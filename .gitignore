@@ -1,7 +1,73 @@
-bin/
-obj/
-*.user
-*.suo
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]*/
+[Aa][Rr][Mm]64*/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+## IDE — Visual Studio
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.pidb
+*.svclog
+*.scc
+
+## IDE — VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## IDE — JetBrains Rider
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+## OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Test results
+[Tt]est[Rr]esult*/
+TestResult.xml
+coverage*/
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+## Misc
+*.tmp
+*.bak
+*.swp
+*.cache
+*.log
+StyleCopReport.xml
+publish/
+*.publishsettings
+**/publish/
+
+## Avalonia specific
+*.axaml.cs.bak
