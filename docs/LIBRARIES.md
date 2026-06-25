@@ -28,14 +28,12 @@ Every library explained in plain English — what it does, why you'd want it, an
 | **VtNetCore** | Parses VT100/xterm escape codes into structured data. | Renders colored/formatted terminal output correctly. |
 | **CliWrap** | Clean wrapper around Process.Start. | Simple run-to-completion commands without boilerplate. |
 
-## MVVM & REACTIVE (TBD)
+## MVVM & REACTIVE (Phase 0)
 
 | Library | What It Does | Why You Want It |
 |---------|-------------|-----------------|
-| **CommunityToolkit.Mvvm** | Lightweight MVVM framework — source generators for INotifyPropertyChanged. | Minimal boilerplate, no heavy reactive dependency. |
-| **ReactiveUI** | Full reactive MVVM — WhenAnyValue, reactive bindings, activation. | Powerful but heavier. Better for complex reactive pipelines. |
-
-> **Decision pending:** Choose one MVVM approach in Phase 0 when layout work begins.
+| **Avalonia.ReactiveUI** | ReactiveUI integration for Avalonia — `WhenActivated`, reactive bindings, activation. | Chosen framework. `DESIGN.md` Rule 6 requires reactive UI patterns throughout. |
+| ~~CommunityToolkit.Mvvm~~ | ~~Lightweight MVVM — source generators.~~ | Not chosen. ReactiveUI better fits the reactive/morphing/animation design target. |
 
 ## DI & CONFIG (Phase 0+)
 

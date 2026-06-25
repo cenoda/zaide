@@ -31,12 +31,15 @@ src/Services/AgentRouter.cs  →  namespace Zaide.Services
 src/ViewModels/MainWindowViewModel.cs → namespace Zaide.ViewModels
 ```
 
-## MVVM
+## MVVM — ReactiveUI
 
-- **ViewModels** never reference Views directly — only data binding
-- **Services** never reference ViewModels or Views
-- **Models** are plain data — no UI logic
-- Code-behind (`*.axaml.cs`) should be minimal — just InitializeComponent + event wiring if unavoidable
+- **Framework:** ReactiveUI (chosen over CommunityToolkit.Mvvm for reactive pipelines).
+- **ViewModels** never reference Views directly — only data binding via `WhenAnyValue`, `Bind`, `OneWayBind`.
+- **Services** never reference ViewModels or Views.
+- **Models** are plain data — no UI logic.
+- Code-behind (`*.axaml.cs`) should be minimal — just `InitializeComponent()` if XAML exists, but prefer C# views per `DESIGN.md` Rule 1.
+- **Activation:** Use `WhenActivated` for setup/teardown; dispose subscriptions with `.DisposeWith(d)`.
+- **Commands:** All user actions via `ReactiveCommand.CreateFromTask` or `ReactiveCommand.Create`.
 
 ## Async
 

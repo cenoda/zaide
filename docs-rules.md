@@ -31,6 +31,7 @@ docs/
 │   ├── templates/       # Spec file template
 │   └── INDEX.md         # Spec index table
 ├── CONVENTIONS.md       # Coding conventions
+├── DESIGN.md            # UI aesthetic rules (glass, animation, spacing, XAML policy)
 └── LIBRARIES.md         # NuGet package catalog
 ```
 
@@ -48,6 +49,7 @@ Create these folders/files when first needed — not all at once.
 | Starting a new phase | Create `docs/phases/phase-N/IMPLEMENTATION_PLAN.md` |
 | Finding a code quality issue during review | Add to `docs/phases/phase-N/TOFIX.md` |
 | Fixing a convention or adopting a new one | Update `docs/CONVENTIONS.md` |
+| Changing UI design rules or patterns | Update `docs/DESIGN.md` |
 | Bug not fixed in 2 attempts | Create issue in `docs/issues/open/` |
 
 ---
