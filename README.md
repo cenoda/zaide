@@ -2,6 +2,8 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
+**Status:** Phase 0 (Foundation & Layout) ✅ Complete — Phase 1 (File Tree) planned.
+
 ## Philosophy
 
 ```
@@ -32,6 +34,23 @@ One agent codes, another reviews. They argue. You get better code.
 - **Right:** Each agent has their own panel. They work independently, report to Townhall.
 - **Bottom:** Terminal and standard IDE tools. Toggle with Ctrl+`.
 
+## Status
+
+| Feature | Phase | Status |
+|---------|-------|--------|
+| 3-panel grid layout | 0 | ✅ Done |
+| Semi.Avalonia dark theme | 0 | ✅ Done |
+| Bottom panel toggle (Ctrl+`) | 0 | ✅ Done |
+| DI container (MS DI + ReactiveUI) | 0 | ✅ Done |
+| Ayaka Violet color palette | 0 | ✅ Done |
+| File tree sidebar | 1 | ⏳ Planned |
+| Townhall / Editor center | 2 | ⏳ Planned |
+| Terminal | 3 | ⏳ Planned |
+| Townhall agent logging | 4 | ⏳ Planned |
+| Agent panels | 5 | ⏳ Planned |
+| Agent-to-agent routing | 6 | ⏳ Planned |
+| Git integration | 7 | ⏳ Planned |
+
 ## Agent-to-Agent
 
 - Each agent panel has a **user input** — talk to any agent directly
@@ -41,20 +60,14 @@ One agent codes, another reviews. They argue. You get better code.
 
 ## Stack
 
-- **Avalonia 12** + **Semi.Avalonia** (dark theme)
-- .NET 10.0
-- Cross-platform desktop (Linux, macOS, Windows)
-
-## MVP
-
-- [ ] 3-panel grid layout with Semi theme
-- [ ] File tree sidebar
-- [ ] Townhall / Editor center with tab switching
-- [ ] 2 agent panels (right, split top/bottom)
-- [ ] Bottom panel with Terminal (Ctrl+` toggle)
-- [ ] Git status in sidebar
-- [ ] Agent-to-agent `@`mention routing
-- [ ] Townhall auto-log: all agent file changes appear in shared view
+| Layer | Technology |
+|-------|-----------|
+| UI Framework | **Avalonia 12** + Semi.Avalonia (dark theme) |
+| Architecture | **MVVM** with ReactiveUI |
+| DI | Microsoft.Extensions.DependencyInjection |
+| Language | C# (nullable enabled) |
+| Runtime | .NET 10.0 |
+| Platform | Cross-platform (Linux, macOS, Windows) |
 
 ## Why "Zaide"
 
