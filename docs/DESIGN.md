@@ -128,17 +128,18 @@ All UI state must be reactive. ViewModels expose observable properties; Views su
 - **Activation:** `WhenActivated` for setup/teardown to avoid leaks.
 - **Commands:** `ReactiveCommand` for all user actions. Enable/disable states are reactive.
 - **Throttling:** User input that triggers expensive work must throttle (150–300ms).
-- **Disposal:** All subscriptions use `.DisposeWith(disposables)` inside `WhenActivated`.
+- **Disposal:** All subscriptions use `d.Add(...)` inside `WhenActivated`.
 
 ```csharp
 // Reactive binding pattern
 this.WhenActivated(d =>
 {
-    this.OneWayBind(ViewModel, vm => vm.AgentOutput, v => v._outputText.Text)
-        .DisposeWith(d);
+    d.Add(this.OneWayBind(ViewModel, vm => vm.AgentOutput, v => v._outputText.Text));
 
-    this.BindCommand(ViewModel, vm => vm.SendCommand, v => v._sendButton)
-        .DisposeWith(d);
+    d.Add(this.BindCommand(ViewModel, vm => vm.SendCommand, v => v._sendButton));
+
+    d.Add(this.WhenAnyValue(x => x.ViewModel!.SomeProperty)
+        .Subscribe(value => { /* react */ }));
 });
 ```
 
@@ -169,7 +170,7 @@ Before marking any UI task complete:
 - [ ] All animations 150–200ms with cubic easing
 - [ ] All panels have ≥ 16px inner padding
 - [ ] No visible thick panel borders — separation by gap, shadow, or blur depth
-- [ ] Reactive bindings use `WhenActivated` with `.DisposeWith(d)`
+- [ ] Reactive bindings use `WhenActivated` with `d.Add(...)`
 - [ ] Font is system-native (not custom/bundled)
 - [ ] Glass fallback works on non-composited environments
 - [ ] Resize window to 800×600 — no layout breaks

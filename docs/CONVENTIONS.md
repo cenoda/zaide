@@ -38,7 +38,7 @@ src/ViewModels/MainWindowViewModel.cs → namespace Zaide.ViewModels
 - **Services** never reference ViewModels or Views.
 - **Models** are plain data — no UI logic.
 - Code-behind (`*.axaml.cs`) should be minimal — just `InitializeComponent()` if XAML exists, but prefer C# views per `DESIGN.md` Rule 1.
-- **Activation:** Use `WhenActivated` for setup/teardown; dispose subscriptions with `.DisposeWith(d)`.
+- **Activation:** Use `WhenActivated` for setup/teardown; dispose subscriptions with `d.Add(observable.Subscribe(...))`.
 - **Commands:** All user actions via `ReactiveCommand.CreateFromTask` or `ReactiveCommand.Create`.
 
 ## Async

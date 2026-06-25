@@ -9,8 +9,8 @@
 - [x] DI bridge (Microsoft.Extensions.DependencyInjection 10.0.8) works
 - [x] Directory structure created (`src/Models`, `src/Services`, `src/ViewModels`, `src/Views`)
 - [x] "Ayaka Violet" palette extracted and documented in `DESIGN.md`
-- [ ] Grid layout with 3 columns renders correctly (M1)
-- [ ] Bottom panel toggle works (M3)
+- [x] Grid layout with 3 columns renders correctly (M2)
+- [x] Bottom panel toggle works (M3)
 
 ---
 
@@ -117,13 +117,13 @@ Build `MainWindow` content as a C# view (per DESIGN.md §1):
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings
-- [ ] `dotnet run --project src` opens a 1280×800 window titled "Zaide"
-- [ ] Window shows 3 colored panel regions (left, center, right)
-- [ ] Ctrl+` toggles bottom panel visibility
-- [ ] `MainWindowViewModel` is resolved from DI container
-- [ ] Directory structure matches plan (`src/Models`, `src/Services`, `src/ViewModels`, `src/Views`)
-- [ ] No XAML beyond `App.axaml` and minimal `MainWindow.axaml` shell
+- [x] `dotnet build Zaide.slnx` succeeds with 0 warnings
+- [x] `dotnet run --project src` opens a 1280×800 window titled "Zaide"
+- [x] Window shows 3 colored panel regions (left, center, right)
+- [x] Ctrl+` toggles bottom panel visibility
+- [x] `MainWindowViewModel` is resolved from DI container
+- [x] Directory structure matches plan (`src/Models`, `src/Services`, `src/ViewModels`, `src/Views`)
+- [x] No XAML beyond `App.axaml` and minimal `MainWindow.axaml` shell
 
 ---
 

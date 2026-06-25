@@ -25,9 +25,9 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] Microsoft DI + ReactiveUI bootstrap
 - [x] "Ayaka Violet" palette defined
 - [x] Directory structure: src/{Models,Services,ViewModels,Views}
-- [ ] 3-panel grid layout (left sidebar, center, right agent area)
-- [ ] Bottom panel placeholder (terminal area) with Ctrl+` toggle
-- [ ] Basic window chrome (title, minimize, maximize, close)
+- [x] 3-panel grid layout (left sidebar, center, right agent area)
+- [x] Bottom panel placeholder (terminal area) with Ctrl+` toggle
+- [x] Basic window chrome (title, minimize, maximize, close)
 
 ## Phase 1: File Tree Sidebar
 - [ ] File tree view in left sidebar

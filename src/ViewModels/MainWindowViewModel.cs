@@ -1,4 +1,5 @@
 using ReactiveUI;
+using System.Reactive;
 
 namespace Zaide.ViewModels;
 
@@ -10,5 +11,17 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _isBottomPanelVisible;
         set => this.RaiseAndSetIfChanged(ref _isBottomPanelVisible, value);
+    }
+
+    public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
+
+    public MainWindowViewModel()
+    {
+        ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
+    }
+
+    private void ToggleBottomPanel()
+    {
+        IsBottomPanelVisible = !IsBottomPanelVisible;
     }
 }
