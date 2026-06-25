@@ -37,8 +37,8 @@ The IDE works without agents. Agents are a layer on top that supercharges it.
 |-------------|----------------------------------|
 | UI          | Avalonia 12 (AXAML)              |
 | Theme       | Semi.Avalonia (dark)             |
-| Language    | C# (.NET 9.0)                    |
-| Pattern     | MVVM (to be decided: ReactiveUI or CommunityToolkit) |
+| Language    | C# (.NET 10.0)                    |
+| Pattern     | MVVM (ReactiveUI)                  |
 | Platform    | Cross-platform (Linux, macOS, Windows) |
 
 ---
