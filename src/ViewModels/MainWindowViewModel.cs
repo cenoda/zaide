@@ -15,8 +15,12 @@ public class MainWindowViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
 
-    public MainWindowViewModel()
+    public FileTreeViewModel FileTreeViewModel { get; }
+
+    public MainWindowViewModel(FileTreeViewModel fileTreeViewModel)
     {
+        FileTreeViewModel = fileTreeViewModel;
+
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
     }
 

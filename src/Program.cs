@@ -2,6 +2,7 @@ using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Avalonia.Splat;
 using System;
+using Zaide.Services;
 using Zaide.ViewModels;
 
 namespace Zaide;
@@ -18,6 +19,8 @@ class Program
             .UseReactiveUIWithMicrosoftDependencyResolver(
                 containerConfig: services =>
                 {
+                    services.AddSingleton<FileTreeService>();
+                    services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
                 },
                 withResolver: sp =>
