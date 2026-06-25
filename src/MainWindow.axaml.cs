@@ -8,17 +8,19 @@ using ReactiveUI.Avalonia;
 using System;
 using System.Reactive.Linq;
 using Zaide.ViewModels;
+using Zaide.Views;
 
 namespace Zaide;
 
 /// <summary>
 /// Main application window. Layout built in C# per DESIGN.md §1.
-/// Phase 0: 3-panel grid + bottom panel toggle.
+/// Phase 0: 3-panel grid + bottom panel toggle. Phase 1: file tree sidebar.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly RowDefinition _bottomPanelRow;
     private readonly Border _bottomPanel;
+    private readonly FileTreeView _fileTreeView;
 
     public MainWindow()
     {
@@ -33,11 +35,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
         // === Build Layout (M2) ===
-        (_bottomPanelRow, _bottomPanel) = BuildLayout();
+        (_bottomPanelRow, _bottomPanel, _fileTreeView) = BuildLayout();
 
         // === ReactiveUI Bindings (M3, M4) ===
         this.WhenActivated(d =>
         {
+            // Wire FileTreeView to its ViewModel
+            _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
+
             // Ctrl+` key binding → ViewModel's toggle command
             KeyBindings.Add(new KeyBinding
             {
@@ -61,7 +66,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// Builds the 3-panel grid layout with bottom panel placeholder.
     /// Left: 260px sidebar | Center: * | Right: 320px agent area.
     /// </summary>
-    private (RowDefinition bottomRow, Border bottomPanel) BuildLayout()
+    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView) BuildLayout()
     {
         var grid = new Grid
         {
@@ -81,8 +86,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         var bottomRow = grid.RowDefinitions[1];
 
-        // --- Left Sidebar ---
-        var sidebar = BuildPanel("Sidebar", "#142043", 0, 0, 0, 1);
+        // --- Left Sidebar (Phase 1: FileTreeView) ---
+        var sidebar = new FileTreeView();
         Grid.SetColumn(sidebar, 0);
         Grid.SetRow(sidebar, 0);
         grid.Children.Add(sidebar);
@@ -108,7 +113,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomRow, bottomPanel);
+        return (bottomRow, bottomPanel, sidebar);
     }
 
     /// <summary>
