@@ -73,8 +73,8 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 1. Check this file first — is it already catalogued?
 2. If not, add it here with: What It Does, Why You Want It, Phase
-3. Add to `Zaide.csproj` with a pinned version
-4. Verify it builds: `dotnet build`
+3. Add to `src/Zaide.csproj` (version pinned centrally in `Directory.Packages.props`)
+4. Verify it builds: `dotnet build Zaide.slnx`
 
 ---
 

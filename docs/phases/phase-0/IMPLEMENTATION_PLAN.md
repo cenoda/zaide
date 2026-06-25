@@ -43,7 +43,7 @@
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Entry gate: `dotnet build` passes, window opens | `dotnet run` shows window |
+| M0 | Entry gate: `dotnet build Zaide.slnx` passes, window opens | `dotnet run --project src` shows window |
 | M1 | Define "Ayaka Violet" brushes in `App.axaml` | Visual inspection of window background |
 | M2 | 3-panel grid layout (left sidebar, center, right agent area) | Window shows 3 distinct colored regions |
 | M3 | Bottom panel with Ctrl+` toggle | Press Ctrl+`, panel slides up/down |
@@ -99,7 +99,6 @@ Build `MainWindow` content as a C# view (per DESIGN.md §1):
 
 - `Title = "Zaide"`
 - `Width = 1280, Height = 800`
-- `WindowStartupLocation = CenterScreen`
 - `MinWidth = 800, MinHeight = 600`
 - `WindowStartupLocation = CenterScreen`
 - OS-native title bar (default Avalonia behavior, no custom chrome)
@@ -118,12 +117,12 @@ Build `MainWindow` content as a C# view (per DESIGN.md §1):
 
 ## Exit Conditions
 
-- [ ] `dotnet build` succeeds with 0 warnings
-- [ ] `dotnet run` opens a 1280×800 window titled "Zaide"
+- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings
+- [ ] `dotnet run --project src` opens a 1280×800 window titled "Zaide"
 - [ ] Window shows 3 colored panel regions (left, center, right)
 - [ ] Ctrl+` toggles bottom panel visibility
 - [ ] `MainWindowViewModel` is resolved from DI container
-- [ ] Directory structure matches plan (Models/, Services/, ViewModels/, Views/)
+- [ ] Directory structure matches plan (`src/Models`, `src/Services`, `src/ViewModels`, `src/Views`)
 - [ ] No XAML beyond `App.axaml` and minimal `MainWindow.axaml` shell
 
 ---
