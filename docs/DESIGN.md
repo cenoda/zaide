@@ -151,7 +151,11 @@ Zaide should feel as polished as VS Code or Warp at a glance:
 - **No flicker:** Layout stable on first paint. No cascade of elements appearing.
 - **Smooth resize:** No layout jumps or blank areas during window resize.
 - **Text rendering:** Crisp at all DPI. No blurry text on HiDPI.
-- **Color palette:** Monochromatic dark base + single accent color (TBD: blue or purple).
+- **Color palette:** Monochromatic dark base with "Ayaka Violet" accent system:
+  - **Primary Accent:** `#8FA5DE` (Periwinkle Violet — for active tabs, primary buttons, focus borders)
+  - **Soft Accent:** `#C2C2E5` (Soft Cryo Lavender — for selection, hover states, badges)
+  - **Deep Base:** `#142043` (Midnight Blue-Purple — for sidebars, panel backgrounds)
+  - **Text Active:** `#E3E4F4` (Pale Ice Blue-White — for high-contrast text)
 - **Separator style:** Space or 1px semi-transparent line — never 2px+ solid borders.
 - **Focus states:** Clear but subtle — slight brightness shift, not thick outline.
 
