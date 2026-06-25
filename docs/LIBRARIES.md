@@ -32,8 +32,9 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 | Library | What It Does | Why You Want It |
 |---------|-------------|-----------------|
-| **Avalonia.ReactiveUI** | ReactiveUI integration for Avalonia — `WhenActivated`, reactive bindings, activation. | Chosen framework. `DESIGN.md` Rule 6 requires reactive UI patterns throughout. |
-| ~~CommunityToolkit.Mvvm~~ | ~~Lightweight MVVM — source generators.~~ | Not chosen. ReactiveUI better fits the reactive/morphing/animation design target. |
+| **ReactiveUI.Avalonia** | ReactiveUI for Avalonia — `WhenActivated`, reactive bindings, activation, `RoutedViewHost`. | Chosen MVVM framework. Replaces deprecated `Avalonia.ReactiveUI`. v12 targets Avalonia ≥ 12.0.4. |
+| **ReactiveUI.Avalonia.Microsoft.Extensions.DependencyInjection** | Bridges ReactiveUI/Splat to `IServiceCollection`. | Wires our MS DI container into ReactiveUI's service resolution (`UseReactiveUIWithMicrosoftDependencyResolver`). |
+| ~~CommunityToolkit.Mvvm~~ | ~~Lightweight MVVM — source generators.~~ | Not chosen. |
 
 ## DI & CONFIG (Phase 0+)
 

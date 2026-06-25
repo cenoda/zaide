@@ -4,6 +4,6 @@
              RequestedThemeVariant="Dark">
 
     <Application.Styles>
-        <StyleInclude Source="avares://Semi.Avalonia/Themes/Index.axaml" />
+        <StyleInclude Source="avares://Semi.Avalonia/SemiTheme.axaml" />
     </Application.Styles>
 </Application>
