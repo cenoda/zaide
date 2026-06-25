@@ -19,10 +19,10 @@ Code quality issues found during Phase 0 review. Check these before starting Pha
 
 ## Open
 
-### [ ] Remove stale `.gitkeep` from `src/ViewModels/`
+### [x] Remove stale `.gitkeep` from `src/ViewModels/`
 `MainWindowViewModel.cs` now lives in this directory. `.gitkeep` is no longer needed.
 
-### [ ] Add `x:TypeArguments` to `MainWindow.axaml` (nice-to-have)
+### [x] Add `x:TypeArguments` to `MainWindow.axaml` (nice-to-have)
 `MainWindow` inherits `ReactiveWindow<MainWindowViewModel>`. No bindings in XAML yet, so it's harmless — but when Phase adds XAML bindings, this will be required.
 ```xml
 <Window ... xmlns:vm="using:Zaide.ViewModels"
