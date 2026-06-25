@@ -1,6 +1,8 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Zaide.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Zaide.Tests/Zaide.Tests.csproj" />
   </Folder>
-  <Project Path="Zaide.csproj" />
 </Solution>

@@ -2,7 +2,7 @@
 
 | # | Title | Label | Priority | Status |
 |---|-------|-------|----------|--------|
-| — | — | — | — | — |
+| 001 | Incremental build fails with duplicate assembly attributes | BUG | critical | closed |
 
 ---
 

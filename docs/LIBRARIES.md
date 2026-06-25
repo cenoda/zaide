@@ -50,6 +50,23 @@ Every library explained in plain English — what it does, why you'd want it, an
 | **LibGit2Sharp** | Full git in .NET — status, diff, log, branches, commits. | Typed objects instead of parsing CLI output. |
 | **DiffPlex** | Diff algorithm — which lines were added/removed/changed. | Git diff view + unsaved changes comparison. |
 
+## PERSISTENCE & DATA (Phase 0+)
+
+| Library | What It Does | Why You Want It |
+|---------|-------------|-----------------|
+| **Microsoft.Data.Sqlite** | .NET's official SQLite binding. | Single-file database for townhall logs, agent history, project metadata. |
+| **Dapper** | Lightweight micro-ORM (optional). | Simple query mapping without Entity Framework overhead. |
+
+---
+
+## Technical Decisions (Resolved)
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Backend** | SQLite + JSON (settings) | Time-series data needs queries. One-file management. |
+| **Image Storage** | Hybrid: Embedded (UI) + File Ref (project) | Icons build in, agent avatars swap at runtime. |
+| **Plugin** | Interface + DI manual registration | Core interfaces now, .NET 10 Keyed Services later. |
+
 ---
 
 ## Adding a Library

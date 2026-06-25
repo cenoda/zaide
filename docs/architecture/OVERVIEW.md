@@ -39,7 +39,19 @@ The IDE works without agents. Agents are a layer on top that supercharges it.
 | Theme       | Semi.Avalonia (dark)             |
 | Language    | C# (.NET 10.0)                    |
 | Pattern     | MVVM (ReactiveUI)                  |
+| DI          | Microsoft.Extensions.DependencyInjection (Keyed Services ready) |
+| Persistence | SQLite (structured data) + JSON (settings) |
 | Platform    | Cross-platform (Linux, macOS, Windows) |
+
+---
+
+## Technical Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Backend / Persistence** | SQLite + JSON for settings | Time-series data (townhall logs, agent actions) needs queries. SQLite keeps everything in one file. JSON for simple key-value settings. |
+| **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons and UI assets compile into the build. Agent avatars and runtime images stored as file refs for live replacement. |
+| **Plugin Architecture** | Interface + DI manual registration | Define core interfaces (`IAgent`, `IPlugin`) now. Manual registration in DI. Expand to .NET 10 Keyed Services (`services.AddKeyedSingleton`) when plugin ecosystem grows. |
 
 ---
 

@@ -5,13 +5,29 @@ Each phase must be complete before moving to the next.
 
 ---
 
+## Technical Decisions (Resolved)
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Backend** | SQLite + JSON (settings) | Time-series data needs queries. One-file management. |
+| **Image Storage** | Hybrid: Embedded (UI) + File Ref (project) | Icons build in, agent avatars swap at runtime. |
+| **Plugin** | Interface + DI manual registration | Core interfaces now, .NET 10 Keyed Services later. |
+
+See `docs/architecture/OVERVIEW.md` for full details.
+
+---
+
 ## Phase 0: Foundation & Layout
 - [x] Avalonia 12 project scaffold
 - [x] Semi.Avalonia theme applied
+- [x] .NET 10.0 LTS upgrade
+- [x] Central Package Management (CPM)
+- [x] Microsoft DI + ReactiveUI bootstrap
+- [x] "Ayaka Violet" palette defined
+- [x] Directory structure: src/{Models,Services,ViewModels,Views}
 - [ ] 3-panel grid layout (left sidebar, center, right agent area)
 - [ ] Bottom panel placeholder (terminal area) with Ctrl+` toggle
 - [ ] Basic window chrome (title, minimize, maximize, close)
-- [ ] Directory structure: Models/, Services/, ViewModels/, Views/
 
 ## Phase 1: File Tree Sidebar
 - [ ] File tree view in left sidebar

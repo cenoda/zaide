@@ -19,10 +19,22 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Syncing ${REPO_ROOT} → ${DEST}"
 
 cd "${REPO_ROOT}"
 
+# --tpslimit / --tpslimit-burst prevent Google rate-limit errors.
+# --drive-pacer-min-sleep adds a safety cushion between API calls.
 rclone sync . "${DEST}" \
-    --exclude-if-present .rcloneignore \
     --exclude ".git/" \
-    --delete-excluded \
+    --exclude "bin/" \
+    --exclude "obj/" \
+    --exclude ".vs/" \
+    --exclude ".idea/" \
+    --exclude ".vscode/" \
+    --exclude "*.suo" \
+    --exclude "*.user" \
+    --exclude ".DS_Store" \
+    --exclude "Thumbs.db" \
+    --tpslimit 1 \
+    --tpslimit-burst 1 \
+    --drive-pacer-min-sleep 2s \
     --progress \
     2>&1 | tee -a "${LOG_FILE}"
 
