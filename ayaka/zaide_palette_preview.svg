@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" font-family="Inter, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f0f1a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="520" fill="url(#bg)" rx="16"/>
+
+  <!-- Title -->
+  <text x="400" y="48" text-anchor="middle" fill="#E3E4F4" font-size="22" font-weight="700">Zaide — "Ayaka Violet" Palette</text>
+  <text x="400" y="72" text-anchor="middle" fill="#888" font-size="13">Inspired by Kamisato Ayaka (Cryo)</text>
+
+  <!-- Divider -->
+  <line x1="40" y1="90" x2="760" y2="90" stroke="#333" stroke-width="1"/>
+
+  <!-- Primary Accent -->
+  <rect x="40" y="110" width="340" height="160" rx="12" fill="#8FA5DE"/>
+  <text x="60" y="142" fill="#1a1a2e" font-size="13" font-weight="700">PRIMARY ACCENT</text>
+  <text x="60" y="170" fill="#1a1a2e" font-size="28" font-weight="700">#8FA5DE</text>
+  <text x="60" y="200" fill="#1a1a2e" font-size="12">Periwinkle Violet</text>
+  <text x="60" y="220" fill="#1a1a2e" font-size="11" opacity="0.7">Active tabs · Primary buttons · Focus borders</text>
+  <text x="60" y="248" fill="#1a1a2e" font-size="14" font-weight="700">RGB(143, 165, 222)</text>
+
+  <!-- Soft Accent -->
+  <rect x="420" y="110" width="340" height="160" rx="12" fill="#C2C2E5"/>
+  <text x="440" y="142" fill="#1a1a2e" font-size="13" font-weight="700">SOFT ACCENT</text>
+  <text x="440" y="170" fill="#1a1a2e" font-size="28" font-weight="700">#C2C2E5</text>
+  <text x="440" y="200" fill="#1a1a2e" font-size="12">Soft Cryo Lavender</text>
+  <text x="440" y="220" fill="#1a1a2e" font-size="11" opacity="0.7">Selection · Hover states · Badges</text>
+  <text x="440" y="248" fill="#1a1a2e" font-size="14" font-weight="700">RGB(194, 194, 229)</text>
+
+  <!-- Deep Base -->
+  <rect x="40" y="290" width="340" height="160" rx="12" fill="#142043" stroke="#8FA5DE" stroke-width="1.5"/>
+  <text x="60" y="322" fill="#C2C2E5" font-size="13" font-weight="700">DEEP BASE</text>
+  <text x="60" y="350" fill="#E3E4F4" font-size="28" font-weight="700">#142043</text>
+  <text x="60" y="380" fill="#8FA5DE" font-size="12">Midnight Blue-Purple</text>
+  <text x="60" y="400" fill="#8FA5DE" font-size="11" opacity="0.7">Sidebars · Panel backgrounds · Borders</text>
+  <text x="60" y="428" fill="#C2C2E5" font-size="14" font-weight="700">RGB(20, 32, 67)</text>
+
+  <!-- Text Active -->
+  <rect x="420" y="290" width="340" height="160" rx="12" fill="#E3E4F4"/>
+  <text x="440" y="322" fill="#1a1a2e" font-size="13" font-weight="700">TEXT ACTIVE</text>
+  <text x="440" y="350" fill="#1a1a2e" font-size="28" font-weight="700">#E3E4F4</text>
+  <text x="440" y="380" fill="#1a1a2e" font-size="12">Pale Ice Blue-White</text>
+  <text x="440" y="400" fill="#1a1a2e" font-size="11" opacity="0.7">High-contrast text · Headings · Labels</text>
+  <text x="440" y="428" fill="#1a1a2e" font-size="14" font-weight="700">RGB(227, 228, 244)</text>
+
+  <!-- Harmony Bar -->
+  <text x="400" y="482" text-anchor="middle" fill="#666" font-size="11">Cold Violet Harmony · Ice Blue Undertone · Cohesive Cryo Aesthetic</text>
+
+  <!-- Color bar -->
+  <rect x="40" y="490" width="180" height="8" rx="4" fill="#142043"/>
+  <rect x="224" y="490" width="180" height="8" rx="4" fill="#8FA5DE"/>
+  <rect x="408" y="490" width="180" height="8" rx="4" fill="#C2C2E5"/>
+  <rect x="592" y="490" width="168" height="8" rx="4" fill="#E3E4F4"/>
+</svg>
