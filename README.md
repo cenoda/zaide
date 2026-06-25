@@ -42,7 +42,7 @@ One agent codes, another reviews. They argue. You get better code.
 ## Stack
 
 - **Avalonia 12** + **Semi.Avalonia** (dark theme)
-- .NET 9
+- .NET 10.0
 - Cross-platform desktop (Linux, macOS, Windows)
 
 ## MVP

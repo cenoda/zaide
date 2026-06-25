@@ -3,6 +3,13 @@
              x:Class="Zaide.App"
              RequestedThemeVariant="Dark">
 
+    <Application.Resources>
+        <SolidColorBrush x:Key="PrimaryAccent" Color="#8FA5DE" />
+        <SolidColorBrush x:Key="SoftAccent" Color="#C2C2E5" />
+        <SolidColorBrush x:Key="DeepBase" Color="#142043" />
+        <SolidColorBrush x:Key="TextActive" Color="#E3E4F4" />
+    </Application.Resources>
+
     <Application.Styles>
         <StyleInclude Source="avares://Semi.Avalonia/SemiTheme.axaml" />
     </Application.Styles>
