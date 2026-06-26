@@ -1,4 +1,6 @@
 using System;
+using ReactiveUI;
+using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -7,6 +9,12 @@ namespace Zaide.Tests;
 
 public class MainWindowViewModelTests
 {
+    static MainWindowViewModelTests()
+    {
+        // ReactiveUI must be initialized before using WhenAnyValue in constructor
+        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
+    }
+
     private static MainWindowViewModel CreateViewModel()
     {
         var fileTreeService = new FileTreeService();

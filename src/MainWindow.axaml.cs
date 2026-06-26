@@ -21,6 +21,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly Border _bottomPanel;
     private readonly FileTreeView _fileTreeView;
+    private TextBlock _centerText = null!;
 
     public MainWindow()
     {
@@ -35,7 +36,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
         // === Build Layout (M2) ===
-        (_bottomPanelRow, _bottomPanel, _fileTreeView) = BuildLayout();
+        (_bottomPanelRow, _bottomPanel, _fileTreeView, _centerText) = BuildLayout();
 
         // === ReactiveUI Bindings (M3, M4) ===
         this.WhenActivated(d =>
@@ -49,6 +50,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 Gesture = new KeyGesture(Key.OemTilde, KeyModifiers.Control),
                 Command = ViewModel!.ToggleBottomPanelCommand
             });
+
+            // Bind StatusText to center panel
+            d.Add(this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._centerText.Text));
 
             // Bind bottom panel visibility → row height (instant toggle, no animation per Phase 0)
             d.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
@@ -66,7 +70,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// Builds the 3-panel grid layout with bottom panel placeholder.
     /// Left: 260px sidebar | Center: * | Right: 320px agent area.
     /// </summary>
-    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView) BuildLayout()
+    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView, TextBlock centerText) BuildLayout()
     {
         var grid = new Grid
         {
@@ -92,8 +96,22 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(sidebar, 0);
         grid.Children.Add(sidebar);
 
-        // --- Center Panel ---
-        var center = BuildPanel("Center", "#1A1A2E", 1, 0, 1, 0);
+        // --- Center Panel (Phase 1 M4) ---
+        _centerText = new TextBlock
+        {
+            Text = "Open a folder to begin",
+            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        var center = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
+            Padding = new Thickness(16),
+            Margin = new Thickness(1, 0, 1, 0),
+            Child = _centerText
+        };
         Grid.SetColumn(center, 1);
         Grid.SetRow(center, 0);
         grid.Children.Add(center);
@@ -113,7 +131,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomRow, bottomPanel, sidebar);
+        return (bottomRow, bottomPanel, sidebar, _centerText);
     }
 
     /// <summary>
