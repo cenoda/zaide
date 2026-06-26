@@ -20,6 +20,11 @@ namespace Zaide.ViewModels;
 /// </summary>
 public class EditorTabViewModel : ReactiveObject
 {
+    private static readonly StringComparison PathComparison =
+        OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
     private readonly IServiceProvider _services;
     private readonly IFileService _fileService;
     private EditorViewModel? _activeTab;
@@ -49,7 +54,18 @@ public class EditorTabViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
     }
 
-    public ReactiveCommand<string, Unit> OpenFileCommand { get; }
+    /// <summary>
+    /// Error from the most recent failed file-open attempt, surfaced so the UI
+    /// can display it instead of claiming success.
+    /// </summary>
+    private string? _lastOpenError;
+    public string? LastOpenError
+    {
+        get => _lastOpenError;
+        set => this.RaiseAndSetIfChanged(ref _lastOpenError, value);
+    }
+
+    public ReactiveCommand<string, bool> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
     public EditorTabViewModel(IServiceProvider services, IFileService fileService)
@@ -57,7 +73,7 @@ public class EditorTabViewModel : ReactiveObject
         _services = services;
         _fileService = fileService;
 
-        OpenFileCommand = ReactiveCommand.CreateFromTask<string>(OpenFileAsync);
+        OpenFileCommand = ReactiveCommand.CreateFromTask<string, bool>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
     }
 
@@ -65,15 +81,18 @@ public class EditorTabViewModel : ReactiveObject
     /// Opens a file in a new or existing tab. If a tab for the same path
     /// already exists, activates it instead of creating a duplicate.
     /// </summary>
-    private async Task OpenFileAsync(string path)
+    private async Task<bool> OpenFileAsync(string path)
     {
+        var normalizedPath = NormalizePath(path);
+
         // Check if already open — activate existing tab
         var existing = OpenTabs.FirstOrDefault(t =>
-            string.Equals(t.FilePath, path, StringComparison.Ordinal));
+            string.Equals(NormalizePath(t.FilePath), normalizedPath, PathComparison));
         if (existing is not null)
         {
             ActiveTab = existing;
-            return;
+            LastOpenError = null;
+            return true;
         }
 
         // Read file content via service (async, no UI-thread blocking)
@@ -84,8 +103,8 @@ public class EditorTabViewModel : ReactiveObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // TODO: surface error to status bar in a future milestone
-            return;
+            LastOpenError = ex.Message;
+            return false;
         }
 
         // Create new tab via DI (Transient — each tab gets its own instance)
@@ -95,6 +114,8 @@ public class EditorTabViewModel : ReactiveObject
 
         OpenTabs.Add(tab);
         ActiveTab = tab;
+        LastOpenError = null;
+        return true;
     }
 
     /// <summary>
@@ -142,5 +163,12 @@ public class EditorTabViewModel : ReactiveObject
             else
                 ActiveTab = OpenTabs[index - 1];
         }
+    }
+
+    private static string NormalizePath(string path)
+    {
+        return string.IsNullOrWhiteSpace(path)
+            ? string.Empty
+            : Path.GetFullPath(path);
     }
 }

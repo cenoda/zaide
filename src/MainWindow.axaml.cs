@@ -117,8 +117,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             var saveBinding = new KeyBinding
             {
                 Gesture = saveGesture,
-                Command = ReactiveUI.ReactiveCommand.Create(
-                    () => editorTabs.ActiveTab?.SaveCommand.Execute().Subscribe())
+                Command = ViewModel!.SaveActiveTabCommand
             };
             KeyBindings.Add(saveBinding);
             d.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));

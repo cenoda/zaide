@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive.Disposables;
-using ReactiveUI;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
+using ReactiveUI;
 
 namespace Zaide.ViewModels;
 
@@ -38,6 +39,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
+    public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
 
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
@@ -48,6 +50,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
+        SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
     }
 
     /// <summary>
@@ -66,6 +69,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .Where(msg => msg is not null)
                 .Subscribe(msg => StatusText = $"Save failed: {msg}"));
 
+        _disposables.Add(
+            this.WhenAnyValue(x => x.EditorTabs.LastOpenError)
+                .Where(msg => msg is not null)
+                .Subscribe(msg => StatusText = $"Open failed: {msg}"));
+
         // When user selects a file in the tree, open it in the editor
         _disposables.Add(
             this.WhenAnyValue(x => x.FileTreeViewModel.SelectedFile)
@@ -77,8 +85,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
                     if (SupportedExtensions.Contains(ext))
                     {
-                        EditorTabs.OpenFileCommand.Execute(path).Subscribe();
-                        StatusText = $"Opened: {file.Name}";
+                        EditorTabs.OpenFileCommand.Execute(path).Subscribe(result =>
+                        {
+                            if (result)
+                                StatusText = $"Opened: {file.Name}";
+                        });
                     }
                     else
                     {
@@ -98,5 +109,23 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private void ToggleBottomPanel()
     {
         IsBottomPanelVisible = !IsBottomPanelVisible;
+    }
+
+    private async Task SaveActiveTabAsync()
+    {
+        var activeTab = EditorTabs.ActiveTab;
+        if (activeTab is null)
+            return;
+
+        var saved = await activeTab.SaveCommand.Execute();
+        if (saved)
+        {
+            StatusText = $"Saved: {activeTab.FileName}";
+            return;
+        }
+
+        StatusText = activeTab.LastSaveError is { Length: > 0 } error
+            ? $"Save failed: {error}"
+            : $"Save failed: {activeTab.FileName}";
     }
 }

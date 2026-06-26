@@ -74,6 +74,28 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
+    public async Task OpenFile_CaseVariant_ActivatesExisting_OnWindows()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var mockFs = new MockFileService();
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(mockFs);
+        services.AddTransient<EditorViewModel>();
+        var sp = services.BuildServiceProvider();
+        var vm = new EditorTabViewModel(sp, mockFs);
+
+        await vm.OpenFileCommand.Execute(@"C:\Temp\Readme.md");
+        var firstTab = vm.OpenTabs[0];
+
+        await vm.OpenFileCommand.Execute(@"c:\temp\README.md");
+
+        Assert.Single(vm.OpenTabs);
+        Assert.Same(firstTab, vm.ActiveTab);
+    }
+
+    [Fact]
     public async Task CloseTab_RemovesFromCollection()
     {
         var vm = CreateViewModel();

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -86,7 +87,7 @@ public class EditorViewModelTests
     }
 
     [Fact]
-    public void SaveCommand_WritesFile()
+    public async Task SaveCommand_WritesFile()
     {
         var vm = new EditorViewModel(new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
@@ -99,6 +100,7 @@ public class EditorViewModelTests
 
             var result = false;
             vm.SaveCommand.Execute().Subscribe(r => result = r);
+            await Task.Delay(50);
 
             Assert.True(result);
             var saved = File.ReadAllText(filePath);
@@ -112,7 +114,7 @@ public class EditorViewModelTests
     }
 
     [Fact]
-    public void SaveCommand_ClearsDirty()
+    public async Task SaveCommand_ClearsDirty()
     {
         var vm = new EditorViewModel(new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
@@ -125,6 +127,7 @@ public class EditorViewModelTests
             Assert.True(vm.IsDirty);
 
             vm.SaveCommand.Execute().Subscribe();
+            await Task.Delay(50);
 
             Assert.False(vm.IsDirty);
         }

@@ -102,10 +102,31 @@ editor as stable.
 ### [x] Fix misleading status text for extensionless unsupported files
 - Changed `"Opened: {file.Name}"` to `"Unsupported file type: (no extension)"` for extensionless files.
 
+### [x] Stop reporting "Opened" before the file actually opens
+- `EditorTabViewModel.OpenFileCommand` now returns `bool` and stores `LastOpenError` on read failure.
+- `MainWindowViewModel` only sets `"Opened: ..."` after a successful command result.
+- Read failures now surface as `StatusText = "Open failed: ..."` instead of silently returning.
+- Tests: `SelectingUnreadableFile_ShowsOpenFailureStatus`.
+
+### [x] Surface manual Ctrl+S save failures to the user
+- Added `MainWindowViewModel.SaveActiveTabCommand` and moved the `Ctrl+S` binding to it.
+- Manual saves now set `StatusText` on both success (`"Saved: ..."`) and failure (`"Save failed: ..."`).
+- This closes the gap where `EditorTabs.LastSaveError` only covered save-on-close flow.
+- Tests: `SaveActiveTabCommand_ShowsFailureStatus`.
+
+### [x] Prevent duplicate tabs for the same file on Windows path casing differences
+- `EditorTabViewModel` now normalizes paths with `Path.GetFullPath(...)`.
+- Duplicate-tab detection uses `OrdinalIgnoreCase` on Windows, `Ordinal` elsewhere.
+- This keeps `C:\Temp\Readme.md` and `c:\temp\README.md` mapped to one tab.
+- Tests: `OpenFile_CaseVariant_ActivatesExisting_OnWindows`.
+
 ### [x] Add tests for the risky paths
-- Missing coverage:
+- Added coverage for:
   - save failure must not close the tab
   - cancel close on dirty tab
   - grammar reset on supported -> unsupported switch
   - large/slow file behavior assumptions
   - `EditorTabBar` subscription cleanup/lifecycle
+  - unreadable-file open failure status
+  - manual save failure status
+  - Windows case-insensitive duplicate-tab detection

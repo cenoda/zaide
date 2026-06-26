@@ -7,6 +7,7 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Tests.Services;
 using Zaide.ViewModels;
 
 namespace Zaide.Tests;
@@ -21,8 +22,13 @@ public class MainWindowViewModelTests
 
     private static MainWindowViewModel CreateViewModel()
     {
+        return CreateViewModel(new FileService());
+    }
+
+    private static MainWindowViewModel CreateViewModel(IFileService fileService)
+    {
         var services = new ServiceCollection();
-        services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton(fileService);
         services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
 
@@ -83,5 +89,50 @@ public class MainWindowViewModelTests
             if (File.Exists(filePath))
                 File.Delete(filePath);
         }
+    }
+
+    [Fact]
+    public async Task SelectingUnreadableFile_ShowsOpenFailureStatus()
+    {
+        var fileService = new MockFileService
+        {
+            ReadException = new IOException("read denied")
+        };
+        var vm = CreateViewModel(fileService);
+
+        vm.FileTreeViewModel.SelectedFile = new FileTreeNode
+        {
+            Name = "Broken.cs",
+            FullPath = "/tmp/Broken.cs",
+            IsDirectory = false
+        };
+
+        await Task.Delay(100);
+
+        Assert.Empty(vm.EditorTabs.OpenTabs);
+        Assert.Equal("Open failed: read denied", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task SaveActiveTabCommand_ShowsFailureStatus()
+    {
+        var fileService = new MockFileService
+        {
+            WriteException = new UnauthorizedAccessException("permission denied")
+        };
+        var vm = CreateViewModel(fileService);
+        var editor = new EditorViewModel(fileService)
+        {
+            FilePath = "/tmp/test.txt",
+            TextContent = "dirty"
+        };
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        vm.SaveActiveTabCommand.Execute().Subscribe();
+        await Task.Delay(50);
+
+        Assert.Equal("Save failed: permission denied", vm.StatusText);
+        Assert.True(editor.IsDirty);
     }
 }
