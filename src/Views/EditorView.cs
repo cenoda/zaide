@@ -90,7 +90,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
 
-        // Grammar
+        // Grammar — always set, even for unsupported files.
+        // Passing a null/empty scope clears the previous grammar
+        // so plain-text files don't inherit the last tab's highlighting.
         var scope = ext switch
         {
             ".cs" => "source.cs",
@@ -98,8 +100,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             ".md" => "text.html.markdown",
             _ => null
         };
-        if (scope is not null)
-            _textMateInstallation.SetGrammar(scope);
+        _textMateInstallation.SetGrammar(scope ?? "");
 
         // Font — monospace for code, serif for prose
         _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;

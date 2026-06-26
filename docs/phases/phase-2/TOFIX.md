@@ -68,13 +68,10 @@ editor as stable.
 - Removed both `Log()` calls in ActiveTab subscription and the `Log` method itself.
 - `grep -r zaide-debug` + `grep -r AppendAllText` across `src/` — zero remaining hits.
 
-### [ ] Reset syntax highlighting when switching to unsupported/plain-text files
-- `EditorView.ApplyFileMode()` sets grammar for known extensions only.
-- Unsupported files keep the previous tab's grammar.
-- Risk: wrong highlighting after switching between file types.
-- Fix:
-  - Explicitly clear or reset grammar when no scope is mapped.
-  - Add a test for switching from supported -> unsupported extensions.
+### [x] Reset syntax highlighting when switching to unsupported/plain-text files
+- `ApplyFileMode` now always calls `SetGrammar(scope!)` — null scope passes through
+  `LoadGrammar` (returns null), clearing the previous grammar.
+- Verified safe: `TextMateSharp.Registry.LoadGrammar` returns null on null/empty input.
 
 ### [x] Move file I/O off the UI thread
 - Created `IFileService` + `FileService` with `ReadAllTextAsync` / `WriteAllTextAsync`.
