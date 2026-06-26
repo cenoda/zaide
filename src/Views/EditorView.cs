@@ -23,6 +23,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 {
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
+    private readonly IndentGuideRenderer _indentGuideRenderer;
 
     // Guard flag: true while the View is pushing text to the editor,
     // preventing OnTextChanged from bouncing it back to the ViewModel.
@@ -59,9 +60,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
-        // M2 SPIKE: draw indent boundary markers on each visible line.
-        // Removed after M2 exit gate passes.
-        EnableSpikeRenderer();
+        _indentGuideRenderer = new IndentGuideRenderer(
+            _textEditor.TextArea.TextView,
+            new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
 
         Content = _textEditor;
 
@@ -93,7 +94,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                     if (obj is EditorViewModel vm)
                         ApplyFileMode(vm.FilePath);
                     else
+                    {
                         _textEditor.Text = string.Empty;
+                        _indentGuideRenderer.IsEnabled = false;
+                    }
                 }));
 
             _textEditor.TextChanged += OnTextChanged;
@@ -135,6 +139,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         // Font — monospace for code, serif for prose
         _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
+
+        // M3 experiment path: only enable the first-guide renderer for C# files
+        // while the visual behavior is being validated.
+        _indentGuideRenderer.IsEnabled = ext == ".cs";
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
@@ -142,13 +150,4 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
     }
-
-    // M2 SPIKE helper — register the indent boundary marker renderer.
-    private void EnableSpikeRenderer()
-    {
-        var textView = _textEditor.TextArea.TextView;
-        _spikeRenderer = new SpikeIndentGuideRenderer(textView);
-    }
-
-    private SpikeIndentGuideRenderer? _spikeRenderer;
 }

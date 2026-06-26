@@ -25,6 +25,18 @@ intended revert target.
 This matters because future M3 work should start from the actual repo state,
 not from the assumed clean baseline described in the original revert summary.
 
+## Follow-Up Implementation (2026-06-26)
+
+The active spike identified in the post-revert audit has now been replaced.
+
+- `src/Views/SpikeIndentGuideRenderer.cs` was removed
+- `src/Views/IndentGuideRenderer.cs` now implements the M3 first-guide path
+- `EditorView` enables the renderer only for the current C# experiment path
+- Focused helper tests were added for the pure indentation logic
+
+The original root-cause notes still stand: M3 is not done until the live editor
+result is visually trustworthy.
+
 ## Root Cause
 
 The implementation did not reach the bar for visual correctness. This was not a

@@ -2,27 +2,27 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `dotnet build Zaide.slnx` passes with 0 warnings
-- [x] `dotnet test Zaide.slnx` passes with all tests green (69/69 on 2026-06-26)
+- [x] `dotnet build Zaide.slnx` passes with 0 warnings (2026-06-27)
+- [x] `dotnet test Zaide.slnx` passes with all tests green (79/79 on 2026-06-27)
 - [ ] Read `docs/phases/phase-2.1/TOFIX.md`
 - [ ] Read `docs/phases/phase-2.1/REVERT_LOG.md`
 - [x] Verify against live code what Phase 2.1 state actually exists
-- [ ] Decide whether to fully revert the M2 spike or treat the current spike as the M2 baseline
+- [x] Decide whether to fully revert the M2 spike or treat the current spike as the M2 baseline
 - [ ] Confirm the exact visual target with a real sample file before writing renderer logic
 
 ### Live Repo State Snapshot (2026-06-26)
 
-The repository is not at a pure pre-Phase-2.1 baseline.
+The repository now contains the M3 first-guide experiment path.
 
-- `src/Views/SpikeIndentGuideRenderer.cs` exists and is registered from
-  `src/Views/EditorView.cs`
-- `EditorView` currently enables the spike unconditionally during construction
-- The previously attempted production `IndentGuideRenderer.cs` is gone
-- The current codebase therefore reflects an active M2-style spike, not a clean
-  "no indent guides present" baseline
+- `src/Views/SpikeIndentGuideRenderer.cs` has been removed
+- `src/Views/IndentGuideRenderer.cs` now implements the first-guide renderer
+- `src/Views/IndentGuideMetrics.cs` contains the pure indentation helper logic
+- `EditorView` enables the renderer only for the current C# experiment path
+- Focused helper tests exist in `tests/Zaide.Tests/Views/IndentGuideMetricsTests.cs`
 
-Treat this as the starting point for any M3 work unless the spike is explicitly
-removed first.
+Manual visual validation was completed for M3 on 2026-06-27 using a dedicated
+sample file covering spaces, tabs, mixed indentation, blank lines, and deeper
+nesting.
 
 ---
 
@@ -95,9 +95,7 @@ repeatably in the live editor.
 
 Turn the successful coordinate spike into minimal production code.
 
-1. Resolve the baseline decision first:
-   - either remove `SpikeIndentGuideRenderer` and restart M3 from a clean tree
-   - or promote the proven parts of the spike into `IndentGuideRenderer`
+1. Promote the proven parts of the spike into `IndentGuideRenderer`.
 2. Create `src/Views/IndentGuideRenderer.cs` implementing `IBackgroundRenderer`
    only after M2 succeeds visually in the live app.
 3. Define the first-guide rule before coding:
@@ -112,18 +110,18 @@ aligned while scrolling vertically.
 
 ### M3 Readiness Notes
 
-M3 is hard because it is not just a file rename from `SpikeIndentGuideRenderer`
-to `IndentGuideRenderer`.
+M3 was hard because it was not just a file rename from
+`SpikeIndentGuideRenderer` to `IndentGuideRenderer`.
 
-- The current spike marks the first non-whitespace boundary on each visible
-  line, which is not automatically the same as "render the first indent guide"
+- The old spike marked the first non-whitespace boundary on each visible line,
+  which is not automatically the same as "render the first indent guide"
 - M3 needs a clear production rule for lines with less than one indent level,
   blank lines, and mixed tab/space prefixes
 - `TextView.GetVisualPosition(...)` appears to be the key coordinate source in
   the spike, but visual trust must still be confirmed while scrolling in a real
   `.cs` file before treating it as production-ready
-- The current unconditional spike hookup in `EditorView` is useful for
-  experimentation but is not the final M3 wiring shape
+- The final M3 experiment hookup in `EditorView` is intentionally limited to
+  C# files until the live visual checks pass
 
 ---
 
@@ -186,14 +184,14 @@ sufficient for this phase.
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings and 0 errors
-- [ ] `dotnet test Zaide.slnx` succeeds
-- [ ] First indent guide level proven visually before multi-level work begins
+- [x] `dotnet build Zaide.slnx` succeeds with 0 warnings and 0 errors
+- [x] `dotnet test Zaide.slnx` succeeds
+- [x] First indent guide level proven visually before multi-level work begins
 - [ ] Multi-level guides look correct in a real `.cs` file
 - [ ] Guides scroll correctly with the document
 - [ ] No guides shown for unsupported file types
-- [ ] Temporary spike code removed
-- [ ] Helper tests added only for pure non-UI logic
+- [x] Temporary spike code removed
+- [x] Helper tests added only for pure non-UI logic
 
 ## Rollback Plan
 
