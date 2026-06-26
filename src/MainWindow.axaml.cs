@@ -65,6 +65,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 _editorTabBar.TabCloseRequested -= OnTabCloseRequested;
             }));
 
+            // M5: unsaved-changes dialog. ViewModel raises ConfirmClose,
+            // MainWindow shows UnsavedDialog and feeds the result back.
+            d.Add(editorTabs.ConfirmClose.RegisterHandler(async ctx =>
+            {
+                var dialog = new UnsavedDialog { DataContext = ctx.Input };
+                var result = await dialog.ShowDialog<bool?>(this);
+                ctx.SetOutput(result);
+            }));
+
             // Wire active tab → EditorView + tab bar highlight + welcome text
             d.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 
@@ -29,6 +30,13 @@ public class EditorTabViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _activeTab, value);
     }
 
+    /// <summary>
+    /// Raised when a dirty tab is about to close. The View subscribes and
+    /// shows the unsaved-changes dialog. Returns: true = save then close,
+    /// false = close without saving, null = cancel (don't close).
+    /// </summary>
+    public Interaction<EditorViewModel, bool?> ConfirmClose { get; } = new();
+
     public ReactiveCommand<string, Unit> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
@@ -37,7 +45,7 @@ public class EditorTabViewModel : ReactiveObject
         _services = services;
 
         OpenFileCommand = ReactiveCommand.Create<string>(OpenFile);
-        CloseTabCommand = ReactiveCommand.Create<EditorViewModel>(CloseTab);
+        CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
     }
 
     /// <summary>
@@ -77,32 +85,44 @@ public class EditorTabViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Closes a tab and removes it from the collection.
-    /// If closing the active tab, activates the nearest remaining tab.
-    /// M5 will add dirty-check interaction before removal.
+    /// Closes a tab. If the tab is dirty, raises ConfirmClose to prompt
+    /// the user via the unsaved-changes dialog. Removes the tab from
+    /// the collection and activates a neighbor if needed.
     /// </summary>
-    private void CloseTab(EditorViewModel tab)
+    private async Task CloseTabAsync(EditorViewModel tab)
     {
+        if (tab.IsDirty)
+        {
+            var shouldSave = await ConfirmClose.Handle(tab);
+            if (shouldSave == true)
+            {
+                // Save then close
+                tab.SaveCommand.Execute().Subscribe();
+            }
+            else if (shouldSave == false)
+            {
+                // Close without saving
+            }
+            else
+            {
+                // null — user cancelled, don't close
+                return;
+            }
+        }
+
         var index = OpenTabs.IndexOf(tab);
         if (index < 0) return;
 
         OpenTabs.RemoveAt(index);
 
-        // If we closed the active tab, activate a neighbor
         if (ReferenceEquals(ActiveTab, tab))
         {
             if (OpenTabs.Count == 0)
-            {
                 ActiveTab = null;
-            }
             else if (index < OpenTabs.Count)
-            {
-                ActiveTab = OpenTabs[index]; // next tab
-            }
+                ActiveTab = OpenTabs[index];
             else
-            {
-                ActiveTab = OpenTabs[index - 1]; // previous tab (was last)
-            }
+                ActiveTab = OpenTabs[index - 1];
         }
     }
 }
