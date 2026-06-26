@@ -84,7 +84,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                     {
                         StatusText = ext.Length > 0
                             ? $"Unsupported file type: {ext}"
-                            : $"Opened: {file.Name}";
+                            : "Unsupported file type: (no extension)";
                     }
                 }));
     }

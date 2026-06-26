@@ -99,11 +99,8 @@ editor as stable.
 - `MainWindow.WhenActivated` calls `vm.Activate()` and disposes on deactivation.
 - `IDisposable` implemented; re-entrant guard prevents double-activation.
 
-### [ ] Fix misleading status text for extensionless unsupported files
-- Unsupported files with no extension report `Opened: ...` even when nothing opened.
-- Risk: misleading UX and harder debugging.
-- Fix:
-  - Report that the file type is unsupported instead of claiming success.
+### [x] Fix misleading status text for extensionless unsupported files
+- Changed `"Opened: {file.Name}"` to `"Unsupported file type: (no extension)"` for extensionless files.
 
 ### [ ] Add tests for the risky paths
 - Missing coverage:
