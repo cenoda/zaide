@@ -54,20 +54,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             d.Add(this.GetObservable(ViewModelProperty)
                 .Subscribe(obj =>
                 {
-                    Log($"[EditorView] ViewModelProperty changed: " +
-                        $"{(obj is EditorViewModel vm ? vm.FileName : "null")}");
-                    if (obj is EditorViewModel vm2)
-                    {
-                        Log($"[EditorView] TextContent length={vm2.TextContent.Length}, " +
-                            $"preview='{vm2.TextContent[..Math.Min(40, vm2.TextContent.Length)]}'");
-                        _textEditor.Text = vm2.TextContent;
-                        Log($"[EditorView] After set, _textEditor.Text length={_textEditor.Text.Length}");
-                    }
+                    if (obj is EditorViewModel vm)
+                        _textEditor.Text = vm.TextContent;
                     else
-                    {
-                        // ViewModel was cleared — reset the editor to blank
                         _textEditor.Text = string.Empty;
-                    }
                 }));
 
             // Editor → ViewModel: sync user edits via TextChanged event
@@ -82,9 +72,4 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         ViewModel.TextContent = _textEditor.Text;
     }
 
-    private static void Log(string msg)
-    {
-        var ts = DateTime.Now.ToString("HH:mm:ss.fff");
-        System.IO.File.AppendAllText("/tmp/zaide-debug.log", $"[{ts}] {msg}\n");
-    }
 }

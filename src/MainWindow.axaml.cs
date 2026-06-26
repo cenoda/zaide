@@ -98,7 +98,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // Ctrl+S: save the active tab. Placed on MainWindow because
             // AvaloniaEdit's TextEditor intercepts Ctrl+S internally.
+            // Guard against duplicates — WhenActivated may fire multiple times.
             var saveGesture = new KeyGesture(Key.S, KeyModifiers.Control);
+            foreach (var kb in KeyBindings.Where(k =>
+                k.Gesture?.Key == Key.S && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
+                KeyBindings.Remove(kb);
+
             var saveBinding = new KeyBinding
             {
                 Gesture = saveGesture,
