@@ -13,33 +13,28 @@ Code quality issues found during Phase 2 review. Check these before starting Pha
 
 ### Post-M3 visual check (2026-06-26)
 - [x] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
-- [x] `dotnet test Zaide.slnx`: 32 passed, 0 failed
-- [ ] Phase 1 → Phase 2 exit conditions all met
+- [x] `dotnet test Zaide.slnx`: 33 passed, 0 failed
+- [x] Phase 1 → Phase 2 exit conditions all met
 
 ---
 
-## Open
+## Resolved
 
-### [ ] Editor doesn't show file content after M3
-Tab opens and displays filename, editor widget renders, but content area is blank.
-**Updated debug (2026-06-26):** The ViewModel path is now covered by
-`MainWindowViewModelTests.SelectingSupportedFile_OpensActiveTabWithContent`.
-The strongest remaining suspect was center layout: `DockPanel` gave fill space to
-`_welcomeText` instead of `_editorView`. Candidate patch applied by replacing the
-center `DockPanel` with a two-row `Grid`; manual visual verification still needed
-before closing ISSUE-002.
+### [x] Editor blank content — ISSUE-002
+Root cause: `DockPanel` gave fill space to `_welcomeText`, collapsing `_editorView`
+to zero height. Also missing `AvaloniaEdit.xaml` theme style. Fixed by replacing
+`DockPanel` with 2-row `Grid` + adding Fluent theme includes. Commit: `13dabbb`.
 
-### [ ] Close button (×) visually invisible but clickable
-Button is present in layout (clickable, highlight works), but `Opacity = 0` is never
-changed to 1. The `PointerEntered`/`PointerExited` events on the tab `Border` may not
-fire correctly in the running app. The Opacity-based approach is correct — the events
-just aren't reaching the handler.
+### [x] Close button invisible — ISSUE-003
+Root cause: `PointerEntered` on `Border`/`Grid` never fired — Avalonia delivers
+to topmost child. Fixed by replacing themed `Button` with custom `Border+TextBlock`
+glyph in its own Grid column, hover driven by `IsPointerOver` observable instead
+of pointer events. Commit: `f6b5535`.
 
-### [ ] Ctrl+` bottom panel toggle doesn't work
-Never verified before M3. May be a keybinding issue — `Key.OemTilde` mapping varies
-across keyboard layouts. On Linux with non-US keyboards, the tilde key may not map
-to `OemTilde`. The `KeyBindings.Add` in `WhenActivated` may also be adding duplicates
-if `WhenActivated` fires multiple times.
+### [x] Ctrl+` toggle broken
+Root cause: `Key.OemTilde` fails on non-US keyboards + `WhenActivated` added
+duplicate KeyBindings. Fixed by using `Key.Oem3` (physical backtick), adding
+`Ctrl+J` fallback, and removing duplicates before adding. Commit: _(pending)_.
 
 ---
 

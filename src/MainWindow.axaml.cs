@@ -6,6 +6,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Zaide.ViewModels;
@@ -76,11 +77,23 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         $"{_editorView.ViewModel?.FileName ?? "null"}");
                 }));
 
-            // Ctrl+` key binding → ViewModel's toggle command
+            // Ctrl+` toggle bottom panel. Key.Oem3 is the physical backtick key
+            // (to the left of 1 on US layout). OemTilde fails on many non-US
+            // keyboard layouts. Ctrl+J is the universal fallback.
+            // Guard against duplicates — WhenActivated may fire multiple times.
+            var toggleCmd = ViewModel!.ToggleBottomPanelCommand;
+            foreach (var kb in KeyBindings.Where(k => k.Command == toggleCmd).ToList())
+                KeyBindings.Remove(kb);
+
             KeyBindings.Add(new KeyBinding
             {
-                Gesture = new KeyGesture(Key.OemTilde, KeyModifiers.Control),
-                Command = ViewModel!.ToggleBottomPanelCommand
+                Gesture = new KeyGesture(Key.Oem3, KeyModifiers.Control),
+                Command = toggleCmd
+            });
+            KeyBindings.Add(new KeyBinding
+            {
+                Gesture = new KeyGesture(Key.J, KeyModifiers.Control),
+                Command = toggleCmd
             });
 
             // Bind StatusText (no longer on _centerText; keep for future status bar)
