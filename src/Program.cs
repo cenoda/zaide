@@ -22,6 +22,7 @@ class Program
                     services.AddSingleton<FileTreeService>();
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
+                    services.AddSingleton<EditorTabViewModel>();
                     services.AddTransient<EditorViewModel>();
                 },
                 withResolver: sp =>

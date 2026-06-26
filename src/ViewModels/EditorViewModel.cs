@@ -16,6 +16,7 @@ public class EditorViewModel : ReactiveObject
     private string _fileName = string.Empty;
     private string _textContent = string.Empty;
     private bool _isDirty;
+    private bool _suppressDirty;
 
     /// <summary>
     /// Full path to the open file, or empty for new unsaved tabs.
@@ -76,11 +77,26 @@ public class EditorViewModel : ReactiveObject
     {
         SaveCommand = ReactiveCommand.Create(MarkClean);
 
-        // Track dirty state: any change to TextContent marks the tab dirty.
-        // M3 will add suppression logic for programmatic file loads.
+        // Track dirty state: any change to TextContent marks the tab dirty,
+        // unless LoadFileContent has temporarily suppressed tracking.
         this.WhenAnyValue(x => x.TextContent)
             .Skip(1) // Skip the initial empty-string value
-            .Subscribe(_ => IsDirty = true);
+            .Subscribe(_ =>
+            {
+                if (!_suppressDirty)
+                    IsDirty = true;
+            });
+    }
+
+    /// <summary>
+    /// Loads file content without marking the tab as dirty.
+    /// Sets TextContent while the dirty-tracking subscription is suppressed.
+    /// </summary>
+    public void LoadFileContent(string content)
+    {
+        _suppressDirty = true;
+        TextContent = content;
+        _suppressDirty = false;
     }
 
     /// <summary>

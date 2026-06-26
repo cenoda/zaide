@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
@@ -17,9 +18,14 @@ public class MainWindowViewModelTests
 
     private static MainWindowViewModel CreateViewModel()
     {
+        var services = new ServiceCollection();
+        services.AddTransient<EditorViewModel>();
+        var sp = services.BuildServiceProvider();
+
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
-        return new MainWindowViewModel(fileTreeViewModel);
+        var editorTabs = new EditorTabViewModel(sp);
+        return new MainWindowViewModel(fileTreeViewModel, editorTabs);
     }
 
     [Fact]

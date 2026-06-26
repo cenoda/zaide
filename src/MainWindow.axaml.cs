@@ -6,6 +6,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Zaide.ViewModels;
 using Zaide.Views;
@@ -21,7 +22,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly Border _bottomPanel;
     private readonly FileTreeView _fileTreeView;
-    private TextBlock _centerText = null!;
+    private EditorTabBar _editorTabBar = null!;
+    private EditorView _editorView = null!;
+    private TextBlock _welcomeText = null!;
 
     public MainWindow()
     {
@@ -35,14 +38,40 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-        // === Build Layout (M2) ===
-        (_bottomPanelRow, _bottomPanel, _fileTreeView, _centerText) = BuildLayout();
+        // === Build Layout (M2, Phase 2) ===
+        (_bottomPanelRow, _bottomPanel, _fileTreeView) = BuildLayout();
 
-        // === ReactiveUI Bindings (M3, M4) ===
+        // === ReactiveUI Bindings (M3, Phase 2) ===
         this.WhenActivated(d =>
         {
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
+
+            // Wire EditorTabBar: collection + events (with disposal)
+            var editorTabs = ViewModel!.EditorTabs;
+            _editorTabBar.SetTabs(editorTabs.OpenTabs);
+
+            void OnTabClicked(EditorViewModel tab) => editorTabs.ActiveTab = tab;
+            void OnTabCloseRequested(EditorViewModel tab) =>
+                editorTabs.CloseTabCommand.Execute(tab).Subscribe();
+
+            _editorTabBar.TabClicked += OnTabClicked;
+            _editorTabBar.TabCloseRequested += OnTabCloseRequested;
+
+            d.Add(Disposable.Create(() =>
+            {
+                _editorTabBar.TabClicked -= OnTabClicked;
+                _editorTabBar.TabCloseRequested -= OnTabCloseRequested;
+            }));
+
+            // Wire active tab → EditorView + tab bar highlight + welcome text
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
+                .Subscribe(active =>
+                {
+                    _editorView.ViewModel = active;
+                    _editorTabBar.SetActiveTab(active);
+                    _welcomeText.IsVisible = active is null;
+                }));
 
             // Ctrl+` key binding → ViewModel's toggle command
             KeyBindings.Add(new KeyBinding
@@ -51,8 +80,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 Command = ViewModel!.ToggleBottomPanelCommand
             });
 
-            // Bind StatusText to center panel
-            d.Add(this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._centerText.Text));
+            // Bind StatusText (no longer on _centerText; keep for future status bar)
+            d.Add(this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._welcomeText.Text));
 
             // Bind bottom panel visibility → row height (instant toggle, no animation per Phase 0)
             d.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
@@ -70,7 +99,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// Builds the 3-panel grid layout with bottom panel placeholder.
     /// Left: 260px sidebar | Center: * | Right: 320px agent area.
     /// </summary>
-    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView, TextBlock centerText) BuildLayout()
+    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView) BuildLayout()
     {
         var grid = new Grid
         {
@@ -96,22 +125,32 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(sidebar, 0);
         grid.Children.Add(sidebar);
 
-        // --- Center Panel (Phase 1 M4) ---
-        _centerText = new TextBlock
+        // --- Center Panel (Phase 2: Editor + Tab Bar) ---
+        _editorTabBar = new EditorTabBar();
+        _editorView = new EditorView();
+        _welcomeText = new TextBlock
         {
-            Text = "Open a folder to begin",
+            Text = "Open a file to begin",
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             FontSize = 14,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        var center = new Border
+
+        var center = new DockPanel
         {
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
-            Padding = new Thickness(16),
             Margin = new Thickness(1, 0, 1, 0),
-            Child = _centerText
+            Children =
+            {
+                _editorTabBar,
+                _editorView,
+                _welcomeText
+            }
         };
+        DockPanel.SetDock(_editorTabBar, Dock.Top);
+        _welcomeText.IsVisible = true; // shown when no tabs are open
+
         Grid.SetColumn(center, 1);
         Grid.SetRow(center, 0);
         grid.Children.Add(center);
@@ -131,7 +170,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomRow, bottomPanel, sidebar, _centerText);
+        return (bottomRow, bottomPanel, sidebar);
     }
 
     /// <summary>
