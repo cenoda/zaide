@@ -51,6 +51,7 @@ Create these folders/files when first needed — not all at once.
 | Fixing a convention or adopting a new one | Update `docs/CONVENTIONS.md` |
 | Changing UI design rules or patterns | Update `docs/DESIGN.md` |
 | Bug not fixed in 2 attempts | Create issue in `docs/issues/open/` |
+| Reverting a phase implementation | Create `docs/phases/phase-N/REVERT_LOG.md` |
 
 ---
 
@@ -99,6 +100,46 @@ Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 ## Rollback Plan
 - Commit hash to revert to: ...
 ```
+
+### Revert Log Template
+
+When a phase implementation is reverted (structural reset, not a bug fix),
+create `docs/phases/phase-N/REVERT_LOG.md`:
+
+```markdown
+# Phase N: Revert Log
+
+## What Was Reverted
+
+- **Reverted from:** `<commit-hash>` (last bad implementation commit)
+- **Reverted to:** `<commit-hash>` (last known-good commit)
+- **Commits discarded:** `<hash-1>`, `<hash-2>`, ...
+- **Files removed:**
+  - `src/...`
+  - `tests/...`
+
+## Root Cause
+
+_Why was the implementation fundamentally broken — not just bugs, but why
+patching forward was the wrong call._
+
+1. ...
+2. ...
+
+## Rules Added
+
+_What rules were added to `docs-rules.md` (or other docs) to prevent this
+class of failure in the future._
+
+- `docs-rules.md` §N — ...
+
+## Revert Commit
+
+`<hash>` — `git reset --hard <known-good-hash>`
+```
+
+This file serves as a permanent record. Any future agent attempting this
+phase must read it first.
 
 ---
 
@@ -189,3 +230,120 @@ These patterns are borrowed from the `cenoda/aero` project and proven in practic
 - **Know when to walk away** — two failed attempts at a library = the library is the problem. Pivot.
 - **No silent fixes** — never apply a fix without understanding why it works.
 - **Debug-friendly code** — add logging from the start, not just when debugging.
+
+---
+
+## 11. Hard Rules (from Phase 2 revert)
+
+These are enforced by code review — no exceptions. They exist because Phase 2
+was implemented once, found fundamentally broken, and reverted at commit
+`0971113`. The second attempt must not repeat these mistakes.
+
+### 11a. ViewModels must never reference Views
+
+**Forbidden in any ViewModel:**
+
+| Forbidden | Because |
+|-----------|---------|
+| `Func<T>` or `Action<T>` whose T is a UI type | ViewModel now knows the View layer exists |
+| `Func<Window>`, `Func<Control>` | ViewModel can't reason about windows |
+| Setting `Func<>` callbacks from the View | Inverts MVVM — View should subscribe to ViewModel, not inject callbacks |
+| Any `using` of `Avalonia.Controls` | ViewModel should only reference `ReactiveUI`, `System`, and Models/Services |
+
+**The correct pattern — `Interaction<TInput, TOutput>`:**
+
+```csharp
+// ViewModel — pure, no UI knowledge
+public Interaction<EditorViewModel, bool> ConfirmClose { get; } = new();
+
+// Close command asks the interaction, doesn't know about dialogs
+CloseTabCommand = ReactiveCommand.CreateFromTask(async tab =>
+{
+    if (tab.IsDirty)
+    {
+        var shouldSave = await ConfirmClose.Handle(tab);
+        if (shouldSave) tab.SaveCommand.Execute().Subscribe();
+    }
+    OpenTabs.Remove(tab);
+});
+```
+
+```csharp
+// View — subscribes to the interaction, owns the dialog
+this.WhenActivated(d =>
+{
+    d.Add(ViewModel.ConfirmClose.RegisterHandler(async ctx =>
+    {
+        var dialog = new UnsavedDialog();  // its own ReactiveWindow
+        var result = await dialog.ShowDialog<bool>(this);
+        ctx.SetOutput(result);
+    }));
+});
+```
+
+### 11b. Every `.Subscribe()` inside `WhenActivated` must use `d.Add()`
+
+```csharp
+// WRONG — leaks the subscription
+this.WhenAnyValue(x => x.ViewModel)
+    .Subscribe(vm => { /* ... */ });
+
+// CORRECT — disposed on deactivation
+this.WhenActivated(d =>
+{
+    d.Add(this.WhenAnyValue(x => x.ViewModel)
+        .Subscribe(vm => { /* ... */ }));
+});
+```
+
+This applies to `Execute().Subscribe()` calls too. If you can't hook it into
+`d.Add()`, use `Observable.StartAsync` or reconsider the pattern.
+
+### 11c. One binding pattern per data flow
+
+Don't mix approaches for the same data. If two-way `Bind` creates a feedback
+loop, document *why* in a comment and pick a single alternative — don't add
+both an event handler AND a `WhenAnyValue` for the same property.
+
+### 11d. No `dynamic` in production code
+
+AvaloniaEdit's `InstallTextMate` returns a concrete type. Cast it. If the type
+is internal, wrap it in a typed helper. `dynamic` disables compiler checking
+and tells future agents that `dynamic` is acceptable.
+
+### 11e. Dialogs are their own ReactiveWindow
+
+`MainWindow.axaml.cs` must not grow 40-line inline dialog factories. Every
+dialog gets its own file (View + ViewModel if needed), even if it's simple.
+
+### 11f. Every milestone gets its own commit
+
+Never batch milestones into one commit (e.g., `M1-M3` or `M4-M6`). Each
+milestone is one commit with its own tests. If M4 is sloppy, you revert only
+M4–M6, not everything.
+
+### 11g. Plan-required tests must exist
+
+If `IMPLEMENTATION_PLAN.md` says `tests/.../EditorTabViewModelTests.cs` must
+exist, the file must exist with the listed test methods before the milestone
+is marked done. Missing tests = incomplete milestone.
+
+### 11h. All file I/O has error handling
+
+`File.WriteAllText` and `File.ReadAllText` must be wrapped in try/catch.
+Unhandled I/O exceptions crash silently and confuse future agents debugging
+"why doesn't save work?"
+
+### 11i. Revert early when code is bad
+
+Two commits of bad implementation is cheap to revert. Ten is not. If you realize
+the code has fundamental structural problems (not just bugs), revert to the last
+known-good commit and re-implement correctly. Patching bad architecture produces
+worse architecture.
+
+### 11j. Verify exit conditions concretely
+
+Before marking a milestone `[x]` or a phase complete, run the exact verification
+commands and check that every file the plan says should exist actually exists.
+"Build passes and tests pass" is not enough — the plan may list test files
+that were never created.
