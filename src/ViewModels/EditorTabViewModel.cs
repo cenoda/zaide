@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
+using Zaide.Services;
 
 namespace Zaide.ViewModels;
 
@@ -20,6 +21,7 @@ namespace Zaide.ViewModels;
 public class EditorTabViewModel : ReactiveObject
 {
     private readonly IServiceProvider _services;
+    private readonly IFileService _fileService;
     private EditorViewModel? _activeTab;
 
     public ObservableCollection<EditorViewModel> OpenTabs { get; } = new();
@@ -50,11 +52,12 @@ public class EditorTabViewModel : ReactiveObject
     public ReactiveCommand<string, Unit> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
-    public EditorTabViewModel(IServiceProvider services)
+    public EditorTabViewModel(IServiceProvider services, IFileService fileService)
     {
         _services = services;
+        _fileService = fileService;
 
-        OpenFileCommand = ReactiveCommand.Create<string>(OpenFile);
+        OpenFileCommand = ReactiveCommand.CreateFromTask<string>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
     }
 
@@ -62,7 +65,7 @@ public class EditorTabViewModel : ReactiveObject
     /// Opens a file in a new or existing tab. If a tab for the same path
     /// already exists, activates it instead of creating a duplicate.
     /// </summary>
-    private void OpenFile(string path)
+    private async Task OpenFileAsync(string path)
     {
         // Check if already open — activate existing tab
         var existing = OpenTabs.FirstOrDefault(t =>
@@ -73,11 +76,11 @@ public class EditorTabViewModel : ReactiveObject
             return;
         }
 
-        // Read file content (rule 11h: I/O with error handling)
+        // Read file content via service (async, no UI-thread blocking)
         string content;
         try
         {
-            content = File.ReadAllText(path);
+            content = await _fileService.ReadAllTextAsync(path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

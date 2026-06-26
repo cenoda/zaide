@@ -19,6 +19,7 @@ class Program
             .UseReactiveUIWithMicrosoftDependencyResolver(
                 containerConfig: services =>
                 {
+                    services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<FileTreeService>();
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();

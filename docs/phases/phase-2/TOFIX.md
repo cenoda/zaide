@@ -76,12 +76,10 @@ editor as stable.
   - Explicitly clear or reset grammar when no scope is mapped.
   - Add a test for switching from supported -> unsupported extensions.
 
-### [ ] Move file I/O off the UI thread
-- File open/save uses synchronous `File.ReadAllText` and `File.WriteAllText`.
-- Risk: UI freezes on large files, slow disks, network mounts, antivirus interference.
-- Fix:
-  - Make open/save async.
-  - Push file I/O behind a service boundary that supports cancellation and error reporting.
+### [x] Move file I/O off the UI thread
+- Created `IFileService` + `FileService` with `ReadAllTextAsync` / `WriteAllTextAsync`.
+- `EditorViewModel.SaveAsync` + `EditorTabViewModel.OpenFileAsync` use the service.
+- Both commands changed to `CreateFromTask`; tests updated to `async Task` with `await`.
 
 ### [ ] Clean up `EditorTabBar` lifecycle and subscription management
 - The tab bar manually mirrors the collection and owns per-tab hover subscriptions.

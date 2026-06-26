@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
@@ -21,12 +22,13 @@ public class MainWindowViewModelTests
     private static MainWindowViewModel CreateViewModel()
     {
         var services = new ServiceCollection();
+        services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
-        var editorTabs = new EditorTabViewModel(sp);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>());
         return new MainWindowViewModel(fileTreeViewModel, editorTabs);
     }
 
@@ -52,7 +54,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public void SelectingSupportedFile_OpensActiveTabWithContent()
+    public async Task SelectingSupportedFile_OpensActiveTabWithContent()
     {
         var vm = CreateViewModel();
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
@@ -68,6 +70,7 @@ public class MainWindowViewModelTests
                 FullPath = filePath,
                 IsDirectory = false
             };
+            await System.Threading.Tasks.Task.Delay(100);
 
             Assert.Single(vm.EditorTabs.OpenTabs);
             Assert.Same(vm.EditorTabs.OpenTabs[0], vm.EditorTabs.ActiveTab);

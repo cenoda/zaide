@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Zaide.Services;
 using Zaide.ViewModels;
 
 namespace Zaide.Tests.ViewModels;
@@ -11,13 +14,14 @@ public class EditorTabViewModelTests
     private static EditorTabViewModel CreateViewModel()
     {
         var services = new ServiceCollection();
+        services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp);
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>());
     }
 
     [Fact]
-    public void OpenFile_CreatesNewTab()
+    public async Task OpenFile_CreatesNewTab()
     {
         var vm = CreateViewModel();
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
@@ -26,7 +30,7 @@ public class EditorTabViewModelTests
         {
             File.WriteAllText(filePath, "class Program { }");
 
-            vm.OpenFileCommand.Execute(filePath).Subscribe(_ => { });
+            await vm.OpenFileCommand.Execute(filePath);
 
             Assert.Single(vm.OpenTabs);
             Assert.Equal(filePath, vm.OpenTabs[0].FilePath);
@@ -42,7 +46,7 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
-    public void OpenFile_ActivatesExisting()
+    public async Task OpenFile_ActivatesExisting()
     {
         var vm = CreateViewModel();
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".md");
@@ -52,11 +56,11 @@ public class EditorTabViewModelTests
             File.WriteAllText(filePath, "# Hello");
 
             // Open first time
-            vm.OpenFileCommand.Execute(filePath).Subscribe(_ => { });
+            await vm.OpenFileCommand.Execute(filePath);
             var firstTab = vm.OpenTabs[0];
 
             // Open second time — should activate existing, not duplicate
-            vm.OpenFileCommand.Execute(filePath).Subscribe(_ => { });
+            await vm.OpenFileCommand.Execute(filePath);
 
             Assert.Single(vm.OpenTabs);
             Assert.Same(firstTab, vm.ActiveTab);
@@ -69,7 +73,7 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
-    public void CloseTab_RemovesFromCollection()
+    public async Task CloseTab_RemovesFromCollection()
     {
         var vm = CreateViewModel();
         var path1 = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
@@ -80,13 +84,13 @@ public class EditorTabViewModelTests
             File.WriteAllText(path1, "first");
             File.WriteAllText(path2, "second");
 
-            vm.OpenFileCommand.Execute(path1).Subscribe(_ => { });
-            vm.OpenFileCommand.Execute(path2).Subscribe(_ => { });
+            await vm.OpenFileCommand.Execute(path1);
+            await vm.OpenFileCommand.Execute(path2);
 
             Assert.Equal(2, vm.OpenTabs.Count);
 
             var tabToClose = vm.OpenTabs[0];
-            vm.CloseTabCommand.Execute(tabToClose).Subscribe(_ => { });
+            await vm.CloseTabCommand.Execute(tabToClose);
 
             Assert.Single(vm.OpenTabs);
             Assert.DoesNotContain(tabToClose, vm.OpenTabs);
@@ -106,7 +110,7 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
-    public void CloseTab_StaysOpen_WhenSaveFails()
+    public async Task CloseTab_StaysOpen_WhenSaveFails()
     {
         var vm = CreateViewModel();
 
@@ -120,6 +124,7 @@ public class EditorTabViewModelTests
         try
         {
             var tab = new ServiceCollection()
+                .AddSingleton<IFileService, FileService>()
                 .AddTransient<EditorViewModel>()
                 .BuildServiceProvider()
                 .GetRequiredService<EditorViewModel>();
@@ -132,7 +137,7 @@ public class EditorTabViewModelTests
             vm.ActiveTab = tab;
 
             // Try closing — save should fail, tab must stay
-            vm.CloseTabCommand.Execute(tab).Subscribe(_ => { });
+            await vm.CloseTabCommand.Execute(tab);
 
             Assert.Single(vm.OpenTabs);
             Assert.True(tab.IsDirty);
@@ -146,7 +151,7 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
-    public void CloseTab_ActivatesNeighbor_WhenActiveClosed()
+    public async Task CloseTab_ActivatesNeighbor_WhenActiveClosed()
     {
         var vm = CreateViewModel();
         var path1 = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".json");
@@ -157,15 +162,15 @@ public class EditorTabViewModelTests
             File.WriteAllText(path1, "{}");
             File.WriteAllText(path2, "{}");
 
-            vm.OpenFileCommand.Execute(path1).Subscribe(_ => { });
-            vm.OpenFileCommand.Execute(path2).Subscribe(_ => { });
+            await vm.OpenFileCommand.Execute(path1);
+            await vm.OpenFileCommand.Execute(path2);
 
             // Tab 0 is active (last opened)
             Assert.Equal(2, vm.OpenTabs.Count);
             Assert.Same(vm.OpenTabs[1], vm.ActiveTab);
 
             // Close active tab → neighbor should become active
-            vm.CloseTabCommand.Execute(vm.ActiveTab!).Subscribe(_ => { });
+            await vm.CloseTabCommand.Execute(vm.ActiveTab!);
 
             Assert.Single(vm.OpenTabs);
             Assert.NotNull(vm.ActiveTab);

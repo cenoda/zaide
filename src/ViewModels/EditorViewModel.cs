@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Services;
 
 namespace Zaide.ViewModels;
 
@@ -12,6 +14,7 @@ namespace Zaide.ViewModels;
 /// </summary>
 public class EditorViewModel : ReactiveObject
 {
+    private readonly IFileService _fileService;
     private string _filePath = string.Empty;
     private string _fileName = string.Empty;
     private string _textContent = string.Empty;
@@ -97,9 +100,10 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, bool> SaveCommand { get; }
 
-    public EditorViewModel()
+    public EditorViewModel(IFileService fileService)
     {
-        SaveCommand = ReactiveCommand.Create(Save);
+        _fileService = fileService;
+        SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
 
         // Track dirty state: any change to TextContent marks the tab dirty,
         // unless LoadFileContent has temporarily suppressed tracking.
@@ -124,17 +128,17 @@ public class EditorViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Writes TextContent to FilePath, then clears the dirty flag.
-    /// Returns true on success, false on failure or empty path.
+    /// Writes TextContent to FilePath via the file service, then clears the
+    /// dirty flag. Returns true on success, false on failure or empty path.
     /// </summary>
-    private bool Save()
+    private async Task<bool> SaveAsync()
     {
         if (string.IsNullOrEmpty(FilePath))
             return false;
 
         try
         {
-            File.WriteAllText(FilePath, TextContent);
+            await _fileService.WriteAllTextAsync(FilePath, TextContent);
             IsDirty = false;
             LastSaveError = null;
             return true;

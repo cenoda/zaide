@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Xunit;
+using Zaide.Services;
 using Zaide.ViewModels;
 
 namespace Zaide.Tests.ViewModels;
@@ -10,7 +11,7 @@ public class EditorViewModelTests
     [Fact]
     public void FileName_DerivedFromPath()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
 
         vm.FilePath = "/home/user/project/Program.cs";
 
@@ -20,7 +21,7 @@ public class EditorViewModelTests
     [Fact]
     public void FileName_Untitled_WhenPathEmpty()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
 
         vm.FilePath = "";
 
@@ -30,7 +31,7 @@ public class EditorViewModelTests
     [Fact]
     public void IsDirty_DefaultsToFalse()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
 
         Assert.False(vm.IsDirty);
     }
@@ -38,7 +39,7 @@ public class EditorViewModelTests
     [Fact]
     public void MarkDirty_WhenTextChanges()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
 
         vm.TextContent = "hello world";
 
@@ -48,7 +49,7 @@ public class EditorViewModelTests
     [Fact]
     public void MarkClean_AfterSave()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
         vm.TextContent = "hello";
         Assert.True(vm.IsDirty);
 
@@ -60,7 +61,7 @@ public class EditorViewModelTests
     [Fact]
     public void SaveCommand_Fails_WhenPathIsDirectory()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
         var dir = Path.Combine(Path.GetTempPath(), "zaide-dir-" + Guid.NewGuid());
 
         try
@@ -87,7 +88,7 @@ public class EditorViewModelTests
     [Fact]
     public void SaveCommand_WritesFile()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
 
         try
@@ -113,7 +114,7 @@ public class EditorViewModelTests
     [Fact]
     public void SaveCommand_ClearsDirty()
     {
-        var vm = new EditorViewModel();
+        var vm = new EditorViewModel(new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
 
         try
