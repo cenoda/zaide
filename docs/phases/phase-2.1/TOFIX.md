@@ -14,7 +14,12 @@ Code quality issues found during Phase 2.1 review. Check these before starting P
 
 ## Open
 
-_No issues yet._
+- [ ] Re-approach indent guides from first principles. The Phase 2.1 `IBackgroundRenderer`
+  attempt was reverted on 2026-06-26 because guide placement did not match the
+  editor's actual indentation reliably enough to ship.
+- [ ] Verify a replacement approach with a minimal live prototype before touching
+  `EditorView` again. Visual correctness in `.cs` files is the gate, not just
+  build/test success.
 
 ---
 

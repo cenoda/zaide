@@ -59,10 +59,6 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
-        // Indent guides: not exposed as a built-in option in AvaloniaEdit v12.
-        // Phase 2.1 — implement via IBackgroundRenderer on the TextView
-        // (draw vertical lines at indentation boundaries in custom render pass).
-
         Content = _textEditor;
 
         this.WhenActivated(d =>
