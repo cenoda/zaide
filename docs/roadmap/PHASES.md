@@ -30,11 +30,11 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] Basic window chrome (title, minimize, maximize, close)
 
 ## Phase 1: File Tree Sidebar
-- [ ] File tree view in left sidebar
-- [ ] Open folder dialog
-- [ ] Click file → placeholder "opened" state
-- [ ] Ignore list (node_modules, bin, obj, .git)
-- [ ] File system watcher for live updates
+- [x] File tree view in left sidebar
+- [x] Open folder dialog
+- [x] Click file → placeholder "opened" state
+- [x] Ignore list (node_modules, bin, obj, .git)
+- [x] File system watcher for live updates
 
 ## Phase 2: Editor
 - [ ] Text editor widget (AvaloniaEdit or alternative)
@@ -91,4 +91,4 @@ See `docs/architecture/OVERVIEW.md` for full details.
 
 ---
 
-*Last updated: 2025-06-25*
+*Last updated: 2025-06-26*

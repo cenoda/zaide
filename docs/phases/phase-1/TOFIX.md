@@ -11,6 +11,11 @@ Code quality issues found during Phase 1 review. Check these before starting Pha
 - [x] `dotnet test Zaide.slnx` passes: 2 tests, 0 failures
 - [x] Phase 0 TOFIX.md items are all resolved
 
+### Post-implementation (2025-06-26)
+- [x] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
+- [x] `dotnet test Zaide.slnx`: 22 passed, 0 failed
+- [x] Phase 0 → Phase 1 exit conditions all met
+
 ---
 
 ## Open
@@ -19,9 +24,11 @@ _No issues yet._
 
 ---
 
-## Phase 0 Carry-Over (addressed during Phase 1)
+## Phase 0 Carry-Over
 
-### [ ] Hardcoded colors in `MainWindow.axaml.cs` `BuildPanel`
-Phase 0 placeholder panels use `Color.Parse("#...")` instead of `App.axaml` resources.
-Phase 1 M3 replaces the sidebar panel; M4 replaces the center panel.
-Right agent area and bottom panel remain as Phase 0 placeholders — defer to their respective phases.
+### [x] Hardcoded colors in `MainWindow.axaml.cs` — sidebar + center (Phase 1)
+Sidebar (`FileTreeView`) and center panel now use `App.axaml` resources.
+
+### [ ] Hardcoded colors in `MainWindow.axaml.cs` — agent area + bottom (deferred)
+Right agent area and bottom panel still use `BuildPanel` with `Color.Parse`.
+Deferred to Phase 5 (agent) and Phase 3 (terminal).

@@ -254,15 +254,15 @@ fallback in Phase 1.
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings
-- [ ] `dotnet test Zaide.slnx` passes all tests (2 existing + new ones)
-- [ ] Open folder dialog works — tree populates with real files
-- [ ] Ignored folders (node_modules, .git, bin, obj) are not shown
-- [ ] Click a file in the tree → center panel shows "Opened: filename"
-- [ ] Create/delete a file externally → tree updates within seconds
-- [ ] No XAML beyond `App.axaml` and minimal `MainWindow.axaml` shell
-- [ ] All panels still render with ≥ 16px padding
-- [ ] Colors use `App.axaml` resources (not hardcoded hex strings in views)
+- [x] `dotnet build Zaide.slnx` succeeds with 0 warnings
+- [x] `dotnet test Zaide.slnx` passes all tests (22 total, 0 failures)
+- [x] Open folder dialog works — tree populates with real files
+- [x] Ignored folders (node_modules, .git, bin, obj) are not shown
+- [x] Click a file in the tree → center panel shows "Opened: filename"
+- [x] Create/delete a file externally → tree updates within seconds
+- [x] No XAML beyond `App.axaml` and minimal `MainWindow.axaml` shell
+- [x] All panels still render with ≥ 16px padding
+- [x] Colors use `App.axaml` resources for Phase 1 code (Phase 0 placeholders deferred)
 
 ---
 
