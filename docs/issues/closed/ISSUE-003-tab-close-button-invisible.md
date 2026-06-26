@@ -74,7 +74,7 @@ grid.PointerEntered += (_, _) =>
 
 ## Resolution
 
-- **Root cause:** Likely a combination of brittle hover detection and the themed `Button` visual not rendering the close glyph as expected.
-- **Fix:** Drive reveal from `Border.IsPointerOver` and render the close affordance with a custom `Border` + `TextBlock` instead of a themed `Button`.
-- **Commit:** TBD
-- **Closed date:** TBD
+- **Root cause:** `PointerEntered`/`PointerExited` events on `Border`/`Grid` never fired — Avalonia delivers pointer events to the topmost child at the pointer position. Also the themed `Button` template rendered unpredictably.
+- **Fix:** Replaced `Button` with custom `Border`+`TextBlock` glyph in its own Grid column. Hover driven by `GetObservable(IsPointerOverProperty)` instead of pointer events — property-system based, child-agnostic.
+- **Commit:** `f6b5535`
+- **Closed date:** 2026-06-26

@@ -37,12 +37,12 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] File system watcher for live updates
 
 ## Phase 2: Editor
-- [ ] Text editor widget (AvaloniaEdit or alternative)
-- [ ] Tabbed editor — open/close/switch tabs
-- [ ] Open file from tree → editor tab
-- [ ] File save (Ctrl+S)
-- [ ] Dirty flag indicator on tabs
-- [ ] Syntax highlighting (TextMate grammars)
+- [x] Text editor widget (AvaloniaEdit)
+- [x] Tabbed editor — open/close/switch tabs
+- [x] Open file from tree → editor tab
+- [x] File save (Ctrl+S)
+- [x] Dirty flag indicator on tabs
+- [x] Syntax highlighting (TextMate grammars)
 
 ## Phase 3: Terminal
 - [ ] Embedded terminal in bottom panel
