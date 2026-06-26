@@ -2,16 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
 using ReactiveUI;
 using System.Reactive;
 using System.Reactive.Linq;
 
 namespace Zaide.ViewModels;
 
-public class MainWindowViewModel : ReactiveObject
+public class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private bool _isBottomPanelVisible;
     private string? _statusText = "Open a folder to begin";
+    private CompositeDisposable? _disposables;
 
     // Supported text-file extensions for opening in the editor.
     // Binary files and unknown extensions show a status message instead.
@@ -45,34 +47,52 @@ public class MainWindowViewModel : ReactiveObject
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
-
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
+    }
+
+    /// <summary>
+    /// Starts reactive subscriptions. Called by the View during activation.
+    /// Safe to call multiple times — re-entrant guard prevents duplicates.
+    /// </summary>
+    public void Activate()
+    {
+        if (_disposables is not null) return;
+
+        _disposables = new CompositeDisposable();
 
         // Surface save errors from the tab manager
-        this.WhenAnyValue(x => x.EditorTabs.LastSaveError)
-            .Where(msg => msg is not null)
-            .Subscribe(msg => StatusText = $"Save failed: {msg}");
+        _disposables.Add(
+            this.WhenAnyValue(x => x.EditorTabs.LastSaveError)
+                .Where(msg => msg is not null)
+                .Subscribe(msg => StatusText = $"Save failed: {msg}"));
 
         // When user selects a file in the tree, open it in the editor
-        this.WhenAnyValue(x => x.FileTreeViewModel.SelectedFile)
-            .Where(file => file is not null && !file.IsDirectory)
-            .Subscribe(file =>
-            {
-                var path = file!.FullPath;
-                var ext = Path.GetExtension(path);
+        _disposables.Add(
+            this.WhenAnyValue(x => x.FileTreeViewModel.SelectedFile)
+                .Where(file => file is not null && !file.IsDirectory)
+                .Subscribe(file =>
+                {
+                    var path = file!.FullPath;
+                    var ext = Path.GetExtension(path);
 
-                if (SupportedExtensions.Contains(ext))
-                {
-                    EditorTabs.OpenFileCommand.Execute(path).Subscribe();
-                    StatusText = $"Opened: {file.Name}";
-                }
-                else
-                {
-                    StatusText = ext.Length > 0
-                        ? $"Unsupported file type: {ext}"
-                        : $"Opened: {file.Name}";
-                }
-            });
+                    if (SupportedExtensions.Contains(ext))
+                    {
+                        EditorTabs.OpenFileCommand.Execute(path).Subscribe();
+                        StatusText = $"Opened: {file.Name}";
+                    }
+                    else
+                    {
+                        StatusText = ext.Length > 0
+                            ? $"Unsupported file type: {ext}"
+                            : $"Opened: {file.Name}";
+                    }
+                }));
+    }
+
+    public void Dispose()
+    {
+        _disposables?.Dispose();
+        _disposables = null;
     }
 
     private void ToggleBottomPanel()

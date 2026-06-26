@@ -29,7 +29,9 @@ public class MainWindowViewModelTests
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>());
-        return new MainWindowViewModel(fileTreeViewModel, editorTabs);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs);
+        vm.Activate();
+        return vm;
     }
 
     [Fact]

@@ -48,6 +48,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
 
+            // Activate VM subscriptions (save errors, file-open) and clean up
+            ViewModel!.Activate();
+            d.Add(Disposable.Create(() => ViewModel!.Dispose()));
+
             // Wire EditorTabBar: collection + events (with disposal)
             var editorTabs = ViewModel!.EditorTabs;
             _editorTabBar.SetTabs(editorTabs.OpenTabs);

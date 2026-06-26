@@ -98,11 +98,10 @@ editor as stable.
 - `_isUpdatingFromViewModel` guard flag prevents feedback loop; text equality check avoids
   redundant sets. `ApplyFileMode` still tied to VM changes only.
 
-### [ ] Stop creating long-lived constructor subscriptions in `MainWindowViewModel`
-- `WhenAnyValue(...SelectedFile)` is subscribed in the constructor with no disposal path.
-- Risk: violates project ReactiveUI conventions and makes future lifetime bugs easier to introduce.
-- Fix:
-  - Move this into an activation/lifetime-managed pattern or otherwise make ownership explicit.
+### [x] Stop creating long-lived constructor subscriptions in `MainWindowViewModel`
+- Subscriptions moved to `Activate()` with `CompositeDisposable` storage.
+- `MainWindow.WhenActivated` calls `vm.Activate()` and disposes on deactivation.
+- `IDisposable` implemented; re-entrant guard prevents double-activation.
 
 ### [ ] Fix misleading status text for extensionless unsupported files
 - Unsupported files with no extension report `Opened: ...` even when nothing opened.
