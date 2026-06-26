@@ -24,12 +24,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
 
-    // Fonts: monospace for code, sans-serif for prose (Markdown).
-    // Liberation Sans is on nearly every Linux distro; falls back to sans-serif.
+    // Fonts: monospace for code, serif for prose (Markdown).
     private static readonly FontFamily CodeFont =
         new("Cascadia Code, Consolas, monospace");
     private static readonly FontFamily ProseFont =
-        new("Liberation Sans, sans-serif");
+        new("Georgia, serif");
 
     public EditorView()
     {
@@ -56,8 +55,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
-        // NOTE: ShowIndentGuides is not exposed in AvaloniaEdit v12.
-        // Defer to a future upgrade when the API is available.
+        // Indent guides: not exposed as a built-in option in AvaloniaEdit v12.
+        // Phase 2.1 — implement via IBackgroundRenderer on the TextView
+        // (draw vertical lines at indentation boundaries in custom render pass).
 
         Content = _textEditor;
 
@@ -104,21 +104,12 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
     /// <summary>
     /// Switches the editor font based on file type.
-    /// Code: monospace 14px. Markdown: sans-serif 18px (impossible to miss).
+    /// Code uses monospace; Markdown uses serif for comfortable reading.
     /// </summary>
     private void SetFont(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        if (ext == ".md")
-        {
-            _textEditor.FontFamily = ProseFont;
-            _textEditor.FontSize = 18;
-        }
-        else
-        {
-            _textEditor.FontFamily = CodeFont;
-            _textEditor.FontSize = 14;
-        }
+        _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
