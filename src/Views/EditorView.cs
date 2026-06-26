@@ -24,6 +24,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
 
+    // Guard flag: true while the View is pushing text to the editor,
+    // preventing OnTextChanged from bouncing it back to the ViewModel.
+    private bool _isUpdatingFromViewModel;
+
     // Fonts: monospace for code, serif for prose (Markdown).
     private static readonly FontFamily CodeFont =
         new("Cascadia Code, Consolas, monospace");
@@ -63,18 +67,33 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         this.WhenActivated(d =>
         {
+            // VM → editor: follow the active ViewModel's TextContent.
+            // Uses Switch() so the subscription tracks the *current* VM —
+            // when the VM changes or TextContent changes programmatically,
+            // the editor updates. Guard flag prevents feedback loop.
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Select(vm => vm is EditorViewModel evm
+                    ? evm.WhenAnyValue(x => x.TextContent)
+                    : Observable.Never<string>())
+                .Switch()
+                .Subscribe(newContent =>
+                {
+                    if (_isUpdatingFromViewModel) return;
+                    if (_textEditor.Text == newContent) return;
+
+                    _isUpdatingFromViewModel = true;
+                    try { _textEditor.Text = newContent; }
+                    finally { _isUpdatingFromViewModel = false; }
+                }));
+
+            // File mode (grammar + font): only on VM change, not on keystroke.
             d.Add(this.GetObservable(ViewModelProperty)
                 .Subscribe(obj =>
                 {
                     if (obj is EditorViewModel vm)
-                    {
-                        _textEditor.Text = vm.TextContent;
                         ApplyFileMode(vm.FilePath);
-                    }
                     else
-                    {
                         _textEditor.Text = string.Empty;
-                    }
                 }));
 
             _textEditor.TextChanged += OnTextChanged;
@@ -108,7 +127,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
     private void OnTextChanged(object? sender, EventArgs e)
     {
-        if (ViewModel is null) return;
+        if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
     }
 }

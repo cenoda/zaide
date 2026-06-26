@@ -92,12 +92,11 @@ editor as stable.
 - Fix:
   - Replace with a cancellable timer/debounce approach tied to control lifetime.
 
-### [ ] Make `EditorView` react to active-tab content changes, not just VM swaps
-- The view copies text when `ViewModel` changes, but does not subscribe to `TextContent` changes on the active VM.
-- Risk: future features like reload, format, external refresh, or programmatic edits will desync the editor surface.
-- Fix:
-  - Bind/subscription should follow the active VM and update editor text when `TextContent` changes.
-  - Keep loop prevention explicit.
+### [x] Make `EditorView` react to active-tab content changes, not just VM swaps
+- `GetObservable(ViewModelProperty).Select(...WhenAnyValue(TextContent)).Switch()` pattern
+  tracks the current VM's TextContent — updates on both VM change and programmatic changes.
+- `_isUpdatingFromViewModel` guard flag prevents feedback loop; text equality check avoids
+  redundant sets. `ApplyFileMode` still tied to VM changes only.
 
 ### [ ] Stop creating long-lived constructor subscriptions in `MainWindowViewModel`
 - `WhenAnyValue(...SelectedFile)` is subscribed in the constructor with no disposal path.
