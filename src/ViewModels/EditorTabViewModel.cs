@@ -37,6 +37,16 @@ public class EditorTabViewModel : ReactiveObject
     /// </summary>
     public Interaction<EditorViewModel, bool?> ConfirmClose { get; } = new();
 
+    /// <summary>
+    /// Error from the most recent failed save, surfaced so the UI can display it.
+    /// </summary>
+    private string? _lastSaveError;
+    public string? LastSaveError
+    {
+        get => _lastSaveError;
+        set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
+    }
+
     public ReactiveCommand<string, Unit> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
@@ -99,7 +109,10 @@ public class EditorTabViewModel : ReactiveObject
                 // Save then close — only close if save succeeded
                 var saved = await tab.SaveCommand.Execute();
                 if (!saved)
+                {
+                    LastSaveError = tab.LastSaveError;
                     return;
+                }
             }
             else if (shouldSave == false)
             {

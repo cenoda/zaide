@@ -106,6 +106,46 @@ public class EditorTabViewModelTests
     }
 
     [Fact]
+    public void CloseTab_StaysOpen_WhenSaveFails()
+    {
+        var vm = CreateViewModel();
+
+        // Wire ConfirmClose to return true (user clicked Save)
+        vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
+
+        // Open a tab pointing at a directory — save will fail
+        var dir = Path.Combine(Path.GetTempPath(), "zaide-dir-" + Guid.NewGuid());
+        Directory.CreateDirectory(dir);
+
+        try
+        {
+            var tab = new ServiceCollection()
+                .AddTransient<EditorViewModel>()
+                .BuildServiceProvider()
+                .GetRequiredService<EditorViewModel>();
+
+            tab.FilePath = dir; // directory → WriteAllText throws
+            tab.TextContent = "unsaved";
+            Assert.True(tab.IsDirty);
+
+            vm.OpenTabs.Add(tab);
+            vm.ActiveTab = tab;
+
+            // Try closing — save should fail, tab must stay
+            vm.CloseTabCommand.Execute(tab).Subscribe(_ => { });
+
+            Assert.Single(vm.OpenTabs);
+            Assert.True(tab.IsDirty);
+            Assert.NotNull(vm.LastSaveError);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir);
+        }
+    }
+
+    [Fact]
     public void CloseTab_ActivatesNeighbor_WhenActiveClosed()
     {
         var vm = CreateViewModel();

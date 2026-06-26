@@ -59,9 +59,10 @@ Production-bound issues found after Phase 2 completion. Fix before treating the
 editor as stable.
 
 ### [x] Save failure can still close a dirty tab
-- `EditorViewModel.Save()` returns `bool`; `CloseTabAsync` awaits result and skips close on false.
-- `LastSaveError` property set on failure, cleared on success.
-- Test `SaveCommand_Fails_WhenPathIsDirectory` covers the failure path.
+- `EditorViewModel.Save()` returns `bool`; `CloseTabAsync` awaits result, skips close on false.
+- `EditorTabViewModel.LastSaveError` surfaces the error; `MainWindowViewModel` pushes it to `StatusText`.
+- `EditorViewModel.LastSaveError` holds the exception message.
+- Tests: `SaveCommand_Fails_WhenPathIsDirectory` (VM-level) + `CloseTab_StaysOpen_WhenSaveFails` (full close flow).
 
 ### [ ] Remove hardcoded `/tmp` debug logging from `MainWindow`
 - Active-tab changes append to `/tmp/zaide-debug.log` on the UI path.

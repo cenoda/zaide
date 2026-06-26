@@ -48,6 +48,11 @@ public class MainWindowViewModel : ReactiveObject
 
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
 
+        // Surface save errors from the tab manager
+        this.WhenAnyValue(x => x.EditorTabs.LastSaveError)
+            .Where(msg => msg is not null)
+            .Subscribe(msg => StatusText = $"Save failed: {msg}");
+
         // When user selects a file in the tree, open it in the editor
         this.WhenAnyValue(x => x.FileTreeViewModel.SelectedFile)
             .Where(file => file is not null && !file.IsDirectory)
