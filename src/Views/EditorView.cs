@@ -3,6 +3,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaEdit;
 using ReactiveUI;
@@ -27,6 +28,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             ShowLineNumbers = true,
             FontSize = 14,
             FontFamily = new FontFamily("Cascadia Code, Consolas, monospace"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             Options =
@@ -42,12 +45,24 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         this.WhenActivated(d =>
         {
-            // ViewModel → editor: load content when ViewModel changes (tab switch)
-            d.Add(this.WhenAnyValue(x => x.ViewModel)
-                .Subscribe(vm =>
+            // ViewModel → editor: load content when ViewModel changes (tab switch).
+            // Uses GetObservable(ViewModelProperty) instead of WhenAnyValue(x => x.ViewModel)
+            // because ReactiveUserControl<T>.ViewModel is backed by a StyledProperty.
+            // WhenAnyValue's expression analysis can resolve to the base property and
+            // miss PropertyChanged notifications from SetValue. GetObservable talks to
+            // Avalonia's property system directly — no ambiguity.
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Subscribe(obj =>
                 {
-                    if (vm is null) return;
-                    _textEditor.Text = vm.TextContent;
+                    Log($"[EditorView] ViewModelProperty changed: " +
+                        $"{(obj is EditorViewModel vm ? vm.FileName : "null")}");
+                    if (obj is EditorViewModel vm2)
+                    {
+                        Log($"[EditorView] TextContent length={vm2.TextContent.Length}, " +
+                            $"preview='{vm2.TextContent[..Math.Min(40, vm2.TextContent.Length)]}'");
+                        _textEditor.Text = vm2.TextContent;
+                        Log($"[EditorView] After set, _textEditor.Text length={_textEditor.Text.Length}");
+                    }
                 }));
 
             // Editor → ViewModel: sync user edits via TextChanged event
@@ -60,5 +75,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     {
         if (ViewModel is null) return;
         ViewModel.TextContent = _textEditor.Text;
+    }
+
+    private static void Log(string msg)
+    {
+        var ts = DateTime.Now.ToString("HH:mm:ss.fff");
+        System.IO.File.AppendAllText("/tmp/zaide-debug.log", $"[{ts}] {msg}\n");
     }
 }

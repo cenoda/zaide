@@ -1,8 +1,10 @@
 using System;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 
@@ -47,5 +49,34 @@ public class MainWindowViewModelTests
 
         vm.ToggleBottomPanelCommand.Execute().Subscribe();
         Assert.False(vm.IsBottomPanelVisible);
+    }
+
+    [Fact]
+    public void SelectingSupportedFile_OpensActiveTabWithContent()
+    {
+        var vm = CreateViewModel();
+        var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
+        const string content = "class Program { }";
+
+        try
+        {
+            File.WriteAllText(filePath, content);
+
+            vm.FileTreeViewModel.SelectedFile = new FileTreeNode
+            {
+                Name = Path.GetFileName(filePath),
+                FullPath = filePath,
+                IsDirectory = false
+            };
+
+            Assert.Single(vm.EditorTabs.OpenTabs);
+            Assert.Same(vm.EditorTabs.OpenTabs[0], vm.EditorTabs.ActiveTab);
+            Assert.Equal(content, vm.EditorTabs.ActiveTab!.TextContent);
+        }
+        finally
+        {
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 }

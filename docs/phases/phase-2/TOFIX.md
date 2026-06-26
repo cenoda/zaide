@@ -22,10 +22,12 @@ Code quality issues found during Phase 2 review. Check these before starting Pha
 
 ### [ ] Editor doesn't show file content after M3
 Tab opens and displays filename, editor widget renders, but content area is blank.
-**Hypothesis:** `EditorView.WhenActivated` fires before `_editorView.ViewModel` is set,
-and the `WhenAnyValue(x => x.ViewModel)` subscription in `EditorView` never re-fires
-when ViewModel changes from null to non-null. The `WhenAnyValue` fires on initial null
-but not on subsequent non-null set. Need to verify the subscription triggers on change.
+**Updated debug (2026-06-26):** The ViewModel path is now covered by
+`MainWindowViewModelTests.SelectingSupportedFile_OpensActiveTabWithContent`.
+The strongest remaining suspect was center layout: `DockPanel` gave fill space to
+`_welcomeText` instead of `_editorView`. Candidate patch applied by replacing the
+center `DockPanel` with a two-row `Grid`; manual visual verification still needed
+before closing ISSUE-002.
 
 ### [ ] Close button (×) visually invisible but clickable
 Button is present in layout (clickable, highlight works), but `Opacity = 0` is never

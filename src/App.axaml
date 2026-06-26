@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fluent="clr-namespace:Avalonia.Themes.Fluent;assembly=Avalonia.Themes.Fluent"
              x:Class="Zaide.App"
              RequestedThemeVariant="Dark">
 
@@ -11,6 +12,8 @@
     </Application.Resources>
 
     <Application.Styles>
+        <fluent:FluentTheme />
         <StyleInclude Source="avares://Semi.Avalonia/SemiTheme.axaml" />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     </Application.Styles>
 </Application>

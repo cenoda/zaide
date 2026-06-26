@@ -68,9 +68,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
+                    Log($"[MainWindow] ActiveTab changed: {active?.FileName ?? "null"}");
                     _editorView.ViewModel = active;
                     _editorTabBar.SetActiveTab(active);
                     _welcomeText.IsVisible = active is null;
+                    Log($"[MainWindow] _editorView.ViewModel is now: " +
+                        $"{_editorView.ViewModel?.FileName ?? "null"}");
                 }));
 
             // Ctrl+` key binding → ViewModel's toggle command
@@ -137,8 +140,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        var center = new DockPanel
+        var center = new Grid
         {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            },
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
             Margin = new Thickness(1, 0, 1, 0),
             Children =
@@ -148,7 +156,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 _welcomeText
             }
         };
-        DockPanel.SetDock(_editorTabBar, Dock.Top);
+        Grid.SetRow(_editorTabBar, 0);
+        Grid.SetRow(_editorView, 1);
+        Grid.SetRow(_welcomeText, 1);
         _welcomeText.IsVisible = true; // shown when no tabs are open
 
         Grid.SetColumn(center, 1);
@@ -199,5 +209,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 HorizontalAlignment = HorizontalAlignment.Center
             }
         };
+    }
+
+    private static void Log(string msg)
+    {
+        var ts = DateTime.Now.ToString("HH:mm:ss.fff");
+        System.IO.File.AppendAllText("/tmp/zaide-debug.log", $"[{ts}] {msg}\n");
     }
 }
