@@ -11,16 +11,33 @@ Code quality issues found during Phase 2 review. Check these before starting Pha
 - [x] `dotnet test Zaide.slnx` passes: 22 tests, 0 failures
 - [x] Phase 1 TOFIX.md items reviewed — one open item ("Hardcoded colors") deferred to Phase 3/5
 
-### Post-implementation (YYYY-MM-DD)
-- [ ] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
-- [ ] `dotnet test Zaide.slnx`: N passed, 0 failed
+### Post-M3 visual check (2026-06-26)
+- [x] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
+- [x] `dotnet test Zaide.slnx`: 32 passed, 0 failed
 - [ ] Phase 1 → Phase 2 exit conditions all met
 
 ---
 
 ## Open
 
-_No issues yet._
+### [ ] Editor doesn't show file content after M3
+Tab opens and displays filename, editor widget renders, but content area is blank.
+**Hypothesis:** `EditorView.WhenActivated` fires before `_editorView.ViewModel` is set,
+and the `WhenAnyValue(x => x.ViewModel)` subscription in `EditorView` never re-fires
+when ViewModel changes from null to non-null. The `WhenAnyValue` fires on initial null
+but not on subsequent non-null set. Need to verify the subscription triggers on change.
+
+### [ ] Close button (×) visually invisible but clickable
+Button is present in layout (clickable, highlight works), but `Opacity = 0` is never
+changed to 1. The `PointerEntered`/`PointerExited` events on the tab `Border` may not
+fire correctly in the running app. The Opacity-based approach is correct — the events
+just aren't reaching the handler.
+
+### [ ] Ctrl+` bottom panel toggle doesn't work
+Never verified before M3. May be a keybinding issue — `Key.OemTilde` mapping varies
+across keyboard layouts. On Linux with non-US keyboards, the tilde key may not map
+to `OemTilde`. The `KeyBindings.Add` in `WhenActivated` may also be adding duplicates
+if `WhenActivated` fires multiple times.
 
 ---
 
