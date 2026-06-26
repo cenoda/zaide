@@ -78,12 +78,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
-                    Log($"[MainWindow] ActiveTab changed: {active?.FileName ?? "null"}");
                     _editorView.ViewModel = active;
                     _editorTabBar.SetActiveTab(active);
                     _welcomeText.IsVisible = active is null;
-                    Log($"[MainWindow] _editorView.ViewModel is now: " +
-                        $"{_editorView.ViewModel?.FileName ?? "null"}");
                 }));
 
             // Ctrl+` toggle bottom panel. Key.Oem3 is the physical backtick key
@@ -250,9 +247,4 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         };
     }
 
-    private static void Log(string msg)
-    {
-        var ts = DateTime.Now.ToString("HH:mm:ss.fff");
-        System.IO.File.AppendAllText("/tmp/zaide-debug.log", $"[{ts}] {msg}\n");
-    }
 }

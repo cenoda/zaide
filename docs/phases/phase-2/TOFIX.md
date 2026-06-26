@@ -64,12 +64,9 @@ editor as stable.
 - `EditorViewModel.LastSaveError` holds the exception message.
 - Tests: `SaveCommand_Fails_WhenPathIsDirectory` (VM-level) + `CloseTab_StaysOpen_WhenSaveFails` (full close flow).
 
-### [ ] Remove hardcoded `/tmp` debug logging from `MainWindow`
-- Active-tab changes append to `/tmp/zaide-debug.log` on the UI path.
-- Risk: Linux-specific behavior, blocking disk I/O on UI thread, possible runtime failure on other platforms.
-- Fix:
-  - Remove the temporary file logger.
-  - If logging is still needed, use a proper app logging abstraction behind debug-only wiring.
+### [x] Remove hardcoded `/tmp` debug logging from `MainWindow`
+- Removed both `Log()` calls in ActiveTab subscription and the `Log` method itself.
+- `grep -r zaide-debug` + `grep -r AppendAllText` across `src/` — zero remaining hits.
 
 ### [ ] Reset syntax highlighting when switching to unsupported/plain-text files
 - `EditorView.ApplyFileMode()` sets grammar for known extensions only.
