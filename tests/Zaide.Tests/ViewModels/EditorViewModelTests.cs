@@ -69,8 +69,10 @@ public class EditorViewModelTests
             vm.FilePath = filePath;
             vm.TextContent = "hello world";
 
-            vm.SaveCommand.Execute().Subscribe();
+            var result = false;
+            vm.SaveCommand.Execute().Subscribe(r => result = r);
 
+            Assert.True(result);
             var saved = File.ReadAllText(filePath);
             Assert.Equal("hello world", saved);
         }

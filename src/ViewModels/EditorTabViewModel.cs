@@ -96,8 +96,10 @@ public class EditorTabViewModel : ReactiveObject
             var shouldSave = await ConfirmClose.Handle(tab);
             if (shouldSave == true)
             {
-                // Save then close
-                tab.SaveCommand.Execute().Subscribe();
+                // Save then close — only close if save succeeded
+                var saved = await tab.SaveCommand.Execute();
+                if (!saved)
+                    return;
             }
             else if (shouldSave == false)
             {

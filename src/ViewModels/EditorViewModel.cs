@@ -82,10 +82,9 @@ public class EditorViewModel : ReactiveObject
     public bool IsSaved => !IsDirty;
 
     /// <summary>
-    /// ReactiveCommand for saving the file. Placeholder in M1;
-    /// full implementation in M4.
+    /// ReactiveCommand for saving the file.
     /// </summary>
-    public ReactiveCommand<Unit, Unit> SaveCommand { get; }
+    public ReactiveCommand<Unit, bool> SaveCommand { get; }
 
     public EditorViewModel()
     {
@@ -115,21 +114,22 @@ public class EditorViewModel : ReactiveObject
 
     /// <summary>
     /// Writes TextContent to FilePath, then clears the dirty flag.
-    /// No-op if FilePath is empty (unsaved new tab).
+    /// Returns true on success, false on failure or empty path.
     /// </summary>
-    private void Save()
+    private bool Save()
     {
         if (string.IsNullOrEmpty(FilePath))
-            return;
+            return false;
 
         try
         {
             File.WriteAllText(FilePath, TextContent);
             IsDirty = false;
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // TODO: surface save error in a future milestone
+            return false;
         }
     }
 
