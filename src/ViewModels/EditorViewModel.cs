@@ -82,6 +82,17 @@ public class EditorViewModel : ReactiveObject
     public bool IsSaved => !IsDirty;
 
     /// <summary>
+    /// Error message from the last failed save. null when the last save
+    /// succeeded or no save has been attempted yet.
+    /// </summary>
+    private string? _lastSaveError;
+    public string? LastSaveError
+    {
+        get => _lastSaveError;
+        private set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
+    }
+
+    /// <summary>
     /// ReactiveCommand for saving the file.
     /// </summary>
     public ReactiveCommand<Unit, bool> SaveCommand { get; }
@@ -125,10 +136,12 @@ public class EditorViewModel : ReactiveObject
         {
             File.WriteAllText(FilePath, TextContent);
             IsDirty = false;
+            LastSaveError = null;
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            LastSaveError = ex.Message;
             return false;
         }
     }

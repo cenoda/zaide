@@ -58,14 +58,10 @@ Deferred to Phase 5 (agent) and Phase 3 (terminal).
 Production-bound issues found after Phase 2 completion. Fix before treating the
 editor as stable.
 
-### [ ] Save failure can still close a dirty tab
-- `EditorViewModel.Save()` swallows I/O/auth errors and returns no success/failure state.
-- `EditorTabViewModel.CloseTabAsync()` closes the tab after "Save" even if the write failed.
-- Risk: silent data loss.
-- Fix:
-  - Make save report success/failure.
-  - Only close after a confirmed successful save.
-  - Surface save errors to the UI.
+### [x] Save failure can still close a dirty tab
+- `EditorViewModel.Save()` returns `bool`; `CloseTabAsync` awaits result and skips close on false.
+- `LastSaveError` property set on failure, cleared on success.
+- Test `SaveCommand_Fails_WhenPathIsDirectory` covers the failure path.
 
 ### [ ] Remove hardcoded `/tmp` debug logging from `MainWindow`
 - Active-tab changes append to `/tmp/zaide-debug.log` on the UI path.

@@ -58,6 +58,33 @@ public class EditorViewModelTests
     }
 
     [Fact]
+    public void SaveCommand_Fails_WhenPathIsDirectory()
+    {
+        var vm = new EditorViewModel();
+        var dir = Path.Combine(Path.GetTempPath(), "zaide-dir-" + Guid.NewGuid());
+
+        try
+        {
+            Directory.CreateDirectory(dir);
+            vm.FilePath = dir; // directory, not a file → WriteAllText will fail
+            vm.TextContent = "should not save";
+            Assert.True(vm.IsDirty);
+
+            var result = true;
+            vm.SaveCommand.Execute().Subscribe(r => result = r);
+
+            Assert.False(result, "Save should return false on I/O failure");
+            Assert.True(vm.IsDirty, "Dirty flag should remain true after failed save");
+            Assert.NotNull(vm.LastSaveError);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir);
+        }
+    }
+
+    [Fact]
     public void SaveCommand_WritesFile()
     {
         var vm = new EditorViewModel();
