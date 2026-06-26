@@ -78,19 +78,15 @@ editor as stable.
 - `EditorViewModel.SaveAsync` + `EditorTabViewModel.OpenFileAsync` use the service.
 - Both commands changed to `CreateFromTask`; tests updated to `async Task` with `await`.
 
-### [ ] Clean up `EditorTabBar` lifecycle and subscription management
-- The tab bar manually mirrors the collection and owns per-tab hover subscriptions.
-- `SetTabs()` / reset paths clear visual state without disposing all existing subscriptions.
-- Risk: stale subscriptions, leaked controls/viewmodels, rising maintenance cost.
-- Fix:
-  - Dispose all per-tab subscriptions when rebinding/resetting.
-  - Prefer a less custom binding/template-based approach if Avalonia now supports it cleanly.
+### [x] Clean up `EditorTabBar` lifecycle and subscription management
+- `DisposeAllSubscriptions()` called before clearing in `SetTabs()` and `Reset`.
+- `RemoveTab` disposes both `_hoverSubscriptions` and `_hoverCts`.
+- Helper method disposes all subscriptions + cancels all CTS tokens.
 
-### [ ] Remove uncancelled hover-delay tasks in `EditorTabBar`
-- Every pointer leave schedules `Task.Delay(200).ContinueWith(...)`.
-- Risk: avoidable dispatcher churn and brittle hover behavior under rapid pointer movement.
-- Fix:
-  - Replace with a cancellable timer/debounce approach tied to control lifetime.
+### [x] Remove uncancelled hover-delay tasks in `EditorTabBar`
+- Replaced `Task.Delay(200).ContinueWith` with `CancellationTokenSource` per tab.
+- Hover-in cancels pending hide + shows; hover-out cancels old token, creates new 200ms delay.
+- `TaskContinuationOptions.NotOnCanceled` avoids running cancelled continuations.
 
 ### [x] Make `EditorView` react to active-tab content changes, not just VM swaps
 - `GetObservable(ViewModelProperty).Select(...WhenAnyValue(TextContent)).Switch()` pattern

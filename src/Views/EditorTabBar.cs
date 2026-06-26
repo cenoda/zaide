@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -34,6 +36,7 @@ public partial class EditorTabBar : UserControl
     private readonly StackPanel _tabsPanel;
     private readonly Dictionary<EditorViewModel, Border> _tabItems = new();
     private readonly Dictionary<EditorViewModel, IDisposable> _hoverSubscriptions = new();
+    private readonly Dictionary<EditorViewModel, CancellationTokenSource> _hoverCts = new();
 
     private ObservableCollection<EditorViewModel>? _tabs;
     private EditorViewModel? _activeTab;
@@ -108,6 +111,7 @@ public partial class EditorTabBar : UserControl
         _tabs.CollectionChanged += OnTabsChanged;
 
         _tabsPanel.Children.Clear();
+        DisposeAllSubscriptions();
         _tabItems.Clear();
 
         foreach (var vm in tabs)
@@ -143,6 +147,7 @@ public partial class EditorTabBar : UserControl
         else if (e.Action == NotifyCollectionChangedAction.Reset)
         {
             _tabsPanel.Children.Clear();
+            DisposeAllSubscriptions();
             _tabItems.Clear();
         }
     }
@@ -167,6 +172,27 @@ public partial class EditorTabBar : UserControl
             subscription.Dispose();
             _hoverSubscriptions.Remove(vm);
         }
+
+        if (_hoverCts.TryGetValue(vm, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+            _hoverCts.Remove(vm);
+        }
+    }
+
+    private void DisposeAllSubscriptions()
+    {
+        foreach (var sub in _hoverSubscriptions.Values)
+            sub.Dispose();
+        _hoverSubscriptions.Clear();
+
+        foreach (var cts in _hoverCts.Values)
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+        _hoverCts.Clear();
     }
 
     private Border BuildTabItem(EditorViewModel vm)
@@ -249,23 +275,39 @@ public partial class EditorTabBar : UserControl
                 TabClicked?.Invoke(vm);
         };
 
+        var hoverCts = new CancellationTokenSource();
+        _hoverCts[vm] = hoverCts;
+
         _hoverSubscriptions[vm] = border.GetObservable(InputElement.IsPointerOverProperty)
             .Subscribe(isPointerOver =>
         {
             if (isPointerOver)
             {
+                // Cancel any pending hide, show immediately
+                hoverCts.Cancel();
+                hoverCts.Dispose();
+                hoverCts = new CancellationTokenSource();
+                _hoverCts[vm] = hoverCts;
                 closeButton.Opacity = 1;
                 return;
             }
 
-            // 200ms delay before hiding — prevents the close button from
-            // vanishing while the user is moving the pointer toward it.
-            _ = System.Threading.Tasks.Task.Delay(200).ContinueWith(_ =>
+            // Delay hide — cancel old token, start new 200ms delay
+            hoverCts.Cancel();
+            hoverCts.Dispose();
+            hoverCts = new CancellationTokenSource();
+            _hoverCts[vm] = hoverCts;
+            var token = hoverCts.Token;
+
+            _ = Task.Delay(200, token).ContinueWith(t =>
+            {
+                if (t.IsCanceled) return;
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
                     if (!border.IsPointerOver)
                         closeButton.Opacity = 0;
-                }));
+                });
+            }, TaskContinuationOptions.NotOnCanceled);
         });
 
         return border;
