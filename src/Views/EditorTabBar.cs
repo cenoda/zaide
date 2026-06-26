@@ -78,7 +78,8 @@ public partial class EditorTabBar : UserControl
         // By default ScrollViewer only scrolls vertically on wheel events.
         _scrollViewer.PointerWheelChanged += (_, e) =>
         {
-            var delta = e.Delta.Y;
+            // Multiply by 50 px/notch — Linux wheel deltas are tiny otherwise.
+            var delta = e.Delta.Y * 50;
             _scrollViewer.Offset = new Vector(
                 _scrollViewer.Offset.X - delta, _scrollViewer.Offset.Y);
             e.Handled = true;
