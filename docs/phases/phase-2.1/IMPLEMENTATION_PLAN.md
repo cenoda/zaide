@@ -3,7 +3,7 @@
 ## Pre-Implementation Verification
 
 - [ ] `dotnet build Zaide.slnx` passes with 0 warnings (Phase 2 baseline)
-- [ ] `dotnet test Zaide.slnx` passes: 35 tests, 0 failures
+- [ ] `dotnet test Zaide.slnx` passes: 69 tests, 0 failures
 
 ---
 
@@ -35,7 +35,11 @@ AvaloniaEdit v12 does not expose `ShowIndentGuides` as a built-in option.
 Implement via the `IBackgroundRenderer` interface on the `TextView`:
 
 1. Create `src/Views/IndentGuideRenderer.cs` implementing `IBackgroundRenderer`
-2. In `Draw()`, iterate visible lines, compute indentation columns from leading whitespace,
+   - `Layer` property returns `KnownLayer.Background` (draws behind text)
+2. In `Draw()`, iterate `textView.VisualLines` (only visible lines — no perf cost),
+   for each line: get `visualLine.FirstDocumentLine`, read leading whitespace
+   from `textView.Document.GetText(line.Offset, line.Length)`, compute indent
+   depth accounting for tab width (`textView.Options.IndentationSize`),
    draw vertical dotted lines at each indentation boundary
 3. Register renderer in `EditorView` constructor:
    ```csharp
@@ -44,12 +48,19 @@ Implement via the `IBackgroundRenderer` interface on the `TextView`:
 
 **Considerations:**
 - `IBackgroundRenderer` is part of AvaloniaEdit's public API — no fork needed
-- Indentation depth computed from `TextDocument.GetLineByOffset()` → leading whitespace count
+- Use `VisualLine.FirstDocumentLine` to get the document line, then read leading whitespace from `TextDocument.GetText()`
 - Visual column must account for tab width (`TextEditorOptions.IndentationSize`)
 - Lines drawn in the `TextView` coordinate system; clip to `textView.Bounds`
-- Respect `textView.ScrollOffset` for offset calculation
+- Respect `textView.ScrollOffset` for vertical offset — `VisualLine.VisualTop` already accounts for scroll
+- Use a semi-transparent pen color from the app theme (e.g., `TextDisabled` or similar resource) for the dotted lines
+- Avoid per-frame allocations: consider caching the `Pen` instance as a static/readonly field
+- Extract indent-depth computation into an `internal static` helper so it can be unit-tested without instantiating Avalonia controls
 
 ---
+
+## Testing
+
+Extract indent-depth computation into `internal static int GetIndentDepth(string line, int tabWidth)` so unit tests can verify it without Avalonia controls. Add test cases: spaces, tabs, mixed, empty lines, no indentation.
 
 ## Exit Conditions
 
@@ -58,6 +69,7 @@ Implement via the `IBackgroundRenderer` interface on the `TextView`:
 - [ ] Indent guides visible when editing indented code (.cs, .json)
 - [ ] Guides scroll correctly with the document
 - [ ] No guides shown for plain text / unindented files
+- [ ] Unit tests for indent-depth computation logic
 
 ---
 

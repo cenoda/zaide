@@ -8,7 +8,7 @@ Code quality issues found during Phase 2.1 review. Check these before starting P
 
 ### Pre-implementation gate (YYYY-MM-DD)
 - [ ] `dotnet build Zaide.slnx` passes with 0 warnings
-- [ ] `dotnet test Zaide.slnx` passes: N tests, 0 failures
+- [ ] `dotnet test Zaide.slnx` passes: 69 tests, 0 failures
 
 ---
 
