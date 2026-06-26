@@ -59,8 +59,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
-        // M1 SPIKE: prove the drawing surface with a fixed red marker.
-        // Removed after M1 exit gate passes.
+        // M2 SPIKE: draw indent boundary markers on each visible line.
+        // Removed after M2 exit gate passes.
         EnableSpikeRenderer();
 
         Content = _textEditor;
@@ -143,7 +143,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         ViewModel.TextContent = _textEditor.Text;
     }
 
-    // M1 SPIKE helper — register the temporary red-marker renderer.
+    // M2 SPIKE helper — register the indent boundary marker renderer.
     private void EnableSpikeRenderer()
     {
         var textView = _textEditor.TextArea.TextView;
