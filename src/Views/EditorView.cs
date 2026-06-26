@@ -62,7 +62,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
-            new SolidColorBrush(Color.FromArgb(255, 0, 255, 0)));
+            new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
 
         Content = _textEditor;
 

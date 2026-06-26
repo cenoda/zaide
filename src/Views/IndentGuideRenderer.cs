@@ -1,4 +1,3 @@
-using System;
 using Avalonia;
 using Avalonia.Media;
 using AvaloniaEdit;
@@ -14,19 +13,12 @@ namespace Zaide.Views;
 internal sealed class IndentGuideRenderer : IBackgroundRenderer
 {
     private readonly TextView _textView;
-    private readonly Pen[] _guidePens;
+    private readonly Pen _guidePen;
 
     public IndentGuideRenderer(TextView textView, IBrush guideBrush)
     {
         _textView = textView;
-        _guidePens =
-        [
-            new Pen(guideBrush, 1),
-            new Pen(new SolidColorBrush(Color.FromArgb(255, 0, 255, 0)), 1),
-            new Pen(new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)), 1),
-            new Pen(new SolidColorBrush(Color.FromArgb(255, 0, 255, 255)), 1),
-            new Pen(new SolidColorBrush(Color.FromArgb(255, 255, 105, 180)), 1)
-        ];
+        _guidePen = new Pen(guideBrush, 1);
         _textView.BackgroundRenderers.Add(this);
     }
 
@@ -75,16 +67,10 @@ internal sealed class IndentGuideRenderer : IBackgroundRenderer
                     - textView.ScrollOffset.X;
 
                 drawingContext.DrawLine(
-                    GetGuidePen(guideLevel),
+                    _guidePen,
                     new Point(guideX, top),
                     new Point(guideX, top + visualLine.Height));
             }
         }
-    }
-
-    private Pen GetGuidePen(int guideLevel)
-    {
-        var index = Math.Min(guideLevel, _guidePens.Length - 1);
-        return _guidePens[index];
     }
 }
