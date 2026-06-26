@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Zaide.Views;
 
@@ -69,5 +70,53 @@ internal static class IndentGuideMetrics
 
         visualColumn = indentationSize;
         return true;
+    }
+
+    public static IReadOnlyList<int> GetIndentBoundaryDocumentColumns(
+        string lineText,
+        int indentationSize)
+    {
+        if (indentationSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(indentationSize));
+
+        var boundaryColumns = new List<int>();
+        int leadingVisualColumns = 0;
+        int documentColumn = 1;
+        int index = 0;
+
+        while (index < lineText.Length)
+        {
+            var c = lineText[index];
+
+            if (c == ' ')
+            {
+                leadingVisualColumns++;
+                documentColumn++;
+                index++;
+            }
+            else if (c == '\t')
+            {
+                leadingVisualColumns =
+                    (leadingVisualColumns / indentationSize + 1) * indentationSize;
+                documentColumn++;
+                index++;
+            }
+            else
+            {
+                break;
+            }
+
+            if (leadingVisualColumns > 0 && leadingVisualColumns % indentationSize == 0)
+                boundaryColumns.Add(documentColumn);
+        }
+
+        if (index >= lineText.Length)
+            return Array.Empty<int>();
+
+        var firstContentChar = lineText[index];
+        if (firstContentChar == '\r' || firstContentChar == '\n')
+            return Array.Empty<int>();
+
+        return boundaryColumns;
     }
 }

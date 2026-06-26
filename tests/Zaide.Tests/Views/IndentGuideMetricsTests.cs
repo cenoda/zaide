@@ -58,4 +58,21 @@ public class IndentGuideMetricsTests
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             IndentGuideMetrics.GetVisibleIndentGuideLevelCount("    x", 0));
     }
+
+    [Theory]
+    [InlineData("    if (ready)", new[] { 5 })]
+    [InlineData("        if (ready)", new[] { 5, 9 })]
+    [InlineData("\tif (ready)", new[] { 2 })]
+    [InlineData("\t\tif (ready)", new[] { 2, 3 })]
+    [InlineData("  \tif (ready)", new[] { 4 })]
+    public void GetIndentBoundaryDocumentColumns_ReturnsExpectedColumns(
+        string lineText,
+        int[] expected)
+    {
+        var result = IndentGuideMetrics.GetIndentBoundaryDocumentColumns(
+            lineText,
+            indentationSize: 4);
+
+        Assert.Equal(expected, result);
+    }
 }

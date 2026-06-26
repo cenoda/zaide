@@ -49,26 +49,28 @@ internal sealed class IndentGuideRenderer : IBackgroundRenderer
                 continue;
 
             var text = textView.Document.GetText(line.Offset, line.TotalLength);
-            var guideLevelCount = IndentGuideMetrics.GetVisibleIndentGuideLevelCount(
+            var boundaryColumns = IndentGuideMetrics.GetIndentBoundaryDocumentColumns(
                 text,
                 indentationSize);
+            var guideLevelCount = boundaryColumns.Count;
             if (guideLevelCount == 0)
                 continue;
-
-            // Ask AvaloniaEdit for the rendered X at the line start, then place
-            // each guide inside its indentation block instead of on the content
-            // boundary. That avoids drawing over code glyphs.
-            var lineStart = textView.GetVisualPosition(
-                new TextViewPosition(line.LineNumber, 1, 1),
-                VisualYPosition.TextTop);
 
             var top = visualLine.VisualTop - textView.ScrollOffset.Y;
             for (int guideLevel = 1; guideLevel <= guideLevelCount; guideLevel++)
             {
-                var guideVisualColumn = ((guideLevel - 1) * indentationSize)
-                    + (indentationSize / 2.0);
+                var blockStartPosition = textView.GetVisualPosition(
+                    new TextViewPosition(
+                        line.LineNumber,
+                        guideLevel == 1 ? 1 : boundaryColumns[guideLevel - 2]),
+                    VisualYPosition.TextTop);
+                var blockEndPosition = textView.GetVisualPosition(
+                    new TextViewPosition(
+                        line.LineNumber,
+                        boundaryColumns[guideLevel - 1]),
+                    VisualYPosition.TextTop);
                 var guideX = PixelSnapHelpers.PixelAlign(
-                        lineStart.X + guideVisualColumn * textView.WideSpaceWidth,
+                        (blockStartPosition.X + blockEndPosition.X) / 2.0,
                         pixelSize.Width)
                     - textView.ScrollOffset.X;
 
