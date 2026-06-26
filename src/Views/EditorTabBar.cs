@@ -33,6 +33,7 @@ public partial class EditorTabBar : UserControl
     private readonly ScrollViewer _scrollViewer;
     private readonly StackPanel _tabsPanel;
     private readonly Dictionary<EditorViewModel, Border> _tabItems = new();
+    private readonly Dictionary<EditorViewModel, IDisposable> _hoverSubscriptions = new();
 
     private ObservableCollection<EditorViewModel>? _tabs;
     private EditorViewModel? _activeTab;
@@ -149,6 +150,12 @@ public partial class EditorTabBar : UserControl
             _tabsPanel.Children.Remove(border);
             _tabItems.Remove(vm);
         }
+
+        if (_hoverSubscriptions.TryGetValue(vm, out var subscription))
+        {
+            subscription.Dispose();
+            _hoverSubscriptions.Remove(vm);
+        }
     }
 
     private Border BuildTabItem(EditorViewModel vm)
@@ -158,29 +165,58 @@ public partial class EditorTabBar : UserControl
             [!TextBlock.TextProperty] = new Avalonia.Data.Binding("FileName"),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 28, 0),
+            Margin = new Thickness(10, 0, 8, 0),
             MaxWidth = 200
         };
         label.DataContext = vm;
 
-        var closeButton = new Button
+        var closeGlyph = new TextBlock
         {
-            Content = "×",
+            Text = "×",
+            FontSize = 14,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false
+        };
+
+        var closeButton = new Border
+        {
             Width = 20,
             Height = 20,
-            FontSize = 14,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 4, 0),
             Background = Brushes.Transparent,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            CornerRadius = new CornerRadius(4),
             Cursor = new Cursor(StandardCursorType.Hand),
-            Opacity = 0
+            Opacity = 0,
+            Child = closeGlyph
         };
 
-        closeButton.Click += (_, _) => TabCloseRequested?.Invoke(vm);
+        closeButton.PointerEntered += (_, _) =>
+            closeButton.Background = new SolidColorBrush(Color.Parse("#22C2C2E5"));
+        closeButton.PointerExited += (_, _) => closeButton.Background = Brushes.Transparent;
+        closeButton.PointerPressed += (_, e) =>
+        {
+            if (e.GetCurrentPoint(closeButton).Properties.IsLeftButtonPressed)
+            {
+                e.Handled = true;
+                TabCloseRequested?.Invoke(vm);
+            }
+        };
 
-        var grid = new Grid();
+        var grid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition { Width = GridLength.Auto }
+            }
+        };
+        Grid.SetColumn(label, 0);
+        Grid.SetColumn(closeButton, 1);
         grid.Children.Add(label);
         grid.Children.Add(closeButton);
 
@@ -196,20 +232,30 @@ public partial class EditorTabBar : UserControl
             HorizontalAlignment = HorizontalAlignment.Left
         };
 
-        border.PointerEntered += (_, _) => closeButton.Opacity = 1;
-        border.PointerExited += (_, _) =>
-        {
-            // 200ms delay before hiding — prevents the close button from
-            // vanishing while the user is moving the pointer toward it.
-            _ = System.Threading.Tasks.Task.Delay(200).ContinueWith(_ =>
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    closeButton.Opacity = 0));
-        };
         border.PointerPressed += (_, e) =>
         {
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
                 TabClicked?.Invoke(vm);
         };
+
+        _hoverSubscriptions[vm] = border.GetObservable(InputElement.IsPointerOverProperty)
+            .Subscribe(isPointerOver =>
+        {
+            if (isPointerOver)
+            {
+                closeButton.Opacity = 1;
+                return;
+            }
+
+            // 200ms delay before hiding — prevents the close button from
+            // vanishing while the user is moving the pointer toward it.
+            _ = System.Threading.Tasks.Task.Delay(200).ContinueWith(_ =>
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (!border.IsPointerOver)
+                        closeButton.Opacity = 0;
+                }));
+        });
 
         return border;
     }

@@ -120,7 +120,9 @@ Possible theories to test:
 
 ## Resolution
 
-- **Root cause:** Likely missing editor theme resources. The app originally loaded only Semi theme styles, while AvaloniaEdit's Fluent theme expects base Fluent resources and appears to render incompletely without them.
-- **Fix:** Load Avalonia `FluentTheme`, keep `SemiTheme.axaml`, and include `avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml` so the editor theme has its required resource chain.
-- **Commit:** TBD
-- **Closed date:** TBD
+- **Root cause:** Two issues combined:
+  1. **Layout:** `DockPanel` gave fill space to `_welcomeText` (last child), collapsing `_editorView` to zero height. Verified by debug log: data flow was correct — `_textEditor.Text` was set to 11376 chars, but the editor had zero layout height.
+  2. **Theme:** Missing `AvaloniaEdit.xaml` style include — TextEditor rendering was incomplete without its Fluent theme resources.
+- **Fix:** Replaced `DockPanel` with 2-row `Grid` (row 0: Auto for tab bar, row 1: * for editor+welcome overlay). Added `FluentTheme` + `AvaloniaEdit.xaml` to `App.axaml`. Set `Stretch` alignment on TextEditor.
+- **Commit:** `13dabbb`
+- **Closed date:** 2026-06-26
