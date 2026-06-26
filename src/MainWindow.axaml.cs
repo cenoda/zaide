@@ -83,6 +83,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .Subscribe(active =>
                 {
                     _editorView.ViewModel = active;
+                    _editorView.IsVisible = active is not null;
                     _editorTabBar.SetActiveTab(active);
                     _welcomeText.IsVisible = active is null;
                 }));
@@ -156,7 +157,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = new GridLength(0) }
             },
-            Background = new SolidColorBrush(Color.Parse("#1E1E23"))
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
         };
 
         var bottomRow = grid.RowDefinitions[1];
@@ -205,13 +206,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(center);
 
         // --- Right Agent Area ---
-        var agentArea = BuildPanel("Agent Area", "#142043", 1, 0, 0, 0);
+        var agentArea = BuildPanel("Agent Area", "DeepBase", 1, 0, 0, 0);
         Grid.SetColumn(agentArea, 2);
         Grid.SetRow(agentArea, 0);
         grid.Children.Add(agentArea);
 
         // --- Bottom Panel (hidden by default) ---
-        var bottomPanel = BuildPanel("Terminal (Ctrl+`)", "#0F1A33", 0, 1, 0, 0);
+        var bottomPanel = BuildPanel("Terminal (Ctrl+`)", "PanelDeep", 0, 1, 0, 0);
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 0);
         Grid.SetColumnSpan(bottomPanel, 3);
@@ -223,12 +224,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     }
 
     /// <summary>
-    /// Creates a placeholder panel Border with Ayaka palette colors + centered label.
+    /// Creates a placeholder panel Border with themed palette colors + centered label.
     /// Margins create subtle 1px separators per DESIGN.md §5.
     /// </summary>
     private static Border BuildPanel(
         string label,
-        string backgroundColor,
+        string backgroundResourceKey,
         double marginLeft,
         double marginTop,
         double marginRight,
@@ -236,13 +237,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse(backgroundColor)),
+            Background = (IBrush?)Application.Current!.Resources[backgroundResourceKey],
             Padding = new Thickness(16),
             Margin = new Thickness(marginLeft, marginTop, marginRight, marginBottom),
             Child = new TextBlock
             {
                 Text = label,
-                Foreground = new SolidColorBrush(Color.Parse("#E3E4F4")),
+                Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
                 FontSize = 14,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center

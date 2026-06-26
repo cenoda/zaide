@@ -47,9 +47,11 @@ duplicate KeyBindings. Fixed by using `Key.Oem3` (physical backtick), adding
 
 ## Phase 1 Carry-Over
 
-### [ ] Hardcoded colors in `MainWindow.axaml.cs` — agent area + bottom (deferred)
-Right agent area and bottom panel still use `BuildPanel` with `Color.Parse`.
-Deferred to Phase 5 (agent) and Phase 3 (terminal).
+### [x] Hardcoded colors in `MainWindow.axaml.cs` — agent area + bottom
+Right agent area (`DeepBase`), bottom panel (`PanelDeep`), and grid background
+(`SurfaceBase`) now use `App.axaml` resource lookups. `BuildPanel` refactored to
+accept a resource key instead of a hex color string. Two new theme resources
+added: `SurfaceBase` (#1E1E23) and `PanelDeep` (#0F1A33).
 
 ---
 
@@ -130,3 +132,14 @@ editor as stable.
   - unreadable-file open failure status
   - manual save failure status
   - Windows case-insensitive duplicate-tab detection
+
+### [x] Empty editor allows typing but content cannot be saved
+When no file is open (or a new empty editor is shown), the `TextEditor` was
+fully interactive — the user could type freely. However, `SaveAsync()` short-
+circuits with `return false` when `FilePath` is empty, so the typed content
+was silently lost.
+
+**Fix:** Set `_editorView.IsVisible = active is not null` in the ActiveTab
+subscription so the editor is hidden when no tab is active. The welcome text
+("Open a file to begin") is the only interactive element in that state.
+Tests already cover `SaveCommand_Fails_WhenPathIsEmpty` at the VM level.

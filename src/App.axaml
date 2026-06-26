@@ -5,10 +5,29 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <SolidColorBrush x:Key="PrimaryAccent" Color="#8FA5DE" />
-        <SolidColorBrush x:Key="SoftAccent" Color="#C2C2E5" />
-        <SolidColorBrush x:Key="DeepBase" Color="#142043" />
-        <SolidColorBrush x:Key="TextActive" Color="#E3E4F4" />
+        <!-- Palette raw colors (shared source of truth) -->
+        <Color x:Key="PrimaryAccentColor">#8FA5DE</Color>
+        <Color x:Key="SoftAccentColor">#C2C2E5</Color>
+        <Color x:Key="DeepBaseColor">#142043</Color>
+        <Color x:Key="TextActiveColor">#E3E4F4</Color>
+        <Color x:Key="SurfaceBaseColor">#1E1E23</Color>
+        <Color x:Key="PanelDeepColor">#0F1A33</Color>
+        <Color x:Key="SurfacePanelColor">#1A2B50</Color>
+        <Color x:Key="SurfaceBorderColor">#2D4175</Color>
+
+        <!-- Palette brushes (derived from the colors above) -->
+        <SolidColorBrush x:Key="PrimaryAccent" Color="{StaticResource PrimaryAccentColor}" />
+        <SolidColorBrush x:Key="SoftAccent" Color="{StaticResource SoftAccentColor}" />
+        <SolidColorBrush x:Key="DeepBase" Color="{StaticResource DeepBaseColor}" />
+        <SolidColorBrush x:Key="TextActive" Color="{StaticResource TextActiveColor}" />
+        <SolidColorBrush x:Key="SurfaceBase" Color="{StaticResource SurfaceBaseColor}" />
+        <SolidColorBrush x:Key="PanelDeep" Color="{StaticResource PanelDeepColor}" />
+        <SolidColorBrush x:Key="SurfacePanel" Color="{StaticResource SurfacePanelColor}" />
+        <SolidColorBrush x:Key="SurfaceBorder" Color="{StaticResource SurfaceBorderColor}" />
+
+        <!-- Override AvaloniaEdit SearchPanel to use Zaide palette -->
+        <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelColor}" />
+        <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SurfaceBorderColor}" />
     </Application.Resources>
 
     <Application.Styles>

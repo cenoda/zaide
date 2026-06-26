@@ -29,6 +29,6 @@ _No issues yet._
 ### [x] Hardcoded colors in `MainWindow.axaml.cs` — sidebar + center (Phase 1)
 Sidebar (`FileTreeView`) and center panel now use `App.axaml` resources.
 
-### [ ] Hardcoded colors in `MainWindow.axaml.cs` — agent area + bottom (deferred)
-Right agent area and bottom panel still use `BuildPanel` with `Color.Parse`.
-Deferred to Phase 5 (agent) and Phase 3 (terminal).
+### [x] Hardcoded colors in `MainWindow.axaml.cs` — agent area + bottom
+Right agent area, bottom panel, and grid background now use `App.axaml`
+resources. See Phase 2 TOFIX for details.
