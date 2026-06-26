@@ -69,8 +69,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                     if (obj is EditorViewModel vm)
                     {
                         _textEditor.Text = vm.TextContent;
-                        SetGrammar(vm.FilePath);
-                        SetFont(vm.FilePath);
+                        ApplyFileMode(vm.FilePath);
                     }
                     else
                     {
@@ -84,12 +83,14 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     }
 
     /// <summary>
-    /// Maps a file extension to its TextMate grammar scope and applies it.
-    /// Unsupported extensions get plain text (no highlighting).
+    /// Applies syntax highlighting and font based on the file extension.
+    /// Parses the extension once — no duplicated Path.GetExtension calls.
     /// </summary>
-    private void SetGrammar(string filePath)
+    private void ApplyFileMode(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
+
+        // Grammar
         var scope = ext switch
         {
             ".cs" => "source.cs",
@@ -97,18 +98,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             ".md" => "text.html.markdown",
             _ => null
         };
-
         if (scope is not null)
             _textMateInstallation.SetGrammar(scope);
-    }
 
-    /// <summary>
-    /// Switches the editor font based on file type.
-    /// Code uses monospace; Markdown uses serif for comfortable reading.
-    /// </summary>
-    private void SetFont(string filePath)
-    {
-        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        // Font — monospace for code, serif for prose
         _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
     }
 

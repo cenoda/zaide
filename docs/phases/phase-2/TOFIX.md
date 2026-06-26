@@ -34,7 +34,14 @@ of pointer events. Commit: `f6b5535`.
 ### [x] Ctrl+` toggle broken
 Root cause: `Key.OemTilde` fails on non-US keyboards + `WhenActivated` added
 duplicate KeyBindings. Fixed by using `Key.Oem3` (physical backtick), adding
-`Ctrl+J` fallback, and removing duplicates before adding. Commit: _(pending)_.
+`Ctrl+J` fallback, and removing duplicates before adding.
+
+### Post-M6 verification (2026-06-26)
+- [x] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
+- [x] `dotnet test Zaide.slnx`: 35 passed, 0 failures
+- [x] All M1–M6 exit conditions met
+- [x] Font switching: Georgia/serif for .md, Cascadia Code for code
+- [x] Indent guides deferred to Phase 2.1 (IBackgroundRenderer approach)
 
 ---
 
