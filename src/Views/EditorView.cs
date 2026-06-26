@@ -1,25 +1,28 @@
 using System;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaEdit;
+using AvaloniaEdit.TextMate;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
+using TextMateSharp.Grammars;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
 
 /// <summary>
-/// Code editor view wrapping AvaloniaEdit's TextEditor.
-/// Uses event-based sync (not two-way Bind) to avoid feedback loops.
-/// Handles null ViewModel gracefully during activation ordering.
+/// Code editor view wrapping AvaloniaEdit's TextEditor with TextMate
+/// syntax highlighting. Uses event-based sync (not two-way Bind) to
+/// avoid feedback loops. Handles null ViewModel gracefully.
 /// </summary>
 public partial class EditorView : ReactiveUserControl<EditorViewModel>
 {
     private readonly TextEditor _textEditor;
+    private readonly TextMate.Installation _textMateInstallation;
 
     public EditorView()
     {
@@ -28,8 +31,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             ShowLineNumbers = true,
             FontSize = 14,
             FontFamily = new FontFamily("Cascadia Code, Consolas, monospace"),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             Options =
@@ -41,29 +44,51 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             }
         };
 
+        // Initialize TextMate with the DarkPlus theme (matches app dark theme).
+        // TextMateSharp.Grammars bundles 100+ grammars — no external downloads.
+        var registry = new RegistryOptions(ThemeName.DarkPlus);
+        _textMateInstallation = _textEditor.InstallTextMate(registry);
+
         Content = _textEditor;
 
         this.WhenActivated(d =>
         {
-            // ViewModel → editor: load content when ViewModel changes (tab switch).
-            // Uses GetObservable(ViewModelProperty) instead of WhenAnyValue(x => x.ViewModel)
-            // because ReactiveUserControl<T>.ViewModel is backed by a StyledProperty.
-            // WhenAnyValue's expression analysis can resolve to the base property and
-            // miss PropertyChanged notifications from SetValue. GetObservable talks to
-            // Avalonia's property system directly — no ambiguity.
             d.Add(this.GetObservable(ViewModelProperty)
                 .Subscribe(obj =>
                 {
                     if (obj is EditorViewModel vm)
+                    {
                         _textEditor.Text = vm.TextContent;
+                        SetGrammar(vm.FilePath);
+                    }
                     else
+                    {
                         _textEditor.Text = string.Empty;
+                    }
                 }));
 
-            // Editor → ViewModel: sync user edits via TextChanged event
             _textEditor.TextChanged += OnTextChanged;
             d.Add(Disposable.Create(() => _textEditor.TextChanged -= OnTextChanged));
         });
+    }
+
+    /// <summary>
+    /// Maps a file extension to its TextMate grammar scope and applies it.
+    /// Unsupported extensions get plain text (no highlighting).
+    /// </summary>
+    private void SetGrammar(string filePath)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        var scope = ext switch
+        {
+            ".cs" => "source.cs",
+            ".json" => "source.json",
+            ".md" => "text.html.markdown",
+            _ => null
+        };
+
+        if (scope is not null)
+            _textMateInstallation.SetGrammar(scope);
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
@@ -71,5 +96,4 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         if (ViewModel is null) return;
         ViewModel.TextContent = _textEditor.Text;
     }
-
 }
