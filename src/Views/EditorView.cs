@@ -62,7 +62,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
-            new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
+            new SolidColorBrush(Color.FromArgb(255, 0, 255, 0)));
 
         Content = _textEditor;
 
@@ -140,8 +140,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         // Font — monospace for code, serif for prose
         _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
 
-        // M3 experiment path: only enable the first-guide renderer for C# files
-        // while the visual behavior is being validated.
+        // Experiment path: only enable indent guides for C# files while the
+        // visual behavior is being validated.
         _indentGuideRenderer.IsEnabled = ext == ".cs";
     }
 

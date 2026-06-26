@@ -9,7 +9,7 @@ Phase 2.1 or starting Phase 3.
 
 ### Pre-implementation gate (YYYY-MM-DD)
 - [x] `dotnet build Zaide.slnx` passes with 0 warnings (2026-06-27)
-- [x] `dotnet test Zaide.slnx` passes: 79 tests, 0 failures (2026-06-27)
+- [x] `dotnet test Zaide.slnx` passes: 82 tests, 0 failures (2026-06-27)
 
 ---
 
@@ -33,6 +33,10 @@ Phase 2.1 or starting Phase 3.
 - [x] Re-check mixed tabs/spaces in the live editor and document any remaining
   limitation before moving to M4.
   No obvious M3-blocking misalignment was found in the manual sample review.
+- [ ] Verify the M4 multi-level renderer visually in a real `.cs` file.
+  The renderer now draws one guide per full indent level, but live-editor
+  alignment and scrolling still need manual confirmation before Phase 2.1 can
+  be treated as complete.
 
 ---
 

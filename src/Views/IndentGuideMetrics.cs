@@ -3,16 +3,15 @@ using System;
 namespace Zaide.Views;
 
 /// <summary>
-/// Pure helper logic for deciding whether a line should show the first
-/// indent guide. Tabs advance to the next indentation boundary.
-/// Whitespace-only lines intentionally do not render a guide in M3.
+/// Pure helper logic for deciding how many indent guides a line should show.
+/// Tabs advance to the next indentation boundary.
+/// Whitespace-only lines intentionally do not render guides.
 /// </summary>
 internal static class IndentGuideMetrics
 {
-    public static bool TryGetFirstGuideVisualColumn(
+    public static int GetVisibleIndentGuideLevelCount(
         string lineText,
-        int indentationSize,
-        out int visualColumn)
+        int indentationSize)
     {
         if (indentationSize <= 0)
             throw new ArgumentOutOfRangeException(nameof(indentationSize));
@@ -44,18 +43,25 @@ internal static class IndentGuideMetrics
 
         if (index >= lineText.Length)
         {
-            visualColumn = 0;
-            return false;
+            return 0;
         }
 
         var firstContentChar = lineText[index];
         if (firstContentChar == '\r' || firstContentChar == '\n')
         {
-            visualColumn = 0;
-            return false;
+            return 0;
         }
 
-        if (leadingVisualColumns < indentationSize)
+        return leadingVisualColumns / indentationSize;
+    }
+
+    public static bool TryGetFirstGuideVisualColumn(
+        string lineText,
+        int indentationSize,
+        out int visualColumn)
+    {
+        var levelCount = GetVisibleIndentGuideLevelCount(lineText, indentationSize);
+        if (levelCount == 0)
         {
             visualColumn = 0;
             return false;

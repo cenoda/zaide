@@ -3,26 +3,27 @@
 ## Pre-Implementation Verification
 
 - [x] `dotnet build Zaide.slnx` passes with 0 warnings (2026-06-27)
-- [x] `dotnet test Zaide.slnx` passes with all tests green (79/79 on 2026-06-27)
+- [x] `dotnet test Zaide.slnx` passes with all tests green (82/82 on 2026-06-27)
 - [ ] Read `docs/phases/phase-2.1/TOFIX.md`
 - [ ] Read `docs/phases/phase-2.1/REVERT_LOG.md`
 - [x] Verify against live code what Phase 2.1 state actually exists
 - [x] Decide whether to fully revert the M2 spike or treat the current spike as the M2 baseline
 - [ ] Confirm the exact visual target with a real sample file before writing renderer logic
 
-### Live Repo State Snapshot (2026-06-26)
+### Live Repo State Snapshot (2026-06-27)
 
-The repository now contains the M3 first-guide experiment path.
+The repository now contains the M4 multi-level experiment path.
 
 - `src/Views/SpikeIndentGuideRenderer.cs` has been removed
-- `src/Views/IndentGuideRenderer.cs` now implements the first-guide renderer
+- `src/Views/IndentGuideRenderer.cs` now implements the multi-level renderer
 - `src/Views/IndentGuideMetrics.cs` contains the pure indentation helper logic
 - `EditorView` enables the renderer only for the current C# experiment path
 - Focused helper tests exist in `tests/Zaide.Tests/Views/IndentGuideMetricsTests.cs`
 
 Manual visual validation was completed for M3 on 2026-06-27 using a dedicated
 sample file covering spaces, tabs, mixed indentation, blank lines, and deeper
-nesting.
+nesting. M4 code is now in place, but multi-level visual validation is still
+required.
 
 ---
 
@@ -129,9 +130,9 @@ M3 was hard because it was not just a file rename from
 
 Extend the renderer only after a single guide level is proven visually.
 
-1. Add support for multiple indentation levels.
-2. Verify nested blocks line up correctly.
-3. Re-check mixed whitespace cases before treating the feature as complete.
+1. [x] Add support for multiple indentation levels.
+2. [ ] Verify nested blocks line up correctly.
+3. [ ] Re-check mixed whitespace cases before treating the feature as complete.
 
 **Exit gate:** Multi-level guides must be visually correct enough to ship, not
 just “close.”

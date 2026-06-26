@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Media;
 using AvaloniaEdit;
@@ -7,18 +8,25 @@ using AvaloniaEdit.Utils;
 namespace Zaide.Views;
 
 /// <summary>
-/// M3 renderer: draws only the first indent guide level for lines whose
-/// leading whitespace reaches at least one full indentation level.
+/// M4 renderer: draws indent guides for each full indentation level reached
+/// by a non-blank line.
 /// </summary>
 internal sealed class IndentGuideRenderer : IBackgroundRenderer
 {
     private readonly TextView _textView;
-    private readonly Pen _guidePen;
+    private readonly Pen[] _guidePens;
 
     public IndentGuideRenderer(TextView textView, IBrush guideBrush)
     {
         _textView = textView;
-        _guidePen = new Pen(guideBrush, 1);
+        _guidePens =
+        [
+            new Pen(guideBrush, 1),
+            new Pen(new SolidColorBrush(Color.FromArgb(255, 0, 255, 0)), 1),
+            new Pen(new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)), 1),
+            new Pen(new SolidColorBrush(Color.FromArgb(255, 0, 255, 255)), 1),
+            new Pen(new SolidColorBrush(Color.FromArgb(255, 255, 105, 180)), 1)
+        ];
         _textView.BackgroundRenderers.Add(this);
     }
 
@@ -41,30 +49,40 @@ internal sealed class IndentGuideRenderer : IBackgroundRenderer
                 continue;
 
             var text = textView.Document.GetText(line.Offset, line.TotalLength);
-            if (!IndentGuideMetrics.TryGetFirstGuideVisualColumn(
+            var guideLevelCount = IndentGuideMetrics.GetVisibleIndentGuideLevelCount(
                 text,
-                indentationSize,
-                out var guideVisualColumn))
-            {
+                indentationSize);
+            if (guideLevelCount == 0)
                 continue;
-            }
 
-            // Ask AvaloniaEdit for the rendered X at the line start, then move
-            // one full indent level to the right using the editor's space width.
+            // Ask AvaloniaEdit for the rendered X at the line start, then place
+            // each guide inside its indentation block instead of on the content
+            // boundary. That avoids drawing over code glyphs.
             var lineStart = textView.GetVisualPosition(
                 new TextViewPosition(line.LineNumber, 1, 1),
                 VisualYPosition.TextTop);
 
-            var guideX = PixelSnapHelpers.PixelAlign(
-                    lineStart.X + guideVisualColumn * textView.WideSpaceWidth,
-                    pixelSize.Width)
-                - textView.ScrollOffset.X;
-
             var top = visualLine.VisualTop - textView.ScrollOffset.Y;
-            drawingContext.DrawLine(
-                _guidePen,
-                new Point(guideX, top),
-                new Point(guideX, top + visualLine.Height));
+            for (int guideLevel = 1; guideLevel <= guideLevelCount; guideLevel++)
+            {
+                var guideVisualColumn = ((guideLevel - 1) * indentationSize)
+                    + (indentationSize / 2.0);
+                var guideX = PixelSnapHelpers.PixelAlign(
+                        lineStart.X + guideVisualColumn * textView.WideSpaceWidth,
+                        pixelSize.Width)
+                    - textView.ScrollOffset.X;
+
+                drawingContext.DrawLine(
+                    GetGuidePen(guideLevel),
+                    new Point(guideX, top),
+                    new Point(guideX, top + visualLine.Height));
+            }
         }
+    }
+
+    private Pen GetGuidePen(int guideLevel)
+    {
+        var index = Math.Min(guideLevel, _guidePens.Length - 1);
+        return _guidePens[index];
     }
 }
