@@ -29,30 +29,6 @@ public class IndentGuideMetricsTests
     }
 
     [Fact]
-    public void TryGetFirstGuideVisualColumn_ReturnsFirstIndentBoundary()
-    {
-        var result = IndentGuideMetrics.TryGetFirstGuideVisualColumn(
-            "        if (ready)",
-            indentationSize: 4,
-            out var visualColumn);
-
-        Assert.True(result);
-        Assert.Equal(4, visualColumn);
-    }
-
-    [Fact]
-    public void TryGetFirstGuideVisualColumn_ReturnsFalse_WhenNoFullIndentLevelExists()
-    {
-        var result = IndentGuideMetrics.TryGetFirstGuideVisualColumn(
-            "   if (ready)",
-            indentationSize: 4,
-            out var visualColumn);
-
-        Assert.False(result);
-        Assert.Equal(0, visualColumn);
-    }
-
-    [Fact]
     public void GetVisibleIndentGuideLevelCount_Throws_WhenIndentationSizeInvalid()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>

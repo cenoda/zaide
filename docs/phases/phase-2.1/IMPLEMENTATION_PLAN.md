@@ -190,7 +190,7 @@ sufficient for this phase.
 - [x] First indent guide level proven visually before multi-level work begins
 - [x] Multi-level guides look correct in a real `.cs` file
 - [x] Guides scroll correctly with the document
-- [ ] No guides shown for unsupported file types
+- [x] No guides shown for unsupported file types
 - [x] Temporary spike code removed
 - [x] Helper tests added only for pure non-UI logic
 

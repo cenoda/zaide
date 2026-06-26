@@ -56,22 +56,6 @@ internal static class IndentGuideMetrics
         return leadingVisualColumns / indentationSize;
     }
 
-    public static bool TryGetFirstGuideVisualColumn(
-        string lineText,
-        int indentationSize,
-        out int visualColumn)
-    {
-        var levelCount = GetVisibleIndentGuideLevelCount(lineText, indentationSize);
-        if (levelCount == 0)
-        {
-            visualColumn = 0;
-            return false;
-        }
-
-        visualColumn = indentationSize;
-        return true;
-    }
-
     public static IReadOnlyList<int> GetIndentBoundaryDocumentColumns(
         string lineText,
         int indentationSize)

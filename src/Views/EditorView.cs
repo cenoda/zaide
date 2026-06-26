@@ -141,7 +141,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
 
         // Experiment path: only enable indent guides for C# files while the
-        // visual behavior is being validated.
+        // visual behavior is being validated. If more file types need guides
+        // later, extract a helper like ShouldEnableForFile(ext) or gate on
+        // GetGrammarScope returning non-null.
         _indentGuideRenderer.IsEnabled = ext == ".cs";
     }
 
