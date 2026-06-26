@@ -108,8 +108,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             KeyBindings.Add(saveBinding);
             d.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
 
-            // Bind StatusText (no longer on _centerText; keep for future status bar)
-            d.Add(this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._welcomeText.Text));
+            // Welcome text: always shows the static message. StatusText is
+            // preserved for a future status bar, not bound to the welcome overlay.
 
             // Bind bottom panel visibility → row height (instant toggle, no animation per Phase 0)
             d.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)

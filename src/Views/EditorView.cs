@@ -63,6 +63,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                         _textEditor.Text = vm2.TextContent;
                         Log($"[EditorView] After set, _textEditor.Text length={_textEditor.Text.Length}");
                     }
+                    else
+                    {
+                        // ViewModel was cleared — reset the editor to blank
+                        _textEditor.Text = string.Empty;
+                    }
                 }));
 
             // Editor → ViewModel: sync user edits via TextChanged event
