@@ -102,7 +102,7 @@ editor as stable.
 ### [x] Fix misleading status text for extensionless unsupported files
 - Changed `"Opened: {file.Name}"` to `"Unsupported file type: (no extension)"` for extensionless files.
 
-### [ ] Add tests for the risky paths
+### [x] Add tests for the risky paths
 - Missing coverage:
   - save failure must not close the tab
   - cancel close on dirty tab
