@@ -74,6 +74,16 @@ public partial class EditorTabBar : UserControl
             MinHeight = 36 // content-driven; MinHeight avoids HiDPI clipping
         };
 
+        // Translate vertical mouse wheel → horizontal scrolling.
+        // By default ScrollViewer only scrolls vertically on wheel events.
+        _scrollViewer.PointerWheelChanged += (_, e) =>
+        {
+            var delta = e.Delta.Y;
+            _scrollViewer.Offset = new Vector(
+                _scrollViewer.Offset.X - delta, _scrollViewer.Offset.Y);
+            e.Handled = true;
+        };
+
         Content = _scrollViewer;
     }
 
