@@ -3,14 +3,27 @@
 ## What Was Reverted
 
 - **Reverted from:** working tree only (Phase 2.1 was not committed)
-- **Reverted to:** current Phase 2 baseline without indent-guide implementation
+- **Intended revert target:** Phase 2 baseline without indent-guide implementation
 - **Commits discarded:** none
 - **Files removed:**
   - `src/Views/IndentGuideRenderer.cs`
   - `tests/Zaide.Tests/Views/IndentGuideRendererTests.cs`
-- **Files modified (reverted to pre-Phase-2.1 state):**
+- **Files modified during revert attempt:**
   - `src/Views/EditorView.cs`
   - `docs/phases/phase-2.1/TOFIX.md`
+
+## Post-Revert Audit (2026-06-26)
+
+A later live-code audit found that the repository did not fully land at the
+intended revert target.
+
+- `src/Views/SpikeIndentGuideRenderer.cs` still exists
+- `src/Views/EditorView.cs` still enables the spike renderer
+- The current tree therefore contains an active M2 experiment path even though
+  the earlier production `IndentGuideRenderer.cs` was removed
+
+This matters because future M3 work should start from the actual repo state,
+not from the assumed clean baseline described in the original revert summary.
 
 ## Root Cause
 

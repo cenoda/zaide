@@ -2,12 +2,27 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `dotnet build Zaide.slnx` passes with 0 warnings (current Phase 2 baseline)
-- [ ] `dotnet test Zaide.slnx` passes with all tests green
+- [ ] `dotnet build Zaide.slnx` passes with 0 warnings
+- [x] `dotnet test Zaide.slnx` passes with all tests green (69/69 on 2026-06-26)
 - [ ] Read `docs/phases/phase-2.1/TOFIX.md`
 - [ ] Read `docs/phases/phase-2.1/REVERT_LOG.md`
-- [ ] Verify against live code that `EditorView` is back to the pre-Phase-2.1 baseline
+- [x] Verify against live code what Phase 2.1 state actually exists
+- [ ] Decide whether to fully revert the M2 spike or treat the current spike as the M2 baseline
 - [ ] Confirm the exact visual target with a real sample file before writing renderer logic
+
+### Live Repo State Snapshot (2026-06-26)
+
+The repository is not at a pure pre-Phase-2.1 baseline.
+
+- `src/Views/SpikeIndentGuideRenderer.cs` exists and is registered from
+  `src/Views/EditorView.cs`
+- `EditorView` currently enables the spike unconditionally during construction
+- The previously attempted production `IndentGuideRenderer.cs` is gone
+- The current codebase therefore reflects an active M2-style spike, not a clean
+  "no indent guides present" baseline
+
+Treat this as the starting point for any M3 work unless the spike is explicitly
+removed first.
 
 ---
 
@@ -80,14 +95,35 @@ repeatably in the live editor.
 
 Turn the successful coordinate spike into minimal production code.
 
-1. Create `src/Views/IndentGuideRenderer.cs` implementing `IBackgroundRenderer`
-   only after M2 succeeds.
-2. Render just the first indent guide level.
-3. Keep the renderer disabled by default except for the active experiment path.
-4. Add only the helper logic needed for the first guide level.
+1. Resolve the baseline decision first:
+   - either remove `SpikeIndentGuideRenderer` and restart M3 from a clean tree
+   - or promote the proven parts of the spike into `IndentGuideRenderer`
+2. Create `src/Views/IndentGuideRenderer.cs` implementing `IBackgroundRenderer`
+   only after M2 succeeds visually in the live app.
+3. Define the first-guide rule before coding:
+   - draw one guide only for lines that reach at least one full indent level
+   - document how tabs, mixed whitespace, and blank lines are handled
+4. Render just the first indent guide level.
+5. Keep the renderer disabled by default except for the active experiment path.
+6. Add only the helper logic needed for the first guide level.
 
 **Exit gate:** The first guide must look correct in nested C# code and remain
 aligned while scrolling vertically.
+
+### M3 Readiness Notes
+
+M3 is hard because it is not just a file rename from `SpikeIndentGuideRenderer`
+to `IndentGuideRenderer`.
+
+- The current spike marks the first non-whitespace boundary on each visible
+  line, which is not automatically the same as "render the first indent guide"
+- M3 needs a clear production rule for lines with less than one indent level,
+  blank lines, and mixed tab/space prefixes
+- `TextView.GetVisualPosition(...)` appears to be the key coordinate source in
+  the spike, but visual trust must still be confirmed while scrolling in a real
+  `.cs` file before treating it as production-ready
+- The current unconditional spike hookup in `EditorView` is useful for
+  experimentation but is not the final M3 wiring shape
 
 ---
 
