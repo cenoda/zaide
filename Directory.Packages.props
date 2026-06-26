@@ -32,5 +32,9 @@
 
     <!-- Diagnostics (debug-only in main project) -->
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
+
+    <!-- Editor (Phase 2) -->
+    <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
+    <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
   </ItemGroup>
 </Project>
