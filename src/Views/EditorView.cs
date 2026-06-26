@@ -24,11 +24,12 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
 
-    // Fonts: monospace for code, serif for prose (Markdown).
+    // Fonts: monospace for code, sans-serif for prose (Markdown).
+    // Liberation Sans is on nearly every Linux distro; falls back to sans-serif.
     private static readonly FontFamily CodeFont =
         new("Cascadia Code, Consolas, monospace");
     private static readonly FontFamily ProseFont =
-        new("Georgia, serif");
+        new("Liberation Sans, sans-serif");
 
     public EditorView()
     {
@@ -103,12 +104,21 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
     /// <summary>
     /// Switches the editor font based on file type.
-    /// Code files use monospace; Markdown uses serif for comfortable reading.
+    /// Code: monospace 14px. Markdown: sans-serif 18px (impossible to miss).
     /// </summary>
     private void SetFont(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
+        if (ext == ".md")
+        {
+            _textEditor.FontFamily = ProseFont;
+            _textEditor.FontSize = 18;
+        }
+        else
+        {
+            _textEditor.FontFamily = CodeFont;
+            _textEditor.FontSize = 14;
+        }
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
