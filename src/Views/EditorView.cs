@@ -24,13 +24,19 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
 
+    // Fonts: monospace for code, serif for prose (Markdown).
+    private static readonly FontFamily CodeFont =
+        new("Cascadia Code, Consolas, monospace");
+    private static readonly FontFamily ProseFont =
+        new("Georgia, serif");
+
     public EditorView()
     {
         _textEditor = new TextEditor
         {
             ShowLineNumbers = true,
             FontSize = 14,
-            FontFamily = new FontFamily("Cascadia Code, Consolas, monospace"),
+            FontFamily = CodeFont,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
@@ -49,6 +55,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
+        // NOTE: ShowIndentGuides is not exposed in AvaloniaEdit v12.
+        // Defer to a future upgrade when the API is available.
+
         Content = _textEditor;
 
         this.WhenActivated(d =>
@@ -60,6 +69,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                     {
                         _textEditor.Text = vm.TextContent;
                         SetGrammar(vm.FilePath);
+                        SetFont(vm.FilePath);
                     }
                     else
                     {
@@ -89,6 +99,16 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         if (scope is not null)
             _textMateInstallation.SetGrammar(scope);
+    }
+
+    /// <summary>
+    /// Switches the editor font based on file type.
+    /// Code files use monospace; Markdown uses serif for comfortable reading.
+    /// </summary>
+    private void SetFont(string filePath)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
