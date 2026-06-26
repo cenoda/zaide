@@ -102,6 +102,24 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     }
 
     /// <summary>
+    /// Returns the TextMate grammar scope for a file extension,
+    /// or null when no grammar is available.
+    /// Internal + static so unit tests can verify the mapping
+    /// without instantiating an Avalonia control.
+    /// </summary>
+    internal static string? GetGrammarScope(string filePath)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        return ext switch
+        {
+            ".cs" => "source.cs",
+            ".json" => "source.json",
+            ".md" => "text.html.markdown",
+            _ => null
+        };
+    }
+
+    /// <summary>
     /// Applies syntax highlighting and font based on the file extension.
     /// Parses the extension once — no duplicated Path.GetExtension calls.
     /// </summary>
@@ -112,13 +130,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         // Grammar — always set, even for unsupported files.
         // Passing a null/empty scope clears the previous grammar
         // so plain-text files don't inherit the last tab's highlighting.
-        var scope = ext switch
-        {
-            ".cs" => "source.cs",
-            ".json" => "source.json",
-            ".md" => "text.html.markdown",
-            _ => null
-        };
+        var scope = GetGrammarScope(filePath);
         _textMateInstallation.SetGrammar(scope ?? "");
 
         // Font — monospace for code, serif for prose

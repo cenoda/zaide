@@ -25,4 +25,8 @@
     <PackageReference Include="AvaloniaEdit.TextMate" />
     <PackageReference Include="TextMateSharp.Grammars" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Zaide.Tests" />
+  </ItemGroup>
 </Project>

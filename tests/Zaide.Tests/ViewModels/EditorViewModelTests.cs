@@ -134,4 +134,101 @@ public class EditorViewModelTests
                 File.Delete(filePath);
         }
     }
+
+    // ---------------------------------------------------------------
+    // Risky-path tests
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void LoadFileContent_DoesNotMarkDirty()
+    {
+        // LoadFileContent suppresses the dirty-tracking subscription.
+        // Even with a large payload, the tab must remain clean.
+        var vm = new EditorViewModel(new FileService());
+        var large = new string('x', 500_000);
+
+        vm.LoadFileContent(large);
+
+        Assert.Equal(large, vm.TextContent);
+        Assert.False(vm.IsDirty);
+    }
+
+    [Fact]
+    public void TextContent_AfterLoadFileContent_MarksDirty()
+    {
+        // After a file load, any subsequent TextContent change should
+        // re-engage the dirty subscription.
+        var vm = new EditorViewModel(new FileService());
+        vm.LoadFileContent("original content");
+        Assert.False(vm.IsDirty);
+
+        vm.TextContent = "tweaked";
+
+        Assert.True(vm.IsDirty);
+    }
+
+    [Fact]
+    public void LoadFileContent_LargePayload_SetsTextContent()
+    {
+        // Simulates loading a very large file (1 MB of text).
+        // The content must be stored as-is, not truncated.
+        var vm = new EditorViewModel(new FileService());
+        var big = new string('A', 1_000_000);
+
+        vm.LoadFileContent(big);
+
+        Assert.Equal(1_000_000, vm.TextContent.Length);
+        Assert.Equal(big, vm.TextContent);
+        Assert.False(vm.IsDirty);
+    }
+
+    [Fact]
+    public void LoadFileContent_EmptyString_ClearsContent()
+    {
+        var vm = new EditorViewModel(new FileService());
+        vm.TextContent = "was here";
+        vm.MarkClean();
+
+        vm.LoadFileContent("");
+
+        Assert.Equal("", vm.TextContent);
+        Assert.False(vm.IsDirty);
+    }
+
+    [Fact]
+    public void DisplayName_ShowsDot_WhenDirty()
+    {
+        var vm = new EditorViewModel(new FileService());
+        vm.FilePath = "/tmp/test.cs";
+
+        Assert.Equal("test.cs", vm.DisplayName);
+
+        vm.TextContent = "changed";
+        Assert.Equal("● test.cs", vm.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_ReturnsFileName_WhenClean()
+    {
+        var vm = new EditorViewModel(new FileService());
+        vm.FilePath = "/tmp/report.md";
+
+        Assert.Equal("report.md", vm.DisplayName);
+
+        vm.MarkClean();
+        Assert.Equal("report.md", vm.DisplayName);
+    }
+
+    [Fact]
+    public void SaveCommand_Fails_WhenPathIsEmpty()
+    {
+        var vm = new EditorViewModel(new FileService());
+        vm.TextContent = "content";
+
+        var result = true;
+        vm.SaveCommand.Execute().Subscribe(r => result = r);
+
+        Assert.False(result);
+        Assert.True(vm.IsDirty);
+    }
 }

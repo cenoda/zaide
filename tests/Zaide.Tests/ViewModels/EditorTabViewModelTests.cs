@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Zaide.Services;
+using Zaide.Tests.Services;
 using Zaide.ViewModels;
 
 namespace Zaide.Tests.ViewModels;
@@ -180,6 +181,171 @@ public class EditorTabViewModelTests
         {
             if (File.Exists(path1)) File.Delete(path1);
             if (File.Exists(path2)) File.Delete(path2);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Risky-path tests
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public async Task SaveFailure_MustNotCloseTab_MockFileService()
+    {
+        // Uses MockFileService so the failure is deterministic and does not
+        // depend on OS permissions or filesystem quirks.
+        var mockFs = new MockFileService
+        {
+            WriteException = new IOException("disk full")
+        };
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(mockFs);
+        services.AddTransient<EditorViewModel>();
+        var sp = services.BuildServiceProvider();
+        var vm = new EditorTabViewModel(sp, mockFs);
+
+        // ConfirmClose returns true (user says "Save")
+        vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
+
+        var tab = sp.GetRequiredService<EditorViewModel>();
+        tab.FilePath = "/tmp/fake-save-fail.txt";
+        tab.TextContent = "dirty content";
+        Assert.True(tab.IsDirty);
+
+        vm.OpenTabs.Add(tab);
+        vm.ActiveTab = tab;
+
+        // Attempt close → save fails → tab must remain
+        await vm.CloseTabCommand.Execute(tab);
+
+        Assert.Single(vm.OpenTabs);
+        Assert.Same(tab, vm.OpenTabs[0]);
+        Assert.True(tab.IsDirty);
+        Assert.NotNull(vm.LastSaveError);
+        Assert.Equal("disk full", vm.LastSaveError);
+    }
+
+    [Fact]
+    public async Task CancelClose_OnDirtyTab_DoesNotRemoveTab()
+    {
+        // ConfirmClose returns null → user cancels the dialog.
+        var vm = CreateViewModel();
+        vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(null));
+
+        var path = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            File.WriteAllText(path, "original");
+            await vm.OpenFileCommand.Execute(path);
+
+            var tab = vm.OpenTabs[0];
+            tab.TextContent = "modified"; // mark dirty
+            Assert.True(tab.IsDirty);
+
+            await vm.CloseTabCommand.Execute(tab);
+
+            // Tab must NOT be removed — user cancelled
+            Assert.Single(vm.OpenTabs);
+            Assert.Same(tab, vm.OpenTabs[0]);
+            Assert.True(tab.IsDirty, "Tab should still be dirty after cancel");
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CloseWithoutSave_OnDirtyTab_RemovesTab()
+    {
+        // ConfirmClose returns false → user chose "Close without saving".
+        var vm = CreateViewModel();
+        vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(false));
+
+        var path = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            File.WriteAllText(path, "original");
+            await vm.OpenFileCommand.Execute(path);
+
+            var tab = vm.OpenTabs[0];
+            tab.TextContent = "modified"; // mark dirty
+            Assert.True(tab.IsDirty);
+
+            await vm.CloseTabCommand.Execute(tab);
+
+            // Tab removed without saving
+            Assert.Empty(vm.OpenTabs);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SaveFailure_SetsLastErrorOnTab()
+    {
+        // Verify LastSaveError is propagated from the tab to the tab manager.
+        var mockFs = new MockFileService
+        {
+            WriteException = new UnauthorizedAccessException("permission denied")
+        };
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(mockFs);
+        services.AddTransient<EditorViewModel>();
+        var sp = services.BuildServiceProvider();
+        var vm = new EditorTabViewModel(sp, mockFs);
+
+        vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
+
+        var tab = sp.GetRequiredService<EditorViewModel>();
+        tab.FilePath = "/tmp/fake-perm.txt";
+        tab.TextContent = "dirty";
+        vm.OpenTabs.Add(tab);
+        vm.ActiveTab = tab;
+
+        await vm.CloseTabCommand.Execute(tab);
+
+        Assert.Single(vm.OpenTabs);
+        Assert.NotNull(vm.LastSaveError);
+        Assert.Contains("permission denied", vm.LastSaveError);
+    }
+
+    [Fact]
+    public async Task ConfirmClose_NotRaised_WhenTabIsClean()
+    {
+        // If the tab is clean, the close should go through without
+        // ever touching the ConfirmClose interaction.
+        var vm = CreateViewModel();
+        bool handlerCalled = false;
+        vm.ConfirmClose.RegisterHandler(ctx =>
+        {
+            handlerCalled = true;
+            ctx.SetOutput(true);
+        });
+
+        var path = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            File.WriteAllText(path, "content");
+            await vm.OpenFileCommand.Execute(path);
+
+            var tab = vm.OpenTabs[0];
+            Assert.False(tab.IsDirty);
+
+            await vm.CloseTabCommand.Execute(tab);
+
+            Assert.Empty(vm.OpenTabs);
+            Assert.False(handlerCalled, "ConfirmClose should not be raised for a clean tab");
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
         }
     }
 }
