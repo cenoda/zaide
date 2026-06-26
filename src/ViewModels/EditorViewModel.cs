@@ -40,8 +40,17 @@ public class EditorViewModel : ReactiveObject
     public string FileName
     {
         get => _fileName;
-        private set => this.RaiseAndSetIfChanged(ref _fileName, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _fileName, value);
+            this.RaisePropertyChanged(nameof(DisplayName));
+        }
     }
+
+    /// <summary>
+    /// Tab label shown in the tab bar. Prefixed with ● when the tab is dirty.
+    /// </summary>
+    public string DisplayName => IsDirty ? $"● {FileName}" : FileName;
 
     /// <summary>
     /// Current text content of the editor. Changes in M1 mark the tab as dirty.
@@ -59,7 +68,12 @@ public class EditorViewModel : ReactiveObject
     public bool IsDirty
     {
         get => _isDirty;
-        private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _isDirty, value);
+            this.RaisePropertyChanged(nameof(DisplayName));
+            this.RaisePropertyChanged(nameof(IsSaved));
+        }
     }
 
     /// <summary>
@@ -75,7 +89,7 @@ public class EditorViewModel : ReactiveObject
 
     public EditorViewModel()
     {
-        SaveCommand = ReactiveCommand.Create(MarkClean);
+        SaveCommand = ReactiveCommand.Create(Save);
 
         // Track dirty state: any change to TextContent marks the tab dirty,
         // unless LoadFileContent has temporarily suppressed tracking.
@@ -100,7 +114,28 @@ public class EditorViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Resets the dirty flag. Called by SaveCommand (M4 will add file I/O).
+    /// Writes TextContent to FilePath, then clears the dirty flag.
+    /// No-op if FilePath is empty (unsaved new tab).
+    /// </summary>
+    private void Save()
+    {
+        if (string.IsNullOrEmpty(FilePath))
+            return;
+
+        try
+        {
+            File.WriteAllText(FilePath, TextContent);
+            IsDirty = false;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // TODO: surface save error in a future milestone
+        }
+    }
+
+    /// <summary>
+    /// Resets the dirty flag without writing to disk. Used by tests
+    /// and internal logic where file I/O is not needed.
     /// </summary>
     public void MarkClean()
     {

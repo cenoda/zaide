@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Xunit;
 using Zaide.ViewModels;
 
@@ -54,5 +55,53 @@ public class EditorViewModelTests
         vm.MarkClean();
 
         Assert.False(vm.IsDirty);
+    }
+
+    [Fact]
+    public void SaveCommand_WritesFile()
+    {
+        var vm = new EditorViewModel();
+        var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            File.WriteAllText(filePath, "original");
+            vm.FilePath = filePath;
+            vm.TextContent = "hello world";
+
+            vm.SaveCommand.Execute().Subscribe();
+
+            var saved = File.ReadAllText(filePath);
+            Assert.Equal("hello world", saved);
+        }
+        finally
+        {
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void SaveCommand_ClearsDirty()
+    {
+        var vm = new EditorViewModel();
+        var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
+
+        try
+        {
+            File.WriteAllText(filePath, "original");
+            vm.FilePath = filePath;
+            vm.TextContent = "modified";
+            Assert.True(vm.IsDirty);
+
+            vm.SaveCommand.Execute().Subscribe();
+
+            Assert.False(vm.IsDirty);
+        }
+        finally
+        {
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 }

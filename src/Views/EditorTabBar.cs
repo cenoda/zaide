@@ -162,7 +162,7 @@ public partial class EditorTabBar : UserControl
     {
         var label = new TextBlock
         {
-            [!TextBlock.TextProperty] = new Avalonia.Data.Binding("FileName"),
+            [!TextBlock.TextProperty] = new Avalonia.Data.Binding("DisplayName"),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(10, 0, 8, 0),

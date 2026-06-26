@@ -96,6 +96,18 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 Command = toggleCmd
             });
 
+            // Ctrl+S: save the active tab. Placed on MainWindow because
+            // AvaloniaEdit's TextEditor intercepts Ctrl+S internally.
+            var saveGesture = new KeyGesture(Key.S, KeyModifiers.Control);
+            var saveBinding = new KeyBinding
+            {
+                Gesture = saveGesture,
+                Command = ReactiveUI.ReactiveCommand.Create(
+                    () => editorTabs.ActiveTab?.SaveCommand.Execute().Subscribe())
+            };
+            KeyBindings.Add(saveBinding);
+            d.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
+
             // Bind StatusText (no longer on _centerText; keep for future status bar)
             d.Add(this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._welcomeText.Text));
 
