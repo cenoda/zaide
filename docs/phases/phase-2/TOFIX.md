@@ -7,9 +7,9 @@ Code quality issues found during Phase 2 review. Check these before starting Pha
 ## Verified
 
 ### Pre-implementation gate (2026-06-26)
-- [ ] `dotnet build Zaide.slnx` passes with 0 warnings
-- [ ] `dotnet test Zaide.slnx` passes: N tests, 0 failures
-- [ ] Phase 1 TOFIX.md items are all resolved
+- [x] `dotnet build Zaide.slnx` passes with 0 warnings
+- [x] `dotnet test Zaide.slnx` passes: 22 tests, 0 failures
+- [x] Phase 1 TOFIX.md items reviewed — one open item ("Hardcoded colors") deferred to Phase 3/5
 
 ### Post-implementation (YYYY-MM-DD)
 - [ ] `dotnet build Zaide.slnx`: 0 warnings, 0 errors

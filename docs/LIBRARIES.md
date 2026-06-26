@@ -16,9 +16,9 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 | Library | What It Does | Why You Want It |
 |---------|-------------|-----------------|
-| **AvaloniaEdit** | Real code editor widget — text rendering, cursor, selection, line numbers, folding. | Without it, you're building from a `<TextBox>`. Months saved. Must verify Avalonia 12 compatibility. |
-| **AvaloniaEdit.TextMate** | Teaches AvaloniaEdit to read TextMate grammars (VS Code's format for coloring). | Drop in `.tmLanguage` files → instant syntax highlighting. |
-| **TextMateSharp.Grammars** | Bundle of 100+ pre-made TextMate grammars. | C#, Python, JS, Rust, Go — all covered without hunting for grammar files. |
+| **Avalonia.AvaloniaEdit** | Modern replacement for the deprecated `AvaloniaEdit` v0.10.12. Full code editor widget — text rendering, cursor, selection, line numbers, folding. | Without it, you're building from a `<TextBox>`. Months saved. v12.0.0 targets Avalonia 12 and .NET 8+/10. Pulled in transitively by `AvaloniaEdit.TextMate`. |
+| **AvaloniaEdit.TextMate** | Teaches AvaloniaEdit to read TextMate grammars (VS Code's format for coloring). | Drop in `.tmLanguage` files → instant syntax highlighting. v12.0.0 compatible with Avalonia 12. |
+| **TextMateSharp.Grammars** | Bundle of 100+ pre-made TextMate grammars. | C#, Python, JS, Rust, Go — all covered without hunting for grammar files. v2.0.4. |
 
 ## TERMINAL (Phase 3)
 

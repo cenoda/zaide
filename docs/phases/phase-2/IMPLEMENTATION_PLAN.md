@@ -2,11 +2,11 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `dotnet build Zaide.slnx` passes with 0 warnings (Phase 1 baseline)
-- [ ] `dotnet test Zaide.slnx` passes: 22 tests, 0 failures
-- [ ] Phase 1 TOFIX.md items are all resolved
-- [ ] AvaloniaEdit + TextMate packages verified compatible with Avalonia 12
-- [ ] `Interaction<T,U>` pattern confirmed working (used for M5 dialog)
+- [x] `dotnet build Zaide.slnx` passes with 0 warnings (Phase 1 baseline)
+- [x] `dotnet test Zaide.slnx` passes: 22 tests, 0 failures
+- [x] Phase 1 TOFIX.md items reviewed — one open item ("Hardcoded colors") deferred to Phase 3/5, does not block Phase 2
+- [x] Avalonia.AvaloniaEdit + TextMate packages verified compatible with Avalonia 12
+- [x] `Interaction<T,U>` pattern confirmed working (used for M5 dialog)
 
 ---
 
@@ -39,10 +39,32 @@
 
 ### M1: AvaloniaEdit Integration
 
-**Packages to add** (verify in Directory.Packages.props first):
-- `AvaloniaEdit` — text editor widget
-- `AvaloniaEdit.TextMate` — TextMate grammar support
-- `TextMateSharp.Grammars` — bundled grammars (C#, JSON, Markdown, etc.)
+**Packages to add** (verified 2026-06-26 against NuGet.org):
+
+- `AvaloniaEdit.TextMate` v12.0.0 — text editor widget + TextMate grammar support
+  - **Transitively pulls in `Avalonia.AvaloniaEdit` v12.0.0** (the modern replacement for
+    the deprecated `AvaloniaEdit` v0.10.12 package)
+  - **Transitively pulls in `TextMateSharp` v2.0.4** (TextMate grammar parser)
+  - Compatible with Avalonia 12.0.5 and .NET 10.0
+- `TextMateSharp.Grammars` v2.0.4 — bundled grammars (C#, JSON, Markdown, etc.)
+  - We declare this explicitly because our code directly constructs
+    `RegistryOptions` and references `ThemeName` from this package.
+
+**⚠️ IMPORTANT: DO NOT install `AvaloniaEdit` v0.10.12** — this NuGet package is
+deprecated and unlisted. The canonical package is now `Avalonia.AvaloniaEdit` v12.0.0,
+which is pulled in transitively by `AvaloniaEdit.TextMate`.
+
+**CPM entries to add to `Directory.Packages.props`:**
+```xml
+<PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
+<PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
+```
+
+**Package references to add to `src/Zaide.csproj`:**
+```xml
+<PackageReference Include="AvaloniaEdit.TextMate" />
+<PackageReference Include="TextMateSharp.Grammars" />
+```
 
 **Files to create:**
 
