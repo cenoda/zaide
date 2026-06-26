@@ -59,6 +59,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var registry = new RegistryOptions(ThemeName.DarkPlus);
         _textMateInstallation = _textEditor.InstallTextMate(registry);
 
+        // M1 SPIKE: prove the drawing surface with a fixed red marker.
+        // Removed after M1 exit gate passes.
+        EnableSpikeRenderer();
+
         Content = _textEditor;
 
         this.WhenActivated(d =>
@@ -138,4 +142,13 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
     }
+
+    // M1 SPIKE helper — register the temporary red-marker renderer.
+    private void EnableSpikeRenderer()
+    {
+        var textView = _textEditor.TextArea.TextView;
+        _spikeRenderer = new SpikeIndentGuideRenderer(textView);
+    }
+
+    private SpikeIndentGuideRenderer? _spikeRenderer;
 }
