@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 0 (Foundation & Layout) ✅ Complete — Phase 1 (File Tree) planned.
+**Status:** Phase 2 (Editor) ✅ Complete — Phase 2.1 (Editor Polish) planned.
 
 ## Philosophy
 
@@ -43,8 +43,8 @@ One agent codes, another reviews. They argue. You get better code.
 | Bottom panel toggle (Ctrl+`) | 0 | ✅ Done |
 | DI container (MS DI + ReactiveUI) | 0 | ✅ Done |
 | Ayaka Violet color palette | 0 | ✅ Done |
-| File tree sidebar | 1 | ⏳ Planned |
-| Townhall / Editor center | 2 | ⏳ Planned |
+| File tree sidebar | 1 | ✅ Done |
+| Townhall / Editor center | 2 | ✅ Done |
 | Terminal | 3 | ⏳ Planned |
 | Townhall agent logging | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |
