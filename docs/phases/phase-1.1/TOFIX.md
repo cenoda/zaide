@@ -28,7 +28,7 @@ Code quality issues found during Phase 1.1 review. Check these before starting P
 
 ## Open
 
-### [ ] M1 plan-required tests not created
+### [x] M1 plan-required tests not created
 
 `docs/phases/phase-1.1/IMPLEMENTATION_PLAN.md` lists 6 test methods for
 `tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs`:
@@ -39,8 +39,7 @@ Code quality issues found during Phase 1.1 review. Check these before starting P
 - `OpenFolderCommand_SetsStatusText_OnFilePath`
 - `OpenFolderCommand_SetsStatusText_OnInvalidPath`
 
-The file contains only the original 3 Phase 1 tests. Per `docs-rules.md` §11g,
-plan-required tests must exist before the milestone is marked complete.
+All tests have been implemented and are passing. The file now contains all required tests.
 
 ---
 
