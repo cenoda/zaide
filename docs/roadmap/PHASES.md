@@ -36,6 +36,17 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] Ignore list (node_modules, bin, obj, .git)
 - [x] File system watcher for live updates
 
+### Phase 1.1: File Tree Polish
+- [x] Directory rename cascade fix (descendant paths update)
+- [x] OpenFolderCommand error handling (4 exception types)
+- [x] GridSplitter (sidebar 180–500px)
+- [x] Right-click context menu (Open, Expand All, Collapse All)
+- [x] IsExpanded binding to TreeViewItem
+- [x] Single open pathway (RequestOpenFileCommand)
+- [x] Keyboard: Ctrl+O folder picker, Enter + Double-click to open
+- [x] Sort-order enforcement (.OrderBy on enumerations)
+- [x] Subscription disposal ($11b violations: 0)
+
 ## Phase 2: Editor
 - [x] Text editor widget (AvaloniaEdit)
 - [x] Tabbed editor — open/close/switch tabs
@@ -91,4 +102,4 @@ See `docs/architecture/OVERVIEW.md` for full details.
 
 ---
 
-*Last updated: 2025-06-26*
+*Last updated: 2026-06-27*
