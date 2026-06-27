@@ -75,7 +75,7 @@ namespace Zaide.Tests.Models
         {
             var filePath = "/path/to/file.txt";
             var document = new Document(filePath);
-            document.MarkClean();
+            document.Content = "New content";
 
             document.MarkClean();
 

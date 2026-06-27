@@ -6,7 +6,19 @@ namespace Zaide.Models
 {
     public class Document
     {
-        public string Content { get; set; }
+        private string _content;
+        public string Content
+        {
+            get => _content;
+            set
+            {
+                if (_content != value)
+                {
+                    _content = value;
+                    IsDirty = true;
+                }
+            }
+        }
         public string FilePath { get; init; }
         public bool IsDirty { get; private set; }
         public string? LastSaveError { get; private set; }
@@ -14,7 +26,7 @@ namespace Zaide.Models
         public Document(string filePath, string content = "")
         {
             FilePath = filePath;
-            Content = content;
+            _content = content;
             IsDirty = false;
             LastSaveError = null;
         }
