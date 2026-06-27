@@ -83,17 +83,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .Where(msg => msg is not null)
                 .Subscribe(msg => StatusText = $"Open failed: {msg}"));
 
-        // Subscribe to RequestOpenFileCommand executions.
-        // Avalonia TreeView changes selection on right-click, so SelectedFile
-        // is always the context-menu target by the time the command fires.
+        // Subscribe to OpenFileRequested (published by RequestOpenFileCommand).
+        // Uses the FileTreeNode payload directly — no dependency on SelectedFile.
         _disposables.Add(
-            FileTreeViewModel.RequestOpenFileCommand.Subscribe(_ =>
+            FileTreeViewModel.OpenFileRequested.Subscribe(node =>
             {
-                var selected = FileTreeViewModel.SelectedFile;
-                if (selected is null || selected.IsDirectory)
-                    return;
-
-                var path = selected.FullPath;
+                var path = node.FullPath;
                 var ext = Path.GetExtension(path);
 
                 if (SupportedExtensions.Contains(ext))
@@ -101,7 +96,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                     EditorTabs.OpenFileCommand.Execute(path).Subscribe(result =>
                     {
                         if (result)
-                            StatusText = $"Opened: {selected.Name}";
+                            StatusText = $"Opened: {node.Name}";
                     });
                 }
                 else

@@ -104,7 +104,7 @@
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` 0 warnings, 0 errors
+- [ ] `dotnet build Zaide.slnx`: 0 errors (3 pre-existing xUnit analyzer warnings are out of scope — see Phase 1.1 TOFIX.md)
 - [ ] `dotnet test Zaide.slnx` passes
 - [ ] "New File" → file created on disk, appears in tree
 - [ ] "New Folder" → dir created on disk, appears in tree

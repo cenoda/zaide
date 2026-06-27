@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
@@ -22,6 +23,13 @@ public class FileTreeViewModel : ReactiveObject
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
     private string? _statusText;
+    private readonly Subject<FileTreeNode> _openFileSubject = new();
+
+    /// <summary>
+    /// Fires when a file open is requested. Payload is the FileTreeNode.
+    /// Used by MainWindowViewModel to open the file — avoids relying on SelectedFile.
+    /// </summary>
+    public IObservable<FileTreeNode> OpenFileRequested => _openFileSubject;
 
     // B2: Reactive status property for tree-specific errors (M1)
     public string? StatusText
@@ -55,23 +63,27 @@ public class FileTreeViewModel : ReactiveObject
     {
         _fileTreeService = fileTreeService;
 
-        // M1 Fix B2: Wrap folder opening in try/catch and set StatusText on failure
+        // Wrap folder opening in try/catch and set StatusText on failure.
+        // Watcher is only torn down AFTER validation — if EnumerateDirectory fails,
+        // the existing watcher stays active so the user doesn't lose live updates.
         OpenFolderCommand = ReactiveCommand.Create<string>(path =>
         {
-            // Stop previous watcher
-            _watcherSubscription?.Dispose();
-            StatusText = null; // Clear status on new operation attempt (B2)
-            _fileTreeService.StopWatching();
+            StatusText = null; // Clear status on new operation attempt
 
             try
             {
                 var nodes = _fileTreeService.EnumerateDirectory(path);
-                RootPath = path;  // set only after validation succeeds
+
+                // Validation succeeded — safely tear down old watcher
+                _watcherSubscription?.Dispose();
+                _fileTreeService.StopWatching();
+
+                RootPath = path;
                 RootNodes.Clear();
                 foreach (var node in nodes)
                     RootNodes.Add(node);
 
-                // Start watching for live changes only upon successful loading
+                // Start watching for live changes
                 _fileTreeService.StartWatching(path);
                 _watcherSubscription = _fileTreeService.FileChanges!
                     .ObserveOn(AvaloniaScheduler.Instance)
@@ -98,13 +110,15 @@ public class FileTreeViewModel : ReactiveObject
             }
         });
 
-        // M3: RequestOpenFileCommand — single open pathway for context menu and Enter key
+        // M3: RequestOpenFileCommand — single open pathway for context menu and Enter key.
+        // Publishes to OpenFileRequested subject; MainWindowViewModel subscribes there
+        // with the actual FileTreeNode payload (avoids dependency on SelectedFile).
         RequestOpenFileCommand = ReactiveCommand.Create<FileTreeNode>(node =>
         {
             if (node is null || node.IsDirectory)
-                return; // No-op on directory
+                return;
 
-            // This command is mediated by MainWindowViewModel to EditorTabs.OpenFileCommand
+            _openFileSubject.OnNext(node);
         });
 
         // M3: ExpandAllCommand — recursively expand all directory nodes

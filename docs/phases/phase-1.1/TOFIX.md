@@ -6,9 +6,9 @@ Code quality issues found during Phase 1.1 review. Check these before starting P
 
 ## Verified
 
-### Pre-implementation gate (2026-06-27)
+### Pre-implementation gate — historical baseline (2026-06-27)
 - [x] `dotnet build Zaide.slnx` passes with 0 errors
-- [x] `dotnet test Zaide.slnx` passes: 85 tests, 0 failures
+- [x] `dotnet test Zaide.slnx` passes: **85 tests, 0 failures** (baseline before Phase 1.1 work)
 - [x] Phase 1 TOFIX.md items all resolved
 - [x] Phase 2 TOFIX.md items all resolved
 
