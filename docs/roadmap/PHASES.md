@@ -47,6 +47,13 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] Sort-order enforcement (.OrderBy on enumerations)
 - [x] Subscription disposal ($11b violations: 0)
 
+### Phase 1.2: File Tree Essentials
+- [x] New File / New Folder (context menu + modal prompt)
+- [x] Show Hidden Files toggle (Ctrl+Shift+H + checkable menu)
+- [x] Copy Path / Copy Relative Path (context menu → clipboard)
+- [x] Create watcher now stays alive on failed folder open
+- [x] Open file request uses payload, not SelectedFile
+
 ## Phase 2: Editor
 - [x] Text editor widget (AvaloniaEdit)
 - [x] Tabbed editor — open/close/switch tabs
