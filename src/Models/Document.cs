@@ -17,6 +17,7 @@ namespace Zaide.Models
                     _content = value;
                     IsDirty = true;
                     OnContentChanged();
+                    OnDirtyStateChanged();
                 }
             }
         }
