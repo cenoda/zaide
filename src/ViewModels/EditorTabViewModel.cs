@@ -112,7 +112,7 @@ public class EditorTabViewModel : ReactiveObject
         }
 
         // Open document via Workspace
-        var document = _workspace.OpenDocument(path, _fileService);
+        var document = _workspace.OpenDocument(normalizedPath, content);
         var tab = new EditorViewModel(document, _services.GetRequiredService<IFileService>());
 
         OpenTabs.Add(tab);

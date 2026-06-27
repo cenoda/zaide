@@ -13,15 +13,14 @@ namespace Zaide.Models
 
         public Document? ActiveDocument { get; private set; }
 
-        public Document OpenDocument(string path, IFileService fileService)
+public Document OpenDocument(string path, string content)
+    {
+        if (_documents.TryGetValue(path, out var existingDocument))
         {
-            if (_documents.TryGetValue(path, out var existingDocument))
-            {
-                ActiveDocument = existingDocument;
-                return existingDocument;
-            }
+            ActiveDocument = existingDocument;
+            return existingDocument;
+        }
 
-            var content = fileService.ReadAllTextAsync(path).GetAwaiter().GetResult();
             var document = new Document(path, content);
             _documents[path] = document;
             ActiveDocument = document;

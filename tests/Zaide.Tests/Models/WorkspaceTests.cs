@@ -12,15 +12,12 @@ namespace Zaide.Tests.Models
         [Fact]
         public void OpenDocument_ReturnsExistingDocumentOnRepeatCall()
         {
-            var fileServiceMock = new Mock<IFileService>();
-            fileServiceMock.Setup(fs => fs.ReadAllTextAsync(It.IsAny<string>()))
-                .ReturnsAsync("test content");
-
             var workspace = new Workspace();
             var path = "/path/to/file.txt";
+            var content = "test content";
 
-            var firstCall = workspace.OpenDocument(path, fileServiceMock.Object);
-            var secondCall = workspace.OpenDocument(path, fileServiceMock.Object);
+            var firstCall = workspace.OpenDocument(path, content);
+            var secondCall = workspace.OpenDocument(path, content);
 
             Assert.Same(firstCall, secondCall);
         }
@@ -28,31 +25,25 @@ namespace Zaide.Tests.Models
         [Fact]
         public void OpenDocument_CreatesNewDocumentOnFirstCall()
         {
-            var fileServiceMock = new Mock<IFileService>();
-            fileServiceMock.Setup(fs => fs.ReadAllTextAsync(It.IsAny<string>()))
-                .ReturnsAsync("test content");
-
             var workspace = new Workspace();
             var path = "/path/to/file.txt";
+            var content = "test content";
 
-            var document = workspace.OpenDocument(path, fileServiceMock.Object);
+            var document = workspace.OpenDocument(path, content);
 
             Assert.NotNull(document);
             Assert.Equal(path, document.FilePath);
-            Assert.Equal("test content", document.Content);
+            Assert.Equal(content, document.Content);
         }
 
         [Fact]
         public void CloseDocument_RemovesFromCache()
         {
-            var fileServiceMock = new Mock<IFileService>();
-            fileServiceMock.Setup(fs => fs.ReadAllTextAsync(It.IsAny<string>()))
-                .ReturnsAsync("test content");
-
             var workspace = new Workspace();
             var path = "/path/to/file.txt";
+            var content = "test content";
 
-            workspace.OpenDocument(path, fileServiceMock.Object);
+            workspace.OpenDocument(path, content);
             Assert.Single(workspace.Documents);
 
             workspace.CloseDocument(path);
@@ -62,16 +53,13 @@ namespace Zaide.Tests.Models
         [Fact]
         public void CloseDocument_UpdatesActiveDocument()
         {
-            var fileServiceMock = new Mock<IFileService>();
-            fileServiceMock.Setup(fs => fs.ReadAllTextAsync(It.IsAny<string>()))
-                .ReturnsAsync("test content");
-
             var workspace = new Workspace();
             var path1 = "/path/to/file1.txt";
             var path2 = "/path/to/file2.txt";
+            var content = "test content";
 
-            var doc1 = workspace.OpenDocument(path1, fileServiceMock.Object);
-            var doc2 = workspace.OpenDocument(path2, fileServiceMock.Object);
+            var doc1 = workspace.OpenDocument(path1, content);
+            var doc2 = workspace.OpenDocument(path2, content);
             Assert.Equal(doc2, workspace.ActiveDocument);
 
             workspace.CloseDocument(path2);
@@ -81,16 +69,13 @@ namespace Zaide.Tests.Models
         [Fact]
         public void SetActiveDocument_UpdatesActiveDocument()
         {
-            var fileServiceMock = new Mock<IFileService>();
-            fileServiceMock.Setup(fs => fs.ReadAllTextAsync(It.IsAny<string>()))
-                .ReturnsAsync("test content");
-
             var workspace = new Workspace();
             var path1 = "/path/to/file1.txt";
             var path2 = "/path/to/file2.txt";
+            var content = "test content";
 
-            var doc1 = workspace.OpenDocument(path1, fileServiceMock.Object);
-            var doc2 = workspace.OpenDocument(path2, fileServiceMock.Object);
+            var doc1 = workspace.OpenDocument(path1, content);
+            var doc2 = workspace.OpenDocument(path2, content);
 
             workspace.SetActiveDocument(doc1);
             Assert.Equal(doc1, workspace.ActiveDocument);
