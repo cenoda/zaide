@@ -124,12 +124,9 @@ public class EditorViewModel : ReactiveObject
         if (_document == null) return;
 
         // Unsubscribe from previous document if it exists
-        if (_document.ContentChanged != null)
-        {
-            _document.ContentChanged -= HandleContentChanged;
-            _document.DirtyStateChanged -= HandleDirtyStateChanged;
-            _document.SaveErrorChanged -= HandleSaveErrorChanged;
-        }
+        _document.ContentChanged -= HandleContentChanged;
+        _document.DirtyStateChanged -= HandleDirtyStateChanged;
+        _document.SaveErrorChanged -= HandleSaveErrorChanged;
 
         _textContent = _document.Content;
         _isDirty = _document.IsDirty;
