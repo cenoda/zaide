@@ -25,6 +25,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 {
     private readonly TreeView _treeView;
     private readonly TextBlock _headerText;
+    private IDisposable? _openFolderSubscription;
 
     public FileTreeView()
     {
@@ -49,7 +50,9 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 new FolderPickerOpenOptions { AllowMultiple = false });
 
             if (folders.Count > 0)
-                ViewModel!.OpenFolderCommand.Execute(folders[0].Path.LocalPath).Subscribe(_ => { });
+                _openFolderSubscription = ViewModel!.OpenFolderCommand
+                    .Execute(folders[0].Path.LocalPath)
+                    .Subscribe(_ => { });
         };
 
         // --- TreeView with IsExpanded binding and Context Menu (M3) ---
@@ -145,24 +148,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 }));
 
             // M5: Dispose of event handlers and subscriptions
-            // Store subscriptions for disposal
-            var headerClickSubscription = ViewModel!.OpenFolderCommand.Subscribe(_ => { });
-            d.Add(headerClickSubscription);
-
-            var openItemClickSubscription = ViewModel!.RequestOpenFileCommand.Subscribe(_ => { });
-            d.Add(openItemClickSubscription);
-
-            var expandAllClickSubscription = ViewModel!.ExpandAllCommand.Subscribe(_ => { });
-            d.Add(expandAllClickSubscription);
-
-            var collapseAllClickSubscription = ViewModel!.CollapseAllCommand.Subscribe(_ => { });
-            d.Add(collapseAllClickSubscription);
-
-            var enterKeySubscription = ViewModel!.RequestOpenFileCommand.Subscribe(_ => { });
-            d.Add(enterKeySubscription);
-
-            var doubleTapSubscription = ViewModel!.RequestOpenFileCommand.Subscribe(_ => { });
-            d.Add(doubleTapSubscription);
+            d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));
         });
 
         _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>
