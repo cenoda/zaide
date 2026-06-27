@@ -23,8 +23,9 @@ public class EditorTabBarLifecycleTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>());
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
     }
 
     [Fact]

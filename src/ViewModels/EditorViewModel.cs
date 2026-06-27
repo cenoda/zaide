@@ -29,7 +29,7 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public string FilePath
     {
-        get => _document?.FilePath;
+        get => _document.FilePath;
         set
         {
             if (_document != null && _document.FilePath != value)

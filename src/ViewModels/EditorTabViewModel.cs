@@ -43,6 +43,10 @@ public class EditorTabViewModel : ReactiveObject
             {
                 _workspace.SetActiveDocument(value.Document);
             }
+            else
+            {
+                _workspace.SetActiveDocument(null);
+            }
         }
     }
 

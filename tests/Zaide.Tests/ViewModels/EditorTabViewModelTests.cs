@@ -18,9 +18,9 @@ public class EditorTabViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Models.Workspace>();
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Models.Workspace>());
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
     }
 
     [Fact]
@@ -85,8 +85,9 @@ public class EditorTabViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
         services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs);
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
 
         await vm.OpenFileCommand.Execute(@"C:\Temp\Readme.md");
         var firstTab = vm.OpenTabs[0];
@@ -219,8 +220,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs);
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
 
         // ConfirmClose returns true (user says "Save")
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
@@ -314,8 +316,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs);
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
 
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 

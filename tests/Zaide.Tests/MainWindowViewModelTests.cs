@@ -30,12 +30,12 @@ public class MainWindowViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton(fileService);
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Models.Workspace>();
+        services.AddSingleton<Zaide.Models.Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Models.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs);
         vm.Activate();
         return vm;
