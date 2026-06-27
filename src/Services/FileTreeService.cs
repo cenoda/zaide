@@ -135,18 +135,18 @@ public class FileTreeService : IDisposable
 
     private static bool IsHidden(string name)
     {
-        return name.Length > 0 && name[0] == '.';
+        return name is not "." and not ".." && name.Length > 0 && name[0] == '.';
     }
 
     private static IEnumerable<DirectoryInfo> EnumerateDirectoriesSafe(DirectoryInfo root)
     {
-        try { return root.EnumerateDirectories(); }
+        try { return root.EnumerateDirectories().OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase); }
         catch (UnauthorizedAccessException) { return Array.Empty<DirectoryInfo>(); }
     }
 
     private static IEnumerable<FileInfo> EnumerateFilesSafe(DirectoryInfo root)
     {
-        try { return root.EnumerateFiles(); }
+        try { return root.EnumerateFiles().OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase); }
         catch (UnauthorizedAccessException) { return Array.Empty<FileInfo>(); }
     }
 }

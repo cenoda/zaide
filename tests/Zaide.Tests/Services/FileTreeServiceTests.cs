@@ -87,4 +87,38 @@ public class FileTreeServiceTests
                 Directory.Delete(root, recursive: true);
         }
     }
+
+    [Fact]
+    public void IsHidden_ExcludesDotAndDotDot()
+    {
+        Assert.False(_service.IsIgnored("."));
+        Assert.False(_service.IsIgnored(".."));
+    }
+
+    [Fact]
+    public void EnumerateDirectory_SortsDirectoriesBeforeFiles()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid());
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "z-dir"));
+            Directory.CreateDirectory(Path.Combine(root, "a-dir"));
+            File.WriteAllText(Path.Combine(root, "z-file.txt"), "z");
+            File.WriteAllText(Path.Combine(root, "a-file.txt"), "a");
+
+            var nodes = _service.EnumerateDirectory(root);
+
+            // Directories should come first, sorted alphabetically
+            Assert.Equal("a-dir", nodes[0].Name);
+            Assert.Equal("z-dir", nodes[1].Name);
+            // Files should come after directories, sorted alphabetically
+            Assert.Equal("a-file.txt", nodes[2].Name);
+            Assert.Equal("z-file.txt", nodes[3].Name);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
 }
