@@ -7,7 +7,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Models;
 
 namespace Zaide.ViewModels;
 
@@ -74,19 +73,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             this.WhenAnyValue(x => x.EditorTabs.LastOpenError)
                 .Where(msg => msg is not null)
                 .Subscribe(msg => StatusText = $"Open failed: {msg}"));
-
-        // M3: Remove auto-open on selection. Single-click now only selects.
-        // Open happens via Enter key, context menu "Open", or Ctrl+O folder picker.
-        // Subscribe to RequestOpenFileCommand instead (single open pathway)
-        // Note: RequestOpenFileCommand is ReactiveCommand<FileTreeNode, Unit>, so we need to track the selected node separately
-        _disposables.Add(
-            this.WhenAnyValue(x => x.FileTreeViewModel.SelectedFile)
-                .Where(file => file is not null && !file.IsDirectory)
-                .Subscribe(file =>
-                {
-                    // This subscription is only for tracking the selected file, not for auto-opening
-                    // Auto-opening is now handled by the context menu and Enter key via RequestOpenFileCommand
-                }));
 
         // Subscribe to RequestOpenFileCommand executions
         _disposables.Add(
