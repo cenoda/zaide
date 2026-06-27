@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
@@ -135,30 +136,29 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         : new GridLength(0);
                     _bottomPanel.IsVisible = visible;
                 }));
+            // M4: PickFolder handler — opens native folder dialog
+            disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
+            {
+                var topLevel = TopLevel.GetTopLevel(this);
+                if (topLevel is null) { ctx.SetOutput(null); return; }
+                var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
+                    new FolderPickerOpenOptions { AllowMultiple = false });
+                ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
+            }));
+
+            // M4: Ctrl+O key binding (same pattern as Ctrl+S)
+            var openFolderGesture = new KeyGesture(Key.O, KeyModifiers.Control);
+            foreach (var kb in KeyBindings.Where(k =>
+                k.Gesture?.Key == Key.O && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
+                KeyBindings.Remove(kb);
+            var openBinding = new KeyBinding
+            {
+                Gesture = openFolderGesture,
+                Command = ViewModel!.OpenFolderCommand
+            };
+            KeyBindings.Add(openBinding);
+            disposables.Add(Disposable.Create(() => KeyBindings.Remove(openBinding)));
         });
-
-        // M4: PickFolder handler — opens native folder dialog
-        disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
-        {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel is null) { ctx.SetOutput(null); return; }
-            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-                new FolderPickerOpenOptions { AllowMultiple = false });
-            ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
-        }));
-
-        // M4: Ctrl+O key binding (same pattern as Ctrl+S)
-        var openFolderGesture = new KeyGesture(Key.O, KeyModifiers.Control);
-        foreach (var kb in KeyBindings.Where(k =>
-            k.Gesture?.Key == Key.O && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
-            KeyBindings.Remove(kb);
-        var openBinding = new KeyBinding
-        {
-            Gesture = openFolderGesture,
-            Command = ViewModel!.OpenFolderCommand
-        };
-        KeyBindings.Add(openBinding);
-        disposables.Add(Disposable.Create(() => KeyBindings.Remove(openBinding)));
     }
 
     /// <summary>

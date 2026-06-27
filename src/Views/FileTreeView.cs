@@ -145,9 +145,18 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 }));
         });
 
-        _treeView.KeyDown += (_, e) =>
+        _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>
         {
             if (e.Key != Key.Enter) return;
+            var selected = ViewModel!.SelectedFile;
+            if (selected is null || selected.IsDirectory) return;
+            e.Handled = true;
+            ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
+        }, handledEventsToo: true);
+
+        // M4: Double-click to open file (VS Code convention)
+        _treeView.DoubleTapped += (_, _) =>
+        {
             var selected = ViewModel!.SelectedFile;
             if (selected is null || selected.IsDirectory) return;
             ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();

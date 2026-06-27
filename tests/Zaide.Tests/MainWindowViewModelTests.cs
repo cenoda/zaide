@@ -72,12 +72,14 @@ public class MainWindowViewModelTests
         {
             File.WriteAllText(filePath, content);
 
-            vm.FileTreeViewModel.SelectedFile = new FileTreeNode
+            var node = new FileTreeNode
             {
                 Name = Path.GetFileName(filePath),
                 FullPath = filePath,
                 IsDirectory = false
             };
+            vm.FileTreeViewModel.SelectedFile = node;
+            vm.FileTreeViewModel.RequestOpenFileCommand.Execute(node).Subscribe();
             await System.Threading.Tasks.Task.Delay(100);
 
             Assert.Single(vm.EditorTabs.OpenTabs);
@@ -100,12 +102,14 @@ public class MainWindowViewModelTests
         };
         var vm = CreateViewModel(fileService);
 
-        vm.FileTreeViewModel.SelectedFile = new FileTreeNode
+        var node = new FileTreeNode
         {
             Name = "Broken.cs",
             FullPath = "/tmp/Broken.cs",
             IsDirectory = false
         };
+        vm.FileTreeViewModel.SelectedFile = node;
+        vm.FileTreeViewModel.RequestOpenFileCommand.Execute(node).Subscribe();
 
         await Task.Delay(100);
 
