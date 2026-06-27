@@ -123,24 +123,41 @@ public class EditorViewModel : ReactiveObject
     {
         if (_document == null) return;
 
+        // Unsubscribe from previous document if it exists
+        if (_document.ContentChanged != null)
+        {
+            _document.ContentChanged -= HandleContentChanged;
+            _document.DirtyStateChanged -= HandleDirtyStateChanged;
+            _document.SaveErrorChanged -= HandleSaveErrorChanged;
+        }
+
         _textContent = _document.Content;
         _isDirty = _document.IsDirty;
         _lastSaveError = _document.LastSaveError;
 
-        _document.ContentChanged += (sender, e) =>
-        {
-            _textContent = _document.Content;
-            this.RaisePropertyChanged(nameof(TextContent));
-            IsDirty = _document.IsDirty;
-        };
-        _document.DirtyStateChanged += (sender, e) =>
-        {
-            IsDirty = _document.IsDirty;
-        };
-        _document.SaveErrorChanged += (sender, e) =>
-        {
-            LastSaveError = _document.LastSaveError;
-        };
+        _document.ContentChanged += HandleContentChanged;
+        _document.DirtyStateChanged += HandleDirtyStateChanged;
+        _document.SaveErrorChanged += HandleSaveErrorChanged;
+    }
+
+    private void HandleContentChanged(object? sender, EventArgs e)
+    {
+        if (_document == null) return;
+        _textContent = _document.Content;
+        this.RaisePropertyChanged(nameof(TextContent));
+        IsDirty = _document.IsDirty;
+    }
+
+    private void HandleDirtyStateChanged(object? sender, EventArgs e)
+    {
+        if (_document == null) return;
+        IsDirty = _document.IsDirty;
+    }
+
+    private void HandleSaveErrorChanged(object? sender, EventArgs e)
+    {
+        if (_document == null) return;
+        LastSaveError = _document.LastSaveError;
     }
 
     /// <summary>
