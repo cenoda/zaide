@@ -34,6 +34,14 @@ public class EditorViewModel : ReactiveObject
         {
             if (_document == null || _document.FilePath != value)
             {
+                // Unsubscribe from current document before replacing it
+                if (_document != null)
+                {
+                    _document.ContentChanged -= HandleContentChanged;
+                    _document.DirtyStateChanged -= HandleDirtyStateChanged;
+                    _document.SaveErrorChanged -= HandleSaveErrorChanged;
+                }
+
                 var newDocument = new Document(value, _document?.Content ?? string.Empty);
                 _document = newDocument;
                 this.RaiseAndSetIfChanged(ref _document, _document);
@@ -49,6 +57,7 @@ public class EditorViewModel : ReactiveObject
     /// <summary>
     /// Display name for the tab. Derived from FilePath.
     /// </summary>
+
     private string _fileName = string.Empty;
     public string FileName
     {
@@ -122,11 +131,6 @@ public class EditorViewModel : ReactiveObject
     private void InitializeReactiveProperties()
     {
         if (_document == null) return;
-
-        // Unsubscribe from previous document if it exists
-        _document.ContentChanged -= HandleContentChanged;
-        _document.DirtyStateChanged -= HandleDirtyStateChanged;
-        _document.SaveErrorChanged -= HandleSaveErrorChanged;
 
         _textContent = _document.Content;
         _isDirty = _document.IsDirty;
