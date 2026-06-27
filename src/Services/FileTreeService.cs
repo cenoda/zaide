@@ -29,6 +29,12 @@ public class FileTreeService : IDisposable
     /// </summary>
     public List<FileTreeNode> EnumerateDirectory(string path)
     {
+        if (string.IsNullOrWhiteSpace(path))
+            throw new ArgumentException("Path cannot be empty.", nameof(path));
+
+        if (path.IndexOf('\0') >= 0)
+            throw new ArgumentException("Path contains invalid characters.", nameof(path));
+
         if (!Directory.Exists(path))
             throw new DirectoryNotFoundException($"Directory not found: {path}");
 
