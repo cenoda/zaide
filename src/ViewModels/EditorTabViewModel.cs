@@ -28,6 +28,7 @@ public class EditorTabViewModel : ReactiveObject
 
     private readonly IServiceProvider _services;
     private readonly IFileService _fileService;
+    private readonly Workspace _workspace;
     private EditorViewModel? _activeTab;
 
     public ObservableCollection<EditorViewModel> OpenTabs { get; } = new();
@@ -73,6 +74,7 @@ public class EditorTabViewModel : ReactiveObject
     {
         _services = services;
         _fileService = fileService;
+        _workspace = new Workspace();
 
         OpenFileCommand = ReactiveCommand.CreateFromTask<string, bool>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
@@ -92,6 +94,7 @@ public class EditorTabViewModel : ReactiveObject
         if (existing is not null)
         {
             ActiveTab = existing;
+            _workspace.SetActiveDocument(existing.Document);
             LastOpenError = null;
             return true;
         }
@@ -108,10 +111,9 @@ public class EditorTabViewModel : ReactiveObject
             return false;
         }
 
-        // Create new tab via DI (Transient — each tab gets its own instance)
-        var document = new Document(path);
+        // Open document via Workspace
+        var document = _workspace.OpenDocument(path, _fileService);
         var tab = new EditorViewModel(document, _services.GetRequiredService<IFileService>());
-        tab.LoadFileContent(content);
 
         OpenTabs.Add(tab);
         ActiveTab = tab;
@@ -153,6 +155,7 @@ public class EditorTabViewModel : ReactiveObject
         var index = OpenTabs.IndexOf(tab);
         if (index < 0) return;
 
+        _workspace.CloseDocument(tab.Document.FilePath);
         OpenTabs.RemoveAt(index);
 
         if (ReferenceEquals(ActiveTab, tab))
