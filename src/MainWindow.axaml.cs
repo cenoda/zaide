@@ -148,8 +148,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         {
             ColumnDefinitions =
             {
-                new ColumnDefinition { Width = new GridLength(260) },
+                // Sidebar (Fixed min width 180px, max width 500px) - M2
+                new ColumnDefinition { Width = new GridLength(260), MinWidth = 180, MaxWidth = 500 },
+                // GridSplitter between Sidebar and Center (4px wide, transparent) - M2
+                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
+                // Center: Editor + Tab Bar
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                // Right Agent Area (Fixed width 320px)
                 new ColumnDefinition { Width = new GridLength(320) }
             },
             RowDefinitions =
@@ -167,6 +172,19 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetColumn(sidebar, 0);
         Grid.SetRow(sidebar, 0);
         grid.Children.Add(sidebar);
+
+        // --- GridSplitter (M2) ---
+        var splitter = new GridSplitter
+        {
+            Width = 4,
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeWestEast),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+        Grid.SetColumn(splitter, 1);
+        Grid.SetRow(splitter, 0);
+        grid.Children.Add(splitter);
 
         // --- Center Panel (Phase 2: Editor + Tab Bar) ---
         _editorTabBar = new EditorTabBar();
@@ -201,13 +219,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(_welcomeText, 1);
         _welcomeText.IsVisible = true; // shown when no tabs are open
 
-        Grid.SetColumn(center, 1);
+        Grid.SetColumn(center, 2); // Center now in column 2 (after splitter)
         Grid.SetRow(center, 0);
         grid.Children.Add(center);
 
         // --- Right Agent Area ---
         var agentArea = BuildPanel("Agent Area", "DeepBase", 1, 0, 0, 0);
-        Grid.SetColumn(agentArea, 2);
+        Grid.SetColumn(agentArea, 3); // Agent area now in column 3 (after center)
         Grid.SetRow(agentArea, 0);
         grid.Children.Add(agentArea);
 
@@ -215,7 +233,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var bottomPanel = BuildPanel("Terminal (Ctrl+`)", "PanelDeep", 0, 1, 0, 0);
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 0);
-        Grid.SetColumnSpan(bottomPanel, 3);
+        Grid.SetColumnSpan(bottomPanel, 4); // Span all columns (sidebar, splitter, center, agent)
         Grid.SetRow(bottomPanel, 1);
         grid.Children.Add(bottomPanel);
 

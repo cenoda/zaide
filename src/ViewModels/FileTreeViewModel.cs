@@ -21,6 +21,14 @@ public class FileTreeViewModel : ReactiveObject
     private FileTreeNode? _selectedFile;
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
+    private string? _statusText;
+
+    // B2: Reactive status property for tree-specific errors (M1)
+    public string? StatusText
+    {
+        get => _statusText;
+        private set => this.RaiseAndSetIfChanged(ref _statusText, value);
+    }
 
     public ObservableCollection<FileTreeNode> RootNodes { get; } = new();
 
@@ -42,23 +50,47 @@ public class FileTreeViewModel : ReactiveObject
     {
         _fileTreeService = fileTreeService;
 
+        // M1 Fix B2: Wrap folder opening in try/catch and set StatusText on failure
         OpenFolderCommand = ReactiveCommand.Create<string>(path =>
         {
             // Stop previous watcher
             _watcherSubscription?.Dispose();
+            StatusText = null; // Clear status on new operation attempt (B2)
             _fileTreeService.StopWatching();
 
-            RootPath = path;
-            var nodes = _fileTreeService.EnumerateDirectory(path);
-            RootNodes.Clear();
-            foreach (var node in nodes)
-                RootNodes.Add(node);
+            try
+            {
+                RootPath = path;
+                var nodes = _fileTreeService.EnumerateDirectory(path);
+                RootNodes.Clear();
+                foreach (var node in nodes)
+                    RootNodes.Add(node);
 
-            // Start watching for live changes
-            _fileTreeService.StartWatching(path);
-            _watcherSubscription = _fileTreeService.FileChanges!
-                .ObserveOn(AvaloniaScheduler.Instance)
-                .Subscribe(HandleFileChange);
+                // Start watching for live changes only upon successful loading
+                _fileTreeService.StartWatching(path);
+                _watcherSubscription = _fileTreeService.FileChanges!
+                    .ObserveOn(AvaloniaScheduler.Instance)
+                    .Subscribe(HandleFileChange);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                // B2 Fix: Set status text and leave RootNodes unchanged on failure
+                StatusText = $"Error: Directory not found at '{path}'. Details: {ex.Message}";
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                // B2 Fix: Set status text and leave RootNodes unchanged on failure
+                StatusText = $"Access Denied: Cannot access directory '{path}'. Details: {ex.Message}";
+            }
+            catch (NotSupportedException ex)
+            {
+                // B2 Fix: Catch other unexpected IO errors gracefully
+                StatusText = $"Operation Failed: The path provided is not supported or invalid. Details: {ex.Message}";
+            }
+            catch (ArgumentException ex)
+            {
+                StatusText = $"Invalid Argument: Invalid file path format provided. Details: {ex.Message}";
+            }
         });
     }
 
@@ -73,6 +105,7 @@ public class FileTreeViewModel : ReactiveObject
                 HandleDeleted(change.FullPath);
                 break;
             case ChangeType.Renamed:
+                // M1 Fix B1/B2
                 HandleRenamed(change.FullPath, change.OldPath!);
                 break;
         }
@@ -118,8 +151,33 @@ public class FileTreeViewModel : ReactiveObject
         var node = FindNodeByPath(oldPath);
         if (node is null) return;
 
+        // 1. Update basic node properties
         node.Name = Path.GetFileName(newPath);
         node.FullPath = newPath;
+
+        // B1 Fix: Recursively update FullPath for all descendants if the old/new paths represent a directory rename
+        UpdateDescendantPaths(node, oldPath, newPath);
+    }
+
+    /// <summary>
+    /// Recursively updates descendant node full paths following a directory rename. (M1 Fix B1)
+    /// </summary>
+    private static void UpdateDescendantPaths(FileTreeNode node, string oldDirPath, string newDirPath)
+    {
+        foreach (var child in node.Children)
+        {
+            // Check if the path starts with the old directory path prefix
+            if (child.FullPath != null && child.FullPath.StartsWith(oldDirPath))
+            {
+                string relativePathSegment = child.FullPath[oldDirPath.Length..];
+                child.FullPath = newDirPath + relativePathSegment;
+            }
+
+            if (child.IsDirectory)
+            {
+                UpdateDescendantPaths(child, oldDirPath, newDirPath);
+            }
+        }
     }
 
     /// <summary>
