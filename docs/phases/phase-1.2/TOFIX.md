@@ -23,6 +23,7 @@ Code quality issues found during Phase 1.2 audit. Check these before starting Ph
 - [x] C1 — Toggle flips flag before re-enumeration succeeds (FIXED)
 - [x] C2 — Menu item not explicitly checkable (FIXED)
 - [x] D1 — `OneWayBind` crash on local variable expression (FIXED)
+- [x] E1 — `HandleCreated` ignores root-level file creation (FIXED)
 
 ---
 
@@ -140,6 +141,21 @@ which binds to the local variable directly without expression tree constraints.
 
 ---
 
+### [x] E1 — `HandleCreated` ignores root-level file creation (HIGH) (FIXED 2026-06-27)
+
+`HandleCreated` called `FindNodeByPath(parentDir!)` to find the parent node. When
+creating a file directly under `RootPath` (e.g., via the context menu on a top-level
+directory or empty tree), `parentDir == RootPath`, but `RootPath` has no node in
+the tree — only its children are in `RootNodes`. So `FindNodeByPath` returned null
+and the created file was silently dropped. Same bug in `HandleDeleted`.
+
+**Fix:** Added early-return branches in both `HandleCreated` and `HandleDeleted`
+that check `parentDir == RootPath` and operate directly on `RootNodes`.
+
+**Files:** `src/ViewModels/FileTreeViewModel.cs` (lines 237–298)
+
+---
+
 ## Known Limitations (by design, not for TOFIX)
 
 ### M1 New File/Folder uses modal prompt
@@ -165,6 +181,21 @@ Carried over from Phase 1.1. Full fix requires TreeViewItem template customizati
 ### C2: `StatusText` properties have no UI binding
 `FileTreeViewModel.StatusText` and `MainWindowViewModel.StatusText` receive
 error messages but no visual widget renders them. Planned for Phase 3 status bar.
+
+### F1: Auto-open newly created files in editor
+After creating a file via "New File", optionally open it in the editor tab.
+Not a bug; UX enhancement for a future phase.
+
+### F2: Default `.txt` extension on new file
+When the user enters a file name without an extension (e.g. "notes"), default
+to `.txt` rather than creating an extensionless file.
+
+### F3: Use app palette colors in create prompt modal
+The `ShowNamePromptAsync` modal window uses default system colors. Should use
+the app's palette (`DeepBase`, `SoftAccent`, `TextActive`, etc.) for consistency.
+
+### F4: Drag-and-drop file moving
+Not implemented in Phase 1.2. Planned start point for Phase 1.3.
 
 ---
 

@@ -237,25 +237,53 @@ public class FileTreeViewModel : ReactiveObject
     private void HandleCreated(string fullPath)
     {
         var parentDir = Path.GetDirectoryName(fullPath);
+
+        // Root-level files go directly into RootNodes
+        if (parentDir == RootPath)
+        {
+            var name = Path.GetFileName(fullPath);
+            var isDir = Directory.Exists(fullPath);
+            RootNodes.Add(new FileTreeNode
+            {
+                Name = name,
+                FullPath = fullPath,
+                IsDirectory = isDir
+            });
+            return;
+        }
+
         var parent = FindNodeByPath(parentDir!);
         if (parent is null) return;
 
-        var name = Path.GetFileName(fullPath);
-        var isDir = Directory.Exists(fullPath);
+        var nodeName = Path.GetFileName(fullPath);
+        var nodeIsDir = Directory.Exists(fullPath);
 
-        var node = new FileTreeNode
+        parent.Children.Add(new FileTreeNode
         {
-            Name = name,
+            Name = nodeName,
             FullPath = fullPath,
-            IsDirectory = isDir
-        };
-
-        parent.Children.Add(node);
+            IsDirectory = nodeIsDir
+        });
     }
 
     private void HandleDeleted(string fullPath)
     {
         var parentDir = Path.GetDirectoryName(fullPath);
+
+        // Root-level removal: scan RootNodes directly
+        if (parentDir == RootPath)
+        {
+            for (var i = RootNodes.Count - 1; i >= 0; i--)
+            {
+                if (RootNodes[i].FullPath == fullPath)
+                {
+                    RootNodes.RemoveAt(i);
+                    return;
+                }
+            }
+            return;
+        }
+
         var parent = FindNodeByPath(parentDir!);
         if (parent is null) return;
 
