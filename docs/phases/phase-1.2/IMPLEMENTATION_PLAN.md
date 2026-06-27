@@ -30,7 +30,7 @@
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Entry gate | `dotnet build Zaide.slnx && dotnet test Zaide.slnx` |
+| M0 | Entry gate | ✅ `dotnet build Zaide.slnx && dotnet test Zaide.slnx` — 0 errors, 93 passed |
 | M1 | New File / New Folder via context menu | Right-click → "New File" → prompt → file created. "New Folder" → dir created. Tree updates via watcher. |
 | M2 | Show hidden files toggle (Ctrl+Shift+H + context menu) | Ctrl+Shift+H toggles. Right-click toggle. `.agents`/`.gitignore` appear/disappear. |
 | M3 | Copy Path / Copy Relative Path | Right-click file → "Copy Path" / "Copy Relative Path" → clipboard. |
@@ -104,8 +104,8 @@
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx`: 0 errors (3 pre-existing xUnit analyzer warnings are out of scope — see Phase 1.1 TOFIX.md)
-- [ ] `dotnet test Zaide.slnx` passes
+- [x] `dotnet build Zaide.slnx`: 0 errors (3 pre-existing xUnit analyzer warnings are out of scope — see Phase 1.1 TOFIX.md)
+- [x] `dotnet test Zaide.slnx` passes
 - [ ] "New File" → file created on disk, appears in tree
 - [ ] "New Folder" → dir created on disk, appears in tree
 - [ ] Ctrl+Shift+H → hidden files toggle
