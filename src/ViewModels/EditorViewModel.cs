@@ -142,6 +142,9 @@ public class EditorViewModel : ReactiveObject
         _textContent = _document.Content;
         _isDirty = _document.IsDirty;
         _lastSaveError = _document.LastSaveError;
+        FileName = string.IsNullOrEmpty(_document.FilePath)
+            ? "Untitled"
+            : Path.GetFileName(_document.FilePath);
 
         _document.ContentChanged += HandleContentChanged;
         _document.DirtyStateChanged += HandleDirtyStateChanged;

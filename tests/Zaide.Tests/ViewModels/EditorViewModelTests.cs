@@ -31,6 +31,16 @@ public class EditorViewModelTests
     }
 
     [Fact]
+    public void FileName_InitializedFromDocumentPath()
+    {
+        var vm = new EditorViewModel(
+            new Document("/home/user/project/Program.cs"),
+            new FileService());
+
+        Assert.Equal("Program.cs", vm.FileName);
+    }
+
+    [Fact]
     public void IsDirty_DefaultsToFalse()
     {
         var vm = new EditorViewModel(new Document(""), new FileService());
