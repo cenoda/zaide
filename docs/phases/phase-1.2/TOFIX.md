@@ -20,6 +20,8 @@ Code quality issues found during Phase 1.2 audit. Check these before starting Ph
 - [x] B1 — `ShowNamePromptAsync` hang on close button (FIXED)
 - [x] B2 — Name prompt not actually modal (FIXED)
 - [x] B3 — Stale StatusText on successful create (FIXED)
+- [x] C1 — Toggle flips flag before re-enumeration succeeds (FIXED)
+- [x] C2 — Menu item not explicitly checkable (FIXED)
 
 ---
 
@@ -95,6 +97,32 @@ file/folder creation.
 **Fix:** Added `StatusText = null;` before the try block in `CreateNodeCommand`.
 
 **Files:** `src/ViewModels/FileTreeViewModel.cs` (line 149)
+
+---
+
+### [x] C1 — Toggle flips flag before re-enumeration succeeds (MEDIUM) (FIXED 2026-06-27)
+
+`ToggleHiddenFilesCommand` set `ShowHiddenFiles = !ShowHiddenFiles` *before*
+re-enumerating and restarting the watcher. If `EnumerateDirectory` or `StartWatching`
+failed, the UI state reported the new mode but the tree and watcher still reflected
+(or had stopped for) the previous mode.
+
+**Fix:** Compute the new value via local `newValue = !ShowHiddenFiles`, pass it to
+`EnumerateDirectory` and `StartWatching`, and only assign `ShowHiddenFiles = newValue`
+after both succeed. On failure, the old tree, watcher, and UI state remain in sync.
+
+**Files:** `src/ViewModels/FileTreeViewModel.cs` (lines 174–207)
+
+---
+
+### [x] C2 — Menu item not explicitly checkable (LOW) (FIXED 2026-06-27)
+
+The "Show Hidden Files" `MenuItem` only bound `IsChecked` without setting
+`ToggleType`, leaving its checkable behavior dependent on Avalonia defaults.
+
+**Fix:** Added `ToggleType = MenuItemToggleType.CheckBox` to the `MenuItem` initializer.
+
+**Files:** `src/Views/FileTreeView.cs` (line 149)
 
 ---
 

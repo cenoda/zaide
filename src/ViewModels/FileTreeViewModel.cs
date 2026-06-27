@@ -173,16 +173,19 @@ public class FileTreeViewModel : ReactiveObject
 
         // M2: ToggleHiddenFilesCommand — toggles show/hide of . prefixed entries.
         // Re-enumerates RootPath with the new flag and restarts the watcher.
+        // ShowHiddenFiles is only flipped AFTER successful re-enumeration, so
+        // a failure leaves UI state, tree, and watcher in sync.
         ToggleHiddenFilesCommand = ReactiveCommand.Create(() =>
         {
-            ShowHiddenFiles = !ShowHiddenFiles;
-
             if (RootPath is null) return;
+
+            var newValue = !ShowHiddenFiles;
 
             try
             {
-                var nodes = _fileTreeService.EnumerateDirectory(RootPath, ShowHiddenFiles);
+                var nodes = _fileTreeService.EnumerateDirectory(RootPath, newValue);
 
+                // Validation succeeded — safely tear down old watcher
                 _watcherSubscription?.Dispose();
                 _fileTreeService.StopWatching();
 
@@ -190,10 +193,12 @@ public class FileTreeViewModel : ReactiveObject
                 foreach (var node in nodes)
                     RootNodes.Add(node);
 
-                _fileTreeService.StartWatching(RootPath, ShowHiddenFiles);
+                _fileTreeService.StartWatching(RootPath, newValue);
                 _watcherSubscription = _fileTreeService.FileChanges!
                     .ObserveOn(AvaloniaScheduler.Instance)
                     .Subscribe(HandleFileChange);
+
+                ShowHiddenFiles = newValue; // Flip only after everything succeeded
             }
             catch (Exception ex)
             {

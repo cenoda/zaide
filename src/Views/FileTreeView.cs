@@ -143,7 +143,11 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         // M2: Show Hidden Files toggle
         contextMenu.Items.Add(new Separator());
-        var showHiddenItem = new MenuItem { Header = "Show Hidden Files" };
+        var showHiddenItem = new MenuItem
+        {
+            Header = "Show Hidden Files",
+            ToggleType = MenuItemToggleType.CheckBox
+        };
         // Bind IsChecked to ShowHiddenFiles via WhenActivated below
         showHiddenItem.Click += (_, _) => ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
         contextMenu.Items.Add(showHiddenItem);
