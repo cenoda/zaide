@@ -135,6 +135,22 @@ public class FileTreeService : IDisposable
         FileChanges = null;
     }
 
+    /// <summary>
+    /// Creates an empty file at the given path. The FileSystemWatcher picks it up.
+    /// </summary>
+    public void CreateFile(string path)
+    {
+        using var _ = File.Create(path);
+    }
+
+    /// <summary>
+    /// Creates a directory at the given path. The FileSystemWatcher picks it up.
+    /// </summary>
+    public void CreateDirectory(string path)
+    {
+        Directory.CreateDirectory(path);
+    }
+
     public void Dispose()
     {
         StopWatching();

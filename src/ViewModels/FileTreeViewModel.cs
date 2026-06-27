@@ -47,6 +47,9 @@ public class FileTreeViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> ExpandAllCommand { get; }
     public ReactiveCommand<Unit, Unit> CollapseAllCommand { get; }
 
+    // M1: Create file or directory. Tuple: (parentDir, name, isDirectory).
+    public ReactiveCommand<(string ParentDir, string Name, bool IsDirectory), Unit> CreateNodeCommand { get; }
+
     public FileTreeNode? SelectedFile
     {
         get => _selectedFile;
@@ -133,6 +136,26 @@ public class FileTreeViewModel : ReactiveObject
         {
             foreach (var node in RootNodes)
                 SetExpandedRecursive(node, false);
+        });
+
+        // M1: CreateNodeCommand — creates a file or directory on disk.
+        // Watcher picks up the change — no manual tree insert.
+        CreateNodeCommand = ReactiveCommand.Create<(string ParentDir, string Name, bool IsDirectory)>(spec =>
+        {
+            var (parentDir, name, isDirectory) = spec;
+            var fullPath = Path.Combine(parentDir, name);
+
+            try
+            {
+                if (isDirectory)
+                    _fileTreeService.CreateDirectory(fullPath);
+                else
+                    _fileTreeService.CreateFile(fullPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                StatusText = $"Failed to create {(isDirectory ? "directory" : "file")} '{name}': {ex.Message}";
+            }
         });
     }
 

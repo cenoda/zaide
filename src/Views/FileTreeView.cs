@@ -1,6 +1,7 @@
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -107,6 +108,39 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         contextMenu.Items.Add(openItem);
         contextMenu.Items.Add(expandAllItem);
         contextMenu.Items.Add(collapseAllItem);
+
+        // M1: New File / New Folder
+        contextMenu.Items.Add(new Separator());
+        var newFileItem = new MenuItem { Header = "New File" };
+        newFileItem.Click += async (_, _) =>
+        {
+            var parentDir = GetParentDirForCreation();
+            if (parentDir is null) return;
+
+            var name = await ShowNamePromptAsync("New File", "Enter file name:");
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            ViewModel!.CreateNodeCommand
+                .Execute((parentDir, name, false))
+                .Subscribe();
+        };
+        contextMenu.Items.Add(newFileItem);
+
+        var newFolderItem = new MenuItem { Header = "New Folder" };
+        newFolderItem.Click += async (_, _) =>
+        {
+            var parentDir = GetParentDirForCreation();
+            if (parentDir is null) return;
+
+            var name = await ShowNamePromptAsync("New Folder", "Enter folder name:");
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            ViewModel!.CreateNodeCommand
+                .Execute((parentDir, name, true))
+                .Subscribe();
+        };
+        contextMenu.Items.Add(newFolderItem);
+
         _treeView.ContextFlyout = contextMenu;
 
         _treeView.SelectionChanged += (_, e) =>
@@ -168,5 +202,104 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             if (selected is null || selected.IsDirectory) return;
             ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
         };
+    }
+
+    /// <summary>
+    /// Determines the parent directory for new file/folder creation.
+    /// If right-clicked on a directory node, uses that; otherwise falls back to RootPath.
+    /// Returns null when no folder is open.
+    /// </summary>
+    private string? GetParentDirForCreation()
+    {
+        if (ViewModel is null) return null;
+
+        if (_treeView.SelectedItem is FileTreeNode selected && selected.IsDirectory)
+            return selected.FullPath;
+
+        return ViewModel.RootPath;
+    }
+
+    /// <summary>
+    /// Shows a simple modal dialog with a TextBox for name input.
+    /// Returns the entered text, or null if cancelled.
+    /// </summary>
+    private static async Task<string?> ShowNamePromptAsync(string title, string prompt)
+    {
+        var textBox = new TextBox
+        {
+            PlaceholderText = prompt,
+            MinWidth = 300,
+            Margin = new Thickness(8)
+        };
+
+        var okButton = new Button { Content = "OK", Margin = new Thickness(4) };
+        var cancelButton = new Button { Content = "Cancel", Margin = new Thickness(4) };
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 8, 8),
+            Children = { okButton, cancelButton }
+        };
+
+        var stackPanel = new StackPanel
+        {
+            Children =
+            {
+                new TextBlock { Text = prompt, Margin = new Thickness(8, 8, 8, 0) },
+                textBox,
+                buttonPanel
+            }
+        };
+
+        var window = new Window
+        {
+            Title = title,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            Content = stackPanel,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        var tcs = new TaskCompletionSource<string?>();
+        okButton.Click += (_, _) =>
+        {
+            tcs.TrySetResult(textBox.Text);
+            window.Close();
+        };
+        cancelButton.Click += (_, _) =>
+        {
+            tcs.TrySetResult(null);
+            window.Close();
+        };
+
+        // Allow Enter to confirm
+        textBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                tcs.TrySetResult(textBox.Text);
+                window.Close();
+            }
+        };
+
+        // Allow Escape to cancel
+        window.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                tcs.TrySetResult(null);
+                window.Close();
+            }
+        };
+
+        textBox.AttachedToVisualTree += (_, _) => textBox.Focus();
+
+        var topLevel = TopLevel.GetTopLevel(textBox);
+        if (topLevel is Window parentWindow)
+            await window.ShowDialog(parentWindow);
+        else
+            window.Show();
+
+        return await tcs.Task;
     }
 }
