@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
@@ -146,12 +147,7 @@ public class EditorTabViewModelTests
 
         try
         {
-            var tab = new ServiceCollection()
-                .AddSingleton<IFileService, FileService>()
-                .AddTransient<EditorViewModel>()
-                .BuildServiceProvider()
-                .GetRequiredService<EditorViewModel>();
-
+            var tab = new EditorViewModel(new Document(""), new FileService());
             tab.FilePath = dir; // directory → WriteAllText throws
             tab.TextContent = "unsaved";
             Assert.True(tab.IsDirty);
@@ -222,14 +218,13 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
         var vm = new EditorTabViewModel(sp, mockFs);
 
         // ConfirmClose returns true (user says "Save")
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 
-        var tab = sp.GetRequiredService<EditorViewModel>();
+        var tab = new EditorViewModel(new Document(""), mockFs);
         tab.FilePath = "/tmp/fake-save-fail.txt";
         tab.TextContent = "dirty content";
         Assert.True(tab.IsDirty);
@@ -318,13 +313,12 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
         var vm = new EditorTabViewModel(sp, mockFs);
 
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 
-        var tab = sp.GetRequiredService<EditorViewModel>();
+        var tab = new EditorViewModel(new Document(""), mockFs);
         tab.FilePath = "/tmp/fake-perm.txt";
         tab.TextContent = "dirty";
         vm.OpenTabs.Add(tab);

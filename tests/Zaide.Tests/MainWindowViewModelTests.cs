@@ -125,7 +125,7 @@ public class MainWindowViewModelTests
             WriteException = new UnauthorizedAccessException("permission denied")
         };
         var vm = CreateViewModel(fileService);
-        var editor = new EditorViewModel(fileService)
+        var editor = new EditorViewModel(new Document(""), fileService)
         {
             FilePath = "/tmp/test.txt",
             TextContent = "dirty"

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 
@@ -12,7 +13,7 @@ public class EditorViewModelTests
     [Fact]
     public void FileName_DerivedFromPath()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
 
         vm.FilePath = "/home/user/project/Program.cs";
 
@@ -22,7 +23,7 @@ public class EditorViewModelTests
     [Fact]
     public void FileName_Untitled_WhenPathEmpty()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
 
         vm.FilePath = "";
 
@@ -32,7 +33,7 @@ public class EditorViewModelTests
     [Fact]
     public void IsDirty_DefaultsToFalse()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
 
         Assert.False(vm.IsDirty);
     }
@@ -40,7 +41,7 @@ public class EditorViewModelTests
     [Fact]
     public void MarkDirty_WhenTextChanges()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
 
         vm.TextContent = "hello world";
 
@@ -50,7 +51,7 @@ public class EditorViewModelTests
     [Fact]
     public void MarkClean_AfterSave()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.TextContent = "hello";
         Assert.True(vm.IsDirty);
 
@@ -62,7 +63,7 @@ public class EditorViewModelTests
     [Fact]
     public void SaveCommand_Fails_WhenPathIsDirectory()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         var dir = Path.Combine(Path.GetTempPath(), "zaide-dir-" + Guid.NewGuid());
 
         try
@@ -89,7 +90,7 @@ public class EditorViewModelTests
     [Fact]
     public async Task SaveCommand_WritesFile()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
 
         try
@@ -116,7 +117,7 @@ public class EditorViewModelTests
     [Fact]
     public async Task SaveCommand_ClearsDirty()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         var filePath = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".txt");
 
         try
@@ -147,7 +148,7 @@ public class EditorViewModelTests
     {
         // LoadFileContent suppresses the dirty-tracking subscription.
         // Even with a large payload, the tab must remain clean.
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         var large = new string('x', 500_000);
 
         vm.LoadFileContent(large);
@@ -161,7 +162,7 @@ public class EditorViewModelTests
     {
         // After a file load, any subsequent TextContent change should
         // re-engage the dirty subscription.
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.LoadFileContent("original content");
         Assert.False(vm.IsDirty);
 
@@ -175,7 +176,7 @@ public class EditorViewModelTests
     {
         // Simulates loading a very large file (1 MB of text).
         // The content must be stored as-is, not truncated.
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         var big = new string('A', 1_000_000);
 
         vm.LoadFileContent(big);
@@ -188,7 +189,7 @@ public class EditorViewModelTests
     [Fact]
     public void LoadFileContent_EmptyString_ClearsContent()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.TextContent = "was here";
         vm.MarkClean();
 
@@ -201,7 +202,7 @@ public class EditorViewModelTests
     [Fact]
     public void DisplayName_ShowsDot_WhenDirty()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.FilePath = "/tmp/test.cs";
 
         Assert.Equal("test.cs", vm.DisplayName);
@@ -213,7 +214,7 @@ public class EditorViewModelTests
     [Fact]
     public void DisplayName_ReturnsFileName_WhenClean()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.FilePath = "/tmp/report.md";
 
         Assert.Equal("report.md", vm.DisplayName);
@@ -225,7 +226,7 @@ public class EditorViewModelTests
     [Fact]
     public void SaveCommand_Fails_WhenPathIsEmpty()
     {
-        var vm = new EditorViewModel(new FileService());
+        var vm = new EditorViewModel(new Document(""), new FileService());
         vm.TextContent = "content";
 
         var result = true;

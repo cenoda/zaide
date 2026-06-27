@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
+using Zaide.Models;
 using Zaide.Services;
 
 namespace Zaide.ViewModels;
@@ -108,8 +109,8 @@ public class EditorTabViewModel : ReactiveObject
         }
 
         // Create new tab via DI (Transient — each tab gets its own instance)
-        var tab = _services.GetRequiredService<EditorViewModel>();
-        tab.FilePath = path;
+        var document = new Document(path);
+        var tab = new EditorViewModel(document, _services.GetRequiredService<IFileService>());
         tab.LoadFileContent(content);
 
         OpenTabs.Add(tab);

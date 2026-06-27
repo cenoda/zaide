@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Reactive;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Models;
 using Zaide.Services;
 
 namespace Zaide.ViewModels;
@@ -15,11 +15,13 @@ namespace Zaide.ViewModels;
 public class EditorViewModel : ReactiveObject
 {
     private readonly IFileService _fileService;
-    private string _filePath = string.Empty;
-    private string _fileName = string.Empty;
-    private string _textContent = string.Empty;
-    private bool _isDirty;
-    private bool _suppressDirty;
+
+    private Document _document;
+    public Document Document
+    {
+        get => _document;
+        private set => this.RaiseAndSetIfChanged(ref _document, value);
+    }
 
     /// <summary>
     /// Full path to the open file, or empty for new unsaved tabs.
@@ -27,10 +29,20 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public string FilePath
     {
-        get => _filePath;
+        get => Document.FilePath;
         set
         {
-            this.RaiseAndSetIfChanged(ref _filePath, value);
+            // Since FilePath is init-only, we need to create a new Document if it changes.
+            // This is a workaround for the init-only constraint.
+            if (Document.FilePath != value)
+            {
+                var newDocument = new Document(value, Document.Content);
+                if (Document.IsDirty)
+                {
+                    newDocument.MarkClean();
+                }
+                Document = newDocument;
+            }
             FileName = string.IsNullOrEmpty(value)
                 ? "Untitled"
                 : Path.GetFileName(value);
@@ -40,6 +52,7 @@ public class EditorViewModel : ReactiveObject
     /// <summary>
     /// Display name for the tab. Derived from FilePath.
     /// </summary>
+    private string _fileName = string.Empty;
     public string FileName
     {
         get => _fileName;
@@ -61,23 +74,14 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public string TextContent
     {
-        get => _textContent;
-        set => this.RaiseAndSetIfChanged(ref _textContent, value);
+        get => Document.Content;
+        set => Document.Content = value;
     }
 
     /// <summary>
     /// True when content has been modified since the last save.
     /// </summary>
-    public bool IsDirty
-    {
-        get => _isDirty;
-        private set
-        {
-            this.RaiseAndSetIfChanged(ref _isDirty, value);
-            this.RaisePropertyChanged(nameof(DisplayName));
-            this.RaisePropertyChanged(nameof(IsSaved));
-        }
-    }
+    public bool IsDirty => Document.IsDirty;
 
     /// <summary>
     /// Read-only convenience flag — inverse of IsDirty.
@@ -88,32 +92,18 @@ public class EditorViewModel : ReactiveObject
     /// Error message from the last failed save. null when the last save
     /// succeeded or no save has been attempted yet.
     /// </summary>
-    private string? _lastSaveError;
-    public string? LastSaveError
-    {
-        get => _lastSaveError;
-        private set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
-    }
+    public string? LastSaveError => Document.LastSaveError;
 
     /// <summary>
     /// ReactiveCommand for saving the file.
     /// </summary>
     public ReactiveCommand<Unit, bool> SaveCommand { get; }
 
-    public EditorViewModel(IFileService fileService)
+    public EditorViewModel(Document document, IFileService fileService)
     {
+        Document = document;
         _fileService = fileService;
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
-
-        // Track dirty state: any change to TextContent marks the tab dirty,
-        // unless LoadFileContent has temporarily suppressed tracking.
-        this.WhenAnyValue(x => x.TextContent)
-            .Skip(1) // Skip the initial empty-string value
-            .Subscribe(_ =>
-            {
-                if (!_suppressDirty)
-                    IsDirty = true;
-            });
     }
 
     /// <summary>
@@ -122,9 +112,12 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public void LoadFileContent(string content)
     {
-        _suppressDirty = true;
-        TextContent = content;
-        _suppressDirty = false;
+        var wasDirty = Document.IsDirty;
+        Document.Content = content;
+        if (!wasDirty)
+        {
+            Document.MarkClean();
+        }
     }
 
     /// <summary>
@@ -138,14 +131,11 @@ public class EditorViewModel : ReactiveObject
 
         try
         {
-            await _fileService.WriteAllTextAsync(FilePath, TextContent);
-            IsDirty = false;
-            LastSaveError = null;
+            await Document.SaveAsync(_fileService);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            LastSaveError = ex.Message;
             return false;
         }
     }
@@ -156,6 +146,6 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public void MarkClean()
     {
-        IsDirty = false;
+        Document.MarkClean();
     }
 }
