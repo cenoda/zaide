@@ -84,17 +84,17 @@ loop. The workaround was undocumented and confusing.
 
 ## Rules Added
 
-- `docs-rules.md` §11a–11j — 10 hard rules enforced by code review:
-  - 11a — ViewModels never reference Views (use `Interaction<T,U>`)
-  - 11b — Every `.Subscribe()` in `WhenActivated` uses `d.Add()`
-  - 11c — One binding pattern per data flow
-  - 11d — No `dynamic` in production code
-  - 11e — Dialogs are their own `ReactiveWindow`
-  - 11f — One milestone per commit
-  - 11g — Plan-required tests must exist
-  - 11h — All file I/O has error handling
-  - 11i — Revert early when code is bad
-  - 11j — Verify exit conditions concretely
+- `docs-rules.md` §12a–12j — 10 hard rules enforced by code review:
+  - 12a — ViewModels never reference Views (use `Interaction<T,U>`)
+  - 12b — Every `.Subscribe()` in `WhenActivated` uses `d.Add()`
+  - 12c — One binding pattern per data flow
+  - 12d — No `dynamic` in production code
+  - 12e — Dialogs are their own `ReactiveWindow`
+  - 12f — One milestone per commit
+  - 12g — Plan-required tests must exist
+  - 12h — All file I/O has error handling
+  - 12i — Revert early when code is bad
+  - 12j — Verify exit conditions concretely
 - `docs-rules.md` §3 — Revert Log Template (this file's template)
 - `docs-rules.md` §2 — Trigger: "Reverting a phase → Create REVERT_LOG.md"
 

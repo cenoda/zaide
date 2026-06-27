@@ -22,6 +22,10 @@ docs/
 │   └── phase-N/
 │       ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
 │       └── TOFIX.md                 # Code quality issues found in review
+├── refactor/            # Foundation-level refactoring (structural, not feature)
+│   └── refactor-N/
+│       ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
+│       └── TOFIX.md                 # Code quality issues found in review
 ├── issues/
 │   ├── open/            # Active issues (ISSUE-###-short-name.md)
 │   ├── closed/          # Resolved issues (moved here)
@@ -48,14 +52,20 @@ Create these folders/files when first needed — not all at once.
 | Changing architecture (DI, interfaces, new subsystem) | Update `docs/architecture/` |
 | Starting a new phase | Create `docs/phases/phase-N/IMPLEMENTATION_PLAN.md` |
 | Finding a code quality issue during review | Add to `docs/phases/phase-N/TOFIX.md` |
+| Starting a new refactor | Create `docs/refactor/refactor-N/IMPLEMENTATION_PLAN.md` |
+| Completing a refactor milestone | Mark `[x]` in refactor plan |
+| Finding a code quality issue during refactor | Add to `docs/refactor/refactor-N/TOFIX.md` |
 | Fixing a convention or adopting a new one | Update `docs/CONVENTIONS.md` |
 | Changing UI design rules or patterns | Update `docs/DESIGN.md` |
 | Bug not fixed in 2 attempts | Create issue in `docs/issues/open/` |
 | Reverting a phase implementation | Create `docs/phases/phase-N/REVERT_LOG.md` |
+| Reverting a refactor implementation | Create `docs/refactor/refactor-N/REVERT_LOG.md` |
 
 ---
 
-## 3. Phase Planning Convention
+## 3. Feature Phase Planning Convention
+
+This section applies to feature phases (`phases/phase-N/`) only. For structural refactoring, see §4.
 
 Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 
@@ -143,9 +153,43 @@ phase must read it first.
 
 ---
 
-## 4. TOFIX Convention
+## 4. Refactor Planning Convention
 
-Each phase has a `TOFIX.md` that tracks code quality issues found during review.
+Refactors live in `docs/refactor/refactor-N/`. They follow the same
+incremental structure as feature phases, but differ in scope and boundaries:
+
+- **No new features** — refactors restructure existing code without changing
+  observable behavior (unless a minor API surface change is required).
+- **Exit condition** always includes a regression gate: all existing tests
+  must pass before the refactor is complete.
+- **Template is identical** to the Feature Phase template in §3, but the
+  title line reads `Refactor N: [Title] — Implementation Plan`.
+
+### Rules (from §3, with refactor-specific notes)
+
+1. **Verify against live code** — src/ before claim.
+2. **No scope creep** — if a feature is missing and the refactor reveals it,
+   stop, file it as a separate issue, and finish the refactor first.
+3. **Build for this refactor only (YAGNI)** — don't over-abstract in
+   anticipation of a future refactor.
+4. **Prefer documented limitations over edge-case code** — keep a
+   "Refactor N Limitations" section.
+5. **Make gates verifiable** — entry/exit conditions must be checkable
+   commands, not vibes.
+6. **One concern per milestone** — each milestone independently testable.
+7. **All existing tests must pass** — regression is the top priority.
+
+### Revert Log
+
+Same format as §3 Revert Log Template, but saved to
+`docs/refactor/refactor-N/REVERT_LOG.md`.
+
+---
+
+## 5. TOFIX Convention
+
+Each phase or refactor has a `TOFIX.md` that tracks code quality issues
+found during review.
 
 - **Before starting work on a phase**, read its `TOFIX.md` and address open items first.
 - **After a review session**, add new findings with a clear description and fix hint.
@@ -154,7 +198,7 @@ Each phase has a `TOFIX.md` that tracks code quality issues found during review.
 
 ---
 
-## 5. Issue Tracking
+## 6. Issue Tracking
 
 If a bug fix is not obvious after 2 attempts, create an issue file immediately.
 
@@ -169,7 +213,7 @@ If a bug fix is not obvious after 2 attempts, create an issue file immediately.
 
 ---
 
-## 6. Library Catalog (`docs/LIBRARIES.md`)
+## 7. Library Catalog (`docs/LIBRARIES.md`)
 
 Before implementing non-trivial functionality, check if a library exists.
 
@@ -185,7 +229,7 @@ Every library entry must have:
 
 ---
 
-## 7. Architecture Docs
+## 8. Architecture Docs
 
 Keep `docs/architecture/OVERVIEW.md` as the canonical description of Zaide's
 two layers:
@@ -200,7 +244,7 @@ Update architecture docs when:
 
 ---
 
-## 8. Commit Messages
+## 9. Commit Messages
 
 ```
 area: short imperative summary
@@ -210,18 +254,18 @@ Examples: `editor: add tab switching`, `agents: implement townhall logger`, `doc
 
 ---
 
-## 9. Decision Checkpoints (Stop and Ask User)
+## 10. Decision Checkpoints (Stop and Ask User)
 
 Stop work and ask when:
 1. Architecture change — modifying interfaces or DI setup
 2. New dependency — adding a NuGet package not in `LIBRARIES.md`
-3. Phase boundary — about to start a new phase
+3. Phase boundary — about to start a new phase or refactor
 4. Build failure — can't fix in 2 attempts
 5. Convention conflict — existing code violates `CONVENTIONS.md`
 
 ---
 
-## 10. Lessons from Aero
+## 11. Lessons from Aero
 
 These patterns are borrowed from the `cenoda/aero` project and proven in practice:
 
@@ -233,13 +277,13 @@ These patterns are borrowed from the `cenoda/aero` project and proven in practic
 
 ---
 
-## 11. Hard Rules (from Phase 2 revert)
+## 12. Hard Rules (from Phase 2 revert)
 
 These are enforced by code review — no exceptions. They exist because Phase 2
 was implemented once, found fundamentally broken, and reverted at commit
 `0971113`. The second attempt must not repeat these mistakes.
 
-### 11a. ViewModels must never reference Views
+### 12a. ViewModels must never reference Views
 
 **Forbidden in any ViewModel:**
 
@@ -281,7 +325,7 @@ this.WhenActivated(d =>
 });
 ```
 
-### 11b. Every `.Subscribe()` inside `WhenActivated` must use `d.Add()`
+### 12b. Every `.Subscribe()` inside `WhenActivated` must use `d.Add()`
 
 ```csharp
 // WRONG — leaks the subscription
@@ -299,49 +343,49 @@ this.WhenActivated(d =>
 This applies to `Execute().Subscribe()` calls too. If you can't hook it into
 `d.Add()`, use `Observable.StartAsync` or reconsider the pattern.
 
-### 11c. One binding pattern per data flow
+### 12c. One binding pattern per data flow
 
 Don't mix approaches for the same data. If two-way `Bind` creates a feedback
 loop, document *why* in a comment and pick a single alternative — don't add
 both an event handler AND a `WhenAnyValue` for the same property.
 
-### 11d. No `dynamic` in production code
+### 12d. No `dynamic` in production code
 
 AvaloniaEdit's `InstallTextMate` returns a concrete type. Cast it. If the type
 is internal, wrap it in a typed helper. `dynamic` disables compiler checking
 and tells future agents that `dynamic` is acceptable.
 
-### 11e. Dialogs are their own ReactiveWindow
+### 12e. Dialogs are their own ReactiveWindow
 
 `MainWindow.axaml.cs` must not grow 40-line inline dialog factories. Every
 dialog gets its own file (View + ViewModel if needed), even if it's simple.
 
-### 11f. Every milestone gets its own commit
+### 12f. Every milestone gets its own commit
 
 Never batch milestones into one commit (e.g., `M1-M3` or `M4-M6`). Each
 milestone is one commit with its own tests. If M4 is sloppy, you revert only
 M4–M6, not everything.
 
-### 11g. Plan-required tests must exist
+### 12g. Plan-required tests must exist
 
 If `IMPLEMENTATION_PLAN.md` says `tests/.../EditorTabViewModelTests.cs` must
 exist, the file must exist with the listed test methods before the milestone
 is marked done. Missing tests = incomplete milestone.
 
-### 11h. All file I/O has error handling
+### 12h. All file I/O has error handling
 
 `File.WriteAllText` and `File.ReadAllText` must be wrapped in try/catch.
 Unhandled I/O exceptions crash silently and confuse future agents debugging
 "why doesn't save work?"
 
-### 11i. Revert early when code is bad
+### 12i. Revert early when code is bad
 
 Two commits of bad implementation is cheap to revert. Ten is not. If you realize
 the code has fundamental structural problems (not just bugs), revert to the last
 known-good commit and re-implement correctly. Patching bad architecture produces
 worse architecture.
 
-### 11j. Verify exit conditions concretely
+### 12j. Verify exit conditions concretely
 
 Before marking a milestone `[x]` or a phase complete, run the exact verification
 commands and check that every file the plan says should exist actually exists.
