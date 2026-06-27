@@ -230,6 +230,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 interaction.SetOutput(Unit.Default);
             }));
 
+            // M3: Disable Copy Relative Path when no folder is open
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.RootPath)
+                .Subscribe(path => copyRelativePathItem.IsEnabled = path is not null));
+
             // M5: Dispose of event handlers and subscriptions
             d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));
         });

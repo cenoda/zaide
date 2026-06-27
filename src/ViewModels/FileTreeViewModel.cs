@@ -223,13 +223,15 @@ public class FileTreeViewModel : ReactiveObject
             CopyToClipboard.Handle(node.FullPath).Subscribe();
         });
 
-        // M3: CopyRelativePathCommand — copies path relative to RootPath
+        // M3: CopyRelativePathCommand — copies path relative to RootPath.
+        // Disabled when no folder is open (RootPath is null).
+        var canCopyRelative = this.WhenAnyValue(x => x.RootPath).Select(p => p is not null);
         CopyRelativePathCommand = ReactiveCommand.Create<FileTreeNode>(node =>
         {
             if (node is null || RootPath is null) return;
             var relative = Path.GetRelativePath(RootPath, node.FullPath);
             CopyToClipboard.Handle(relative).Subscribe();
-        });
+        }, canCopyRelative);
     }
 
     private static void SetExpandedRecursive(FileTreeNode node, bool isExpanded)
