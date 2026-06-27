@@ -37,10 +37,6 @@ public class EditorViewModel : ReactiveObject
             if (Document.FilePath != value)
             {
                 var newDocument = new Document(value, Document.Content);
-                if (Document.IsDirty)
-                {
-                    newDocument.MarkClean();
-                }
                 Document = newDocument;
             }
             FileName = string.IsNullOrEmpty(value)
@@ -69,8 +65,7 @@ public class EditorViewModel : ReactiveObject
     public string DisplayName => IsDirty ? $"● {FileName}" : FileName;
 
     /// <summary>
-    /// Current text content of the editor. Changes in M1 mark the tab as dirty.
-    /// M3 will add file-load suppression to avoid dirty-on-open.
+    /// Current text content of the editor. Changes mark the tab as dirty.
     /// </summary>
     public string TextContent
     {
