@@ -18,8 +18,9 @@ public class EditorTabViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Models.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>());
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Models.Workspace>());
     }
 
     [Fact]
