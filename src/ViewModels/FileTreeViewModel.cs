@@ -184,7 +184,7 @@ public class FileTreeViewModel : ReactiveObject
         }
     }
 
-    private void HandleRenamed(string newPath, string oldPath)
+    public void HandleRenamed(string newPath, string oldPath)
     {
         var node = FindNodeByPath(oldPath);
         if (node is null) return;
