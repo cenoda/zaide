@@ -20,7 +20,7 @@ namespace Zaide.Models
                 }
             }
         }
-        public string FilePath { get; init; }
+        public string FilePath { get; set; }
         public bool IsDirty { get; private set; }
         public string? LastSaveError { get; private set; }
 

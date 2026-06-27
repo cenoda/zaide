@@ -32,25 +32,32 @@ public class EditorViewModel : ReactiveObject
         get => _document?.FilePath;
         set
         {
-            if (_document == null || _document.FilePath != value)
+            if (_document != null && _document.FilePath != value)
             {
-                // Unsubscribe from current document before replacing it
-                if (_document != null)
-                {
-                    _document.ContentChanged -= HandleContentChanged;
-                    _document.DirtyStateChanged -= HandleDirtyStateChanged;
-                    _document.SaveErrorChanged -= HandleSaveErrorChanged;
-                }
-
-                var newDocument = new Document(value, _document?.Content ?? string.Empty);
+                _document.FilePath = value;
+                this.RaisePropertyChanged(nameof(FileName));
+                // Update FileName since it's derived from FilePath
+                FileName = string.IsNullOrEmpty(value)
+                    ? "Untitled"
+                    : Path.GetFileName(value);
+            }
+            else if (_document == null)
+            {
+                var newDocument = new Document(value, string.Empty);
                 _document = newDocument;
                 this.RaiseAndSetIfChanged(ref _document, _document);
-                // Re-wire reactive properties for the new document
                 InitializeReactiveProperties();
+                FileName = string.IsNullOrEmpty(value)
+                    ? "Untitled"
+                    : Path.GetFileName(value);
             }
-            FileName = string.IsNullOrEmpty(value)
-                ? "Untitled"
-                : Path.GetFileName(value);
+            else
+            {
+                // If path is same as current, still ensure FileName reflects it (e.g. for empty paths)
+                FileName = string.IsNullOrEmpty(value)
+                    ? "Untitled"
+                    : Path.GetFileName(value);
+            }
         }
     }
 
