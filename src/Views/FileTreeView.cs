@@ -223,7 +223,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     /// Shows a simple modal dialog with a TextBox for name input.
     /// Returns the entered text, or null if cancelled.
     /// </summary>
-    private static async Task<string?> ShowNamePromptAsync(string title, string prompt)
+    private async Task<string?> ShowNamePromptAsync(string title, string prompt)
     {
         var textBox = new TextBox
         {
@@ -292,10 +292,13 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             }
         };
 
+        // Prevent hang if user closes via title bar close button
+        window.Closed += (_, _) => tcs.TrySetResult(null);
+
         textBox.AttachedToVisualTree += (_, _) => textBox.Focus();
 
-        var topLevel = TopLevel.GetTopLevel(textBox);
-        if (topLevel is Window parentWindow)
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow is not null)
             await window.ShowDialog(parentWindow);
         else
             window.Show();

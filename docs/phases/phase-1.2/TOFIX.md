@@ -17,6 +17,9 @@ Code quality issues found during Phase 1.2 audit. Check these before starting Ph
 - [x] A1 — Failed folder open drops live watcher (FIXED)
 - [x] A2 — `RequestOpenFileCommand` payload ignored (FIXED)
 - [x] P1 — Ambiguous exit condition in plan (FIXED)
+- [x] B1 — `ShowNamePromptAsync` hang on close button (FIXED)
+- [x] B2 — Name prompt not actually modal (FIXED)
+- [x] B3 — Stale StatusText on successful create (FIXED)
 
 ---
 
@@ -56,6 +59,42 @@ to `OpenFileRequested` with the actual payload — no dependency on `SelectedFil
 
 **Files:** `src/ViewModels/FileTreeViewModel.cs` (lines 26–32, 113–122),
 `src/ViewModels/MainWindowViewModel.cs` (lines 86–108)
+
+---
+
+### [x] B1 — `ShowNamePromptAsync` hang on close button (MEDIUM) (FIXED 2026-06-27)
+
+The `TaskCompletionSource` was only completed on OK, Cancel, Enter, or Escape.
+Closing the window via the title-bar close button left `await tcs.Task` pending
+indefinitely.
+
+**Fix:** Added `window.Closed += (_, _) => tcs.TrySetResult(null)`.
+
+**Files:** `src/Views/FileTreeView.cs` (line 296)
+
+---
+
+### [x] B2 — Name prompt not actually modal (MEDIUM) (FIXED 2026-06-27)
+
+`TopLevel.GetTopLevel(textBox)` ran before `textBox` was attached to the visual
+tree, so it returned null and fell back to `window.Show()` — allowing the user
+to interact with the main window while the prompt was open.
+
+**Fix:** Changed method from `static` to instance method; uses `TopLevel.GetTopLevel(this)`
+(the `FileTreeView` which is already attached when the context menu is shown).
+
+**Files:** `src/Views/FileTreeView.cs` (lines 226, 300–302)
+
+---
+
+### [x] B3 — Stale StatusText on successful create (LOW) (FIXED 2026-06-27)
+
+A previous error message in `StatusText` persisted after a subsequent successful
+file/folder creation.
+
+**Fix:** Added `StatusText = null;` before the try block in `CreateNodeCommand`.
+
+**Files:** `src/ViewModels/FileTreeViewModel.cs` (line 149)
 
 ---
 

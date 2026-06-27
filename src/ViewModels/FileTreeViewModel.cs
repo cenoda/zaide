@@ -140,10 +140,13 @@ public class FileTreeViewModel : ReactiveObject
 
         // M1: CreateNodeCommand — creates a file or directory on disk.
         // Watcher picks up the change — no manual tree insert.
+        // Clears StatusText on success so stale errors don't persist.
         CreateNodeCommand = ReactiveCommand.Create<(string ParentDir, string Name, bool IsDirectory)>(spec =>
         {
             var (parentDir, name, isDirectory) = spec;
             var fullPath = Path.Combine(parentDir, name);
+
+            StatusText = null;
 
             try
             {
