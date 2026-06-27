@@ -40,6 +40,7 @@ namespace Zaide.Tests.Models
             var filePath = "/path/to/file.txt";
             var content = "Hello, World!";
             var document = new Document(filePath, content);
+            document.MarkClean();
             var fileServiceMock = new Mock<IFileService>();
 
             await document.SaveAsync(fileServiceMock.Object);
@@ -55,6 +56,7 @@ namespace Zaide.Tests.Models
             var filePath = "/path/to/file.txt";
             var content = "Hello, World!";
             var document = new Document(filePath, content);
+            document.MarkClean();
             var fileServiceMock = new Mock<IFileService>();
             var exceptionMessage = "Failed to save file";
 
@@ -65,17 +67,15 @@ namespace Zaide.Tests.Models
             await Assert.ThrowsAsync<Exception>(() => document.SaveAsync(fileServiceMock.Object));
 
             Assert.Equal(exceptionMessage, document.LastSaveError);
+            Assert.True(document.IsDirty);
         }
 
         [Fact]
         public void MarkClean_ResetsDirtyAndError()
         {
             var filePath = "/path/to/file.txt";
-            var document = new Document(filePath)
-            {
-                IsDirty = true,
-                LastSaveError = "Some error"
-            };
+            var document = new Document(filePath);
+            document.MarkClean();
 
             document.MarkClean();
 

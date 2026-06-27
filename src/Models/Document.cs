@@ -7,9 +7,9 @@ namespace Zaide.Models
     public class Document
     {
         public string Content { get; set; }
-        public string FilePath { get; set; }
-        public bool IsDirty { get; set; }
-        public string? LastSaveError { get; set; }
+        public string FilePath { get; init; }
+        public bool IsDirty { get; private set; }
+        public string? LastSaveError { get; private set; }
 
         public Document(string filePath, string content = "")
         {
@@ -30,6 +30,7 @@ namespace Zaide.Models
             catch (Exception ex)
             {
                 LastSaveError = ex.Message;
+                IsDirty = true;
                 throw;
             }
         }
