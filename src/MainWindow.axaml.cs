@@ -43,14 +43,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         (_bottomPanelRow, _bottomPanel, _fileTreeView) = BuildLayout();
 
         // === ReactiveUI Bindings (M3, Phase 2) ===
-        this.WhenActivated(d =>
+        this.WhenActivated(disposables =>
         {
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
 
             // Activate VM subscriptions (save errors, file-open) and clean up
             ViewModel!.Activate();
-            d.Add(Disposable.Create(() => ViewModel!.Dispose()));
+            disposables.Add(Disposable.Create(() => ViewModel!.Dispose()));
 
             // Wire EditorTabBar: collection + events (with disposal)
             var editorTabs = ViewModel!.EditorTabs;
@@ -63,7 +63,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             _editorTabBar.TabClicked += OnTabClicked;
             _editorTabBar.TabCloseRequested += OnTabCloseRequested;
 
-            d.Add(Disposable.Create(() =>
+            disposables.Add(Disposable.Create(() =>
             {
                 _editorTabBar.TabClicked -= OnTabClicked;
                 _editorTabBar.TabCloseRequested -= OnTabCloseRequested;
@@ -71,7 +71,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // M5: unsaved-changes dialog. ViewModel raises ConfirmClose,
             // MainWindow shows UnsavedDialog and feeds the result back.
-            d.Add(editorTabs.ConfirmClose.RegisterHandler(async ctx =>
+            disposables.Add(editorTabs.ConfirmClose.RegisterHandler(async ctx =>
             {
                 var dialog = new UnsavedDialog { DataContext = ctx.Input };
                 var result = await dialog.ShowDialog<bool?>(this);
@@ -79,7 +79,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             }));
 
             // Wire active tab → EditorView + tab bar highlight + welcome text
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
+            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
                     _editorView.ViewModel = active;
@@ -121,13 +121,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 Command = ViewModel!.SaveActiveTabCommand
             };
             KeyBindings.Add(saveBinding);
-            d.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
+            disposables.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
 
             // Welcome text: always shows the static message. StatusText is
             // preserved for a future status bar, not bound to the welcome overlay.
 
             // Bind bottom panel visibility → row height (instant toggle, no animation per Phase 0)
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
+            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
                 .Subscribe(visible =>
                 {
                     _bottomPanelRow.Height = visible
@@ -136,6 +136,17 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _bottomPanel.IsVisible = visible;
                 }));
         });
+
+        // Add Ctrl+O key binding
+        var inputElement = this.GetVisualDescendants().OfType<IInputElement>().FirstOrDefault();
+        if (inputElement != null)
+        {
+            inputElement.KeyBindings.Add(new KeyBinding
+            {
+                Gesture = new KeyGesture(Key.O, KeyModifiers.Control),
+                Command = ViewModel!.OpenFolderCommand
+            });
+        }
     }
 
     /// <summary>

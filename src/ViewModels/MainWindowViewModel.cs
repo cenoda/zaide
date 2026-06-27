@@ -40,6 +40,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
+    public Interaction<Unit, string?> PickFolder { get; }
+    public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
 
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
@@ -51,6 +53,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         EditorTabs = editorTabViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
+        PickFolder = new Interaction<Unit, string?>();
+        OpenFolderCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            var path = await PickFolder.Handle(Unit.Default);
+            if (path is not null)
+                await FileTreeViewModel.OpenFolderCommand.Execute(path);
+        });
     }
 
     /// <summary>

@@ -144,5 +144,13 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         : path;
                 }));
         });
+
+        _treeView.KeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Enter) return;
+            var selected = ViewModel!.SelectedFile;
+            if (selected is null || selected.IsDirectory) return;
+            ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
+        };
     }
 }
