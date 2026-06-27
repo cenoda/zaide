@@ -67,26 +67,32 @@
 **Files to modify:**
 
 - `src/ViewModels/FileTreeViewModel.cs`
-  - **B1 — Rename cascade fix:** In `HandleRenamed`, when the renamed node is a directory, recursively update `FullPath` for all descendants:
+  - **B1 — Rename cascade fix (prefix-safe):** In `HandleRenamed`, when the renamed node is a directory, recursively update `FullPath` for all descendants using explicit prefix matching:
     ```csharp
     private static void UpdateDescendantPaths(FileTreeNode node, string oldDirPath, string newDirPath)
     {
         foreach (var child in node.Children)
         {
-            child.FullPath = child.FullPath.Replace(oldDirPath, newDirPath);
+            if (child.FullPath.StartsWith(oldDirPath))
+                child.FullPath = newDirPath + child.FullPath[oldDirPath.Length..];
             if (child.IsDirectory)
                 UpdateDescendantPaths(child, oldDirPath, newDirPath);
         }
     }
     ```
-  - **B2 — Error handling:** Wrap `OpenFolderCommand` body in try/catch. On `DirectoryNotFoundException` or `UnauthorizedAccessException`, do NOT clear `RootNodes`; set `StatusText` to an error message.
-  - `string? StatusText` reactive property (already proposed as error surface; also serves as connection point for Phase 3+ status bar).
+    `string.Replace` is unsafe — it replaces all substring occurrences anywhere in the path. `StartsWith` + prefix slice ensures only the renamed directory prefix is updated.
+  - **B2 — Error handling:** Wrap `OpenFolderCommand` body in try/catch. Catch `DirectoryNotFoundException`, `UnauthorizedAccessException`, `NotSupportedException`, `ArgumentException`. Do NOT clear `RootNodes`; set `StatusText` to `ex.Message`.
+  - Add `string? StatusText` reactive property. **Independent** from `MainWindowViewModel.StatusText` — both are connection points for the Phase 3+ status bar. `FileTreeViewModel.StatusText` holds tree-specific errors (folder open failures); `MainWindowViewModel.StatusText` holds editor errors (save/open failures). No cross-propagation needed in Phase 1.1.
 
-**No changes to `MainWindowViewModel.cs` or `MainWindow.axaml.cs`.** The orphaned `StatusText` property in `MainWindowViewModel` (C2) stays as-is — it already receives save/open error data via `Activate()` subscriptions and will be bound to a UI widget in Phase 3+.
+**No changes to `MainWindowViewModel.cs` or `MainWindow.axaml.cs`.**
 
 **Tests to add (FileTreeViewModelTests.cs):**
-- `HandleRenamed_UpdatesDescendantPaths` — rename a dir with children → child paths updated.
+- `HandleRenamed_UpdatesDescendantPaths` — dir with 2 files → rename dir → both child FullPaths update.
+- `HandleRenamed_UpdatesDescendantPaths_WithNonAscii` — directory name contains 한글/emoji → children paths update correctly.
+- `HandleRenamed_DoesNotCorruptPaths_WithPartialNameMatch` — rename `/home/user/proj` → child at `/home/user/proj/backup/old_project` NOT corrupted (prefix `StartsWith` prevents substring false positives).
 - `OpenFolderCommand_SetsStatusText_OnInaccessiblePath` — nonexistent path → StatusText set, RootNodes unchanged.
+- `OpenFolderCommand_SetsStatusText_OnFilePath` — pass a file path (not directory) → StatusText set, no crash.
+- `OpenFolderCommand_SetsStatusText_OnInvalidPath` — pass `"C:\\*?"` or empty string → caught by ArgumentException/NotSupportedException.
 
 ---
 
@@ -103,33 +109,55 @@
 
 ---
 
-### M3: Context Menu
+### M3: Context Menu + IsExpanded Binding
 
 **Files to modify:**
 
-- `src/ViewModels/FileTreeViewModel.cs`
-  - Add `ReactiveCommand<FileTreeNode, Unit> RequestOpenFileCommand` — the ViewModel emits a request to open a file; `MainWindowViewModel` mediates to `EditorTabs.OpenFileCommand`.
-  - Add `CollapseAllCommand` and `ExpandAllCommand` (`ReactiveCommand<Unit, Unit>`).
-  - `ExpandAllCommand`: recursively sets `IsExpanded = true` on all directory nodes. Performance is acceptable — typical project has 500–1,000 directories (ignored folders excluded), ~100ms for full expand. TreeView virtualization handles rendering.
-  - `CollapseAllCommand`: recursively sets `IsExpanded = false`.
-
 - `src/Views/FileTreeView.cs`
+  - **IsExpanded binding (critical):** The current `FuncTreeDataTemplate` does not bind `FileTreeNode.IsExpanded` to the `TreeViewItem`. Without this, `ExpandAll`/`CollapseAll` commands mutate model state with zero visible effect. Replace the template to include expansion state binding:
+    ```csharp
+    _treeView.ItemTemplate = new FuncTreeDataTemplate<FileTreeNode>(
+        match: _ => true,
+        build: (node, _) =>
+        {
+            var tb = new TextBlock
+            {
+                Text = node.Name,
+                Foreground = (IBrush?)Application.Current!.Resources["TextActive"]
+            };
+            // Bind TreeViewItem.IsExpanded ↔ FileTreeNode.IsExpanded (two-way)
+            tb.AttachedToVisualTree += (_, _) =>
+            {
+                var tvi = tb.FindAncestorOfType<TreeViewItem>();
+                if (tvi is not null)
+                    tvi.Bind(TreeViewItem.IsExpandedProperty,
+                        new Binding(nameof(FileTreeNode.IsExpanded), BindingMode.TwoWay));
+            };
+            return tb;
+        },
+        itemsSelector: node => node.Children);
+    ```
   - Attach `MenuFlyout` to the TreeView via `ContextFlyout`:
     - "Open" → `ViewModel!.RequestOpenFileCommand.Execute(selectedNode).Subscribe()`
     - "Expand All" → `ViewModel!.ExpandAllCommand.Execute().Subscribe()`
     - "Collapse All" → `ViewModel!.CollapseAllCommand.Execute().Subscribe()`
-  - Menu items enabled only when a node is selected (bind `IsEnabled` to `ViewModel.SelectedFile != null`).
+  - Items gated: `IsEnabled` bound to `ViewModel.SelectedFile != null`.
+
+- `src/ViewModels/FileTreeViewModel.cs`
+  - Add `ReactiveCommand<FileTreeNode, Unit> RequestOpenFileCommand`.
+  - Add `CollapseAllCommand` and `ExpandAllCommand` — recursively sets `IsExpanded` on all directory nodes. With the binding above, TreeView visually expands/collapses.
+  - `ExpandAllCommand` performance: ~100ms for 500–1,000 dirs. TreeView virtualization handles rendering.
 
 - `src/ViewModels/MainWindowViewModel.cs` (Activate)
-  - Subscribe to `FileTreeViewModel.RequestOpenFileCommand` → call `EditorTabs.OpenFileCommand.Execute(file.FullPath)`.
-  - Same mediation pattern already used for `SelectedFile` → `OpenFileCommand`.
+  - **Remove** the `SelectedFile` → auto-open subscription (lines 77-100). Single-click selection no longer opens files.
+  - **Add** subscription to `FileTreeViewModel.RequestOpenFileCommand` → `EditorTabs.OpenFileCommand.Execute(file.FullPath)`.
+  - Rationale: exactly one open pathway. Prevents double-open when right-clicking (SelectionChanged fires → context menu "Open" would trigger a second open). Matches VS Code behavior: single-click selects, double-click/Enter/context-menu opens.
 
 ```
-FileTreeView (View)                MainWindow (View)
-  → ViewModel.RequestOpenFileCommand     ↕ (data binding)
-       ↓                            MainWindowViewModel.Activate()
-MainWindowViewModel                       → EditorTabs.OpenFileCommand
-  (mediates between the two VMs)
+Single open pathway (no double-trigger):
+  Enter (M4) ─────────┐
+  Context Menu (M3) ──┤→ RequestOpenFileCommand → MainWindowViewModel → EditorTabs.OpenFileCommand
+  (SelectedFile is tracked but no longer auto-opens)
 ```
 
 **No new tests (UI + integration plumbing).**
@@ -147,7 +175,20 @@ MainWindowViewModel                       → EditorTabs.OpenFileCommand
 - `src/MainWindow.axaml.cs`
   - Register `PickFolder` handler in `WhenActivated`: opens native folder picker, sets output.
   - Add `Ctrl+O` key binding → `OpenFolderCommand`.
-  - Add `Enter` key binding → open selected file when TreeView has focus.
+
+- `src/Views/FileTreeView.cs`
+  - Add `KeyDown` handler on the TreeView for `Enter` key:
+    ```csharp
+    _treeView.KeyDown += (_, e) =>
+    {
+        if (e.Key != Key.Enter) return;
+        var selected = ViewModel!.SelectedFile;
+        if (selected is null || selected.IsDirectory) return;  // no-op on directory
+        ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
+    };
+    ```
+  - Reuses the same `RequestOpenFileCommand` → `MainWindowViewModel` mediation as M3's context menu "Open".
+  - `Enter` on a directory → no-op (not an error; consistent with VS Code behavior).
 
 **No new tests (UI + interaction plumbing).**
 
@@ -159,11 +200,10 @@ MainWindowViewModel                       → EditorTabs.OpenFileCommand
 
 - `src/Services/FileTreeService.cs`
   - **C1 fix:** Add explicit `.` / `..` guard in `IsHidden`: `name is not "." and not ".." && name.Length > 0 && name[0] == '.'`
+  - **Sort-order enforcement:** `DirectoryInfo.EnumerateDirectories()` and `EnumerateFiles()` do NOT guarantee sorted order across filesystems. Add explicit `.OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)` to both `EnumerateDirectoriesSafe` and `EnumerateFilesSafe` return values. Directories-first-then-files order is already enforced by the loop structure in `EnumerateDirectory`.
 
 - `src/Views/FileTreeView.cs`
   - **B3 fix:** Store the `IDisposable` from `PointerPressed` `Execute().Subscribe()` in a field; dispose via `d.Add(Disposable.Create(...))` in `WhenActivated`.
-
-- Verify sort-order stability: `EnumerateDirectory` already sorts directories-first then files alphabetically.
 
 **Tests to add (FileTreeServiceTests.cs):**
 - `IsHidden_ExcludesDotAndDotDot` — `.` and `..` return false.
@@ -177,7 +217,7 @@ MainWindowViewModel                       → EditorTabs.OpenFileCommand
 - **"Expand All" is full recursive** — acceptable for typical projects (500–1,000 dirs, ~100ms). For monorepos with 10,000+ directories, the command may pause briefly. No lazy-expand optimization in this phase.
 - **No folder history persistence** — still resets on launch. Persistence comes with workspace support in a later phase.
 - **No status bar UI** — `StatusText` properties exist as connection points for Phase 3+. Error messages are set but not yet rendered.
-- **Enter-to-open only works when TreeView has focus** — clicks elsewhere shift focus; this is standard TreeView behavior.
+- **Single-click selects, Enter/context-menu opens** — matches VS Code behavior. Phase 1 auto-opened on single-click; this is intentionally removed to prevent double-open when right-clicking.
 - **Ctrl+O uses the `Interaction` pattern** — consistent with Phase 2 `ConfirmClose`. Minimal added complexity (2 properties, ~15 lines).
 
 ---
@@ -212,7 +252,7 @@ MainWindowViewModel                       → EditorTabs.OpenFileCommand
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
 | GridSplitter breaks layout at edge sizes | Medium | Low | Constrain MinWidth/MaxWidth; test at 800x600 window |
-| `HandleRenamed` cascade fix misses deep paths with partial matches | Low | Medium | Use string.Replace only for path-prefix match; test with nested dirs |
+| `HandleRenamed` cascade fix uses prefix-safe `StartsWith` + slice | Low | Low | String prefix comparison is deterministic. `StartsWith` false positives would require a directory named identically as a substring prefix of another — path separator guarantees this can't happen. Test `HandleRenamed_DoesNotCorruptPaths_WithPartialNameMatch` validates. |
 | Interaction-based `PickFolder` adds complexity to MainWindowViewModel | Low | Low | Follows docs-rules.md §11a exactly; proven pattern from Phase 2 |
 
 ---
