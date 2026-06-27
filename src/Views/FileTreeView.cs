@@ -3,10 +3,12 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
@@ -50,19 +52,58 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 ViewModel!.OpenFolderCommand.Execute(folders[0].Path.LocalPath).Subscribe(_ => { });
         };
 
-        // --- TreeView ---
+        // --- TreeView with IsExpanded binding and Context Menu (M3) ---
         _treeView = new TreeView
         {
             ItemTemplate = new FuncTreeDataTemplate<FileTreeNode>(
                 match: _ => true,
-                build: (node, _) => new TextBlock
+                build: (node, _) =>
                 {
-                    Text = node.Name,
-                    Foreground = (IBrush?)Application.Current!.Resources["TextActive"]
+                    var tb = new TextBlock
+                    {
+                        Text = node.Name,
+                        Foreground = (IBrush?)Application.Current!.Resources["TextActive"]
+                    };
+
+                    // M3: Bind TreeViewItem.IsExpanded ↔ FileTreeNode.IsExpanded (two-way)
+                    tb.AttachedToVisualTree += (_, _) =>
+                    {
+                        var tvi = tb.FindAncestorOfType<TreeViewItem>();
+                        if (tvi is not null)
+                        {
+                            var binding = new Binding(nameof(FileTreeNode.IsExpanded))
+                            {
+                                Mode = BindingMode.TwoWay
+                            };
+                            tvi.Bind(TreeViewItem.IsExpandedProperty, binding);
+                        }
+                    };
+
+                    return tb;
                 },
                 itemsSelector: node => node.Children
             )
         };
+
+        // M3: Context Menu for tree nodes
+        var contextMenu = new MenuFlyout();
+        var openItem = new MenuItem { Header = "Open" };
+        openItem.Click += (_, _) =>
+        {
+            if (_treeView.SelectedItem is FileTreeNode selected && !selected.IsDirectory)
+                ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
+        };
+
+        var expandAllItem = new MenuItem { Header = "Expand All" };
+        expandAllItem.Click += (_, _) => ViewModel!.ExpandAllCommand.Execute().Subscribe();
+
+        var collapseAllItem = new MenuItem { Header = "Collapse All" };
+        collapseAllItem.Click += (_, _) => ViewModel!.CollapseAllCommand.Execute().Subscribe();
+
+        contextMenu.Items.Add(openItem);
+        contextMenu.Items.Add(expandAllItem);
+        contextMenu.Items.Add(collapseAllItem);
+        _treeView.ContextFlyout = contextMenu;
 
         _treeView.SelectionChanged += (_, e) =>
         {

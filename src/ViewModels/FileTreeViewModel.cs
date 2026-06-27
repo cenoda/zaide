@@ -34,6 +34,11 @@ public class FileTreeViewModel : ReactiveObject
 
     public ReactiveCommand<string, Unit> OpenFolderCommand { get; }
 
+    // M3: Commands for context menu and keyboard interactions
+    public ReactiveCommand<FileTreeNode, Unit> RequestOpenFileCommand { get; }
+    public ReactiveCommand<Unit, Unit> ExpandAllCommand { get; }
+    public ReactiveCommand<Unit, Unit> CollapseAllCommand { get; }
+
     public FileTreeNode? SelectedFile
     {
         get => _selectedFile;
@@ -92,6 +97,39 @@ public class FileTreeViewModel : ReactiveObject
                 StatusText = $"Invalid Argument: Invalid file path format provided. Details: {ex.Message}";
             }
         });
+
+        // M3: RequestOpenFileCommand — single open pathway for context menu and Enter key
+        RequestOpenFileCommand = ReactiveCommand.Create<FileTreeNode>(node =>
+        {
+            if (node is null || node.IsDirectory)
+                return; // No-op on directory
+
+            // This command is mediated by MainWindowViewModel to EditorTabs.OpenFileCommand
+        });
+
+        // M3: ExpandAllCommand — recursively expand all directory nodes
+        ExpandAllCommand = ReactiveCommand.Create(() =>
+        {
+            foreach (var node in RootNodes)
+                SetExpandedRecursive(node, true);
+        });
+
+        // M3: CollapseAllCommand — recursively collapse all directory nodes
+        CollapseAllCommand = ReactiveCommand.Create(() =>
+        {
+            foreach (var node in RootNodes)
+                SetExpandedRecursive(node, false);
+        });
+    }
+
+    private static void SetExpandedRecursive(FileTreeNode node, bool isExpanded)
+    {
+        node.IsExpanded = isExpanded;
+        foreach (var child in node.Children)
+        {
+            if (child.IsDirectory)
+                SetExpandedRecursive(child, isExpanded);
+        }
     }
 
     private void HandleFileChange(FileChangeEvent change)
