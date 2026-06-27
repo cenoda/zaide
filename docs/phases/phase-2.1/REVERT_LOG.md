@@ -1,65 +1,33 @@
-# Phase 2.1: Revert Log
+# Revert Log — Phase 2.1
 
-## What Was Reverted
+## Revert: File and Directory Creation Feature (2026-06-27)
 
-- **Reverted from:** working tree only (Phase 2.1 was not committed)
-- **Intended revert target:** Phase 2 baseline without indent-guide implementation
-- **Commits discarded:** none
-- **Files removed:**
-  - `src/Views/IndentGuideRenderer.cs`
-  - `tests/Zaide.Tests/Views/IndentGuideRendererTests.cs`
-- **Files modified during revert attempt:**
-  - `src/Views/EditorView.cs`
-  - `docs/phases/phase-2.1/TOFIX.md`
+**Reverted Commit:** `945dcac` — "feat: implement file and directory creation functionality"
 
-## Post-Revert Audit (2026-06-26)
+**Target Commit:** `e18be45fa8083ad573dcf038e2798cb5415f3897` — "Check M0 pre-implementation verification"
 
-A later live-code audit found that the repository did not fully land at the
-intended revert target.
+**Reason:** Feature implementation was premature; reset to pre-implementation state to verify baseline before continuing. Origin had incorrect state; synced origin with local.
 
-- `src/Views/SpikeIndentGuideRenderer.cs` still exists
-- `src/Views/EditorView.cs` still enables the spike renderer
-- The current tree therefore contains an active M2 experiment path even though
-  the earlier production `IndentGuideRenderer.cs` was removed
+**Action Taken:**
+- `git reset --hard e18be45fa8083ad573dcf038e2798cb5415f3897`
+- Hard sync: origin was diverged with `945dcac` ahead of local
+- `git push --force-with-lease origin master` to sync origin to correct state
+- Local and origin now both at `e18be45`
 
-This matters because future M3 work should start from the actual repo state,
-not from the assumed clean baseline described in the original revert summary.
+**Commits Reverted:**
+1. `945dcac` — feat: implement file and directory creation functionality
 
-## Follow-Up Implementation (2026-06-26)
+**Files Affected:**
+- All changes to file and directory creation implementation reverted
+- Worktree reset to clean state at target commit
+- Origin remote reset to match local
 
-The active spike identified in the post-revert audit has now been replaced.
+**Current State:**
+- Both local and origin at `e18be45` (M0 pre-implementation verification)
+- Ready to plan next approach
 
-- `src/Views/SpikeIndentGuideRenderer.cs` was removed
-- `src/Views/IndentGuideRenderer.cs` now implements the M3 first-guide path
-- `EditorView` enables the renderer only for the current C# experiment path
-- Focused helper tests were added for the pure indentation logic
+**Next Steps:**
+- Verify M0 pre-implementation state is stable
+- Plan file and directory creation feature before re-implementing
 
-The original root-cause notes still stand: M3 is not done until the live editor
-result is visually trustworthy.
-
-## Root Cause
-
-The implementation did not reach the bar for visual correctness. This was not a
-case where a small follow-up patch would make the feature acceptable; the core
-problem was that the approach never produced trustworthy guide placement in the
-editor.
-
-1. The renderer logic was implemented and tested at the helper level, but the
-   actual UI result was still wrong. Build/test success did not prove the
-   feature worked in the only place that mattered: the live editor surface.
-2. The implementation focused too early on patching calculations inside
-   `IndentGuideRenderer` without first locking down a minimal visual proof that
-   AvaloniaEdit would expose stable coordinates for this use case.
-3. The phase exit condition that mattered most, "indent guides look correct in
-   real files," was not satisfied, so leaving the code in place would make the
-   repository look healthier than it actually was.
-
-## Rules Added
-
-No new global rules were added. The failure is recorded in the phase-local
-`TOFIX.md` so the next attempt starts with an explicit visual-verification gate.
-
-## Revert Commit
-
-Not committed. Phase 2.1 was reverted directly in the working tree on
-2026-06-26.
+---
