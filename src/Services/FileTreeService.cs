@@ -20,14 +20,17 @@ public class FileTreeService : IDisposable
     };
 
     private FileSystemWatcher? _watcher;
+    private bool _includeHidden;
 
     public IObservable<FileChangeEvent>? FileChanges { get; private set; }
 
     /// <summary>
     /// Recursively enumerate a directory into a list of FileTreeNode.
     /// Directories are sorted first, then files. Both are sorted alphabetically.
+    /// When includeHidden is true, hidden entries (.name) are included;
+    /// only DefaultIgnores are still filtered out.
     /// </summary>
-    public List<FileTreeNode> EnumerateDirectory(string path)
+    public List<FileTreeNode> EnumerateDirectory(string path, bool includeHidden = false)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Path cannot be empty.", nameof(path));
@@ -43,7 +46,7 @@ public class FileTreeService : IDisposable
 
         foreach (var dir in EnumerateDirectoriesSafe(root))
         {
-            if (IsIgnored(dir.Name))
+            if (ShouldSkip(dir.Name, includeHidden))
                 continue;
 
             var node = new FileTreeNode
@@ -56,7 +59,7 @@ public class FileTreeService : IDisposable
 
             try
             {
-                var children = EnumerateDirectory(dir.FullName);
+                var children = EnumerateDirectory(dir.FullName, includeHidden);
                 foreach (var child in children)
                     node.Children.Add(child);
             }
@@ -69,7 +72,7 @@ public class FileTreeService : IDisposable
 
         foreach (var file in EnumerateFilesSafe(root))
         {
-            if (IsIgnored(file.Name))
+            if (ShouldSkip(file.Name, includeHidden))
                 continue;
 
             nodes.Add(new FileTreeNode
@@ -83,6 +86,17 @@ public class FileTreeService : IDisposable
         return nodes;
     }
 
+    /// <summary>
+    /// Returns true if name should be excluded: always filters DefaultIgnores,
+    /// and additionally filters hidden entries when includeHidden is false.
+    /// </summary>
+    private static bool ShouldSkip(string name, bool includeHidden)
+    {
+        return DefaultIgnores.Contains(name) || (!includeHidden && IsHidden(name));
+    }
+
+    // Kept for backward compat with existing callers that check DefaultIgnores + hidden.
+    // M2 callers should prefer ShouldSkip with an explicit includeHidden flag.
     public bool IsIgnored(string name)
     {
         return DefaultIgnores.Contains(name) || IsHidden(name);
@@ -90,10 +104,12 @@ public class FileTreeService : IDisposable
 
     /// <summary>
     /// Start monitoring a directory tree for file/directory creation, deletion, and rename.
+    /// includeHidden controls whether the watcher's filter pipeline skips hidden entries.
     /// </summary>
-    public void StartWatching(string path)
+    public void StartWatching(string path, bool includeHidden = false)
     {
         StopWatching();
+        _includeHidden = includeHidden;
 
         _watcher = new FileSystemWatcher(path)
         {
@@ -113,11 +129,14 @@ public class FileTreeService : IDisposable
             h => _watcher.Renamed += h,
             h => _watcher.Renamed -= h);
 
+        // Capture the current flag so the closure matches the toggle state at watch time
+        var currentIncludeHidden = _includeHidden;
+
         FileChanges = created
             .Select(e => new FileChangeEvent(ChangeType.Created, e.EventArgs.FullPath))
             .Merge(deleted.Select(e => new FileChangeEvent(ChangeType.Deleted, e.EventArgs.FullPath)))
             .Merge(renamed.Select(e => new FileChangeEvent(ChangeType.Renamed, e.EventArgs.FullPath, e.EventArgs.OldFullPath)))
-            .Where(change => !IsIgnored(Path.GetFileName(change.FullPath)))
+            .Where(change => !ShouldSkip(Path.GetFileName(change.FullPath), currentIncludeHidden))
             .Throttle(TimeSpan.FromMilliseconds(100));
 
         _watcher.EnableRaisingEvents = true;

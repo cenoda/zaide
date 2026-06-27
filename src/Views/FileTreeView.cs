@@ -141,6 +141,13 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
         contextMenu.Items.Add(newFolderItem);
 
+        // M2: Show Hidden Files toggle
+        contextMenu.Items.Add(new Separator());
+        var showHiddenItem = new MenuItem { Header = "Show Hidden Files" };
+        // Bind IsChecked to ShowHiddenFiles via WhenActivated below
+        showHiddenItem.Click += (_, _) => ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
+        contextMenu.Items.Add(showHiddenItem);
+
         _treeView.ContextFlyout = contextMenu;
 
         _treeView.SelectionChanged += (_, e) =>
@@ -182,12 +189,23 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         : path;
                 }));
 
+            // M2: Bind Show Hidden Files menu item check state
+            d.Add(this.OneWayBind(ViewModel, vm => vm.ShowHiddenFiles, v => showHiddenItem.IsChecked));
+
             // M5: Dispose of event handlers and subscriptions
             d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));
         });
 
         _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>
         {
+            // M2: Ctrl+Shift+H — toggle hidden files
+            if (e.Key == Key.H && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+            {
+                e.Handled = true;
+                ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
+                return;
+            }
+
             if (e.Key != Key.Enter) return;
             var selected = ViewModel!.SelectedFile;
             if (selected is null || selected.IsDirectory) return;

@@ -23,6 +23,7 @@ public class FileTreeViewModel : ReactiveObject
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
     private string? _statusText;
+    private bool _showHiddenFiles;
     private readonly Subject<FileTreeNode> _openFileSubject = new();
 
     /// <summary>
@@ -49,6 +50,15 @@ public class FileTreeViewModel : ReactiveObject
 
     // M1: Create file or directory. Tuple: (parentDir, name, isDirectory).
     public ReactiveCommand<(string ParentDir, string Name, bool IsDirectory), Unit> CreateNodeCommand { get; }
+
+    // M2: Show hidden files toggle
+    public ReactiveCommand<Unit, Unit> ToggleHiddenFilesCommand { get; }
+
+    public bool ShowHiddenFiles
+    {
+        get => _showHiddenFiles;
+        private set => this.RaiseAndSetIfChanged(ref _showHiddenFiles, value);
+    }
 
     public FileTreeNode? SelectedFile
     {
@@ -158,6 +168,36 @@ public class FileTreeViewModel : ReactiveObject
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 StatusText = $"Failed to create {(isDirectory ? "directory" : "file")} '{name}': {ex.Message}";
+            }
+        });
+
+        // M2: ToggleHiddenFilesCommand — toggles show/hide of . prefixed entries.
+        // Re-enumerates RootPath with the new flag and restarts the watcher.
+        ToggleHiddenFilesCommand = ReactiveCommand.Create(() =>
+        {
+            ShowHiddenFiles = !ShowHiddenFiles;
+
+            if (RootPath is null) return;
+
+            try
+            {
+                var nodes = _fileTreeService.EnumerateDirectory(RootPath, ShowHiddenFiles);
+
+                _watcherSubscription?.Dispose();
+                _fileTreeService.StopWatching();
+
+                RootNodes.Clear();
+                foreach (var node in nodes)
+                    RootNodes.Add(node);
+
+                _fileTreeService.StartWatching(RootPath, ShowHiddenFiles);
+                _watcherSubscription = _fileTreeService.FileChanges!
+                    .ObserveOn(AvaloniaScheduler.Instance)
+                    .Subscribe(HandleFileChange);
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Failed to toggle hidden files: {ex.Message}";
             }
         });
     }
