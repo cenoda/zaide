@@ -77,11 +77,11 @@ public class EditorTabViewModel : ReactiveObject
     public ReactiveCommand<string, bool> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
-    public EditorTabViewModel(IServiceProvider services, IFileService fileService)
+    public EditorTabViewModel(IServiceProvider services, IFileService fileService, Workspace workspace)
     {
         _services = services;
         _fileService = fileService;
-        _workspace = new Workspace();
+        _workspace = workspace;
 
         OpenFileCommand = ReactiveCommand.CreateFromTask<string, bool>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
