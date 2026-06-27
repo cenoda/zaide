@@ -36,7 +36,14 @@ public class EditorTabViewModel : ReactiveObject
     public EditorViewModel? ActiveTab
     {
         get => _activeTab;
-        set => this.RaiseAndSetIfChanged(ref _activeTab, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _activeTab, value);
+            if (value != null)
+            {
+                _workspace.SetActiveDocument(value.Document);
+            }
+        }
     }
 
     /// <summary>
@@ -161,7 +168,10 @@ public class EditorTabViewModel : ReactiveObject
         if (ReferenceEquals(ActiveTab, tab))
         {
             if (OpenTabs.Count == 0)
+            {
                 ActiveTab = null;
+                _workspace.SetActiveDocument(null);
+            }
             else if (index < OpenTabs.Count)
                 ActiveTab = OpenTabs[index];
             else

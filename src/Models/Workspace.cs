@@ -38,11 +38,15 @@ public Document OpenDocument(string path, string content)
             }
         }
 
-        public void SetActiveDocument(Document document)
+        public void SetActiveDocument(Document? document)
         {
-            if (_documents.ContainsKey(document.FilePath))
+            if (document != null && _documents.ContainsKey(document.FilePath))
             {
                 ActiveDocument = document;
+            }
+            else if (document == null)
+            {
+                ActiveDocument = null;
             }
         }
     }

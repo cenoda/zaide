@@ -67,16 +67,26 @@ public class EditorViewModel : ReactiveObject
     /// <summary>
     /// Current text content of the editor. Changes mark the tab as dirty.
     /// </summary>
+    private string _textContent = string.Empty;
     public string TextContent
     {
-        get => Document.Content;
-        set => Document.Content = value;
+        get => _textContent;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _textContent, value);
+            Document.Content = value;
+        }
     }
 
     /// <summary>
     /// True when content has been modified since the last save.
     /// </summary>
-    public bool IsDirty => Document.IsDirty;
+    private bool _isDirty;
+    public bool IsDirty
+    {
+        get => _isDirty;
+        private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+    }
 
     /// <summary>
     /// Read-only convenience flag — inverse of IsDirty.
@@ -87,7 +97,12 @@ public class EditorViewModel : ReactiveObject
     /// Error message from the last failed save. null when the last save
     /// succeeded or no save has been attempted yet.
     /// </summary>
-    public string? LastSaveError => Document.LastSaveError;
+    private string? _lastSaveError;
+    public string? LastSaveError
+    {
+        get => _lastSaveError;
+        private set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
+    }
 
     /// <summary>
     /// ReactiveCommand for saving the file.
@@ -99,6 +114,27 @@ public class EditorViewModel : ReactiveObject
         Document = document;
         _fileService = fileService;
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
+
+        // Initialize reactive properties from Document
+        _textContent = Document.Content;
+        _isDirty = Document.IsDirty;
+        _lastSaveError = Document.LastSaveError;
+
+        // Subscribe to Document changes to update reactive properties
+        Document.ContentChanged += (sender, e) =>
+        {
+            _textContent = Document.Content;
+            this.RaisePropertyChanged(nameof(TextContent));
+            IsDirty = Document.IsDirty;
+        };
+        Document.DirtyStateChanged += (sender, e) =>
+        {
+            IsDirty = Document.IsDirty;
+        };
+        Document.SaveErrorChanged += (sender, e) =>
+        {
+            LastSaveError = Document.LastSaveError;
+        };
     }
 
     /// <summary>
