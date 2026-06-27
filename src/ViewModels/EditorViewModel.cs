@@ -29,15 +29,16 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public string FilePath
     {
-        get => Document.FilePath;
+        get => _document?.FilePath;
         set
         {
-            // Since FilePath is init-only, we need to create a new Document if it changes.
-            // This is a workaround for the init-only constraint.
-            if (Document.FilePath != value)
+            if (_document == null || _document.FilePath != value)
             {
-                var newDocument = new Document(value, Document.Content);
-                Document = newDocument;
+                var newDocument = new Document(value, _document?.Content ?? string.Empty);
+                _document = newDocument;
+                this.RaiseAndSetIfChanged(ref _document, _document);
+                // Re-wire reactive properties for the new document
+                InitializeReactiveProperties();
             }
             FileName = string.IsNullOrEmpty(value)
                 ? "Untitled"
@@ -111,29 +112,34 @@ public class EditorViewModel : ReactiveObject
 
     public EditorViewModel(Document document, IFileService fileService)
     {
-        Document = document;
+        _document = document;
         _fileService = fileService;
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
 
-        // Initialize reactive properties from Document
-        _textContent = Document.Content;
-        _isDirty = Document.IsDirty;
-        _lastSaveError = Document.LastSaveError;
+        InitializeReactiveProperties();
+    }
 
-        // Subscribe to Document changes to update reactive properties
-        Document.ContentChanged += (sender, e) =>
+    private void InitializeReactiveProperties()
+    {
+        if (_document == null) return;
+
+        _textContent = _document.Content;
+        _isDirty = _document.IsDirty;
+        _lastSaveError = _document.LastSaveError;
+
+        _document.ContentChanged += (sender, e) =>
         {
-            _textContent = Document.Content;
+            _textContent = _document.Content;
             this.RaisePropertyChanged(nameof(TextContent));
-            IsDirty = Document.IsDirty;
+            IsDirty = _document.IsDirty;
         };
-        Document.DirtyStateChanged += (sender, e) =>
+        _document.DirtyStateChanged += (sender, e) =>
         {
-            IsDirty = Document.IsDirty;
+            IsDirty = _document.IsDirty;
         };
-        Document.SaveErrorChanged += (sender, e) =>
+        _document.SaveErrorChanged += (sender, e) =>
         {
-            LastSaveError = Document.LastSaveError;
+            LastSaveError = _document.LastSaveError;
         };
     }
 
