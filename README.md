@@ -51,20 +51,21 @@ One agent codes, another reviews. They argue. You get better code.
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
 
-## Agent-to-Agent
+## Agent-to-Agent Communication
 
-- Each agent panel has a **user input** — talk to any agent directly
-- Use `@agent` mentions to route messages between agents
-- **Townhall** is the shared transparency layer: every agent action is logged here automatically
-- No agent can work in secret. You always see what they changed.
+Each agent panel includes:
+- **User input** field for direct communication with agents
+- **`@agent` mentions** to route messages between agents
+- **Townhall transparency layer**: all agent actions are logged automatically
+- No secret work - you always see what each agent is doing
 
-## Stack
+## Stack Architecture
 
 | Layer | Technology |
 |-------|-----------|
 | UI Framework | **Avalonia 12** + Semi.Avalonia (dark theme) |
 | Architecture | **MVVM** with ReactiveUI |
-| DI | Microsoft.Extensions.DependencyInjection |
+| DI Container | Microsoft.Extensions.DependencyInjection |
 | Language | C# (nullable enabled) |
 | Runtime | .NET 10.0 |
 | Platform | Cross-platform (Linux, macOS, Windows) |
