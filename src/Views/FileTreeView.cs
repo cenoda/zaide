@@ -194,7 +194,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 }));
 
             // M2: Bind Show Hidden Files menu item check state
-            d.Add(this.OneWayBind(ViewModel, vm => vm.ShowHiddenFiles, v => showHiddenItem.IsChecked));
+            // Uses WhenAnyValue + Subscribe instead of OneWayBind because
+            // showHiddenItem is a local variable, not a view member expression.
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.ShowHiddenFiles)
+                .Subscribe(isChecked => showHiddenItem.IsChecked = isChecked));
 
             // M5: Dispose of event handlers and subscriptions
             d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));

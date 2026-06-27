@@ -22,6 +22,7 @@ Code quality issues found during Phase 1.2 audit. Check these before starting Ph
 - [x] B3 — Stale StatusText on successful create (FIXED)
 - [x] C1 — Toggle flips flag before re-enumeration succeeds (FIXED)
 - [x] C2 — Menu item not explicitly checkable (FIXED)
+- [x] D1 — `OneWayBind` crash on local variable expression (FIXED)
 
 ---
 
@@ -123,6 +124,19 @@ The "Show Hidden Files" `MenuItem` only bound `IsChecked` without setting
 **Fix:** Added `ToggleType = MenuItemToggleType.CheckBox` to the `MenuItem` initializer.
 
 **Files:** `src/Views/FileTreeView.cs` (line 149)
+
+---
+
+### [x] D1 — `OneWayBind` crash on local variable expression (HIGH) (FIXED 2026-06-27)
+
+`OneWayBind(ViewModel, vm => vm.ShowHiddenFiles, v => showHiddenItem.IsChecked)` threw
+`NotSupportedException` at runtime because ReactiveUI's expression parser cannot
+resolve `showHiddenItem.IsChecked` — it's a local variable, not a view member.
+
+**Fix:** Replaced with `WhenAnyValue(x => x.ViewModel!.ShowHiddenFiles).Subscribe(...)`
+which binds to the local variable directly without expression tree constraints.
+
+**Files:** `src/Views/FileTreeView.cs` (lines 196–200)
 
 ---
 
