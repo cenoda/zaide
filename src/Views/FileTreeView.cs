@@ -1,4 +1,5 @@
 using System;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -152,6 +154,24 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         showHiddenItem.Click += (_, _) => ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
         contextMenu.Items.Add(showHiddenItem);
 
+        // M3: Copy Path / Copy Relative Path
+        contextMenu.Items.Add(new Separator());
+        var copyPathItem = new MenuItem { Header = "Copy Path" };
+        copyPathItem.Click += (_, _) =>
+        {
+            if (_treeView.SelectedItem is FileTreeNode selected)
+                ViewModel!.CopyPathCommand.Execute(selected).Subscribe();
+        };
+        contextMenu.Items.Add(copyPathItem);
+
+        var copyRelativePathItem = new MenuItem { Header = "Copy Relative Path" };
+        copyRelativePathItem.Click += (_, _) =>
+        {
+            if (_treeView.SelectedItem is FileTreeNode selected)
+                ViewModel!.CopyRelativePathCommand.Execute(selected).Subscribe();
+        };
+        contextMenu.Items.Add(copyRelativePathItem);
+
         _treeView.ContextFlyout = contextMenu;
 
         _treeView.SelectionChanged += (_, e) =>
@@ -198,6 +218,17 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             // showHiddenItem is a local variable, not a view member expression.
             d.Add(this.WhenAnyValue(x => x.ViewModel!.ShowHiddenFiles)
                 .Subscribe(isChecked => showHiddenItem.IsChecked = isChecked));
+
+            // M3: Register clipboard copy handler via Interaction
+            d.Add(ViewModel!.CopyToClipboard.RegisterHandler(async interaction =>
+            {
+                var topLevel = TopLevel.GetTopLevel(this);
+                if (topLevel?.Clipboard is { } clipboard)
+                {
+                    await clipboard.SetTextAsync(interaction.Input);
+                }
+                interaction.SetOutput(Unit.Default);
+            }));
 
             // M5: Dispose of event handlers and subscriptions
             d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));

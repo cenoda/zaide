@@ -54,6 +54,16 @@ public class FileTreeViewModel : ReactiveObject
     // M2: Show hidden files toggle
     public ReactiveCommand<Unit, Unit> ToggleHiddenFilesCommand { get; }
 
+    // M3: Copy path commands — execute with a FileTreeNode payload
+    public ReactiveCommand<FileTreeNode, Unit> CopyPathCommand { get; }
+    public ReactiveCommand<FileTreeNode, Unit> CopyRelativePathCommand { get; }
+
+    /// <summary>
+    /// M3: Fires when a path string should be copied to clipboard.
+    /// MainWindowViewModel registers the handler that calls topLevel.Clipboard.SetTextAsync.
+    /// </summary>
+    public Interaction<string, Unit> CopyToClipboard { get; } = new();
+
     public bool ShowHiddenFiles
     {
         get => _showHiddenFiles;
@@ -204,6 +214,21 @@ public class FileTreeViewModel : ReactiveObject
             {
                 StatusText = $"Failed to toggle hidden files: {ex.Message}";
             }
+        });
+
+        // M3: CopyPathCommand — copies the absolute path of a node to clipboard
+        CopyPathCommand = ReactiveCommand.Create<FileTreeNode>(node =>
+        {
+            if (node is null) return;
+            CopyToClipboard.Handle(node.FullPath).Subscribe();
+        });
+
+        // M3: CopyRelativePathCommand — copies path relative to RootPath
+        CopyRelativePathCommand = ReactiveCommand.Create<FileTreeNode>(node =>
+        {
+            if (node is null || RootPath is null) return;
+            var relative = Path.GetRelativePath(RootPath, node.FullPath);
+            CopyToClipboard.Handle(relative).Subscribe();
         });
     }
 
