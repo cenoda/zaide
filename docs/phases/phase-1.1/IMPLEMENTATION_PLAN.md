@@ -225,7 +225,7 @@ Single open pathway (no double-trigger):
 ## Exit Conditions
 
 - [x] `dotnet build Zaide.slnx` succeeds with 0 warnings and 0 errors
-- [x] `dotnet test Zaide.slnx` passes all tests (85 passed, 0 failed)
+- [x] `dotnet test Zaide.slnx` passes all tests (93 passed, 0 failed)
 - [x] `docs-rules.md` §11b violations: 0 (B3 resolved)
 - [x] Rename a directory in the tree → children paths update correctly (B1)
 - [x] Open an inaccessible folder → `StatusText` set, no crash, RootNodes unchanged (B2)

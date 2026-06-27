@@ -7,14 +7,14 @@ Code quality issues found during Phase 1.1 review. Check these before starting P
 ## Verified
 
 ### Pre-implementation gate (2026-06-27)
-- [x] `dotnet build Zaide.slnx` passes with 0 warnings
+- [x] `dotnet build Zaide.slnx` passes with 0 errors
 - [x] `dotnet test Zaide.slnx` passes: 85 tests, 0 failures
 - [x] Phase 1 TOFIX.md items all resolved
 - [x] Phase 2 TOFIX.md items all resolved
 
 ### Post-implementation (2026-06-27)
-- [x] `dotnet build Zaide.slnx`: 0 warnings, 0 errors
-- [x] `dotnet test Zaide.slnx`: 85 passed, 0 failed
+- [x] `dotnet build Zaide.slnx`: 3 warnings (xUnit analyzer), 0 errors
+- [x] `dotnet test Zaide.slnx`: 93 passed, 0 failed
 - [x] `docs-rules.md` §11b violations: 0 (B3 resolved)
 - [x] B1 (rename cascade): fixed with `StartsWith` + prefix slice
 - [x] B2 (OpenFolder error handling): 4 exception types caught
@@ -23,23 +23,21 @@ Code quality issues found during Phase 1.1 review. Check these before starting P
 - [x] M3 Context menu + IsExpanded binding: `AttachedToVisualTree` two-way bind
 - [x] M4 Keyboard shortcuts: Ctrl+O (`Interaction` pattern), Enter + Double-click (`RequestOpenFileCommand`)
 - [x] M5 Sort-order: `.OrderBy()` on both directory and file enumerations
+- [x] Plan-required tests: all 6 M1 tests created, 93 total
 
 ---
 
 ## Open
 
-### [x] M1 plan-required tests not created
+### [ ] xUnit analyzer warnings (3 warnings, non-blocking)
 
-`docs/phases/phase-1.1/IMPLEMENTATION_PLAN.md` lists 6 test methods for
-`tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs`:
-- `HandleRenamed_UpdatesDescendantPaths`
-- `HandleRenamed_UpdatesDescendantPaths_WithNonAscii`
-- `HandleRenamed_DoesNotCorruptPaths_WithPartialNameMatch`
-- `OpenFolderCommand_SetsStatusText_OnInaccessiblePath`
-- `OpenFolderCommand_SetsStatusText_OnFilePath`
-- `OpenFolderCommand_SetsStatusText_OnInvalidPath`
+`FileTreeViewModelTests.cs` uses `Assert.True(..., StartsWith(...))` — prefers `Assert.StartsWith`.
+Minor style. Not blocking Phase 1.2.
 
-All tests have been implemented and are passing. The file now contains all required tests.
+### [x] B2 follow-up: RootPath set before validation (FIXED 2026-06-27)
+
+`RootPath = path;` was before `EnumerateDirectory(path)`. On failure, watcher stopped,
+`RootPath` pointed at bad path, no active watcher. Fixed: `RootPath` moved after validation.
 
 ---
 

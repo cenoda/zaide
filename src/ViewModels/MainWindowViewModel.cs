@@ -83,7 +83,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .Where(msg => msg is not null)
                 .Subscribe(msg => StatusText = $"Open failed: {msg}"));
 
-        // Subscribe to RequestOpenFileCommand executions
+        // Subscribe to RequestOpenFileCommand executions.
+        // Avalonia TreeView changes selection on right-click, so SelectedFile
+        // is always the context-menu target by the time the command fires.
         _disposables.Add(
             FileTreeViewModel.RequestOpenFileCommand.Subscribe(_ =>
             {

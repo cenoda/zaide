@@ -65,8 +65,8 @@ public class FileTreeViewModel : ReactiveObject
 
             try
             {
-                RootPath = path;
                 var nodes = _fileTreeService.EnumerateDirectory(path);
+                RootPath = path;  // set only after validation succeeds
                 RootNodes.Clear();
                 foreach (var node in nodes)
                     RootNodes.Add(node);

@@ -4,9 +4,9 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `dotnet build Zaide.slnx` passes with 0 warnings
-- [ ] `dotnet test Zaide.slnx` passes: 85 tests, 0 failures
-- [ ] Phase 1.1 TOFIX.md reviewed (6 missing tests — decide: write now or defer)
+- [ ] `dotnet build Zaide.slnx` passes with 0 errors
+- [ ] `dotnet test Zaide.slnx` passes: 93 tests, 0 failures
+- [ ] Phase 1.1 TOFIX.md reviewed (3 xUnit warnings, 1 open item)
 - [ ] Phase 2 TOFIX.md check
 
 ---
@@ -68,7 +68,7 @@
 
 - `src/Services/FileTreeService.cs`
   - `EnumerateDirectory(string path, bool includeHidden = false)`. When true: skip `IsHidden`, only `DefaultIgnores`.
-  - Watcher `.Where()` filter respects `includeHidden`.
+  - Watcher recreation: `StartWatching` builds the filter pipeline once at call time. Toggling hidden files requires calling `StartWatching(path)` again with a new `includeHidden` flag passed through. Add a `bool _includeHidden` field stored at watch-start time so `FileChanges` observable's `.Where()` filter uses the current value.
 
 - `src/Views/FileTreeView.cs`
   - Context menu: checkable "Show Hidden Files". `Ctrl+Shift+H` on TreeView.
