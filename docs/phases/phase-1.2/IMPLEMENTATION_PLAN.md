@@ -4,10 +4,10 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `dotnet build Zaide.slnx` passes with 0 errors
-- [ ] `dotnet test Zaide.slnx` passes: 93 tests, 0 failures
-- [ ] Phase 1.1 TOFIX.md reviewed (3 xUnit warnings, 1 open item)
-- [ ] Phase 2 TOFIX.md check
+- [x] `dotnet build Zaide.slnx` passes with 0 errors
+- [x] `dotnet test Zaide.slnx` passes: 93 tests, 0 failures
+- [x] Phase 1.1 TOFIX.md reviewed (3 xUnit warnings, 1 open item)
+- [x] Phase 2 TOFIX.md check
 
 ---
 
