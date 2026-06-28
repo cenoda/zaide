@@ -2,9 +2,10 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `Mono.Posix.NETStandard` NuGet verified compatible with .NET 10 on Linux
-- [ ] Proof-of-concept: `forkpty()` P/Invoke works (manual declaration if needed)
-- [ ] Proof-of-concept: `forkpty()` spawns a shell, reads output, writes input
+- [ ] Native PTY approach verified compatible with .NET 10 on Linux
+- [ ] Proof-of-concept: PTY master/slave allocation works via libc P/Invoke
+- [ ] Proof-of-concept: shell spawn path works without managed code running in a post-fork child branch
+- [ ] Proof-of-concept: PTY session spawns a shell, reads output, and writes input
 - [ ] Proof-of-concept: `TIOCSWINSZ` ioctl resizes the PTY
 - [ ] Avalonia `TextBox` confirmed viable as a read-only output display with manual key forwarding (known limitations documented in §TextBox Surface)
 
@@ -23,7 +24,7 @@ session with character-level input, raw text output, and proper lifecycle manage
 **In scope:**
 - Bottom terminal panel integrated into the existing shell layout
 - Toggle terminal visibility via existing `ToggleBottomPanelCommand` (Ctrl+` / Ctrl+J)
-- Linux PTY-backed shell session (via `Mono.Posix.NETStandard` with manual `forkpty()` P/Invoke if needed)
+- Linux PTY-backed shell session via native libc interop
 - Character-level input forwarding (every keystroke sent to PTY immediately)
 - Raw text output buffer (no ANSI/VT100 parsing in this phase)
 - Terminal resize support (`TIOCSWINSZ` ioctl)
@@ -46,12 +47,18 @@ session with character-level input, raw text output, and proper lifecycle manage
 
 ### PTY Approach
 
-Use `Mono.Posix.NETStandard` NuGet package for POSIX syscalls on Linux.
-If `forkpty()` is not available in the package, use manual P/Invoke:
-```csharp
-[DllImport("libutil", SetLastError = true)]
-private static extern int forkpty(out int master, IntPtr name, IntPtr termios, IntPtr winsize);
-```
+Do not rely on `forkpty()` followed by managed child-branch logic. Forking a
+multi-threaded .NET process and then running managed code in the child before
+`exec` is unsafe.
+
+The preferred Phase 3 approach is:
+- allocate a PTY master/slave pair through native libc interop
+- spawn the shell through a native path that does not return managed execution
+  into a post-fork child branch
+- keep all PTY/session lifecycle control in the Linux terminal service
+
+The exact native API combination is left to the proof-of-concept, but the
+design target is the same: a real PTY without managed child-branch execution.
 
 This gives a real PTY: programs like `ls --color`, `git status`, `python -i`,
 and bash readline (Tab completion, arrow-key history, Ctrl+C) all detect a
@@ -59,10 +66,9 @@ TTY and behave correctly. Cursor-addressed programs like `vim` and `htop`
 emit raw ANSI sequences visible as text — terminal emulator rendering is a
 future phase.
 
-**Fallback (reduced-scope outcome):** If `Mono.Posix.NETStandard` proves incompatible
-with .NET 10 or Avalonia's runtime, a `System.Diagnostics.Process` with redirected
-streams can replace the PTY backend. This is **not** an equivalent swap — it changes
-the product contract:
+**Fallback (reduced-scope outcome):** If the PTY path proves unworkable on the
+current stack, a `System.Diagnostics.Process` with redirected streams can replace
+the PTY backend. This is **not** an equivalent swap — it changes the product contract:
 
 - No TTY detection (programs see a pipe, not a terminal)
 - No `Resize()` — terminal dimension ioctls have no effect
@@ -70,11 +76,11 @@ the product contract:
 - No Ctrl+C signal routing (SIGINT is not delivered to the child)
 - Key handling falls back to line-buffered input
 
-`ITerminalService` handles the interface boundary, but the ViewModel and View
-must treat this as a degraded mode. The scope in §Scope narrows correspondingly:
-character-level input forwarding becomes line-level; `echo hello` still works
-but `vim` / `htop` / `python -i` are non-functional. Upgrade to PTY is a
-future-phase requirement.
+`ITerminalService` preserves the same API surface, but the semantics are weaker
+in degraded mode. The ViewModel and View must treat this as a reduced-scope
+outcome. The scope in §Scope narrows correspondingly: character-level input
+forwarding becomes line-level; `echo hello` still works but `vim` / `htop` /
+`python -i` are non-functional. Upgrade to PTY is a future-phase requirement.
 
 ### Data Model
 
@@ -84,7 +90,8 @@ default 200,000 characters) for raw output. No line-splitting, no ANSI parsing.
 The view renders the buffer contents in a monospace `TextBox`.
 
 **Future:** ANSI parsing will replace the raw `TextBox` with a styled text
-renderer. The `StringBuilder` buffer model will remain as the source of truth.
+renderer. The `StringBuilder` buffer model can remain as the source buffer, but
+stream decoding must stay stateful across read boundaries.
 
 ### Input Model
 
@@ -98,8 +105,8 @@ Input is **character-level**, not line-based. The `TerminalPanel` captures
 - Ctrl+D → `\x04` (EOT)
 - Arrow keys → ANSI escape sequences (`\x1B[A`, `\x1B[B`, etc.)
 
-This ensures Tab completion, Ctrl+C interruption, readline, and interactive
-programs all work correctly.
+This ensures Tab completion, Ctrl+C interruption, readline, and PTY-backed
+interactive shell workflows work correctly.
 
 **Ctrl+C conflict:** When the terminal panel is focused, Ctrl+C sends `\x03`
 to the PTY (SIGINT). When the editor panel is focused, Ctrl+C is copy.
@@ -151,7 +158,7 @@ controls or third-party terminal widgets.
 | Component | Path | Description |
 |-----------|------|-------------|
 | `ITerminalService` | `src/Services/ITerminalService.cs` | Interface for terminal operations |
-| `LinuxTerminalService` | `src/Services/LinuxTerminalService.cs` | Linux PTY implementation via `Mono.Posix.NETStandard` |
+| `LinuxTerminalService` | `src/Services/LinuxTerminalService.cs` | Linux PTY implementation via native libc interop |
 | `TerminalPanel` | `src/Views/TerminalPanel.cs` | Terminal UI panel (C# view, monospace `TextBox`) |
 | `TerminalViewModel` | `src/ViewModels/TerminalViewModel.cs` | Terminal state, raw output buffer, input forwarding |
 
@@ -176,14 +183,14 @@ services.AddSingleton<ITerminalService>(sp =>
 
 ## Implementation Sequence
 
-### Step 1: NuGet + Proof-of-Concept (M0)
+### Step 1: Native PTY Proof-of-Concept (M0)
 
-- [ ] Add `Mono.Posix.NETStandard` v1.0.0 to `Directory.Packages.props` and `src/Zaide.csproj`
-- [ ] Verify `forkpty()` P/Invoke (manual declaration if needed)
-- [ ] Verify `forkpty()` spawns `/bin/bash`, reads "bash-5.1$" prompt, writes `echo hello\n`, reads `hello\n`
+- [ ] Verify native PTY allocation via libc P/Invoke
+- [ ] Verify shell spawn path does not depend on managed child-branch logic after `fork`
+- [ ] Verify PTY session spawns `/bin/bash`, reads prompt, writes `echo hello\n`, reads `hello\n`
 - [ ] Verify `TIOCSWINSZ` ioctl resizes the PTY without errors
-- [ ] If `Mono.Posix.NETStandard` fails, fall back to `Process` redirected streams (document limitations)
-- [ ] `dotnet build Zaide.slnx` — 0 warnings after adding the package
+- [ ] If PTY path fails, fall back to `Process` redirected streams (document limitations)
+- [ ] `dotnet build Zaide.slnx` — 0 warnings after any package or interop changes
 
 ### Step 2: Service Interface + Linux Implementation (M1)
 
@@ -201,12 +208,12 @@ services.AddSingleton<ITerminalService>(sp =>
   }
   ```
 - [ ] Create `LinuxTerminalService` implementing `ITerminalService`:
-  - Uses `Mono.Unix.Native.Syscall.forkpty()` to create PTY
+  - Uses native PTY allocation + native shell spawn path
   - Background thread reads from PTY fd → raises `OutputReceived`
   - `WriteAsync` writes bytes to PTY fd
   - `Resize` calls `TIOCSWINSZ` ioctl on PTY fd
-  - `ProcessExited` raised when child process exits (detect via `waitpid`)
-  - `Dispose` kills child process, closes fd, joins reader thread
+  - Reader thread owns exit detection; service reaps child and raises `ProcessExited` once
+  - `Dispose` is idempotent: kills child process if needed, closes fd, joins reader thread, tolerates repeated calls
 - [ ] Register in `Program.cs` DI container
 
 **Tests:**
@@ -224,7 +231,7 @@ services.AddSingleton<ITerminalService>(sp =>
   - `string? StartupError` — reactive property, set when `StartAsync` fails (null on success or before start)
   - `ReactiveCommand<Unit, Unit> ClearCommand` — clears buffer
   - Subscribes to `ITerminalService.OutputReceived`:
-    - Decodes `byte[]` → UTF-8 string (with replacement character for invalid sequences)
+    - Decodes `byte[]` with a stateful UTF-8 `Decoder` carried across read chunks
     - Appends to `_outputBuffer`
     - Trims from front if capacity exceeded (acceptable for MVP at 200K buffer size)
     - Raises `PropertyChanged` for `OutputText`
@@ -232,11 +239,13 @@ services.AddSingleton<ITerminalService>(sp =>
     - Updates `IsRunning`
     - Appends "\r\n[Process exited]\r\n" to buffer
   - `SendInputAsync(byte[] data)` → `_service.WriteAsync(data)`
-  - `Dispose` disposes the service
-- [ ] Start terminal on ViewModel construction (or via explicit `StartCommand`)
+  - `EnsureStartedAsync()` lazily starts the terminal on first reveal/focus
+  - `Dispose` is idempotent and disposes the service safely
+- [ ] Start terminal lazily when the terminal panel is first shown
 
 **Tests:**
 - `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
+- `OutputReceived_DecodesUtf8AcrossChunkBoundaries` — split a multibyte sequence across two events, verify correct decoded output
 - `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (acceptable for MVP at 200K buffer size)
 - `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
 - `ProcessExited_UpdatesIsRunning` — verify state change
@@ -299,8 +308,9 @@ services.AddSingleton<ITerminalService>(sp =>
 ### Step 5: Layout Integration (M4)
 
 - [ ] Modify `BuildLayout()` in `MainWindow.axaml.cs`:
-  - Replace the bottom panel placeholder `Border` with `TerminalPanel`
-  - Inject `TerminalViewModel` from `MainWindowViewModel`
+  - Preserve the existing bottom-panel visibility wiring
+  - Keep the existing `Border` as the bottom-panel container, or change the field type intentionally and update all visibility bindings
+  - Host `TerminalPanel` inside the bottom-panel container
   - Keep existing `Grid.SetColumnSpan(bottomPanel, 4)` spanning
 - [ ] Add `TerminalViewModel` property to `MainWindowViewModel`
 - [ ] Add subscription in `MainWindowViewModel.Activate()`:
@@ -311,10 +321,12 @@ services.AddSingleton<ITerminalService>(sp =>
           .Subscribe(err => StatusText = $"Terminal: {err}"));
   ```
 - [ ] Wire bottom panel toggle to show/hide `TerminalPanel`
-- [ ] Wire `TerminalViewModel` disposal in `MainWindowViewModel.Dispose()`
+- [ ] On first terminal reveal, call `TerminalViewModel.EnsureStartedAsync()`
+- [ ] Reuse the same visibility toggle path to refocus the terminal surface when shown
+- [ ] If `TerminalViewModel` remains DI-managed singleton, either do not dispose it from `MainWindowViewModel`, or require fully idempotent disposal semantics
 
 **Tests:**
-- `MainWindowViewModel_DisposesTerminalViewModel` — verify disposal chain
+- `MainWindowViewModel_EnsuresTerminalStartsOnFirstReveal` — verify lazy startup trigger
 
 ### Step 6: Cleanup and Polish (M5)
 
@@ -351,7 +363,7 @@ services.AddSingleton<ITerminalService>(sp =>
 | M1 | `LinuxTerminalService` integration tests pass | — |
 | M2 | `TerminalViewModel` unit tests pass | — |
 | M3 | — | Terminal panel renders in bottom area with monospace font |
-| M4 | `MainWindowViewModel` disposal test passes | Panel toggle shows/hides terminal |
+| M4 | `MainWindowViewModel_EnsuresTerminalStartsOnFirstReveal` passes | Panel toggle shows/hides terminal |
 | M5 | All tests pass | `echo hello` works, `exit` cleans up, no zombie processes |
 
 ## Rollback Plan
@@ -363,8 +375,8 @@ Full scope as defined above — character-level input, resize, TTY detection,
 interactive shells, `echo hello`, `ls --color`, `python -i`, readline.
 
 ### Outcome B: PTY fails, redirected-stream fallback (reduced scope)
-If `Mono.Posix.NETStandard` integration fails (runtime errors, package incompatibility,
-P/Invoke breakage on .NET 10), the fallback is a `System.Diagnostics.Process` with
+If the PTY integration fails (runtime errors, interop breakage on .NET 10,
+or native API incompatibility), the fallback is a `System.Diagnostics.Process` with
 redirected streams. This is a **different product** with a narrower contract:
 
 | Capability | Outcome A (PTY) | Outcome B (redirected) |
@@ -381,7 +393,7 @@ redirected streams. This is a **different product** with a narrower contract:
 
 1. Replace `LinuxTerminalService` with a redirected-stream implementation
 2. `ITerminalService` interface stays the same (same API surface, weaker semantics) — ViewModel and View code is unchanged, but `WriteAsync` data is now line-buffered and `Resize` is a no-op
-3. Remove `Mono.Posix.NETStandard` from `Directory.Packages.props` and `src/Zaide.csproj`
+3. Remove any PTY-specific package or interop scaffolding that is no longer needed
 4. Update docs/phases/phase-3/IMPLEMENTATION_PLAN.md to reflect the reduced scope
 5. Mark the redirected-stream implementation as temporary, with PTY upgrade as the
    next-phase requirement
@@ -398,6 +410,7 @@ If even `Process` with redirected streams is problematic, revert the entire phas
 - **MVP Scope:** Raw text output (no ANSI parsing). Programs that emit ANSI codes
   will show raw escape sequences. This is acceptable for Phase 3.
 - Every keystroke goes directly to the PTY — no line-buffering, no command model.
+- Prefer lazy terminal startup on first reveal over eager process launch at app startup.
 
 ## Phase 3 Limitations
 
