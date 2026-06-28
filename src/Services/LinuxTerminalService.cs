@@ -23,6 +23,7 @@ public sealed class LinuxTerminalService : ITerminalService
     private readonly object _writeLock = new();
     private int _exitSignaled;
     private volatile bool _disposed;
+    private volatile bool _isRunning;
 
     /// <inheritdoc/>
     public event Action<byte[]>? OutputReceived;
@@ -31,7 +32,11 @@ public sealed class LinuxTerminalService : ITerminalService
     public event Action? ProcessExited;
 
     /// <inheritdoc/>
-    public bool IsRunning { get; private set; }
+    public bool IsRunning
+    {
+        get => _isRunning;
+        private set => _isRunning = value;
+    }
 
     /// <inheritdoc/>
     public Task StartAsync(string shell = "/bin/bash", CancellationToken ct = default)
@@ -39,25 +44,34 @@ public sealed class LinuxTerminalService : ITerminalService
         if (IsRunning) return Task.CompletedTask;
         ct.ThrowIfCancellationRequested();
 
-        // --- allocate the PTY master ---
+        // --- allocate the PTY master (close fd on any partial failure) ---
         _master = LinuxPtyInterop.posix_openpt(LinuxPtyInterop.O_RDWR | LinuxPtyInterop.O_NOCTTY);
         if (_master < 0)
             throw new InvalidOperationException($"posix_openpt failed, errno={Marshal.GetLastPInvokeError()}");
 
-        if (LinuxPtyInterop.grantpt(_master) != 0)
-            throw new InvalidOperationException($"grantpt failed, errno={Marshal.GetLastPInvokeError()}");
+        try
+        {
+            if (LinuxPtyInterop.grantpt(_master) != 0)
+                throw new InvalidOperationException($"grantpt failed, errno={Marshal.GetLastPInvokeError()}");
 
-        if (LinuxPtyInterop.unlockpt(_master) != 0)
-            throw new InvalidOperationException($"unlockpt failed, errno={Marshal.GetLastPInvokeError()}");
+            if (LinuxPtyInterop.unlockpt(_master) != 0)
+                throw new InvalidOperationException($"unlockpt failed, errno={Marshal.GetLastPInvokeError()}");
 
-        string slavePath = LinuxPtyInterop.GetSlaveName(_master);
-        if (string.IsNullOrEmpty(slavePath))
-            throw new InvalidOperationException("ptsname_r returned empty slave path");
+            string slavePath = LinuxPtyInterop.GetSlaveName(_master);
+            if (string.IsNullOrEmpty(slavePath))
+                throw new InvalidOperationException("ptsname_r returned empty slave path");
 
-        // --- spawn the shell with the slave wired to stdin/stdout/stderr ---
-        _pid = SpawnShell(shell, slavePath);
-        if (_pid <= 0)
-            throw new InvalidOperationException("posix_spawn failed to produce a valid pid");
+            // --- spawn the shell with the slave wired to stdin/stdout/stderr ---
+            _pid = SpawnShell(shell, slavePath);
+            if (_pid <= 0)
+                throw new InvalidOperationException("posix_spawn failed to produce a valid pid");
+        }
+        catch
+        {
+            LinuxPtyInterop.close(_master);
+            _master = -1;
+            throw;
+        }
 
         IsRunning = true;
         _reader = new Thread(ReadLoop) { IsBackground = true, Name = "pty-reader" };
