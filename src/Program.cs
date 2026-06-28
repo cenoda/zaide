@@ -26,6 +26,7 @@ class Program
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
+                    services.AddSingleton<TerminalViewModel>();
                     services.AddTransient<EditorViewModel>(sp =>
                         new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
                 },

@@ -265,9 +265,20 @@ services.AddSingleton<ITerminalService>(sp =>
 - [x] `LinuxTerminalService_Dispose_KillsProcess` — dispose, verify `IsRunning == false`
 - [x] Mark as `[Trait("Category", "Integration")]` for CI skip on non-Linux
 
-### Step 3: Terminal ViewModel (M2)
+### Step 3: Terminal ViewModel (M2) — DONE
 
-- [ ] Create `TerminalViewModel : ReactiveObject, IDisposable`:
+> **Status:** Implemented as `src/ViewModels/TerminalViewModel.cs`, registered
+> as a singleton in `Program.cs`. UTF-8 decode happens on the reader thread; the
+> buffer append + `OutputText` change is marshaled to the UI thread via a seam
+> (`Dispatcher.UIThread.Post` in production, run-inline in tests). Buffer access
+> is lock-guarded. 8 unit tests pass; full suite 115 green, 0 build warnings.
+>
+> Implementation note: the UI-marshal seam is an internal constructor
+> (`InternalsVisibleTo Zaide.Tests`), so the DI-facing public constructor stays
+> a clean single `(ITerminalService)` — no constructor ambiguity for the
+> container.
+
+- [x] Create `TerminalViewModel : ReactiveObject, IDisposable`:
   - `StringBuilder _outputBuffer` (max 200,000 characters, configurable, acts as ring buffer)
   - `string OutputText` — reactive property, derived from `_outputBuffer`
   - `bool IsRunning` — reactive property from service
@@ -292,7 +303,7 @@ services.AddSingleton<ITerminalService>(sp =>
     - Safe before startup completes: early input must not throw; either no-op or buffer until the PTY is ready
   - `EnsureStartedAsync()` lazily starts the terminal on first reveal/focus
   - `Dispose` is idempotent and disposes the service safely
-- [ ] Start terminal lazily when the terminal panel is first shown
+- [x] Start terminal lazily when the terminal panel is first shown <!-- EnsureStartedAsync; wired to reveal in Step 5 -->
 
 > **Perf note (accepted for MVP):** `OutputText` is rebuilt via
 > `_outputBuffer.ToString()` on every output chunk, and front-trimming a
@@ -302,13 +313,14 @@ services.AddSingleton<ITerminalService>(sp =>
 > model.
 
 **Tests:**
-- `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
-- `OutputReceived_DecodesUtf8AcrossChunkBoundaries` — split a multibyte sequence across two events, verify correct decoded output
-- `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (acceptable for MVP at 200K buffer size)
-- `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
-- `ProcessExited_UpdatesIsRunning` — verify state change
-- `StartupError_SetOnStartFailure` — mock throws on `StartAsync`, verify `StartupError` is set
-- `StartupError_NullOnStartSuccess` — verify `StartupError` is null after successful `StartAsync`
+- [x] `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
+- [x] `OutputReceived_DecodesUtf8AcrossChunkBoundaries` — split a multibyte sequence across two events, verify correct decoded output
+- [x] `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (acceptable for MVP at 200K buffer size)
+- [x] `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
+- [x] `ProcessExited_UpdatesIsRunning` — verify state change
+- [x] `StartupError_SetOnStartFailure` — mock throws on `StartAsync`, verify `StartupError` is set
+- [x] `StartupError_NullOnStartSuccess` — verify `StartupError` is null after successful `StartAsync`
+- [x] `Dispose_UnsubscribesAndDisposesService` — events after dispose are ignored; service disposed once (added)
 
 ### Step 4: Terminal Panel View (M3)
 
