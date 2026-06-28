@@ -239,6 +239,7 @@ services.AddSingleton<ITerminalService>(sp =>
     - Updates `IsRunning`
     - Appends "\r\n[Process exited]\r\n" to buffer
   - `SendInputAsync(byte[] data)` → `_service.WriteAsync(data)`
+    - Safe before startup completes: early input must not throw; either no-op or buffer until the PTY is ready
   - `EnsureStartedAsync()` lazily starts the terminal on first reveal/focus
   - `Dispose` is idempotent and disposes the service safely
 - [ ] Start terminal lazily when the terminal panel is first shown
