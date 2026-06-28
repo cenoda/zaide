@@ -45,12 +45,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
+    public TerminalViewModel TerminalViewModel { get; }
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
-                               EditorTabViewModel editorTabViewModel)
+                               EditorTabViewModel editorTabViewModel,
+                               TerminalViewModel terminalViewModel)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
+        TerminalViewModel = terminalViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();
@@ -82,6 +85,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             this.WhenAnyValue(x => x.EditorTabs.LastOpenError)
                 .Where(msg => msg is not null)
                 .Subscribe(msg => StatusText = $"Open failed: {msg}"));
+
+        _disposables.Add(
+            this.WhenAnyValue(x => x.TerminalViewModel.StartupError)
+                .Where(err => err is not null)
+                .Subscribe(err => StatusText = $"Terminal: {err}"));
 
         // Subscribe to OpenFileRequested (published by RequestOpenFileCommand).
         // Uses the FileTreeNode payload directly — no dependency on SelectedFile.

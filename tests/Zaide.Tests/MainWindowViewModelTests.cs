@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
@@ -36,7 +37,9 @@ public class MainWindowViewModelTests
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs);
+        var terminalService = new Moq.Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a(), 200_000);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel);
         vm.Activate();
         return vm;
     }
@@ -139,5 +142,29 @@ public class MainWindowViewModelTests
 
         Assert.Equal("Save failed: permission denied", vm.StatusText);
         Assert.True(editor.IsDirty);
+    }
+
+    [Fact]
+    public async Task TerminalStartupError_UpdatesStatusText()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService());
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Moq.Mock<ITerminalService>();
+        terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("pty failed"));
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a(), 200_000);
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel);
+        vm.Activate();
+
+        await terminalViewModel.EnsureStartedAsync();
+
+        Assert.Equal("Terminal: pty failed", vm.StatusText);
     }
 }

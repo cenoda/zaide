@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI;
@@ -42,8 +43,16 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        _outputTextBox.KeyDown += OnKeyDown;
-        _outputTextBox.TextInput += OnTextInput;
+        _outputTextBox.AddHandler(
+            InputElement.KeyDownEvent,
+            OnKeyDown,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        _outputTextBox.AddHandler(
+            InputElement.TextInputEvent,
+            OnTextInput,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
 
         Content = _outputTextBox;
 

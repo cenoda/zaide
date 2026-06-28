@@ -24,6 +24,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly Border _bottomPanel;
     private readonly FileTreeView _fileTreeView;
+    private readonly TerminalPanel _terminalPanel;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -41,13 +42,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
         // === Build Layout (M2, Phase 2) ===
-        (_bottomPanelRow, _bottomPanel, _fileTreeView) = BuildLayout();
+        (_bottomPanelRow, _bottomPanel, _fileTreeView, _terminalPanel) = BuildLayout();
 
         // === ReactiveUI Bindings (M3, Phase 2) ===
         this.WhenActivated(disposables =>
         {
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
+            _terminalPanel.ViewModel = ViewModel.TerminalViewModel;
 
             // Activate VM subscriptions (save errors, file-open) and clean up
             ViewModel!.Activate();
@@ -135,6 +137,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         ? new GridLength(250)
                         : new GridLength(0);
                     _bottomPanel.IsVisible = visible;
+
+                    if (visible)
+                    {
+                        _terminalPanel.FocusTerminal();
+                        _ = ViewModel.TerminalViewModel.EnsureStartedAsync();
+                    }
                 }));
             // M4: PickFolder handler — opens native folder dialog
             disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
@@ -165,7 +173,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// Builds the 3-panel grid layout with bottom panel placeholder.
     /// Left: 260px sidebar | Center: * | Right: 320px agent area.
     /// </summary>
-    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView) BuildLayout()
+    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView, TerminalPanel terminalPanel) BuildLayout()
     {
         var grid = new Grid
         {
@@ -253,7 +261,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(agentArea);
 
         // --- Bottom Panel (hidden by default) ---
-        var bottomPanel = BuildPanel("Terminal (Ctrl+`)", "PanelDeep", 0, 1, 0, 0);
+        var terminalPanel = new TerminalPanel();
+        var bottomPanel = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
+            Padding = new Thickness(0),
+            Margin = new Thickness(0, 1, 0, 0),
+            Child = terminalPanel
+        };
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 0);
         Grid.SetColumnSpan(bottomPanel, 4); // Span all columns (sidebar, splitter, center, agent)
@@ -261,7 +276,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomRow, bottomPanel, sidebar);
+        return (bottomRow, bottomPanel, sidebar, terminalPanel);
     }
 
     /// <summary>
