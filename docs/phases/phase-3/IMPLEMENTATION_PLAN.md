@@ -226,7 +226,7 @@ services.AddSingleton<ITerminalService>(sp =>
   - Subscribes to `ITerminalService.OutputReceived`:
     - Decodes `byte[]` → UTF-8 string (with replacement character for invalid sequences)
     - Appends to `_outputBuffer`
-    - Trims from front if capacity exceeded (O(1) bulk remove)
+    - Trims from front if capacity exceeded (acceptable for MVP at 200K buffer size)
     - Raises `PropertyChanged` for `OutputText`
   - Subscribes to `ITerminalService.ProcessExited`:
     - Updates `IsRunning`
@@ -237,7 +237,7 @@ services.AddSingleton<ITerminalService>(sp =>
 
 **Tests:**
 - `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
-- `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (O(1) bulk remove)
+- `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (acceptable for MVP at 200K buffer size)
 - `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
 - `ProcessExited_UpdatesIsRunning` — verify state change
 - `StartupError_SetOnStartFailure` — mock throws on `StartAsync`, verify `StartupError` is set
@@ -254,7 +254,7 @@ services.AddSingleton<ITerminalService>(sp =>
   - `KeyDown` handler converts keys to raw input:
   - Auto-focus `TextBox` when panel becomes visible
     ```csharp
-    private void OnKeyDown(object? sender, KeyEventArgs e)
+    private async void OnKeyDown(object? sender, KeyEventArgs e)
     {
         byte[]? bytes = e.Key switch
         {
@@ -280,7 +280,7 @@ services.AddSingleton<ITerminalService>(sp =>
     ```
   - `TextInput` handler for printable characters:
     ```csharp
-    private void OnTextInput(object? sender, TextInputEventArgs e)
+    private async void OnTextInput(object? sender, TextInputEventArgs e)
     {
         if (e.Text is { Length: > 0 })
         {
@@ -310,7 +310,6 @@ services.AddSingleton<ITerminalService>(sp =>
           .Where(err => err is not null)
           .Subscribe(err => StatusText = $"Terminal: {err}"));
   ```
-- [ ] Add `TerminalViewModel` property to `MainWindowViewModel`
 - [ ] Wire bottom panel toggle to show/hide `TerminalPanel`
 - [ ] Wire `TerminalViewModel` disposal in `MainWindowViewModel.Dispose()`
 
@@ -381,7 +380,7 @@ redirected streams. This is a **different product** with a narrower contract:
 **If Outcome B is adopted:**
 
 1. Replace `LinuxTerminalService` with a redirected-stream implementation
-2. `ITerminalService` interface stays the same — ViewModel and View code is unchanged
+2. `ITerminalService` interface stays the same (same API surface, weaker semantics) — ViewModel and View code is unchanged, but `WriteAsync` data is now line-buffered and `Resize` is a no-op
 3. Remove `Mono.Posix.NETStandard` from `Directory.Packages.props` and `src/Zaide.csproj`
 4. Update docs/phases/phase-3/IMPLEMENTATION_PLAN.md to reflect the reduced scope
 5. Mark the redirected-stream implementation as temporary, with PTY upgrade as the
