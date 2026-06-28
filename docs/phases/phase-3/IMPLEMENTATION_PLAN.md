@@ -2,12 +2,21 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Native PTY approach verified compatible with .NET 10 on Linux
-- [ ] Proof-of-concept: PTY master/slave allocation works via libc P/Invoke
-- [ ] Proof-of-concept: shell spawn path works without managed code running in a post-fork child branch
-- [ ] Proof-of-concept: PTY session spawns a shell, reads output, and writes input
-- [ ] Proof-of-concept: `TIOCSWINSZ` ioctl resizes the PTY
+- [x] Native PTY approach verified compatible with .NET 10 on Linux
+- [x] Proof-of-concept: PTY master/slave allocation works via libc P/Invoke
+- [x] Proof-of-concept: shell spawn path works without managed code running in a post-fork child branch
+- [x] Proof-of-concept: PTY session spawns a shell, reads output, and writes input
+- [x] Proof-of-concept: `TIOCSWINSZ` ioctl resizes the PTY
 - [ ] Avalonia `TextBox` confirmed viable as a read-only output display with manual key forwarding (known limitations documented in §TextBox Surface)
+
+> **PoC result (M0):** Verified by the throwaway spike in `spike/PtySpike/`
+> (run: `dotnet run` with `--project spike/PtySpike`). All four PTY claims pass:
+> `posix_openpt`/`grantpt`/`unlockpt`/`ptsname_r` allocate the pair,
+> `posix_spawn` + `POSIX_SPAWN_SETSID` spawns `/bin/bash` with the slave wired
+> to fds 0/1/2 (no managed post-fork code), `echo hello` round-trips, and
+> `TIOCSWINSZ` returns 0. `exit` terminates cleanly and `waitpid` reaps the
+> child with no zombie. **PTY path adopted — Outcome A.** The spike is the
+> reference for Step 2; delete `spike/` once `LinuxTerminalService` lands.
 
 ## Entry Gate (M0)
 
@@ -197,17 +206,20 @@ services.AddSingleton<ITerminalService>(sp =>
 
 ### Step 1: Native PTY Proof-of-Concept (M0)
 
-- [ ] Verify native PTY allocation via libc P/Invoke
-- [ ] Verify shell spawn path does not depend on managed child-branch logic after `fork`
+- [x] Verify native PTY allocation via libc P/Invoke
+- [x] Verify shell spawn path does not depend on managed child-branch logic after `fork`
   - Recommended non-fork path: `posix_openpt` / `grantpt` / `unlockpt` / `ptsname`
     to allocate the PTY, then `posix_spawn` with file actions to dup the slave fd
     onto the child's stdin/stdout/stderr. This satisfies the "no managed
     post-fork child branch" rule directly (the child is replaced by the shell
     image without any managed code running between fork and exec).
-- [ ] Verify PTY session spawns `/bin/bash`, reads prompt, writes `echo hello\n`, reads `hello\n`
-- [ ] Verify `TIOCSWINSZ` ioctl resizes the PTY without errors
-- [ ] If PTY path fails, fall back to `Process` redirected streams (document limitations)
-- [ ] `dotnet build Zaide.slnx` — 0 warnings after any package or interop changes
+  - Confirmed by the `spike/PtySpike/` PoC using exactly this path, with
+    `POSIX_SPAWN_SETSID` so the child becomes a session leader and opening the
+    slave (without `O_NOCTTY`) acquires it as the controlling terminal.
+- [x] Verify PTY session spawns `/bin/bash`, reads prompt, writes `echo hello\n`, reads `hello\n`
+- [x] Verify `TIOCSWINSZ` ioctl resizes the PTY without errors
+- [ ] If PTY path fails, fall back to `Process` redirected streams (document limitations) — N/A, PTY path passed
+- [x] `dotnet build Zaide.slnx` — 0 warnings after any package or interop changes (spike is outside the solution; main build remains 0 warnings)
 
 ### Step 2: Service Interface + Linux Implementation (M1)
 
