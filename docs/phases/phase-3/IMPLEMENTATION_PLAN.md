@@ -12,6 +12,9 @@
 ## Entry Gate (M0)
 
 - [ ] `dotnet build Zaide.slnx` passes with 0 warnings
+  - Note: `Directory.Build.props` sets `TreatWarningsAsErrors=false`, so the build
+    will not fail on warnings on its own — "0 warnings" is a manual discipline,
+    verify the build output is clean.
 - [ ] `dotnet test Zaide.slnx` passes (all existing tests green — 90+ at time of writing)
 - [ ] Run Zaide, toggle bottom panel with Ctrl+` and Ctrl+J — both work
 - [ ] Bottom panel placeholder visible in `MainWindow.axaml.cs` `BuildLayout()`
@@ -169,6 +172,15 @@ services.AddSingleton<ITerminalService, LinuxTerminalService>();
 services.AddSingleton<TerminalViewModel>();
 ```
 
+**Shutdown disposal (required for the no-zombie exit condition):** A singleton
+`ITerminalService` is only disposed when the DI container is disposed. `Program.cs`
+builds the provider through `UseReactiveUIWithMicrosoftDependencyResolver` but does
+**not** currently dispose it on application exit, so `LinuxTerminalService.Dispose()`
+would never fire and the shell child process would be orphaned. The phase must wire
+an explicit shutdown hook — dispose the `ITerminalService` (or the provider) from the
+desktop lifetime's `ShutdownRequested`/exit path — otherwise the "no zombie processes"
+exit condition cannot be met.
+
 When Phase 3.1 (Windows) or 3.2 (macOS) adds a backend, the registration
 swaps to a platform-conditional factory:
 
@@ -187,6 +199,11 @@ services.AddSingleton<ITerminalService>(sp =>
 
 - [ ] Verify native PTY allocation via libc P/Invoke
 - [ ] Verify shell spawn path does not depend on managed child-branch logic after `fork`
+  - Recommended non-fork path: `posix_openpt` / `grantpt` / `unlockpt` / `ptsname`
+    to allocate the PTY, then `posix_spawn` with file actions to dup the slave fd
+    onto the child's stdin/stdout/stderr. This satisfies the "no managed
+    post-fork child branch" rule directly (the child is replaced by the shell
+    image without any managed code running between fork and exec).
 - [ ] Verify PTY session spawns `/bin/bash`, reads prompt, writes `echo hello\n`, reads `hello\n`
 - [ ] Verify `TIOCSWINSZ` ioctl resizes the PTY without errors
 - [ ] If PTY path fails, fall back to `Process` redirected streams (document limitations)
@@ -202,11 +219,15 @@ services.AddSingleton<ITerminalService>(sp =>
       event Action? ProcessExited;
 
       Task StartAsync(string shell = "/bin/bash", CancellationToken ct = default);
-      Task WriteAsync(byte[] data);
+      Task WriteAsync(byte[] data, CancellationToken ct = default);
       void Resize(int columns, int rows);
       bool IsRunning { get; }
   }
   ```
+  > **Note:** `OutputReceived` and `ProcessExited` are raised from the
+  > background reader thread. They carry **no** UI-thread guarantee — the
+  > `TerminalViewModel` is responsible for marshaling to the UI thread before
+  > touching bound state (see Step 3).
 - [ ] Create `LinuxTerminalService` implementing `ITerminalService`:
   - Uses native PTY allocation + native shell spawn path
   - Background thread reads from PTY fd → raises `OutputReceived`
@@ -231,11 +252,18 @@ services.AddSingleton<ITerminalService>(sp =>
   - `string? StartupError` — reactive property, set when `StartAsync` fails (null on success or before start)
   - `ReactiveCommand<Unit, Unit> ClearCommand` — clears buffer
   - Subscribes to `ITerminalService.OutputReceived`:
+    - **Marshals to the UI thread first.** The event fires on the background
+      reader thread, so the handler body must run via
+      `Dispatcher.UIThread.Post(...)` (or observe on `RxApp.MainThreadScheduler`)
+      before mutating the buffer or raising `PropertyChanged`. Mutating bound
+      state off the UI thread will throw or corrupt rendering in Avalonia.
     - Decodes `byte[]` with a stateful UTF-8 `Decoder` carried across read chunks
+      (decode happens before the UI-thread hop; only buffer mutation needs the UI thread)
     - Appends to `_outputBuffer`
     - Trims from front if capacity exceeded (acceptable for MVP at 200K buffer size)
     - Raises `PropertyChanged` for `OutputText`
   - Subscribes to `ITerminalService.ProcessExited`:
+    - **Also marshals to the UI thread** (same reader-thread origin)
     - Updates `IsRunning`
     - Appends "\r\n[Process exited]\r\n" to buffer
   - `SendInputAsync(byte[] data)` → `_service.WriteAsync(data)`
@@ -243,6 +271,13 @@ services.AddSingleton<ITerminalService>(sp =>
   - `EnsureStartedAsync()` lazily starts the terminal on first reveal/focus
   - `Dispose` is idempotent and disposes the service safely
 - [ ] Start terminal lazily when the terminal panel is first shown
+
+> **Perf note (accepted for MVP):** `OutputText` is rebuilt via
+> `_outputBuffer.ToString()` on every output chunk, and front-trimming a
+> `StringBuilder` is an O(n) copy. Under chatty output (e.g. `yes`, large build
+> logs) this is measurably expensive at the 200K buffer size. Acceptable for the
+> MVP; the future ANSI/cell-renderer phase replaces this with an incremental
+> model.
 
 **Tests:**
 - `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
@@ -314,6 +349,9 @@ services.AddSingleton<ITerminalService>(sp =>
   - Host `TerminalPanel` inside the bottom-panel container
   - Keep existing `Grid.SetColumnSpan(bottomPanel, 4)` spanning
 - [ ] Add `TerminalViewModel` property to `MainWindowViewModel`
+  - Add a `TerminalViewModel` parameter to the `MainWindowViewModel` constructor
+    (currently `(FileTreeViewModel, EditorTabViewModel)`) so DI supplies the
+    singleton, and expose it as a property.
 - [ ] Add subscription in `MainWindowViewModel.Activate()`:
   ```csharp
   _disposables.Add(
@@ -333,6 +371,8 @@ services.AddSingleton<ITerminalService>(sp =>
 
 - [ ] Verify `exit` in shell → panel shows "[Process exited]", service reports stopped
 - [ ] Verify app shutdown → no zombie processes (`ps aux | grep bash`)
+- [ ] Verify the shutdown disposal hook actually fires `ITerminalService.Dispose()` on app exit (DI does not dispose the provider automatically here)
+- [ ] Verify output rendering works while bash streams rapidly (UI-thread marshaling holds; no cross-thread exceptions)
 - [ ] Verify `dotnet build Zaide.slnx` — 0 warnings
 - [ ] Verify `dotnet test Zaide.slnx` — all tests pass
 - [ ] Verify Ctrl+C in terminal sends SIGINT, not clipboard copy
