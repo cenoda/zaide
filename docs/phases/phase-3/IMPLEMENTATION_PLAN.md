@@ -221,9 +221,19 @@ services.AddSingleton<ITerminalService>(sp =>
 - [ ] If PTY path fails, fall back to `Process` redirected streams (document limitations) — N/A, PTY path passed
 - [x] `dotnet build Zaide.slnx` — 0 warnings after any package or interop changes (spike is outside the solution; main build remains 0 warnings)
 
-### Step 2: Service Interface + Linux Implementation (M1)
+### Step 2: Service Interface + Linux Implementation (M1) — DONE
 
-- [ ] Create `ITerminalService` interface:
+> **Status:** Implemented. `ITerminalService`, `LinuxTerminalService`, and
+> `LinuxPtyInterop` (P/Invoke) live in `src/Services/`; DI registration in
+> `Program.cs`; app-exit disposal hook in `App.axaml.cs`. 3 integration tests
+> pass; full suite is 107 green with 0 build warnings; no orphaned/zombie
+> processes after run. The `spike/` PoC was deleted (superseded).
+>
+> Minor follow-ups (non-blocking, optional): close `_master` on partial
+> `StartAsync` failure to avoid an fd leak; consider marking the `IsRunning`
+> backing field volatile (cross-thread read/write).
+
+- [x] Create `ITerminalService` interface:
   ```csharp
   public interface ITerminalService : IDisposable
   {
@@ -240,20 +250,20 @@ services.AddSingleton<ITerminalService>(sp =>
   > background reader thread. They carry **no** UI-thread guarantee — the
   > `TerminalViewModel` is responsible for marshaling to the UI thread before
   > touching bound state (see Step 3).
-- [ ] Create `LinuxTerminalService` implementing `ITerminalService`:
+- [x] Create `LinuxTerminalService` implementing `ITerminalService`:
   - Uses native PTY allocation + native shell spawn path
   - Background thread reads from PTY fd → raises `OutputReceived`
   - `WriteAsync` writes bytes to PTY fd
   - `Resize` calls `TIOCSWINSZ` ioctl on PTY fd
   - Reader thread owns exit detection; service reaps child and raises `ProcessExited` once
   - `Dispose` is idempotent: kills child process if needed, closes fd, joins reader thread, tolerates repeated calls
-- [ ] Register in `Program.cs` DI container
+- [x] Register in `Program.cs` DI container
 
 **Tests:**
-- `LinuxTerminalService_StartAsync_RaisesOutput` — starts bash, verifies prompt output received
-- `LinuxTerminalService_WriteAsync_EchoesInput` — sends `echo hello\n`, verifies output contains `hello`
-- `LinuxTerminalService_Dispose_KillsProcess` — dispose, verify `IsRunning == false`
-- Mark as `[Trait("Category", "Integration")]` for CI skip on non-Linux
+- [x] `LinuxTerminalService_StartAsync_RaisesOutput` — starts bash, verifies prompt output received
+- [x] `LinuxTerminalService_WriteAsync_EchoesInput` — sends `echo hello\n`, verifies output contains `hello`
+- [x] `LinuxTerminalService_Dispose_KillsProcess` — dispose, verify `IsRunning == false`
+- [x] Mark as `[Trait("Category", "Integration")]` for CI skip on non-Linux
 
 ### Step 3: Terminal ViewModel (M2)
 

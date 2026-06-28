@@ -1,16 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace PtySpike;
+namespace Zaide.Services;
 
 /// <summary>
-/// Raw libc P/Invoke surface for the PTY spike. This is the candidate native
-/// path for <c>LinuxTerminalService</c> (Phase 3, Step 2): allocate a PTY via
-/// <c>posix_openpt</c> and spawn the shell via <c>posix_spawn</c> with
-/// <c>POSIX_SPAWN_SETSID</c> — so no managed code runs in a post-fork child
-/// branch.
+/// Raw libc P/Invoke surface for PTY allocation and child-process management.
+/// Used exclusively by <see cref="LinuxTerminalService"/> — never called from
+/// Views or ViewModels.
 /// </summary>
-internal static class NativeMethods
+internal static class LinuxPtyInterop
 {
     private const string Libc = "libc";
 
@@ -24,6 +23,13 @@ internal static class NativeMethods
     // --- ioctl request: set window size ---
     public const nuint TIOCSWINSZ = 0x5414;
 
+    // --- signals for shutdown ---
+    public const int SIGHUP = 1;
+    public const int SIGKILL = 9;
+
+    // --- waitpid options ---
+    public const int WNOHANG = 1;
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Winsize
     {
@@ -34,6 +40,7 @@ internal static class NativeMethods
     }
 
     // --- PTY allocation ---
+
     [DllImport(Libc, SetLastError = true)]
     public static extern int posix_openpt(int flags);
 
@@ -47,6 +54,7 @@ internal static class NativeMethods
     public static extern int ptsname_r(int fd, byte[] buf, nuint buflen);
 
     // --- fd I/O ---
+
     [DllImport(Libc, SetLastError = true)]
     public static extern nint read(int fd, byte[] buf, nuint count);
 
@@ -59,11 +67,16 @@ internal static class NativeMethods
     [DllImport(Libc, SetLastError = true)]
     public static extern int ioctl(int fd, nuint request, ref Winsize ws);
 
-    // --- child reaping ---
+    // --- process management ---
+
+    [DllImport(Libc, SetLastError = true)]
+    public static extern int kill(int pid, int sig);
+
     [DllImport(Libc, SetLastError = true)]
     public static extern int waitpid(int pid, out int status, int options);
 
-    // --- posix_spawn family (opaque structs passed by pointer) ---
+    // --- posix_spawn family ---
+
     [DllImport(Libc, SetLastError = true)]
     public static extern int posix_spawn(
         out int pid,
@@ -101,4 +114,38 @@ internal static class NativeMethods
 
     [DllImport(Libc, SetLastError = true)]
     public static extern int posix_spawnattr_setflags(nint attr, short flags);
+
+    // --- helpers ---
+
+    /// <summary>
+    /// Reads the slave device path from the master fd via <c>ptsname_r</c>.
+    /// </summary>
+    public static string GetSlaveName(int master)
+    {
+        var buf = new byte[256];
+        if (ptsname_r(master, buf, (nuint)buf.Length) != 0)
+            return string.Empty;
+        int len = Array.IndexOf(buf, (byte)0);
+        if (len < 0) len = buf.Length;
+        return System.Text.Encoding.UTF8.GetString(buf, 0, len);
+    }
+
+    /// <summary>
+    /// Builds a NULL-terminated <c>char**</c> in native memory. The default
+    /// <c>string[]</c> marshaller does not append the NULL terminator that
+    /// <c>posix_spawn</c> requires.
+    /// </summary>
+    public static nint BuildNativeStringArray(string[] items, List<nint> allocations)
+    {
+        nint array = Marshal.AllocCoTaskMem((items.Length + 1) * IntPtr.Size);
+        allocations.Add(array);
+        for (int i = 0; i < items.Length; i++)
+        {
+            nint str = Marshal.StringToCoTaskMemUTF8(items[i]);
+            allocations.Add(str);
+            Marshal.WriteIntPtr(array, i * IntPtr.Size, str);
+        }
+        Marshal.WriteIntPtr(array, items.Length * IntPtr.Size, IntPtr.Zero);
+        return array;
+    }
 }

@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Zaide.Services;
 using Zaide.ViewModels;
 
 namespace Zaide;
@@ -22,6 +23,13 @@ public partial class App : Application
         {
             var vm = Services.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { ViewModel = vm };
+
+            // Dispose the terminal service on exit so the child bash
+            // process is killed and doesn't outlive the app.
+            desktop.Exit += (_, _) =>
+            {
+                Services.GetService<ITerminalService>()?.Dispose();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();
