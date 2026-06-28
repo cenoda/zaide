@@ -111,7 +111,7 @@ public class FileTreeViewModelTests
             var renamedNode = vm.RootNodes.FirstOrDefault(n => n.Name == "renamed_한글");
             Assert.NotNull(renamedNode);
             Assert.Equal(newDirPath, renamedNode.FullPath);
-            Assert.Equal(1, renamedNode.Children.Count);
+            Assert.Single(renamedNode.Children);
             Assert.True(renamedNode.Children.All(c => c.FullPath.StartsWith(newDirPath)));
         }
         finally
@@ -147,10 +147,10 @@ public class FileTreeViewModelTests
             var renamedNode = vm.RootNodes.FirstOrDefault(n => n.Name == "renamed_proj");
             Assert.NotNull(renamedNode);
             Assert.Equal(newDirPath, renamedNode.FullPath);
-            Assert.Equal(1, renamedNode.Children.Count);
+            Assert.Single(renamedNode.Children);
             var backupNode = renamedNode.Children.FirstOrDefault(c => c.Name == "backup");
             Assert.NotNull(backupNode);
-            Assert.True(backupNode.FullPath.StartsWith(newDirPath));
+            Assert.StartsWith(newDirPath, backupNode.FullPath);
             Assert.Contains("old_project.txt", backupNode.Children.FirstOrDefault()?.Name);
         }
         finally
