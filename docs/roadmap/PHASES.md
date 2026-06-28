@@ -66,7 +66,7 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [ ] Embedded terminal in bottom panel
 - [ ] Ctrl+` toggle visibility
 - [ ] Process execution (run commands)
-- [ ] VT100 escape code rendering
+- [ ] Raw text output (no VT100 parsing — deferred to future polish phase)
 
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)

@@ -6,7 +6,7 @@
 - [ ] Proof-of-concept: `forkpty()` P/Invoke works (manual declaration if needed)
 - [ ] Proof-of-concept: `forkpty()` spawns a shell, reads output, writes input
 - [ ] Proof-of-concept: `TIOCSWINSZ` ioctl resizes the PTY
-- [ ] Avalonia `TextBox` confirmed suitable for raw terminal output display
+- [ ] Avalonia `TextBox` confirmed viable as a read-only output display with manual key forwarding (known limitations documented in §TextBox Surface)
 
 ## Entry Gate (M0)
 
@@ -54,13 +54,27 @@ private static extern int forkpty(out int master, IntPtr name, IntPtr termios, I
 ```
 
 This gives a real PTY: programs like `ls --color`, `git status`, `python -i`,
-`vim`, `htop` all detect a TTY and behave correctly.
+and bash readline (Tab completion, arrow-key history, Ctrl+C) all detect a
+TTY and behave correctly. Cursor-addressed programs like `vim` and `htop`
+emit raw ANSI sequences visible as text — terminal emulator rendering is a
+future phase.
 
-**Fallback:** If `Mono.Posix.NETStandard` proves incompatible with .NET 10 or Avalonia's
-runtime, fall back to `System.Diagnostics.Process` with redirected streams.
-Document the limitations (no color, no interactive programs, no resize) and
-upgrade in a later phase. The `ITerminalService` interface makes this swap
-invisible to the rest of the codebase.
+**Fallback (reduced-scope outcome):** If `Mono.Posix.NETStandard` proves incompatible
+with .NET 10 or Avalonia's runtime, a `System.Diagnostics.Process` with redirected
+streams can replace the PTY backend. This is **not** an equivalent swap — it changes
+the product contract:
+
+- No TTY detection (programs see a pipe, not a terminal)
+- No `Resize()` — terminal dimension ioctls have no effect
+- No color output, no interactive prompts (`python -i`, `git commit`)
+- No Ctrl+C signal routing (SIGINT is not delivered to the child)
+- Key handling falls back to line-buffered input
+
+`ITerminalService` handles the interface boundary, but the ViewModel and View
+must treat this as a degraded mode. The scope in §Scope narrows correspondingly:
+character-level input forwarding becomes line-level; `echo hello` still works
+but `vim` / `htop` / `python -i` are non-functional. Upgrade to PTY is a
+future-phase requirement.
 
 ### Data Model
 
@@ -97,12 +111,47 @@ Terminal panel uses `FontFamily = "Cascadia Code, JetBrains Mono, monospace"`
 with a fallback chain. Consistent monospace character width is required for
 correct terminal rendering.
 
+### TextBox Surface
+
+The MVP terminal panel uses a **read-only `TextBox`** as the output surface with
+manual `KeyDown`/`TextInput` capture for input forwarding. This is an **output
+viewer plus minimal key relay**, not a terminal emulator widget.
+
+**Known limitations (accepted for MVP):**
+
+- **No selection/copy from output:** `IsReadOnly = true` with `KeyDown` handling
+  makes text selection unreliable. Recommended pattern: handle Ctrl+Shift+C for
+  copy separately, or add a context-menu "Copy" action. Pure mouse selection
+  inside the TextBox is not guaranteed.
+- **Input focus fragility:** `TextBox` may lose focus to other controls when the
+  panel is toggled or when Avalonia routes a modifier key. The panel must
+  refocus the `TextBox` on visibility toggle.
+- **Modifier key routing:** Ctrl+<key> combinations are captured by `KeyDown`
+  before `TextInput` fires. The handler must not accidentally consume keys that
+  should reach the shell (e.g., Ctrl+L for clear, Ctrl+U for kill-line).
+- **IME/composition input:** `TextInput` events from input method editors are
+  passed through as encoded UTF-8 bytes. Composition preview (underline) is not
+  displayed in read-only mode — the composed character appears only on commit.
+- **Non-printable keys:** Keys without a `TextInput` event (function keys,
+  Escape) must be mapped in `KeyDown`. The mapping table covers the common
+  subset (arrows, Enter, Backspace, Tab, Ctrl+C/D). Untested keys (F1–F12,
+  Insert, Page Up/Down) are not forwarded.
+
+**Future:** A custom `TerminalSurface` control (derived from `Control` with
+direct drawing) will replace the `TextBox` when ANSI parsing and cell-based
+rendering are added.
+
+**Design rule for Step 4:** If the `TextBox` surface proves too limiting during
+implementation (e.g., focus handling is unusable), switch to a plain `Border`
+with a `TextBlock` child and direct `DrawingContext` rendering. Do not add XAML
+controls or third-party terminal widgets.
+
 ## Key Components to Create
 
 | Component | Path | Description |
 |-----------|------|-------------|
 | `ITerminalService` | `src/Services/ITerminalService.cs` | Interface for terminal operations |
-| `LinuxTerminalService` | `src/Services/LinuxTerminalService.cs` | Linux PTY implementation via `Mono.Posix` |
+| `LinuxTerminalService` | `src/Services/LinuxTerminalService.cs` | Linux PTY implementation via `Mono.Posix.NETStandard` |
 | `TerminalPanel` | `src/Views/TerminalPanel.cs` | Terminal UI panel (C# view, monospace `TextBox`) |
 | `TerminalViewModel` | `src/ViewModels/TerminalViewModel.cs` | Terminal state, raw output buffer, input forwarding |
 
@@ -172,6 +221,7 @@ services.AddSingleton<ITerminalService>(sp =>
   - `StringBuilder _outputBuffer` (max 200,000 characters, configurable, acts as ring buffer)
   - `string OutputText` — reactive property, derived from `_outputBuffer`
   - `bool IsRunning` — reactive property from service
+  - `string? StartupError` — reactive property, set when `StartAsync` fails (null on success or before start)
   - `ReactiveCommand<Unit, Unit> ClearCommand` — clears buffer
   - Subscribes to `ITerminalService.OutputReceived`:
     - Decodes `byte[]` → UTF-8 string (with replacement character for invalid sequences)
@@ -190,6 +240,8 @@ services.AddSingleton<ITerminalService>(sp =>
 - `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (O(1) bulk remove)
 - `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
 - `ProcessExited_UpdatesIsRunning` — verify state change
+- `StartupError_SetOnStartFailure` — mock throws on `StartAsync`, verify `StartupError` is set
+- `StartupError_NullOnStartSuccess` — verify `StartupError` is null after successful `StartAsync`
 
 ### Step 4: Terminal Panel View (M3)
 
@@ -221,7 +273,7 @@ services.AddSingleton<ITerminalService>(sp =>
         };
         if (bytes is not null)
         {
-            ViewModel?.SendInput(bytes);
+            await ViewModel!.SendInputAsync(bytes);
             e.Handled = true;
         }
     }
@@ -231,7 +283,10 @@ services.AddSingleton<ITerminalService>(sp =>
     private void OnTextInput(object? sender, TextInputEventArgs e)
     {
         if (e.Text is { Length: > 0 })
-            ViewModel?.SendInput(e.Text);
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(e.Text);
+            await ViewModel!.SendInputAsync(bytes);
+        }
         e.Handled = true;
     }
     ```
@@ -302,19 +357,39 @@ services.AddSingleton<ITerminalService>(sp =>
 
 ## Rollback Plan
 
-If `Mono.Posix.NETStandard` integration fails (runtime errors, package incompatibility, P/Invoke
-breakage on .NET 10):
+Phase 3 has two possible outcomes depending on PTY viability:
 
-1. Replace `LinuxTerminalService` with a redirected-stream implementation:
-   - `Process.StandardOutput` / `Process.StandardInput` for I/O
-   - No PTY — document limitations (no color, no interactive programs, no resize)
-2. `ITerminalService` interface stays the same — no changes to ViewModel or View
+### Outcome A: PTY works (target scope)
+Full scope as defined above — character-level input, resize, TTY detection,
+interactive shells, `echo hello`, `ls --color`, `python -i`, readline.
+
+### Outcome B: PTY fails, redirected-stream fallback (reduced scope)
+If `Mono.Posix.NETStandard` integration fails (runtime errors, package incompatibility,
+P/Invoke breakage on .NET 10), the fallback is a `System.Diagnostics.Process` with
+redirected streams. This is a **different product** with a narrower contract:
+
+| Capability | Outcome A (PTY) | Outcome B (redirected) |
+|---|---|---|
+| Input mode | Character-level, immediate | Line-buffered (`Process.StandardInput`) |
+| `Resize()` | ioctl on PTY fd | No-op |
+| TTY detection | Programs see `/dev/pts/N` | Programs see a pipe |
+| `ls --color` | Colors emitted | No color (detects pipe) |
+| `python -i` | Interactive REPL | Hangs or exits (no PTY) |
+| Ctrl+C routing | SIGINT to child | Kills process tree |
+| Tab completion | Full readline support | Shell-dependent, degraded |
+
+**If Outcome B is adopted:**
+
+1. Replace `LinuxTerminalService` with a redirected-stream implementation
+2. `ITerminalService` interface stays the same — ViewModel and View code is unchanged
 3. Remove `Mono.Posix.NETStandard` from `Directory.Packages.props` and `src/Zaide.csproj`
-4. Mark the redirected-stream implementation as temporary, upgrade in a later phase
-5. If even redirected streams are problematic, revert the entire phase (git revert)
+4. Update docs/phases/phase-3/IMPLEMENTATION_PLAN.md to reflect the reduced scope
+5. Mark the redirected-stream implementation as temporary, with PTY upgrade as the
+   next-phase requirement
 
-The key invariant: `ITerminalService` is the only contract the rest of the app
-depends on. Swapping backends is a service-layer change, never a view or viewmodel change.
+**Outcome C: Even redirected streams fail**
+If even `Process` with redirected streams is problematic, revert the entire phase
+(`git revert`) and document the blocking issue in TOFIX.md.
 
 ## Direction
 
