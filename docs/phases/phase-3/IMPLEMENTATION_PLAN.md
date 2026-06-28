@@ -2,7 +2,8 @@
 
 ## Pre-Implementation Verification
 
-- [ ] `Mono.Posix` NuGet verified compatible with .NET 10 on Linux
+- [ ] `Mono.Posix.NETStandard` NuGet verified compatible with .NET 10 on Linux
+- [ ] Proof-of-concept: `forkpty()` P/Invoke works (manual declaration if needed)
 - [ ] Proof-of-concept: `forkpty()` spawns a shell, reads output, writes input
 - [ ] Proof-of-concept: `TIOCSWINSZ` ioctl resizes the PTY
 - [ ] Avalonia `TextBox` confirmed suitable for raw terminal output display
@@ -22,7 +23,7 @@ session with character-level input, raw text output, and proper lifecycle manage
 **In scope:**
 - Bottom terminal panel integrated into the existing shell layout
 - Toggle terminal visibility via existing `ToggleBottomPanelCommand` (Ctrl+` / Ctrl+J)
-- Linux PTY-backed shell session (via `Mono.Posix` `forkpty()`)
+- Linux PTY-backed shell session (via `Mono.Posix.NETStandard` with manual `forkpty()` P/Invoke if needed)
 - Character-level input forwarding (every keystroke sent to PTY immediately)
 - Raw text output buffer (no ANSI/VT100 parsing in this phase)
 - Terminal resize support (`TIOCSWINSZ` ioctl)
@@ -45,11 +46,17 @@ session with character-level input, raw text output, and proper lifecycle manage
 
 ### PTY Approach
 
-Use `Mono.Posix` NuGet package for `forkpty()`/`openpty()` P/Invoke on Linux.
+Use `Mono.Posix.NETStandard` NuGet package for POSIX syscalls on Linux.
+If `forkpty()` is not available in the package, use manual P/Invoke:
+```csharp
+[DllImport("libutil", SetLastError = true)]
+private static extern int forkpty(out int master, IntPtr name, IntPtr termios, IntPtr winsize);
+```
+
 This gives a real PTY: programs like `ls --color`, `git status`, `python -i`,
 `vim`, `htop` all detect a TTY and behave correctly.
 
-**Fallback:** If `Mono.Posix` proves incompatible with .NET 10 or Avalonia's
+**Fallback:** If `Mono.Posix.NETStandard` proves incompatible with .NET 10 or Avalonia's
 runtime, fall back to `System.Diagnostics.Process` with redirected streams.
 Document the limitations (no color, no interactive programs, no resize) and
 upgrade in a later phase. The `ITerminalService` interface makes this swap
@@ -58,9 +65,9 @@ invisible to the rest of the codebase.
 ### Data Model
 
 Terminal output is a **character stream**, not a list of lines. The ViewModel
-holds a `StringBuilder` (with a configurable max capacity acting as a ring buffer)
-for raw output. No line-splitting, no ANSI parsing. The view renders the buffer
-contents in a monospace `TextBox`.
+holds a `StringBuilder` (with a configurable max capacity acting as a ring buffer,
+default 200,000 characters) for raw output. No line-splitting, no ANSI parsing.
+The view renders the buffer contents in a monospace `TextBox`.
 
 **Future:** ANSI parsing will replace the raw `TextBox` with a styled text
 renderer. The `StringBuilder` buffer model will remain as the source of truth.
@@ -122,10 +129,11 @@ services.AddSingleton<ITerminalService>(sp =>
 
 ### Step 1: NuGet + Proof-of-Concept (M0)
 
-- [ ] Add `Mono.Posix` to `Directory.Packages.props` and `src/Zaide.csproj`
+- [ ] Add `Mono.Posix.NETStandard` v1.0.0 to `Directory.Packages.props` and `src/Zaide.csproj`
+- [ ] Verify `forkpty()` P/Invoke (manual declaration if needed)
 - [ ] Verify `forkpty()` spawns `/bin/bash`, reads "bash-5.1$" prompt, writes `echo hello\n`, reads `hello\n`
 - [ ] Verify `TIOCSWINSZ` ioctl resizes the PTY without errors
-- [ ] If `Mono.Posix` fails, fall back to `Process` redirected streams (document limitations)
+- [ ] If `Mono.Posix.NETStandard` fails, fall back to `Process` redirected streams (document limitations)
 - [ ] `dotnet build Zaide.slnx` — 0 warnings after adding the package
 
 ### Step 2: Service Interface + Linux Implementation (M1)
@@ -137,7 +145,7 @@ services.AddSingleton<ITerminalService>(sp =>
       event Action<byte[]>? OutputReceived;
       event Action? ProcessExited;
 
-      Task StartAsync(string shell = "/bin/bash");
+      Task StartAsync(string shell = "/bin/bash", CancellationToken ct = default);
       Task WriteAsync(byte[] data);
       void Resize(int columns, int rows);
       bool IsRunning { get; }
@@ -161,25 +169,25 @@ services.AddSingleton<ITerminalService>(sp =>
 ### Step 3: Terminal ViewModel (M2)
 
 - [ ] Create `TerminalViewModel : ReactiveObject, IDisposable`:
-  - `StringBuilder _outputBuffer` (max 100,000 characters, acts as ring buffer)
+  - `StringBuilder _outputBuffer` (max 200,000 characters, configurable, acts as ring buffer)
   - `string OutputText` — reactive property, derived from `_outputBuffer`
   - `bool IsRunning` — reactive property from service
   - `ReactiveCommand<Unit, Unit> ClearCommand` — clears buffer
   - Subscribes to `ITerminalService.OutputReceived`:
-    - Decodes `byte[]` → UTF-8 string
+    - Decodes `byte[]` → UTF-8 string (with replacement character for invalid sequences)
     - Appends to `_outputBuffer`
-    - Trims from front if capacity exceeded
+    - Trims from front if capacity exceeded (O(1) bulk remove)
     - Raises `PropertyChanged` for `OutputText`
   - Subscribes to `ITerminalService.ProcessExited`:
     - Updates `IsRunning`
     - Appends "\r\n[Process exited]\r\n" to buffer
-  - `SendInput(string text)` → encodes to UTF-8 bytes → `_service.WriteAsync(bytes)`
+  - `SendInputAsync(byte[] data)` → `_service.WriteAsync(data)`
   - `Dispose` disposes the service
 - [ ] Start terminal on ViewModel construction (or via explicit `StartCommand`)
 
 **Tests:**
-- `OutputReceived_AppendsToBuffer` — mock service, raise event, verify `OutputText`
-- `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed
+- `OutputReceived_AppendsToBuffer` — mock service (using `Mock<ITerminalService>`), raise event, verify `OutputText`
+- `BufferTrimsWhenFull` — append beyond capacity, verify oldest chars removed (O(1) bulk remove)
 - `ClearCommand_EmptiesBuffer` — verify `OutputText` is empty after clear
 - `ProcessExited_UpdatesIsRunning` — verify state change
 
@@ -190,7 +198,9 @@ services.AddSingleton<ITerminalService>(sp =>
   - `TextBox` with `FontFamily = "Cascadia Code, JetBrains Mono, monospace"`
   - `IsReadOnly = true` for output display (input handled via KeyDown)
   - `TextWrapping = NoWrap`, horizontal scrollbar
+  - `Padding = 16px` (per DESIGN.md §5)
   - `KeyDown` handler converts keys to raw input:
+  - Auto-focus `TextBox` when panel becomes visible
     ```csharp
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
@@ -238,6 +248,14 @@ services.AddSingleton<ITerminalService>(sp =>
   - Inject `TerminalViewModel` from `MainWindowViewModel`
   - Keep existing `Grid.SetColumnSpan(bottomPanel, 4)` spanning
 - [ ] Add `TerminalViewModel` property to `MainWindowViewModel`
+- [ ] Add subscription in `MainWindowViewModel.Activate()`:
+  ```csharp
+  _disposables.Add(
+      this.WhenAnyValue(x => x.TerminalViewModel.StartupError)
+          .Where(err => err is not null)
+          .Subscribe(err => StatusText = $"Terminal: {err}"));
+  ```
+- [ ] Add `TerminalViewModel` property to `MainWindowViewModel`
 - [ ] Wire bottom panel toggle to show/hide `TerminalPanel`
 - [ ] Wire `TerminalViewModel` disposal in `MainWindowViewModel.Dispose()`
 
@@ -254,6 +272,8 @@ services.AddSingleton<ITerminalService>(sp =>
 - [ ] Verify Tab key sends `\x09` (Tab completion works in bash)
 - [ ] Verify arrow keys navigate bash history
 - [ ] Verify terminal panel uses monospace font
+- [ ] Verify terminal panel auto-focuses on TextBox when visible
+- [ ] Verify StatusText shows terminal startup errors
 - [ ] Remove any temporary/prototype code
 
 ## Exit Conditions
@@ -282,14 +302,14 @@ services.AddSingleton<ITerminalService>(sp =>
 
 ## Rollback Plan
 
-If `Mono.Posix` integration fails (runtime errors, package incompatibility, P/Invoke
+If `Mono.Posix.NETStandard` integration fails (runtime errors, package incompatibility, P/Invoke
 breakage on .NET 10):
 
 1. Replace `LinuxTerminalService` with a redirected-stream implementation:
    - `Process.StandardOutput` / `Process.StandardInput` for I/O
    - No PTY — document limitations (no color, no interactive programs, no resize)
 2. `ITerminalService` interface stays the same — no changes to ViewModel or View
-3. Remove `Mono.Posix` from `Directory.Packages.props` and `src/Zaide.csproj`
+3. Remove `Mono.Posix.NETStandard` from `Directory.Packages.props` and `src/Zaide.csproj`
 4. Mark the redirected-stream implementation as temporary, upgrade in a later phase
 5. If even redirected streams are problematic, revert the entire phase (git revert)
 
@@ -313,5 +333,6 @@ depends on. Swapping backends is a service-layer change, never a view or viewmod
 - No tabs, splits, or multiple terminal sessions.
 - No UI for shell/profile settings.
 - Copy/paste is limited to basic clipboard passthrough.
-- Scrollback buffer is fixed-size (100K characters) — oldest output is discarded.
+- Scrollback buffer is fixed-size (200K characters, configurable) — oldest output is discarded.
 - Terminal rendering uses a plain `TextBox` — no grid-based character cell rendering.
+- Cascadia Code and JetBrains Mono fonts may not be installed on minimal Linux systems (falls back to system monospace).
