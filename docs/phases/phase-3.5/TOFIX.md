@@ -17,6 +17,7 @@ _(None yet.)_
 | Issue | Reason | Target Phase |
 |-------|--------|--------------|
 | Full ANSI/VT100 rendering | Phase 3.5 only normalizes a small raw-output subset | Future renderer phase |
+| Clear-screen sequence (`clear` / Ctrl+L) not honored | M4 leaves all CSI sequences verbatim (Option 1). `clear` emits `\x1B[H\x1B[2J`, which shows as raw text; the toolbar Clear button is the supported substitute. Honoring it properly needs the ANSI renderer. | Future renderer phase |
 | Terminal tabs and splits | Single terminal session remains the MVP boundary | Future terminal phase |
 | Windows terminal backend | Phase 3.5 keeps Linux MVP scope | Phase 3.1 |
 | macOS terminal backend | Phase 3.5 keeps Linux MVP scope | Phase 3.2 |

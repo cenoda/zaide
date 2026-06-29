@@ -84,7 +84,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] Expand common shell key forwarding
 - [x] Add visible terminal controls/state
 - [x] Make terminal restart safe across service and ViewModel layers
-- [ ] Improve raw output experience within MVP bounds
+- [x] Improve raw output experience within MVP bounds
 
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)

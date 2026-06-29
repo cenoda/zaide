@@ -26,7 +26,7 @@ or a full ANSI/cell renderer.
 | M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit tests for geometry + resize forwarding; manual shell resize check | ✅ Done |
 | M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper | ✅ Done |
 | M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior | ✅ Done |
-| M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C | ⏳ Pending |
+| M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C | ✅ Done |
 | M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` | ⏳ Pending |
 
 ### M1: Resize Wiring
@@ -133,6 +133,29 @@ Keep raw-output improvement intentionally small and verifiable:
 - Defer full ANSI/VT100 parsing, color rendering, cursor addressing, and
   alternate-screen behavior to a later renderer phase.
 
+**Status:** ✅ Implemented in `TerminalOutputBuffer`.
+
+- Buffer ownership and the supported control-character subset were extracted
+  from `TerminalViewModel` into `src/ViewModels/TerminalOutputBuffer.cs`, a pure,
+  UI-agnostic class with a single-line write cursor. The ViewModel delegates
+  `Append`/`Clear`/trimming to it under its existing buffer lock.
+- **`\r`** parks the cursor at the current line start so following characters
+  overwrite it; trailing characters of a longer previous line are intentionally
+  left in place (matches real terminals — progress bars render correctly).
+- **`\b`** moves the cursor back one column, bounded at the line start, so the
+  common `\b \b` erase sequence works.
+- **`\n` / `\r\n`** break to a new line.
+- Cursor state persists across read chunks (a `\r` in one chunk correctly
+  overwrites text from a previous chunk), and front-trimming adjusts the cursor.
+- **`clear` decision:** Option 1 — full ANSI/CSI sequences (including the
+  clear-screen sequence emitted by `clear` / Ctrl+L) are left in the buffer
+  verbatim. The toolbar **Clear** button is the supported way to clear the
+  surface. A real clear-screen is deferred to the future ANSI renderer phase
+  (logged in TOFIX). This keeps M4 off the ANSI-parsing slope.
+- Covered by `TerminalOutputBufferTests` (16 cases: CR overwrite incl. trailing
+  chars and multi-line scoping, split-chunk CR, backspace erase and line-start
+  bounding, CRLF, escape-sequences-verbatim, and trim correctness).
+
 ## Design Notes
 
 - Keep the existing PTY backend. Phase 3 proved the service boundary and Linux
@@ -167,7 +190,7 @@ Keep raw-output improvement intentionally small and verifiable:
       missed `ProcessExited` events or zombie child processes
 - [x] ViewModel restart path works after clean process exit
 - [x] Restart does not duplicate terminal event handling
-- [ ] Raw output MVP subset is implemented or explicitly documented as deferred
+- [x] Raw output MVP subset is implemented or explicitly documented as deferred
 - [ ] Manual terminal smoke test passes on Linux
 
 ## Rollback Plan

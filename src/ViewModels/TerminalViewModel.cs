@@ -27,9 +27,8 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
     private readonly ITerminalService _service;
     private readonly Action<Action> _uiPost;
-    private readonly int _maxBufferChars;
     private readonly Decoder _decoder = Encoding.UTF8.GetDecoder();
-    private readonly StringBuilder _outputBuffer = new();
+    private readonly TerminalOutputBuffer _outputBuffer;
     private readonly object _bufferLock = new();
 
     private bool _startRequested;
@@ -40,12 +39,14 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private int _pendingRows;
 
     /// <summary>
-    /// Raw terminal output accumulated so far (bounded ring buffer). No ANSI
-    /// parsing — escape sequences appear verbatim (Phase 3 MVP scope).
+    /// Raw terminal output accumulated so far (bounded ring buffer). A small
+    /// control-character subset (<c>\r</c>, <c>\b</c>, <c>\n</c>) is applied by
+    /// <see cref="TerminalOutputBuffer"/>; other escape sequences appear
+    /// verbatim (Phase 3.5 MVP scope).
     /// </summary>
     public string OutputText
     {
-        get { lock (_bufferLock) return _outputBuffer.ToString(); }
+        get { lock (_bufferLock) return _outputBuffer.Text; }
     }
 
     private bool _isRunning;
@@ -117,7 +118,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     {
         _service = terminalService;
         _uiPost = uiPost;
-        _maxBufferChars = maxBufferChars;
+        _outputBuffer = new TerminalOutputBuffer(maxBufferChars);
 
         ClearCommand = ReactiveCommand.Create(Clear);
 
@@ -252,12 +253,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private void Append(string text)
     {
         lock (_bufferLock)
-        {
             _outputBuffer.Append(text);
-            int excess = _outputBuffer.Length - _maxBufferChars;
-            if (excess > 0)
-                _outputBuffer.Remove(0, excess);
-        }
         this.RaisePropertyChanged(nameof(OutputText));
     }
 
