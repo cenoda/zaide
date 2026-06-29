@@ -20,3 +20,5 @@ _(None yet.)_
 | Terminal tabs and splits | Single terminal session remains the MVP boundary | Future terminal phase |
 | Windows terminal backend | Phase 3.5 keeps Linux MVP scope | Phase 3.1 |
 | macOS terminal backend | Phase 3.5 keeps Linux MVP scope | Phase 3.2 |
+| **Modifier+arrow/home/end keys** | The M2 `modifiers != KeyModifiers.None` guard intentionally drops Shift+Home/End (selection) and Ctrl+Left/Right (word-jump) to keep modifier combinations available for View-level actions. These are common readline shortcuts that would need explicit escape-sequence mappings in `TerminalKeyMapper` if a use-case appears. | Future key-mapping phase |
+| **MeasureCellWidth caches first non-zero result permanently** | If the first `FormattedText` measurement happens before the font resolves and returns a fallback-glyph width, that wrong value sticks for the session. Low risk because the font family and size are static, but worth revisiting if column counts ever look off. | Future terminal-renderer phase |
