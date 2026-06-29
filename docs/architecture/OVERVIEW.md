@@ -5,29 +5,47 @@ One agent codes, another reviews. They argue. You get better code.
 
 ---
 
-## Two-Layer Architecture
+## Current Architecture
 
 ```
-┌──────────────────────────────────────────────────┐
-│              ZAIDE IDE (Standalone)                │
-│  Editor │ Tabs │ FileTree │ Terminal │ Git │ Build │
-├──────────────────────────────────────────────────┤
-│          AGENT-TO-AGENT LAYER                     │
-│  AgentPanel │ Townhall │ @Mention Router          │
-│  Agent A ↔ Agent B ↔ Agent C (debate model)      │
-└──────────────────────────────────────────────────┘
+┌──────────┬────────────────────────┬──────────────────┐
+│          │                        │   Agent Area     │
+│  Files   │        Editor          │   (placeholder)  │
+│  (Tree)  │    (tabbed, syntax     │                  │
+│          │     highlighting)      │                  │
+├──────────┴────────────────────────┴──────────────────┤
+│  [Terminal]                                Ctrl+`     │
+└──────────────────────────────────────────────────────┘
 ```
 
-The IDE works without agents. Agents are a layer on top that supercharges it.
+### Current layers (implemented):
+
+| Layer | Component | Status |
+|-------|-----------|--------|
+| **Left** | File tree sidebar | ✅ Done |
+| **Center** | Tabbed editor with syntax highlighting (AvaloniaEdit) | ✅ Done |
+| **Right** | Agent area (placeholder panel) | ✅ Done (shell only) |
+| **Bottom** | Terminal (Linux PTY-backed shell) | ✅ Done |
+
+### Planned layers (future):
+
+| Layer | Phase | Description |
+|-------|-------|-------------|
+| Townhall | 4 | Agent activity log in center area |
+| Agent Panels | 5 | Individual agent UIs replacing the placeholder |
+| Agent Router | 6 | @mention routing between agents |
+| Git Integration | 7 | Status, diff, commit from sidebar |
+
+The IDE works without agents. The agent layer is built on top.
 
 ---
 
 ## Core Principles
 
-1. **Agent-to-Agent first** — agents debate each other, user observes and intervenes
-2. **Transparency** — every agent action is logged in Townhall automatically
+1. **Agent-to-Agent first** — agents debate each other, user observes and intervenes (planned for Phase 4–6)
+2. **Transparency** — every agent action is logged in Townhall automatically (planned)
 3. **No secret changes** — all file modifications are visible in real-time
-4. **IDE is standalone** — must be usable as a plain editor without agents
+4. **IDE is standalone** — must be usable as a plain editor without agents ✅
 
 ---
 
@@ -35,62 +53,28 @@ The IDE works without agents. Agents are a layer on top that supercharges it.
 
 | Layer       | Technology                      |
 |-------------|----------------------------------|
-| UI          | Avalonia 12 (AXAML)              |
+| UI          | Avalonia 12 (C# construction, no AXAML for custom views) |
 | Theme       | Semi.Avalonia (dark)             |
-| Language    | C# (.NET 10.0)                    |
-| Pattern     | MVVM (ReactiveUI)                  |
-| DI          | Microsoft.Extensions.DependencyInjection (Keyed Services ready) |
-| Persistence | SQLite (structured data) + JSON (settings) |
+| Language    | C# (.NET 10.0, nullable enabled) |
+| Pattern     | MVVM (ReactiveUI)                |
+| DI          | Microsoft.Extensions.DependencyInjection |
 | Platform    | Cross-platform (Linux, macOS, Windows) |
+| Persistence | *(none yet — deferred to Phase 4+)* |
+| Plugin      | *(none yet — deferred to Phase 6+)* |
 
 ---
 
-## Technical Decisions
+## Future Technical Considerations
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Backend / Persistence** | SQLite + JSON for settings | Time-series data (townhall logs, agent actions) needs queries. SQLite keeps everything in one file. JSON for simple key-value settings. |
-| **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons and UI assets compile into the build. Agent avatars and runtime images stored as file refs for live replacement. |
-| **Plugin Architecture** | Interface + DI manual registration | Define core interfaces (`IAgent`, `IPlugin`) now. Manual registration in DI. Expand to .NET 10 Keyed Services (`services.AddKeyedSingleton`) when plugin ecosystem grows. |
+The following decisions have been discussed but are **not yet implemented**.
+They will be revisited when their respective phases begin.
 
----
-
-## UI Layout
-
-```
-┌──────────┬────────────────────────┬──────────────────┐
-│          │                        │   Agent A        │
-│  Files   │   Townhall / Editor    │                  │
-│  (Tree)  │      (tab switch)      ├──────────────────┤
-│          │                        │   Agent B        │
-│  Git     │                        │                  │
-├──────────┴────────────────────────┴──────────────────┤
-│  [Terminal | Problems | Build | Output]   Ctrl+`     │
-└──────────────────────────────────────────────────────┘
-```
-
-- **Left sidebar:** File tree, git status
-- **Center:** Townhall (agent activity log) or Editor (code), tab-switched
-- **Right:** Agent panels, split vertically — each agent has its own panel
-- **Bottom:** Terminal and standard IDE tools, toggled with Ctrl+`
+| Consideration | Planned Approach | Rationale |
+|---------------|------------------|-----------|
+| **Persistence** | SQLite (structured data) + JSON (settings) | Time-series data (townhall logs) needs queries. JSON for simple key-value settings. |
+| **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons compile in. Agent avatars stored as file refs for live replacement. |
+| **Plugin Architecture** | Interface + DI manual registration | Core interfaces (`IAgent`, `IPlugin`) defined when agent layer begins. .NET 10 Keyed Services for plugin DI later. |
 
 ---
 
-## Subsystems (planned)
-
-| Subsystem | Phase | Description |
-|-----------|-------|-------------|
-| Window & Layout | 0 | 3-panel grid with Semi theme |
-| File Tree | 1 | Sidebar file browser |
-| Editor | 2 | Code editor with tabs |
-| Terminal | 3 | Embedded terminal with toggle |
-| Townhall | 4 | Agent transparency layer |
-| Agent Panels | 5 | Individual agent UIs |
-| Agent Router | 6 | @mention routing between agents |
-| Git Integration | 7 | Status, diff, commit from sidebar |
-
-These phases are tentative and will be refined as work progresses.
-
----
-
-*Last updated: 2025-06-25*
+*Last updated: 2026-06-29*

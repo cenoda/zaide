@@ -15,24 +15,26 @@ Zaide:   Agent A ↔ Agent B ↔ Agent C   (A-to-A, multi-agent debate)
 AI's biggest weakness is self-confirmation (hallucination).
 One agent codes, another reviews. They argue. You get better code.
 
-## Layout
+## Current Layout
 
 ```
 ┌──────────┬────────────────────────┬──────────────────┐
-│          │                        │   Agent A        │
-│  Files   │   Townhall / Editor    │                  │
-│  (Tree)  │      (tab switch)       ├──────────────────┤
-│          │                        │   Agent B        │
-│  Git     │                        │                  │
+│          │                        │   Agent Area     │
+│  Files   │        Editor          │   (placeholder)  │
+│  (Tree)  │    (tabbed, syntax     │                  │
+│          │     highlighting)      │                  │
 ├──────────┴────────────────────────┴──────────────────┤
-│  [Terminal | Problems | Build | Output]   Ctrl+`     │
+│  [Terminal]                                Ctrl+`     │
 └──────────────────────────────────────────────────────┘
 ```
 
-- **Left:** Classic IDE sidebar (files, git status)
-- **Center:** Your main stage. Townhall to watch agents work, Editor to code yourself.
-- **Right:** Each agent has their own panel. They work independently, report to Townhall.
-- **Bottom:** Terminal and standard IDE tools. Toggle with Ctrl+`.
+- **Left:** File tree sidebar
+- **Center:** Tabbed code editor with syntax highlighting (AvaloniaEdit)
+- **Right:** Agent area (placeholder — agent panels coming in Phase 5)
+- **Bottom:** Terminal panel (Linux PTY-backed shell), toggled with Ctrl+`
+
+> **Note:** The agent-to-agent layer (Townhall, agent panels, @mention routing)
+> is a future goal. The current app is an IDE foundation — usable standalone.
 
 ## Status
 
@@ -44,20 +46,14 @@ One agent codes, another reviews. They argue. You get better code.
 | DI container (MS DI + ReactiveUI) | 0 | ✅ Done |
 | Ayaka Violet color palette | 0 | ✅ Done |
 | File tree sidebar | 1 | ✅ Done |
-| Townhall / Editor center | 2 | ✅ Done |
-| Terminal | 3 | ✅ Done |
-| Townhall agent logging | 4 | ⏳ Planned |
+| File tree: new file/folder, rename, hidden toggle | 1.2 | ✅ Done |
+| Editor with tabs, save, syntax highlighting | 2 | ✅ Done |
+| Indent guides in editor | 2.1 | ✅ Done |
+| Terminal (Linux PTY) | 3 | ✅ Done |
+| Townhall / Agent transparency | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
-
-## Agent-to-Agent Communication
-
-Each agent panel includes:
-- **User input** field for direct communication with agents
-- **`@agent` mentions** to route messages between agents
-- **Townhall transparency layer**: all agent actions are logged automatically
-- No secret work - you always see what each agent is doing
 
 ## Stack Architecture
 
@@ -69,6 +65,17 @@ Each agent panel includes:
 | Language | C# (nullable enabled) |
 | Runtime | .NET 10.0 |
 | Platform | Cross-platform (Linux, macOS, Windows) |
+
+## Future Direction
+
+The planned agent-to-agent layer will add:
+
+- **Townhall** — a scrollable, filterable log of all agent actions
+- **Agent panels** — individual UIs for each agent with user input fields
+- **@mention routing** — agents can request review from each other
+- **Git integration** — status, diff, and commits from the sidebar
+
+See [docs/roadmap/PHASES.md](docs/roadmap/PHASES.md) for the full plan.
 
 ## Why "Zaide"
 

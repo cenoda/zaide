@@ -5,15 +5,26 @@ Each phase must be complete before moving to the next.
 
 ---
 
-## Technical Decisions (Resolved)
+## Technical Decisions (Resolved So Far)
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Backend** | SQLite + JSON (settings) | Time-series data needs queries. One-file management. |
-| **Image Storage** | Hybrid: Embedded (UI) + File Ref (project) | Icons build in, agent avatars swap at runtime. |
-| **Plugin** | Interface + DI manual registration | Core interfaces now, .NET 10 Keyed Services later. |
+| **UI Framework** | Avalonia 12 + Semi.Avalonia (dark) | Cross-platform, MVVM-friendly |
+| **Architecture** | MVVM with ReactiveUI | Standard for Avalonia, testable |
+| **DI** | Microsoft.Extensions.DependencyInjection | Standard .NET, no magic |
+| **Language** | C# (nullable enabled) | Type safety, .NET 10 |
+| **Editor** | AvaloniaEdit + TextMate grammars | Syntax highlighting, proven widget |
+| **Terminal** | Linux native PTY via P/Invoke | Real TTY for shell interactivity |
 
-See `docs/architecture/OVERVIEW.md` for full details.
+### Future Considerations (not yet implemented)
+
+| Decision | Planned Approach | Rationale |
+|----------|-----------------|-----------|
+| **Persistence** | SQLite (structured data) + JSON (settings) | Time-series data needs queries. One-file management. |
+| **Image Storage** | Hybrid: Embedded (UI) + File Ref (project) | Icons build in, agent avatars swap at runtime. |
+| **Plugin** | Interface + DI manual registration | Core interfaces later, .NET 10 Keyed Services when needed. |
+
+See `docs/architecture/OVERVIEW.md` for extended discussion.
 
 ---
 
