@@ -27,7 +27,7 @@ or a full ANSI/cell renderer.
 | M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper | ✅ Done |
 | M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior | ✅ Done |
 | M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C | ✅ Done |
-| M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` | ⏳ Pending |
+| M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` | ✅ Done (manual smoke test outstanding) |
 
 ### M1: Resize Wiring
 
@@ -192,6 +192,36 @@ Keep raw-output improvement intentionally small and verifiable:
 - [x] Restart does not duplicate terminal event handling
 - [x] Raw output MVP subset is implemented or explicitly documented as deferred
 - [ ] Manual terminal smoke test passes on Linux
+
+## M5 Exit Audit
+
+Audited after M4. Automated gates and artifacts verified concretely (docs-rules §12j):
+
+- `dotnet build Zaide.slnx` — 0 warnings, 0 errors.
+- `dotnet test Zaide.slnx` — 208 passed, 0 failed.
+- Plan-required artifacts exist: `TerminalGeometry`, `TerminalKeyMapper`,
+  `TerminalState`, `TerminalOutputBuffer`, and their tests
+  (`TerminalGeometryTests`, `TerminalKeyMapperTests`, `TerminalOutputBufferTests`,
+  plus the M3 restart/state cases in `TerminalViewModelTests` and
+  `LinuxTerminalServiceTests`).
+- `LinuxTerminalService` is referenced only in `Program.cs` DI and tests — not
+  in Views/ViewModels.
+- No `spike/` or temporary scaffolding remains.
+- Roadmap bullets and TOFIX deferrals are in sync with the implementation.
+
+**Outstanding (cannot be automated):** the manual Linux smoke test below is the
+only remaining exit condition. Run it before marking the phase fully complete.
+
+### Manual smoke test checklist (run on Linux)
+
+- [ ] Toggle the terminal (Ctrl+` / Ctrl+J); it starts and focuses.
+- [ ] Resize the window/panel — bash reflows (`ls` columns, line wrap track the width).
+- [ ] Run a `\r` progress generator (e.g. `for i in $(seq 1 100); do printf '\rProgress: %d%%' $i; sleep 0.01; done`) — it updates one line, not many.
+- [ ] Backspace at the prompt erases characters cleanly.
+- [ ] `clear` shows raw escape text (documented limit); the Clear button empties the surface.
+- [ ] Ctrl+C interrupts a running command; Ctrl+Shift+C / Ctrl+Shift+V copy/paste.
+- [ ] Type `exit` → "[Process exited]" shows, status reads "Exited", Restart re-spawns a shell.
+- [ ] Close the app → no leftover `bash` zombie (`ps aux | grep bash`).
 
 ## Rollback Plan
 
