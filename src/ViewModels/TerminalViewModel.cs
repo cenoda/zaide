@@ -34,6 +34,8 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
     private bool _startRequested;
     private volatile bool _disposed;
+    private int _currentColumns;
+    private int _currentRows;
 
     /// <summary>
     /// Raw terminal output accumulated so far (bounded ring buffer). No ANSI
@@ -118,6 +120,23 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// exit — the service treats writes as a no-op when not running.
     /// </summary>
     public Task SendInputAsync(byte[] data) => _service.WriteAsync(data);
+
+    /// <summary>
+    /// Forwards a terminal viewport resize to the PTY backend. Safe to call
+    /// before startup or after exit — the service treats it as a no-op.
+    /// Only forwards to the service when the dimensions actually change.
+    /// </summary>
+    /// <param name="columns">Number of terminal columns.</param>
+    /// <param name="rows">Number of terminal rows.</param>
+    public void Resize(int columns, int rows)
+    {
+        if (columns <= 0 || rows <= 0) return;
+        if (columns == _currentColumns && rows == _currentRows) return;
+
+        _currentColumns = columns;
+        _currentRows = rows;
+        _service.Resize(columns, rows);
+    }
 
     private void OnOutputReceived(byte[] data)
     {

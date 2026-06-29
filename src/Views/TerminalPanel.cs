@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
@@ -7,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Reactive;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.ViewModels;
@@ -24,6 +27,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         new("Cascadia Code, JetBrains Mono, monospace");
 
     private readonly TextBox _outputTextBox;
+    private double _cellWidth;
 
     public TerminalPanel()
     {
@@ -69,6 +73,15 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                     if (visible)
                         FocusTerminal();
                 }));
+
+            // --- M1: Resize wiring ---
+            // Measure the monospace character cell width once the control is
+            // laid out, then forward viewport size changes (throttled) to the
+            // ViewModel so it can update the PTY rows/columns.
+            d.Add(this.GetObservable(BoundsProperty)
+                .Throttle(TimeSpan.FromMilliseconds(100))
+                .ObserveOn(AvaloniaScheduler.Instance)
+                .Subscribe(_ => ForwardResize()));
         });
     }
 
@@ -123,5 +136,54 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         int lineCount = _outputTextBox.GetLineCount();
         if (lineCount > 0)
             _outputTextBox.ScrollToLine(lineCount - 1);
+    }
+
+    /// <summary>
+    /// Computes the terminal columns/rows from the current bounds and font
+    /// metrics, then forwards the result to the ViewModel.
+    /// </summary>
+    private void ForwardResize()
+    {
+        if (ViewModel is null) return;
+
+        var bounds = Bounds;
+        if (bounds.Width <= 0 || bounds.Height <= 0) return;
+
+        double cellWidth = MeasureCellWidth();
+        double lineHeight = _outputTextBox.LineHeight;
+        var padding = _outputTextBox.Padding;
+
+        var (columns, rows) = TerminalGeometry.Compute(
+            bounds.Width, bounds.Height,
+            cellWidth, lineHeight,
+            padding.Left, padding.Top,
+            padding.Right, padding.Bottom);
+
+        ViewModel.Resize(columns, rows);
+    }
+
+    /// <summary>
+    /// Measures the pixel width of a single monospace character cell using
+    /// <see cref="FormattedText"/> glyph advance for the configured terminal
+    /// font. The result is cached after the first successful measurement.
+    /// </summary>
+    private double MeasureCellWidth()
+    {
+        if (_cellWidth > 0) return _cellWidth;
+
+        var typeface = new Typeface(TerminalFont, FontStyle.Normal, FontWeight.Normal);
+        double fontSize = _outputTextBox.FontSize;
+
+        // Measure 'M' — the canonical monospace reference character.
+        var ft = new FormattedText(
+            "M",
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            fontSize,
+            Brushes.Black);
+
+        _cellWidth = ft.Width;
+        return _cellWidth;
     }
 }

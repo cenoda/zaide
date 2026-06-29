@@ -2,12 +2,12 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Read `docs/phases/phase-3/IMPLEMENTATION_PLAN.md`
-- [ ] Verify current terminal code in `src/Views/TerminalPanel.cs`
-- [ ] Verify current terminal state in `src/ViewModels/TerminalViewModel.cs`
-- [ ] Verify PTY resize support in `src/Services/ITerminalService.cs`
-- [ ] Confirm entry gate: `dotnet build`
-- [ ] Confirm entry gate: `dotnet test`
+- [x] Read `docs/phases/phase-3/IMPLEMENTATION_PLAN.md`
+- [x] Verify current terminal code in `src/Views/TerminalPanel.cs`
+- [x] Verify current terminal state in `src/ViewModels/TerminalViewModel.cs`
+- [x] Verify PTY resize support in `src/Services/ITerminalService.cs`
+- [x] Confirm entry gate: `dotnet build`
+- [x] Confirm entry gate: `dotnet test`
 
 ## Scope
 

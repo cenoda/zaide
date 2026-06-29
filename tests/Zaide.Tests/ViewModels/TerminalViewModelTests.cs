@@ -132,4 +132,55 @@ public class TerminalViewModelTests
         Assert.Equal(string.Empty, vm.OutputText);
         service.Verify(s => s.Dispose(), Times.Once);
     }
+
+    [Fact]
+    public void Resize_ForwardsToService()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(120, 30);
+
+        service.Verify(s => s.Resize(120, 30), Times.Once);
+    }
+
+    [Fact]
+    public void Resize_SkipsWhenDimensionsUnchanged()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(120, 30);
+        vm.Resize(120, 30);
+
+        service.Verify(s => s.Resize(120, 30), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, 30)]
+    [InlineData(-1, 30)]
+    [InlineData(120, 0)]
+    [InlineData(120, -1)]
+    public void Resize_IgnoresInvalidDimensions(int cols, int rows)
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(cols, rows);
+
+        service.Verify(s => s.Resize(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public void Resize_ForwardsWhenDimensionsChange()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(120, 30);
+        vm.Resize(100, 25);
+
+        service.Verify(s => s.Resize(120, 30), Times.Once);
+        service.Verify(s => s.Resize(100, 25), Times.Once);
+    }
 }
