@@ -83,9 +83,9 @@ EditorTabViewModel (tab UI coordinator)
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current open/edit/save works | `dotnet run` → open → edit → save | ✅ Completed |
 | M1 | Introduce `Document` model (`FilePath`, `Content`, `IsDirty`, `LastSaveError`, `SaveAsync(IFileService)`, `MarkClean()`). Plain model — no `ReactiveObject`. | `DocumentTests` — construct, store/return values, SaveAsync delegates to IFileService, MarkClean resets dirty | ✅ Completed |
-| M2 | Refactor `EditorViewModel` to wrap `Document` only. Replace `_textContent`, `_filePath`, `_fileName`, `_isDirty`, `_lastSaveError`, `_suppressDirty`, `SaveAsync()` with delegation to `Document`. Keep `TextContent`, `FilePath`, `IsDirty`, `DisplayName`, `SaveCommand`, `LoadFileContent()`, `MarkClean()` as public API surface. SaveCommand calls `Document.SaveAsync(IFileService)`. | • `EditorViewModelTests` behavioral contract tests pass unchanged (IsDirty defaults, MarkClean, DisplayName, SaveCommand failure paths, LoadFileContent) — these assert VM API behavior, not internals<br>• `SaveCommand_WritesFile` and `SaveCommand_ClearsDirty` stay as VM integration tests (they exercise the public save pathway)<br>• `FileService`-dependent save tests move to `DocumentTests` (they test Document.SaveAsync directly) | ⏳ Pending |
-| M3 | Introduce `Workspace` + refactor `EditorTabViewModel` in **one step**. Workspace is the document registry (`path → Document`). `Workspace.OpenDocument(path, IFileService)` checks its cache: if a Document for `path` already exists, returns it; otherwise creates, caches, and returns a new Document. EditorTabViewModel calls `Workspace.OpenDocument`, then checks if the returned Document is already represented in `OpenTabs`; if yes, activates the existing tab; if no, wraps the Document in a new EditorViewModel and adds it. Close delegates to `Workspace.CloseDocument(path)` then removes the tab. Tab switch updates `Workspace.ActiveDocument`. | • `WorkspaceTests` — OpenDocument returns existing Document on repeat call, creates new Document on first call; CloseDocument removes from cache; ActiveDocument tracks correctly<br>• `EditorTabViewModelTests` — existing open/close/activate tests pass unchanged; open flow now goes through Workspace<br>• Open path: file path → Workspace.OpenDocument (cached or new) → Document → EditorViewModel wrapper<br>• Close path: EditorTabViewModel calls Workspace.CloseDocument then removes tab<br>• Tab switch: EditorTabViewModel sets Workspace.ActiveDocument | ⏳ Pending |
-| M4 | Stabilize state + regression sweep. Dirty-flag edge cases, close tab with unsaved changes, tab switch with dirty document, error propagation from Workspace to EditorTabViewModel. | Manual regression: open → edit → save → close → reopen. All existing `dotnet test` pass with zero regressions. | ⏳ Pending |
+| M2 | Refactor `EditorViewModel` to wrap `Document` only. Replace `_textContent`, `_filePath`, `_fileName`, `_isDirty`, `_lastSaveError`, `_suppressDirty`, `SaveAsync()` with delegation to `Document`. Keep `TextContent`, `FilePath`, `IsDirty`, `DisplayName`, `SaveCommand`, `LoadFileContent()`, `MarkClean()` as public API surface. SaveCommand calls `Document.SaveAsync(IFileService)`. | • `EditorViewModelTests` behavioral contract tests pass unchanged (IsDirty defaults, MarkClean, DisplayName, SaveCommand failure paths, LoadFileContent) — these assert VM API behavior, not internals<br>• `SaveCommand_WritesFile` and `SaveCommand_ClearsDirty` stay as VM integration tests (they exercise the public save pathway)<br>• `FileService`-dependent save tests move to `DocumentTests` (they test Document.SaveAsync directly) | ✅ Completed |
+| M3 | Introduce `Workspace` + refactor `EditorTabViewModel` in **one step**. Workspace is the document registry (`path → Document`). `Workspace.OpenDocument(path, IFileService)` checks its cache: if a Document for `path` already exists, returns it; otherwise creates, caches, and returns a new Document. EditorTabViewModel calls `Workspace.OpenDocument`, then checks if the returned Document is already represented in `OpenTabs`; if yes, activates the existing tab; if no, wraps the Document in a new EditorViewModel and adds it. Close delegates to `Workspace.CloseDocument(path)` then removes the tab. Tab switch updates `Workspace.ActiveDocument`. | • `WorkspaceTests` — OpenDocument returns existing Document on repeat call, creates new Document on first call; CloseDocument removes from cache; ActiveDocument tracks correctly<br>• `EditorTabViewModelTests` — existing open/close/activate tests pass unchanged; open flow now goes through Workspace<br>• Open path: file path → Workspace.OpenDocument (cached or new) → Document → EditorViewModel wrapper<br>• Close path: EditorTabViewModel calls Workspace.CloseDocument then removes tab<br>• Tab switch: EditorTabViewModel sets Workspace.ActiveDocument | ✅ Completed |
+| M4 | Stabilize state + regression sweep. Dirty-flag edge cases, close tab with unsaved changes, tab switch with dirty document, error propagation from Workspace to EditorTabViewModel. | Manual regression: open → edit → save → close → reopen. All existing `dotnet test` pass with zero regressions. | ✅ Completed |
 
 ### Removed from original plan
 
@@ -121,14 +121,14 @@ When EditorViewModel stops owning file state directly, the following test assert
 - No multi-tab Document sharing — not needed until split-view is implemented.
 
 ## Exit Conditions
-- [ ] Build succeeds: `dotnet build`
-- [ ] Open → edit → save works: open goes `path → Workspace.OpenDocument → Document → EditorViewModel`; save goes `EditorViewModel.SaveCommand → Document.SaveAsync(IFileService)` directly (Workspace is not in the save path)
-- [ ] EditorViewModel delegates all file state to Document (no `_textContent`, `_filePath`, `_isDirty` in EditorViewModel)
-- [ ] EditorTabViewModel delegates document operations to Workspace (no Document creation in EditorTabViewModel)
-- [ ] No regressions in tab open/close/switch behavior
-- [ ] All existing tests pass: `dotnet test` — zero regressions
-- [ ] New `DocumentTests` exist and pass
-- [ ] New `WorkspaceTests` exist and pass
+- [x] Build succeeds: `dotnet build`
+- [x] Open → edit → save works: open goes `path → Workspace.OpenDocument → Document → EditorViewModel`; save goes `EditorViewModel.SaveCommand → Document.SaveAsync(IFileService)` directly (Workspace is not in the save path)
+- [x] EditorViewModel delegates all file state to Document (no `_textContent`, `_filePath`, `_isDirty` in EditorViewModel)
+- [x] EditorTabViewModel delegates document operations to Workspace (no Document creation in EditorTabViewModel)
+- [x] No regressions in tab open/close/switch behavior
+- [x] All existing tests pass: `dotnet test` — zero regressions
+- [x] New `DocumentTests` exist and pass
+- [x] New `WorkspaceTests` exist and pass
 
 ## Rollback Plan
 - Commit hash to revert to: (fill before starting M1)

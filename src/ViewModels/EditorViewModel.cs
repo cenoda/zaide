@@ -9,14 +9,14 @@ using Zaide.Services;
 namespace Zaide.ViewModels;
 
 /// <summary>
-/// ViewModel for a single editor tab. Manages text content, dirty tracking,
-/// file path, and save operations. One instance per open tab (Transient).
+/// ViewModel for a single editor tab. Delegates all file state to
+/// <see cref="Models.Document"/>. One instance per open tab (Transient).
 /// </summary>
 public class EditorViewModel : ReactiveObject
 {
     private readonly IFileService _fileService;
-
     private Document _document;
+
     public Document Document
     {
         get => _document;
@@ -25,56 +25,28 @@ public class EditorViewModel : ReactiveObject
 
     /// <summary>
     /// Full path to the open file, or empty for new unsaved tabs.
-    /// When set, FileName is derived from the path.
+    /// Delegates to <see cref="Models.Document.FilePath"/>.
     /// </summary>
     public string FilePath
     {
         get => _document.FilePath;
         set
         {
-            if (_document != null && _document.FilePath != value)
-            {
-                _document.FilePath = value;
-                this.RaisePropertyChanged(nameof(FileName));
-                // Update FileName since it's derived from FilePath
-                FileName = string.IsNullOrEmpty(value)
-                    ? "Untitled"
-                    : Path.GetFileName(value);
-            }
-            else if (_document == null)
-            {
-                var newDocument = new Document(value, string.Empty);
-                _document = newDocument;
-                this.RaiseAndSetIfChanged(ref _document, _document);
-                InitializeReactiveProperties();
-                FileName = string.IsNullOrEmpty(value)
-                    ? "Untitled"
-                    : Path.GetFileName(value);
-            }
-            else
-            {
-                // If path is same as current, still ensure FileName reflects it (e.g. for empty paths)
-                FileName = string.IsNullOrEmpty(value)
-                    ? "Untitled"
-                    : Path.GetFileName(value);
-            }
+            if (_document.FilePath == value) return;
+            _document.FilePath = value;
+            this.RaisePropertyChanged(nameof(FilePath));
+            this.RaisePropertyChanged(nameof(FileName));
+            this.RaisePropertyChanged(nameof(DisplayName));
         }
     }
 
     /// <summary>
     /// Display name for the tab. Derived from FilePath.
     /// </summary>
-
-    private string _fileName = string.Empty;
-    public string FileName
-    {
-        get => _fileName;
-        private set
-        {
-            this.RaiseAndSetIfChanged(ref _fileName, value);
-            this.RaisePropertyChanged(nameof(DisplayName));
-        }
-    }
+    public string FileName =>
+        string.IsNullOrEmpty(Document.FilePath)
+            ? "Untitled"
+            : Path.GetFileName(Document.FilePath);
 
     /// <summary>
     /// Tab label shown in the tab bar. Prefixed with ● when the tab is dirty.
@@ -82,28 +54,20 @@ public class EditorViewModel : ReactiveObject
     public string DisplayName => IsDirty ? $"● {FileName}" : FileName;
 
     /// <summary>
-    /// Current text content of the editor. Changes mark the tab as dirty.
+    /// Current text content of the editor. Delegates to <see cref="Models.Document.Content"/>.
+    /// Setting this value marks the tab as dirty via the Document model.
     /// </summary>
-    private string _textContent = string.Empty;
     public string TextContent
     {
-        get => _textContent;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _textContent, value);
-            Document.Content = value;
-        }
+        get => Document.Content;
+        set => Document.Content = value;
     }
 
     /// <summary>
     /// True when content has been modified since the last save.
+    /// Delegates to <see cref="Models.Document.IsDirty"/>.
     /// </summary>
-    private bool _isDirty;
-    public bool IsDirty
-    {
-        get => _isDirty;
-        private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
-    }
+    public bool IsDirty => Document.IsDirty;
 
     /// <summary>
     /// Read-only convenience flag — inverse of IsDirty.
@@ -113,13 +77,9 @@ public class EditorViewModel : ReactiveObject
     /// <summary>
     /// Error message from the last failed save. null when the last save
     /// succeeded or no save has been attempted yet.
+    /// Delegates to <see cref="Models.Document.LastSaveError"/>.
     /// </summary>
-    private string? _lastSaveError;
-    public string? LastSaveError
-    {
-        get => _lastSaveError;
-        private set => this.RaiseAndSetIfChanged(ref _lastSaveError, value);
-    }
+    public string? LastSaveError => Document.LastSaveError;
 
     /// <summary>
     /// ReactiveCommand for saving the file.
@@ -132,43 +92,16 @@ public class EditorViewModel : ReactiveObject
         _fileService = fileService;
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
 
-        InitializeReactiveProperties();
-    }
-
-    private void InitializeReactiveProperties()
-    {
-        if (_document == null) return;
-
-        _textContent = _document.Content;
-        _isDirty = _document.IsDirty;
-        _lastSaveError = _document.LastSaveError;
-        FileName = string.IsNullOrEmpty(_document.FilePath)
-            ? "Untitled"
-            : Path.GetFileName(_document.FilePath);
-
-        _document.ContentChanged += HandleContentChanged;
-        _document.DirtyStateChanged += HandleDirtyStateChanged;
-        _document.SaveErrorChanged += HandleSaveErrorChanged;
-    }
-
-    private void HandleContentChanged(object? sender, EventArgs e)
-    {
-        if (_document == null) return;
-        _textContent = _document.Content;
-        this.RaisePropertyChanged(nameof(TextContent));
-        IsDirty = _document.IsDirty;
-    }
-
-    private void HandleDirtyStateChanged(object? sender, EventArgs e)
-    {
-        if (_document == null) return;
-        IsDirty = _document.IsDirty;
-    }
-
-    private void HandleSaveErrorChanged(object? sender, EventArgs e)
-    {
-        if (_document == null) return;
-        LastSaveError = _document.LastSaveError;
+        // Subscribe to Document events to propagate changes to reactive properties.
+        // Document is a plain model (not ReactiveObject), so we bridge via events.
+        _document.ContentChanged += (_, _) => this.RaisePropertyChanged(nameof(TextContent));
+        _document.DirtyStateChanged += (_, _) =>
+        {
+            this.RaisePropertyChanged(nameof(IsDirty));
+            this.RaisePropertyChanged(nameof(IsSaved));
+            this.RaisePropertyChanged(nameof(DisplayName));
+        };
+        _document.SaveErrorChanged += (_, _) => this.RaisePropertyChanged(nameof(LastSaveError));
     }
 
     /// <summary>
