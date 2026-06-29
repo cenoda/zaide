@@ -63,10 +63,10 @@ See `docs/architecture/OVERVIEW.md` for full details.
 - [x] Syntax highlighting (TextMate grammars)
 
 ## Phase 3: Terminal
-- [ ] Embedded terminal in bottom panel
-- [ ] Ctrl+` toggle visibility
-- [ ] Process execution (run commands)
-- [ ] Raw text output (no VT100 parsing — deferred to future polish phase)
+- [x] Embedded terminal in bottom panel
+- [x] Ctrl+` toggle visibility
+- [x] Process execution (run commands)
+- [x] Raw text output (no VT100 parsing — deferred to future polish phase)
 
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)
@@ -109,4 +109,4 @@ See `docs/architecture/OVERVIEW.md` for full details.
 
 ---
 
-*Last updated: 2026-06-27*
+*Last updated: 2026-06-29*

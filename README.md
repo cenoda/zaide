@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 2 (Editor) ✅ Complete — Phase 2.1 (Editor Polish) planned.
+**Status:** Phase 3 (Terminal) ✅ Complete — Phase 4 (Townhall) planned next.
 
 ## Philosophy
 
@@ -45,7 +45,7 @@ One agent codes, another reviews. They argue. You get better code.
 | Ayaka Violet color palette | 0 | ✅ Done |
 | File tree sidebar | 1 | ✅ Done |
 | Townhall / Editor center | 2 | ✅ Done |
-| Terminal | 3 | ⏳ Planned |
+| Terminal | 3 | ✅ Done |
 | Townhall agent logging | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
