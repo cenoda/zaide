@@ -41,8 +41,30 @@ public sealed class LinuxTerminalService : ITerminalService
     /// <inheritdoc/>
     public Task StartAsync(string shell = "/bin/bash", CancellationToken ct = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (IsRunning) return Task.CompletedTask;
         ct.ThrowIfCancellationRequested();
+
+        // --- reset restart state (start -> exit -> restart) ---
+        // A previous session may have exited. Its reader thread already ran
+        // SignalExit() and returned, but join it defensively so two reader
+        // threads never overlap, then clear the exit latch and stale handles
+        // so the next exit is detected, reaped, and raised exactly once again.
+        _reader?.Join(TimeSpan.FromSeconds(2));
+        _reader = null;
+
+        // A clean shell exit (ReadLoop EOF -> SignalExit) does NOT close the
+        // master fd — only Dispose does. On restart we must close the previous
+        // master ourselves, otherwise every cycle leaks one PTY fd until
+        // terminal creation eventually fails.
+        if (_master >= 0)
+        {
+            LinuxPtyInterop.close(_master);
+            _master = -1;
+        }
+
+        _pid = -1;
+        Interlocked.Exchange(ref _exitSignaled, 0);
 
         // --- allocate the PTY master (close fd on any partial failure) ---
         _master = LinuxPtyInterop.posix_openpt(LinuxPtyInterop.O_RDWR | LinuxPtyInterop.O_NOCTTY);

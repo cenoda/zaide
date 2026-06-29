@@ -218,4 +218,142 @@ public class TerminalViewModelTests
         vm.Resize(80, 24);
         service.Verify(s => s.Resize(80, 24), Times.Once);
     }
+
+    // --- M3: state transitions ---
+
+    [Fact]
+    public void State_IsNotStarted_BeforeStart()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        Assert.Equal(TerminalState.NotStarted, vm.State);
+        Assert.Equal("Not started", vm.StatusLabel);
+    }
+
+    [Fact]
+    public async Task State_IsRunning_AfterSuccessfulStart()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+
+        Assert.Equal(TerminalState.Running, vm.State);
+        Assert.Equal("Running", vm.StatusLabel);
+    }
+
+    [Fact]
+    public async Task State_IsExited_AfterProcessExit()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.ProcessExited += null);
+
+        Assert.Equal(TerminalState.Exited, vm.State);
+        Assert.Equal("Exited", vm.StatusLabel);
+    }
+
+    [Fact]
+    public async Task State_IsError_AndLabelIncludesMessage_OnStartFailure()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .ThrowsAsync(new InvalidOperationException("posix_openpt failed"));
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+
+        Assert.Equal(TerminalState.Error, vm.State);
+        Assert.Equal("Error: posix_openpt failed", vm.StatusLabel);
+    }
+
+    // --- M3: ViewModel restart path ---
+
+    [Fact]
+    public async Task Restart_StartsServiceAgain_AfterCleanExit()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.ProcessExited += null);
+        Assert.Equal(TerminalState.Exited, vm.State);
+
+        await vm.RestartAsync();
+
+        // StartAsync called twice total: initial start + restart.
+        service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+        Assert.Equal(TerminalState.Running, vm.State);
+    }
+
+    [Fact]
+    public async Task Restart_IsNoOp_WhileRunning()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        await vm.RestartAsync(); // still running — must not restart
+
+        service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RestartCommand_CanExecute_OnlyWhenNotRunning()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        bool canExecute = true;
+        using var sub = vm.RestartCommand.CanExecute.Subscribe(v => canExecute = v);
+
+        Assert.True(canExecute); // not started yet → enabled
+
+        await vm.EnsureStartedAsync();
+        Assert.False(canExecute); // running → disabled
+
+        service.Raise(s => s.ProcessExited += null);
+        Assert.True(canExecute); // exited → enabled again
+    }
+
+    [Fact]
+    public async Task Restart_DoesNotDuplicateEventHandling()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.ProcessExited += null);
+        await vm.RestartAsync();
+
+        // A single output event after restart must append exactly once. If the
+        // VM had re-subscribed on restart, the text would appear twice.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("X"));
+
+        int occurrences = vm.OutputText.Split('X').Length - 1;
+        Assert.Equal(1, occurrences);
+    }
 }

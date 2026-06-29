@@ -64,11 +64,43 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     public string? StartupError
     {
         get => _startupError;
-        private set => this.RaiseAndSetIfChanged(ref _startupError, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _startupError, value);
+            this.RaisePropertyChanged(nameof(StatusLabel));
+        }
     }
+
+    private TerminalState _state = TerminalState.NotStarted;
+    /// <summary>Current lifecycle state of the terminal session.</summary>
+    public TerminalState State
+    {
+        get => _state;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _state, value);
+            this.RaisePropertyChanged(nameof(StatusLabel));
+        }
+    }
+
+    /// <summary>Human-readable status for display in the control strip.</summary>
+    public string StatusLabel => State switch
+    {
+        TerminalState.NotStarted => "Not started",
+        TerminalState.Running => "Running",
+        TerminalState.Exited => "Exited",
+        TerminalState.Error => StartupError is { Length: > 0 } e ? $"Error: {e}" : "Error",
+        _ => string.Empty
+    };
 
     /// <summary>Clears the output buffer.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
+
+    /// <summary>
+    /// Restarts the shell after it has exited. Disabled while the terminal is
+    /// running. See <see cref="RestartAsync"/>.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> RestartCommand { get; }
 
     /// <summary>Production constructor used by the DI container.</summary>
     public TerminalViewModel(ITerminalService terminalService)
@@ -89,6 +121,11 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
         ClearCommand = ReactiveCommand.Create(Clear);
 
+        // Restart is only meaningful once the shell is not running.
+        RestartCommand = ReactiveCommand.CreateFromTask(
+            RestartAsync,
+            this.WhenAnyValue(x => x.IsRunning, running => !running));
+
         _service.OutputReceived += OnOutputReceived;
         _service.ProcessExited += OnProcessExited;
     }
@@ -108,6 +145,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             await _service.StartAsync();
             StartupError = null;
             IsRunning = _service.IsRunning;
+            State = IsRunning ? TerminalState.Running : TerminalState.Exited;
 
             // If the panel computed a viewport size before startup, the PTY
             // silently ignored it. Reapply now so the shell gets its real size.
@@ -117,8 +155,30 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         {
             StartupError = ex.Message;
             IsRunning = false;
+            State = TerminalState.Error;
             _startRequested = false; // allow a retry on the next reveal
         }
+    }
+
+    /// <summary>
+    /// Restarts the shell session after a clean exit (or a failed start).
+    /// <see cref="EnsureStartedAsync"/> leaves <c>_startRequested</c> set, so
+    /// this deliberately clears that gate and resets the cached viewport size
+    /// before starting again. The singleton service is reused, so event
+    /// subscriptions are not re-added and cannot duplicate. No-op if the
+    /// terminal is already running or the ViewModel is disposed.
+    /// </summary>
+    public async Task RestartAsync()
+    {
+        if (_disposed || IsRunning) return;
+
+        // Clear the one-shot start gate and the cached size so the next
+        // resize (and the post-start reapply) reach the new PTY.
+        _startRequested = false;
+        _currentColumns = 0;
+        _currentRows = 0;
+
+        await EnsureStartedAsync();
     }
 
     /// <summary>
@@ -184,6 +244,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _uiPost(() =>
         {
             IsRunning = false;
+            State = TerminalState.Exited;
             Append("\r\n[Process exited]\r\n");
         });
     }

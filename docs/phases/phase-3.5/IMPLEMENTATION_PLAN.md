@@ -25,7 +25,7 @@ or a full ANSI/cell renderer.
 | M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Done |
 | M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit tests for geometry + resize forwarding; manual shell resize check | ✅ Done |
 | M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper | ✅ Done |
-| M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior | ⏳ Pending |
+| M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior | ✅ Done |
 | M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C | ⏳ Pending |
 | M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` | ⏳ Pending |
 
@@ -98,6 +98,30 @@ Add a small visible terminal control strip and keep the first pass practical:
 Clipboard access must stay in the View layer. ViewModels may expose terminal
 text or accept raw input bytes, but must not reference Avalonia clipboard APIs.
 
+**Status:** ✅ Implemented.
+
+- **Service restart-safety** (`LinuxTerminalService.StartAsync`): resets the
+  `_exitSignaled` latch, joins/clears the old reader thread, closes the previous
+  PTY master fd (a clean shell exit never closes it — only `Dispose` did, so
+  restart would otherwise leak one fd per cycle), clears stale `_pid`/`_master`
+  before spawning, and adds an `ObjectDisposedException` guard. Integration test
+  `Restart_StartExitRestartExit_RaisesProcessExitedEachTime` proves the second
+  exit still reaps and raises `ProcessExited` exactly twice; a separate
+  `Restart_DoesNotLeakFileDescriptors` test runs repeated cycles and asserts the
+  process fd count stays flat.
+- **ViewModel restart path** (`TerminalViewModel.RestartCommand` /
+  `RestartAsync`): clears the `_startRequested` gate and cached viewport size,
+  then re-runs `EnsureStartedAsync`. Gated by a `!IsRunning` `canExecute` so it
+  is only enabled after a clean exit. The singleton service is reused, so
+  events are never re-subscribed (covered by `Restart_DoesNotDuplicateEventHandling`).
+- **State + control strip**: `TerminalState` enum (`NotStarted`/`Running`/
+  `Exited`/`Error`) drives a `StatusLabel`, shown in a toolbar above the output
+  with `Clear` and `Restart` buttons (bound via `BindCommand`).
+- **Clipboard**: Ctrl+Shift+C / Ctrl+Shift+V handled entirely in `TerminalPanel`
+  using `TopLevel.Clipboard` (`SetTextAsync` / `TryGetTextAsync`). The mapper
+  returns `null` for these so they never reach the PTY. Large-paste chunking is
+  deferred (see TOFIX).
+
 ### M4: Raw Output MVP
 
 Keep raw-output improvement intentionally small and verifiable:
@@ -138,11 +162,11 @@ Keep raw-output improvement intentionally small and verifiable:
 - [x] Terminal resize updates PTY rows/columns
 - [x] Common shell keys work: Enter, Backspace, Tab, arrows, Ctrl+C, Ctrl+D,
       Ctrl+L, Home/End, Delete
-- [ ] Terminal clear/restart/error state is visible and tested
-- [ ] `LinuxTerminalService` supports start -> exit -> restart -> exit without
+- [x] Terminal clear/restart/error state is visible and tested
+- [x] `LinuxTerminalService` supports start -> exit -> restart -> exit without
       missed `ProcessExited` events or zombie child processes
-- [ ] ViewModel restart path works after clean process exit
-- [ ] Restart does not duplicate terminal event handling
+- [x] ViewModel restart path works after clean process exit
+- [x] Restart does not duplicate terminal event handling
 - [ ] Raw output MVP subset is implemented or explicitly documented as deferred
 - [ ] Manual terminal smoke test passes on Linux
 

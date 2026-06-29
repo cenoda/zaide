@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -27,6 +28,9 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         new("Cascadia Code, JetBrains Mono, monospace");
 
     private readonly TextBox _outputTextBox;
+    private readonly Button _clearButton;
+    private readonly Button _restartButton;
+    private readonly TextBlock _statusText;
     private double _cellWidth;
 
     public TerminalPanel()
@@ -58,11 +62,65 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
 
-        Content = _outputTextBox;
+        // --- M3: control strip (status + clear + restart) ---
+        _statusText = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"]
+        };
+
+        _clearButton = BuildToolbarButton("Clear");
+        _restartButton = BuildToolbarButton("Restart");
+
+        var buttonStrip = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { _clearButton, _restartButton }
+        };
+
+        var toolbarGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Children = { _statusText, buttonStrip }
+        };
+        Grid.SetColumn(_statusText, 0);
+        Grid.SetColumn(buttonStrip, 1);
+
+        var toolbar = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
+            Padding = new Thickness(16, 6, 16, 6),
+            Child = toolbarGrid
+        };
+
+        var root = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            }
+        };
+        Grid.SetRow(toolbar, 0);
+        Grid.SetRow(_outputTextBox, 1);
+        root.Children.Add(toolbar);
+        root.Children.Add(_outputTextBox);
+
+        Content = root;
 
         this.WhenActivated(d =>
         {
             d.Add(this.OneWayBind(ViewModel, vm => vm.OutputText, v => v._outputTextBox.Text));
+            d.Add(this.OneWayBind(ViewModel, vm => vm.StatusLabel, v => v._statusText.Text));
+            d.Add(this.BindCommand(ViewModel, vm => vm.ClearCommand, v => v._clearButton));
+            d.Add(this.BindCommand(ViewModel, vm => vm.RestartCommand, v => v._restartButton));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.OutputText)
                 .Subscribe(_ => ScrollToEnd()));
@@ -77,13 +135,27 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             // --- M1: Resize wiring ---
             // Measure the monospace character cell width once the control is
             // laid out, then forward viewport size changes (throttled) to the
-            // ViewModel so it can update the PTY rows/columns.
-            d.Add(this.GetObservable(BoundsProperty)
+            // ViewModel so it can update the PTY rows/columns. Observe the
+            // output TextBox bounds (not the whole panel) so the toolbar row
+            // is excluded from the row calculation.
+            d.Add(_outputTextBox.GetObservable(BoundsProperty)
                 .Throttle(TimeSpan.FromMilliseconds(100))
                 .ObserveOn(AvaloniaScheduler.Instance)
                 .Subscribe(_ => ForwardResize()));
         });
     }
+
+    private static Button BuildToolbarButton(string label) => new()
+    {
+        Content = label,
+        FontSize = 12,
+        Padding = new Thickness(12, 4, 12, 4),
+        Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
+        Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+        BorderThickness = new Thickness(0),
+        CornerRadius = new CornerRadius(6),
+        Cursor = new Cursor(StandardCursorType.Hand)
+    };
 
     public void FocusTerminal()
     {
@@ -94,6 +166,25 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private async void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (ViewModel is null) return;
+
+        // Clipboard actions live in the View layer (never the ViewModel) and
+        // are deliberately not forwarded to the PTY.
+        if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
+        {
+            if (e.Key == Key.C)
+            {
+                await CopySelectionAsync();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.V)
+            {
+                await PasteAsync();
+                e.Handled = true;
+                return;
+            }
+        }
 
         byte[]? bytes = TerminalKeyMapper.Map(e.Key, e.KeyModifiers);
         if (bytes is null) return;
@@ -117,6 +208,38 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         return ViewModel?.SendInputAsync(bytes) ?? Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Copies the current TextBox selection to the OS clipboard (Ctrl+Shift+C).
+    /// No-op when nothing is selected. Clipboard access stays in the View.
+    /// </summary>
+    private async Task CopySelectionAsync()
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null) return;
+
+        string? selected = _outputTextBox.SelectedText;
+        if (!string.IsNullOrEmpty(selected))
+            await clipboard.SetTextAsync(selected);
+    }
+
+    /// <summary>
+    /// Pastes clipboard text into the shell as raw input bytes (Ctrl+Shift+V).
+    /// MVP limit: the whole clipboard is written in one call; very large
+    /// pastes are not chunked yet (tracked in TOFIX).
+    /// </summary>
+    private async Task PasteAsync()
+    {
+        if (ViewModel is null) return;
+
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null) return;
+
+        string? text = await clipboard.TryGetTextAsync();
+        if (string.IsNullOrEmpty(text)) return;
+
+        await ViewModel.SendInputAsync(Encoding.UTF8.GetBytes(text));
+    }
+
     private void ScrollToEnd()
     {
         _outputTextBox.CaretIndex = _outputTextBox.Text?.Length ?? 0;
@@ -133,7 +256,9 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     {
         if (ViewModel is null) return;
 
-        var bounds = Bounds;
+        // Use the output TextBox bounds — the actual terminal viewport — so
+        // the toolbar row above it is not counted as shell rows.
+        var bounds = _outputTextBox.Bounds;
 
         double cellWidth = MeasureCellWidth();
         double lineHeight = _outputTextBox.LineHeight;

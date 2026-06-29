@@ -78,4 +78,79 @@ public class LinuxTerminalServiceTests
 
         Assert.False(service.IsRunning);
     }
+
+    [Fact]
+    public async Task Restart_StartExitRestartExit_RaisesProcessExitedEachTime()
+    {
+        using var service = new LinuxTerminalService();
+        int exitCount = 0;
+        var exited = new AutoResetEvent(false);
+        service.ProcessExited += () =>
+        {
+            Interlocked.Increment(ref exitCount);
+            exited.Set();
+        };
+
+        // --- First session ---
+        await service.StartAsync();
+        Assert.True(service.IsRunning);
+
+        await Task.Delay(300); // let bash reach its prompt
+        await service.WriteAsync(Encoding.UTF8.GetBytes("exit\r"));
+
+        Assert.True(exited.WaitOne(TimeSpan.FromSeconds(5)), "first exit was not signaled");
+        Assert.False(service.IsRunning);
+
+        // --- Second session (restart on the same instance) ---
+        await service.StartAsync();
+        Assert.True(service.IsRunning);
+
+        await Task.Delay(300);
+        await service.WriteAsync(Encoding.UTF8.GetBytes("exit\r"));
+
+        Assert.True(exited.WaitOne(TimeSpan.FromSeconds(5)),
+            "second exit was not signaled — restart left stale exit/reader state");
+        Assert.False(service.IsRunning);
+
+        // Exactly two exits: the latch was reset on restart, and the single
+        // subscription was not duplicated across sessions.
+        Assert.Equal(2, exitCount);
+    }
+
+    [Fact]
+    public async Task Restart_DoesNotLeakFileDescriptors()
+    {
+        using var service = new LinuxTerminalService();
+        var exited = new AutoResetEvent(false);
+        service.ProcessExited += () => exited.Set();
+
+        async Task RunCycleAsync()
+        {
+            await service.StartAsync();
+            await Task.Delay(300); // let bash reach its prompt
+            await service.WriteAsync(Encoding.UTF8.GetBytes("exit\r"));
+            Assert.True(exited.WaitOne(TimeSpan.FromSeconds(5)), "shell did not exit");
+        }
+
+        // Warm up one full cycle, then take the fd baseline.
+        await RunCycleAsync();
+        int baseline = CountOpenFds();
+
+        // Several more restart cycles. A per-restart master-fd leak would grow
+        // the count by roughly one per cycle.
+        for (int i = 0; i < 5; i++)
+            await RunCycleAsync();
+
+        int after = CountOpenFds();
+
+        Assert.True(after <= baseline + 2,
+            $"Open fd count grew from {baseline} to {after} across 5 restarts — " +
+            "likely a leaked PTY master fd.");
+    }
+
+    // Counts this process's open file descriptors via /proc (Linux-only).
+    // The PTY master is a raw int fd, not a SafeHandle, so the GC never closes
+    // it — a leak here is deterministic.
+    private static int CountOpenFds()
+        => System.IO.Directory.GetFiles("/proc/self/fd").Length;
 }

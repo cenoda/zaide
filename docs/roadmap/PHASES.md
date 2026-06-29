@@ -80,10 +80,10 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] Raw text output (no VT100 parsing — deferred to future polish phase)
 
 ### Phase 3.5: Terminal UI Normalization
-- [ ] Wire terminal resize to PTY rows/columns
-- [ ] Expand common shell key forwarding
-- [ ] Add visible terminal controls/state
-- [ ] Make terminal restart safe across service and ViewModel layers
+- [x] Wire terminal resize to PTY rows/columns
+- [x] Expand common shell key forwarding
+- [x] Add visible terminal controls/state
+- [x] Make terminal restart safe across service and ViewModel layers
 - [ ] Improve raw output experience within MVP bounds
 
 ## Phase 4: Townhall (Agent Transparency)
