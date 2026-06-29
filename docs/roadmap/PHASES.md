@@ -83,6 +83,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [ ] Wire terminal resize to PTY rows/columns
 - [ ] Expand common shell key forwarding
 - [ ] Add visible terminal controls/state
+- [ ] Make terminal restart safe across service and ViewModel layers
 - [ ] Improve raw output experience within MVP bounds
 
 ## Phase 4: Townhall (Agent Transparency)

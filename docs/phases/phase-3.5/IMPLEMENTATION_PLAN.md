@@ -26,7 +26,7 @@ or a full ANSI/cell renderer.
 | M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit tests for geometry + resize forwarding; manual shell resize check |
 | M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper |
 | M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior |
-| M4 | Improve raw output experience within MVP bounds | Manual check with `echo`, `ls --color`, `clear`, Ctrl+C |
+| M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C |
 | M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` |
 
 ### M1: Resize Wiring
@@ -39,6 +39,10 @@ it yet. Implement resize in three small, testable steps:
 - Add a `TerminalViewModel.Resize(columns, rows)` pass-through.
 - Subscribe to terminal panel bounds/font changes, throttle them, and call the
   ViewModel resize method.
+
+The geometry helper must use an explicit character-cell measurement source,
+such as `FormattedText` glyph advance for the configured monospace font and the
+terminal line height. Do not assume `TextBox` exposes terminal cell metrics.
 
 ### M2: Key Forwarding
 
@@ -62,10 +66,29 @@ Add a small visible terminal control strip and keep the first pass practical:
   `StartAsync`, re-validate `_master` / `_reader` state before spawning, and add
   a service-level start -> exit -> restart -> exit test that proves the second
   exit still reaps the child and raises `ProcessExited`.
-- Add restart behavior deliberately, with tests proving event subscriptions do
-  not duplicate across restart.
+- Add a ViewModel-level restart path, such as `RestartCommand`, that can start
+  the singleton service again after a clean exit. `EnsureStartedAsync()` leaves
+  `_startRequested` true today, so restart must deliberately reset or bypass
+  that gate.
+- Test restart lifecycle at the real risk points: stale reader state, missed
+  `ProcessExited`, unreaped child process, and accidental duplicate event
+  handling.
 - Prefer explicit Ctrl+Shift+C / Ctrl+Shift+V clipboard actions over relying on
   TextBox mouse selection, which is unreliable in the Phase 3 surface.
+
+Clipboard access must stay in the View layer. ViewModels may expose terminal
+text or accept raw input bytes, but must not reference Avalonia clipboard APIs.
+
+### M4: Raw Output MVP
+
+Keep raw-output improvement intentionally small and verifiable:
+
+- Support carriage return (`\r`) overwrite behavior if feasible.
+- Support backspace (`\b`) deletion behavior if feasible.
+- Treat clear-screen ANSI from commands like `clear` as either a toolbar-driven
+  Clear substitute or a documented limitation.
+- Defer full ANSI/VT100 parsing, color rendering, cursor addressing, and
+  alternate-screen behavior to a later renderer phase.
 
 ## Design Notes
 
@@ -99,7 +122,9 @@ Add a small visible terminal control strip and keep the first pass practical:
 - [ ] Terminal clear/restart/error state is visible and tested
 - [ ] `LinuxTerminalService` supports start -> exit -> restart -> exit without
       missed `ProcessExited` events or zombie child processes
-- [ ] Restart does not duplicate terminal service event subscriptions
+- [ ] ViewModel restart path works after clean process exit
+- [ ] Restart does not duplicate terminal event handling
+- [ ] Raw output MVP subset is implemented or explicitly documented as deferred
 - [ ] Manual terminal smoke test passes on Linux
 
 ## Rollback Plan
