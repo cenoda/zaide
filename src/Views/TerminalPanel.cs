@@ -147,7 +147,6 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         if (ViewModel is null) return;
 
         var bounds = Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0) return;
 
         double cellWidth = MeasureCellWidth();
         double lineHeight = _outputTextBox.LineHeight;

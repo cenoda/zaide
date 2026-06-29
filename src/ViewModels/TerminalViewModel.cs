@@ -36,6 +36,8 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private volatile bool _disposed;
     private int _currentColumns;
     private int _currentRows;
+    private int _pendingColumns;
+    private int _pendingRows;
 
     /// <summary>
     /// Raw terminal output accumulated so far (bounded ring buffer). No ANSI
@@ -106,6 +108,10 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             await _service.StartAsync();
             StartupError = null;
             IsRunning = _service.IsRunning;
+
+            // If the panel computed a viewport size before startup, the PTY
+            // silently ignored it. Reapply now so the shell gets its real size.
+            ApplyPendingResize();
         }
         catch (Exception ex)
         {
@@ -125,17 +131,38 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// Forwards a terminal viewport resize to the PTY backend. Safe to call
     /// before startup or after exit — the service treats it as a no-op.
     /// Only forwards to the service when the dimensions actually change.
+    /// When called before the service is running, the latest dimensions are
+    /// remembered and forwarded automatically after startup completes.
     /// </summary>
     /// <param name="columns">Number of terminal columns.</param>
     /// <param name="rows">Number of terminal rows.</param>
     public void Resize(int columns, int rows)
     {
         if (columns <= 0 || rows <= 0) return;
+
+        // Always remember the latest request so it survives startup.
+        _pendingColumns = columns;
+        _pendingRows = rows;
+
         if (columns == _currentColumns && rows == _currentRows) return;
 
         _currentColumns = columns;
         _currentRows = rows;
         _service.Resize(columns, rows);
+    }
+
+    /// <summary>
+    /// Reapplies the last <see cref="Resize"/> request to the service. Called
+    /// after startup completes so the PTY receives the real viewport size
+    /// even if the panel computed it before the shell was alive.
+    /// </summary>
+    private void ApplyPendingResize()
+    {
+        if (_pendingColumns <= 0 || _pendingRows <= 0) return;
+
+        _service.Resize(_pendingColumns, _pendingRows);
+        _currentColumns = _pendingColumns;
+        _currentRows = _pendingRows;
     }
 
     private void OnOutputReceived(byte[] data)

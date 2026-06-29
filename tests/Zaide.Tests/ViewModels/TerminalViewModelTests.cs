@@ -183,4 +183,39 @@ public class TerminalViewModelTests
         service.Verify(s => s.Resize(120, 30), Times.Once);
         service.Verify(s => s.Resize(100, 25), Times.Once);
     }
+
+    [Fact]
+    public async Task Resize_BeforeStart_IsReappliedAfterStartup()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        // Panel computes a size before the shell is alive — service would
+        // silently ignore it, but the ViewModel must remember it.
+        vm.Resize(120, 30);
+        service.Verify(s => s.Resize(120, 30), Times.Once);
+
+        await vm.EnsureStartedAsync();
+
+        // After startup the pending size must be reapplied.
+        service.Verify(s => s.Resize(120, 30), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Resize_AfterStart_ForwardsOnce()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+
+        vm.Resize(80, 24);
+        service.Verify(s => s.Resize(80, 24), Times.Once);
+    }
 }
