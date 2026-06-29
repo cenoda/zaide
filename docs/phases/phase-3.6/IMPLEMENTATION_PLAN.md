@@ -105,7 +105,7 @@ record CsiAction(int[] Params, char FinalByte);
 
 **Design rules:**
 - The parser is pure: input is `ReadOnlySpan<char>`, output is `IEnumerable<AnsiAction>` or an action list. No dependencies on Avalonia, `ITerminalService`, or screen buffer types.
-- Unknown escape sequences (unrecognised final bytes, incomplete sequences) emit a "deferred" action so the screen buffer can show them as verbatim text if desired, or they can be silently dropped. This phase drops them silently (to avoid visible escape junk — the main UX goal).
+- The parser **drops unsupported sequences silently** at the parser level. Unknown/incomplete escape sequences (including private DECSET/DECRST, DCS, OSC, and unrecognised CSI final bytes) are consumed but produce no action output. This avoids visible escape junk (the main UX goal) and keeps the screen buffer free of "unknown action" handling. Tests assert unsupported sequences produce zero actions.
 - **The parser fully owns partial-sequence state.** Split escape sequences across chunk boundaries (e.g. `\x1B` at end of chunk A, `[31m` in chunk B) are handled entirely inside the parser. Each call to `Parse(nextChunk)` continues from its internal state and emits complete actions only. The ViewModel simply calls `Parse(nextChunk)` — it does not inspect or stitch parser internals.
 
 **Tests (M1):**
@@ -116,7 +116,7 @@ record CsiAction(int[] Params, char FinalByte);
 - Parse `\x1B[3;5H` (cursor position with row=3, col=5)
 - Parse `\x1B[0m` → SGR reset
 - Parse `\x1B[1;31m` → SGR bright + red
-- Unknown sequence `\x1B[?25h` → deferred (dropped)
+- Unknown sequence `\x1B[?25h` → no actions emitted (silently dropped)
 - Split sequence across two `Append` calls (partial persists)
 - Newline and carriage return in ground state produce Execute actions
 
@@ -168,11 +168,14 @@ internal readonly struct CellAttribute
 - **`EraseLine(int param)`** — 0 = cursor to end of line, 1 = start to cursor, 2 = entire line
 - **`SetSgr(int[] params)`** — updates `_currentAttributes`
 - **`Scroll()`** — scroll buffer up by one row, clear bottom row, reset cursor to bottom row
-- **`Resize(int columns, int rows)`** — reallocate buffer, copy as much content as fits, and clamp the cursor into the new bounds (required by M4; initial buffer defaults to 80×24)
+- **`Resize(int columns, int rows)`** — reallocate buffer, copy overlapping cells (row/col clamped to min of old and new dimensions), fill new cells with space/default attributes, and clamp the cursor into the new bounds. No line reflow: content that falls outside the new grid is discarded. (Required by M4; initial buffer defaults to 80×24.)
 
 **Scrollback:** The screen buffer is exactly the visible area (rows × cols). No scrollback history in this phase. The `TerminalOutputBuffer`'s ring-buffer scrollback (200K chars of history) is replaced entirely — full history is deferred to a future phase when scrollback in the custom control is added.
 
-> ⚠️ **Deliberate temporary regression:** Phase 3.5 users could see ~200K chars of scrollback via the TextBox's built-in scrollbar. Phase 3.6 removes this — the terminal will only show the visible viewport. The manual smoke test explicitly checks this regression is acceptable before closing the phase. Scrollback will return in a future phase once the render control supports scrolling.
+> ⚠️ **Deliberate temporary regressions from Phase 3.5:**
+> 1. **Scrollback lost:** Phase 3.5 users could see ~200K chars of scrollback via the TextBox's built-in scrollbar. Phase 3.6 removes this — the terminal only shows the visible viewport (rows × cols). Scrollback returns in a future phase once the render control supports scrolling.
+> 2. **No interactive selection:** Phase 3.5 users could select arbitrary text with the mouse in the TextBox and copy it. Phase 3.6 has no mouse selection. Ctrl+Shift+C copies all visible text row-by-row (not just the cursor line). This is strictly worse for targeted copying, but acceptable for the renderer foundation.
+> Both are checked in the manual smoke test before closing the phase.
 
 **Initial size:** The screen buffer is created with the default size **80 columns × 24 rows**. `TerminalViewModel.Resize()` is called by `TerminalPanel.ForwardResize()` as soon as the panel is measured; the first resize call updates to the actual viewport dimensions.
 
@@ -192,6 +195,8 @@ internal readonly struct CellAttribute
 - Backspace does not cross into previous row
 - Tab advances to next 8-column stop
 - Content survives ordering: write "AB", cursor back, write "C" → "CB"
+- Resize to larger grid: preserved cells at top-left, new cells are spaces
+- Resize to smaller grid: overflowing cells discarded, cursor clamped
 
 ### M3: Custom Terminal Render Control
 
@@ -200,7 +205,9 @@ internal readonly struct CellAttribute
 Replaces the `TextBox` as the terminal rendering surface. Uses `DrawingContext` for pixel-exact cell rendering.
 
 ```csharp
-// View-neutral — ViewModel can construct snapshots without referencing Views
+// File: src/ViewModels/TerminalSnapshot.cs — public snapshot for view binding
+// (one class per file: TerminalSnapshot.cs, TerminalCell colocated as same file
+//  since TerminalCell is only used as the element type of TerminalSnapshot.Cells)
 
 namespace Zaide.ViewModels;
 
@@ -231,6 +238,8 @@ public readonly struct TerminalCell
 ```
 
 ```csharp
+// File: src/Views/TerminalRenderControl.cs
+
 namespace Zaide.Views;
 
 public class TerminalRenderControl : Control
@@ -256,6 +265,12 @@ public class TerminalRenderControl : Control
 - Draw a cursor block at `(CursorRow, CursorCol)` using the inverted foreground/background
 - Only re-render when the screen buffer or cursor position changes (invalidate via `InvalidateVisual()`)
 
+**Focusability and input handling:**
+- The constructor must set `Focusable = true` and handle `GotFocus`/`LostFocus` to toggle cursor visibility (cursor fully visible when focused, dimmed when unfocused)
+- Subscribe to `KeyDownEvent` (tunnel routing, matching the existing `TextBox` handler pattern) for key-mapped input (arrows, Ctrl+C, etc.)
+- Subscribe to `TextInputEvent` (tunnel routing) for printable character input
+- Without this, Home/End/arrows and text input will not work — the control must be explicitly focusable and must forward keyboard events the same way the old TextBox did
+
 **Performance notes:**
 - For a typical 80×24 terminal, that's 1,920 `FormattedText` instances per frame. This is acceptable for a first pass — real terminals batch glyph rendering, but we avoid premature optimization.
 - If profiling shows frame drops, the optimization path is: batch characters per unique attribute, then render each row as a single `FormattedText` with ` spans.
@@ -265,16 +280,17 @@ public class TerminalRenderControl : Control
 - `TerminalPanel` swaps `_outputTextBox` for `_renderControl = new TerminalRenderControl()`
 - `TerminalPanel` still owns the toolbar (status, clear, restart) — unchanged
 - Key forwarding (`OnKeyDown`, `OnTextInput`) moves from `_outputTextBox` event handlers to `_renderControl` event handlers
-- Clipboard (`CopySelectionAsync`) changes from `TextBox.SelectedText` to copying the cursor-line text via `ScreenSnapshot.Lines[CursorRow]` (selection highlighting deferred to a future phase)
+- Clipboard (`CopySelectionAsync`) copies all visible text via `string.Join("\n", ScreenSnapshot.Lines)` — every visible row concatenated with newlines. This is the best achievable without mouse selection; once interactive selection lands in a future phase, it can restrict to the selected range.
 - `FocusTerminal()` focuses `_renderControl` instead of `_outputTextBox`
 - `ScrollToEnd()` becomes a no-op (no scrollbar yet — deferred)
 - `ForwardResize()` uses `_renderControl.Bounds` and `_renderControl.CellWidth` / `_renderControl.LineHeight`
 
 **Tests (M3):**
-- **RenderTargetBitmap snapshot test:** Create a `TerminalRenderControl` in a test window running under the Avalonia headless test platform (e.g. `[UiThreadFact]` with the headless platform provider initialized), set a `TerminalSnapshot` with known content (e.g. 3×3 grid, cells at (0,0)=`'A'` red, (1,1)=`'B'` green), render to a `RenderTargetBitmap`, and verify pixel color at the expected cell position matches the expected foreground color. This validates the drawing pipeline end-to-end without manual inspection.
-- **Invalidation test:** Set `SnapshotProperty` and mutate the snapshot; declare `AffectsRender<TerminalRenderControl>(SnapshotProperty)` so that styled-property changes automatically trigger `InvalidateVisual()`. Assert the control rendered (no manual mock required).
-- **Geometry assertion:** Verify `CellWidth > 0` after first measure.
-- **TerminalSnapshot structure test:** Construct a `TerminalSnapshot` with known content and assert `Cells` is row-major and correctly sized.
+
+- **TerminalSnapshot structure test** (pure logic, no Avalonia): Construct a `TerminalSnapshot` with known content and assert `Cells` is row-major, correctly sized (Columns × Rows), and `Lines` matches the expected per-row strings. This validates the snapshotter's projection from `TerminalScreen`.
+- **AffectsRender declaration:** `TerminalRenderControl` declares `AffectsRender<TerminalRenderControl>(SnapshotProperty, CursorRowProperty, CursorColProperty, CursorVisibleProperty)` so styled-property changes automatically trigger `InvalidateVisual()` (testable by assertion in a minimal Avalonia headless test).
+- **Coarse "nonblank render" smoke test:** Create a `TerminalRenderControl` under the Avalonia headless test platform, set a `SnapshotProperty` with known 3×3 content, pump the dispatcher, call `InvalidateVisual()`, and render to `RenderTargetBitmap`. Assert the result is non-null and has the expected pixel dimensions (3×CellWidth × 3×LineHeight). Do not assert exact pixel colors — font rendering, antialiasing, and platform DPI make color-matching brittle. This validates the control renders *something* without crashing.
+- **Geometry assertion:** Verify `CellWidth > 0` after first measure under headless Avalonia.
 - **Manual smoke test:** Terminal panel renders characters in correct positions and colors.
 - Key forwarding tests remain in `TerminalKeyMapperTests` (unchanged).
 
@@ -298,11 +314,11 @@ public class TerminalRenderControl : Control
 
 **View changes (`TerminalPanel.cs`):**
 
-- Replace `_outputTextBox` TextBox with `_renderControl` `TerminalRenderControl`
+- Replace `_outputTextBox` TextBox with `_renderControl = new TerminalRenderControl()`
 - Bind `ScreenSnapshot`, `CursorRow`, `CursorCol` from ViewModel to render control
 - Move key event handlers from TextBox to the render control
 - Remove `ScrollToEnd()` and `_outputTextBox.CaretIndex` references
-- `CopySelectionAsync` copies the cursor-line text via `ScreenSnapshot.Lines[CursorRow]` (selection highlighting deferred to a future phase)
+- `CopySelectionAsync` copies all visible text via `string.Join("\n", ScreenSnapshot.Lines)` — every visible row concatenated with newlines
 
 **Integration tests:**
 
@@ -339,21 +355,23 @@ public class TerminalRenderControl : Control
 - [ ] Type `echo -e '\033[1;32mbold green\033[0m'` — bold green
 - [ ] Type `clear` — screen clears (no raw escape text)
 - [ ] Type a long command that wraps to a second line
-- [ ] Resize terminal — content reflows (rows/cols recalculated)
+- [ ] Resize terminal — grid resizes, overlapping cells preserved, no line reflow (rows/cols recalculated)
 - [ ] Backspace, arrows, Home/End work at shell prompt
 - [ ] Ctrl+C interrupts a running command
-- [ ] Ctrl+Shift+C / Ctrl+Shift+V copy/paste
+- [ ] Ctrl+Shift+C — copies all visible text (no mouse selection yet); Ctrl+Shift+V — pastes from clipboard
+- [ ] Focus terminal by clicking or Tab-navigating to the render control; verify cursor is visible and key input works
 - [ ] Type `exit` → "[Process exited]" shows, Restart re-spawns
 
 ## Design Notes
 
 - **Parser replaces TerminalOutputBuffer:** The old `TerminalOutputBuffer`'s hand-coded `\r`/`\b`/`\n` logic is superseded by the ANSI parser. The parser handles these as C0 Execute actions.
+- **Parser silently drops unknown sequences:** No "unknown action" type flows to the screen buffer. Unsupported escape sequences are consumed at parser level and produce zero actions. Tests verify this.
 - **Screen buffer is the single source of truth:** All visible terminal state lives in `TerminalScreen`. The render control reads from it; parsing writes to it.
 - **View layer owns rendering only:** `TerminalRenderControl` does not parse or interpret escape sequences. It only renders the cell grid it receives.
-- **Three pure types, one control:** `AnsiParser` and `TerminalScreen` are pure (no Avalonia, no `ITerminalService`). `TerminalRenderControl` is the only Avalonia-dependent addition.
+- **Three pure types, one control:** `AnsiParser` and `TerminalScreen` are pure (no Avalonia, no `ITerminalService`). `TerminalRenderControl` is the only Avalonia-dependent addition. `TerminalSnapshot` and `TerminalCell` are public but pure value types in the ViewModel namespace.
 - **No scrollback in this phase:** The screen buffer is exactly the visible viewport. Scrollback (history ring) is deferred to a future terminal phase.
 - **256-color SGR is deferred** (`38;5;n` / `48;5;n`). The parser recognises the parameter sequence but the screen buffer only supports the base 16 ANSI colors. The sequence is consumed (not passed through as junk) — the color is clamped to the nearest base ANSI color or silently ignored.
-- **Selection/copy:** Copy (Ctrl+Shift+C) copies the current cursor-line text. There is no interactive selection with the mouse — that is deferred to a future phase when mouse capture and highlight rendering are added.
+- **Copy (Ctrl+Shift+C) copies all visible text row-by-row.** There is no interactive selection with the mouse — that is deferred to a future phase. This is a **deliberate UX regression** from Phase 3.5's TextBox-based selection; the smoke test must confirm it's acceptable.
 - **Cursor is always rendered** as a block cursor at the current position. Blinking is deferred.
 
 ## Deferred Items (logged in TOFIX)
@@ -377,6 +395,7 @@ public class TerminalRenderControl : Control
 |------|--------|
 | `src/ViewModels/AnsiParser.cs` | **Create** — ANSI/CSI state machine |
 | `src/ViewModels/TerminalScreen.cs` | **Create** — screen-buffer cell grid |
+| `src/ViewModels/TerminalSnapshot.cs` | **Create** — public snapshot type for view binding (includes `TerminalCell` struct) |
 | `src/Views/TerminalRenderControl.cs` | **Create** — custom render control |
 | `src/ViewModels/TerminalViewModel.cs` | **Modify** — replace `TerminalOutputBuffer` with parser + screen |
 | `src/Views/TerminalPanel.cs` | **Modify** — replace TextBox with render control |
@@ -392,16 +411,18 @@ public class TerminalRenderControl : Control
 ## Rollback Plan
 
 1. Revert changes to `TerminalViewModel.cs` and `TerminalPanel.cs`
-2. Delete `AnsiParser.cs`, `TerminalScreen.cs`, `TerminalRenderControl.cs`, and their tests
+2. Delete `AnsiParser.cs`, `TerminalScreen.cs`, `TerminalSnapshot.cs`, `TerminalRenderControl.cs`, and their tests
 3. Restore `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs`
 4. Revert this phase's docs
 
-#### Manual smoke test: scrollback regression check
+#### Manual smoke test: scrollback and selection regression checks
 
-The Phase 3.6 renderer intentionally loses scrollback history (the Phase 3.5 TextBox had ~200K chars of ring-buffer scrollback). Before accepting the phase:
+The Phase 3.6 renderer intentionally loses two Phase 3.5 capabilities. Before accepting the phase:
 
 - [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify only the last ~24 lines are visible (no scrollbar)
-- [ ] Confirm the loss of scrollback is acceptable for the MVP; if not, flag scrollback as an immediate follow-up rather than a deferred phase
+- [ ] Confirm the loss of scrollback is acceptable for the MVP; if not, flag scrollback as an immediate follow-up
+- [ ] Run `cat /etc/passwd`, then press Ctrl+Shift+C — verify all visible text is copied, confirm no mouse selection is available
+- [ ] Confirm the copy-all-visible-text behaviour is acceptable; if not, flag mouse selection as an immediate follow-up
 
 ## Exit Conditions
 
@@ -411,7 +432,7 @@ The Phase 3.6 renderer intentionally loses scrollback history (the Phase 3.5 Tex
 - [ ] Screen buffer correctly models the terminal grid (tests pass)
 - [ ] Custom render control replaces TextBox in the terminal panel
 - [ ] `clear`, colored output, cursor movement work without visible escape junk
-- [ ] Clipboard copy copies cursor-line text
-- [ ] Phase-3.5 manual smoke test items still pass (scrollback regression noted and accepted)
+- [ ] Clipboard copy copies all visible text (selection regression noted and accepted)
+- [ ] Phase-3.5 manual smoke test items still pass (scrollback and selection regressions noted and accepted)
 - [ ] Phase-3.5 `TerminalOutputBuffer` is removed (no dead code)
 - [ ] TOFIX documents new deferrals
