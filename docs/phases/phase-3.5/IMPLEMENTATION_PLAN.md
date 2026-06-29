@@ -20,14 +20,14 @@ or a full ANSI/cell renderer.
 
 ## Milestones (Incremental)
 
-| Milestone | Description | Test |
-|-----------|-------------|------|
-| M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` |
-| M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit tests for geometry + resize forwarding; manual shell resize check |
-| M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper |
-| M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior |
-| M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C |
-| M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` |
+| Milestone | Description | Test | Status |
+|-----------|-------------|------|--------|
+| M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Done |
+| M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit tests for geometry + resize forwarding; manual shell resize check | ✅ Done |
+| M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper | ✅ Done |
+| M3 | Add visible terminal controls and state: clear, clipboard actions if feasible, restart, running/exited/error | ViewModel tests for command/state behavior | ⏳ Pending |
+| M4 | Improve raw output behavior within a defined MVP subset | Unit tests for supported control characters; manual check with `echo`, `clear`, Ctrl+C | ⏳ Pending |
+| M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` | ⏳ Pending |
 
 ### M1: Resize Wiring
 
@@ -55,6 +55,25 @@ helper should cover at least:
 
 Escape, Page Up/Down, and function keys may be added if the mapping stays small
 and testable. Otherwise document them as deferred.
+
+**Status:** ✅ Implemented in `TerminalKeyMapper.Map(Key, KeyModifiers)`.
+
+**Keys mapped:** Enter (`\r`), Backspace (`0x7F`), Tab (`0x09`),
+Left/Right/Up/Down (`\x1B[D/C/A/B`), Home (`\x1B[H`), End (`\x1B[F`),
+Delete (`\x1B[3~`), Ctrl+C (`0x03`), Ctrl+D (`0x04`), Ctrl+L (`0x0C`).
+
+**Intentional guard:** All non-control base keys (Enter, Backspace, Tab,
+arrows, Home, End, Delete) only map when `modifiers == KeyModifiers.None`.
+This prevents `Shift+Enter`, `Alt+arrows`, etc. from silently collapsing into
+plain terminal input, keeping those combinations available for future View-level
+actions (clipboard, pane splits, etc.).
+
+**Deferred keys (null-mapped, documented gap):**
+- Escape — may be needed for `vi` mode or `meta` key support
+- PageUp / PageDown — shell scrollback if terminal history is added
+- F1–F12 — function key bindings (readline, `mc`, `htop`, etc.)
+- These return `null` from the mapper and will be added in a future phase
+  when shell usage provides a clear test case.
 
 ### M3: Controls And State
 
@@ -114,10 +133,10 @@ Keep raw-output improvement intentionally small and verifiable:
 
 ## Exit Conditions
 
-- [ ] `dotnet build` succeeds with 0 warnings
-- [ ] `dotnet test` succeeds
-- [ ] Terminal resize updates PTY rows/columns
-- [ ] Common shell keys work: Enter, Backspace, Tab, arrows, Ctrl+C, Ctrl+D,
+- [x] `dotnet build` succeeds with 0 warnings
+- [x] `dotnet test` succeeds
+- [x] Terminal resize updates PTY rows/columns
+- [x] Common shell keys work: Enter, Backspace, Tab, arrows, Ctrl+C, Ctrl+D,
       Ctrl+L, Home/End, Delete
 - [ ] Terminal clear/restart/error state is visible and tested
 - [ ] `LinuxTerminalService` supports start -> exit -> restart -> exit without

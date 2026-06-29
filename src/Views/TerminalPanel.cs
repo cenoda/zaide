@@ -95,20 +95,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     {
         if (ViewModel is null) return;
 
-        byte[]? bytes = e.Key switch
-        {
-            Key.Enter => [(byte)'\r'],
-            Key.Back => [0x7F],
-            Key.Tab => [0x09],
-            Key.Left => "\x1B[D"u8.ToArray(),
-            Key.Right => "\x1B[C"u8.ToArray(),
-            Key.Up => "\x1B[A"u8.ToArray(),
-            Key.Down => "\x1B[B"u8.ToArray(),
-            _ when e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key == Key.C => [0x03],
-            _ when e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key == Key.D => [0x04],
-            _ => null
-        };
-
+        byte[]? bytes = TerminalKeyMapper.Map(e.Key, e.KeyModifiers);
         if (bytes is null) return;
 
         await SendInputAsync(bytes);
