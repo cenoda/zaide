@@ -58,6 +58,10 @@ Add a small visible terminal control strip and keep the first pass practical:
 
 - Clear output through the existing `ClearCommand`.
 - Show running, exited, and startup/error states inside the terminal area.
+- Make `LinuxTerminalService` restart-safe: reset exit/reader state in
+  `StartAsync`, re-validate `_master` / `_reader` state before spawning, and add
+  a service-level start -> exit -> restart -> exit test that proves the second
+  exit still reaps the child and raises `ProcessExited`.
 - Add restart behavior deliberately, with tests proving event subscriptions do
   not duplicate across restart.
 - Prefer explicit Ctrl+Shift+C / Ctrl+Shift+V clipboard actions over relying on
@@ -93,6 +97,8 @@ Add a small visible terminal control strip and keep the first pass practical:
 - [ ] Common shell keys work: Enter, Backspace, Tab, arrows, Ctrl+C, Ctrl+D,
       Ctrl+L, Home/End, Delete
 - [ ] Terminal clear/restart/error state is visible and tested
+- [ ] `LinuxTerminalService` supports start -> exit -> restart -> exit without
+      missed `ProcessExited` events or zombie child processes
 - [ ] Restart does not duplicate terminal service event subscriptions
 - [ ] Manual terminal smoke test passes on Linux
 
