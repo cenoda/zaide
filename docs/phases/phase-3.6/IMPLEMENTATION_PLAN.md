@@ -1,5 +1,15 @@
 # Phase 3.6: Terminal Renderer Foundation — Implementation Plan
 
+## Planning Status
+
+**Ready for implementation.** Planning audit is complete, Fable review feedback
+has been incorporated, and the entry gates passed serially:
+
+- `dotnet build Zaide.slnx` — 0 warnings, 0 errors
+- `dotnet test Zaide.slnx --no-build` — 208 passed, 0 failed
+
+M1–M5 remain unchecked below because implementation has not started yet.
+
 ## Pre-Implementation Verification
 
 - [x] Read `docs/phases/phase-3.6/BRIEF.md`
@@ -28,7 +38,7 @@
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ❌ (verify) |
+| M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Ready |
 | M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ❌ |
 | M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ❌ |
 | M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ❌ |
@@ -81,10 +91,10 @@ record CsiAction(int[] Params, char FinalByte);
 | 1 | Bold / Bright foreground |
 | 7 | Inverse / Reverse |
 | 30–37 | Foreground color (0–7 standard ANSI) |
-| 38;5;n | 256-color foreground (deferred — documented gap) |
+| 38;5;n | 256-color foreground (consumed and ignored — deferred) |
 | 39 | Default foreground |
 | 40–47 | Background color (0–7 standard ANSI) |
-| 48;5;n | 256-color background (deferred) |
+| 48;5;n | 256-color background (consumed and ignored — deferred) |
 | 49 | Default background |
 | 90–97 | Bright foreground (8–15) |
 | 100–107 | Bright background (8–15) |
@@ -95,6 +105,7 @@ record CsiAction(int[] Params, char FinalByte);
 - DCS (Device Control String) — used by `tmux`/`kitty`; not supported
 - OSC (Operating System Command) — window title, clipboard; not supported
 - SGR 3 (italic), 4 (underline), 9 (strikethrough) — recognised but treated as no-op if attribute not yet in `CellAttribute`
+- SGR 38;5;n / 48;5;n — consumed and ignored; extended palette support is deferred
 
 **C0 control characters handled:**
 - `\r` (0x0D) → Execute: CR
@@ -275,6 +286,7 @@ public class TerminalRenderControl : Control
 - For a typical 80×24 terminal, that's 1,920 `FormattedText` instances per frame. This is acceptable for a first pass — real terminals batch glyph rendering, but we avoid premature optimization.
 - If profiling shows frame drops, the optimization path is: batch characters per unique attribute, then render each row as a single `FormattedText` with ` spans.
 - The control owns the terminal font family and font size, and calculates cell metrics (`CellWidth`, `LineHeight`) internally. `TerminalPanel.ForwardResize()` reads `_renderControl.CellWidth` and `_renderControl.LineHeight` rather than hosting a duplicate `MeasureCellWidth()` helper. The `TerminalGeometry` helper is reused for the columns/rows math.
+- `ForwardResize()` must skip resize forwarding until `_renderControl.CellWidth > 0` and `_renderControl.LineHeight > 0`. `TerminalGeometry.Compute()` rejects zero or negative metrics, and bounds can arrive before the control has measured its first glyph.
 
 **Integration into TerminalPanel:**
 - `TerminalPanel` swaps `_outputTextBox` for `_renderControl = new TerminalRenderControl()`
@@ -283,14 +295,13 @@ public class TerminalRenderControl : Control
 - Clipboard (`CopySelectionAsync`) copies all visible text via `string.Join("\n", ScreenSnapshot.Lines)` — every visible row concatenated with newlines. This is the best achievable without mouse selection; once interactive selection lands in a future phase, it can restrict to the selected range.
 - `FocusTerminal()` focuses `_renderControl` instead of `_outputTextBox`
 - `ScrollToEnd()` becomes a no-op (no scrollbar yet — deferred)
-- `ForwardResize()` uses `_renderControl.Bounds` and `_renderControl.CellWidth` / `_renderControl.LineHeight`
+- `ForwardResize()` uses `_renderControl.Bounds` and `_renderControl.CellWidth` / `_renderControl.LineHeight`, and returns early while either metric is zero
 
 **Tests (M3):**
 
 - **TerminalSnapshot structure test** (pure logic, no Avalonia): Construct a `TerminalSnapshot` with known content and assert `Cells` is row-major, correctly sized (Columns × Rows), and `Lines` matches the expected per-row strings. This validates the snapshotter's projection from `TerminalScreen`.
-- **AffectsRender declaration:** `TerminalRenderControl` declares `AffectsRender<TerminalRenderControl>(SnapshotProperty, CursorRowProperty, CursorColProperty, CursorVisibleProperty)` so styled-property changes automatically trigger `InvalidateVisual()` (testable by assertion in a minimal Avalonia headless test).
-- **Coarse "nonblank render" smoke test:** Create a `TerminalRenderControl` under the Avalonia headless test platform, set a `SnapshotProperty` with known 3×3 content, pump the dispatcher, call `InvalidateVisual()`, and render to `RenderTargetBitmap`. Assert the result is non-null and has the expected pixel dimensions (3×CellWidth × 3×LineHeight). Do not assert exact pixel colors — font rendering, antialiasing, and platform DPI make color-matching brittle. This validates the control renders *something* without crashing.
-- **Geometry assertion:** Verify `CellWidth > 0` after first measure under headless Avalonia.
+- **Render-control contract test** (no new test dependency): Verify the control exposes the expected styled properties and declares render invalidation with `AffectsRender<TerminalRenderControl>(SnapshotProperty, CursorRowProperty, CursorColProperty, CursorVisibleProperty)`. Do not add Avalonia.Headless for this phase unless separately approved under the dependency rules.
+- **Resize guard test:** Exercise the resize forwarding path with zero metrics and assert it returns without calling `ViewModel.Resize()`. Then exercise positive metrics through `TerminalGeometryTests` as the pure geometry coverage.
 - **Manual smoke test:** Terminal panel renders characters in correct positions and colors.
 - Key forwarding tests remain in `TerminalKeyMapperTests` (unchanged).
 
@@ -334,15 +345,21 @@ public class TerminalRenderControl : Control
 - New tests: `TerminalScreenTests` (M2), `AnsiParserTests` (M1), integration flow through ViewModel
 - Existing `TerminalViewModelTests` updates:
   - `BufferTrimsWhenFull` — **delete**: the screen-buffer model replaces the ring buffer and has no size-bounded trimming
+  - Constructor seam — remove `maxBufferChars` from `CreateViewModel(...)` and the internal ViewModel constructor; keep only the `uiPost` seam needed for deterministic event dispatch in tests
+  - `OutputReceived_AppendsToBuffer` — rewrite to assert `ScreenSnapshot` line/cell content
   - `OutputReceived_DecodesUtf8AcrossChunkBoundaries` — **keep and rewrite**: the ViewModel still owns the `Decoder` state, but assert against screen content instead of `OutputText`
-  - Restart/state/clear tests — **update** to bind against `ScreenSnapshot`, `StatusLabel`, and `State` rather than `OutputText`
+  - `ClearCommand_EmptiesBuffer` — rewrite to assert screen cells are cleared and `ScreenSnapshot` is updated
+  - `ProcessExited_UpdatesIsRunning` — rewrite the "[Process exited]" assertion against visible screen content
+  - `Dispose_UnsubscribesAndDisposesService` — rewrite late-output assertion against unchanged `ScreenSnapshot`
+  - `Restart_DoesNotDuplicateEventHandling` — rewrite duplicate-output assertion against visible screen content
+  - Restart/state tests — keep lifecycle assertions (`State`, `StatusLabel`, `IsRunning`) and remove `OutputText` usage
 
 ### M5: Documentation and Exit Audit
 
 - [ ] Remove `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` (superseded by screen buffer + parser)
 - [ ] Update `TOFIX.md` — remove M4 clear-screen deferral since `\x1B[2J` is now supported; add new deferrals from M1 gaps
 - [ ] Update `docs/spec/` or `CONVENTIONS.md` if new naming conventions were established
-- [ ] Update `docs/roadmap/PHASES.md` — add Phase 3.6 (Terminal Renderer Foundation), 3.7 (Interactive Shell Quality), 3.8 (TUI Compatibility), and 3.9 (Terminal UX Polish) bullets under the `Phase 3` section
+- [ ] Update `docs/roadmap/PHASES.md` — rename/number the existing Phase 3 terminal bullets for Phase 3.6 (Terminal Renderer Foundation), 3.7 (Interactive Shell Quality), 3.8 (TUI Compatibility), and 3.9 (Terminal UX Polish); do not create duplicate bullets
 - [ ] `dotnet build` — 0 warnings, 0 errors
 - [ ] `dotnet test` — all tests pass
 - [ ] Manual smoke test on Linux (see below)
@@ -365,12 +382,12 @@ public class TerminalRenderControl : Control
 ## Design Notes
 
 - **Parser replaces TerminalOutputBuffer:** The old `TerminalOutputBuffer`'s hand-coded `\r`/`\b`/`\n` logic is superseded by the ANSI parser. The parser handles these as C0 Execute actions.
-- **Parser silently drops unknown sequences:** No "unknown action" type flows to the screen buffer. Unsupported escape sequences are consumed at parser level and produce zero actions. Tests verify this.
+- **Parser silently drops unknown sequences:** No "unknown action" type flows to the screen buffer. Unsupported escape sequences are consumed at parser level and produce zero actions. Tests verify this. Supported SGR sequences still dispatch to the screen; unsupported SGR parameters are consumed and ignored by `SetSgr`.
 - **Screen buffer is the single source of truth:** All visible terminal state lives in `TerminalScreen`. The render control reads from it; parsing writes to it.
 - **View layer owns rendering only:** `TerminalRenderControl` does not parse or interpret escape sequences. It only renders the cell grid it receives.
-- **Three pure types, one control:** `AnsiParser` and `TerminalScreen` are pure (no Avalonia, no `ITerminalService`). `TerminalRenderControl` is the only Avalonia-dependent addition. `TerminalSnapshot` and `TerminalCell` are public but pure value types in the ViewModel namespace.
+- **Three pure types, one control:** `AnsiParser` and `TerminalScreen` are pure (no Avalonia, no `ITerminalService`). `TerminalRenderControl` is the only Avalonia-dependent addition. `TerminalSnapshot` and `TerminalCell` are public but pure value types in the ViewModel namespace. `Cell` and `CellAttribute` may stay colocated in `TerminalScreen.cs`, and `TerminalCell` may stay colocated in `TerminalSnapshot.cs`, because each is a small helper type only meaningful inside that owning type's API.
 - **No scrollback in this phase:** The screen buffer is exactly the visible viewport. Scrollback (history ring) is deferred to a future terminal phase.
-- **256-color SGR is deferred** (`38;5;n` / `48;5;n`). The parser recognises the parameter sequence but the screen buffer only supports the base 16 ANSI colors. The sequence is consumed (not passed through as junk) — the color is clamped to the nearest base ANSI color or silently ignored.
+- **256-color SGR is deferred** (`38;5;n` / `48;5;n`). The parser recognises the parameter sequence but the screen buffer only supports the base 16 ANSI colors. The sequence is consumed (not passed through as junk) and ignored; no clamping is attempted in this phase.
 - **Copy (Ctrl+Shift+C) copies all visible text row-by-row.** There is no interactive selection with the mouse — that is deferred to a future phase. This is a **deliberate UX regression** from Phase 3.5's TextBox-based selection; the smoke test must confirm it's acceptable.
 - **Cursor is always rendered** as a block cursor at the current position. Blinking is deferred.
 
@@ -379,7 +396,7 @@ public class TerminalRenderControl : Control
 | Issue | Reason | Target Phase |
 |-------|--------|--------------|
 | Scrollback history ring | Screen buffer is viewport-only | Future terminal phase |
-| 256-color SGR (38;5;n / 48;5;n) | Parser recognises but clamps; need extended palette | Future terminal renderer phase |
+| 256-color SGR (38;5;n / 48;5;n) | Parser recognises and ignores; need extended palette | Future terminal renderer phase |
 | Mouse selection in terminal | Complex highlight rendering, mouse capture | Future terminal phase |
 | Blinking cursor | Cosmetic; no visual impact on functionality | Future terminal phase |
 | Cursor hide/show (DECSET/DECRST) | Not in M1 supported sequence set | Phase 3.8 (TUI compatibility) |
