@@ -69,6 +69,18 @@ following become true:
 - Test setup becomes awkward because too much logic stays inside UI-facing
   classes.
 
+## Watchlist After Phase 3.5
+
+Before starting Phase 4, re-check whether these concerns are still contained:
+
+- `MainWindow` owns too much UI composition or command wiring.
+- Status/error reporting is still ad hoc instead of routed through a clear
+  app-level surface.
+- Workspace/document lifecycle needs a stronger home before Townhall and agent
+  actions depend on it.
+- Terminal, editor, file tree, and future agent panels need shared command/focus
+  conventions.
+
 ## First Migration Targets
 
 When this refactor starts, check these areas first:

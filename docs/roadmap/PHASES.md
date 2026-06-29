@@ -79,6 +79,12 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] Process execution (run commands)
 - [x] Raw text output (no VT100 parsing — deferred to future polish phase)
 
+### Phase 3.5: Terminal UI Normalization
+- [ ] Wire terminal resize to PTY rows/columns
+- [ ] Expand common shell key forwarding
+- [ ] Add visible terminal controls/state
+- [ ] Improve raw output experience within MVP bounds
+
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)
 - [ ] Auto-log: timestamped entries for agent actions
@@ -113,7 +119,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 | 1 | Phase 0 layout renders correctly |
 | 2 | Phase 1 file tree works, can select files |
 | 3 | Phase 2 editor works, can edit and save |
-| 4 | Phase 3 terminal works |
+| 4 | Phase 3.5 terminal UI normalization complete |
 | 5 | Phase 4 townhall displays entries |
 | 6 | Phase 5 agent panels render and accept input |
 | 7 | Phase 6 agent routing works |

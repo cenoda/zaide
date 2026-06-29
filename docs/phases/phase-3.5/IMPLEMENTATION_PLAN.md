@@ -1,0 +1,65 @@
+# Phase 3.5: Terminal UI Normalization — Implementation Plan
+
+## Pre-Implementation Verification
+
+- [ ] Read `docs/phases/phase-3/IMPLEMENTATION_PLAN.md`
+- [ ] Verify current terminal code in `src/Views/TerminalPanel.cs`
+- [ ] Verify current terminal state in `src/ViewModels/TerminalViewModel.cs`
+- [ ] Verify PTY resize support in `src/Services/ITerminalService.cs`
+- [ ] Confirm entry gate: `dotnet build`
+- [ ] Confirm entry gate: `dotnet test`
+
+## Scope
+
+**Goal:** Make the Linux PTY terminal feel like a normal IDE terminal before
+starting agent-facing phases.
+
+**Boundaries:** This phase improves the shared terminal UI and Linux MVP
+behavior. It does not add Windows/macOS backends, terminal tabs, split panes,
+or a full ANSI/cell renderer.
+
+## Milestones (Incremental)
+
+| Milestone | Description | Test |
+|-----------|-------------|------|
+| M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` |
+| M1 | Wire terminal resize from UI bounds/font metrics to PTY rows/columns | Unit test for resize forwarding; manual shell resize check |
+| M2 | Expand key forwarding for common shell/readline controls | Unit tests for key mapping helper |
+| M3 | Add visible terminal controls and state: clear, copy/paste path if feasible, restart, running/exited/error | ViewModel tests for command/state behavior |
+| M4 | Improve raw output experience within MVP bounds | Manual check with `echo`, `ls --color`, `clear`, Ctrl+C |
+| M5 | Documentation and exit audit | Update roadmap/TOFIX if needed; `dotnet build`, `dotnet test` |
+
+## Design Notes
+
+- Keep the existing PTY backend. Phase 3 proved the service boundary and Linux
+  PTY lifecycle.
+- Prefer small helpers for key mapping and terminal geometry so behavior can be
+  tested without instantiating Avalonia controls.
+- Keep terminal rendering intentionally modest. If ANSI parsing grows beyond a
+  small normalization step, defer it to a later renderer phase.
+- Surface terminal failure states where the user can see them, not only through
+  `MainWindowViewModel.StatusText`.
+
+## Limitations (by design)
+
+- Linux remains the only implemented terminal backend.
+- ANSI/VT100 rendering remains incomplete unless a small safe subset is added.
+- The terminal still uses one session.
+- No terminal tabs, splits, profiles, or persistent shell settings.
+- No project-wide command framework in this phase; that belongs to Refactor 2
+  if Phase 4 increases command pressure.
+
+## Exit Conditions
+
+- [ ] `dotnet build` succeeds with 0 warnings
+- [ ] `dotnet test` succeeds
+- [ ] Terminal resize updates PTY rows/columns
+- [ ] Common shell keys work: Enter, Backspace, Tab, arrows, Ctrl+C, Ctrl+D,
+      Ctrl+L, Home/End, Delete
+- [ ] Terminal clear/restart/error state is visible and tested
+- [ ] Manual terminal smoke test passes on Linux
+
+## Rollback Plan
+
+- Revert changes in `src/Views/TerminalPanel.cs`, `src/ViewModels/TerminalViewModel.cs`,
+  terminal tests, and this phase's docs.
