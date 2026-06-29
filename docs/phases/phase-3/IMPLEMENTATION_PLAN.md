@@ -228,10 +228,6 @@ services.AddSingleton<ITerminalService>(sp =>
 > `Program.cs`; app-exit disposal hook in `App.axaml.cs`. 3 integration tests
 > pass; full suite is 107 green with 0 build warnings; no orphaned/zombie
 > processes after run. The `spike/` PoC was deleted (superseded).
->
-> Minor follow-ups (non-blocking, optional): close `_master` on partial
-> `StartAsync` failure to avoid an fd leak; consider marking the `IsRunning`
-> backing field volatile (cross-thread read/write).
 
 - [x] Create `ITerminalService` interface:
   ```csharp
