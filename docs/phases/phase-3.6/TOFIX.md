@@ -136,6 +136,18 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
   cursor visibility or position changes, so the focused terminal cursor pulses
   again without involving PTY state.
   Code: `src/Views/TerminalRenderControl.cs`.
+- [x] **M4-07: Pressing Enter while scrolled back does not return to live
+  output** — the terminal render control now exposes an explicit
+  `ScrollToBottom()` path, and plain Enter uses it before sending carriage
+  return to the PTY. This brings the viewport back to the latest lines when the
+  user resumes shell input from older scrollback.
+  Code: `src/Views/TerminalRenderControl.cs`,
+  `src/Views/TerminalPanel.cs`.
+- [x] **M4-08: Bottom terminal panel cannot be resized by dragging** — the main
+  window layout now includes a dedicated horizontal `GridSplitter` above the
+  terminal row, shown only while the bottom panel is visible, so the terminal
+  height is user-resizable instead of fixed at toggle height.
+  Code: `src/MainWindow.axaml.cs`.
 
 ## Deferred to Future Phases
 

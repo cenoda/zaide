@@ -299,6 +299,23 @@ public class TerminalRenderControl : Control
         return !string.IsNullOrEmpty(text);
     }
 
+    /// <summary>
+    /// Returns the viewport to the live bottom so newly arriving shell output
+    /// is shown again after the user has scrolled back.
+    /// </summary>
+    public void ScrollToBottom(bool clearSelection = false)
+    {
+        _followLiveBottom = true;
+        if (clearSelection)
+        {
+            _selectionAnchor = null;
+            _selectionEnd = null;
+            _isSelecting = false;
+        }
+
+        InvalidateVisual();
+    }
+
     internal static string BuildSelectedText(
         TerminalSnapshot snapshot,
         (int Row, int Col) start,

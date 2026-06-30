@@ -21,7 +21,9 @@ namespace Zaide;
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
+    private readonly RowDefinition _bottomSplitterRow;
     private readonly RowDefinition _bottomPanelRow;
+    private readonly GridSplitter _bottomPanelSplitter;
     private readonly Border _bottomPanel;
     private readonly FileTreeView _fileTreeView;
     private readonly TerminalPanel _terminalPanel;
@@ -42,7 +44,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
         // === Build Layout (M2, Phase 2) ===
-        (_bottomPanelRow, _bottomPanel, _fileTreeView, _terminalPanel) = BuildLayout();
+        (_bottomSplitterRow, _bottomPanelRow, _bottomPanelSplitter, _bottomPanel, _fileTreeView, _terminalPanel) = BuildLayout();
 
         // === ReactiveUI Bindings (M3, Phase 2) ===
         this.WhenActivated(disposables =>
@@ -133,9 +135,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
                 .Subscribe(visible =>
                 {
+                    _bottomSplitterRow.Height = visible
+                        ? new GridLength(4, GridUnitType.Pixel)
+                        : new GridLength(0);
                     _bottomPanelRow.Height = visible
                         ? new GridLength(250)
                         : new GridLength(0);
+                    _bottomPanelSplitter.IsVisible = visible;
                     _bottomPanel.IsVisible = visible;
 
                     if (visible)
@@ -173,7 +179,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// Builds the 3-panel grid layout with bottom panel placeholder.
     /// Left: 260px sidebar | Center: * | Right: 320px agent area.
     /// </summary>
-    private (RowDefinition bottomRow, Border bottomPanel, FileTreeView fileTreeView, TerminalPanel terminalPanel) BuildLayout()
+    private (RowDefinition bottomSplitterRow, RowDefinition bottomRow, GridSplitter bottomPanelSplitter, Border bottomPanel, FileTreeView fileTreeView, TerminalPanel terminalPanel) BuildLayout()
     {
         var grid = new Grid
         {
@@ -191,12 +197,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             RowDefinitions =
             {
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                new RowDefinition { Height = new GridLength(0) },
                 new RowDefinition { Height = new GridLength(0) }
             },
             Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
         };
 
-        var bottomRow = grid.RowDefinitions[1];
+        var bottomSplitterRow = grid.RowDefinitions[1];
+        var bottomRow = grid.RowDefinitions[2];
 
         // --- Left Sidebar (Phase 1: FileTreeView) ---
         var sidebar = new FileTreeView();
@@ -260,6 +268,22 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(agentArea, 0);
         grid.Children.Add(agentArea);
 
+        // --- Bottom Panel Splitter ---
+        var bottomPanelSplitter = new GridSplitter
+        {
+            Height = 4,
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            ResizeDirection = GridResizeDirection.Rows
+        };
+        bottomPanelSplitter.IsVisible = false;
+        Grid.SetColumn(bottomPanelSplitter, 0);
+        Grid.SetColumnSpan(bottomPanelSplitter, 4);
+        Grid.SetRow(bottomPanelSplitter, 1);
+        grid.Children.Add(bottomPanelSplitter);
+
         // --- Bottom Panel (hidden by default) ---
         var terminalPanel = new TerminalPanel();
         var bottomPanel = new Border
@@ -272,11 +296,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 0);
         Grid.SetColumnSpan(bottomPanel, 4); // Span all columns (sidebar, splitter, center, agent)
-        Grid.SetRow(bottomPanel, 1);
+        Grid.SetRow(bottomPanel, 2);
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomRow, bottomPanel, sidebar, terminalPanel);
+        return (bottomSplitterRow, bottomRow, bottomPanelSplitter, bottomPanel, sidebar, terminalPanel);
     }
 
     /// <summary>

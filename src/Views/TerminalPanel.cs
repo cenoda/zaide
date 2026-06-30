@@ -126,6 +126,11 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         }
         byte[]? bytes = TerminalKeyMapper.Map(e.Key, e.KeyModifiers);
         if (bytes is null) return;
+        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+        {
+            _renderControl.ScrollToBottom(clearSelection: true);
+        }
+
         await SendInputAsync(bytes);
         e.Handled = true;
     }
