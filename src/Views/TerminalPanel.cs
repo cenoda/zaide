@@ -25,6 +25,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     public TerminalPanel()
     {
         _renderControl = new TerminalRenderControl();
+        _renderControl.ContextMenu = BuildContextMenu();
         _renderControl.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         _renderControl.AddHandler(InputElement.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
 
@@ -84,12 +85,41 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         Cursor = new Cursor(StandardCursorType.Hand)
     };
 
+    private ContextMenu BuildContextMenu()
+    {
+        var copyItem = new MenuItem { Header = "Copy" };
+        copyItem.Click += async (_, _) => await CopyAllVisibleTextAsync();
+
+        var pasteItem = new MenuItem { Header = "Paste" };
+        pasteItem.Click += async (_, _) => await PasteAsync();
+
+        return new ContextMenu
+        {
+            ItemsSource = new object[]
+            {
+                copyItem,
+                pasteItem
+            }
+        };
+    }
+
     public void FocusTerminal() => _renderControl.Focus();
 
     private async void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (ViewModel is null) return;
-        if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
+        bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        bool alt = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+
+        if (ctrl && !alt && e.Key == Key.C && _renderControl.TryGetSelectedText(out _))
+        {
+            await CopyAllVisibleTextAsync();
+            e.Handled = true;
+            return;
+        }
+
+        if (ctrl && shift && !alt)
         {
             if (e.Key == Key.C) { await CopyAllVisibleTextAsync(); e.Handled = true; return; }
             if (e.Key == Key.V) { await PasteAsync(); e.Handled = true; return; }
