@@ -11,7 +11,7 @@ verified in code; the only outstanding item is the human-run Linux smoke
 checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 292 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 298 passed, 0 failed
 - `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` have been
   removed (superseded by AnsiParser + TerminalScreen).
 
@@ -23,9 +23,9 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
   ViewModel-level rejection of invalid dimensions is covered by
   `Resize_IgnoresInvalidDimensions`. Accept as deferred to when Avalonia
   headless is available.
-- **GAP-3: Manual smoke test (outstanding).** The 12-item Linux smoke checklist
-  and scrollback/selection regression checks have not been run. Requires human
-  running the application on Linux.
+- **GAP-3: Manual smoke test (outstanding).** The Linux smoke checklist has not
+  been run. Requires human running the application on Linux, including the new
+  click-drag selection and mouse-wheel scrollback behaviors.
 
 ## Resolved Issues
 
@@ -87,6 +87,29 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
 - **TerminalViewModel test migration made explicit (planning only)** — The plan
   now enumerates the constructor-seam and `OutputText` assertion rewrites needed
   when `TerminalOutputBuffer` is replaced by `ScreenSnapshot`.
+- [x] **M4-01: Toolbar Clear bypasses shell redraw** — the Clear button now
+  sends Ctrl+L (`0x0C`) to the PTY while the shell is running, matching terminal
+  behavior instead of blanking only the renderer surface. Local clear remains as
+  a fallback when the terminal is not running. Covered by
+  `ClearCommand_SendsCtrlLToRunningTerminal` and
+  `ClearCommand_ClearsScreen_WhenTerminalIsNotRunning`.
+  Code: `src/ViewModels/TerminalViewModel.cs`. Tests:
+  `tests/Zaide.Tests/ViewModels/TerminalViewModelTests.cs`.
+- [x] **M4-02: Default terminal colors ignore Zaide palette** — the render
+  control now resolves default foreground/background from the app theme
+  (`TextActiveColor` / `DeepBaseColor`) instead of hardcoding ANSI black/white.
+  Explicit ANSI colors still render as terminal colors.
+  Code: `src/Views/TerminalRenderControl.cs`.
+- [x] **M4-03: Mouse selection and wheel scroll absent from custom terminal** —
+  the terminal now retains bounded scrollback, supports mouse-wheel navigation,
+  click-drag selection, and selection-first clipboard copy.
+  Code: `src/ViewModels/TerminalScreen.cs`,
+  `src/ViewModels/TerminalSnapshot.cs`,
+  `src/ViewModels/TerminalViewModel.cs`,
+  `src/Views/TerminalRenderControl.cs`,
+  `src/Views/TerminalPanel.cs`. Tests:
+  `TerminalScreenTests`, `TerminalViewModelTests`,
+  `TerminalRenderControlTests`.
 
 ## Deferred to Future Phases
 
@@ -96,9 +119,9 @@ real code.
 
 | Issue | Reason | Target Phase |
 |-------|--------|--------------|
-| Scrollback history ring | Planned screen buffer is viewport-only; deliberate regression from Phase 3.5 | Future terminal phase |
 | 256-color SGR (38;5;n / 48;5;n) | Parser will recognise and ignore; extended palette deferred | Future terminal renderer phase |
-| Mouse selection in terminal | Complex highlight rendering, mouse capture; deliberate regression from Phase 3.5 | Future terminal phase |
+| Deep scrollback polish | Current renderer keeps bounded row scrollback and wheel navigation, but not a full history/search UX | Future terminal phase |
+| Selection polish | Basic click-drag selection exists, but richer IDE selection/search ergonomics remain future work | Future terminal phase |
 | Blinking cursor | Cosmetic; no visual impact on functionality | Future terminal phase |
 | Cursor hide/show (DECSET/DECRST) | Not in M1 supported sequence set | Phase 3.8 (TUI compatibility) |
 | Alternate screen (`\x1B[?1049h`) | Needed for vim/htop — explicitly out of scope | Phase 3.8 (TUI compatibility) |

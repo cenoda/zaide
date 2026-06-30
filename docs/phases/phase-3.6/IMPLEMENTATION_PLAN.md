@@ -15,7 +15,7 @@
 Latest gate results:
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 292 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 298 passed, 0 failed
 
 The old `TerminalOutputBuffer` (TextBox-backed) is removed. The terminal
 now renders through the full pipeline: PTY bytes → UTF-8 decoder → AnsiParser →
@@ -221,17 +221,24 @@ internal readonly struct CellAttribute
 - **`ExecuteC0(C0Kind kind)`** — handles CR (cursor to col 0), LF (cursor down, scroll), BS (cursor back), TAB (advance to next 8-col stop), BEL (no-op)
 - **`CursorUp(int n)`** / **`CursorDown(int n)`** / **`CursorForward(int n)`** / **`CursorBack(int n)`** — clamped at edges
 - **`CursorPosition(int row, int col)`** — 1-based (terminal convention); clamped
-- **`EraseDisplay(int param)`** — 0 = from cursor to end, 1 = from start to cursor, 2 = all, 3 = all + scrollback (scrollback = no-op this phase)
+- **`EraseDisplay(int param)`** — 0 = from cursor to end, 1 = from start to cursor, 2 = all, 3 = all + scrollback
 - **`EraseLine(int param)`** — 0 = cursor to end of line, 1 = start to cursor, 2 = entire line
 - **`SetSgr(int[] params)`** — updates `_currentAttributes`
 - **`Scroll()`** — scroll buffer up by one row, clear bottom row, reset cursor to bottom row
 - **`Resize(int columns, int rows)`** — reallocate buffer, copy overlapping cells (row/col clamped to min of old and new dimensions), fill new cells with space/default attributes, and clamp the cursor into the new bounds. No line reflow: content that falls outside the new grid is discarded. (Required by M4; initial buffer defaults to 80×24.)
 
-**Scrollback:** The screen buffer is exactly the visible area (rows × cols). No scrollback history in this phase. The `TerminalOutputBuffer`'s ring-buffer scrollback (200K chars of history) is replaced entirely — full history is deferred to a future phase when scrollback in the custom control is added.
+**Scrollback:** The live screen buffer remains the visible viewport (rows × cols), but
+the renderer now retains bounded scrollback rows above it for wheel navigation
+and selection. This is intentionally smaller and less polished than the old
+`TerminalOutputBuffer` history, and full terminal-history UX remains future work.
 
-> ⚠️ **Deliberate temporary regressions from Phase 3.5:**
-> 1. **Scrollback lost:** Phase 3.5 users could see ~200K chars of scrollback via the TextBox's built-in scrollbar. Phase 3.6 removes this — the terminal only shows the visible viewport (rows × cols). Scrollback returns in a future phase once the render control supports scrolling.
-> 2. **No interactive selection:** Phase 3.5 users could select arbitrary text with the mouse in the TextBox and copy it. Phase 3.6 has no mouse selection. Ctrl+Shift+C copies all visible text row-by-row (not just the cursor line). This is strictly worse for targeted copying, but acceptable for the renderer foundation.
+> ⚠️ **Known scope limits retained in Phase 3.6:**
+> 1. **Scrollback is bounded, not full-history parity:** The renderer now keeps
+>    bounded row scrollback for wheel navigation and selection, but it is not yet
+>    the final terminal-history/search experience.
+> 2. **Selection is functional, not polished:** Click-drag selection and
+>    selection-first copy exist, but richer terminal UX such as search and more
+>    refined selection ergonomics remain future work.
 > Both are checked in the manual smoke test before closing the phase.
 
 **Initial size:** The screen buffer is created with the default size **80 columns × 24 rows**. `TerminalViewModel.Resize()` is called by `TerminalPanel.ForwardResize()` as soon as the panel is measured; the first resize call updates to the actual viewport dimensions.
@@ -338,9 +345,11 @@ public class TerminalRenderControl : Control
 - `TerminalPanel` swaps `_outputTextBox` for `_renderControl = new TerminalRenderControl()`
 - `TerminalPanel` still owns the toolbar (status, clear, restart) — unchanged
 - Key forwarding (`OnKeyDown`, `OnTextInput`) moves from `_outputTextBox` event handlers to `_renderControl` event handlers
-- Clipboard (`CopySelectionAsync`) copies all visible text via `string.Join("\n", ScreenSnapshot.Lines)` — every visible row concatenated with newlines. This is the best achievable without mouse selection; once interactive selection lands in a future phase, it can restrict to the selected range.
+- Clipboard prefers the active mouse selection when present; otherwise it falls
+  back to all visible viewport text.
 - `FocusTerminal()` focuses `_renderControl` instead of `_outputTextBox`
-- `ScrollToEnd()` becomes a no-op (no scrollbar yet — deferred)
+- Mouse wheel navigates bounded scrollback rows above the viewport; selection can
+  span retained scrollback and visible rows.
 - `ForwardResize()` uses `_renderControl.Bounds` and `_renderControl.CellWidth` / `_renderControl.LineHeight`, and returns early while either metric is zero
 
 **Tests (M3):**
@@ -375,7 +384,8 @@ public class TerminalRenderControl : Control
 - Bind `ScreenSnapshot`, `CursorRow`, `CursorCol` from ViewModel to render control
 - Move key event handlers from TextBox to the render control
 - Remove `ScrollToEnd()` and `_outputTextBox.CaretIndex` references
-- `CopySelectionAsync` copies all visible text via `string.Join("\n", ScreenSnapshot.Lines)` — every visible row concatenated with newlines
+- `CopySelectionAsync` copies the current mouse selection when present; otherwise
+  it copies the visible viewport rows
 
 **Integration tests:**
 
@@ -421,7 +431,9 @@ public class TerminalRenderControl : Control
 - [ ] Resize terminal — grid resizes, overlapping cells preserved, no line reflow (rows/cols recalculated)
 - [ ] Backspace, arrows, Home/End work at shell prompt
 - [ ] Ctrl+C interrupts a running command
-- [ ] Ctrl+Shift+C — copies all visible text (no mouse selection yet); Ctrl+Shift+V — pastes from clipboard
+- [ ] Click-drag selection highlights terminal text and Ctrl+Shift+C copies the selection; with no selection it falls back to visible viewport text
+- [ ] Mouse wheel scrolls through bounded terminal scrollback
+- [ ] Ctrl+Shift+V — pastes from clipboard
 - [ ] Focus terminal by clicking or Tab-navigating to the render control; verify cursor is visible and key input works
 - [ ] Type `exit` → "[Process exited]" shows, Restart re-spawns
 
@@ -432,18 +444,22 @@ public class TerminalRenderControl : Control
 - **Screen buffer is the single source of truth:** All visible terminal state lives in `TerminalScreen`. The render control reads from it; parsing writes to it.
 - **View layer owns rendering only:** `TerminalRenderControl` does not parse or interpret escape sequences. It only renders the cell grid it receives.
 - **Three pure types, one control:** `AnsiParser` and `TerminalScreen` are pure (no Avalonia, no `ITerminalService`). `TerminalRenderControl` is the only Avalonia-dependent addition. `TerminalSnapshot` and `TerminalCell` are public but pure value types in the ViewModel namespace. `Cell` and `CellAttribute` may stay colocated in `TerminalScreen.cs`, and `TerminalCell` may stay colocated in `TerminalSnapshot.cs`, because each is a small helper type only meaningful inside that owning type's API.
-- **No scrollback in this phase:** The screen buffer is exactly the visible viewport. Scrollback (history ring) is deferred to a future terminal phase.
+- **Bounded scrollback exists in this phase:** The live screen buffer is still the
+  visible viewport, but the renderer retains bounded rows above it for wheel
+  navigation and selection. Full history/search UX is deferred.
 - **256-color SGR is deferred** (`38;5;n` / `48;5;n`). The parser recognises the parameter sequence but the screen buffer only supports the base 16 ANSI colors. The sequence is consumed (not passed through as junk) and ignored; no clamping is attempted in this phase.
-- **Copy (Ctrl+Shift+C) copies all visible text row-by-row.** There is no interactive selection with the mouse — that is deferred to a future phase. This is a **deliberate UX regression** from Phase 3.5's TextBox-based selection; the smoke test must confirm it's acceptable.
+- **Copy (Ctrl+Shift+C) is selection-first.** Mouse selection now works across
+  retained scrollback and visible rows. If nothing is selected, copy falls back
+  to the visible viewport.
 - **Cursor is always rendered** as a block cursor at the current position. Blinking is deferred.
 
 ## Deferred Items (logged in TOFIX)
 
 | Issue | Reason | Target Phase |
 |-------|--------|--------------|
-| Scrollback history ring | Screen buffer is viewport-only | Future terminal phase |
+| Deep scrollback / search UX | Bounded wheel scrollback exists, but not full history/search polish | Future terminal phase |
 | 256-color SGR (38;5;n / 48;5;n) | Parser recognises and ignores; need extended palette | Future terminal renderer phase |
-| Mouse selection in terminal | Complex highlight rendering, mouse capture | Future terminal phase |
+| Selection polish | Basic click-drag selection exists; richer ergonomics remain future work | Future terminal phase |
 | Blinking cursor | Cosmetic; no visual impact on functionality | Future terminal phase |
 | Cursor hide/show (DECSET/DECRST) | Not in M1 supported sequence set | Phase 3.8 (TUI compatibility) |
 | Alternate screen (`\x1B[?1049h`) | Needed for vim/htop — explicitly out of scope | Phase 3.8 (TUI compatibility) |
@@ -478,14 +494,15 @@ public class TerminalRenderControl : Control
 3. Restore `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs`
 4. Revert this phase's docs
 
-#### Manual smoke test: scrollback and selection regression checks
+#### Manual smoke test: scrollback and selection checks
 
-The Phase 3.6 renderer intentionally loses two Phase 3.5 capabilities. Before accepting the phase:
+The Phase 3.6 renderer now includes bounded wheel scrollback and basic
+selection. Before accepting the phase:
 
-- [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify only the last ~24 lines are visible (no scrollbar)
-- [ ] Confirm the loss of scrollback is acceptable for the MVP; if not, flag scrollback as an immediate follow-up
-- [ ] Run `cat /etc/passwd`, then press Ctrl+Shift+C — verify all visible text is copied, confirm no mouse selection is available
-- [ ] Confirm the copy-all-visible-text behaviour is acceptable; if not, flag mouse selection as an immediate follow-up
+- [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify mouse wheel reaches retained lines above the viewport
+- [ ] Confirm bounded scrollback feels acceptable for the MVP; if not, flag deeper terminal-history UX as an immediate follow-up
+- [ ] Run `cat /etc/passwd`, drag-select a few lines, then press Ctrl+Shift+C — verify the selection is copied
+- [ ] Confirm selection-first copy behaviour feels acceptable for the MVP
 
 ## Exit Conditions
 
@@ -495,8 +512,8 @@ The Phase 3.6 renderer intentionally loses two Phase 3.5 capabilities. Before ac
 - [x] Screen buffer correctly models the terminal grid (tests pass)
 - [x] Custom render control replaces TextBox in the terminal panel
 - [ ] `clear`, colored output, cursor movement work without visible escape junk — **pending manual smoke test** (see checklist below)
-- [x] Clipboard copy copies all visible text (selection regression noted and accepted)
-- [ ] Phase-3.5 manual smoke test items still pass (scrollback and selection regressions noted and accepted) — **pending manual smoke test** (see checklist below)
+- [x] Clipboard copy supports selection-first copy with visible-viewport fallback
+- [ ] Phase-3.5 manual smoke test items still pass, including bounded scrollback and drag selection — **pending manual smoke test** (see checklist below)
 - [x] Phase-3.5 `TerminalOutputBuffer` is removed (no dead code)
 - [x] TOFIX documents new deferrals
 
@@ -515,15 +532,15 @@ running the application on Linux:
 - [ ] Resize terminal — grid resizes, overlapping cells preserved, no line reflow
 - [ ] Backspace, arrows, Home/End work at shell prompt
 - [ ] Ctrl+C interrupts a running command
-- [ ] Ctrl+Shift+C — copies all visible text; Ctrl+Shift+V — pastes from clipboard
+- [ ] Click-drag selection works and Ctrl+Shift+C copies the selection; mouse wheel navigates bounded scrollback; Ctrl+Shift+V pastes from clipboard
 - [ ] Focus terminal by clicking or Tab-navigating; verify cursor and key input
 - [ ] Type `exit` → "[Process exited]" shows, Restart re-spawns
 
-### Scrollback and selection regression checks
-- [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify only ~24 visible (no scrollbar)
-- [ ] Confirm scrollback loss is acceptable for MVP
-- [ ] Run `cat /etc/passwd`, then Ctrl+Shift+C — verify all visible text copied (no mouse selection)
-- [ ] Confirm copy-all-visible-text behaviour is acceptable
+### Scrollback and selection checks
+- [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify mouse wheel reaches retained lines above the viewport
+- [ ] Confirm bounded scrollback is acceptable for MVP
+- [ ] Run `cat /etc/passwd`, drag-select a few lines, then Ctrl+Shift+C — verify the selection is copied
+- [ ] Confirm selection-first copy behaviour is acceptable
 
 ### Accepted deferrals (no code action required for phase exit)
 - **GAP-1:** Resize guard test for zero `CellWidth`/`LineHeight` requires
