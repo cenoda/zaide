@@ -77,7 +77,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ⬜ Not started |
-| M1 | **Clean Models layer**: Remove `IFileService` from `Document.SaveAsync` (use delegate pattern). Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
+| M1 | **Clean Models layer**: Remove `SaveAsync` entirely from `Document` (model should not own persistence workflow). Add `RecordSaveError(string?)` for VM to call after save attempt. Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Not started |
 | M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Not started |
@@ -110,14 +110,16 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
           Document.MarkClean();
           return true;
       }
-      catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+      catch (Exception ex)
       {
           Document.RecordSaveError(ex.Message);
-          return false;
+          if (ex is IOException or UnauthorizedAccessException)
+              return false;
+          throw;
       }
   }
   ```
-- **Important:** Only catch `IOException` and `UnauthorizedAccessException` — these are expected save failures that should return `false`. Unexpected exceptions (e.g., `NullReferenceException`, `InvalidOperationException`) must propagate uncaught, matching the current contract where `Document.SaveAsync` rethrows after recording the error. The VM's `catch` filter preserves this behavior while removing the service dependency from the model.
+- **Important:** Catch all exceptions to record the error (matching current `Document.SaveAsync` behavior which records `LastSaveError` before rethrowing). For expected save failures (`IOException`, `UnauthorizedAccessException`), return `false`. For unexpected exceptions, rethrow after recording the error. This preserves the exact current contract: the error is always recorded, but only I/O failures are handled gracefully.
 - This truly removes the service dependency from the model — the VM owns the use case.
 
 **Call-site updates (required for M1 to compile):**
@@ -256,8 +258,8 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 **FileTreeService changes:**
 - Implement `IFileTreeService`
 - Change `StartWatching` to return `IObservable<FileChangeEvent>` (currently returns void, sets `FileChanges` property)
-- Remove nullable `FileChanges` property (no longer needed)
-- `StopWatching()` still disposes the watcher and sets `FileChanges` to null internally
+- Remove nullable `FileChanges` property entirely (no longer needed — the observable is returned directly from `StartWatching`)
+- `StopWatching()` disposes the watcher; no `FileChanges` property to null out
 
 **FileTreeViewModel changes:**
 - Change dependency from `FileTreeService` to `IFileTreeService`
