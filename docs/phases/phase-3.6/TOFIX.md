@@ -23,6 +23,13 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
   ViewModel-level rejection of invalid dimensions is covered by
   `Resize_IgnoresInvalidDimensions`. Accept as deferred to when Avalonia
   headless is available.
+- **GAP-4: Only one terminal session exists; no terminal tabs.** The current
+  terminal stack is still intentionally single-session: `TerminalViewModel` is
+  a singleton, `MainWindowViewModel` exposes one `TerminalViewModel`, and
+  `TerminalPanel` hosts one render surface plus one toolbar. This is not a
+  Phase 3.6 renderer regression, but it is a real IDE UX gap for anyone who
+  expects multiple shell sessions. Track as follow-up work for a dedicated
+  multi-terminal phase or an expanded Phase 3.9 scope.
 - **GAP-3: Manual smoke test (outstanding).** The Linux smoke checklist has not
   been run. Requires human running the application on Linux, including the new
   click-drag selection and mouse-wheel scrollback behaviors.
@@ -141,6 +148,7 @@ real code.
 | 256-color SGR (38;5;n / 48;5;n) | Parser will recognise and ignore; extended palette deferred | Future terminal renderer phase |
 | Deep scrollback polish | Current renderer keeps bounded row scrollback and wheel navigation, but not a full history/search UX | Future terminal phase |
 | Selection polish | Basic click-drag selection exists, but richer IDE selection/search ergonomics remain future work | Future terminal phase |
+| Terminal tabs / multiple sessions | Current architecture is explicitly single-session; requires terminal session manager + tab UI | Future terminal phase |
 | Cursor hide/show (DECSET/DECRST) | Not in M1 supported sequence set | Phase 3.8 (TUI compatibility) |
 | Alternate screen (`\x1B[?1049h`) | Needed for vim/htop — explicitly out of scope | Phase 3.8 (TUI compatibility) |
 | OSC sequences (window title, etc.) | No user-facing need yet | Future terminal phase |

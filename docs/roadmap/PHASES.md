@@ -86,7 +86,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] **3.6:** Terminal renderer foundation (ANSI/CSI parser, screen buffer, custom render control) — ✅ Complete
 - [ ] **3.7:** Interactive shell quality (clear, prompts, resize stability)
 - [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
-- [ ] **3.9:** Terminal UX polish (selection, scrollback, search)
+- [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
 
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)
