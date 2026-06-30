@@ -172,8 +172,12 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       doc.MarkClean();
       var vm = new EditorViewModel(doc, fileService.Object);
 
-      await Assert.ThrowsAsync<InvalidOperationException>(
-          async () => await vm.SaveCommand.Execute());
+      // ReactiveCommand catches exceptions and surfaces them via ThrownExceptions.
+      // We observe the command's result observable to detect the error.
+      var result = await vm.SaveCommand.Execute().Catch(Observable.Return(false));
+      Assert.False(result);
+      Assert.Equal("Unexpected failure", vm.LastSaveError);
+      Assert.True(vm.IsDirty);
   }
 
   [Fact]
@@ -186,20 +190,16 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       doc.MarkClean();
       var vm = new EditorViewModel(doc, fileService.Object);
 
-      try
-      {
-          await vm.SaveCommand.Execute();
-      }
-      catch (InvalidOperationException)
-      {
-          // Expected — verify error was recorded before rethrow
-      }
+      var result = await vm.SaveCommand.Execute().Catch(Observable.Return(false));
 
+      Assert.False(result);
       Assert.Equal("Unexpected failure", vm.LastSaveError);
       Assert.True(vm.IsDirty);
   }
   ```
   These tests verify that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract. Note: `EditorViewModel` constructor takes `(Document document, IFileService fileService)` and `Document` has a private setter, so tests must construct the Document first and pass it in.
+  
+  **Important:** `ReactiveCommand` catches exceptions thrown by the underlying async method and surfaces them via the `ThrownExceptions` observable rather than propagating them through `await Execute()`. The test must use `.Catch(Observable.Return(false))` to handle the error gracefully and then assert on the Document state. Do NOT use `Assert.ThrowsAsync` with `SaveCommand.Execute()` — it will not work as expected.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -293,9 +293,15 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
     void CreateDirectory(string path);
 }
 ```
-**Important:** `IFileTreeQuery` exposes `ShouldSkip(string name, bool includeHidden)` — not `IsIgnored(string name)`. The live `FileTreeService.IsIgnored` (line 100) always treats dotfiles as hidden regardless of the `includeHidden` flag, which is a bug-prone contract. The actual filtering in both enumeration (line 93) and watcher (line 139) uses `ShouldSkip` with an explicit `includeHidden` parameter. The interface must match the real filtering contract, not the legacy `IsIgnored` method. The `FileTreeService` implementation should keep `IsIgnored` as a private helper if needed, but the public interface only exposes `ShouldSkip`.
+**Important:** `IFileTreeQuery` exposes `ShouldSkip(string name, bool includeHidden)` — not `IsIgnored(string name)`. The live `FileTreeService.IsIgnored` (line 100) always treats dotfiles as hidden regardless of the `includeHidden` flag, which is a bug-prone contract. The actual filtering in both enumeration (line 93) and watcher (line 139) uses `ShouldSkip` with an explicit `includeHidden` parameter. The interface must match the real filtering contract, not the legacy `IsIgnored` method.
+
+**Note on `IsIgnored` visibility:** The current `FileTreeService.IsIgnored` is `public` and has 3 existing tests in `FileTreeServiceTests.cs` that call it directly (`IsIgnored_ReturnsTrue_ForCommonPatterns`, `IsIgnored_ReturnsFalse_ForNormalFolders`, `IsHidden_ExcludesDotAndDotDot`). After M3, `IsIgnored` should remain **public** (not private) to avoid breaking these tests. It is not part of the `IFileTreeQuery` interface, but it stays as a public convenience method on `FileTreeService` for backward compatibility. The interface only exposes `ShouldSkip`.
+
+**Note on `ShouldSkip` visibility change:** The current `FileTreeService.ShouldSkip` is `private static`. After M3, it must become `public` (instance method) to implement `IFileTreeQuery.ShouldSkip`. The `static` keyword is removed and the method signature changes from `private static bool ShouldSkip(string name, bool includeHidden)` to `public bool ShouldSkip(string name, bool includeHidden)`.
 
 **Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
+
+**Note on subscription lifetime:** `StopWatching()` disposes the underlying `FileSystemWatcher`, which stops the observable from emitting. However, the observable subscription itself is **not** disposed by `StopWatching()` — callers must dispose their subscription separately (typically before calling `StopWatching()` during restart). The VM code already follows this pattern: dispose subscription, then stop watcher. Document `StopWatching()` with: *"Disposes the underlying watcher. Callers must dispose their observable subscriptions separately via the IDisposable returned by Subscribe."*
 
 **Watcher lifetime rule (critical):** The returned observable must capture a **local** `FileSystemWatcher` instance, not the field `_watcher`. Currently the observables close over `_watcher` (a field), and `StopWatching()` disposes and nulls it. After M3, `StartWatching()` creates a new watcher, builds the observable from it, and returns the observable. The field `_watcher` is still needed for `StopWatching()` to dispose, but the observable's event subscriptions must reference the same instance. Implementation pattern:
 ```csharp
