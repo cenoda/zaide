@@ -126,6 +126,123 @@ public class AnsiParserTests
     }
 
     [Fact]
+    public void Parse_SplitSequenceAtFinalByteBoundary_CompletesOnSecondCall()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B[31");
+        var second = parser.Parse("m");
+
+        Assert.Empty(first);
+        var csi = Assert.Single(second);
+        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
+        Assert.Equal(new[] { 31 }, dispatch.Parameters);
+        Assert.Equal('m', dispatch.FinalByte);
+    }
+
+    [Fact]
+    public void Parse_SplitOscAcrossCalls_DropsSequenceWhenTerminatorArrives()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B]0;ti");
+        var second = parser.Parse("tle\a");
+
+        Assert.Empty(first);
+        Assert.Empty(second);
+    }
+
+    [Fact]
+    public void Parse_SplitDcsAcrossCalls_DropsSequenceWhenTerminatorArrives()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1BPde");
+        var second = parser.Parse("mo\x1B\\");
+
+        Assert.Empty(first);
+        Assert.Empty(second);
+    }
+
+    [Fact]
+    public void Parse_EscInsideCsi_AbortsMalformedSequenceAndStartsNewEscape()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[\x1B[31m");
+
+        var csi = Assert.Single(actions);
+        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
+        Assert.Equal(new[] { 31 }, dispatch.Parameters);
+        Assert.Equal('m', dispatch.FinalByte);
+    }
+
+    [Fact]
+    public void Parse_BareEscBeforePrintable_ReprocessesPrintableCharacter()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1Bw");
+
+        var print = Assert.Single(actions);
+        var printAction = Assert.IsType<PrintAction>(print);
+        Assert.Equal("w", printAction.Text);
+    }
+
+    [Fact]
+    public void Parse_ScsSequence_ConsumesPrefixAndDesignator()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B(M");
+
+        Assert.Empty(actions);
+    }
+
+    [Fact]
+    public void Parse_UnterminatedOsc_ResetsAfterGuardLimitAndPrintsFollowingText()
+    {
+        var parser = new AnsiParser();
+        var unterminatedOsc = "\x1B]" + new string('a', 4095) + "tail";
+
+        var actions = parser.Parse(unterminatedOsc);
+
+        var print = Assert.Single(actions);
+        var printAction = Assert.IsType<PrintAction>(print);
+        Assert.Equal("tail", printAction.Text);
+    }
+
+    [Fact]
+    public void Parse_NegativeCursorParameter_DropsUnsupportedSequence()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[-1A");
+
+        Assert.Empty(actions);
+    }
+
+    [Fact]
+    public void Parse_CsiIntermediateByte_DropsUnsupportedSequence()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[#A");
+
+        Assert.Empty(actions);
+    }
+
+    [Fact]
+    public void Parse_RisEscape_IsDroppedWithoutEmittingText()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B" + "c");
+
+        Assert.Empty(actions);
+    }
+
+    [Fact]
     public void Parse_NewlineAndCarriageReturn_EmitExecuteActions()
     {
         var parser = new AnsiParser();

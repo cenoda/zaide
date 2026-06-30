@@ -10,12 +10,15 @@ namespace Zaide.ViewModels;
 /// </summary>
 internal sealed class AnsiParser
 {
+    private const int MaxUnsupportedStringLength = 4096;
+
     private readonly StringBuilder _printBuffer = new();
     private readonly StringBuilder _csiBuffer = new();
 
     private ParserState _state = ParserState.Ground;
     private UnsupportedState _unsupportedState = UnsupportedState.None;
     private bool _unsupportedEscSeen;
+    private int _unsupportedLength;
 
     public IReadOnlyList<AnsiAction> Parse(ReadOnlySpan<char> chunk)
     {
@@ -29,13 +32,16 @@ internal sealed class AnsiParser
                     ProcessGround(ch, actions);
                     break;
                 case ParserState.Escape:
-                    ProcessEscape(ch);
+                    ProcessEscape(ch, actions);
                     break;
                 case ParserState.Csi:
                     ProcessCsi(ch, actions);
                     break;
+                case ParserState.EscapeCharsetDesignator:
+                    ProcessEscapeCharsetDesignator();
+                    break;
                 case ParserState.UnsupportedString:
-                    ProcessUnsupportedString(ch);
+                    ProcessUnsupportedString(ch, actions);
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown parser state: {_state}");
@@ -68,7 +74,7 @@ internal sealed class AnsiParser
         }
     }
 
-    private void ProcessEscape(char ch)
+    private void ProcessEscape(char ch, List<AnsiAction> actions)
     {
         switch (ch)
         {
@@ -82,14 +88,35 @@ internal sealed class AnsiParser
             case 'P':
                 StartUnsupportedString(UnsupportedState.Dcs);
                 break;
+            case '(':
+            case ')':
+            case '*':
+            case '+':
+                _state = ParserState.EscapeCharsetDesignator;
+                break;
+            case '7':
+            case '8':
+            case '=':
+            case '>':
+            case 'c':
+                _state = ParserState.Ground;
+                break;
             default:
                 _state = ParserState.Ground;
+                ProcessGround(ch, actions);
                 break;
         }
     }
 
     private void ProcessCsi(char ch, List<AnsiAction> actions)
     {
+        if (ch == '\x1B')
+        {
+            _csiBuffer.Clear();
+            _state = ParserState.Escape;
+            return;
+        }
+
         if (IsCsiFinalByte(ch))
         {
             EmitSupportedCsi(ch, actions);
@@ -101,7 +128,12 @@ internal sealed class AnsiParser
         _csiBuffer.Append(ch);
     }
 
-    private void ProcessUnsupportedString(char ch)
+    private void ProcessEscapeCharsetDesignator()
+    {
+        _state = ParserState.Ground;
+    }
+
+    private void ProcessUnsupportedString(char ch, List<AnsiAction> actions)
     {
         if (_unsupportedState == UnsupportedState.Osc && ch == '\a')
         {
@@ -121,6 +153,19 @@ internal sealed class AnsiParser
         }
 
         _unsupportedEscSeen = ch == '\x1B';
+        _unsupportedLength++;
+
+        if (_unsupportedLength < MaxUnsupportedStringLength)
+        {
+            return;
+        }
+
+        ResetUnsupportedString();
+
+        if (ch != '\x1B' && !char.IsControl(ch))
+        {
+            ProcessGround(ch, actions);
+        }
     }
 
     private void EmitSupportedCsi(char finalByte, List<AnsiAction> actions)
@@ -131,7 +176,7 @@ internal sealed class AnsiParser
         }
 
         string rawParameters = _csiBuffer.ToString();
-        if (rawParameters.IndexOfAny(['?', '>', '!', '"', '$', ' ', '\'']) >= 0)
+        if (!HasSupportedCsiParameterBytes(rawParameters))
         {
             return;
         }
@@ -142,6 +187,21 @@ internal sealed class AnsiParser
         }
 
         actions.Add(new CsiDispatchAction(parameters, finalByte));
+    }
+
+    private static bool HasSupportedCsiParameterBytes(string rawParameters)
+    {
+        foreach (char ch in rawParameters)
+        {
+            if ((ch >= '0' && ch <= '9') || ch == ';')
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryParseParameters(string rawParameters, char finalByte, out int[] parameters)
@@ -243,6 +303,7 @@ internal sealed class AnsiParser
     {
         _unsupportedState = unsupportedState;
         _unsupportedEscSeen = false;
+        _unsupportedLength = 0;
         _state = ParserState.UnsupportedString;
     }
 
@@ -250,6 +311,7 @@ internal sealed class AnsiParser
     {
         _unsupportedState = UnsupportedState.None;
         _unsupportedEscSeen = false;
+        _unsupportedLength = 0;
         _state = ParserState.Ground;
     }
 
@@ -258,6 +320,7 @@ internal sealed class AnsiParser
         Ground,
         Escape,
         Csi,
+        EscapeCharsetDesignator,
         UnsupportedString
     }
 

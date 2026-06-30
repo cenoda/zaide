@@ -2,11 +2,12 @@
 
 ## Planning Status
 
-**Ready for implementation.** Planning audit is complete, Fable review feedback
-has been incorporated, and the entry gates passed serially:
+**In progress.** Planning audit is complete, Fable review feedback has been
+incorporated, M1 is now closed, and the latest verification gates passed
+serially:
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 208 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 233 passed, 0 failed
 
 Preparation was re-verified against live code on **2026-06-30**. The current
 terminal surface still matches the expected pre-renderer baseline:
@@ -18,8 +19,8 @@ terminal surface still matches the expected pre-renderer baseline:
 - `src/Program.cs` still registers `ITerminalService` as
   `LinuxTerminalService` and `TerminalViewModel` as a singleton
 
-M1 has been implemented but is not yet fully closed because the M1 code audit
-found unresolved issues captured in `TOFIX.md`. M2–M5 remain unchecked.
+M1 is complete after the parser audit fixes landed on **2026-06-30**. M2–M5
+remain unchecked.
 
 ## Pre-Implementation Verification
 
@@ -81,7 +82,7 @@ change or must preserve:
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Ready |
-| M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ◐ In review |
+| M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ✅ Complete |
 | M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ❌ |
 | M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ❌ |
 | M4 | Wire pipeline: parser → screen buffer → render control | Integration test with mock PTY output | ❌ |
