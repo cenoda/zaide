@@ -84,50 +84,55 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 | M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. Update all test constructors (`FileTreeViewModelTests`, `MainWindowViewModelTests`). No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests`, `MainWindowViewModelTests` pass | ⬜ Not started |
 | M6 | **Move file extension logic out of MainWindowViewModel**: Extract `SupportedExtensions` to a static `SupportedFileTypes` class in `Services/` (not `Models/` — this is editor policy, not domain data). MainWindowViewModel delegates to it. Add tests for `SupportedFileTypes.IsTextFile` (supported, unsupported, no-extension). | `SupportedFileTypes` tests pass; `MainWindowViewModelTests` pass; manual: open file → opens in editor; open binary → shows status | ⬜ Not started |
 | M7 | **Stabilize + regression sweep**: Full manual regression. All tests pass. No behavioral changes. | `dotnet test` — zero regressions; manual: open/edit/save/close/reopen, terminal start/stop/restart, file tree operations | ⬜ Not started |
-| M8 | **TerminalViewModel UI-post seam — deferred**: `TerminalViewModel` uses `Dispatcher.UIThread.Post` directly (line 139). This refactor does **not** fix it. A future refactor should inject an `IUIThreadPoster` or similar abstraction. Marked deferred to avoid scope creep. | No changes this refactor | ⬜ Not started |
+| M8 | **TerminalViewModel UI-post seam — deferred**: `TerminalViewModel` has an internal test seam (`_uiPost`), but the production constructor (line 137-140) still references `Dispatcher.UIThread.Post` directly. This refactor does **not** fix it. A future refactor should inject an `IUIThreadPoster` or similar abstraction through DI. Marked deferred to avoid scope creep. | No changes this refactor | ⬜ Not started |
 
 ## Detailed Milestone Plans
 
 ### M1: Clean Models Layer
 
 **Document.cs changes:**
-- Remove `IFileService` parameter from `SaveAsync`
-- Option A: Make `SaveAsync` take a `Func<string, string, Task>` delegate
-- Option B: Make `SaveAsync` raise an event that the VM handles
-- Option C: Keep `IFileService` but move it to a separate `DocumentSaver` class
-- **Decision:** Use Option A (delegate) — keeps Document simple, avoids new class
+- **Remove `SaveAsync` entirely** from Document. The model should not own persistence workflow.
+- Add `RecordSaveError(string? error)` method for VM to call after save attempt.
+- Document becomes a pure data model: content, dirty flag, error state — no I/O.
+
+**EditorViewModel.cs changes (save coordinator):**
+- `SaveAsync()` now orchestrates the save:
+  ```csharp
+  private async Task<bool> SaveAsync()
+  {
+      if (string.IsNullOrEmpty(FilePath))
+          return false;
+      try
+      {
+          await _fileService.WriteAllTextAsync(FilePath, TextContent);
+          Document.MarkClean();
+          return true;
+      }
+      catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+      {
+          Document.RecordSaveError(ex.Message);
+          return false;
+      }
+  }
+  ```
+- This truly removes the service dependency from the model — the VM owns the use case.
 
 **Call-site updates (required for M1 to compile):**
 
-- **EditorViewModel.cs** (line 132): Update `SaveAsync()` to pass the delegate instead of `_fileService`:
+- **DocumentTests.cs**: Remove `SaveAsync_*` tests. Add tests for `RecordSaveError`:
   ```csharp
-  // Before:
-  await Document.SaveAsync(_fileService);
-  
-  // After:
-  await Document.SaveAsync(_fileService.WriteAllTextAsync);
-  ```
-  Alternatively, store the delegate in the constructor: `_saveFunc = fileService.WriteAllTextAsync;`
-
-- **Program.cs** (line 30-31): Update `EditorViewModel` registration to pass the delegate:
-  ```csharp
-  // Before:
-  services.AddTransient<EditorViewModel>(sp =>
-      new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
-  
-  // After (no change needed if EditorViewModel still takes IFileService):
-  // The delegate is created at call-site in EditorViewModel.SaveAsync
+  [Fact]
+  public void RecordSaveError_SetsLastSaveError()
+  {
+      var doc = new Document("/path.txt", "content");
+      doc.MarkClean();
+      doc.RecordSaveError("Disk full");
+      Assert.Equal("Disk full", doc.LastSaveError);
+      Assert.True(doc.IsDirty);
+  }
   ```
 
-- **DocumentTests.cs** (lines 38-71): Update tests to use the delegate pattern:
-  ```csharp
-  // Before:
-  await document.SaveAsync(fileServiceMock.Object);
-  
-  // After:
-  await document.SaveAsync(fileServiceMock.Object.WriteAllTextAsync);
-  ```
-  Or refactor tests to verify the delegate is called correctly.
+- **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -181,6 +186,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 **Workspace.cs changes:**
 - Remove unused `using Zaide.Services;`
+- Fix broken indentation around `OpenDocument` method (line 16 has no indentation)
 
 ### M2: Extract Terminal Pure Logic — DEFERRED
 
@@ -205,13 +211,11 @@ public interface IFileTreeQuery
 }
 
 // File system watching — infrastructure
-// Note: FileChanges is non-null after StartWatching() is called.
-// The VM uses FileChanges! after StartWatching, so the contract must guarantee
-// that StartWatching() initializes FileChanges before returning.
+// StartWatching() returns the observable directly, avoiding nullable state.
+// The VM subscribes to the returned observable and disposes the subscription to stop.
 public interface IFileTreeWatcher : IDisposable
 {
-    IObservable<FileChangeEvent> FileChanges { get; }
-    void StartWatching(string path, bool includeHidden = false);
+    IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false);
     void StopWatching();
 }
 
@@ -223,7 +227,7 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 }
 ```
 
-**Contract note:** `FileChanges` is now non-nullable. `StartWatching()` must initialize it before returning. This matches the current `FileTreeService` behavior and the VM's usage pattern (`_fileTreeService.FileChanges!.Subscribe(...)`). Tests should verify that `FileChanges` is non-null after `StartWatching()`.
+**Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
 
 **FileTreeService changes:**
 - Implement `IFileTreeService`
