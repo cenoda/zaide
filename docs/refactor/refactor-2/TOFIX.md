@@ -62,6 +62,18 @@ Tracking file for audit findings and remediation status.
 - **Milestone:** M3
 - **Status:** ⬜ Planned
 
+### L3: M3 references _scheduler before M5 exists
+- **Issue:** M3 VM restart snippet used `_scheduler` but `IScheduler` injection is only introduced in M5. Implementing M3 alone would not compile.
+- **Fix:** M3 must keep `AvaloniaScheduler.Instance` in the `ObserveOn()` call. When M5 is applied, replace with `_scheduler`. The plan now documents this ordering rule explicitly.
+- **Milestone:** M3 → M5 sequencing
+- **Status:** ⬜ Planned
+
+### L4: M3 DI registration risks dual service instances
+- **Issue:** Live `Program.cs` registers concrete `services.AddSingleton<FileTreeService>()`. If both concrete and `IFileTreeService` interface registrations remain, DI creates two instances. `FileTreeViewModel` (now depending on `IFileTreeService`) would get a different instance than any code still referencing `FileTreeService`.
+- **Fix:** Replace concrete registration with `services.AddSingleton<IFileTreeService, FileTreeService>()`. The plan now specifies the replacement explicitly.
+- **Milestone:** M3
+- **Status:** ⬜ Planned
+
 ---
 
 ## Resolved

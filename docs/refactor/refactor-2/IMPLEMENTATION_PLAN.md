@@ -321,9 +321,10 @@ _watcherSubscription?.Dispose();
 _fileTreeService.StopWatching();
 // ... update tree ...
 _watcherSubscription = _fileTreeService.StartWatching(path)
-    .ObserveOn(_scheduler)
+    .ObserveOn(AvaloniaScheduler.Instance)
     .Subscribe(HandleFileChange);
 ```
+**Important:** Keep `AvaloniaScheduler.Instance` in M3. The `_scheduler` injection is introduced later in M5. If M5 is not yet implemented, the M3 code must continue using `AvaloniaScheduler.Instance`. When M5 is applied, replace `AvaloniaScheduler.Instance` with `_scheduler`.
 This order prevents the subscription from receiving events from a stale watcher during the restart window.
 
 **FileTreeService changes:**
@@ -349,11 +350,13 @@ This order prevents the subscription from receiving events from a stale watcher 
 - [ ] Toggle test: restart watcher with `includeHidden` toggled, verify hidden-file filtering changes accordingly
 
 **Program.cs (DI) changes (required for M3 to work):**
-- Register `IFileTreeService` in DI container:
+- **Replace** the existing concrete `FileTreeService` registration with the interface registration. Currently line 25 registers `services.AddSingleton<FileTreeService>()`. Change it to:
   ```csharp
   services.AddSingleton<IFileTreeService, FileTreeService>();
   ```
-- Without this, `FileTreeViewModel` constructor resolution will fail at startup.
+- This ensures a single service instance. If both the concrete and interface registrations remain, the DI container would create two separate instances, and `FileTreeViewModel` (now depending on `IFileTreeService`) would get a different instance than any code still referencing `FileTreeService` directly.
+- Without this change, `FileTreeViewModel` constructor resolution will fail at startup because `IFileTreeService` is not registered.
+- **Note:** After M3, no code should depend on concrete `FileTreeService` directly. If any other registration still references `FileTreeService`, update it to `IFileTreeService` as well.
 
 **File organization (per CONVENTIONS.md § one-class-per-file):**
 - Each interface goes in its own file:
