@@ -243,6 +243,33 @@ public class AnsiParserTests
     }
 
     [Fact]
+    public void Parse_UnterminatedOsc_GuardBoundaryEscStartsNewEscape()
+    {
+        var parser = new AnsiParser();
+        var unterminatedOsc = "\x1B]" + new string('a', 4095) + "\x1B[31m";
+
+        var actions = parser.Parse(unterminatedOsc);
+
+        var csi = Assert.Single(actions);
+        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
+        Assert.Equal(new[] { 31 }, dispatch.Parameters);
+        Assert.Equal('m', dispatch.FinalByte);
+    }
+
+    [Fact]
+    public void Parse_UnterminatedOsc_GuardBoundaryControlCharacterIsEmitted()
+    {
+        var parser = new AnsiParser();
+        var unterminatedOsc = "\x1B]" + new string('a', 4095) + "\r";
+
+        var actions = parser.Parse(unterminatedOsc);
+
+        var execute = Assert.Single(actions);
+        Assert.IsType<ExecuteAction>(execute);
+        Assert.Equal(AnsiC0Control.CarriageReturn, ((ExecuteAction)execute).Control);
+    }
+
+    [Fact]
     public void Parse_NewlineAndCarriageReturn_EmitExecuteActions()
     {
         var parser = new AnsiParser();

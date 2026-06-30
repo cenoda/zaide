@@ -162,7 +162,11 @@ internal sealed class AnsiParser
 
         ResetUnsupportedString();
 
-        if (ch != '\x1B' && !char.IsControl(ch))
+        if (ch == '\x1B')
+        {
+            _state = ParserState.Escape;
+        }
+        else
         {
             ProcessGround(ch, actions);
         }

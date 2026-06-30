@@ -16,12 +16,12 @@ Planning audit passed after review feedback was incorporated. Entry gates were
 run serially:
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 233 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 235 passed, 0 failed
 
 M1 code audit completed on **2026-06-30**. The follow-up parser pass resolved
 all seven audit findings on the same date. Focused regression coverage now
-includes the repaired cases:
-`dotnet test Zaide.slnx --no-build --filter AnsiParserTests` → 25 passed,
+includes the repaired cases (plus M1-08 follow-up):
+`dotnet test Zaide.slnx --no-build --filter AnsiParserTests` → 27 passed,
 0 failed.
 
 ## Open Issues
@@ -45,6 +45,15 @@ _(None. M1 audit items were resolved on 2026-06-30.)_
   sequences cannot silence the terminal forever. Covered by
   `Parse_UnterminatedOsc_ResetsAfterGuardLimitAndPrintsFollowingText`.
   Code: `src/ViewModels/AnsiParser.cs:136`. Test: `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs:203`.
+- [x] **M1-08: Guard-boundary ESC and control characters silently dropped
+  (follow-up)** — when the 4096-char guard fires in
+  `ProcessUnsupportedString()`, the original code dropped ESC and C0 controls
+  at the boundary. Fixed to route ESC into Escape state and everything else
+  through `ProcessGround()`. Tests:
+  `Parse_UnterminatedOsc_GuardBoundaryEscStartsNewEscape` and
+  `Parse_UnterminatedOsc_GuardBoundaryControlCharacterIsEmitted`.
+  Code: `src/ViewModels/AnsiParser.cs:165`. Tests:
+  `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs:246` and `:260`.
 - [x] **M1-04: Only one split-point tested for chunk boundaries** — added
   explicit split coverage for the final-byte boundary plus OSC/DCS mid-string
   continuation. Tests: `Parse_SplitSequenceAtFinalByteBoundary_CompletesOnSecondCall`,
