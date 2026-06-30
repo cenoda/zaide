@@ -28,11 +28,12 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 2. Remove UI framework dependencies from Model types (replace ReactiveUI with plain INotifyPropertyChanged)
 3. Extract interfaces for concrete service dependencies in ViewModels
 4. Reduce MainWindow's composition burden (extract file-type policy)
-5. Inject dependencies that currently reference Avalonia (IScheduler)
+5. Inject IScheduler into FileTreeViewModel (remove AvaloniaScheduler reference)
 
 **Deferred to future refactors:**
 - Moving terminal pure logic to `Terminal/` folder (requires namespace change — see M2)
 - Moving tree manipulation logic out of VM (requires FileTreeNode domain/UI split — see M4)
+- TerminalViewModel's `Dispatcher.UIThread.Post` usage (see M8 below) — requires separate UI-post abstraction
 
 **Boundaries (NOT in scope):**
 - ❌ No actual multi-project split (that's a future refactor)
@@ -80,9 +81,10 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 | M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Not started |
 | M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Not started |
-| M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests` pass | ⬜ Not started |
-| M6 | **Move file extension logic out of MainWindowViewModel**: Extract `SupportedExtensions` to a static `SupportedFileTypes` class in `Services/` (not `Models/` — this is editor policy, not domain data). MainWindowViewModel delegates to it. | `MainWindowViewModelTests` (if any) pass; manual: open file → opens in editor; open binary → shows status | ⬜ Not started |
+| M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. Update all test constructors (`FileTreeViewModelTests`, `MainWindowViewModelTests`). No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests`, `MainWindowViewModelTests` pass | ⬜ Not started |
+| M6 | **Move file extension logic out of MainWindowViewModel**: Extract `SupportedExtensions` to a static `SupportedFileTypes` class in `Services/` (not `Models/` — this is editor policy, not domain data). MainWindowViewModel delegates to it. Add tests for `SupportedFileTypes.IsTextFile` (supported, unsupported, no-extension). | `SupportedFileTypes` tests pass; `MainWindowViewModelTests` pass; manual: open file → opens in editor; open binary → shows status | ⬜ Not started |
 | M7 | **Stabilize + regression sweep**: Full manual regression. All tests pass. No behavioral changes. | `dotnet test` — zero regressions; manual: open/edit/save/close/reopen, terminal start/stop/restart, file tree operations | ⬜ Not started |
+| M8 | **TerminalViewModel UI-post seam — deferred**: `TerminalViewModel` uses `Dispatcher.UIThread.Post` directly (line 139). This refactor does **not** fix it. A future refactor should inject an `IUIThreadPoster` or similar abstraction. Marked deferred to avoid scope creep. | No changes this refactor | ⬜ Not started |
 
 ## Detailed Milestone Plans
 
@@ -203,9 +205,12 @@ public interface IFileTreeQuery
 }
 
 // File system watching — infrastructure
+// Note: FileChanges is non-null after StartWatching() is called.
+// The VM uses FileChanges! after StartWatching, so the contract must guarantee
+// that StartWatching() initializes FileChanges before returning.
 public interface IFileTreeWatcher : IDisposable
 {
-    IObservable<FileChangeEvent>? FileChanges { get; }
+    IObservable<FileChangeEvent> FileChanges { get; }
     void StartWatching(string path, bool includeHidden = false);
     void StopWatching();
 }
@@ -217,6 +222,8 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
     void CreateDirectory(string path);
 }
 ```
+
+**Contract note:** `FileChanges` is now non-nullable. `StartWatching()` must initialize it before returning. This matches the current `FileTreeService` behavior and the VM's usage pattern (`_fileTreeService.FileChanges!.Subscribe(...)`). Tests should verify that `FileChanges` is non-null after `StartWatching()`.
 
 **FileTreeService changes:**
 - Implement `IFileTreeService`
@@ -267,6 +274,9 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
   ```csharp
   var vm = new FileTreeViewModel(_service, CurrentThreadScheduler.Instance);
   ```
+- **FileTreeViewModelTests.cs**: Update all `new FileTreeViewModel(_service)` calls to include the scheduler parameter.
+- **MainWindowViewModelTests.cs** (lines 37, 156): Update manual `FileTreeViewModel` construction to include the scheduler parameter.
+- Consider creating a test factory method to centralize VM construction and reduce churn when constructor signatures change.
 
 ### M6: Move File Extension Logic
 
@@ -305,6 +315,13 @@ public static class SupportedFileTypes
 - Remove `SupportedExtensions` field
 - Remove `using System.Collections.Generic;` if no longer needed
 - Use `SupportedFileTypes.IsTextFile(path)` instead of `SupportedExtensions.Contains(ext)`
+
+**New tests (required for M6):**
+- Create `tests/Zaide.Tests/Services/SupportedFileTypesTests.cs` with:
+  - `IsTextFile_SupportedExtension_ReturnsTrue` (e.g., `.cs`, `.json`)
+  - `IsTextFile_UnsupportedExtension_ReturnsFalse` (e.g., `.exe`, `.dll`)
+  - `IsTextFile_NoExtension_ReturnsFalse`
+  - `IsTextFile_CaseInsensitive` (e.g., `.CS` == `.cs`)
 
 ### M7: Stabilize + Regression
 
