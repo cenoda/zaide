@@ -76,7 +76,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ⬜ Not started |
+| M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ✅ Complete (300 passed, 0 failed) |
 | M1 | **Clean Models layer**: Remove `SaveAsync` entirely from `Document` (model should not own persistence workflow). Add `RecordSaveError(string?)` for VM to call after save attempt. Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Deferred / N/A |
 | M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
@@ -157,6 +157,8 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       Assert.True(raised);
   }
   ```
+
+- **EditorTabViewModelTests.cs**: The existing tests `CloseTab_StaysOpen_WhenSaveFails` (line 139) and `SaveFailure_MustNotCloseTab_MockFileService` (line 211) exercise `CloseTabAsync` which awaits `tab.SaveCommand.Execute()` and reads `tab.LastSaveError`. These tests must continue to pass after M1 — verify they still assert `tab.IsDirty` and `vm.LastSaveError` correctly with the new VM-coordinated save flow. No test changes expected unless the save-failure contract changes.
 
 - **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state. Add explicit tests for the unexpected-exception contract:
   ```csharp
@@ -342,6 +344,9 @@ This order prevents the subscription from receiving events from a stale watcher 
 - [ ] `StartWatching()` returns `IObservable<FileChangeEvent>` (not void)
 - [ ] Watcher subscription tests cover: open-folder flow, hidden-toggle restart flow
 - [ ] `FileTreeServiceTests` verify `StartWatching()` returns non-null observable
+- [ ] Event-delivery tests: create/rename/delete a file in the watched directory and verify the observable emits the corresponding `FileChangeEvent`
+- [ ] Restart test: stop and restart the watcher, then create a file — verify the new observable emits events (no stale subscription from the old watcher)
+- [ ] Toggle test: restart watcher with `includeHidden` toggled, verify hidden-file filtering changes accordingly
 
 **Program.cs (DI) changes (required for M3 to work):**
 - Register `IFileTreeService` in DI container:
@@ -356,6 +361,8 @@ This order prevents the subscription from receiving events from a stale watcher 
   - `src/Services/IFileTreeWatcher.cs`
   - `src/Services/IFileTreeService.cs`
 - `FileTreeService.cs` remains unchanged (already exists).
+
+**Note on FileChangeEvent placement:** `FileChangeEvent` currently lives in `Models/` (`src/Models/FileChangeEvent.cs`). The new service interfaces in `Services/` will reference it, creating cross-layer coupling from Services back to Models. This is **tolerated** for this prep pass — `FileChangeEvent` is a simple value object (not a domain entity), and moving it to a shared location would require a namespace change that is out of scope. A future project split should place `FileChangeEvent` in `Zaide.Core` or a shared contracts assembly.
 
 ### M4: Tree Manipulation Logic — Stays in VM
 
