@@ -1,4 +1,4 @@
-# Refactor 2: Project Boundary Split — Implementation Plan
+# Refactor 2: Layer Boundary Cleanup — Implementation Plan
 
 ## Pre-Implementation Verification
 
@@ -93,7 +93,9 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 **Document.cs changes:**
 - **Remove `SaveAsync` entirely** from Document. The model should not own persistence workflow.
 - Add `RecordSaveError(string? error)` method for VM to call after save attempt.
+- `RecordSaveError` must raise `SaveErrorChanged` and `DirtyStateChanged` events (matching current behavior where `SaveAsync` raises both on failure).
 - Document becomes a pure data model: content, dirty flag, error state — no I/O.
+- Remove `using Zaide.Services;` (no longer needed).
 
 **EditorViewModel.cs changes (save coordinator):**
 - `SaveAsync()` now orchestrates the save:
@@ -108,13 +110,14 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
           Document.MarkClean();
           return true;
       }
-      catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+      catch (Exception ex)
       {
           Document.RecordSaveError(ex.Message);
           return false;
       }
   }
   ```
+- **Important:** Catch all exceptions (not just IOException/UnauthorizedAccessException) to match current `Document.SaveAsync` behavior which rethrows any exception after recording the error.
 - This truly removes the service dependency from the model — the VM owns the use case.
 
 **Call-site updates (required for M1 to compile):**
@@ -129,6 +132,27 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       doc.RecordSaveError("Disk full");
       Assert.Equal("Disk full", doc.LastSaveError);
       Assert.True(doc.IsDirty);
+  }
+
+  [Fact]
+  public void RecordSaveError_RaisesSaveErrorChanged()
+  {
+      var doc = new Document("/path.txt", "content");
+      var raised = false;
+      doc.SaveErrorChanged += (_, _) => raised = true;
+      doc.RecordSaveError("error");
+      Assert.True(raised);
+  }
+
+  [Fact]
+  public void RecordSaveError_RaisesDirtyStateChanged()
+  {
+      var doc = new Document("/path.txt", "content");
+      doc.MarkClean();
+      var raised = false;
+      doc.DirtyStateChanged += (_, _) => raised = true;
+      doc.RecordSaveError("error");
+      Assert.True(raised);
   }
   ```
 
@@ -231,10 +255,21 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 
 **FileTreeService changes:**
 - Implement `IFileTreeService`
-- No other changes in this milestone
+- Change `StartWatching` to return `IObservable<FileChangeEvent>` (currently returns void, sets `FileChanges` property)
+- Remove nullable `FileChanges` property (no longer needed)
+- `StopWatching()` still disposes the watcher and sets `FileChanges` to null internally
 
 **FileTreeViewModel changes:**
 - Change dependency from `FileTreeService` to `IFileTreeService`
+- Replace `_fileTreeService.FileChanges!.Subscribe(...)` with subscribing to the returned observable from `_fileTreeService.StartWatching(...)`
+- Remove all `FileChanges!` null-forgiving operators
+
+**M3 exit checks (API contract change):**
+- [ ] No `FileChanges!` null-forgiving operator remains in `FileTreeViewModel.cs`
+- [ ] No nullable `FileChanges` property exists in `IFileTreeWatcher` or `FileTreeService`
+- [ ] `StartWatching()` returns `IObservable<FileChangeEvent>` (not void)
+- [ ] Watcher subscription tests cover: open-folder flow, hidden-toggle restart flow
+- [ ] `FileTreeServiceTests` verify `StartWatching()` returns non-null observable
 
 **Program.cs (DI) changes (required for M3 to work):**
 - Register `IFileTreeService` in DI container:
@@ -302,11 +337,15 @@ public static class SupportedFileTypes
     {
         ".cs", ".json", ".md", ".txt", ".xml", ".axaml", ".csproj",
         ".sln", ".slnx", ".props", ".targets", ".config",
-        ".editorconfig", ".gitignore", ".gitattributes", ".yml",
-        ".yaml", ".css", ".html", ".js", ".ts", ".fs", ".vb",
+        ".yml", ".yaml", ".css", ".html", ".js", ".ts", ".fs", ".vb",
         ".xaml", ".resx", ".razor", ".cshtml", ".svg"
     };
 
+    // Bare dotfiles (e.g., .editorconfig, .gitignore, .gitattributes) are
+    // supported by name, not by extension. Path.GetExtension returns ".gitignore"
+    // for these, so they are covered by the extension set above.
+    // Pure basename-only files (e.g., "Makefile", "Dockerfile") are NOT supported
+    // by this policy — they return empty extension and IsTextFile returns false.
     public static bool IsTextFile(string path)
     {
         var ext = Path.GetExtension(path);
@@ -370,8 +409,10 @@ public static class SupportedFileTypes
 
 ## Future Refactor (Out of Scope)
 
-After this refactor is complete, the codebase will be ready for:
-1. **Namespace cleanup**: Move terminal types to `Zaide.Core.Terminal`
-2. **Project split**: Create `Zaide.Core`, `Zaide.Application`, `Zaide.Infrastructure`, `Zaide.UI` projects
-3. **MainWindow decomposition**: Extract `MainWindowLayoutBuilder`, `MainWindowKeyBindings`, `MainWindowDialogHandler`
-4. **Status routing**: Create `IStatusReporter` interface for app-level status messages
+After this refactor is complete, the codebase will be **closer to ready** for a future project split, but core/UI separation will still be incomplete. Remaining work includes:
+
+1. **Namespace cleanup**: Move terminal types to `Zaide.Core.Terminal` (requires namespace change — deferred from M2)
+2. **TerminalViewModel UI-post abstraction**: Inject `IUIThreadPoster` to remove the production constructor's `Dispatcher.UIThread.Post` dependency (deferred from M8)
+3. **Project split**: Create `Zaide.Core`, `Zaide.Application`, `Zaide.Infrastructure`, `Zaide.UI` projects
+4. **MainWindow decomposition**: Extract `MainWindowLayoutBuilder`, `MainWindowKeyBindings`, `MainWindowDialogHandler`
+5. **Status routing**: Create `IStatusReporter` interface for app-level status messages

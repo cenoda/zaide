@@ -1,42 +1,40 @@
-# Refactor 2: Project Boundary Split — Draft
+# Refactor 2: Layer Boundary Cleanup — Draft
 
 ## Intent
 
-This is a reminder draft for a future structural refactor.
+This draft documents the rationale for a layer boundary cleanup pass that was
+prepared during Phase 3 completion. The actual implementation plan is in
+`IMPLEMENTATION_PLAN.md`.
 
 The current repository keeps `Models`, `Services`, `ViewModels`, and `Views`
 inside a single project: `src/Zaide.csproj`.
 
-A future split into multiple projects may become useful, but it should not be
-started yet just because the idea sounds cleaner on paper.
+A future split into multiple projects may become useful, but the current
+refactor is intentionally limited to boundary cleanup — not a multi-project
+split.
 
 ## Current Decision
 
-Do not start the multi-project split during the current Phase 2 / Phase 2.1
-window.
+Phase 3 is complete. Phase 4 (agent panels, Townhall, Router) is next.
+The boundary cleanup in `IMPLEMENTATION_PLAN.md` is a preparation pass that
+should be evaluated before starting Phase 4, since Phase 4 work is likely to
+increase coupling pressure.
 
-Prefer a smaller preparation pass first:
-
-- Remove service dependencies from model types where possible.
-- Keep dependency direction clean: UI -> application/services -> core.
-- Separate pure logic from infrastructure-heavy code inside existing services.
-- Avoid adding new cross-layer shortcuts while implementing future phases.
-
-## Why Not Now
+## Why Not A Full Split Now
 
 - The codebase is still small enough for a single-project structure.
-- The immediate next work is feature delivery, not architecture migration.
 - A project split now would create churn in DI, tests, namespaces, and docs.
-- The real boundaries will be clearer after Terminal and before the agent-heavy
-  phases begin.
+- The real boundaries will be clearer after Phase 4 agent work begins.
+- The cleanup pass removes the most obvious cross-layer violations without
+  the overhead of a full project split.
 
 ## Best Timing
 
-Re-evaluate this refactor after Phase 3 is complete, or at the latest before
-starting Phase 4.
+The cleanup pass should be done before starting Phase 4, or at the latest
+during early Phase 4 when coupling pressure first becomes noticeable.
 
 That is the point where Townhall, Agent Panels, and Router work are likely to
-increase coupling pressure enough to justify physical project boundaries.
+increase coupling pressure enough to justify the boundary cleanup.
 
 ## Likely Target Shape
 
