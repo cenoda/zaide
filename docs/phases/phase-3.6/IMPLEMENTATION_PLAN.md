@@ -7,7 +7,7 @@ incorporated, M1 is now closed, and the latest verification gates passed
 serially:
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 233 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 288 passed, 0 failed
 
 Preparation was re-verified against live code on **2026-06-30**. The current
 terminal surface still matches the expected pre-renderer baseline:
@@ -19,8 +19,9 @@ terminal surface still matches the expected pre-renderer baseline:
 - `src/Program.cs` still registers `ITerminalService` as
   `LinuxTerminalService` and `TerminalViewModel` as a singleton
 
-M1 is complete after the parser audit fixes landed on **2026-06-30**. M2–M5
-remain unchecked.
+M1 is complete after the parser audit fixes landed on **2026-06-30**. M2 is
+complete after the screen-buffer model and its 53 tests landed on **2026-06-30**.
+M3–M5 remain unchecked.
 
 ## Pre-Implementation Verification
 
@@ -83,7 +84,7 @@ change or must preserve:
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Ready |
 | M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ✅ Complete |
-| M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ❌ |
+| M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ✅ Complete |
 | M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ❌ |
 | M4 | Wire pipeline: parser → screen buffer → render control | Integration test with mock PTY output | ❌ |
 | M5 | Documentation and exit audit | `dotnet build`, `dotnet test`, TOFIX update | ❌ |
@@ -248,7 +249,7 @@ internal readonly struct CellAttribute
 - Scroll pushes content up, clears bottom row
 - Backspace does not cross into previous row
 - Tab advances to next 8-column stop
-- Content survives ordering: write "AB", cursor back, write "C" → "CB"
+- Content survives ordering: write "AB", cursor back, write "C" → "AC"
 - Resize to larger grid: preserved cells at top-left, new cells are spaces
 - Resize to smaller grid: overflowing cells discarded, cursor clamped
 
