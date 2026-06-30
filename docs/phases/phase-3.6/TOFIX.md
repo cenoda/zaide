@@ -22,6 +22,10 @@ M1 code audit completed on **2026-06-30**. The parser implementation covers
 the planned surface area enough to continue review, but M1 should be treated
 as incomplete until the issues below are resolved or explicitly deferred.
 Seven issues were identified: one real bug, three gaps, and three minor items.
+All seven remain reproducible in the live code on **2026-06-30**. Focused
+coverage still passes because the missing/broken cases are not yet asserted:
+`dotnet test Zaide.slnx --no-build --filter AnsiParserTests` → 15 passed,
+0 failed.
 
 ## Open Issues
 
@@ -50,7 +54,7 @@ if (ch == '\x1B')
 }
 ```
 
-**Location:** `src/ViewModels/AnsiParser.cs`, `ProcessCsi()` method.
+**Location:** `src/ViewModels/AnsiParser.cs:91` (`ProcessCsi()`).
 
 ### M1-02: Bare ESC consumes the following character (SCS leak)
 
@@ -72,7 +76,7 @@ acceptable, but SCS (Select Character Set) sequences leak visible text.
 - Or accept the leak and document it here as a known limitation until a fuller
   escape-sequence model is added.
 
-**Location:** `src/ViewModels/AnsiParser.cs`, `ProcessEscape()` method.
+**Location:** `src/ViewModels/AnsiParser.cs:71` (`ProcessEscape()`).
 
 ### M1-03: Unterminated OSC/DCS swallows all subsequent output
 
@@ -86,7 +90,7 @@ output, including printable text and CSI sequences, is silently consumed.
 characters (for example 4096) without a terminator, force-reset to Ground.
 This prevents one broken sequence from permanently silencing the terminal.
 
-**Location:** `src/ViewModels/AnsiParser.cs`, `ProcessUnsupportedString()` method.
+**Location:** `src/ViewModels/AnsiParser.cs:104` (`ProcessUnsupportedString()`).
 
 ### M1-04: Only one split-point tested for chunk boundaries
 
@@ -107,7 +111,7 @@ This prevents one broken sequence from permanently silencing the terminal.
 **Fix:** Add one or two extra split tests. The "params | final byte" split is
 the most important because shells often flush output mid-escape.
 
-**Location:** `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs`.
+**Location:** `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs:113`.
 
 ### M1-05: Negative CSI parameters are accepted (minor)
 
@@ -118,7 +122,7 @@ in the `IndexOfAny` rejection list and `int.TryParse("-1")` succeeds. Real
 terminals do not send negative parameters. The screen buffer in M2 should
 clamp all parameter values, but the parser could reject them earlier.
 
-**Location:** `src/ViewModels/AnsiParser.cs`, `EmitSupportedCsi()` / `TryParseParameters()`.
+**Location:** `src/ViewModels/AnsiParser.cs:126` and `src/ViewModels/AnsiParser.cs:147`.
 
 ### M1-06: Incomplete intermediate-byte rejection in CSI (minor)
 
@@ -131,7 +135,7 @@ characters are still rejected indirectly because `int.TryParse` fails, so the
 current net effect is usually still "drop the sequence." The notable exception
 is `-1` (Issue M1-05), which parses successfully.
 
-**Location:** `src/ViewModels/AnsiParser.cs`, `EmitSupportedCsi()` method.
+**Location:** `src/ViewModels/AnsiParser.cs:126` (`EmitSupportedCsi()`).
 
 ### M1-07: No tests for common non-CSI escape sequences (minor)
 
@@ -145,7 +149,7 @@ returned to Ground, and no action emitted. That matches the current
 
 **Fix:** Add one representative test such as `\x1Bc` producing zero actions.
 
-**Location:** `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs`.
+**Location:** `tests/Zaide.Tests/ViewModels/AnsiParserTests.cs:103`.
 
 ## Resolved Issues
 
