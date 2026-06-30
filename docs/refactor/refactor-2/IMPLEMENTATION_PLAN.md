@@ -420,22 +420,33 @@ public static class SupportedFileTypes
         ".cs", ".json", ".md", ".txt", ".xml", ".axaml", ".csproj",
         ".sln", ".slnx", ".props", ".targets", ".config",
         ".yml", ".yaml", ".css", ".html", ".js", ".ts", ".fs", ".vb",
-        ".xaml", ".resx", ".razor", ".cshtml", ".svg",
+        ".xaml", ".resx", ".razor", ".cshtml", ".svg"
+    };
+
+    // Dotfiles like .editorconfig, .gitignore, .gitattributes are
+    // supported by their full filename, not just extension, because
+    // Path.GetExtension returns the full name for dotfiles (e.g., ".gitignore"),
+    // but for robustness we also check filename if extension lookup fails.
+    // Pure basename-only files (e.g., "Makefile", "Dockerfile") are NOT supported
+    // by this policy — they return empty extension and IsTextFile returns false.
+    private static readonly HashSet<string> KnownDotfiles = new(StringComparer.OrdinalIgnoreCase)
+    {
         ".editorconfig", ".gitignore", ".gitattributes"
     };
 
-    // Dotfiles (e.g., .editorconfig, .gitignore, .gitattributes) are
-    // supported by extension — Path.GetExtension returns ".gitignore" for these,
-    // so they are covered by the extension set above.
-    // Pure basename-only files (e.g., "Makefile", "Dockerfile") are NOT supported
-    // by this policy — they return empty extension and IsTextFile returns false.
     public static bool IsTextFile(string path)
     {
         var ext = Path.GetExtension(path);
-        return ext.Length > 0 && TextExtensions.Contains(ext);
+        if (ext.Length > 0 && TextExtensions.Contains(ext))
+            return true;
+        // Fallback: check known dotfiles by filename
+        var name = Path.GetFileName(path);
+        return name.Length > 0 && KnownDotfiles.Contains(name);
     }
 }
 ```
+**Important:** `Path.GetExtension(".gitignore")` returns `.gitignore` in .NET (the entire name is treated as the extension), so dotfiles ARE covered by `TextExtensions` in most cases. However, the `KnownDotfiles` fallback ensures robust behavior across all path formats and runtime variations. The current `MainWindowViewModel` code at line 100 also uses `Path.GetExtension` and would miss these — extracting to `SupportedFileTypes` fixes both the location and the correctness in one move.
+- **New tests (required for M6):** Add `IsTextFile_Dotfile_KnownName` that passes a bare filename like `".gitignore"` and verifies true. Also add `IsTextFile_Dotfile_FullPath` passing a full path like `"/home/user/.editorconfig"` and verifies true.
 
 **MainWindowViewModel changes:**
 - Remove `SupportedExtensions` field
