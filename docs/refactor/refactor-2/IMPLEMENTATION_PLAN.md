@@ -78,13 +78,13 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ⬜ Not started |
 | M1 | **Clean Models layer**: Remove `SaveAsync` entirely from `Document` (model should not own persistence workflow). Add `RecordSaveError(string?)` for VM to call after save attempt. Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
-| M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Not started |
+| M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Deferred / N/A |
 | M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
-| M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Not started |
+| M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Deferred / N/A |
 | M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. Update all test constructors (`FileTreeViewModelTests`, `MainWindowViewModelTests`). No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests`, `MainWindowViewModelTests` pass | ⬜ Not started |
 | M6 | **Move file extension logic out of MainWindowViewModel**: Extract `SupportedExtensions` to a static `SupportedFileTypes` class in `Services/` (not `Models/` — this is editor policy, not domain data). MainWindowViewModel delegates to it. Add tests for `SupportedFileTypes.IsTextFile` (supported, unsupported, no-extension). | `SupportedFileTypes` tests pass; `MainWindowViewModelTests` pass; manual: open file → opens in editor; open binary → shows status | ⬜ Not started |
 | M7 | **Stabilize + regression sweep**: Full manual regression. All tests pass. No behavioral changes. | `dotnet test` — zero regressions; manual: open/edit/save/close/reopen, terminal start/stop/restart, file tree operations | ⬜ Not started |
-| M8 | **TerminalViewModel UI-post seam — deferred**: `TerminalViewModel` has an internal test seam (`_uiPost`), but the production constructor (line 137-140) still references `Dispatcher.UIThread.Post` directly. This refactor does **not** fix it. A future refactor should inject an `IUIThreadPoster` or similar abstraction through DI. Marked deferred to avoid scope creep. | No changes this refactor | ⬜ Not started |
+| M8 | **TerminalViewModel UI-post seam — deferred**: `TerminalViewModel` has an internal test seam (`_uiPost`), but the production constructor (line 137-140) still references `Dispatcher.UIThread.Post` directly. This refactor does **not** fix it. A future refactor should inject an `IUIThreadPoster` or similar abstraction through DI. Marked deferred to avoid scope creep. | No changes this refactor | ⬜ Deferred / N/A |
 
 ## Detailed Milestone Plans
 
@@ -166,11 +166,12 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       var fileService = new Mock<IFileService>();
       fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
                  .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
-      var vm = new EditorViewModel(fileService.Object, /* other deps */);
-      vm.Document = new Document("/test.cs", "content");
-      vm.Document.MarkClean();
+      var doc = new Document("/test.cs", "content");
+      doc.MarkClean();
+      var vm = new EditorViewModel(doc, fileService.Object);
 
-      await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SaveCommand.Execute());
+      await Assert.ThrowsAsync<InvalidOperationException>(
+          async () => await vm.SaveCommand.Execute());
   }
 
   [Fact]
@@ -179,9 +180,9 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       var fileService = new Mock<IFileService>();
       fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
                  .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
-      var vm = new EditorViewModel(fileService.Object, /* other deps */);
-      vm.Document = new Document("/test.cs", "content");
-      vm.Document.MarkClean();
+      var doc = new Document("/test.cs", "content");
+      doc.MarkClean();
+      var vm = new EditorViewModel(doc, fileService.Object);
 
       try
       {
@@ -192,11 +193,11 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
           // Expected — verify error was recorded before rethrow
       }
 
-      Assert.Equal("Unexpected failure", vm.Document.LastSaveError);
-      Assert.True(vm.Document.IsDirty);
+      Assert.Equal("Unexpected failure", vm.LastSaveError);
+      Assert.True(vm.IsDirty);
   }
   ```
-  These tests verify that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract.
+  These tests verify that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract. Note: `EditorViewModel` constructor takes `(Document document, IFileService fileService)` and `Document` has a private setter, so tests must construct the Document first and pass it in.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -447,6 +448,9 @@ public static class SupportedFileTypes
 - [ ] Create file → tree updates
 - [ ] Rename file → tree updates
 - [ ] Delete file → tree updates
+- [ ] ExpandAll → all nodes expand
+- [ ] CollapseAll → all nodes collapse
+- [ ] Toggle hidden files → watcher restarts, tree updates
 - [ ] Open text file → editor opens
 - [ ] Edit → dirty flag shows
 - [ ] Save → dirty flag clears
