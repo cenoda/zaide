@@ -170,6 +170,13 @@ public class TerminalRenderControl : Control
         {
             int absoluteRow = viewportTop + row;
             double y = row * lh;
+            if (TryGetSelectionSpanForRow(absoluteRow, cols, out int selectionStartCol, out int selectionEndCol))
+            {
+                context.FillRectangle(
+                    new SolidColorBrush(selectionBackground),
+                    new Rect(selectionStartCol * cw, y, (selectionEndCol - selectionStartCol + 1) * cw, lh));
+            }
+
             for (int col = 0; col < cols; col++)
             {
                 var cell = GetAbsoluteCell(snapshot, absoluteRow, col);
@@ -190,7 +197,6 @@ public class TerminalRenderControl : Control
                 bool isSelected = IsSelected(absoluteRow, col);
                 if (isSelected)
                 {
-                    context.FillRectangle(new SolidColorBrush(selectionBackground), rect);
                     fg = selectionForeground;
                 }
                 else if (cell.Background != -1 || cell.Inverse)
@@ -464,6 +470,28 @@ public class TerminalRenderControl : Control
         }
 
         return true;
+    }
+
+    private bool TryGetSelectionSpanForRow(int row, int columns, out int startCol, out int endCol)
+    {
+        startCol = 0;
+        endCol = 0;
+
+        if (!HasSelection())
+        {
+            return false;
+        }
+
+        NormalizeSelection(_selectionAnchor!.Value, _selectionEnd!.Value, out var first, out var last);
+
+        if (row < first.Row || row > last.Row)
+        {
+            return false;
+        }
+
+        startCol = row == first.Row ? first.Col : 0;
+        endCol = row == last.Row ? last.Col : columns - 1;
+        return startCol <= endCol;
     }
 
     private static void NormalizeSelection(
