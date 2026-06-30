@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -10,28 +11,32 @@ using Zaide.ViewModels;
 
 namespace Zaide.Tests.ViewModels;
 
-/// <summary>
-/// Unit tests for <see cref="TerminalViewModel"/>. The UI-marshal seam runs
-/// synchronously (<c>a =&gt; a()</c>) so buffer mutations complete inline, and
-/// the service is mocked so no real PTY is spawned.
-/// </summary>
 public class TerminalViewModelTests
 {
     private static readonly Action<Action> RunInline = a => a();
 
     private static TerminalViewModel CreateViewModel(
-        Mock<ITerminalService> service, int maxBufferChars = 200_000)
-        => new(service.Object, RunInline, maxBufferChars);
+        Mock<ITerminalService>? service = null)
+        => new((service ?? new Mock<ITerminalService>()).Object, RunInline);
+
+    /// <summary>Extracts visible screen text from the snapshot for assertion.</summary>
+    private static string GetScreenText(TerminalViewModel vm)
+    {
+        var snap = vm.ScreenSnapshot;
+        if (snap is null) return string.Empty;
+        return string.Join("\n", snap.Lines).TrimEnd();
+    }
 
     [Fact]
-    public void OutputReceived_AppendsToBuffer()
+    public void OutputReceived_AppendsToScreen()
     {
         var service = new Mock<ITerminalService>();
         var vm = CreateViewModel(service);
 
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello"));
 
-        Assert.Equal("hello", vm.OutputText);
+        // "hello" appears in the first line of the screen
+        Assert.Equal("hello", vm.ScreenSnapshot!.Lines[0].TrimEnd());
     }
 
     [Fact]
@@ -40,36 +45,43 @@ public class TerminalViewModelTests
         var service = new Mock<ITerminalService>();
         var vm = CreateViewModel(service);
 
-        // 'é' (U+00E9) encodes to UTF-8 bytes 0xC3 0xA9 — split across two chunks.
         service.Raise(s => s.OutputReceived += null, new byte[] { 0xC3 });
-        Assert.Equal(string.Empty, vm.OutputText); // incomplete sequence, nothing rendered yet
+        Assert.Null(vm.ScreenSnapshot); // incomplete sequence; no snapshot yet
 
         service.Raise(s => s.OutputReceived += null, new byte[] { 0xA9 });
-        Assert.Equal("é", vm.OutputText);
+        Assert.Equal("\u00E9", GetScreenText(vm));
     }
 
     [Fact]
-    public void BufferTrimsWhenFull()
+    public void OutputReceived_DecodesUtf8AcrossChunkBoundaries_SnapshotUpdatedAfterComplete()
     {
         var service = new Mock<ITerminalService>();
-        var vm = CreateViewModel(service, maxBufferChars: 10);
+        var vm = CreateViewModel(service);
 
-        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("0123456789ABCDE"));
+        // '\u00E9' encodes to UTF-8 bytes 0xC3 0xA9
+        service.Raise(s => s.OutputReceived += null, new byte[] { 0xC3 });
+        Assert.Null(vm.ScreenSnapshot);
 
-        Assert.Equal(10, vm.OutputText.Length);
-        Assert.Equal("56789ABCDE", vm.OutputText); // oldest 5 chars trimmed from the front
+        service.Raise(s => s.OutputReceived += null, new byte[] { 0xA9 });
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal("\u00E9", GetScreenText(vm));
     }
 
     [Fact]
-    public void ClearCommand_EmptiesBuffer()
+    public void ClearCommand_ClearsScreen()
     {
         var service = new Mock<ITerminalService>();
         var vm = CreateViewModel(service);
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello"));
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Contains("hello", GetScreenText(vm));
 
         vm.ClearCommand.Execute().Subscribe();
 
-        Assert.Equal(string.Empty, vm.OutputText);
+        // Screen is cleared; all cells are spaces
+        Assert.Equal(80, vm.ScreenSnapshot!.Columns);
+        Assert.Equal(24, vm.ScreenSnapshot.Rows);
+        Assert.All(vm.ScreenSnapshot.Cells, cell => Assert.Equal(' ', cell.Char));
     }
 
     [Fact]
@@ -87,7 +99,7 @@ public class TerminalViewModelTests
         service.Raise(s => s.ProcessExited += null);
 
         Assert.False(vm.IsRunning);
-        Assert.Contains("[Process exited]", vm.OutputText);
+        Assert.Contains("[Process exited]", GetScreenText(vm));
     }
 
     [Fact]
@@ -129,7 +141,7 @@ public class TerminalViewModelTests
         // Events raised after disposal must not mutate the buffer.
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("late"));
 
-        Assert.Equal(string.Empty, vm.OutputText);
+        Assert.Null(vm.ScreenSnapshot);
         service.Verify(s => s.Dispose(), Times.Once);
     }
 
@@ -193,14 +205,11 @@ public class TerminalViewModelTests
         service.SetupGet(s => s.IsRunning).Returns(true);
         var vm = CreateViewModel(service);
 
-        // Panel computes a size before the shell is alive — service would
-        // silently ignore it, but the ViewModel must remember it.
         vm.Resize(120, 30);
         service.Verify(s => s.Resize(120, 30), Times.Once);
 
         await vm.EnsureStartedAsync();
 
-        // After startup the pending size must be reapplied.
         service.Verify(s => s.Resize(120, 30), Times.Exactly(2));
     }
 
@@ -293,7 +302,6 @@ public class TerminalViewModelTests
 
         await vm.RestartAsync();
 
-        // StartAsync called twice total: initial start + restart.
         service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2));
         Assert.Equal(TerminalState.Running, vm.State);
@@ -309,7 +317,7 @@ public class TerminalViewModelTests
         var vm = CreateViewModel(service);
 
         await vm.EnsureStartedAsync();
-        await vm.RestartAsync(); // still running — must not restart
+        await vm.RestartAsync();
 
         service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -327,13 +335,13 @@ public class TerminalViewModelTests
         bool canExecute = true;
         using var sub = vm.RestartCommand.CanExecute.Subscribe(v => canExecute = v);
 
-        Assert.True(canExecute); // not started yet → enabled
+        Assert.True(canExecute);
 
         await vm.EnsureStartedAsync();
-        Assert.False(canExecute); // running → disabled
+        Assert.False(canExecute);
 
         service.Raise(s => s.ProcessExited += null);
-        Assert.True(canExecute); // exited → enabled again
+        Assert.True(canExecute);
     }
 
     [Fact]
@@ -349,11 +357,82 @@ public class TerminalViewModelTests
         service.Raise(s => s.ProcessExited += null);
         await vm.RestartAsync();
 
-        // A single output event after restart must append exactly once. If the
-        // VM had re-subscribed on restart, the text would appear twice.
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("X"));
 
-        int occurrences = vm.OutputText.Split('X').Length - 1;
+        // Text should appear exactly once in the screen
+        int occurrences = GetScreenText(vm).Count(c => c == 'X');
         Assert.Equal(1, occurrences);
+    }
+
+    // --- M4: pipe-lined rendering ---
+
+    [Fact]
+    public void Append_ParsesAnsiEscapeSequence()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Feed "\x1B[31mred\x1B[0m" which should set red then write "red" then reset
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[31mred\x1B[0m"));
+
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal("red", vm.ScreenSnapshot!.Lines[0].TrimEnd());
+        // First cell 'r' should have red foreground (color index 1)
+        Assert.Equal(1, vm.ScreenSnapshot.Cells[0].Foreground);
+        // After reset, any subsequent writes should have default color
+    }
+
+    [Fact]
+    public void Append_ParsesClearScreen()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello"));
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Contains("hello", GetScreenText(vm));
+
+        // "\x1B[2J" clears the entire display
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2J"));
+        Assert.All(vm.ScreenSnapshot!.Cells, cell => Assert.Equal(' ', cell.Char));
+    }
+
+    [Fact]
+    public void CursorPosition_UpdatesAfterWrite()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("AB"));
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal(2, vm.CursorCol);
+        Assert.Equal(0, vm.CursorRow);
+    }
+
+    [Fact]
+    public async Task CursorVisible_TrueWhenRunning()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        Assert.False(vm.CursorVisible); // not started yet
+
+        await vm.EnsureStartedAsync();
+        Assert.True(vm.CursorVisible);
+    }
+
+    [Fact]
+    public void Resize_UpdatesScreenBuffer()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(50, 10);
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal(50, vm.ScreenSnapshot!.Columns);
+        Assert.Equal(10, vm.ScreenSnapshot.Rows);
     }
 }

@@ -6,28 +6,17 @@ Track code quality issues found during Phase 3.6 review.
 
 ## Status
 
-Phase 3.6 is **in progress**. M1 was implemented and accepted after the
-2026-06-30 parser follow-up pass. M2 (screen-buffer model, 53 tests) was
-implemented and accepted on 2026-06-30. M3–M5 remain open in
-`IMPLEMENTATION_PLAN.md`. The current user-visible terminal still uses the
-Phase 3.5 `TerminalOutputBuffer` (TextBox-backed) because the M4 wiring work
-has not started yet.
-
-Planning audit passed after review feedback was incorporated. Entry gates were
-run serially:
+Phase 3.6 is **in progress**. M1–M4 are complete. M5 (documentation and
+cleanup) is the final milestone.
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 288 passed, 0 failed
-
-M1 code audit completed on **2026-06-30**. The follow-up parser pass resolved
-all seven audit findings on the same date. Focused regression coverage now
-includes the repaired cases (plus M1-08 follow-up):
-`dotnet test Zaide.slnx --no-build --filter AnsiParserTests` → 27 passed,
-0 failed.
+- `dotnet test Zaide.slnx --no-build` — 308 passed, 0 failed
+- `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` have been
+  removed (superseded by AnsiParser + TerminalScreen).
 
 ## Open Issues
 
-_(None. M1 audit items were resolved on 2026-06-30.)_
+_(None. All known gaps from M3 were addressed in M4.)_
 
 ## Resolved Issues
 

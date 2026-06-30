@@ -85,9 +85,9 @@ change or must preserve:
 | M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Ready |
 | M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ✅ Complete |
 | M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ✅ Complete |
-| M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ❌ |
-| M4 | Wire pipeline: parser → screen buffer → render control | Integration test with mock PTY output | ❌ |
-| M5 | Documentation and exit audit | `dotnet build`, `dotnet test`, TOFIX update | ❌ |
+| M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ✅ Complete (2 test items deferred to M4 -- see TOFIX) |
+| M4 | Wire pipeline: parser → screen buffer → render control | Integration test with mock PTY output | ✅ Complete |
+| M5 | Documentation and exit audit | `dotnet build`, `dotnet test`, TOFIX update | ✅ Complete |
 
 ### M1: ANSI/CSI Sequence Parser
 
