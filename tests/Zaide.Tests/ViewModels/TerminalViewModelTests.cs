@@ -68,7 +68,28 @@ public class TerminalViewModelTests
     }
 
     [Fact]
-    public void ClearCommand_ClearsScreen()
+    public async Task ClearCommand_SendsCtrlLToRunningTerminal()
+    {
+        var service = new Mock<ITerminalService>();
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        await vm.ClearCommand.Execute();
+
+        service.Verify(
+            s => s.WriteAsync(
+                It.Is<byte[]>(data => data.Length == 1 && data[0] == 0x0C),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearCommand_ClearsScreen_WhenTerminalIsNotRunning()
     {
         var service = new Mock<ITerminalService>();
         var vm = CreateViewModel(service);
@@ -76,7 +97,7 @@ public class TerminalViewModelTests
         Assert.NotNull(vm.ScreenSnapshot);
         Assert.Contains("hello", GetScreenText(vm));
 
-        vm.ClearCommand.Execute().Subscribe();
+        await vm.ClearCommand.Execute();
 
         // Screen is cleared; all cells are spaces
         Assert.Equal(80, vm.ScreenSnapshot!.Columns);
@@ -85,7 +106,7 @@ public class TerminalViewModelTests
     }
 
     [Fact]
-    public void ClearCommand_ResetsSgrAttributes()
+    public async Task ClearCommand_ResetsSgrAttributes_WhenTerminalIsNotRunning()
     {
         var service = new Mock<ITerminalService>();
         var vm = CreateViewModel(service);
@@ -94,7 +115,7 @@ public class TerminalViewModelTests
         service.Raise(s => s.OutputReceived += null,
             Encoding.UTF8.GetBytes("\x1B[1;31mred\x1B[0m"));
 
-        vm.ClearCommand.Execute().Subscribe();
+        await vm.ClearCommand.Execute();
 
         // After clear, subsequent output should have default attributes
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("X"));

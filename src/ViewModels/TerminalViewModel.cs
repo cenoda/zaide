@@ -23,6 +23,8 @@ namespace Zaide.ViewModels;
 /// </summary>
 public class TerminalViewModel : ReactiveObject, IDisposable
 {
+    private static readonly byte[] ClearInput = new byte[] { 0x0C };
+
     private readonly ITerminalService _service;
     private readonly Action<Action> _uiPost;
     private readonly Decoder _decoder = Encoding.UTF8.GetDecoder();
@@ -122,7 +124,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _ => string.Empty
     };
 
-    /// <summary>Clears the screen buffer.</summary>
+    /// <summary>Clears the terminal surface.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
 
     /// <summary>
@@ -146,7 +148,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _service = terminalService;
         _uiPost = uiPost;
 
-        ClearCommand = ReactiveCommand.Create(Clear);
+        ClearCommand = ReactiveCommand.CreateFromTask(ClearAsync);
 
         // Restart is only meaningful once the shell is not running.
         RestartCommand = ReactiveCommand.CreateFromTask(
@@ -391,8 +393,14 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         CursorCol = _screen.CursorCol;
     }
 
-    private void Clear()
+    private async Task ClearAsync()
     {
+        if (IsRunning)
+        {
+            await _service.WriteAsync(ClearInput);
+            return;
+        }
+
         _screen.EraseDisplay(2);
         _screen.CursorPosition(1, 1);
         _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
