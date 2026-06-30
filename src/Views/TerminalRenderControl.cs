@@ -284,15 +284,16 @@ public class TerminalRenderControl : Control
         for (int row = first.Row; row <= last.Row; row++)
         {
             string line = GetAbsoluteLine(snapshot, row);
+            int lineLength = GetSelectableLineLength(line);
             int startCol = row == first.Row ? first.Col : 0;
-            int endCol = row == last.Row ? last.Col : snapshot.Columns - 1;
+            int endCol = row == last.Row ? last.Col : lineLength - 1;
 
-            if (startCol <= endCol && startCol < line.Length)
+            if (lineLength > 0 && startCol <= endCol && startCol < lineLength)
             {
-                int safeEnd = Math.Min(endCol, line.Length - 1);
+                int safeEnd = Math.Min(endCol, lineLength - 1);
                 if (safeEnd >= startCol)
                 {
-                    builder.Append(line.Substring(startCol, safeEnd - startCol + 1).TrimEnd());
+                    builder.Append(line.Substring(startCol, safeEnd - startCol + 1));
                 }
             }
 
@@ -430,8 +431,16 @@ public class TerminalRenderControl : Control
         }
 
         int row = Math.Clamp((int)(point.Y / LineHeight), 0, snapshot.Rows - 1);
-        int col = Math.Clamp((int)(point.X / CellWidth), 0, snapshot.Columns - 1);
-        cell = (GetViewportTop(snapshot) + row, col);
+        int absoluteRow = GetViewportTop(snapshot) + row;
+        string line = GetAbsoluteLine(snapshot, absoluteRow);
+        int lineLength = GetSelectableLineLength(line);
+        if (lineLength == 0)
+        {
+            return false;
+        }
+
+        int col = Math.Clamp((int)(point.X / CellWidth), 0, lineLength - 1);
+        cell = (absoluteRow, col);
         return true;
     }
 
@@ -456,20 +465,21 @@ public class TerminalRenderControl : Control
 
         if (first.Row == last.Row)
         {
-            return col >= first.Col && col <= last.Col;
+            return col >= first.Col && col <= Math.Min(last.Col, GetSelectableLineLength(GetAbsoluteLine(Snapshot!, row)) - 1);
         }
 
         if (row == first.Row)
         {
-            return col >= first.Col;
+            int lineLength = GetSelectableLineLength(GetAbsoluteLine(Snapshot!, row));
+            return lineLength > 0 && col >= first.Col && col < lineLength;
         }
 
         if (row == last.Row)
         {
-            return col <= last.Col;
+            return col <= Math.Min(last.Col, GetSelectableLineLength(GetAbsoluteLine(Snapshot!, row)) - 1);
         }
 
-        return true;
+        return col < GetSelectableLineLength(GetAbsoluteLine(Snapshot!, row));
     }
 
     private bool TryGetSelectionSpanForRow(int row, int columns, out int startCol, out int endCol)
@@ -489,8 +499,15 @@ public class TerminalRenderControl : Control
             return false;
         }
 
+        string line = GetAbsoluteLine(Snapshot!, row);
+        int lineLength = GetSelectableLineLength(line);
+        if (lineLength == 0)
+        {
+            return false;
+        }
+
         startCol = row == first.Row ? first.Col : 0;
-        endCol = row == last.Row ? last.Col : columns - 1;
+        endCol = row == last.Row ? Math.Min(last.Col, lineLength - 1) : lineLength - 1;
         return startCol <= endCol;
     }
 
@@ -532,6 +549,8 @@ public class TerminalRenderControl : Control
 
         return snapshot.Lines[absoluteRow - snapshot.ScrollbackLines.Count];
     }
+
+    private static int GetSelectableLineLength(string line) => line.TrimEnd().Length;
 
     private void _renderSelectionLiveBottomState()
     {

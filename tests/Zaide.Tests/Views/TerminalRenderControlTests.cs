@@ -131,4 +131,26 @@ public class TerminalRenderControlTests
 
         Assert.Equal("ef\ngh", selected);
     }
+
+    [Fact]
+    public void BuildSelectedText_IgnoresTrailingPaddingWithinRow()
+    {
+        var snapshot = new TerminalSnapshot(
+            6,
+            1,
+            new[] { "abc   " },
+            new[]
+            {
+                new TerminalCell('a', -1, -1, false, false),
+                new TerminalCell('b', -1, -1, false, false),
+                new TerminalCell('c', -1, -1, false, false),
+                new TerminalCell(' ', -1, -1, false, false),
+                new TerminalCell(' ', -1, -1, false, false),
+                new TerminalCell(' ', -1, -1, false, false),
+            });
+
+        string selected = TerminalRenderControl.BuildSelectedText(snapshot, (0, 0), (0, 5));
+
+        Assert.Equal("abc", selected);
+    }
 }
