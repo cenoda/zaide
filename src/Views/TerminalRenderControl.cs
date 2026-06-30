@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -99,7 +100,6 @@ public class TerminalRenderControl : Control
         Color.FromRgb(255, 255, 255), // 15 Bright White
     };
 
-    private static readonly IBrush DefaultBackground = new SolidColorBrush(AnsiColors[0]);
     private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
     private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
 
@@ -133,9 +133,12 @@ public class TerminalRenderControl : Control
 
     public override void Render(DrawingContext context)
     {
+        Color defaultBackground = GetThemeColor("DeepBaseColor", AnsiColors[0]);
+        Color defaultForeground = GetThemeColor("TextActiveColor", AnsiColors[7]);
+
         // Always clear the full control bounds first to avoid stale pixels
         // in the right/bottom gutter after resize.
-        context.FillRectangle(DefaultBackground, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        context.FillRectangle(new SolidColorBrush(defaultBackground), new Rect(0, 0, Bounds.Width, Bounds.Height));
 
         var snapshot = Snapshot;
         if (snapshot is null)
@@ -161,9 +164,9 @@ public class TerminalRenderControl : Control
                 var rect = new Rect(x, y, cw, lh);
 
                 Color bg = cell.Background >= 0 && cell.Background < 16
-                    ? AnsiColors[cell.Background] : AnsiColors[0];
+                    ? AnsiColors[cell.Background] : defaultBackground;
                 Color fg = cell.Foreground >= 0 && cell.Foreground < 16
-                    ? AnsiColors[cell.Foreground] : AnsiColors[7];
+                    ? AnsiColors[cell.Foreground] : defaultForeground;
 
                 if (cell.Inverse)
                     (fg, bg) = (bg, fg);
@@ -206,7 +209,7 @@ public class TerminalRenderControl : Control
                     FlowDirection.LeftToRight,
                     _typeface,
                     _fontSize,
-                    new SolidColorBrush(AnsiColors[0]));
+                    new SolidColorBrush(defaultBackground));
                 context.DrawText(cursorFt, new Point(cc * cw, cr * lh));
             }
         }
@@ -226,6 +229,24 @@ public class TerminalRenderControl : Control
 
         CellWidth = Math.Ceiling(ft.Width);
         LineHeight = Math.Ceiling(ft.Height);
+    }
+
+    private static Color GetThemeColor(string resourceKey, Color fallback)
+    {
+        if (Application.Current?.Resources.TryGetResource(resourceKey, ThemeVariant.Default, out object? value) == true)
+        {
+            if (value is Color color)
+            {
+                return color;
+            }
+
+            if (value is ISolidColorBrush brush)
+            {
+                return brush.Color;
+            }
+        }
+
+        return fallback;
     }
 
 }
