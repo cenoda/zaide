@@ -8,6 +8,16 @@ has been incorporated, and the entry gates passed serially:
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
 - `dotnet test Zaide.slnx --no-build` — 208 passed, 0 failed
 
+Preparation was re-verified against live code on **2026-06-30**. The current
+terminal surface still matches the expected pre-renderer baseline:
+
+- `src/Views/TerminalPanel.cs` still renders terminal output with a read-only
+  `TextBox`
+- `src/ViewModels/TerminalViewModel.cs` still exposes `OutputText` backed by
+  `TerminalOutputBuffer`
+- `src/Program.cs` still registers `ITerminalService` as
+  `LinuxTerminalService` and `TerminalViewModel` as a singleton
+
 M1–M5 remain unchecked below because implementation has not started yet.
 
 ## Pre-Implementation Verification
@@ -19,6 +29,8 @@ M1–M5 remain unchecked below because implementation has not started yet.
 - [x] Verify current output buffer: `src/ViewModels/TerminalOutputBuffer.cs`
 - [x] Verify current ViewModel: `src/ViewModels/TerminalViewModel.cs`
 - [x] Verify current tests: `TerminalOutputBufferTests`, `TerminalKeyMapperTests`, `TerminalGeometryTests`
+- [x] Verify composition root: `src/Program.cs`
+- [x] Verify additional consumers of `TerminalViewModel.OutputText`: `src/MainWindow.axaml.cs`, `tests/Zaide.Tests/MainWindowViewModelTests.cs`
 - [x] Confirm entry gate: `dotnet build`
 - [x] Confirm entry gate: `dotnet test`
 - [x] Phase 3.5 manual Linux smoke test — run by user (informal pass; Phase 3.5 exit checklist not yet updated)
@@ -33,6 +45,35 @@ M1–M5 remain unchecked below because implementation has not started yet.
 - Do not mix renderer work with terminal tabs, splits, or settings UI
 - Keep the supported escape-sequence set intentionally small and testable
 - The `TerminalOutputBuffer` carryover (raw text with `\r`/`\b`/`\n`) is replaced; it is not extended or refactored
+
+## Verified Live Touch Points
+
+These are the concrete code seams verified on 2026-06-30 that Phase 3.6 will
+change or must preserve:
+
+- `src/Views/TerminalPanel.cs`
+  - owns the toolbar, focus behavior, clipboard handlers, key forwarding, and
+    resize forwarding
+  - currently measures glyph width locally and binds `ViewModel.OutputText`
+    into `_outputTextBox.Text`
+- `src/ViewModels/TerminalViewModel.cs`
+  - owns UTF-8 decoder continuity across output chunks
+  - owns terminal lifecycle (`EnsureStartedAsync`, `RestartAsync`, process-exit
+    handling) that should remain intact during renderer migration
+  - currently raises property changes for `OutputText`
+- `src/ViewModels/TerminalOutputBuffer.cs`
+  - pure raw-text buffer that is intentionally superseded in this phase rather
+    than evolved
+- `src/Views/TerminalGeometry.cs`
+  - already provides the reusable row/column math and should stay as the pure
+    geometry seam for resize tests
+- `src/Services/ITerminalService.cs` and `src/Services/LinuxTerminalService.cs`
+  - PTY lifecycle and byte-stream contracts remain unchanged in Phase 3.6; the
+    renderer work sits above this seam
+- Tests that will require migration:
+  - `tests/Zaide.Tests/ViewModels/TerminalOutputBufferTests.cs`
+  - `tests/Zaide.Tests/ViewModels/TerminalViewModelTests.cs`
+  - `tests/Zaide.Tests/MainWindowViewModelTests.cs`
 
 ## Milestones (Incremental)
 
