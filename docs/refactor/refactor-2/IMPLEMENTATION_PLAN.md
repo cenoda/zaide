@@ -158,7 +158,45 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
   }
   ```
 
-- **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state.
+- **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state. Add explicit tests for the unexpected-exception contract:
+  ```csharp
+  [Fact]
+  public async Task SaveAsync_UnexpectedException_Rethrows()
+  {
+      var fileService = new Mock<IFileService>();
+      fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
+                 .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
+      var vm = new EditorViewModel(fileService.Object, /* other deps */);
+      vm.Document = new Document("/test.cs", "content");
+      vm.Document.MarkClean();
+
+      await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SaveCommand.Execute());
+  }
+
+  [Fact]
+  public async Task SaveAsync_UnexpectedException_RecordsError()
+  {
+      var fileService = new Mock<IFileService>();
+      fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
+                 .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
+      var vm = new EditorViewModel(fileService.Object, /* other deps */);
+      vm.Document = new Document("/test.cs", "content");
+      vm.Document.MarkClean();
+
+      try
+      {
+          await vm.SaveCommand.Execute();
+      }
+      catch (InvalidOperationException)
+      {
+          // Expected — verify error was recorded before rethrow
+      }
+
+      Assert.Equal("Unexpected failure", vm.Document.LastSaveError);
+      Assert.True(vm.Document.IsDirty);
+  }
+  ```
+  These tests verify that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -255,6 +293,36 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 
 **Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
 
+**Watcher lifetime rule (critical):** The returned observable must capture a **local** `FileSystemWatcher` instance, not the field `_watcher`. Currently the observables close over `_watcher` (a field), and `StopWatching()` disposes and nulls it. After M3, `StartWatching()` creates a new watcher, builds the observable from it, and returns the observable. The field `_watcher` is still needed for `StopWatching()` to dispose, but the observable's event subscriptions must reference the same instance. Implementation pattern:
+```csharp
+public IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false)
+{
+    StopWatching();
+    _includeHidden = includeHidden;
+    var watcher = new FileSystemWatcher(path) { ... };
+    var observable = Observable.FromEventPattern<...>(h => watcher.Created += h, ...)
+        .Merge(...)
+        .Select(...)
+        .Where(...)
+        .Throttle(...);
+    watcher.EnableRaisingEvents = true;
+    _watcher = watcher;  // store for StopWatching to dispose
+    return observable;
+}
+```
+This ensures the observable's event handlers reference the same watcher instance that `StopWatching()` will dispose.
+
+**VM restart path (subscription order):** The VM must dispose the subscription **before** calling `StopWatching()`. The current code already does this correctly (line 101: `_watcherSubscription?.Dispose()` before line 102: `_fileTreeService.StopWatching()`). After M3, the pattern becomes:
+```csharp
+_watcherSubscription?.Dispose();
+_fileTreeService.StopWatching();
+// ... update tree ...
+_watcherSubscription = _fileTreeService.StartWatching(path)
+    .ObserveOn(_scheduler)
+    .Subscribe(HandleFileChange);
+```
+This order prevents the subscription from receiving events from a stale watcher during the restart window.
+
 **FileTreeService changes:**
 - Implement `IFileTreeService`
 - Change `StartWatching` to return `IObservable<FileChangeEvent>` (currently returns void, sets `FileChanges` property)
@@ -265,6 +333,7 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 - Change dependency from `FileTreeService` to `IFileTreeService`
 - Replace `_fileTreeService.FileChanges!.Subscribe(...)` with subscribing to the returned observable from `_fileTreeService.StartWatching(...)`
 - Remove all `FileChanges!` null-forgiving operators
+- Keep existing subscription disposal order: dispose before `StopWatching()`
 
 **M3 exit checks (API contract change):**
 - [ ] No `FileChanges!` null-forgiving operator remains in `FileTreeViewModel.cs`
