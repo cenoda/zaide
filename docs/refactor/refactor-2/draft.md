@@ -15,10 +15,10 @@ split.
 
 ## Current Decision
 
-Phase 3 is complete. Phase 4 (agent panels, Townhall, Router) is next.
-The boundary cleanup in `IMPLEMENTATION_PLAN.md` is a preparation pass that
-should be evaluated before starting Phase 4, since Phase 4 work is likely to
-increase coupling pressure.
+Phase 3.6 is complete. Terminal polish (Phase 3.7–3.9) remains open before
+Phase 4 (agent panels, Townhall, Router). The boundary cleanup in
+`IMPLEMENTATION_PLAN.md` is a preparation pass that should be evaluated before
+starting Phase 4, since Phase 4 work is likely to increase coupling pressure.
 
 ## Why Not A Full Split Now
 

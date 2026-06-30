@@ -110,14 +110,14 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
           Document.MarkClean();
           return true;
       }
-      catch (Exception ex)
+      catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
       {
           Document.RecordSaveError(ex.Message);
           return false;
       }
   }
   ```
-- **Important:** Catch all exceptions (not just IOException/UnauthorizedAccessException) to match current `Document.SaveAsync` behavior which rethrows any exception after recording the error.
+- **Important:** Only catch `IOException` and `UnauthorizedAccessException` — these are expected save failures that should return `false`. Unexpected exceptions (e.g., `NullReferenceException`, `InvalidOperationException`) must propagate uncaught, matching the current contract where `Document.SaveAsync` rethrows after recording the error. The VM's `catch` filter preserves this behavior while removing the service dependency from the model.
 - This truly removes the service dependency from the model — the VM owns the use case.
 
 **Call-site updates (required for M1 to compile):**
@@ -338,12 +338,13 @@ public static class SupportedFileTypes
         ".cs", ".json", ".md", ".txt", ".xml", ".axaml", ".csproj",
         ".sln", ".slnx", ".props", ".targets", ".config",
         ".yml", ".yaml", ".css", ".html", ".js", ".ts", ".fs", ".vb",
-        ".xaml", ".resx", ".razor", ".cshtml", ".svg"
+        ".xaml", ".resx", ".razor", ".cshtml", ".svg",
+        ".editorconfig", ".gitignore", ".gitattributes"
     };
 
-    // Bare dotfiles (e.g., .editorconfig, .gitignore, .gitattributes) are
-    // supported by name, not by extension. Path.GetExtension returns ".gitignore"
-    // for these, so they are covered by the extension set above.
+    // Dotfiles (e.g., .editorconfig, .gitignore, .gitattributes) are
+    // supported by extension — Path.GetExtension returns ".gitignore" for these,
+    // so they are covered by the extension set above.
     // Pure basename-only files (e.g., "Makefile", "Dockerfile") are NOT supported
     // by this policy — they return empty extension and IsTextFile returns false.
     public static bool IsTextFile(string path)
@@ -365,6 +366,8 @@ public static class SupportedFileTypes
   - `IsTextFile_UnsupportedExtension_ReturnsFalse` (e.g., `.exe`, `.dll`)
   - `IsTextFile_NoExtension_ReturnsFalse`
   - `IsTextFile_CaseInsensitive` (e.g., `.CS` == `.cs`)
+  - `IsTextFile_Dotfile_ReturnsTrue` (e.g., `.editorconfig`, `.gitignore`, `.gitattributes`)
+  - `IsTextFile_BasenameOnly_ReturnsFalse` (e.g., `Makefile`, `Dockerfile`)
 
 ### M7: Stabilize + Regression
 
