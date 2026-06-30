@@ -25,10 +25,14 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 **This refactor's scope (boundary cleanup only):**
 1. Remove service dependencies from Model types
-2. Remove UI framework dependencies from Model types
-3. Move pure logic out of ViewModels into appropriate homes
-4. Extract interfaces for concrete service dependencies in ViewModels
-5. Reduce MainWindow's composition burden
+2. Remove UI framework dependencies from Model types (replace ReactiveUI with plain INotifyPropertyChanged)
+3. Extract interfaces for concrete service dependencies in ViewModels
+4. Reduce MainWindow's composition burden (extract file-type policy)
+5. Inject dependencies that currently reference Avalonia (IScheduler)
+
+**Deferred to future refactors:**
+- Moving terminal pure logic to `Terminal/` folder (requires namespace change — see M2)
+- Moving tree manipulation logic out of VM (requires FileTreeNode domain/UI split — see M4)
 
 **Boundaries (NOT in scope):**
 - ❌ No actual multi-project split (that's a future refactor)
@@ -120,6 +124,27 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
   ```
 - This removes the ReactiveUI dependency from Models while preserving UI binding behavior.
 
+**New test expectation (M1):**
+- Add a test to `FileTreeViewModelTests` (or a new `FileTreeNodeTests`) that verifies `PropertyChanged` fires when `IsExpanded` changes:
+  ```csharp
+  [Fact]
+  public void IsExpanded_RaisesPropertyChanged()
+  {
+      var node = new FileTreeNode { Name = "test", IsDirectory = true };
+      var raised = false;
+      node.PropertyChanged += (_, e) =>
+      {
+          if (e.PropertyName == nameof(FileTreeNode.IsExpanded))
+              raised = true;
+      };
+  
+      node.IsExpanded = true;
+  
+      Assert.True(raised);
+  }
+  ```
+- This preserves the contract that the two-way binding with `TreeViewItem.IsExpanded` depends on.
+
 **Workspace.cs changes:**
 - Remove unused `using Zaide.Services;`
 
@@ -133,9 +158,12 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 ### M3: Extract IFileTreeService Interface
 
+**Note:** `IFileTreeQuery` returns `FileTreeNode`, which is still a UI-bound tree node (has `ObservableCollection`, `INotifyPropertyChanged`). This is **not** a pure domain interface — it's an interface over the current UI tree shape. A future refactor can introduce a pure file-entry model and map to UI nodes. For now, this split separates *enumeration* from *watching* at the infrastructure level, which is the boundary cleanup goal.
+
 **New interfaces:**
 ```csharp
-// Pure tree enumeration — no infrastructure
+// Tree enumeration — returns current UI tree shape (FileTreeNode)
+// Not "pure domain" — see note above. Future refactor can introduce pure file entries.
 public interface IFileTreeQuery
 {
     List<FileTreeNode> EnumerateDirectory(string path, bool includeHidden = false);
