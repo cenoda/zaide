@@ -32,6 +32,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private readonly TerminalScreen _screen = new();
 
     private bool _startRequested;
+    private bool _restartPending;
     private volatile bool _disposed;
     private int _currentColumns;
     private int _currentRows;
@@ -150,10 +151,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
         ClearCommand = ReactiveCommand.CreateFromTask(ClearAsync);
 
-        // Restart is only meaningful once the shell is not running.
-        RestartCommand = ReactiveCommand.CreateFromTask(
-            RestartAsync,
-            this.WhenAnyValue(x => x.IsRunning, running => !running));
+        RestartCommand = ReactiveCommand.CreateFromTask(RestartAsync);
 
         _service.OutputReceived += OnOutputReceived;
         _service.ProcessExited += OnProcessExited;
@@ -199,19 +197,26 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// Restarts the shell session after a clean exit (or a failed start).
     /// <see cref="EnsureStartedAsync"/> leaves <c>_startRequested</c> set, so
     /// this deliberately clears that gate and resets the cached viewport size
-    /// before starting again. The singleton service is reused, so event
-    /// subscriptions are not re-added and cannot duplicate. No-op if the
-    /// terminal is already running or the ViewModel is disposed.
+    /// before starting again. If the shell is currently running, the service is
+    /// asked to terminate it and a fresh shell is started as soon as the exit
+    /// event arrives. The singleton service is reused, so event subscriptions
+    /// are not re-added and cannot duplicate. No-op only when the ViewModel is
+    /// disposed.
     /// </summary>
     public async Task RestartAsync()
     {
-        if (_disposed || IsRunning) return;
+        if (_disposed) return;
+
+        if (IsRunning)
+        {
+            _restartPending = true;
+            await _service.StopAsync();
+            return;
+        }
 
         // Clear the one-shot start gate and the cached size so the next
         // resize (and the post-start reapply) reach the new PTY.
-        _startRequested = false;
-        _currentColumns = 0;
-        _currentRows = 0;
+        PrepareForRestart();
 
         await EnsureStartedAsync();
     }
@@ -287,6 +292,15 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             IsRunning = false;
             State = TerminalState.Exited;
             CursorVisible = false;
+
+            if (_restartPending)
+            {
+                _restartPending = false;
+                PrepareForRestart();
+                _ = EnsureStartedAsync();
+                return;
+            }
+
             Append("\r\n[Process exited]\r\n");
         });
     }
@@ -428,6 +442,13 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _screen.CursorPosition(1, 1);
         _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
         UpdateSnapshot();
+    }
+
+    private void PrepareForRestart()
+    {
+        _startRequested = false;
+        _currentColumns = 0;
+        _currentRows = 0;
     }
 
     public void Dispose()

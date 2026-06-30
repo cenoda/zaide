@@ -350,10 +350,12 @@ public class TerminalViewModelTests
     }
 
     [Fact]
-    public async Task Restart_IsNoOp_WhileRunning()
+    public async Task Restart_WhileRunning_StopsServiceAndRestartsAfterExit()
     {
         var service = new Mock<ITerminalService>();
         service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.Setup(s => s.StopAsync(It.IsAny<CancellationToken>()))
                .Returns(Task.CompletedTask);
         service.SetupGet(s => s.IsRunning).Returns(true);
         var vm = CreateViewModel(service);
@@ -361,12 +363,18 @@ public class TerminalViewModelTests
         await vm.EnsureStartedAsync();
         await vm.RestartAsync();
 
+        service.Verify(s => s.StopAsync(It.IsAny<CancellationToken>()), Times.Once);
+        service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        service.Raise(s => s.ProcessExited += null);
+
         service.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Exactly(2));
+        Assert.Equal(TerminalState.Running, vm.State);
     }
 
     [Fact]
-    public async Task RestartCommand_CanExecute_OnlyWhenNotRunning()
+    public async Task RestartCommand_CanExecute_WhileRunningAndAfterExit()
     {
         var service = new Mock<ITerminalService>();
         service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -380,7 +388,7 @@ public class TerminalViewModelTests
         Assert.True(canExecute);
 
         await vm.EnsureStartedAsync();
-        Assert.False(canExecute);
+        Assert.True(canExecute);
 
         service.Raise(s => s.ProcessExited += null);
         Assert.True(canExecute);

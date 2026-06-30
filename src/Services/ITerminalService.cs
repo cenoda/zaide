@@ -40,6 +40,12 @@ public interface ITerminalService : IDisposable
     Task WriteAsync(byte[] data, CancellationToken ct = default);
 
     /// <summary>
+    /// Terminates the current terminal session. Safe no-op if the terminal is
+    /// not running.
+    /// </summary>
+    Task StopAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Notifies the PTY that the viewport size has changed. Safe no-op if the
     /// terminal is not running.
     /// </summary>

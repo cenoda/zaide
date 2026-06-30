@@ -80,6 +80,22 @@ public class LinuxTerminalServiceTests
     }
 
     [Fact]
+    public async Task StopAsync_TerminatesRunningShell()
+    {
+        using var service = new LinuxTerminalService();
+        var exited = new AutoResetEvent(false);
+        service.ProcessExited += () => exited.Set();
+
+        await service.StartAsync();
+        Assert.True(service.IsRunning);
+
+        await service.StopAsync();
+
+        Assert.True(exited.WaitOne(TimeSpan.FromSeconds(5)), "running shell did not exit after StopAsync");
+        Assert.False(service.IsRunning);
+    }
+
+    [Fact]
     public async Task Restart_StartExitRestartExit_RaisesProcessExitedEachTime()
     {
         using var service = new LinuxTerminalService();

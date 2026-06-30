@@ -124,6 +124,35 @@ public sealed class LinuxTerminalService : ITerminalService
     }
 
     /// <inheritdoc/>
+    public Task StopAsync(CancellationToken ct = default)
+    {
+        if (!IsRunning || _pid <= 0) return Task.CompletedTask;
+        ct.ThrowIfCancellationRequested();
+
+        LinuxPtyInterop.kill(_pid, LinuxPtyInterop.SIGHUP);
+
+        if (_reader is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return Task.Run(() =>
+        {
+            if (_reader.Join(TimeSpan.FromSeconds(2)))
+            {
+                return;
+            }
+
+            if (_pid > 0)
+            {
+                LinuxPtyInterop.kill(_pid, LinuxPtyInterop.SIGKILL);
+            }
+
+            _reader.Join(TimeSpan.FromSeconds(2));
+        }, ct);
+    }
+
+    /// <inheritdoc/>
     public void Resize(int columns, int rows)
     {
         if (!IsRunning || _master < 0) return;
