@@ -18,7 +18,8 @@ terminal surface still matches the expected pre-renderer baseline:
 - `src/Program.cs` still registers `ITerminalService` as
   `LinuxTerminalService` and `TerminalViewModel` as a singleton
 
-M2–M5 remain unchecked below because only M1 has been implemented so far.
+M1 has been implemented but is not yet fully closed because the M1 code audit
+found unresolved issues captured in `TOFIX.md`. M2–M5 remain unchecked.
 
 ## Pre-Implementation Verification
 
@@ -80,7 +81,7 @@ change or must preserve:
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build and tests pass | `dotnet build`, `dotnet test` | ✅ Ready |
-| M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ✅ |
+| M1 | ANSI/CSI sequence parser (state machine) | Unit tests for known sequences | ◐ In review |
 | M2 | Screen-buffer model (2D cell grid with attributes) | Unit tests for write, scroll, clear, cursor moves | ❌ |
 | M3 | Custom terminal render control (Avalonia `DrawingContext`) | Unit tests for geometry; visual smoke test | ❌ |
 | M4 | Wire pipeline: parser → screen buffer → render control | Integration test with mock PTY output | ❌ |
