@@ -76,9 +76,9 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ⬜ Not started |
-| M1 | **Clean Models layer**: Remove `IFileService` from `Document.SaveAsync` (use event/callback pattern instead). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly — see M1 plan below). Remove unused `using` from `Workspace`. | `DocumentTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
+| M1 | **Clean Models layer**: Remove `IFileService` from `Document.SaveAsync` (use delegate pattern). Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Not started |
-| M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Split into pure enumeration (`IFileTreeQuery`) and watching (`IFileTreeWatcher`). ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
+| M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Not started |
 | M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests` pass | ⬜ Not started |
 | M6 | **Move file extension logic out of MainWindowViewModel**: Extract `SupportedExtensions` to a static `SupportedFileTypes` class in `Services/` (not `Models/` — this is editor policy, not domain data). MainWindowViewModel delegates to it. | `MainWindowViewModelTests` (if any) pass; manual: open file → opens in editor; open binary → shows status | ⬜ Not started |
@@ -94,6 +94,38 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 - Option B: Make `SaveAsync` raise an event that the VM handles
 - Option C: Keep `IFileService` but move it to a separate `DocumentSaver` class
 - **Decision:** Use Option A (delegate) — keeps Document simple, avoids new class
+
+**Call-site updates (required for M1 to compile):**
+
+- **EditorViewModel.cs** (line 132): Update `SaveAsync()` to pass the delegate instead of `_fileService`:
+  ```csharp
+  // Before:
+  await Document.SaveAsync(_fileService);
+  
+  // After:
+  await Document.SaveAsync(_fileService.WriteAllTextAsync);
+  ```
+  Alternatively, store the delegate in the constructor: `_saveFunc = fileService.WriteAllTextAsync;`
+
+- **Program.cs** (line 30-31): Update `EditorViewModel` registration to pass the delegate:
+  ```csharp
+  // Before:
+  services.AddTransient<EditorViewModel>(sp =>
+      new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
+  
+  // After (no change needed if EditorViewModel still takes IFileService):
+  // The delegate is created at call-site in EditorViewModel.SaveAsync
+  ```
+
+- **DocumentTests.cs** (lines 38-71): Update tests to use the delegate pattern:
+  ```csharp
+  // Before:
+  await document.SaveAsync(fileServiceMock.Object);
+  
+  // After:
+  await document.SaveAsync(fileServiceMock.Object.WriteAllTextAsync);
+  ```
+  Or refactor tests to verify the delegate is called correctly.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -192,6 +224,20 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 
 **FileTreeViewModel changes:**
 - Change dependency from `FileTreeService` to `IFileTreeService`
+
+**Program.cs (DI) changes (required for M3 to work):**
+- Register `IFileTreeService` in DI container:
+  ```csharp
+  services.AddSingleton<IFileTreeService, FileTreeService>();
+  ```
+- Without this, `FileTreeViewModel` constructor resolution will fail at startup.
+
+**File organization (per CONVENTIONS.md § one-class-per-file):**
+- Each interface goes in its own file:
+  - `src/Services/IFileTreeQuery.cs`
+  - `src/Services/IFileTreeWatcher.cs`
+  - `src/Services/IFileTreeService.cs`
+- `FileTreeService.cs` remains unchanged (already exists).
 
 ### M4: Tree Manipulation Logic — Stays in VM
 
