@@ -6,18 +6,19 @@ Track code quality issues found during Phase 3.6 review.
 
 ## Status
 
-Phase 3.6 is **ready for implementation** but has not been implemented yet.
-M1–M5 work items in `IMPLEMENTATION_PLAN.md` are all unchecked. The current
-terminal still uses the Phase 3.5 `TerminalOutputBuffer` (TextBox-backed).
+Phase 3.6 is **in progress**. M1 is implemented, while M2–M5 remain open in
+`IMPLEMENTATION_PLAN.md`. The current user-visible terminal still uses the
+Phase 3.5 `TerminalOutputBuffer` (TextBox-backed) because the M4 wiring work
+has not started yet.
 
 Planning audit passed after review feedback was incorporated. Entry gates were
 run serially:
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 208 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 223 passed, 0 failed
 
-This file currently has no real entries — it exists as the destination for
-issues discovered once implementation begins.
+This file currently has no real entries — M1 landed cleanly, and this remains
+the destination for issues discovered as M2–M5 proceed.
 
 ## Open Issues
 

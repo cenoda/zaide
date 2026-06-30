@@ -155,4 +155,102 @@ public class AnsiParserTests
                 Assert.Equal("b", print.Text);
             });
     }
+
+    [Fact]
+    public void Parse_Backspace_EmitsExecuteAction()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("a\bb");
+
+        Assert.Collection(
+            actions,
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("a", print.Text);
+            },
+            action =>
+            {
+                var execute = Assert.IsType<ExecuteAction>(action);
+                Assert.Equal(AnsiC0Control.Backspace, execute.Control);
+            },
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("b", print.Text);
+            });
+    }
+
+    [Fact]
+    public void Parse_Tab_EmitsExecuteAction()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("a\tb");
+
+        Assert.Collection(
+            actions,
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("a", print.Text);
+            },
+            action =>
+            {
+                var execute = Assert.IsType<ExecuteAction>(action);
+                Assert.Equal(AnsiC0Control.Tab, execute.Control);
+            },
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("b", print.Text);
+            });
+    }
+
+    [Fact]
+    public void Parse_Bell_EmitsExecuteAction()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("a\ab");
+
+        Assert.Collection(
+            actions,
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("a", print.Text);
+            },
+            action =>
+            {
+                var execute = Assert.IsType<ExecuteAction>(action);
+                Assert.Equal(AnsiC0Control.Bell, execute.Control);
+            },
+            action =>
+            {
+                var print = Assert.IsType<PrintAction>(action);
+                Assert.Equal("b", print.Text);
+            });
+    }
+
+    [Fact]
+    public void Parse_OscSequenceTerminatedByBell_IsDropped()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B]0;title\a");
+
+        Assert.Empty(actions);
+    }
+
+    [Fact]
+    public void Parse_DcsSequenceTerminatedByEscBackslash_IsDropped()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1BPdemo\x1B\\");
+
+        Assert.Empty(actions);
+    }
 }
