@@ -21,20 +21,23 @@ The old `TerminalOutputBuffer` (TextBox-backed) is removed. The terminal
 now renders through the full pipeline: PTY bytes → UTF-8 decoder → AnsiParser →
 TerminalScreen → TerminalSnapshot → TerminalRenderControl.
 
-## Pre-Implementation Verification
+## Pre-Implementation Baseline (Historical)
+
+The following items describe the Phase 3.5 codebase before this phase began.
+All have been verified and superseded during M1–M5:
 
 - [x] Read `docs/phases/phase-3.6/BRIEF.md`
 - [x] Read `docs/phases/phase-3.5/IMPLEMENTATION_PLAN.md` (predecessor)
 - [x] Read `docs/phases/phase-3.5/TOFIX.md` (deferred items)
-- [x] Verify current terminal panel: `src/Views/TerminalPanel.cs`
-- [x] Verify current output buffer: `src/ViewModels/TerminalOutputBuffer.cs`
-- [x] Verify current ViewModel: `src/ViewModels/TerminalViewModel.cs`
-- [x] Verify current tests: `TerminalOutputBufferTests`, `TerminalKeyMapperTests`, `TerminalGeometryTests`
-- [x] Verify composition root: `src/Program.cs`
-- [x] Verify additional consumers of `TerminalViewModel.OutputText`: `src/MainWindow.axaml.cs`, `tests/Zaide.Tests/MainWindowViewModelTests.cs`
-- [x] Confirm entry gate: `dotnet build`
-- [x] Confirm entry gate: `dotnet test`
-- [x] Phase 3.5 manual Linux smoke test — run by user (informal pass; Phase 3.5 exit checklist not yet updated)
+- [x] Verified baseline: `TerminalPanel` used TextBox + `OutputText` binding
+- [x] Verified baseline: `TerminalViewModel` exposed `OutputText` backed by
+      `TerminalOutputBuffer`
+- [x] Verified baseline: `TerminalOutputBufferTests` covered the old buffer
+- [x] Verified baseline: `TerminalKeyMapperTests` and `TerminalGeometryTests`
+      are unchanged
+- [x] Verified composition root: `src/Program.cs`
+- [x] Confirmed entry gate: `dotnet build`
+- [x] Confirmed entry gate: `dotnet test`
 
 ## Scope
 
@@ -47,10 +50,11 @@ TerminalScreen → TerminalSnapshot → TerminalRenderControl.
 - Keep the supported escape-sequence set intentionally small and testable
 - The `TerminalOutputBuffer` carryover (raw text with `\r`/`\b`/`\n`) is replaced; it is not extended or refactored
 
-## Verified Live Touch Points
+## Live Touch Points (Phase 3.5 Baseline — Now Superseded)
 
-These are the concrete code seams verified on 2026-06-30 that Phase 3.6 will
-change or must preserve:
+These are the concrete code seams verified on 2026-06-30 that Phase 3.6 would
+change. All have been migrated or deleted as part of M1–M5; listed here for
+historical audit traceability:
 
 - `src/Views/TerminalPanel.cs`
   - owns the toolbar, focus behavior, clipboard handlers, key forwarding, and

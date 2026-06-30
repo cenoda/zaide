@@ -395,6 +395,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     {
         _screen.EraseDisplay(2);
         _screen.CursorPosition(1, 1);
+        _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
         UpdateSnapshot();
     }
 

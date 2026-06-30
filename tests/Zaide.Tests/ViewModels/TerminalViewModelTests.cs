@@ -85,6 +85,27 @@ public class TerminalViewModelTests
     }
 
     [Fact]
+    public void ClearCommand_ResetsSgrAttributes()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Write styled text so SGR attributes are set (bold + red)
+        service.Raise(s => s.OutputReceived += null,
+            Encoding.UTF8.GetBytes("\x1B[1;31mred\x1B[0m"));
+
+        vm.ClearCommand.Execute().Subscribe();
+
+        // After clear, subsequent output should have default attributes
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("X"));
+        Assert.NotNull(vm.ScreenSnapshot);
+        // The 'X' cell at (0,0) should be default: fg=-1, bg=-1, bold=false
+        Assert.Equal(-1, vm.ScreenSnapshot.Cells[0].Foreground);
+        Assert.Equal(-1, vm.ScreenSnapshot.Cells[0].Background);
+        Assert.False(vm.ScreenSnapshot.Cells[0].Bold);
+    }
+
+    [Fact]
     public async Task ProcessExited_UpdatesIsRunning()
     {
         var service = new Mock<ITerminalService>();

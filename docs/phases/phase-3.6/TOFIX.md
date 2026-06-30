@@ -6,8 +6,9 @@ Track code quality issues found during Phase 3.6 review.
 
 ## Status
 
-Phase 3.6 is **in progress**. M1–M4 are complete. M5 (documentation and
-cleanup) is the final milestone.
+Phase 3.6 is **complete except manual smoke test**. M1–M5 are implemented and
+verified in code; the only outstanding item is the human-run Linux smoke
+checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
 - `dotnet test Zaide.slnx --no-build` — 292 passed, 0 failed
