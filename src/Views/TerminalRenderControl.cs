@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -103,13 +104,16 @@ public class TerminalRenderControl : Control
 
     private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
     private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
+    private static readonly TimeSpan CursorBlinkInterval = TimeSpan.FromMilliseconds(530);
 
     private bool _isFocused;
+    private bool _isCursorBlinkOn = true;
     private bool _followLiveBottom = true;
     private bool _isSelecting;
     private int _viewportTop;
     private (int Row, int Col)? _selectionAnchor;
     private (int Row, int Col)? _selectionEnd;
+    private readonly DispatcherTimer _cursorBlinkTimer;
 
     // ── ctor ──────────────────────────────────────────────────────
 
@@ -122,16 +126,37 @@ public class TerminalRenderControl : Control
         _typeface = new Typeface(DefaultFontFamily, FontStyle.Normal, FontWeight.Normal);
         MeasureCellMetrics();
 
+        _cursorBlinkTimer = new DispatcherTimer
+        {
+            Interval = CursorBlinkInterval
+        };
+        _cursorBlinkTimer.Tick += (_, _) =>
+        {
+            if (!_isFocused || !CursorVisible)
+            {
+                return;
+            }
+
+            _isCursorBlinkOn = !_isCursorBlinkOn;
+            InvalidateVisual();
+        };
+
         GotFocus += (_, _) =>
         {
             _isFocused = true;
+            ResetCursorBlink();
             InvalidateVisual();
         };
         LostFocus += (_, _) =>
         {
             _isFocused = false;
+            ResetCursorBlink();
             InvalidateVisual();
         };
+
+        this.GetObservable(CursorVisibleProperty).Subscribe(_ => ResetCursorBlink());
+        this.GetObservable(CursorRowProperty).Subscribe(_ => ResetCursorBlink());
+        this.GetObservable(CursorColProperty).Subscribe(_ => ResetCursorBlink());
 
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -217,7 +242,8 @@ public class TerminalRenderControl : Control
         }
 
         // Cursor — dimmed when unfocused, full brightness when focused.
-        if (CursorVisible)
+        bool shouldDrawCursor = CursorVisible && (!_isFocused || _isCursorBlinkOn);
+        if (shouldDrawCursor)
         {
             int absoluteCursorRow = snapshot.ScrollbackLines.Count + CursorRow;
             if (absoluteCursorRow < viewportTop || absoluteCursorRow >= viewportTop + rows)
@@ -555,6 +581,20 @@ public class TerminalRenderControl : Control
     private void _renderSelectionLiveBottomState()
     {
         _followLiveBottom = false;
+    }
+
+    private void ResetCursorBlink()
+    {
+        _isCursorBlinkOn = true;
+
+        if (_isFocused && CursorVisible)
+        {
+            _cursorBlinkTimer.Start();
+        }
+        else
+        {
+            _cursorBlinkTimer.Stop();
+        }
     }
 
 }
