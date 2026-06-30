@@ -10,13 +10,21 @@ Phase 3.6 is **in progress**. M1–M4 are complete. M5 (documentation and
 cleanup) is the final milestone.
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 308 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 292 passed, 0 failed
 - `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` have been
   removed (superseded by AnsiParser + TerminalScreen).
 
 ## Open Issues
 
-_(None. All known gaps from M3 were addressed in M4.)_
+- **GAP-1: Resize guard test (accepted deferral).** The plan's M3 test list
+  requires a test for zero-metric guard in `ForwardResize()`. The guard code
+  exists but cannot be unit-tested without Avalonia headless infrastructure.
+  ViewModel-level rejection of invalid dimensions is covered by
+  `Resize_IgnoresInvalidDimensions`. Accept as deferred to when Avalonia
+  headless is available.
+- **GAP-3: Manual smoke test (outstanding).** The 12-item Linux smoke checklist
+  and scrollback/selection regression checks have not been run. Requires human
+  running the application on Linux.
 
 ## Resolved Issues
 

@@ -3,7 +3,6 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Zaide.ViewModels;
 
@@ -127,13 +126,8 @@ public class TerminalRenderControl : Control
             InvalidateVisual();
         };
 
-        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
-        AddHandler(TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
+        // Key forwarding is wired by TerminalPanel.
     }
-
-    // Key forwarding is wired by TerminalPanel in M4.
-    private void OnKeyDown(object? sender, KeyEventArgs e) { }
-    private void OnTextInput(object? sender, TextInputEventArgs e) { }
 
     // ── render ────────────────────────────────────────────────────
 

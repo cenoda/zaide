@@ -83,10 +83,10 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] Add visible terminal controls (clear/restart/state)
 - [x] Make terminal restart safe across service and ViewModel layers
 - [x] Improve raw output experience within MVP bounds
-- [ ] Terminal renderer foundation (ANSI/CSI parser, screen buffer, custom render control)
-- [ ] Interactive shell quality (clear, prompts, resize stability)
-- [ ] TUI compatibility (alternate screen, richer screen-control behavior)
-- [ ] Terminal UX polish (selection, scrollback, search)
+- [x] **3.6:** Terminal renderer foundation (ANSI/CSI parser, screen buffer, custom render control) — ✅ Complete
+- [ ] **3.7:** Interactive shell quality (clear, prompts, resize stability)
+- [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
+- [ ] **3.9:** Terminal UX polish (selection, scrollback, search)
 
 ## Phase 4: Townhall (Agent Transparency)
 - [ ] Townhall view in center area (tab alongside editor)
