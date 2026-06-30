@@ -274,7 +274,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 public interface IFileTreeQuery
 {
     List<FileTreeNode> EnumerateDirectory(string path, bool includeHidden = false);
-    bool IsIgnored(string name);
+    bool ShouldSkip(string name, bool includeHidden);
 }
 
 // File system watching — infrastructure
@@ -293,6 +293,7 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
     void CreateDirectory(string path);
 }
 ```
+**Important:** `IFileTreeQuery` exposes `ShouldSkip(string name, bool includeHidden)` — not `IsIgnored(string name)`. The live `FileTreeService.IsIgnored` (line 100) always treats dotfiles as hidden regardless of the `includeHidden` flag, which is a bug-prone contract. The actual filtering in both enumeration (line 93) and watcher (line 139) uses `ShouldSkip` with an explicit `includeHidden` parameter. The interface must match the real filtering contract, not the legacy `IsIgnored` method. The `FileTreeService` implementation should keep `IsIgnored` as a private helper if needed, but the public interface only exposes `ShouldSkip`.
 
 **Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
 

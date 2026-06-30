@@ -5,7 +5,7 @@
 - [ ] Current build succeeds: `dotnet build`
 - [ ] All tests pass: `dotnet test`
 - [ ] Current layout matches `docs/architecture/OVERVIEW.md` (Tree | Editor | AgentArea + Bottom)
-- [ ] Previous refactor (refactor-2) completed — no open `TOFIX.md` items
+- [ ] **BLOCKED on refactor-2**: refactor-2 (`docs/refactor/refactor-2/`) must be fully implemented and all `TOFIX.md` items resolved before starting refactor-3. The layer boundary cleanup in refactor-2 is a prerequisite — starting refactor-3 without it risks coupling Phase 4 work to the current leaky boundaries.
 - [ ] No new NuGet packages needed for milestones M1–M4
 - [ ] Avalonia 12 tab control API verified (for Townhall tab switching)
 - [ ] ReactiveUI tab activation pattern verified (`ObservableCollection` + `ActiveTab` pattern)
