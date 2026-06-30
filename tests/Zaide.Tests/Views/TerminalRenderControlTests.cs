@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia;
 using Xunit;
 using Zaide.ViewModels;
@@ -7,60 +8,95 @@ namespace Zaide.Tests.Views;
 
 /// <summary>
 /// Contract tests for <see cref="TerminalRenderControl"/> — verify the control
-/// exposes the expected styled properties. No Avalonia headless is required;
-/// only static property metadata is checked.
+/// exposes the expected styled properties and registers them in the Avalonia
+/// property system. No Avalonia headless is required; only static property
+/// metadata is checked.
 /// </summary>
 public class TerminalRenderControlTests
 {
     [Fact]
     public void SnapshotProperty_IsRegistered()
     {
-        Assert.NotNull(TerminalRenderControl.SnapshotProperty);
+        var prop = TerminalRenderControl.SnapshotProperty;
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(TerminalSnapshot), prop.PropertyType);
+        Assert.Equal("Snapshot", prop.Name);
+        Assert.IsType<StyledProperty<TerminalSnapshot?>>(prop);
+    }
+
+    [Fact]
+    public void SnapshotProperty_HasCorrectOwnerType()
+    {
+        // OwnerType confirms the property was registered on this class, not
+        // inherited from a base type — a prerequisite for AffectsRender to work.
         Assert.Equal(
-            typeof(TerminalSnapshot),
-            TerminalRenderControl.SnapshotProperty.PropertyType);
-        Assert.Equal(
-            "Snapshot",
-            TerminalRenderControl.SnapshotProperty.Name);
+            typeof(TerminalRenderControl),
+            TerminalRenderControl.SnapshotProperty.OwnerType);
     }
 
     [Fact]
     public void CursorRowProperty_IsRegistered()
     {
-        Assert.NotNull(TerminalRenderControl.CursorRowProperty);
-        Assert.Equal(
-            typeof(int),
-            TerminalRenderControl.CursorRowProperty.PropertyType);
+        var prop = TerminalRenderControl.CursorRowProperty;
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(int), prop.PropertyType);
+        Assert.Equal("CursorRow", prop.Name);
+        Assert.Equal(typeof(TerminalRenderControl), prop.OwnerType);
     }
 
     [Fact]
     public void CursorColProperty_IsRegistered()
     {
-        Assert.NotNull(TerminalRenderControl.CursorColProperty);
-        Assert.Equal(
-            typeof(int),
-            TerminalRenderControl.CursorColProperty.PropertyType);
+        var prop = TerminalRenderControl.CursorColProperty;
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(int), prop.PropertyType);
+        Assert.Equal("CursorCol", prop.Name);
+        Assert.Equal(typeof(TerminalRenderControl), prop.OwnerType);
     }
 
     [Fact]
     public void CursorVisibleProperty_IsRegistered()
     {
-        Assert.NotNull(TerminalRenderControl.CursorVisibleProperty);
-        Assert.Equal(
-            typeof(bool),
-            TerminalRenderControl.CursorVisibleProperty.PropertyType);
+        var prop = TerminalRenderControl.CursorVisibleProperty;
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(bool), prop.PropertyType);
+        Assert.Equal("CursorVisible", prop.Name);
+        Assert.Equal(typeof(TerminalRenderControl), prop.OwnerType);
     }
 
     [Fact]
-    public void StaticConstructor_RegistersAffectsRenderForAllFourProperties()
+    public void AllFourProperties_HaveDistinctNames()
     {
-        // Accessing the type triggers the static constructor which calls
-        // AffectsRender<T> for each styled property. This test confirms
-        // the type initializer runs without exception, which it only does
-        // when all four AffectsRender calls succeed.
-        _ = TerminalRenderControl.SnapshotProperty;
-        _ = TerminalRenderControl.CursorRowProperty;
-        _ = TerminalRenderControl.CursorColProperty;
-        _ = TerminalRenderControl.CursorVisibleProperty;
+        var names = new[]
+        {
+            TerminalRenderControl.SnapshotProperty.Name,
+            TerminalRenderControl.CursorRowProperty.Name,
+            TerminalRenderControl.CursorColProperty.Name,
+            TerminalRenderControl.CursorVisibleProperty.Name,
+        };
+
+        Assert.Equal(4, names.Distinct().Count());
+    }
+
+    [Fact]
+    public void StaticConstructor_RegistersPropertiesInAvaloniaRegistry()
+    {
+        // Force the static constructor to run by touching static fields.
+        // If any AffectsRender call fails (e.g. because a property was
+        // mis-registered on the wrong type), the type initializer throws.
+        // Then verify the registry knows about each property by owner.
+        var registry = AvaloniaPropertyRegistry.Instance;
+
+        Assert.True(
+            registry.IsRegistered(typeof(TerminalRenderControl), TerminalRenderControl.SnapshotProperty));
+
+        Assert.True(
+            registry.IsRegistered(typeof(TerminalRenderControl), TerminalRenderControl.CursorRowProperty));
+
+        Assert.True(
+            registry.IsRegistered(typeof(TerminalRenderControl), TerminalRenderControl.CursorColProperty));
+
+        Assert.True(
+            registry.IsRegistered(typeof(TerminalRenderControl), TerminalRenderControl.CursorVisibleProperty));
     }
 }

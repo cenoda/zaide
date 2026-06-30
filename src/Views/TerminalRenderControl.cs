@@ -102,6 +102,9 @@ public class TerminalRenderControl : Control
 
     private static readonly IBrush DefaultBackground = new SolidColorBrush(AnsiColors[0]);
     private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
+    private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
+
+    private bool _isFocused;
 
     // ── ctor ──────────────────────────────────────────────────────
 
@@ -113,8 +116,16 @@ public class TerminalRenderControl : Control
         _typeface = new Typeface(DefaultFontFamily, FontStyle.Normal, FontWeight.Normal);
         MeasureCellMetrics();
 
-        GotFocus += (_, _) => CursorVisible = true;
-        LostFocus += (_, _) => CursorVisible = false;
+        GotFocus += (_, _) =>
+        {
+            _isFocused = true;
+            InvalidateVisual();
+        };
+        LostFocus += (_, _) =>
+        {
+            _isFocused = false;
+            InvalidateVisual();
+        };
 
         AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -128,12 +139,13 @@ public class TerminalRenderControl : Control
 
     public override void Render(DrawingContext context)
     {
+        // Always clear the full control bounds first to avoid stale pixels
+        // in the right/bottom gutter after resize.
+        context.FillRectangle(DefaultBackground, new Rect(0, 0, Bounds.Width, Bounds.Height));
+
         var snapshot = Snapshot;
         if (snapshot is null)
-        {
-            context.FillRectangle(DefaultBackground, new Rect(0, 0, Bounds.Width, Bounds.Height));
             return;
-        }
 
         int cols = snapshot.Columns;
         int rows = snapshot.Rows;
@@ -142,8 +154,6 @@ public class TerminalRenderControl : Control
         double lh = LineHeight;
 
         if (cw <= 0 || lh <= 0) return;
-
-        context.FillRectangle(DefaultBackground, new Rect(0, 0, cols * cw, rows * lh));
 
         int idx = 0;
         for (int row = 0; row < rows; row++)
@@ -182,13 +192,15 @@ public class TerminalRenderControl : Control
             }
         }
 
-        // Cursor
+        // Cursor — dimmed when unfocused, full brightness when focused.
         if (CursorVisible)
         {
             int cr = Math.Clamp(CursorRow, 0, rows - 1);
             int cc = Math.Clamp(CursorCol, 0, cols - 1);
             var crRect = new Rect(cc * cw, cr * lh, cw, lh);
-            context.FillRectangle(CursorBrush, crRect);
+
+            IBrush cursorBg = _isFocused ? CursorBrush : DimmedCursorBrush;
+            context.FillRectangle(cursorBg, crRect);
 
             int ci = cr * cols + cc;
             if (ci < cells.Count)
