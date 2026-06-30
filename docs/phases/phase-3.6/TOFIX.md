@@ -11,7 +11,7 @@ verified in code; the only outstanding item is the human-run Linux smoke
 checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
-- `dotnet test Zaide.slnx --no-build` — 298 passed, 0 failed
+- `dotnet test Zaide.slnx --no-build` — 300 passed, 0 failed
 - `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` have been
   removed (superseded by AnsiParser + TerminalScreen).
 
@@ -110,6 +110,25 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
   `src/Views/TerminalPanel.cs`. Tests:
   `TerminalScreenTests`, `TerminalViewModelTests`,
   `TerminalRenderControlTests`.
+- [x] **M4-04: Restart button is unusable during normal terminal operation** —
+  restart now behaves like a true session restart: if the shell is running, the
+  PTY session is stopped and a fresh shell is started automatically after the
+  exit signal; if the shell is already exited or errored, restart starts it as
+  before.
+  Code: `src/Services/ITerminalService.cs`,
+  `src/Services/LinuxTerminalService.cs`,
+  `src/ViewModels/TerminalViewModel.cs`. Tests:
+  `LinuxTerminalServiceTests`, `TerminalViewModelTests`.
+- [x] **M4-05: Selection captured padded terminal blanks instead of only text** —
+  selection bounds now clamp to each row's real text extent, so trailing empty
+  cells after line end are neither highlighted nor copied.
+  Code: `src/Views/TerminalRenderControl.cs`. Test:
+  `TerminalRenderControlTests`.
+- [x] **M4-06: Cursor blink missing from focused terminal** — the render control
+  now runs a lightweight UI-thread blink timer and resets the blink phase when
+  cursor visibility or position changes, so the focused terminal cursor pulses
+  again without involving PTY state.
+  Code: `src/Views/TerminalRenderControl.cs`.
 
 ## Deferred to Future Phases
 
@@ -122,7 +141,6 @@ real code.
 | 256-color SGR (38;5;n / 48;5;n) | Parser will recognise and ignore; extended palette deferred | Future terminal renderer phase |
 | Deep scrollback polish | Current renderer keeps bounded row scrollback and wheel navigation, but not a full history/search UX | Future terminal phase |
 | Selection polish | Basic click-drag selection exists, but richer IDE selection/search ergonomics remain future work | Future terminal phase |
-| Blinking cursor | Cosmetic; no visual impact on functionality | Future terminal phase |
 | Cursor hide/show (DECSET/DECRST) | Not in M1 supported sequence set | Phase 3.8 (TUI compatibility) |
 | Alternate screen (`\x1B[?1049h`) | Needed for vim/htop — explicitly out of scope | Phase 3.8 (TUI compatibility) |
 | OSC sequences (window title, etc.) | No user-facing need yet | Future terminal phase |
