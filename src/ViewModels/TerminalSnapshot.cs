@@ -23,21 +23,40 @@ public sealed class TerminalSnapshot
     public IReadOnlyList<string> Lines { get; }
 
     /// <summary>
+    /// Retained text rows above the visible viewport, oldest first. Used for
+    /// scrollback rendering and selection.
+    /// </summary>
+    public IReadOnlyList<string> ScrollbackLines { get; }
+
+    /// <summary>
     /// Raw cell data for rendering. Row-major; length equals
     /// <c>Columns * Rows</c>.
     /// </summary>
     public IReadOnlyList<TerminalCell> Cells { get; }
 
+    /// <summary>
+    /// Retained scrollback cell data, row-major; length equals
+    /// <c>Columns * ScrollbackLines.Count</c>.
+    /// </summary>
+    public IReadOnlyList<TerminalCell> ScrollbackCells { get; }
+
+    /// <summary>Total rows available for rendering and selection.</summary>
+    public int TotalRows => ScrollbackLines.Count + Rows;
+
     public TerminalSnapshot(
         int columns,
         int rows,
         IReadOnlyList<string> lines,
-        IReadOnlyList<TerminalCell> cells)
+        IReadOnlyList<TerminalCell> cells,
+        IReadOnlyList<string>? scrollbackLines = null,
+        IReadOnlyList<TerminalCell>? scrollbackCells = null)
     {
         Columns = columns;
         Rows = rows;
         Lines = lines ?? throw new ArgumentNullException(nameof(lines));
         Cells = cells ?? throw new ArgumentNullException(nameof(cells));
+        ScrollbackLines = scrollbackLines ?? Array.Empty<string>();
+        ScrollbackCells = scrollbackCells ?? Array.Empty<TerminalCell>();
     }
 }
 

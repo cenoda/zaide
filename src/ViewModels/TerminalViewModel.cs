@@ -364,11 +364,34 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     {
         int cols = _screen.Columns;
         int rows = _screen.Rows;
+        int scrollbackRows = _screen.ScrollbackRowCount;
 
         var lines = new string[rows];
         var cells = new TerminalCell[cols * rows];
+        var scrollbackLines = new string[scrollbackRows];
+        var scrollbackCells = new TerminalCell[cols * scrollbackRows];
         var lineChars = new char[cols];
         int idx = 0;
+        int scrollbackIdx = 0;
+
+        for (int r = 0; r < scrollbackRows; r++)
+        {
+            var row = _screen.GetScrollbackRow(r);
+            for (int c = 0; c < cols; c++)
+            {
+                var cell = row[c];
+                lineChars[c] = cell.Char;
+                scrollbackCells[scrollbackIdx] = new TerminalCell(
+                    cell.Char,
+                    cell.Attribute.Foreground,
+                    cell.Attribute.Background,
+                    cell.Attribute.Bold,
+                    cell.Attribute.Inverse);
+                scrollbackIdx++;
+            }
+
+            scrollbackLines[r] = new string(lineChars);
+        }
 
         for (int r = 0; r < rows; r++)
         {
@@ -388,7 +411,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             lines[r] = new string(lineChars);
         }
 
-        ScreenSnapshot = new TerminalSnapshot(cols, rows, lines, cells);
+        ScreenSnapshot = new TerminalSnapshot(cols, rows, lines, cells, scrollbackLines, scrollbackCells);
         CursorRow = _screen.CursorRow;
         CursorCol = _screen.CursorCol;
     }
@@ -401,7 +424,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        _screen.EraseDisplay(2);
+        _screen.EraseDisplay(3);
         _screen.CursorPosition(1, 1);
         _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
         UpdateSnapshot();

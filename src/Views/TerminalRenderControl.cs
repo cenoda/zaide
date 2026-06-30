@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -104,6 +105,11 @@ public class TerminalRenderControl : Control
     private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
 
     private bool _isFocused;
+    private bool _followLiveBottom = true;
+    private bool _isSelecting;
+    private int _viewportTop;
+    private (int Row, int Col)? _selectionAnchor;
+    private (int Row, int Col)? _selectionEnd;
 
     // ── ctor ──────────────────────────────────────────────────────
 
@@ -111,6 +117,7 @@ public class TerminalRenderControl : Control
     {
         ClipToBounds = true;
         Focusable = true;
+        Cursor = new Cursor(StandardCursorType.Ibeam);
 
         _typeface = new Typeface(DefaultFontFamily, FontStyle.Normal, FontWeight.Normal);
         MeasureCellMetrics();
@@ -126,6 +133,11 @@ public class TerminalRenderControl : Control
             InvalidateVisual();
         };
 
+        PointerPressed += OnPointerPressed;
+        PointerMoved += OnPointerMoved;
+        PointerReleased += OnPointerReleased;
+        PointerWheelChanged += OnPointerWheelChanged;
+
         // Key forwarding is wired by TerminalPanel.
     }
 
@@ -135,6 +147,8 @@ public class TerminalRenderControl : Control
     {
         Color defaultBackground = GetThemeColor("DeepBaseColor", AnsiColors[0]);
         Color defaultForeground = GetThemeColor("TextActiveColor", AnsiColors[7]);
+        Color selectionBackground = GetThemeColor("SoftAccentColor", Color.FromArgb(160, 194, 194, 229));
+        Color selectionForeground = defaultBackground;
 
         // Always clear the full control bounds first to avoid stale pixels
         // in the right/bottom gutter after resize.
@@ -146,20 +160,19 @@ public class TerminalRenderControl : Control
 
         int cols = snapshot.Columns;
         int rows = snapshot.Rows;
-        var cells = snapshot.Cells;
         double cw = CellWidth;
         double lh = LineHeight;
 
         if (cw <= 0 || lh <= 0) return;
 
-        int idx = 0;
+        int viewportTop = GetViewportTop(snapshot);
         for (int row = 0; row < rows; row++)
         {
+            int absoluteRow = viewportTop + row;
             double y = row * lh;
             for (int col = 0; col < cols; col++)
             {
-                var cell = cells[idx];
-                idx++;
+                var cell = GetAbsoluteCell(snapshot, absoluteRow, col);
                 double x = col * cw;
                 var rect = new Rect(x, y, cw, lh);
 
@@ -174,8 +187,16 @@ public class TerminalRenderControl : Control
                 if (cell.Bold && cell.Foreground >= 0 && cell.Foreground <= 7)
                     fg = AnsiColors[cell.Foreground + 8];
 
-                if (cell.Background != -1 || cell.Inverse)
+                bool isSelected = IsSelected(absoluteRow, col);
+                if (isSelected)
+                {
+                    context.FillRectangle(new SolidColorBrush(selectionBackground), rect);
+                    fg = selectionForeground;
+                }
+                else if (cell.Background != -1 || cell.Inverse)
+                {
                     context.FillRectangle(new SolidColorBrush(bg), rect);
+                }
 
                 var ft = new FormattedText(
                     cell.Char.ToString(),
@@ -192,26 +213,28 @@ public class TerminalRenderControl : Control
         // Cursor — dimmed when unfocused, full brightness when focused.
         if (CursorVisible)
         {
-            int cr = Math.Clamp(CursorRow, 0, rows - 1);
+            int absoluteCursorRow = snapshot.ScrollbackLines.Count + CursorRow;
+            if (absoluteCursorRow < viewportTop || absoluteCursorRow >= viewportTop + rows)
+            {
+                return;
+            }
+
+            int cr = Math.Clamp(absoluteCursorRow - viewportTop, 0, rows - 1);
             int cc = Math.Clamp(CursorCol, 0, cols - 1);
             var crRect = new Rect(cc * cw, cr * lh, cw, lh);
 
             IBrush cursorBg = _isFocused ? CursorBrush : DimmedCursorBrush;
             context.FillRectangle(cursorBg, crRect);
 
-            int ci = cr * cols + cc;
-            if (ci < cells.Count)
-            {
-                var ccCell = cells[ci];
-                var cursorFt = new FormattedText(
-                    ccCell.Char.ToString(),
-                    CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    _typeface,
-                    _fontSize,
-                    new SolidColorBrush(defaultBackground));
-                context.DrawText(cursorFt, new Point(cc * cw, cr * lh));
-            }
+            var ccCell = GetAbsoluteCell(snapshot, absoluteCursorRow, cc);
+            var cursorFt = new FormattedText(
+                ccCell.Char.ToString(),
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                _typeface,
+                _fontSize,
+                new SolidColorBrush(defaultBackground));
+            context.DrawText(cursorFt, new Point(cc * cw, cr * lh));
         }
     }
 
@@ -231,6 +254,136 @@ public class TerminalRenderControl : Control
         LineHeight = Math.Ceiling(ft.Height);
     }
 
+    public bool TryGetSelectedText(out string? text)
+    {
+        var snapshot = Snapshot;
+        if (snapshot is null || !HasSelection())
+        {
+            text = null;
+            return false;
+        }
+
+        text = BuildSelectedText(snapshot, _selectionAnchor!.Value, _selectionEnd!.Value);
+        return !string.IsNullOrEmpty(text);
+    }
+
+    internal static string BuildSelectedText(
+        TerminalSnapshot snapshot,
+        (int Row, int Col) start,
+        (int Row, int Col) end)
+    {
+        NormalizeSelection(start, end, out var first, out var last);
+
+        var builder = new StringBuilder();
+        for (int row = first.Row; row <= last.Row; row++)
+        {
+            string line = GetAbsoluteLine(snapshot, row);
+            int startCol = row == first.Row ? first.Col : 0;
+            int endCol = row == last.Row ? last.Col : snapshot.Columns - 1;
+
+            if (startCol <= endCol && startCol < line.Length)
+            {
+                int safeEnd = Math.Min(endCol, line.Length - 1);
+                if (safeEnd >= startCol)
+                {
+                    builder.Append(line.Substring(startCol, safeEnd - startCol + 1).TrimEnd());
+                }
+            }
+
+            if (row < last.Row)
+            {
+                builder.Append('\n');
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (Snapshot is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        Focus();
+        if (!TryMapPointerToCell(e.GetPosition(this), Snapshot, out var cell))
+        {
+            return;
+        }
+
+        _selectionAnchor = cell;
+        _selectionEnd = cell;
+        _isSelecting = true;
+        _renderSelectionLiveBottomState();
+        e.Pointer.Capture(this);
+        e.Handled = true;
+        InvalidateVisual();
+    }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_isSelecting || Snapshot is null)
+        {
+            return;
+        }
+
+        if (!TryMapPointerToCell(e.GetPosition(this), Snapshot, out var cell))
+        {
+            return;
+        }
+
+        _selectionEnd = cell;
+        e.Handled = true;
+        InvalidateVisual();
+    }
+
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!_isSelecting)
+        {
+            return;
+        }
+
+        _isSelecting = false;
+        e.Pointer.Capture(null);
+        e.Handled = true;
+
+        if (_selectionAnchor == _selectionEnd)
+        {
+            _selectionAnchor = null;
+            _selectionEnd = null;
+        }
+
+        InvalidateVisual();
+    }
+
+    private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        var snapshot = Snapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        int maxTop = Math.Max(0, snapshot.TotalRows - snapshot.Rows);
+        if (maxTop == 0 || Math.Abs(e.Delta.Y) < double.Epsilon)
+        {
+            return;
+        }
+
+        int step = Math.Max(1, (int)Math.Ceiling(Math.Abs(e.Delta.Y) * 3));
+        int currentTop = GetViewportTop(snapshot);
+        int nextTop = e.Delta.Y > 0
+            ? Math.Max(0, currentTop - step)
+            : Math.Min(maxTop, currentTop + step);
+
+        _viewportTop = nextTop;
+        _followLiveBottom = nextTop >= maxTop;
+        e.Handled = true;
+        InvalidateVisual();
+    }
+
     private static Color GetThemeColor(string resourceKey, Color fallback)
     {
         if (Application.Current?.Resources.TryGetResource(resourceKey, ThemeVariant.Default, out object? value) == true)
@@ -247,6 +400,114 @@ public class TerminalRenderControl : Control
         }
 
         return fallback;
+    }
+
+    private int GetViewportTop(TerminalSnapshot snapshot)
+    {
+        int maxTop = Math.Max(0, snapshot.TotalRows - snapshot.Rows);
+        if (_followLiveBottom)
+        {
+            _viewportTop = maxTop;
+            return maxTop;
+        }
+
+        _viewportTop = Math.Clamp(_viewportTop, 0, maxTop);
+        return _viewportTop;
+    }
+
+    private bool TryMapPointerToCell(Point point, TerminalSnapshot snapshot, out (int Row, int Col) cell)
+    {
+        cell = default;
+        if (CellWidth <= 0 || LineHeight <= 0 || snapshot.Columns <= 0 || snapshot.TotalRows <= 0)
+        {
+            return false;
+        }
+
+        int row = Math.Clamp((int)(point.Y / LineHeight), 0, snapshot.Rows - 1);
+        int col = Math.Clamp((int)(point.X / CellWidth), 0, snapshot.Columns - 1);
+        cell = (GetViewportTop(snapshot) + row, col);
+        return true;
+    }
+
+    private bool HasSelection() =>
+        _selectionAnchor.HasValue &&
+        _selectionEnd.HasValue &&
+        _selectionAnchor.Value != _selectionEnd.Value;
+
+    private bool IsSelected(int row, int col)
+    {
+        if (!HasSelection())
+        {
+            return false;
+        }
+
+        NormalizeSelection(_selectionAnchor!.Value, _selectionEnd!.Value, out var first, out var last);
+
+        if (row < first.Row || row > last.Row)
+        {
+            return false;
+        }
+
+        if (first.Row == last.Row)
+        {
+            return col >= first.Col && col <= last.Col;
+        }
+
+        if (row == first.Row)
+        {
+            return col >= first.Col;
+        }
+
+        if (row == last.Row)
+        {
+            return col <= last.Col;
+        }
+
+        return true;
+    }
+
+    private static void NormalizeSelection(
+        (int Row, int Col) start,
+        (int Row, int Col) end,
+        out (int Row, int Col) first,
+        out (int Row, int Col) last)
+    {
+        if (start.Row < end.Row || (start.Row == end.Row && start.Col <= end.Col))
+        {
+            first = start;
+            last = end;
+        }
+        else
+        {
+            first = end;
+            last = start;
+        }
+    }
+
+    private static TerminalCell GetAbsoluteCell(TerminalSnapshot snapshot, int absoluteRow, int col)
+    {
+        if (absoluteRow < snapshot.ScrollbackLines.Count)
+        {
+            return snapshot.ScrollbackCells[(absoluteRow * snapshot.Columns) + col];
+        }
+
+        int viewportRow = absoluteRow - snapshot.ScrollbackLines.Count;
+        return snapshot.Cells[(viewportRow * snapshot.Columns) + col];
+    }
+
+    private static string GetAbsoluteLine(TerminalSnapshot snapshot, int absoluteRow)
+    {
+        if (absoluteRow < snapshot.ScrollbackLines.Count)
+        {
+            return snapshot.ScrollbackLines[absoluteRow];
+        }
+
+        return snapshot.Lines[absoluteRow - snapshot.ScrollbackLines.Count];
+    }
+
+    private void _renderSelectionLiveBottomState()
+    {
+        _followLiveBottom = false;
     }
 
 }

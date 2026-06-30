@@ -477,4 +477,19 @@ public class TerminalViewModelTests
         Assert.Equal(50, vm.ScreenSnapshot!.Columns);
         Assert.Equal(10, vm.ScreenSnapshot.Rows);
     }
+
+    [Fact]
+    public void OutputReceived_PopulatesScrollbackInSnapshot()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(3, 2);
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("abcdefghi"));
+
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal(2, vm.ScreenSnapshot!.ScrollbackLines.Count);
+        Assert.Equal("abc", vm.ScreenSnapshot.ScrollbackLines[0]);
+        Assert.Equal("def", vm.ScreenSnapshot.ScrollbackLines[1]);
+    }
 }

@@ -99,4 +99,36 @@ public class TerminalRenderControlTests
         Assert.True(
             registry.IsRegistered(typeof(TerminalRenderControl), TerminalRenderControl.CursorVisibleProperty));
     }
+
+    [Fact]
+    public void BuildSelectedText_SpansScrollbackAndViewportRows()
+    {
+        var snapshot = new TerminalSnapshot(
+            3,
+            2,
+            new[] { "ghi", "jkl" },
+            new[]
+            {
+                new TerminalCell('g', -1, -1, false, false),
+                new TerminalCell('h', -1, -1, false, false),
+                new TerminalCell('i', -1, -1, false, false),
+                new TerminalCell('j', -1, -1, false, false),
+                new TerminalCell('k', -1, -1, false, false),
+                new TerminalCell('l', -1, -1, false, false),
+            },
+            new[] { "abc", "def" },
+            new[]
+            {
+                new TerminalCell('a', -1, -1, false, false),
+                new TerminalCell('b', -1, -1, false, false),
+                new TerminalCell('c', -1, -1, false, false),
+                new TerminalCell('d', -1, -1, false, false),
+                new TerminalCell('e', -1, -1, false, false),
+                new TerminalCell('f', -1, -1, false, false),
+            });
+
+        string selected = TerminalRenderControl.BuildSelectedText(snapshot, (1, 1), (2, 1));
+
+        Assert.Equal("ef\ngh", selected);
+    }
 }

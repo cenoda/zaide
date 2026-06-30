@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Zaide.ViewModels;
 
@@ -54,9 +55,11 @@ internal readonly struct CellAttribute
 /// </summary>
 internal sealed class TerminalScreen
 {
+    private const int MaxScrollbackRows = 2000;
     private static readonly Cell EmptyCell = new(' ', CellAttribute.Default);
 
     private Cell[,] _buffer;
+    private readonly List<Cell[]> _scrollback = new();
     private int _cursorRow;          // 0-based
     private int _cursorCol;          // 0-based
     private CellAttribute _currentAttributes = CellAttribute.Default;
@@ -84,8 +87,14 @@ internal sealed class TerminalScreen
     /// <summary>0-based cursor column.</summary>
     public int CursorCol => _cursorCol;
 
+    /// <summary>Number of retained rows above the visible viewport.</summary>
+    public int ScrollbackRowCount => _scrollback.Count;
+
     /// <summary>Get a single cell at the given 0-based position.</summary>
     public Cell GetCell(int row, int col) => _buffer[row, col];
+
+    /// <summary>Get a retained scrollback row at the given 0-based index.</summary>
+    public IReadOnlyList<Cell> GetScrollbackRow(int row) => _scrollback[row];
 
     /// <summary>Get the text content of a single 0-based row (without attributes).</summary>
     public ReadOnlySpan<char> GetLine(int row)
@@ -247,7 +256,11 @@ internal sealed class TerminalScreen
                 break;
 
             case 2:
-            case 3: // 3 = scrollback clear; no scrollback yet, so same as 2.
+                EraseRange(0, 0, Rows - 1, Columns - 1);
+                break;
+
+            case 3:
+                _scrollback.Clear();
                 EraseRange(0, 0, Rows - 1, Columns - 1);
                 break;
         }
@@ -357,6 +370,18 @@ internal sealed class TerminalScreen
     /// </summary>
     public void Scroll()
     {
+        var scrolledRow = new Cell[Columns];
+        for (int c = 0; c < Columns; c++)
+        {
+            scrolledRow[c] = _buffer[0, c];
+        }
+
+        _scrollback.Add(scrolledRow);
+        if (_scrollback.Count > MaxScrollbackRows)
+        {
+            _scrollback.RemoveAt(0);
+        }
+
         for (int r = 1; r < Rows; r++)
         {
             for (int c = 0; c < Columns; c++)
@@ -383,6 +408,8 @@ internal sealed class TerminalScreen
     {
         if (columns <= 0) throw new ArgumentOutOfRangeException(nameof(columns));
         if (rows <= 0) throw new ArgumentOutOfRangeException(nameof(rows));
+
+        ResizeScrollback(columns);
 
         var newBuffer = new Cell[rows, columns];
 
@@ -464,4 +491,30 @@ internal sealed class TerminalScreen
 
     private CellAttribute WithBackground(int bg) =>
         new(_currentAttributes.Foreground, bg, _currentAttributes.Bold, _currentAttributes.Inverse);
+
+    private void ResizeScrollback(int columns)
+    {
+        for (int i = 0; i < _scrollback.Count; i++)
+        {
+            var row = _scrollback[i];
+            if (row.Length == columns)
+            {
+                continue;
+            }
+
+            var resized = new Cell[columns];
+            int copyCols = Math.Min(row.Length, columns);
+            for (int c = 0; c < copyCols; c++)
+            {
+                resized[c] = row[c];
+            }
+
+            for (int c = copyCols; c < columns; c++)
+            {
+                resized[c] = EmptyCell;
+            }
+
+            _scrollback[i] = resized;
+        }
+    }
 }

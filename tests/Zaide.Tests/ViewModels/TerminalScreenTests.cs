@@ -259,6 +259,21 @@ public class TerminalScreenTests
         Assert.Equal("     ", screen.GetLine(2).ToString());
     }
 
+    [Fact]
+    public void EraseDisplay_Param3_ClearsScrollback()
+    {
+        var screen = new TerminalScreen(3, 2);
+        screen.WriteText("abc");
+        screen.WriteText("def");
+        screen.WriteText("ghi");
+
+        Assert.True(screen.ScrollbackRowCount > 0);
+
+        screen.EraseDisplay(3);
+
+        Assert.Equal(0, screen.ScrollbackRowCount);
+    }
+
     // ── erase line ─────────────────────────────────────────────────
 
     [Fact]
@@ -462,6 +477,23 @@ public class TerminalScreenTests
         Assert.Equal("row2 ", screen.GetLine(1).ToString());
         Assert.Equal("     ", screen.GetLine(2).ToString());
         Assert.Equal(2, screen.CursorRow);
+    }
+
+    [Fact]
+    public void Scroll_RetainsScrolledRowInScrollback()
+    {
+        var screen = new TerminalScreen(3, 2);
+        screen.WriteText("abc");
+        screen.WriteText("def");
+        screen.WriteText("ghi");
+
+        Assert.Equal(2, screen.ScrollbackRowCount);
+        Assert.Equal('a', screen.GetScrollbackRow(0)[0].Char);
+        Assert.Equal('b', screen.GetScrollbackRow(0)[1].Char);
+        Assert.Equal('c', screen.GetScrollbackRow(0)[2].Char);
+        Assert.Equal('d', screen.GetScrollbackRow(1)[0].Char);
+        Assert.Equal('e', screen.GetScrollbackRow(1)[1].Char);
+        Assert.Equal('f', screen.GetScrollbackRow(1)[2].Char);
     }
 
     // ── backspace does not cross row boundary ─────────────────────

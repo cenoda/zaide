@@ -113,6 +113,12 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     {
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard is null) return;
+        if (_renderControl.TryGetSelectedText(out string? selectedText))
+        {
+            await clipboard.SetTextAsync(selectedText);
+            return;
+        }
+
         var snapshot = ViewModel?.ScreenSnapshot;
         if (snapshot is null || snapshot.Lines.Count == 0) return;
         await clipboard.SetTextAsync(string.Join("\n", snapshot.Lines));
