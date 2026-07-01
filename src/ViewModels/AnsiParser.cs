@@ -216,7 +216,7 @@ internal sealed class AnsiParser
             return true;
         }
 
-        var parts = rawParameters.Split(';');
+        var parts = rawParameters.Split(';', ':');
         var values = new int[parts.Length];
 
         for (int i = 0; i < parts.Length; i++)

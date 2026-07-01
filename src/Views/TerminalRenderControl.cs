@@ -296,7 +296,7 @@ public class TerminalRenderControl : Control
                 {
                     fg = selectionForeground;
                 }
-                else if (cell.Background != -1 || cell.Inverse)
+                else if (cell.Background != -1 || cell.Background256 != -1 || cell.BackgroundTrueColor != -1 || cell.Inverse)
                 {
                     context.FillRectangle(new SolidColorBrush(bg), rect);
                 }

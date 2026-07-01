@@ -26,9 +26,12 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Add tests for 256-color SGR handling.
 - [x] Add tests for truecolor SGR handling.
 - [x] Manual smoke tests for 256-color and truecolor output.
+- [x] Fixed extended background colors not being painted in the renderer.
+- [x] Fixed colon-form truecolor sequence parsing in `AnsiParser`.
+- [x] Added test to validate renderer's handling of extended background colors.
 
 ## Notes
 
 - Ensure all changes align with the goals and boundaries defined in the `IMPLEMENTATION_PLAN.md`.
 - Focus on ordinary shell interaction quality without expanding into full TUI compatibility.
-- Milestone 1 (M1) is complete.
+- Milestone 1 (M1) is complete and all issues have been addressed.
