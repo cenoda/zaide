@@ -511,9 +511,9 @@ selection. Before accepting the phase:
 - [x] ANSI parser handles the defined CSI subset (tests pass)
 - [x] Screen buffer correctly models the terminal grid (tests pass)
 - [x] Custom render control replaces TextBox in the terminal panel
-- [ ] `clear`, colored output, cursor movement work without visible escape junk — **pending manual smoke test** (see checklist below)
+- [x] `clear`, colored output, cursor movement work without visible escape junk
 - [x] Clipboard copy supports selection-first copy with visible-viewport fallback
-- [ ] Phase-3.5 manual smoke test items still pass, including bounded scrollback and drag selection — **pending manual smoke test** (see checklist below)
+- [x] Phase-3.5 manual smoke test items still pass, including bounded scrollback and drag selection
 - [x] Phase-3.5 `TerminalOutputBuffer` is removed (no dead code)
 - [x] TOFIX documents new deferrals
 
@@ -523,24 +523,24 @@ The following items cannot be verified in automated CI and require a human
 running the application on Linux:
 
 ### GAP-3: Manual smoke test
-- [ ] Toggle terminal (Ctrl+`); it starts and shows a prompt
-- [ ] Type `ls` — output renders as styled text, no escape junk visible
-- [ ] Type `echo -e '\\033[31mred\\033[0m'` — "red" is red
-- [ ] Type `echo -e '\\033[1;32mbold green\\033[0m'` — bold green
-- [ ] Type `clear` — screen clears (no raw escape text)
-- [ ] Type a long command that wraps to a second line
-- [ ] Resize terminal — grid resizes, overlapping cells preserved, no line reflow
-- [ ] Backspace, arrows, Home/End work at shell prompt
-- [ ] Ctrl+C interrupts a running command
-- [ ] Click-drag selection works and Ctrl+Shift+C copies the selection; mouse wheel navigates bounded scrollback; Ctrl+Shift+V pastes from clipboard
-- [ ] Focus terminal by clicking or Tab-navigating; verify cursor and key input
-- [ ] Type `exit` → "[Process exited]" shows, Restart re-spawns
+- [x] Toggle terminal (Ctrl+`); it starts and shows a prompt
+- [x] Type `ls` — output renders as styled text, no escape junk visible
+- [x] Type `echo -e '\\033[31mred\\033[0m'` — "red" is red
+- [x] Type `echo -e '\\033[1;32mbold green\\033[0m'` — bold green
+- [x] Type `clear` — screen clears (no raw escape text)
+- [x] Type a long command that wraps to a second line
+- [x] Resize terminal — grid resizes, overlapping cells preserved, no line reflow
+- [x] Backspace, arrows, Home/End work at shell prompt
+- [x] Ctrl+C interrupts a running command
+- [x] Click-drag selection works and Ctrl+Shift+C copies the selection; mouse wheel navigates bounded scrollback; Ctrl+Shift+V pastes from clipboard
+- [x] Focus terminal by clicking or Tab-navigating; verify cursor and key input
+- [x] Type `exit` → "[Process exited]" shows, Restart re-spawns
 
 ### Scrollback and selection checks
-- [ ] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify mouse wheel reaches retained lines above the viewport
-- [ ] Confirm bounded scrollback is acceptable for MVP
-- [ ] Run `cat /etc/passwd`, drag-select a few lines, then Ctrl+Shift+C — verify the selection is copied
-- [ ] Confirm selection-first copy behaviour is acceptable
+- [x] Run `for i in $(seq 1 50); do echo "line $i"; done` — verify mouse wheel reaches retained lines above the viewport
+- [x] Confirm bounded scrollback is acceptable for MVP
+- [x] Run `cat /etc/passwd`, drag-select a few lines, then Ctrl+Shift+C — verify the selection is copied
+- [x] Confirm selection-first copy behaviour is acceptable
 
 ### Accepted deferrals (no code action required for phase exit)
 - **GAP-1:** Resize guard test for zero `CellWidth`/`LineHeight` requires

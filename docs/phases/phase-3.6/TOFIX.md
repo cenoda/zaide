@@ -6,12 +6,12 @@ Track code quality issues found during Phase 3.6 review.
 
 ## Status
 
-Phase 3.6 is **complete except manual smoke test**. M1–M5 are implemented and
-verified in code; the only outstanding item is the human-run Linux smoke
-checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
+Phase 3.6 is **complete**. M1–M5 are implemented and verified in code, and the
+human-run Linux smoke checklist has been completed.
 
 - `dotnet build Zaide.slnx` — 0 warnings, 0 errors
 - `dotnet test Zaide.slnx --no-build` — 300 passed, 0 failed
+- Manual Linux smoke checklist — passed
 - `TerminalOutputBuffer.cs` and `TerminalOutputBufferTests.cs` have been
   removed (superseded by AnsiParser + TerminalScreen).
 
@@ -30,10 +30,6 @@ checklist (see IMPLEMENTATION_PLAN.md §Phase Exit: Outstanding Items).
   Phase 3.6 renderer regression, but it is a real IDE UX gap for anyone who
   expects multiple shell sessions. Track as follow-up work for a dedicated
   multi-terminal phase or an expanded Phase 3.9 scope.
-- **GAP-3: Manual smoke test (outstanding).** The Linux smoke checklist has not
-  been run. Requires human running the application on Linux, including the new
-  click-drag selection and mouse-wheel scrollback behaviors.
-
 ## Resolved Issues
 
 - [x] **M1-01: ESC in CSI state is silently swallowed** — `ProcessCsi()` now
