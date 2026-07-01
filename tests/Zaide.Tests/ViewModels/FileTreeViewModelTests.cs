@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -11,18 +12,19 @@ namespace Zaide.Tests.ViewModels;
 public class FileTreeViewModelTests
 {
     private readonly FileTreeService _service = new();
+    private readonly IScheduler _scheduler = CurrentThreadScheduler.Instance;
 
     [Fact]
     public void RootNodes_IsEmpty_BeforeFolderOpened()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         Assert.Empty(vm.RootNodes);
     }
 
     [Fact]
     public void OpenFolderCommand_PopulatesRootNodes_ForTempDirectory()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
 
         try
@@ -46,14 +48,14 @@ public class FileTreeViewModelTests
     [Fact]
     public void SelectedFile_DefaultsToNull()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         Assert.Null(vm.SelectedFile);
     }
 
     [Fact]
     public void HandleRenamed_UpdatesDescendantPaths()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
 
         try
@@ -89,7 +91,7 @@ public class FileTreeViewModelTests
     [Fact]
     public void HandleRenamed_UpdatesDescendantPaths_WithNonAscii()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
 
         try
@@ -124,7 +126,7 @@ public class FileTreeViewModelTests
     [Fact]
     public void HandleRenamed_DoesNotCorruptPaths_WithPartialNameMatch()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
 
         try
@@ -163,7 +165,7 @@ public class FileTreeViewModelTests
     [Fact]
     public void OpenFolderCommand_SetsStatusText_OnInaccessiblePath()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var inaccessiblePath = "/nonexistent/path/that/does/not/exist";
 
         vm.OpenFolderCommand.Execute(inaccessiblePath).Subscribe(_ => { });
@@ -176,7 +178,7 @@ public class FileTreeViewModelTests
     [Fact]
     public void OpenFolderCommand_SetsStatusText_OnFilePath()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var filePath = Path.GetTempFileName();
 
         try
@@ -197,7 +199,7 @@ public class FileTreeViewModelTests
     [Fact]
     public void OpenFolderCommand_SetsStatusText_OnInvalidPath()
     {
-        var vm = new FileTreeViewModel(_service);
+        var vm = new FileTreeViewModel(_service, _scheduler);
         var invalidPath = "invalid\0path";
 
         vm.OpenFolderCommand.Execute(invalidPath).Subscribe(_ => { });

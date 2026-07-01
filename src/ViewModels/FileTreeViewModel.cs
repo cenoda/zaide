@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reactive.Concurrency;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
@@ -19,6 +20,7 @@ namespace Zaide.ViewModels;
 public class FileTreeViewModel : ReactiveObject
 {
     private readonly IFileTreeService _fileTreeService;
+    private readonly IScheduler _scheduler;
     private FileTreeNode? _selectedFile;
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
@@ -82,9 +84,10 @@ public class FileTreeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _rootPath, value);
     }
 
-    public FileTreeViewModel(IFileTreeService fileTreeService)
+    public FileTreeViewModel(IFileTreeService fileTreeService, IScheduler scheduler)
     {
         _fileTreeService = fileTreeService;
+        _scheduler = scheduler;
 
         // Wrap folder opening in try/catch and set StatusText on failure.
         // Watcher is only torn down AFTER validation — if EnumerateDirectory fails,
@@ -109,7 +112,7 @@ public class FileTreeViewModel : ReactiveObject
                 // Start watching for live changes
                 _fileTreeService.StartWatching(path);
                 _watcherSubscription = _fileTreeService.FileChanges!
-                    .ObserveOn(AvaloniaScheduler.Instance)
+                    .ObserveOn(_scheduler)
                     .Subscribe(HandleFileChange);
             }
             catch (DirectoryNotFoundException ex)
@@ -205,7 +208,7 @@ public class FileTreeViewModel : ReactiveObject
 
                 _fileTreeService.StartWatching(RootPath, newValue);
                 _watcherSubscription = _fileTreeService.FileChanges!
-                    .ObserveOn(AvaloniaScheduler.Instance)
+                    .ObserveOn(_scheduler)
                     .Subscribe(HandleFileChange);
 
                 ShowHiddenFiles = newValue; // Flip only after everything succeeded

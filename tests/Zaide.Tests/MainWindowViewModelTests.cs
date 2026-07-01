@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -35,7 +36,7 @@ public class MainWindowViewModelTests
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
-        var fileTreeViewModel = new FileTreeViewModel(fileTreeService);
+        var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
@@ -153,7 +154,7 @@ public class MainWindowViewModelTests
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
-        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService());
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))

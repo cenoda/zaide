@@ -7,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Services;
 
 namespace Zaide.ViewModels;
 
@@ -16,15 +17,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private string? _statusText = "Open a folder to begin";
     private CompositeDisposable? _disposables;
 
-    // Supported text-file extensions for opening in the editor.
-    // Binary files and unknown extensions show a status message instead.
-    private static readonly HashSet<string> SupportedExtensions = new(
-        new[] { ".cs", ".json", ".md", ".txt", ".xml", ".axaml", ".csproj",
-                ".sln", ".slnx", ".props", ".targets", ".config",
-                ".editorconfig", ".gitignore", ".gitattributes", ".yml",
-                ".yaml", ".css", ".html", ".js", ".ts", ".fs", ".vb",
-                ".xaml", ".resx", ".razor", ".cshtml", ".svg" },
-        StringComparer.OrdinalIgnoreCase);
 
     public bool IsBottomPanelVisible
     {
@@ -97,9 +89,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             FileTreeViewModel.OpenFileRequested.Subscribe(node =>
             {
                 var path = node.FullPath;
-                var ext = Path.GetExtension(path);
+                var unsupported = SupportedFileTypes.GetUnsupportedMessage(path);
 
-                if (SupportedExtensions.Contains(ext))
+                if (unsupported is null)
                 {
                     EditorTabs.OpenFileCommand.Execute(path).Subscribe(result =>
                     {
@@ -109,9 +101,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 }
                 else
                 {
-                    StatusText = ext.Length > 0
-                        ? $"Unsupported file type: {ext}"
-                        : "Unsupported file type: (no extension)";
+                    StatusText = unsupported;
                 }
             }));
     }

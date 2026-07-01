@@ -1,7 +1,9 @@
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
+using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
+using System.Reactive.Concurrency;
 using Zaide.Services;
 using Zaide.ViewModels;
 
@@ -23,6 +25,7 @@ class Program
                     services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<ITerminalService, LinuxTerminalService>();
                     services.AddSingleton<IFileTreeService, FileTreeService>();
+                    services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
