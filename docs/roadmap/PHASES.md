@@ -1,7 +1,7 @@
 # Zaide — Development Roadmap
 
-Build the IDE layer first (usable standalone), then add the agent-to-agent layer.
-Each phase must be complete before moving to the next.
+Build a strong IDE foundation first, then pivot the product toward an
+agent-first workspace. Each phase must be complete before moving to the next.
 
 ---
 
@@ -88,14 +88,20 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
 - [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
 
-## Phase 4: Townhall (Agent Transparency)
-- [ ] Townhall view in center area (tab alongside editor)
+## Phase 4: Agent-First Layout Transition
+- [ ] Move Townhall into the visual center of the app
+- [ ] Reposition the editor as a focused implementation surface, still always visible
+- [ ] Preserve fast file-tree, editor, and terminal workflows during the layout pivot
+- [ ] Establish Townhall as the default attention surface for agent activity and user intervention
+
+### Phase 4.1: Townhall Foundations
+- [ ] Townhall thread renders in the center workspace
 - [ ] Auto-log: timestamped entries for agent actions
 - [ ] Scrollable, filterable log
 - [ ] Clear distinction between agent actions and user actions
 
 ## Phase 5: Agent Panels
-- [ ] Right panel split into 2 agent slots (top/bottom)
+- [ ] Add dedicated agent surfaces without demoting Townhall from the primary workspace
 - [ ] Each agent panel: name, status indicator, output area
 - [ ] User input field per agent panel (talk to agent directly)
 
@@ -144,7 +150,7 @@ Cleaned up layer boundaries within the single-project structure (preparation for
 | 2 | Phase 1 file tree works, can select files |
 | 3 | Phase 2 editor works, can edit and save |
 | 4 | Phase 3 terminal UI normalization complete |
-| 5 | Phase 4 townhall displays entries |
+| 5 | Phase 4 layout transition and Townhall foundations render correctly |
 | 6 | Phase 5 agent panels render and accept input |
 | 7 | Phase 6 agent routing works |
 

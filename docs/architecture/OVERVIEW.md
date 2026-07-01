@@ -5,6 +5,19 @@ One agent codes, another reviews. They argue. You get better code.
 
 ---
 
+## Direction
+
+Zaide is intentionally moving away from the classic IDE shape where the editor
+is the unquestioned center and AI sits in a side panel.
+
+The target architecture is **agent-first**:
+
+- The primary visual focus is the shared agent workspace
+- The editor remains visible, but acts as the implementation surface
+- The file tree and terminal support the workflow without dominating it
+
+This is a product-direction choice, not a cosmetic layout tweak.
+
 ## Current Architecture
 
 ```
@@ -27,25 +40,40 @@ One agent codes, another reviews. They argue. You get better code.
 | **Right** | Agent area (placeholder panel) | ✅ Done (shell only) |
 | **Bottom** | Terminal (Linux PTY-backed shell) | ✅ Done |
 
+### Target layout direction:
+
+```
+┌──────────┬────────────────────────────────────┬──────────────┐
+│ Files    │ Townhall                           │ Editor       │
+│ (Tree)   │ active thread, agent discussion,   │ focused file │
+│          │ user intervention, task state      │ diff/edit    │
+├──────────┴────────────────────────────────────┴──────────────┤
+│ Terminal / Logs                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
 ### Planned layers (future):
 
 | Layer | Phase | Description |
 |-------|-------|-------------|
-| Townhall | 4 | Agent activity log in center area |
-| Agent Panels | 5 | Individual agent UIs replacing the placeholder |
+| Agent-first layout transition | 4 | Move Townhall into the visual center and reposition the editor as a focused implementation surface |
+| Townhall | 4 | Shared activity thread for agent work, review, and user intervention |
+| Agent Panels | 5 | Dedicated agent surfaces when specialized views are needed |
 | Agent Router | 6 | @mention routing between agents |
 | Git Integration | 7 | Status, diff, commit from sidebar |
 
-The IDE works without agents. The agent layer is built on top.
+Zaide should still work without full agent infrastructure, but the product is no
+longer editor-first. The agent layer is becoming the main stage, not an add-on.
 
 ---
 
 ## Core Principles
 
-1. **Agent-to-Agent first** — agents debate each other, user observes and intervenes (planned for Phase 4–6)
+1. **Agent-first workspace** — the main screen should foreground agent activity and user intervention
 2. **Transparency** — every agent action is logged in Townhall automatically (planned)
 3. **No secret changes** — all file modifications are visible in real-time
-4. **IDE is standalone** — must be usable as a plain editor without agents ✅
+4. **Editor as execution surface** — code editing remains first-class, but not the sole center of attention
+5. **IDE is standalone** — must remain usable even before the full agent system exists ✅
 
 ---
 

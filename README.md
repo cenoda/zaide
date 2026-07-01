@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 3 (Terminal) ✅ Complete — Phase 4 (Townhall) planned next.
+**Status:** Phase 3 (Terminal) ✅ Complete — agent-first layout transition planned next.
 
 ## Philosophy
 
@@ -14,6 +14,16 @@ Zaide:   Agent A ↔ Agent B ↔ Agent C   (A-to-A, multi-agent debate)
 
 AI's biggest weakness is self-confirmation (hallucination).
 One agent codes, another reviews. They argue. You get better code.
+
+## Product Direction
+
+Zaide is moving away from the classic "editor in the middle, AI on the side"
+shape.
+
+The next UI transition makes the **agent conversation the primary workspace**
+and keeps the editor visible as a focused execution surface. We are not trying
+to bolt chat onto a conventional IDE. We are trying to build an IDE where the
+main narrative is agent collaboration, review, and intervention.
 
 ## Current Layout
 
@@ -30,11 +40,28 @@ One agent codes, another reviews. They argue. You get better code.
 
 - **Left:** File tree sidebar
 - **Center:** Tabbed code editor with syntax highlighting (AvaloniaEdit)
-- **Right:** Agent area (placeholder — agent panels coming in Phase 5)
+- **Right:** Agent area placeholder
 - **Bottom:** Terminal panel (Linux PTY-backed shell), toggled with Ctrl+`
 
-> **Note:** The agent-to-agent layer (Townhall, agent panels, @mention routing)
-> is a future goal. The current app is an IDE foundation — usable standalone.
+## Target Layout Direction
+
+```
+┌──────────┬────────────────────────────────────┬──────────────┐
+│ Files    │ Townhall                           │ Editor       │
+│ (Tree)   │ active thread, agent discussion,   │ focused file │
+│          │ user intervention, task state      │ diff/edit    │
+├──────────┴────────────────────────────────────┴──────────────┤
+│ Terminal / Logs                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+- **Left:** File tree and project navigation
+- **Center:** Townhall, the primary workspace for agent activity and user intervention
+- **Right:** Editor, always available but no longer the visual center of the app
+- **Bottom:** Terminal and runtime/log surface
+
+This shift is intentional. Zaide should read as an agent-native workspace first,
+not as a conventional editor with an AI sidebar.
 
 ## Status
 
@@ -50,7 +77,8 @@ One agent codes, another reviews. They argue. You get better code.
 | Editor with tabs, save, syntax highlighting | 2 | ✅ Done |
 | Indent guides in editor | 2.1 | ✅ Done |
 | Terminal (Linux PTY) | 3 | ✅ Done |
-| Townhall / Agent transparency | 4 | ⏳ Planned |
+| Agent-first layout transition | 4 | ⏳ Planned |
+| Townhall foundations | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
@@ -87,10 +115,11 @@ Cleaned up layer boundaries within the single-project structure:
 
 ## Future Direction
 
-The planned agent-to-agent layer will add:
+The next stages focus on making the center of gravity agent-first:
 
-- **Townhall** — a scrollable, filterable log of all agent actions
-- **Agent panels** — individual UIs for each agent with user input fields
+- **Townhall** — the primary shared workspace for agent activity, discussion, and user intervention
+- **Editor** — still visible and powerful, but framed as the implementation surface
+- **Agent panels** — individual UIs for each agent when dedicated surfaces are needed
 - **@mention routing** — agents can request review from each other
 - **Git integration** — status, diff, and commits from the sidebar
 
