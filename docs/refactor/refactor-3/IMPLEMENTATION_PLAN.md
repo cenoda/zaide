@@ -163,6 +163,47 @@ This plan does not try to:
 
 ---
 
+## Measurable Layout Acceptance Criteria
+
+These constraints are objective pass/fail gates for the layout:
+
+| ID | Criterion | How to Verify |
+|----|-----------|---------------|
+| LC-1 | Center column visible width ≥ 40% of total content area (excluding nav bar) at default window size | Resize to default → measure |
+| LC-2 | Right column (editor) visible width < center column at default window size | Visual comparison; center must be wider |
+| LC-3 | At minimum supported window width (960 px), both center and right columns remain visible (no overflow to zero) | Resize to 960 px → both columns visible |
+| LC-4 | Bottom panel spans exactly under center + right columns; left panel extends full height below it | Visual inspection; no bottom bar under left panel |
+| LC-5 | Bottom panel minimum height ≥ 120 px at default window size; resizes with window drag | Resize bottom edge |
+| LC-6 | Left panel (Explorer + SC) does not exceed 320 px at default window size | Measure or read code constants |
+| LC-7 | Nav bar width is exactly ~40 px; icon-only, no text labels visible | Visual inspection |
+| LC-8 | Townhall has visible channels sub-panel (~120 px), chat area (fills remaining), and people sub-panel (~120 px) | Visual inspection of sub-panels |
+
+---
+
+## Window Size Behavior
+
+| Window Width | Behavior |
+|-------------|----------|
+| ≥ 1200 px | All panels at comfortable default sizes |
+| 960–1199 px | Left panel and nav bar unchanged; center and right columns shrink proportionally but both remain visible (LC-3) |
+| < 960 px | Below minimum supported width; no guarantee of layout integrity |
+
+Collapse priority if content-area width < 700 px: shrink people sub-panel first, then channels sub-panel, then editor. Townhall chat area is never fully hidden.
+
+---
+
+## Verification Artifacts (required at M6 completion)
+
+Each milestone's exit check should produce the following artifacts where applicable:
+
+1. **Screenshot** — capture at default window size and at minimum (960 px). File naming: `docs/refactor/refactor-3/verification/m{N}-default.png`, `m{N}-min.png`.
+2. **Build log** — full `dotnet build Zaide.slnx` output saved or quoted in PR/commit description.
+3. **Test log** — full `dotnet test Zaide.slnx --no-build` output.
+4. **Checklist sign-off** — copy the Manual Verification Checklist (below) into the PR description and check every item.
+5. **No-new-behavior check** — for deferred areas (Source Control, rich Townhall features, log categorization), state explicitly in the PR description that no behavior was added beyond what the milestone specifies.
+
+---
+
 ## Design Rules For This Refactor
 
 1. Do not reopen the product-direction debate inside the implementation work.
@@ -187,6 +228,26 @@ This plan does not try to:
 | M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface |
 | M5 | Terminal/logs alignment | Bottom area works under center+right, reads as shared runtime surface |
 | M6 | Regression sweep and doc sync | Existing workflows stable, docs match reality |
+
+---
+
+## File-Level Implementation Map
+
+Each milestone lists the concrete files and classes that must be created or
+modified. This map prevents scope creep and makes PR reviews easier.
+
+| Milestone | Files Created | Files Modified |
+|-----------|---------------|----------------|
+| M0 | — | — (verification only) |
+| M0.5 | — | `src/App.axaml`, `src/Views/EditorTabBar.cs`, any view with hardcoded colors |
+| M1 | `src/Views/NavBar.cs`, `src/Views/SourceControlPlaceholder.cs` | `src/MainWindow.axaml`, `src/MainWindow.axaml.cs` |
+| M2 | `src/Models/Channel.cs`, `src/Models/TownhallMessage.cs`, `src/Models/WorkspaceAgent.cs`, `src/Models/TownhallState.cs`, `src/ViewModels/TownhallViewModel.cs` | — |
+| M3 | `src/Views/TownhallView.cs`, `src/Views/TownhallChannelPanel.cs`, `src/Views/TownhallChatPanel.cs`, `src/Views/TownhallPeoplePanel.cs`, `src/Views/TownhallInputArea.cs` | `src/MainWindow.axaml.cs` (wire Townhall into center column) |
+| M4 | — | `src/Views/EditorTabBar.cs` (add townhall link label), `src/Views/EditorView.cs` (adjust quietness) |
+| M5 | — | `src/MainWindow.axaml.cs` (bottom panel span), `src/Views/TerminalPanel.cs` (relabel header) |
+| M6 | — | Docs only: `docs/DESIGN.md`, `docs/architecture/OVERVIEW.md`, `docs/roadmap/PHASES.md` |
+
+All new files follow one-class-per-file naming per `docs/CONVENTIONS.md`.
 
 ---
 
@@ -231,6 +292,19 @@ Implementation:
 - Update any hardcoded color values in view files to use the new tokens
 - Verify the overall darkness matches the concept (near-black backgrounds,
   not blue-purple)
+
+**Token-migration checklist (do before marking M0.5 complete):**
+
+1. Run `grep -rn '#[0-9A-Fa-f]\{6\}' src/Views/ src/App.axaml` to find all hex literals.
+2. Cross-reference against the palette table above; any hex that does not
+   match a token value or a deliberate transparent variant (e.g., `#22` prefix)
+   is a migration candidate.
+3. Verify no legacy `#8FA5DE`, `#C2C2E5`, `#142043`, or `#1A2847` values
+   remain anywhere in `src/`.
+4. Verify every view file references palette tokens by resource key name
+   (e.g., `DynamicResource SurfaceBaseBrush`) rather than hardcoded values.
+5. Run `dotnet build Zaide.slnx` to confirm no breakage.
+6. Capture a screenshot at default window size for visual spot-check.
 
 ### M1: Main Window Layout Transition
 
@@ -417,6 +491,49 @@ These are acknowledged but intentionally deferred:
 
 Those concerns are real, but they belong to a later UX/system phase.
 They are not reasons to stop Refactor 3.
+
+---
+
+## Interaction Contracts
+
+These contracts resolve ambiguities identified in the plan audit.
+
+### Nav Bar Interaction
+
+- Explorer icon is active by default on first launch.
+- Clicking the Explorer icon shows the file tree in the left content panel.
+  If it is already showing, clicking has no effect (no toggle-off).
+- Clicking the Source Control icon shows the SC placeholder in the left
+  content panel.
+- Only one left-panel mode is visible at a time; the other is hidden
+  (not collapsed to zero, just replaced in the same layout slot).
+- Clicking the currently active icon does nothing (no empty state).
+
+### Source Control Placeholder
+
+- Renders a panel with a "SOURCE CONTROL" header and empty body.
+- No commit input, no branch selector, no change list, no git commands.
+- The placeholder exists solely to reserve layout space so the left column
+  structure matches the concept and does not need reshuffling when real SC
+  behavior arrives later.
+
+### Townhall Message Ordering
+
+- Messages are displayed newest-at-bottom (chronological, ascending).
+- The message list is append-only within a session; messages are not
+  reordered or inserted mid-list.
+- Channel switching loads the message list for the selected channel;
+  the previous channel's messages are replaced (no cross-channel merge).
+- Draft text is per-channel; switching channels saves and restores draft.
+- In-memory model is sufficient for Refactor 3; no persistence.
+
+### Editor "Shared in #townhall" Label Placement
+
+- The label appears in the editor tab bar area, to the right of the active
+  tab's close button. It is a plain text read-only label styled with
+  TextSecondary color.
+- It is static text (not a clickable link, not a toggle) in Refactor 3.
+- If no tab is open, the label is hidden.
 
 ---
 
