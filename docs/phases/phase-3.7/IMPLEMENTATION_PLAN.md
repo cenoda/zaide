@@ -188,7 +188,11 @@ coverage of prompt redraw transcripts used by readline-style shells.
    Parser changes required:
    - Add `h` and `l` to `IsSupportedCsiFinalByte()` set
    - Modify `HasSupportedCsiParameterBytes()` to allow `?` prefix for DECSET/DECRST
-   - Add new action type `DecSetResetAction(int mode, bool enabled)` or filter to emit only mode 2004
+   - Add new action type `DecSetResetAction(int mode, bool enabled)`
+
+   ViewModel changes required:
+   - Add `DecSetResetAction` handling in `TerminalViewModel.Append()` switch
+   - Add `_bracketedPasteEnabled` flag to `TerminalViewModel`
 
 2. Keep other DECSET/DECRST private modes deferred to Phase 3.8
 3. Move paste wrapping logic to ViewModel:
@@ -209,6 +213,7 @@ coverage of prompt redraw transcripts used by readline-style shells.
 - `PasteAsync_WhenBracketedPasteEnabled_WrapsWithBracketedPasteMarkers`
 - `OutputReceived_BracketedPasteEnable_TogglesPasteMode`
 - `OutputReceived_BracketedPasteDisable_TogglesPasteModeOff`
+- `Append_DecSetResetAction_UpdatesBracketedPasteState`
 - transcript integration tests such as:
   - `"prompt> abc\r\033[Kprompt> abcd"` renders as the latest prompt state
   - interrupted command followed by fresh prompt does not leave stale prompt
@@ -242,22 +247,24 @@ restarts feel predictable instead of merely functional.
 
 1. Audit and tighten resize forwarding so active splitter drags do not leave the
    viewport, cursor, or scrollback position in a surprising state
-2. Add scroll viewport tracking:
-   - Add `FollowLiveBottom` property to `TerminalViewModel`
-   - Track scroll offset in render control and notify ViewModel
-   - User scrolls up via mouse wheel or drag; Enter or click-to-bottom resumes live tracking
+2. Keep viewport ownership in the View layer (no VM state migration):
+   - `TerminalRenderControl` already owns `_followLiveBottom`, `_viewportTop`, wheel handling, and `ScrollToBottom()`
+   - `TerminalPanel` already calls `_renderControl.ScrollToBottom()` on Enter
+   - Add explicit tests for the existing scroll-up-then-Enter-returns-to-bottom behavior
+   - Add `ScrollToBottom()` call on restart to ensure live viewport recovery
 3. Preserve or intentionally reset "follow live bottom" behavior with explicit
    rules:
    - user-scrolled viewport stays put during passive output
-   - explicit resume actions return to live output (click-to-bottom and restart)
-   - avoid implicit jump-to-bottom on normal typing while user is intentionally
-     reviewing scrollback
+   - explicit resume actions (Enter, click-to-bottom, restart) return to
+     live output
 4. Re-check restart behavior with cached dimensions and scrollback state so a
    restarted shell opens in the correct size and a clean live viewport
 5. Add focused regression coverage for:
    - resize before start
    - resize during running session
    - restart after resize
+   - input while scrolled back
+   - scroll-up-then-Enter-returns-to-bottom (existing behavior)
    - input while scrolled back
 
 **Tests (M3):**
@@ -267,6 +274,7 @@ restarts feel predictable instead of merely functional.
 - `Restart_AfterResize_ReappliesLatestViewportSize`
 - `Enter_WhenScrolledBack_ReturnsViewportToLiveBottom`
 - `ManualScrollback_DoesNotAutoJumpOnPassiveOutput`
+- `Restart_WhenScrolledBack_ReturnsViewportToLiveBottom`
 - any pure `TerminalScreen` tests needed if resize semantics change
 
 **Manual smoke for M3:**
