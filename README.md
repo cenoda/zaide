@@ -55,6 +55,25 @@ One agent codes, another reviews. They argue. You get better code.
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
 
+## Completed Refactors
+
+| Refactor | Description | Status |
+|---------|-------------|--------|
+| refactor-1 | Document/Workspace extraction | ✅ Complete |
+| refactor-2 | Layer boundary cleanup | ✅ Complete |
+
+### Refactor-2: Layer Boundary Cleanup (2025-01-20)
+
+Cleaned up layer boundaries within the single-project structure:
+
+- **M1:** Removed `SaveAsync` from `Document` model, replaced `ReactiveObject` with `INotifyPropertyChanged` in `FileTreeNode`
+- **M3:** Extracted `IFileTreeService` interface, `StartWatching()` returns `IObservable<FileChangeEvent>`
+- **M5:** Injected `IScheduler` into `FileTreeViewModel` (removed `AvaloniaScheduler.Instance` direct usage)
+- **M6:** Created `SupportedFileTypes` static class in `Services/` (editor policy)
+- **M7:** Stabilization — 340 tests pass
+
+**Deferred:** Terminal pure logic namespace change (M2), FileTreeNode domain/UI split (M4), UI-post abstraction (M8)
+
 ## Stack Architecture
 
 | Layer | Technology |

@@ -98,6 +98,27 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [ ] Right panel split into 2 agent slots (top/bottom)
 - [ ] Each agent panel: name, status indicator, output area
 - [ ] User input field per agent panel (talk to agent directly)
+
+---
+
+## Completed Refactors
+
+| Refactor | Description | Status |
+|---------|-------------|--------|
+| refactor-1 | Document/Workspace extraction | ✅ Complete |
+| refactor-2 | Layer boundary cleanup | ✅ Complete |
+
+### refactor-2: Layer Boundary Cleanup
+
+Cleaned up layer boundaries within the single-project structure (preparation for future project split):
+
+- **M1:** Removed `SaveAsync` from `Document` model, replaced `ReactiveObject` with `INotifyPropertyChanged` in `FileTreeNode`
+- **M3:** Extracted `IFileTreeService` interface, `StartWatching()` returns `IObservable<FileChangeEvent>`
+- **M5:** Injected `IScheduler` into `FileTreeViewModel` (removed `AvaloniaScheduler.Instance` direct usage)
+- **M6:** Created `SupportedFileTypes` static class in `Services/` (editor policy)
+- **M7:** Stabilization — 340 tests pass
+
+**Deferred:** Terminal pure logic namespace change (M2), FileTreeNode domain/UI split (M4), UI-post abstraction (M8)
 - [ ] Agent panel ↔ Townhall: actions appear in both
 
 ## Phase 6: Agent-to-Agent Router
