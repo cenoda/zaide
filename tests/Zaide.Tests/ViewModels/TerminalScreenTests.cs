@@ -421,16 +421,33 @@ public class TerminalScreenTests
     }
 
     [Fact]
-    public void SetSgr_256Color_IsConsumedAndIgnored()
+    public void SetSgr_256Color_IsConsumedAndApplied()
     {
         var screen = new TerminalScreen(10, 3);
-        screen.SetSgr(new[] { 31, 38, 5, 196 });
+        screen.SetSgr(new[] { 38, 5, 196 });
         screen.Write('X');
-        Assert.Equal(1, screen.GetCell(0, 0).Attribute.Foreground);
+        Assert.Equal(-1, screen.GetCell(0, 0).Attribute.Foreground);
+        Assert.Equal(196, screen.GetCell(0, 0).Attribute.Foreground256);
 
-        screen.SetSgr(new[] { 44, 48, 5, 21 });
+        screen.SetSgr(new[] { 48, 5, 21 });
         screen.Write('Y');
-        Assert.Equal(4, screen.GetCell(0, 1).Attribute.Background);
+        Assert.Equal(-1, screen.GetCell(0, 1).Attribute.Background);
+        Assert.Equal(21, screen.GetCell(0, 1).Attribute.Background256);
+    }
+
+    [Fact]
+    public void SetSgr_TrueColor_IsConsumedAndApplied()
+    {
+        var screen = new TerminalScreen(10, 3);
+        screen.SetSgr(new[] { 38, 2, 255, 105, 180 });
+        screen.Write('X');
+        Assert.Equal(-1, screen.GetCell(0, 0).Attribute.Foreground);
+        Assert.Equal(0xFF69B4, screen.GetCell(0, 0).Attribute.ForegroundTrueColor);
+
+        screen.SetSgr(new[] { 48, 2, 100, 150, 200 });
+        screen.Write('Y');
+        Assert.Equal(-1, screen.GetCell(0, 1).Attribute.Background);
+        Assert.Equal(0x6496C8, screen.GetCell(0, 1).Attribute.BackgroundTrueColor);
     }
 
     [Fact]

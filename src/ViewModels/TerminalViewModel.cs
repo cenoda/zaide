@@ -400,7 +400,11 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                     cell.Attribute.Foreground,
                     cell.Attribute.Background,
                     cell.Attribute.Bold,
-                    cell.Attribute.Inverse);
+                    cell.Attribute.Inverse,
+                    cell.Attribute.Foreground256,
+                    cell.Attribute.Background256,
+                    cell.Attribute.ForegroundTrueColor,
+                    cell.Attribute.BackgroundTrueColor);
                 scrollbackIdx++;
             }
 
@@ -418,7 +422,11 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                     cell.Attribute.Foreground,
                     cell.Attribute.Background,
                     cell.Attribute.Bold,
-                    cell.Attribute.Inverse);
+                    cell.Attribute.Inverse,
+                    cell.Attribute.Foreground256,
+                    cell.Attribute.Background256,
+                    cell.Attribute.ForegroundTrueColor,
+                    cell.Attribute.BackgroundTrueColor);
                 idx++;
             }
 

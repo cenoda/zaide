@@ -102,6 +102,54 @@ public class TerminalRenderControl : Control
         Color.FromRgb(255, 255, 255), // 15 Bright White
     };
 
+    private static readonly Color[] Palette256 = Build256ColorPalette();
+
+    private static Color[] Build256ColorPalette()
+    {
+        var palette = new Color[256];
+        
+        // Standard ANSI colors (0-15)
+        for (int i = 0; i < 16; i++)
+        {
+            palette[i] = AnsiColors[i];
+        }
+        
+        // 6x6x6 color cube (16-231)
+        for (int r = 0; r < 6; r++)
+        {
+            for (int g = 0; g < 6; g++)
+            {
+                for (int b = 0; b < 6; b++)
+                {
+                    int index = 16 + r * 36 + g * 6 + b;
+                    if (index >= 232) break;
+                    
+                    byte red = (byte)(r == 0 ? 0 : r * 40 + 55);
+                    byte green = (byte)(g == 0 ? 0 : g * 40 + 55);
+                    byte blue = (byte)(b == 0 ? 0 : b * 40 + 55);
+                    palette[index] = Color.FromRgb(red, green, blue);
+                }
+            }
+        }
+        
+        // Grayscale (232-255)
+        for (int i = 232; i < 256; i++)
+        {
+            byte gray = (byte)((i - 232) * 10 + 8);
+            palette[i] = Color.FromRgb(gray, gray, gray);
+        }
+        
+        return palette;
+    }
+
+    private static Color ColorFromRgb(int rgb)
+    {
+        byte r = (byte)((rgb >> 16) & 0xFF);
+        byte g = (byte)((rgb >> 8) & 0xFF);
+        byte b = (byte)(rgb & 0xFF);
+        return Color.FromRgb(r, g, b);
+    }
+
     private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
     private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
     private static readonly TimeSpan CursorBlinkInterval = TimeSpan.FromMilliseconds(530);
@@ -208,15 +256,39 @@ public class TerminalRenderControl : Control
                 double x = col * cw;
                 var rect = new Rect(x, y, cw, lh);
 
-                Color bg = cell.Background >= 0 && cell.Background < 16
-                    ? AnsiColors[cell.Background] : defaultBackground;
-                Color fg = cell.Foreground >= 0 && cell.Foreground < 16
-                    ? AnsiColors[cell.Foreground] : defaultForeground;
+                Color bg = defaultBackground;
+                Color fg = defaultForeground;
+
+                if (cell.BackgroundTrueColor != -1)
+                {
+                    bg = ColorFromRgb(cell.BackgroundTrueColor);
+                }
+                else if (cell.Background256 != -1 && cell.Background256 < 256)
+                {
+                    bg = Palette256[cell.Background256];
+                }
+                else if (cell.Background >= 0 && cell.Background < 16)
+                {
+                    bg = AnsiColors[cell.Background];
+                }
+
+                if (cell.ForegroundTrueColor != -1)
+                {
+                    fg = ColorFromRgb(cell.ForegroundTrueColor);
+                }
+                else if (cell.Foreground256 != -1 && cell.Foreground256 < 256)
+                {
+                    fg = Palette256[cell.Foreground256];
+                }
+                else if (cell.Foreground >= 0 && cell.Foreground < 16)
+                {
+                    fg = AnsiColors[cell.Foreground];
+                }
 
                 if (cell.Inverse)
                     (fg, bg) = (bg, fg);
 
-                if (cell.Bold && cell.Foreground >= 0 && cell.Foreground <= 7)
+                if (cell.Bold && cell.Foreground >= 0 && cell.Foreground <= 7 && cell.Foreground256 == -1 && cell.ForegroundTrueColor == -1)
                     fg = AnsiColors[cell.Foreground + 8];
 
                 bool isSelected = IsSelected(absoluteRow, col);

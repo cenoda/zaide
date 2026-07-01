@@ -82,12 +82,33 @@ public readonly struct TerminalCell
     /// <summary>Inverse / reverse-video flag.</summary>
     public readonly bool Inverse;
 
+    /// <summary>256-color foreground index (0–255) or -1 for default.</summary>
+    public readonly int Foreground256;
+
+    /// <summary>256-color background index (0–255) or -1 for default.</summary>
+    public readonly int Background256;
+
+    /// <summary>Truecolor foreground RGB value (0xRRGGBB) or -1 for default.</summary>
+    public readonly int ForegroundTrueColor;
+
+    /// <summary>Truecolor background RGB value (0xRRGGBB) or -1 for default.</summary>
+    public readonly int BackgroundTrueColor;
+
     public TerminalCell(char ch, int foreground, int background, bool bold, bool inverse)
+        : this(ch, foreground, background, bold, inverse, -1, -1, -1, -1)
+    {
+    }
+
+    public TerminalCell(char ch, int foreground, int background, bool bold, bool inverse, int foreground256, int background256, int foregroundTrueColor, int backgroundTrueColor)
     {
         Char = ch;
         Foreground = foreground;
         Background = background;
         Bold = bold;
         Inverse = inverse;
+        Foreground256 = foreground256;
+        Background256 = background256;
+        ForegroundTrueColor = foregroundTrueColor;
+        BackgroundTrueColor = backgroundTrueColor;
     }
 }

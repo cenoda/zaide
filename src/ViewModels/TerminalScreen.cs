@@ -38,12 +38,33 @@ internal readonly struct CellAttribute
     /// <summary>Inverse / reverse-video flag.</summary>
     public readonly bool Inverse;
 
+    /// <summary>256-color foreground index (0–255) or -1 for default.</summary>
+    public readonly int Foreground256;
+
+    /// <summary>256-color background index (0–255) or -1 for default.</summary>
+    public readonly int Background256;
+
+    /// <summary>Truecolor foreground RGB value (0xRRGGBB) or -1 for default.</summary>
+    public readonly int ForegroundTrueColor;
+
+    /// <summary>Truecolor background RGB value (0xRRGGBB) or -1 for default.</summary>
+    public readonly int BackgroundTrueColor;
+
     public CellAttribute(int foreground, int background, bool bold, bool inverse)
+        : this(foreground, background, bold, inverse, -1, -1, -1, -1)
+    {
+    }
+
+    public CellAttribute(int foreground, int background, bool bold, bool inverse, int foreground256, int background256, int foregroundTrueColor, int backgroundTrueColor)
     {
         Foreground = foreground;
         Background = background;
         Bold = bold;
         Inverse = inverse;
+        Foreground256 = foreground256;
+        Background256 = background256;
+        ForegroundTrueColor = foregroundTrueColor;
+        BackgroundTrueColor = backgroundTrueColor;
     }
 }
 
@@ -325,8 +346,20 @@ internal sealed class TerminalScreen
             }
             else if (p == 38 && i + 2 < parameters.Length && parameters[i + 1] == 5)
             {
-                // 256-color foreground — consumed and ignored this phase.
+                // 256-color foreground
+                int colorIndex = parameters[i + 2];
+                _currentAttributes = WithForeground256(colorIndex);
                 i += 2;
+            }
+            else if (p == 38 && i + 4 < parameters.Length && parameters[i + 1] == 2)
+            {
+                // Truecolor foreground
+                int r = parameters[i + 2];
+                int g = parameters[i + 3];
+                int b = parameters[i + 4];
+                int rgb = (r << 16) | (g << 8) | b;
+                _currentAttributes = WithForegroundTrueColor(rgb);
+                i += 4;
             }
             else if (p == 39)
             {
@@ -338,8 +371,20 @@ internal sealed class TerminalScreen
             }
             else if (p == 48 && i + 2 < parameters.Length && parameters[i + 1] == 5)
             {
-                // 256-color background — consumed and ignored this phase.
+                // 256-color background
+                int colorIndex = parameters[i + 2];
+                _currentAttributes = WithBackground256(colorIndex);
                 i += 2;
+            }
+            else if (p == 48 && i + 4 < parameters.Length && parameters[i + 1] == 2)
+            {
+                // Truecolor background
+                int r = parameters[i + 2];
+                int g = parameters[i + 3];
+                int b = parameters[i + 4];
+                int rgb = (r << 16) | (g << 8) | b;
+                _currentAttributes = WithBackgroundTrueColor(rgb);
+                i += 4;
             }
             else if (p == 49)
             {
@@ -481,16 +526,28 @@ internal sealed class TerminalScreen
     }
 
     private CellAttribute WithBold(bool bold) =>
-        new(_currentAttributes.Foreground, _currentAttributes.Background, bold, _currentAttributes.Inverse);
+        new(_currentAttributes.Foreground, _currentAttributes.Background, bold, _currentAttributes.Inverse, _currentAttributes.Foreground256, _currentAttributes.Background256, _currentAttributes.ForegroundTrueColor, _currentAttributes.BackgroundTrueColor);
 
     private CellAttribute WithInverse(bool inverse) =>
-        new(_currentAttributes.Foreground, _currentAttributes.Background, _currentAttributes.Bold, inverse);
+        new(_currentAttributes.Foreground, _currentAttributes.Background, _currentAttributes.Bold, inverse, _currentAttributes.Foreground256, _currentAttributes.Background256, _currentAttributes.ForegroundTrueColor, _currentAttributes.BackgroundTrueColor);
 
     private CellAttribute WithForeground(int fg) =>
-        new(fg, _currentAttributes.Background, _currentAttributes.Bold, _currentAttributes.Inverse);
+        new(fg, _currentAttributes.Background, _currentAttributes.Bold, _currentAttributes.Inverse, -1, _currentAttributes.Background256, -1, _currentAttributes.BackgroundTrueColor);
 
     private CellAttribute WithBackground(int bg) =>
-        new(_currentAttributes.Foreground, bg, _currentAttributes.Bold, _currentAttributes.Inverse);
+        new(_currentAttributes.Foreground, bg, _currentAttributes.Bold, _currentAttributes.Inverse, _currentAttributes.Foreground256, -1, _currentAttributes.ForegroundTrueColor, -1);
+
+    private CellAttribute WithForeground256(int fg) =>
+        new(-1, _currentAttributes.Background, _currentAttributes.Bold, _currentAttributes.Inverse, fg, _currentAttributes.Background256, -1, _currentAttributes.BackgroundTrueColor);
+
+    private CellAttribute WithBackground256(int bg) =>
+        new(_currentAttributes.Foreground, -1, _currentAttributes.Bold, _currentAttributes.Inverse, _currentAttributes.Foreground256, bg, _currentAttributes.ForegroundTrueColor, -1);
+
+    private CellAttribute WithForegroundTrueColor(int fg) =>
+        new(-1, _currentAttributes.Background, _currentAttributes.Bold, _currentAttributes.Inverse, _currentAttributes.Foreground256, _currentAttributes.Background256, fg, _currentAttributes.BackgroundTrueColor);
+
+    private CellAttribute WithBackgroundTrueColor(int bg) =>
+        new(_currentAttributes.Foreground, -1, _currentAttributes.Bold, _currentAttributes.Inverse, _currentAttributes.Foreground256, _currentAttributes.Background256, _currentAttributes.ForegroundTrueColor, bg);
 
     private void ResizeScrollback(int columns)
     {

@@ -180,7 +180,7 @@ internal sealed class AnsiParser
         }
 
         string rawParameters = _csiBuffer.ToString();
-        if (!HasSupportedCsiParameterBytes(rawParameters))
+        if (!IsSupportedCsiParameterBytes(rawParameters, finalByte))
         {
             return;
         }
@@ -290,6 +290,26 @@ internal sealed class AnsiParser
     private static bool IsSupportedCsiFinalByte(char ch)
     {
         return ch is 'A' or 'B' or 'C' or 'D' or 'H' or 'J' or 'K' or 'm';
+    }
+
+    private static bool IsSupportedCsiParameterBytes(string rawParameters, char finalByte)
+    {
+        if (finalByte != 'm')
+        {
+            return HasSupportedCsiParameterBytes(rawParameters);
+        }
+
+        foreach (char ch in rawParameters)
+        {
+            if ((ch >= '0' && ch <= '9') || ch == ';' || ch == ':')
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     private void FlushPrint(List<AnsiAction> actions)
