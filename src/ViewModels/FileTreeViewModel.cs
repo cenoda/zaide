@@ -110,8 +110,8 @@ public class FileTreeViewModel : ReactiveObject
                     RootNodes.Add(node);
 
                 // Start watching for live changes
-                _fileTreeService.StartWatching(path);
-                _watcherSubscription = _fileTreeService.FileChanges!
+                var fileChanges = _fileTreeService.StartWatching(path);
+                _watcherSubscription = fileChanges
                     .ObserveOn(_scheduler)
                     .Subscribe(HandleFileChange);
             }
@@ -206,8 +206,8 @@ public class FileTreeViewModel : ReactiveObject
                 foreach (var node in nodes)
                     RootNodes.Add(node);
 
-                _fileTreeService.StartWatching(RootPath, newValue);
-                _watcherSubscription = _fileTreeService.FileChanges!
+                var fileChanges = _fileTreeService.StartWatching(RootPath, newValue);
+                _watcherSubscription = fileChanges
                     .ObserveOn(_scheduler)
                     .Subscribe(HandleFileChange);
 

@@ -18,18 +18,14 @@ public interface IFileTreeService : IDisposable
 
     /// <summary>
     /// Start monitoring a directory tree for file/directory creation, deletion, and rename.
+    /// Returns an observable that emits file change events.
     /// </summary>
-    void StartWatching(string path, bool includeHidden = false);
+    IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false);
 
     /// <summary>
     /// Stop monitoring.
     /// </summary>
     void StopWatching();
-
-    /// <summary>
-    /// Observable of file change events. Null when not watching.
-    /// </summary>
-    IObservable<FileChangeEvent>? FileChanges { get; }
 
     /// <summary>
     /// Creates an empty file at the given path.

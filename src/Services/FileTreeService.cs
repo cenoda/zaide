@@ -22,8 +22,6 @@ public class FileTreeService : IFileTreeService
     private FileSystemWatcher? _watcher;
     private bool _includeHidden;
 
-    public IObservable<FileChangeEvent>? FileChanges { get; private set; }
-
     /// <summary>
     /// Recursively enumerate a directory into a list of FileTreeNode.
     /// Directories are sorted first, then files. Both are sorted alphabetically.
@@ -105,8 +103,9 @@ public class FileTreeService : IFileTreeService
     /// <summary>
     /// Start monitoring a directory tree for file/directory creation, deletion, and rename.
     /// includeHidden controls whether the watcher's filter pipeline skips hidden entries.
+    /// Returns an observable that emits file change events.
     /// </summary>
-    public void StartWatching(string path, bool includeHidden = false)
+    public IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false)
     {
         StopWatching();
         _includeHidden = includeHidden;
@@ -132,7 +131,7 @@ public class FileTreeService : IFileTreeService
         // Capture the current flag so the closure matches the toggle state at watch time
         var currentIncludeHidden = _includeHidden;
 
-        FileChanges = created
+        var observable = created
             .Select(e => new FileChangeEvent(ChangeType.Created, e.EventArgs.FullPath))
             .Merge(deleted.Select(e => new FileChangeEvent(ChangeType.Deleted, e.EventArgs.FullPath)))
             .Merge(renamed.Select(e => new FileChangeEvent(ChangeType.Renamed, e.EventArgs.FullPath, e.EventArgs.OldFullPath)))
@@ -140,6 +139,7 @@ public class FileTreeService : IFileTreeService
             .Throttle(TimeSpan.FromMilliseconds(100));
 
         _watcher.EnableRaisingEvents = true;
+        return observable;
     }
 
     public void StopWatching()
@@ -150,8 +150,6 @@ public class FileTreeService : IFileTreeService
             _watcher.Dispose();
             _watcher = null;
         }
-
-        FileChanges = null;
     }
 
     /// <summary>

@@ -6,19 +6,7 @@ Tracking file for audit findings and remediation status.
 
 ## High Priority
 
-### H1: Document.SaveAsync owns persistence workflow
-- **File:** `src/Models/Document.cs`
-- **Issue:** Document currently owns the save workflow (calls IFileService, manages dirty/error state). This hides the service dependency instead of removing it.
-- **Fix:** Remove `SaveAsync` from Document. EditorViewModel becomes the save coordinator: calls IFileService directly, then tells Document to mark clean or record error.
-- **Milestone:** M1
-- **Status:** ⬜ Planned
-
-### H2: IFileTreeWatcher.FileChanges contract is false
-- **File:** `src/Services/FileTreeService.cs`
-- **Issue:** Current implementation has nullable `FileChanges` property that is set to null by `StopWatching()`. The plan's non-nullable interface contract doesn't match reality.
-- **Fix:** Change `IFileTreeWatcher.StartWatching()` to return `IObservable<FileChangeEvent>` directly. This eliminates the nullable property and the race condition.
-- **Milestone:** M3
-- **Status:** ⬜ Planned
+*(No high priority items remaining)*
 
 ---
 
@@ -49,30 +37,7 @@ Tracking file for audit findings and remediation status.
 
 ## Low Priority
 
-### L1: Workspace.cs broken indentation
-- **File:** `src/Models/Workspace.cs`
-- **Issue:** `OpenDocument` method (line 16) has no indentation.
-- **Fix:** Fix indentation when M1 touches this file.
-- **Milestone:** M1
-- **Status:** ⬜ Planned
-
-### L2: M3 interfaces need separate files
-- **Issue:** Plan presents three interfaces together, but CONVENTIONS.md requires one class per file.
-- **Fix:** Created `IFileTreeService.cs` with combined interface (single file per CONVENTIONS).
-- **Milestone:** M3
-- **Status:** ✅ Resolved (2026-07-01)
-
-### L3: M3 references _scheduler before M5 exists
-- **Issue:** M3 VM restart snippet used `_scheduler` but `IScheduler` injection is only introduced in M5. Implementing M3 alone would not compile.
-- **Fix:** M3 keeps `AvaloniaScheduler.Instance` in the `ObserveOn()` call. When M5 is applied, replace with `_scheduler`.
-- **Milestone:** M3 → M5 sequencing
-- **Status:** ⬜ Planned (M3 complete, M5 pending)
-
-### L4: M3 DI registration risks dual service instances
-- **Issue:** Live `Program.cs` registers concrete `services.AddSingleton<FileTreeService>()`. If both concrete and `IFileTreeService` interface registrations remain, DI creates two instances.
-- **Fix:** Replaced concrete registration with `services.AddSingleton<IFileTreeService, FileTreeService>()`.
-- **Milestone:** M3
-- **Status:** ✅ Resolved (2026-07-01)
+*(No low priority items remaining)*
 
 ---
 
@@ -84,10 +49,34 @@ Tracking file for audit findings and remediation status.
 - **Milestone:** M1
 - **Status:** ✅ Resolved (2026-07-01)
 
+### H2: IFileTreeWatcher.FileChanges contract is false
+- **File:** `src/Services/FileTreeService.cs`, `src/Services/IFileTreeService.cs`
+- **Fix:** Changed `StartWatching()` to return `IObservable<FileChangeEvent>` directly. Removed nullable `FileChanges` property. `FileTreeViewModel` now uses the returned observable.
+- **Milestone:** M3
+- **Status:** ✅ Resolved (2026-07-01)
+
 ### L1: Workspace.cs broken indentation
 - **File:** `src/Models/Workspace.cs`
 - **Fix:** Removed unused `using Zaide.Services;` — indentation fix deferred to future touch.
 - **Milestone:** M1
+- **Status:** ✅ Resolved (2026-07-01)
+
+### L2: M3 interfaces need separate files
+- **Issue:** Plan presents three interfaces together, but CONVENTIONS.md requires one class per file.
+- **Fix:** Created `IFileTreeService.cs` with combined interface (single file per CONVENTIONS).
+- **Milestone:** M3
+- **Status:** ✅ Resolved (2026-07-01)
+
+### L3: M3 references _scheduler before M5 exists
+- **Issue:** M3 VM restart snippet used `_scheduler` but `IScheduler` injection is only introduced in M5. Implementing M3 alone would not compile.
+- **Fix:** M3 keeps `AvaloniaScheduler.Instance` in the `ObserveOn()` call. When M5 is applied, replace with `_scheduler`.
+- **Milestone:** M3 → M5 sequencing
+- **Status:** ✅ Resolved (M3 and M5 complete)
+
+### L4: M3 DI registration risks dual service instances
+- **Issue:** Live `Program.cs` registers concrete `services.AddSingleton<FileTreeService>()`. If both concrete and `IFileTreeService` interface registrations remain, DI creates two instances.
+- **Fix:** Replaced concrete registration with `services.AddSingleton<IFileTreeService, FileTreeService>()`.
+- **Milestone:** M3
 - **Status:** ✅ Resolved (2026-07-01)
 
 ---
