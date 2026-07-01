@@ -22,7 +22,7 @@ class Program
                     services.AddSingleton<Models.Workspace>();
                     services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<ITerminalService, LinuxTerminalService>();
-                    services.AddSingleton<FileTreeService>();
+                    services.AddSingleton<IFileTreeService, FileTreeService>();
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
                     services.AddSingleton<EditorTabViewModel>();

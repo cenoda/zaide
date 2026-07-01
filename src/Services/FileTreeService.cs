@@ -11,7 +11,7 @@ namespace Zaide.Services;
 /// Enumerates directories and files into a nested FileTreeNode tree.
 /// Applies an ignore list, skips hidden entries, and monitors file system changes.
 /// </summary>
-public class FileTreeService : IDisposable
+public class FileTreeService : IFileTreeService
 {
     private static readonly HashSet<string> DefaultIgnores = new(StringComparer.OrdinalIgnoreCase)
     {

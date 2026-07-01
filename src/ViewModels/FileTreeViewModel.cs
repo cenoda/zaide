@@ -18,7 +18,7 @@ namespace Zaide.ViewModels;
 /// </summary>
 public class FileTreeViewModel : ReactiveObject
 {
-    private readonly FileTreeService _fileTreeService;
+    private readonly IFileTreeService _fileTreeService;
     private FileTreeNode? _selectedFile;
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
@@ -82,7 +82,7 @@ public class FileTreeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _rootPath, value);
     }
 
-    public FileTreeViewModel(FileTreeService fileTreeService)
+    public FileTreeViewModel(IFileTreeService fileTreeService)
     {
         _fileTreeService = fileTreeService;
 
