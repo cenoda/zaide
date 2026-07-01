@@ -150,4 +150,4 @@ Cleaned up layer boundaries within the single-project structure (preparation for
 
 ---
 
-*Last updated: 2026-06-29*
+*Last updated: 2026-07-01*

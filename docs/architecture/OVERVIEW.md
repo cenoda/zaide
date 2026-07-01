@@ -77,4 +77,4 @@ They will be revisited when their respective phases begin.
 
 ---
 
-*Last updated: 2026-06-29*
+*Last updated: 2026-07-01*
