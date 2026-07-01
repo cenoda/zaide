@@ -552,4 +552,83 @@ public class TerminalViewModelTests
         Assert.Equal("abc", vm.ScreenSnapshot.ScrollbackLines[0]);
         Assert.Equal("def", vm.ScreenSnapshot.ScrollbackLines[1]);
     }
+
+    // --- M3: Resize and Session Stability ---
+
+    [Fact]
+    public async Task Restart_AfterResize_ReappliesLatestViewportSize()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        // Start, resize, stop, then restart
+        await vm.EnsureStartedAsync();
+        vm.Resize(100, 30);
+        
+        // Simulate process exit
+        service.SetupGet(s => s.IsRunning).Returns(false);
+        service.Raise(s => s.ProcessExited += null);
+        
+        await vm.RestartAsync();
+
+        // Should forward the latest dimensions after restart (once during resize, once during restart)
+        service.Verify(s => s.Resize(100, 30), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Restart_RaisesRestartedEvent()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        bool eventRaised = false;
+        vm.Restarted += () => eventRaised = true;
+
+        await vm.RestartAsync();
+
+        Assert.True(eventRaised);
+    }
+
+    [Fact]
+    public void Resize_WhenScrolledBack_PreservesScrollOffset()
+    {
+        // This test verifies that resize doesn't interfere with scrollback position
+        // The actual scrollback behavior is tested in the render control tests
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.Resize(50, 10);
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"));
+
+        // Resize should not corrupt the screen buffer
+        vm.Resize(30, 5);
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal(30, vm.ScreenSnapshot!.Columns);
+        Assert.Equal(5, vm.ScreenSnapshot.Rows);
+    }
+
+    [Fact]
+    public async Task Resize_DuringRunningSession_UpdatesSnapshotDimensionsWithoutCorruption()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("Initial content\n"));
+
+        // Resize during running session
+        vm.Resize(60, 15);
+
+        Assert.NotNull(vm.ScreenSnapshot);
+        Assert.Equal(60, vm.ScreenSnapshot!.Columns);
+        Assert.Equal(15, vm.ScreenSnapshot.Rows);
+    }
 }

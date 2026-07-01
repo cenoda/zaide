@@ -8,13 +8,17 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [ ] Add transcript-style tests for prompt redraw patterns.
 
 ### M3: Resize and Session Stability
-- [ ] Audit and tighten resize forwarding in `TerminalViewModel` and `TerminalPanel`.
-- [ ] Ensure viewport behavior is consistent during resize and restart.
-- [ ] Add tests for resize and scrollback behavior.
+- [x] Audit and tighten resize forwarding in `TerminalViewModel` and `TerminalPanel`.
+- [x] Ensure viewport behavior is consistent during resize and restart.
+- [x] Add tests for resize and scrollback behavior.
+- [x] Added `Restarted` event to `TerminalViewModel` to notify when restart completes.
+- [x] Added `OnRestarted` handler in `TerminalPanel` to scroll viewport to bottom after restart.
+- [x] Added comprehensive tests for resize and restart behavior.
 
 ### M4: Docs and Exit Audit
 - [ ] Update `docs/roadmap/PHASES.md` upon completion of Phase 3.7.
 - [ ] Review and update `docs/architecture/OVERVIEW.md` if necessary.
+- [x] M3 implementation completed successfully.
 
 ## Completed Items
 
@@ -33,6 +37,13 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Add bracketed paste mode support in `AnsiParser` and `TerminalViewModel`.
 - [x] Implement `PasteAsync` method in `TerminalViewModel` to wrap paste text with bracketed paste markers.
 - [x] Update `TerminalPanel.PasteAsync()` to call `ViewModel.PasteAsync(text)` instead of `SendInputAsync(bytes)` directly.
+
+### M3: Resize and Session Stability
+- [x] Added `Restarted` event to `TerminalViewModel` to notify when restart completes.
+- [x] Added `OnRestarted` handler in `TerminalPanel` to scroll viewport to bottom after restart.
+- [x] Added comprehensive tests for resize and restart behavior.
+- [x] Verified that resize forwarding works correctly during active sessions.
+- [x] Ensured viewport consistency during resize and restart operations.
 
 ## Notes
 

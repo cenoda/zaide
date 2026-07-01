@@ -1,5 +1,6 @@
 using Avalonia.Input.Platform;
 using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -68,6 +69,11 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             d.Add(this.OneWayBind(ViewModel, vm => vm.StatusLabel, v => v._statusText.Text));
             d.Add(this.BindCommand(ViewModel, vm => vm.ClearCommand, v => v._clearButton));
             d.Add(this.BindCommand(ViewModel, vm => vm.RestartCommand, v => v._restartButton));
+            if (ViewModel != null)
+            {
+                ViewModel.Restarted += OnRestarted;
+                d.Add(Disposable.Create(() => ViewModel.Restarted -= OnRestarted));
+            }
             d.Add(this.GetObservable(IsVisibleProperty).Subscribe(visible => { if (visible) FocusTerminal(); }));
             d.Add(_renderControl.GetObservable(BoundsProperty)
                 .Throttle(TimeSpan.FromMilliseconds(100))
@@ -178,5 +184,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         var bounds = _renderControl.Bounds;
         var (columns, rows) = TerminalGeometry.Compute(bounds.Width, bounds.Height, cw, lh, 0, 0, 0, 0);
         ViewModel.Resize(columns, rows);
+    }
+
+    private void OnRestarted()
+    {
+        _renderControl.ScrollToBottom(clearSelection: true);
     }
 }

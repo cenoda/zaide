@@ -136,8 +136,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// Restarts the shell after it has exited. Disabled while the terminal is
     /// running. See <see cref="RestartAsync"/>.
     /// </summary>
-    public ReactiveCommand<Unit, Unit> RestartCommand { get; }
-
+    public ReactiveCommand<Unit, Unit> RestartCommand { get; }    public event Action? Restarted;
     /// <summary>Production constructor used by the DI container.</summary>
     public TerminalViewModel(ITerminalService terminalService)
         : this(terminalService, action => Dispatcher.UIThread.Post(action))
@@ -223,6 +222,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         PrepareForRestart();
 
         await EnsureStartedAsync();
+        Restarted?.Invoke();
     }
 
     /// <summary>
