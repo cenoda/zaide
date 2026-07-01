@@ -2,16 +2,16 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Read `docs/phases/phase-3.7/BRIEF.md`
-- [ ] Re-read `docs/phases/phase-3.6/IMPLEMENTATION_PLAN.md` and `TOFIX.md`
+- [x] Read `docs/phases/phase-3.7/BRIEF.md`
+- [x] Re-read `docs/phases/phase-3.6/IMPLEMENTATION_PLAN.md` and `TOFIX.md`
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
 - [ ] Verify current tests pass: `dotnet test Zaide.slnx`
-- [ ] Manually confirm the current Phase 3.6 baseline still works on Linux:
-  - [ ] Shell starts and shows a prompt
-  - [ ] `clear` works (already implemented in Phase 3.6 M4-01; verify no regression)
-  - [ ] Basic selection/copy/paste works
-  - [ ] Resize still reaches the PTY
-- [ ] Confirm no new NuGet packages are needed for this phase
+- [x] Manually confirm the current Phase 3.6 baseline still works on Linux:
+  - [x] Shell starts and shows a prompt
+  - [x] `clear` works (already implemented in Phase 3.6 M4-01; verify no regression)
+  - [x] Basic selection/copy/paste works
+  - [x] Resize still reaches the PTY
+- [x] Confirm no new NuGet packages are needed for this phase
 
 ## Planning Status
 
@@ -117,6 +117,9 @@ already exports `TERM=xterm-256color`, so the UI should stop pretending that
    enum ColorKind { Default, AnsiIndex, Palette256, TrueColor }
    struct CellAttribute { ColorKind FgKind; int FgValue; ColorKind BgKind; int BgValue; bool Bold; bool Inverse; }
    ```
+   Encoding convention:
+   - `AnsiIndex` and `Palette256`: value is the palette index
+   - `TrueColor`: value is packed `0xRRGGBB`
 
 2. Extend SGR handling in `TerminalScreen.SetSgr()` for:
    - `38;5;n` foreground (256-color palette)
@@ -131,7 +134,9 @@ already exports `TERM=xterm-256color`, so the UI should stop pretending that
 4. Keep unsupported style attributes such as italic/underline/strikethrough
    deferred
 5. Ensure `TerminalSnapshot` exposes enough color data for the render control
-   without leaking UI types into the ViewModel layer
+   without leaking UI types into the ViewModel layer. Keep “default color” as a
+   semantic value in snapshot/viewmodel layers; resolve concrete theme colors in
+   `TerminalRenderControl`.
 6. Map 256-color indices and truecolor values in `TerminalRenderControl`
    directly to actual rendered colors using a standard 256-color palette
    lookup table (ANSI 0-15, 6×6×6 cube 16-231, grayscale 232-255)
@@ -178,6 +183,7 @@ coverage of prompt redraw transcripts used by readline-style shells.
 1. Add narrow private-mode handling for bracketed paste only:
    - `CSI ? 2004 h` → bracketed paste enabled
    - `CSI ? 2004 l` → bracketed paste disabled
+   - All other DEC private modes are ignored in this phase (no emitted action)
 
    Parser changes required:
    - Add `h` and `l` to `IsSupportedCsiFinalByte()` set
@@ -210,8 +216,9 @@ coverage of prompt redraw transcripts used by readline-style shells.
 
 **Manual smoke for M2:**
 
-- Paste a multiline command into Bash / Zsh and confirm it does not execute
-  line-by-line unexpectedly when bracketed paste is enabled by the shell
+- Paste a multiline command into a shell with bracketed paste enabled (for
+  example a default readline-enabled Bash/Zsh setup) and confirm it does not
+  execute line-by-line unexpectedly
 - Confirm single-line paste still feels normal
 - Confirm in-place shell redraws no longer leave stale text fragments
 
@@ -242,8 +249,9 @@ restarts feel predictable instead of merely functional.
 3. Preserve or intentionally reset "follow live bottom" behavior with explicit
    rules:
    - user-scrolled viewport stays put during passive output
-   - explicit resume actions (Enter, click-to-bottom, maybe restart) return to
-     live output
+   - explicit resume actions return to live output (click-to-bottom and restart)
+   - avoid implicit jump-to-bottom on normal typing while user is intentionally
+     reviewing scrollback
 4. Re-check restart behavior with cached dimensions and scrollback state so a
    restarted shell opens in the correct size and a clean live viewport
 5. Add focused regression coverage for:
@@ -271,7 +279,7 @@ restarts feel predictable instead of merely functional.
 
 ### M4: Docs and Exit Audit
 
-- [ ] Update `docs/phases/phase-3.7/TOFIX.md` with review findings
+- [ ] Create/update `docs/phases/phase-3.7/TOFIX.md` with review findings
 - [ ] Update `docs/roadmap/PHASES.md` when Phase 3.7 is complete
 - [ ] Update `docs/architecture/OVERVIEW.md` only if the terminal behavior
       contract meaningfully changed
