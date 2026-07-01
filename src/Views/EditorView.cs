@@ -44,7 +44,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             FontFamily = CodeFont,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"],
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             Options =
             {

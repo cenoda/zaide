@@ -218,7 +218,7 @@ public class TerminalRenderControl : Control
 
     public override void Render(DrawingContext context)
     {
-        Color defaultBackground = GetThemeColor("DeepBaseColor", AnsiColors[0]);
+        Color defaultBackground = GetThemeColor("SurfaceBaseColor", AnsiColors[0]);
         Color defaultForeground = GetThemeColor("TextActiveColor", AnsiColors[7]);
         Color selectionBackground = GetThemeColor("SoftAccentColor", Color.FromArgb(160, 194, 194, 229));
         Color selectionForeground = defaultBackground;

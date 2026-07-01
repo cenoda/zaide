@@ -55,7 +55,7 @@ public class TownhallChatPanel : UserControl
             Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        Background = (IBrush?)Application.Current!.Resources["SurfaceBase"];
+        Background = (IBrush?)Application.Current!.Resources["GlassBase"];
 
         Content = new DockPanel
         {

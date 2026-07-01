@@ -8,12 +8,12 @@
         <!-- Palette raw colors (shared source of truth — matched to concept.png) -->
         <Color x:Key="PrimaryAccentColor">#066ADB</Color>
         <Color x:Key="SoftAccentColor">#3ED3E4</Color>
-        <Color x:Key="DeepBaseColor">#0A0F19</Color>
-        <Color x:Key="TextActiveColor">#E3E4F4</Color>
-        <Color x:Key="SurfaceBaseColor">#0B121D</Color>
-        <Color x:Key="PanelDeepColor">#0D1520</Color>
-        <Color x:Key="SurfacePanelColor">#0E1825</Color>
-        <Color x:Key="SurfaceBorderColor">#152030</Color>
+        <Color x:Key="DeepBaseColor">#0E1520</Color>
+        <Color x:Key="TextActiveColor">#E8EAF2</Color>
+        <Color x:Key="SurfaceBaseColor">#131B27</Color>
+        <Color x:Key="PanelDeepColor">#111822</Color>
+        <Color x:Key="SurfacePanelColor">#1A2330</Color>
+        <Color x:Key="SurfaceBorderColor">#253040</Color>
 
         <!-- Palette brushes (derived from the colors above) -->
         <SolidColorBrush x:Key="PrimaryAccent" Color="{StaticResource PrimaryAccentColor}" />
@@ -25,12 +25,22 @@
         <SolidColorBrush x:Key="SurfacePanel" Color="{StaticResource SurfacePanelColor}" />
         <SolidColorBrush x:Key="SurfaceBorder" Color="{StaticResource SurfaceBorderColor}" />
 
+        <!-- Glassmorphism translucent surfaces -->
+        <Color x:Key="GlassBaseColor">#151E2B</Color>
+        <Color x:Key="GlassDeepColor">#111820</Color>
+        <Color x:Key="GlassPanelColor">#1C2635</Color>
+        <Color x:Key="GlassBorderColor">#3A4A61</Color>
+        <SolidColorBrush x:Key="GlassBase" Color="{StaticResource GlassBaseColor}" Opacity="0.78" />
+        <SolidColorBrush x:Key="GlassDeep" Color="{StaticResource GlassDeepColor}" Opacity="0.82" />
+        <SolidColorBrush x:Key="GlassPanel" Color="{StaticResource GlassPanelColor}" Opacity="0.72" />
+        <SolidColorBrush x:Key="GlassBorder" Color="{StaticResource GlassBorderColor}" Opacity="0.35" />
+
         <!-- Derived accent colors -->
         <Color x:Key="WarningColor">#FCBB47</Color>
         <Color x:Key="SuccessColor">#28A745</Color>
-        <Color x:Key="TextSecondaryColor">#8B95A5</Color>
-        <Color x:Key="SeparatorColor">#1A2535</Color>
-        <Color x:Key="HoverSurfaceColor">#121D2B</Color>
+        <Color x:Key="TextSecondaryColor">#9AA5B5</Color>
+        <Color x:Key="SeparatorColor">#1E2937</Color>
+        <Color x:Key="HoverSurfaceColor">#1B2736</Color>
         <SolidColorBrush x:Key="Warning" Color="{StaticResource WarningColor}" />
         <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
         <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource TextSecondaryColor}" />
@@ -38,8 +48,8 @@
         <SolidColorBrush x:Key="HoverSurface" Color="{StaticResource HoverSurfaceColor}" />
 
         <!-- Semantic derived colors -->
-        <Color x:Key="TextContentColor">#C0C6D4</Color>
-        <Color x:Key="ActiveHighlightColor">#1A2535</Color>
+        <Color x:Key="TextContentColor">#C8CED8</Color>
+        <Color x:Key="ActiveHighlightColor">#1E2D3F</Color>
         <Color x:Key="CloseHoverColor">#223ED3E4</Color>
         <SolidColorBrush x:Key="TextContent" Color="{StaticResource TextContentColor}" />
         <SolidColorBrush x:Key="ActiveHighlight" Color="{StaticResource ActiveHighlightColor}" />

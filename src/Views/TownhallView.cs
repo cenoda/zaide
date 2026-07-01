@@ -80,7 +80,7 @@ public class TownhallView : UserControl
                 new ColumnDefinition { Width = GridLength.Auto }
             },
             Height = 40,
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
+            Background = (IBrush?)Application.Current!.Resources["GlassPanel"]
         };
         Grid.SetColumn(channelTitleRow, 0);
         Grid.SetColumn(peopleCount, 1);
@@ -91,7 +91,7 @@ public class TownhallView : UserControl
         {
             Child = topBar,
             [DockPanel.DockProperty] = Dock.Top,
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["GlassBorder"],
             BorderThickness = new Thickness(0, 0, 0, 1)
         };
 

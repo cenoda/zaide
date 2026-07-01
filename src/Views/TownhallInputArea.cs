@@ -29,9 +29,9 @@ public class TownhallInputArea : UserControl
         {
             PlaceholderText = "Message #townhall-main",
             FontSize = 13,
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
+            Background = (IBrush?)Application.Current!.Resources["GlassPanel"],
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["GlassBorder"],
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10, 8, 10, 8),
@@ -84,7 +84,7 @@ public class TownhallInputArea : UserControl
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                 new ColumnDefinition { Width = GridLength.Auto }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"],
+            Background = Brushes.Transparent,
             Margin = new Thickness(0),
             ColumnSpacing = 8
         };
@@ -96,10 +96,10 @@ public class TownhallInputArea : UserControl
 
         var host = new Border
         {
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["GlassBorder"],
             BorderThickness = new Thickness(0, 1, 0, 0),
             Padding = new Thickness(12, 10, 12, 10),
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"],
+            Background = (IBrush?)Application.Current!.Resources["GlassBase"],
             Child = root
         };
 

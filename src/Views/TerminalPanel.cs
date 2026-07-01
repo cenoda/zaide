@@ -60,10 +60,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         Grid.SetColumn(buttonStrip, 2);
         var toolbar = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
+            Background = (IBrush?)Application.Current!.Resources["GlassPanel"],
             Padding = new Thickness(0, 6, 12, 6),
             Child = toolbarGrid,
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["GlassBorder"],
             BorderThickness = new Thickness(0, 1, 0, 0)
         };
         var root = new Grid
@@ -105,7 +105,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private static Button BuildToolbarButton(string label) => new()
     {
         Content = label, FontSize = 12, Padding = new Thickness(12, 4, 12, 4),
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
+        Background = (IBrush?)Application.Current!.Resources["GlassPanel"],
         Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
         BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(6),
         Cursor = new Cursor(StandardCursorType.Hand)

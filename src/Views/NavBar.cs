@@ -107,7 +107,7 @@ public class NavBar : UserControl
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto }
             },
-            Background = (IBrush?)Application.Current!.Resources["DeepBase"]
+            Background = (IBrush?)Application.Current!.Resources["GlassDeep"]
         };
 
         Grid.SetRow(topStack, 0);

@@ -157,11 +157,15 @@ Zaide should feel as polished as VS Code or Warp at a glance:
   - **Secondary Accent:** `#3ED3E4` (Cyan Teal — for code type highlights, secondary indicators)
   - **Warning Accent:** `#FCBB47` (Amber — for warnings, modified indicators, alerts)
   - **Success Accent:** `#28A745` (Green — for added indicators, active status dots, sync)
-  - **Deep Base:** `#0A0F19` (Near-Black Navy — for window and panel backgrounds)
-  - **Panel Surface:** `#0B121D` (Slightly Lighter Navy — for elevated panels, code areas)
-  - **Text Active:** `#E3E4F4` (Pale Ice Blue-White — for high-contrast text)
-  - **Text Secondary:** `#8B95A5` (Muted Blue-Gray — for timestamps, line numbers, labels)
-  - **Separator:** `#070C16` (Darkest — for 1px panel separators)
+  - **Deep Base:** `#0E1520` (Near-Black Navy — for window background)
+  - **Surface Base:** `#131B27` (Slate Navy — for editor/terminal surfaces)
+  - **Panel Surface:** `#1A2330` (Elevated Slate — for inputs, buttons, active highlights)
+  - **Glass Base:** `#151E2B` at 78% opacity (translucent sidebar and panel fills)
+  - **Glass Panel:** `#1C2635` at 72% opacity (translucent elevated surfaces)
+  - **Glass Border:** `#3A4A61` at 35% opacity (subtle glass edge)
+  - **Text Active:** `#E8EAF2` (Pale Ice Blue-White — for high-contrast text)
+  - **Text Secondary:** `#9AA5B5` (Muted Blue-Gray — for timestamps, line numbers, labels)
+  - **Separator:** `#1E2937` (Darkest — for 1px panel separators)
 - **Separator style:** Space or 1px semi-transparent line — never 2px+ solid borders.
 - **Focus states:** Clear but subtle — slight brightness shift, not thick outline.
 

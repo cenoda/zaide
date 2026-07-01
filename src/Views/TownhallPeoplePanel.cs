@@ -46,7 +46,7 @@ public class TownhallPeoplePanel : UserControl
             Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        Background = (IBrush?)Application.Current!.Resources["PanelDeep"];
+        Background = (IBrush?)Application.Current!.Resources["GlassBase"];
 
         Content = new DockPanel
         {

@@ -103,7 +103,7 @@ public partial class EditorTabBar : UserControl
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                 new ColumnDefinition { Width = GridLength.Auto }
             },
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"]
+            Background = (IBrush?)Application.Current!.Resources["GlassPanel"]
         };
         Grid.SetColumn(_scrollViewer, 0);
         Grid.SetColumn(sharedIndicator, 1);
@@ -283,7 +283,7 @@ public partial class EditorTabBar : UserControl
         {
             Child = grid,
             Background = _inactiveTabBrush,
-            BorderBrush = (IBrush?)Application.Current!.Resources["DeepBase"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["GlassBorder"],
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = new Thickness(0),
             MinHeight = 36,

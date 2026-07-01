@@ -195,7 +195,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(0) },
                 new RowDefinition { Height = new GridLength(0) }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
+            Background = (IBrush?)Application.Current!.Resources["DeepBase"]
         };
 
         var bottomSplitterRow = grid.RowDefinitions[1];
@@ -242,7 +242,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"],
+            Background = (IBrush?)Application.Current!.Resources["GlassBase"],
             Children =
             {
                 _editorTabBar,
@@ -277,7 +277,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var terminalPanel = new TerminalPanel();
         var bottomPanel = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
+            Background = (IBrush?)Application.Current!.Resources["GlassBase"],
             Padding = new Thickness(0),
             Child = terminalPanel,
             IsVisible = false
