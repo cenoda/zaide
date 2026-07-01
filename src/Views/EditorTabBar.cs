@@ -233,7 +233,7 @@ public partial class EditorTabBar : UserControl
         };
 
         closeButton.PointerEntered += (_, _) =>
-            closeButton.Background = new SolidColorBrush(Color.Parse("#22C2C2E5"));
+            closeButton.Background = new SolidColorBrush(Color.Parse("#223ED3E4"));
         closeButton.PointerExited += (_, _) => closeButton.Background = Brushes.Transparent;
         closeButton.PointerPressed += (_, e) =>
         {

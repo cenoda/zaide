@@ -5,15 +5,15 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <!-- Palette raw colors (shared source of truth) -->
-        <Color x:Key="PrimaryAccentColor">#8FA5DE</Color>
-        <Color x:Key="SoftAccentColor">#C2C2E5</Color>
-        <Color x:Key="DeepBaseColor">#142043</Color>
+        <!-- Palette raw colors (shared source of truth — matched to concept.png) -->
+        <Color x:Key="PrimaryAccentColor">#066ADB</Color>
+        <Color x:Key="SoftAccentColor">#3ED3E4</Color>
+        <Color x:Key="DeepBaseColor">#0A0F19</Color>
         <Color x:Key="TextActiveColor">#E3E4F4</Color>
-        <Color x:Key="SurfaceBaseColor">#1E1E23</Color>
-        <Color x:Key="PanelDeepColor">#0F1A33</Color>
-        <Color x:Key="SurfacePanelColor">#1A2B50</Color>
-        <Color x:Key="SurfaceBorderColor">#2D4175</Color>
+        <Color x:Key="SurfaceBaseColor">#0B121D</Color>
+        <Color x:Key="PanelDeepColor">#0D1520</Color>
+        <Color x:Key="SurfacePanelColor">#0E1825</Color>
+        <Color x:Key="SurfaceBorderColor">#152030</Color>
 
         <!-- Palette brushes (derived from the colors above) -->
         <SolidColorBrush x:Key="PrimaryAccent" Color="{StaticResource PrimaryAccentColor}" />
