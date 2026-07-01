@@ -1,8 +1,5 @@
 using System;
-using System.Threading.Tasks;
-using Moq;
 using Zaide.Models;
-using Zaide.Services;
 using Xunit;
 
 namespace Zaide.Tests.Models
@@ -35,42 +32,6 @@ namespace Zaide.Tests.Models
         }
 
         [Fact]
-        public async Task SaveAsync_DelegatesToFileService()
-        {
-            var filePath = "/path/to/file.txt";
-            var content = "Hello, World!";
-            var document = new Document(filePath, content);
-            document.MarkClean();
-            var fileServiceMock = new Mock<IFileService>();
-
-            await document.SaveAsync(fileServiceMock.Object);
-
-            fileServiceMock.Verify(fs => fs.WriteAllTextAsync(filePath, content), Times.Once);
-            Assert.False(document.IsDirty);
-            Assert.Null(document.LastSaveError);
-        }
-
-        [Fact]
-        public async Task SaveAsync_FileServiceThrows_UpdatesLastSaveError()
-        {
-            var filePath = "/path/to/file.txt";
-            var content = "Hello, World!";
-            var document = new Document(filePath, content);
-            document.MarkClean();
-            var fileServiceMock = new Mock<IFileService>();
-            var exceptionMessage = "Failed to save file";
-
-            fileServiceMock
-                .Setup(fs => fs.WriteAllTextAsync(filePath, content))
-                .ThrowsAsync(new Exception(exceptionMessage));
-
-            await Assert.ThrowsAsync<Exception>(() => document.SaveAsync(fileServiceMock.Object));
-
-            Assert.Equal(exceptionMessage, document.LastSaveError);
-            Assert.True(document.IsDirty);
-        }
-
-        [Fact]
         public void MarkClean_ResetsDirtyAndError()
         {
             var filePath = "/path/to/file.txt";
@@ -81,6 +42,33 @@ namespace Zaide.Tests.Models
 
             Assert.False(document.IsDirty);
             Assert.Null(document.LastSaveError);
+        }
+
+        [Fact]
+        public void RecordSaveError_SetsErrorAndMarksDirty()
+        {
+            var filePath = "/path/to/file.txt";
+            var document = new Document(filePath);
+            document.MarkClean();
+            Assert.False(document.IsDirty);
+
+            document.RecordSaveError("Failed to save");
+
+            Assert.Equal("Failed to save", document.LastSaveError);
+            Assert.True(document.IsDirty);
+        }
+
+        [Fact]
+        public void RecordSaveError_NullError_ClearsErrorButKeepsDirty()
+        {
+            var filePath = "/path/to/file.txt";
+            var document = new Document(filePath);
+            document.RecordSaveError("Previous error");
+
+            document.RecordSaveError(null);
+
+            Assert.Null(document.LastSaveError);
+            Assert.True(document.IsDirty);
         }
     }
 }

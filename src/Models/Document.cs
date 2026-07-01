@@ -1,6 +1,4 @@
 using System;
-using System.Threading.Tasks;
-using Zaide.Services;
 
 namespace Zaide.Models
 {
@@ -37,32 +35,20 @@ namespace Zaide.Models
             LastSaveError = null;
         }
 
-        public async Task SaveAsync(IFileService fileService)
-        {
-            try
-            {
-                await fileService.WriteAllTextAsync(FilePath, Content);
-                IsDirty = false;
-                LastSaveError = null;
-                OnDirtyStateChanged();
-                OnSaveErrorChanged();
-            }
-            catch (Exception ex)
-            {
-                LastSaveError = ex.Message;
-                IsDirty = true;
-                OnSaveErrorChanged();
-                OnDirtyStateChanged();
-                throw;
-            }
-        }
-
         public void MarkClean()
         {
             IsDirty = false;
             LastSaveError = null;
             OnDirtyStateChanged();
             OnSaveErrorChanged();
+        }
+
+        public void RecordSaveError(string? error)
+        {
+            LastSaveError = error;
+            IsDirty = true;
+            OnSaveErrorChanged();
+            OnDirtyStateChanged();
         }
 
         protected virtual void OnContentChanged()

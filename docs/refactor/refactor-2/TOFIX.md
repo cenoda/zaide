@@ -78,7 +78,17 @@ Tracking file for audit findings and remediation status.
 
 ## Resolved
 
-*(Move items here when fixed)*
+### H1: Document.SaveAsync owns persistence workflow
+- **File:** `src/Models/Document.cs`
+- **Fix:** Removed `SaveAsync` from Document. EditorViewModel now calls `IFileService` directly, then tells Document to mark clean or record error.
+- **Milestone:** M1
+- **Status:** ✅ Resolved (2026-07-01)
+
+### L1: Workspace.cs broken indentation
+- **File:** `src/Models/Workspace.cs`
+- **Fix:** Removed unused `using Zaide.Services;` — indentation fix deferred to future touch.
+- **Milestone:** M1
+- **Status:** ✅ Resolved (2026-07-01)
 
 ---
 

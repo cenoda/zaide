@@ -129,11 +129,13 @@ public class EditorViewModel : ReactiveObject
 
         try
         {
-            await Document.SaveAsync(_fileService);
+            await _fileService.WriteAllTextAsync(FilePath, TextContent);
+            Document.MarkClean();
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            Document.RecordSaveError(ex.Message);
             return false;
         }
     }

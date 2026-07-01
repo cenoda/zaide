@@ -1,13 +1,15 @@
+using System;
 using System.Collections.ObjectModel;
-using ReactiveUI;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Zaide.Models;
 
 /// <summary>
 /// Represents a node in the file tree. Directories have Children; files are leaves.
-/// Inherits ReactiveObject so IsExpanded can be bound to TreeView expansion state.
+/// Implements INotifyPropertyChanged directly instead of inheriting ReactiveObject.
 /// </summary>
-public class FileTreeNode : ReactiveObject
+public class FileTreeNode : INotifyPropertyChanged
 {
     private bool _isExpanded;
 
@@ -19,6 +21,20 @@ public class FileTreeNode : ReactiveObject
     public bool IsExpanded
     {
         get => _isExpanded;
-        set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
+        set
+        {
+            if (_isExpanded != value)
+            {
+                _isExpanded = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
