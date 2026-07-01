@@ -8,7 +8,7 @@
 - [ ] Verify current tests pass: `dotnet test Zaide.slnx`
 - [ ] Manually confirm the current Phase 3.6 baseline still works on Linux:
   - [ ] Shell starts and shows a prompt
-  - [ ] `clear` works
+  - [ ] `clear` works (already implemented in Phase 3.6 M4-01; verify no regression)
   - [ ] Basic selection/copy/paste works
   - [ ] Resize still reaches the PTY
 - [ ] Confirm no new NuGet packages are needed for this phase
@@ -111,18 +111,30 @@ already exports `TERM=xterm-256color`, so the UI should stop pretending that
    - ANSI 0-15 palette index
    - 256-color palette index
    - truecolor RGB
-2. Extend SGR handling for:
-   - `38;5;n` foreground
-   - `48;5;n` background
-   - `38;2;r;g;b` foreground
-   - `48;2;r;g;b` background
+
+   Use a tagged union approach in `CellAttribute` and `TerminalCell`:
+   ```csharp
+   enum ColorKind { Default, AnsiIndex, Palette256, TrueColor }
+   struct CellAttribute { ColorKind FgKind; int FgValue; ColorKind BgKind; int BgValue; bool Bold; bool Inverse; }
+   ```
+
+2. Extend SGR handling in `TerminalScreen.SetSgr()` for:
+   - `38;5;n` foreground (256-color palette)
+   - `48;5;n` background (256-color palette)
+   - `38;2;r;g;b` foreground (truecolor RGB)
+   - `48;2;r;g;b` background (truecolor RGB)
+
+   The parser already emits raw parameter arrays for SGR, so no parser changes
+   are needed for 256-color or truecolor parameter detection.
+
 3. Preserve current reset/default behavior for `39`, `49`, and `0`
 4. Keep unsupported style attributes such as italic/underline/strikethrough
    deferred
 5. Ensure `TerminalSnapshot` exposes enough color data for the render control
    without leaking UI types into the ViewModel layer
 6. Map 256-color indices and truecolor values in `TerminalRenderControl`
-   directly to actual rendered colors
+   directly to actual rendered colors using a standard 256-color palette
+   lookup table (ANSI 0-15, 6×6×6 cube 16-231, grayscale 232-255)
 
 **Tests (M1):**
 
@@ -136,6 +148,7 @@ already exports `TERM=xterm-256color`, so the UI should stop pretending that
   - decoded screen content carries the expected extended color metadata
 - Render-control contract tests:
   - color projection helpers resolve ANSI / 256 / RGB values deterministically
+  - 256-color palette lookup table matches standard xterm-256color mapping
 
 **Manual smoke for M1:**
 
@@ -165,11 +178,17 @@ coverage of prompt redraw transcripts used by readline-style shells.
 1. Add narrow private-mode handling for bracketed paste only:
    - `CSI ? 2004 h` → bracketed paste enabled
    - `CSI ? 2004 l` → bracketed paste disabled
+
+   Parser changes required:
+   - Add `h` and `l` to `IsSupportedCsiFinalByte()` set
+   - Modify `HasSupportedCsiParameterBytes()` to allow `?` prefix for DECSET/DECRST
+   - Add new action type `DecSetResetAction(int mode, bool enabled)` or filter to emit only mode 2004
+
 2. Keep other DECSET/DECRST private modes deferred to Phase 3.8
-3. When bracketed paste mode is enabled, `PasteAsync()` wraps pasted text with:
-   - `ESC [ 200 ~`
-   - pasted payload
-   - `ESC [ 201 ~`
+3. Move paste wrapping logic to ViewModel:
+   - Add `_bracketedPasteEnabled` flag to `TerminalViewModel`
+   - Add `PasteAsync(string text)` method that wraps with `ESC [ 200 ~` / `ESC [ 201 ~` when enabled
+   - Update `TerminalPanel.PasteAsync()` to call `ViewModel.PasteAsync(text)` instead of `SendInputAsync(bytes)` directly
 4. Preserve current plain-text paste behavior when bracketed paste mode is not
    enabled
 5. Add transcript-style tests for ordinary prompt redraw patterns that rely on
@@ -216,14 +235,18 @@ restarts feel predictable instead of merely functional.
 
 1. Audit and tighten resize forwarding so active splitter drags do not leave the
    viewport, cursor, or scrollback position in a surprising state
-2. Preserve or intentionally reset “follow live bottom” behavior with explicit
+2. Add scroll viewport tracking:
+   - Add `FollowLiveBottom` property to `TerminalViewModel`
+   - Track scroll offset in render control and notify ViewModel
+   - User scrolls up via mouse wheel or drag; Enter or click-to-bottom resumes live tracking
+3. Preserve or intentionally reset "follow live bottom" behavior with explicit
    rules:
    - user-scrolled viewport stays put during passive output
    - explicit resume actions (Enter, click-to-bottom, maybe restart) return to
      live output
-3. Re-check restart behavior with cached dimensions and scrollback state so a
+4. Re-check restart behavior with cached dimensions and scrollback state so a
    restarted shell opens in the correct size and a clean live viewport
-4. Add focused regression coverage for:
+5. Add focused regression coverage for:
    - resize before start
    - resize during running session
    - restart after resize
@@ -231,6 +254,7 @@ restarts feel predictable instead of merely functional.
 
 **Tests (M3):**
 
+- `Resize_WhenScrolledBack_PreservesScrollOffset`
 - `Resize_DuringRunningSession_UpdatesSnapshotDimensionsWithoutCorruption`
 - `Restart_AfterResize_ReappliesLatestViewportSize`
 - `Enter_WhenScrolledBack_ReturnsViewportToLiveBottom`
