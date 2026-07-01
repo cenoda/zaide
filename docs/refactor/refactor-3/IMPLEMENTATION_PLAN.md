@@ -77,10 +77,10 @@ Column breakdown:
    between Explorer, Source Control, and future left-panel modes. App logo
    at top, settings at bottom.
 
-2. **Left content panel** (~260px): Stacked vertically:
-   - Top: Explorer (file tree and project navigation)
-   - Bottom: Source Control placeholder (reserved layout space, no behavior
-     in Refactor 3)
+2. **Left content panel** (~260px): Single-slot panel controlled by nav bar mode:
+   - Explorer mode: file tree and project navigation
+   - Source Control mode: Source Control placeholder (reserved layout space,
+     no behavior in Refactor 3)
 
 3. **Center column** (widest): Townhall — the primary attention surface.
    Internal structure:
@@ -113,13 +113,14 @@ This is "agent workspace with editor support."
 - Rebuild the main window layout so Townhall becomes the center column
 - Keep the editor visible as the right column
 - Add a far-left icon-only nav bar for panel switching affordance
-- Keep the file tree on the left, stacked above a Source Control placeholder
+- Keep the file tree on the left via nav-driven panel mode switching with a
+  Source Control placeholder mode
 - Keep the terminal/log row on the bottom (content-area width, not full width)
 - Replace the placeholder agent area with a real Townhall surface
 - Build Townhall with three internal sections: channels sidebar, chat area,
   people sidebar
-- Add the Townhall view-model/model structure including channel list, message
-  model with timestamps, and agent status
+- Add the Townhall view-model/model structure including channel list,
+  `TownhallMessage` model with timestamps, and `WorkspaceAgent` status
 - Add a minimal editor-to-townhall link indicator in the editor header
 - Update root docs and refactor docs to reflect the new agent-first baseline
 
@@ -129,8 +130,8 @@ This is "agent workspace with editor support."
 - Agent-to-agent routing
 - Full persistence
 - Git workflow behavior (branching, staging, committing — no logic changes)
-- Dynamic panel switching (nav bar icons switch Explorer/SC only; no
-  arbitrary panel routing)
+- Dynamic panel switching beyond left-panel mode toggle (nav bar switches
+  Explorer/SC only; no arbitrary panel routing)
 - Floating windows
 - Solving every layout-balance concern in this refactor
 - Focused File section below the editor (reserved for a later phase)
@@ -222,7 +223,7 @@ Each milestone's exit check should produce the following artifacts where applica
 | Milestone | Description | Exit Signal |
 |-----------|-------------|-------------|
 | M0 | Confirm baseline health and current layout assumptions | Build/tests green and current shell understood |
-| M1 | Main window layout transition with nav bar | Main window reads as nav bar \| explorer+SC \| townhall \| editor |
+| M1 | Main window layout transition with nav bar | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor |
 | M2 | Townhall domain/view-model foundation | Townhall has channel list, message model, agent status, and state model |
 | M3 | Townhall view integration | Center panel shows channels sidebar, chat area, people sidebar, and input |
 | M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface |
@@ -240,7 +241,7 @@ modified. This map prevents scope creep and makes PR reviews easier.
 |-----------|---------------|----------------|
 | M0 | — | — (verification only) |
 | M0.5 | — | `src/App.axaml`, `src/Views/EditorTabBar.cs`, any view with hardcoded colors |
-| M1 | `src/Views/NavBar.cs`, `src/Views/SourceControlPlaceholder.cs` | `src/MainWindow.axaml`, `src/MainWindow.axaml.cs` |
+| M1 | `src/Views/NavBar.cs`, `src/Views/SourceControlPlaceholder.cs` | `src/MainWindow.axaml` (layout), `src/MainWindow.axaml.cs` (wiring only) |
 | M2 | `src/Models/Channel.cs`, `src/Models/TownhallMessage.cs`, `src/Models/WorkspaceAgent.cs`, `src/Models/TownhallState.cs`, `src/ViewModels/TownhallViewModel.cs` | — |
 | M3 | `src/Views/TownhallView.cs`, `src/Views/TownhallChannelPanel.cs`, `src/Views/TownhallChatPanel.cs`, `src/Views/TownhallPeoplePanel.cs`, `src/Views/TownhallInputArea.cs` | `src/MainWindow.axaml.cs` (wire Townhall into center column) |
 | M4 | — | `src/Views/EditorTabBar.cs` (add townhall link label), `src/Views/EditorView.cs` (adjust quietness) |
@@ -308,10 +309,12 @@ Implementation:
 
 ### M1: Main Window Layout Transition
 
-Change `src/MainWindow.axaml.cs` so the shell becomes:
+Change `src/MainWindow.axaml` so the shell grid/topology becomes (with
+`src/MainWindow.axaml.cs` limited to wiring/composition):
 
 - far-left: icon-only nav bar (~40px)
-- left: file tree (top) + Source Control placeholder (bottom)
+- left: single-slot content panel driven by nav mode (Explorer or Source
+  Control placeholder)
 - center: Townhall
 - right: editor
 - bottom: terminal/logs (spanning content area under center + right only)
@@ -321,9 +324,10 @@ Implementation intent:
 - Add a narrow vertical nav bar on the far left with icons for Explorer
   (active) and Source Control. This provides the navigation affordance shown
   in the concept and reserves the structural slot for future panel switching.
-- Keep the file tree in the left content panel, now stacked above a Source
-  Control placeholder (empty panel with "Source Control" header — no commit
-  logic, no branch selector, no change lists).
+- Keep the file tree in the left content panel in Explorer mode.
+- Add Source Control placeholder mode in the same left-panel slot (empty panel
+  with "Source Control" header — no commit logic, no branch selector, no
+  change lists).
 - Move the editor from center to right.
 - Replace the current right-side placeholder model with a real center
   Townhall surface (initially a simple container; M2/M3 add content).
@@ -347,20 +351,21 @@ Models needed:
 
 - `Channel` — represents a named channel (e.g., "townhall-main", "ai-status").
   Fields: id, name, isActive.
-- `Message` — a single message in a channel. Fields: id, senderId, content,
-  timestamp (DateTimeOffset). Reactions, audio, and inline warning indicators
-  are explicitly deferred.
-- `Agent` — represents a person or agent in the workspace. Fields: id, name,
-  role (user/agent), status (active/busy/idle). Warning badges are deferred.
+- `TownhallMessage` — a single message in a channel. Fields: id, senderId,
+  content, timestamp (DateTimeOffset). Reactions, audio, and inline warning
+  indicators are explicitly deferred.
+- `WorkspaceAgent` — represents a person or agent in the workspace. Fields:
+  id, name, role (user/agent), status (active/busy/idle). Warning badges are
+  deferred.
 - `TownhallState` — current session state. Holds: list of channels, active
   channel id, list of messages for active channel, list of agents, current
   draft text.
 
 ViewModels needed:
 
-- `TownhallViewModel` — exposes observable properties for channels, messages,
-  agents, and draft. Commands: selectChannel, sendMessage. Uses reactive
-  bindings per project conventions.
+- `TownhallViewModel` — exposes observable properties for channels,
+  `TownhallMessage` items, `WorkspaceAgent` items, and draft. Commands:
+  selectChannel, sendMessage. Uses reactive bindings per project conventions.
 
 This milestone is about making the center column feel like a real workspace.
 It is not about building final agent infrastructure.
@@ -403,7 +408,11 @@ Requirements:
 - the editor stays visible at all times
 - open/save/tab workflows continue to work
 - the right column reads as a focused implementation surface
-- the editor should feel slightly quieter than Townhall, not broken or hidden
+- the editor should feel slightly quieter than Townhall, not broken or hidden.
+  Objective styling constraint: reduce editor-header visual emphasis using
+  `SurfacePanelBrush` + `TextSecondaryBrush` for auxiliary labels, while
+  preserving editor text readability with unchanged `TextPrimaryBrush` in the
+  code surface.
 - add a minimal "Shared in #townhall" label in the editor tab/header area
   to signal the conceptual link between editor content and the active
   townhall thread. This is a text label only — no bidirectional data flow,
@@ -425,6 +434,9 @@ Requirements:
 - restart/clear/state controls still work
 - the bottom area spans the content area width (under center + right columns,
   not under the left panel — matching the concept layout)
+- implementation contract: define the shell grid so terminal row starts at the
+  center column and spans center+right columns only; left panel remains full
+  height in its own column
 - the area should read as shared operational output, not as editor-owned space
 
 The concept shows categorized log output with colored tags ([BUILD], [AGENT],
@@ -443,7 +455,7 @@ After the layout transition is complete:
 - confirm Townhall is the visual center with channels, chat, and people
   sections visible
 - confirm the nav bar renders correctly on the far left
-- confirm the Source Control placeholder is visible below Explorer
+- confirm the Source Control placeholder is visible when Source Control mode is active
 - confirm the editor shows the townhall link indicator
 - confirm the bottom panel spans under center + right only
 - confirm root docs and refactor docs still match reality
@@ -455,7 +467,7 @@ After the layout transition is complete:
 - open app: Townhall is visually central
 - nav bar icons are visible on the far left
 - file tree still opens folders and files correctly
-- Source Control placeholder is visible below the file tree
+- Source Control placeholder is visible when Source Control mode is selected
 - Townhall shows channels list, chat messages, and people list
 - switching channels changes the displayed messages
 - typing and sending a message adds it to the chat
@@ -556,8 +568,8 @@ These contracts resolve ambiguities identified in the plan audit.
 ## Exit Conditions
 
 - Nav bar visible on the far left
-- Left column shows Explorer (top) and Source Control placeholder (bottom)
-- Main window layout is nav bar | explorer+SC | townhall | editor
+- Left column supports mode-switched Explorer and Source Control placeholder views
+- Main window layout is nav bar | left-panel mode slot (Explorer/SC) | townhall | editor
 - Townhall shows channels sidebar, chat area, and people sidebar
 - Townhall is the clear primary attention surface
 - Editor remains always visible and usable with townhall link indicator
@@ -568,6 +580,38 @@ These contracts resolve ambiguities identified in the plan audit.
 - Docs match the new reality
 
 ---
+
+## Milestone Testing Expectations
+
+These expectations define minimum validation depth per milestone.
+
+- **M1 (layout transition):**
+  - Build passes.
+  - Manual layout validation against LC-1..LC-8 at default width and 960 px.
+  - Confirm nav bar mode switching (Explorer ↔ Source Control placeholder).
+
+- **M2 (Townhall models/viewmodel):**
+  - Add/extend unit tests for `TownhallViewModel` and state behavior:
+    - select channel updates active channel
+    - send message appends newest-at-bottom
+    - per-channel draft save/restore on channel switch
+
+- **M3 (Townhall view integration):**
+  - Build passes with no binding/runtime errors in output.
+  - Manual verify channels/chat/people/input render and resize behavior.
+
+- **M4 (editor adaptation):**
+  - Regression-check tab open/switch/save/close workflows.
+  - Verify "Shared in #townhall" visibility rules (shown only with active tab).
+
+- **M5 (terminal/log alignment):**
+  - Regression-check terminal toggle/restart/clear/state controls.
+  - Verify terminal panel span under center+right only.
+
+- **M6 (final sweep):**
+  - `dotnet build Zaide.slnx`
+  - `dotnet test Zaide.slnx --no-build`
+  - Manual checklist fully signed off with artifacts.
 
 ## Follow-Up After Refactor 3
 

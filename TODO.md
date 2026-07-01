@@ -1,34 +1,19 @@
-# Phase 2.1 Indent Guides Implementation Plan COMPLETED
+# Refactor 3 Plan Audit + Remediation TODO
 
-## Entry Gate (M0) - COMPLETED ✓
-- Build: 0 warnings, 0 errors
-- Tests: 69 passing, 0 failures
+## Scope
+- Target file: `docs/refactor/refactor-3/IMPLEMENTATION_PLAN.md`
+- User direction: skip testing and modify the plan based on audit findings.
 
-## Implementation Tasks - ALL COMPLETED ✓
-
-### Task 1: Create IndentGuideRenderer.cs ✓
-- [x] Implement `IBackgroundRenderer` interface
-- [x] Layer property returns `KnownLayer.Background`
-- [x] IsEnabled property (bool) - toggle for renderer
-- [x] Static `ShouldEnableForFile(path)` - uses same extension set as GetGrammarScope
-- [x] Static `GetIndentDepth(line, tabWidth)` - computes indent depth
-- [x] Draw() renders vertical dotted lines at each indent level
-
-### Task 2: Modify EditorView.cs ✓
-- [x] Added field: `_indentGuideRenderer`
-- [x] Registered in constructor
-- [x] Enabled in ApplyFileMode()
-
-### Task 3: Create Unit Tests ✓
-- [x] GetIndentDepth tests: spaces, tabs, mixed, empty, no-indent
-- [x] ShouldEnableForFile tests: supported/unsupported extensions
-
-### Exit Gate - COMPLETED ✓
-- [x] Build: 0 warnings, 0 errors
-- [x] Tests: 90 passing, 0 failures (+21 new tests)
-
-## Summary
-Phase 2.1 indent guides feature fully implemented:
-- New files: IndentGuideRenderer.cs, IndentGuideRendererTests.cs
-- Modified files: EditorView.cs (+3 lines integration)
-- All tests pass
+## Steps
+- [x] Read Refactor 3 implementation plan
+- [x] Produce audit findings
+- [x] Confirm testing preference with user
+- [x] Apply plan corrections in IMPLEMENTATION_PLAN.md:
+  - [x] Unify Townhall model naming (`TownhallMessage`, `WorkspaceAgent`) across all sections
+  - [x] Resolve left-panel behavior contradiction (single-slot nav mode switching)
+  - [x] Clarify layout ownership (`MainWindow.axaml` structure, `.axaml.cs` wiring only)
+  - [x] Add explicit grid/span contract for bottom terminal area under center+right
+  - [x] Add milestone-level testing expectations (M1–M5)
+  - [x] Make “editor quieter” guidance objective via token/contrast constraints
+- [x] Re-read updated plan for internal consistency
+- [ ] Finalize and report completion
