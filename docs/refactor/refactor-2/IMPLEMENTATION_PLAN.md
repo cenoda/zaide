@@ -74,11 +74,13 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 ## Milestones (Incremental)
 
+**Implementation ordering is critical:** M1 must be completed before M3 (M3 changes `FileTreeViewModel` which depends on `Document` and `FileTreeNode`). M3 must be completed before M5 (M5 injects `IScheduler` into `FileTreeViewModel`, but M3 changes the service dependency first). M6 and M7 are independent and can be done after M1. Deferred milestones (M2, M4, M8) are never started.
+
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests pass | `dotnet test` — zero failures | ✅ Complete (300 passed, 0 failed) |
 | M1 | **Clean Models layer**: Remove `SaveAsync` entirely from `Document` (model should not own persistence workflow). Add `RecordSaveError(string?)` for VM to call after save attempt. Update all call sites (`EditorViewModel.SaveAsync`, `Program.cs` DI, `DocumentTests`). Remove `ReactiveObject` from `FileTreeNode` (implement `INotifyPropertyChanged` directly). Remove unused `using` from `Workspace`. | `DocumentTests`, `EditorViewModelTests`, `WorkspaceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
-| M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would violate CONVENTIONS.md (namespace must match folder). **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Deferred / N/A |
+| M2 | **Terminal pure logic — deferred**: `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, `TerminalState` are already pure. Moving them to `Terminal/` would require a namespace change from `Zaide.ViewModels` to `Zaide.Terminal`, which is out of scope for this boundary-cleanup pass. **No file moves this refactor.** A future refactor can move them + update namespace to `Zaide.Terminal`. | No changes — files stay in `ViewModels/` | ⬜ Deferred / N/A |
 | M3 | **Extract IFileTreeService interface**: Create `IFileTreeService` interface from `FileTreeService`. Extract testable service interfaces around the current UI tree shape (enumeration + watching). Update DI registration. ViewModels depend on interfaces only. | `FileTreeServiceTests`, `FileTreeViewModelTests` pass | ⬜ Not started |
 | M4 | **Tree manipulation logic — stays in VM**: `HandleCreated`, `HandleDeleted`, `HandleRenamed`, `FindNodeByPath`, `UpdateDescendantPaths` manage UI tree state, not filesystem infrastructure. Moving them to `FileTreeService` would muddy the boundary. **Keep in `FileTreeViewModel`.** A future refactor can extract a pure `FileTreeUpdater` class after splitting `FileTreeNode` into domain + UI state. | `FileTreeViewModelTests` pass; manual regression: open folder → create/rename/delete files → tree updates | ⬜ Deferred / N/A |
 | M5 | **Remove AvaloniaScheduler from FileTreeViewModel**: Inject `IScheduler` as a **required** constructor parameter. Register `AvaloniaScheduler.Instance` in DI (`Program.cs`). Tests inject `CurrentThreadScheduler.Instance`. Update all test constructors (`FileTreeViewModelTests`, `MainWindowViewModelTests`). No fallback to `AvaloniaScheduler.Instance` in VM code. | `FileTreeViewModelTests`, `MainWindowViewModelTests` pass | ⬜ Not started |
@@ -160,10 +162,10 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 - **EditorTabViewModelTests.cs**: The existing tests `CloseTab_StaysOpen_WhenSaveFails` (line 139) and `SaveFailure_MustNotCloseTab_MockFileService` (line 211) exercise `CloseTabAsync` which awaits `tab.SaveCommand.Execute()` and reads `tab.LastSaveError`. These tests must continue to pass after M1 — verify they still assert `tab.IsDirty` and `vm.LastSaveError` correctly with the new VM-coordinated save flow. No test changes expected unless the save-failure contract changes.
 
-- **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state. Add explicit tests for the unexpected-exception contract:
+- **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state. Add an explicit test for the unexpected-exception contract:
   ```csharp
   [Fact]
-  public async Task SaveAsync_UnexpectedException_Rethrows()
+  public async Task SaveAsync_UnexpectedException_RecordsErrorAndRethrows()
   {
       var fileService = new Mock<IFileService>();
       fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -175,35 +177,20 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       // ReactiveCommand catches exceptions and surfaces them via ThrownExceptions.
       // We observe the command's result observable to detect the error.
       var result = await vm.SaveCommand.Execute().Catch(Observable.Return(false));
-      Assert.False(result);
-      Assert.Equal("Unexpected failure", vm.LastSaveError);
-      Assert.True(vm.IsDirty);
-  }
-
-  [Fact]
-  public async Task SaveAsync_UnexpectedException_RecordsError()
-  {
-      var fileService = new Mock<IFileService>();
-      fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
-                 .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
-      var doc = new Document("/test.cs", "content");
-      doc.MarkClean();
-      var vm = new EditorViewModel(doc, fileService.Object);
-
-      var result = await vm.SaveCommand.Execute().Catch(Observable.Return(false));
 
       Assert.False(result);
       Assert.Equal("Unexpected failure", vm.LastSaveError);
       Assert.True(vm.IsDirty);
   }
   ```
-  These tests verify that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract. Note: `EditorViewModel` constructor takes `(Document document, IFileService fileService)` and `Document` has a private setter, so tests must construct the Document first and pass it in.
+  This test verifies that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract. Note: `EditorViewModel` constructor takes `(Document document, IFileService fileService)` and `Document` has a private setter, so tests must construct the Document first and pass it in.
   
   **Important:** `ReactiveCommand` catches exceptions thrown by the underlying async method and surfaces them via the `ThrownExceptions` observable rather than propagating them through `await Execute()`. The test must use `.Catch(Observable.Return(false))` to handle the error gracefully and then assert on the Document state. Do NOT use `Assert.ThrowsAsync` with `SaveCommand.Execute()` — it will not work as expected.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
 - **Implement `INotifyPropertyChanged` directly** (plain C# event, no ReactiveUI)
+- Replace `using ReactiveUI;` with `using System.ComponentModel;` (required for `INotifyPropertyChanged` and `PropertyChangedEventHandler`)
 - `IsExpanded` keeps its backing field + property change notification
 - Rationale: `TreeViewItem.IsExpanded` is bound two-way to `FileTreeNode.IsExpanded`. `ExpandAllCommand` / `CollapseAllCommand` set `IsExpanded` from the VM. Without `PropertyChanged`, source-to-target updates stop reflecting in realized tree items.
 - Implementation:
@@ -259,7 +246,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 
 **No changes this refactor.**
 
-**Rationale:** `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, and `TerminalState` are already pure logic (no UI framework dependencies). Moving them to a `Terminal/` subfolder while keeping namespace `Zaide.ViewModels` would violate `CONVENTIONS.md` (namespaces must match folder structure).
+**Rationale:** `AnsiParser`, `TerminalScreen`, `TerminalSnapshot`, and `TerminalState` are already pure logic (no UI framework dependencies). Moving them to a `Terminal/` subfolder would require a namespace change from `Zaide.ViewModels` to `Zaide.Terminal`, which is out of scope for this boundary-cleanup pass.
 
 **Future refactor:** When ready for namespace cleanup, move files to `src/Terminal/` and update namespace to `Zaide.Terminal`. This requires updating all references and test files.
 
@@ -280,7 +267,11 @@ public interface IFileTreeQuery
 // File system watching — infrastructure
 // StartWatching() returns the observable directly, avoiding nullable state.
 // The VM subscribes to the returned observable and disposes the subscription to stop.
-public interface IFileTreeWatcher : IDisposable
+// Note: IFileTreeWatcher intentionally does NOT inherit IDisposable. The VM uses
+// StopWatching() for restart lifecycle, and the DI container handles final disposal
+// of the singleton FileTreeService. Having both StopWatching() and IDisposable on
+// the interface would create ambiguous disposal responsibility.
+public interface IFileTreeWatcher
 {
     IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false);
     void StopWatching();
@@ -346,12 +337,15 @@ This order prevents the subscription from receiving events from a stale watcher 
 - Remove all `FileChanges!` null-forgiving operators
 - Keep existing subscription disposal order: dispose before `StopWatching()`
 
+**Note on existing test updates:** The current `FileTreeServiceTests.cs` tests that call `StartWatching()` (which currently returns `void`) must be updated to handle the new `IObservable<FileChangeEvent>` return type. Any test asserting on the `FileChanges` property must be rewritten to subscribe to the returned observable instead. The 3 existing `IsIgnored`-related tests remain unchanged since `IsIgnored` stays public.
+
 **M3 exit checks (API contract change):**
 - [ ] No `FileChanges!` null-forgiving operator remains in `FileTreeViewModel.cs`
 - [ ] No nullable `FileChanges` property exists in `IFileTreeWatcher` or `FileTreeService`
 - [ ] `StartWatching()` returns `IObservable<FileChangeEvent>` (not void)
 - [ ] Watcher subscription tests cover: open-folder flow, hidden-toggle restart flow
 - [ ] `FileTreeServiceTests` verify `StartWatching()` returns non-null observable
+- [ ] Tests for `ShouldSkip(name, includeHidden)` covering: hidden file with `includeHidden=false` → true, hidden file with `includeHidden=true` → false, DefaultIgnores entry → true regardless of flag
 - [ ] Event-delivery tests: create/rename/delete a file in the watched directory and verify the observable emits the corresponding `FileChangeEvent`
 - [ ] Restart test: stop and restart the watcher, then create a file — verify the new observable emits events (no stale subscription from the old watcher)
 - [ ] Toggle test: restart watcher with `includeHidden` toggled, verify hidden-file filtering changes accordingly
@@ -388,6 +382,7 @@ This order prevents the subscription from receiving events from a stale watcher 
 - Add **required** constructor parameter `IScheduler scheduler`
 - Replace `AvaloniaScheduler.Instance` with injected `_scheduler`
 - Remove `using ReactiveUI.Avalonia;` from the file
+- **Important:** `using ReactiveUI;` must remain — `FileTreeViewModel` still uses `ReactiveObject`, `ReactiveCommand`, `Interaction`, and `RaiseAndSetIfChanged` from ReactiveUI. Only the Avalonia-specific scheduler namespace is removed.
 - No fallback to `AvaloniaScheduler.Instance` — the VM must not know about Avalonia
 
 **Program.cs (DI) changes:**

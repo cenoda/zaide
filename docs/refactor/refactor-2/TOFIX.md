@@ -33,7 +33,7 @@ Tracking file for audit findings and remediation status.
 
 ### M2: Terminal pure logic in wrong folder
 - **Files:** `src/ViewModels/AnsiParser.cs`, `TerminalScreen.cs`, `TerminalSnapshot.cs`, `TerminalState.cs`
-- **Issue:** These are pure logic types but live in ViewModels folder. Moving them would violate CONVENTIONS.md (namespace must match folder).
+- **Issue:** These are pure logic types but live in ViewModels folder. Moving them would require a namespace change from `Zaide.ViewModels` to `Zaide.Terminal`, which is out of scope for this boundary-cleanup pass.
 - **Fix:** Deferred to future refactor that can update namespaces.
 - **Milestone:** M2 (deferred)
 - **Status:** ⏸️ Deferred
