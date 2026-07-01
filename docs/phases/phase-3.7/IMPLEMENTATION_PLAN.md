@@ -117,6 +117,10 @@ already exports `TERM=xterm-256color`, so the UI should stop pretending that
    enum ColorKind { Default, AnsiIndex, Palette256, TrueColor }
    struct CellAttribute { ColorKind FgKind; int FgValue; ColorKind BgKind; int BgValue; bool Bold; bool Inverse; }
    ```
+   Keep `TerminalCell` public contract stable:
+   - Add new fields `FgKind`, `BgKind` alongside existing `Foreground`/`Background` ints
+   - Existing tests that assert `Foreground`/`Background` int values continue to work
+   - Render control uses the new kind/value fields; old int fields become compatibility shims
    Encoding convention:
    - `AnsiIndex` and `Palette256`: value is the palette index
    - `TrueColor`: value is packed `0xRRGGBB`
@@ -265,7 +269,6 @@ restarts feel predictable instead of merely functional.
    - restart after resize
    - input while scrolled back
    - scroll-up-then-Enter-returns-to-bottom (existing behavior)
-   - input while scrolled back
 
 **Tests (M3):**
 
