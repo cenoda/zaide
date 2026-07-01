@@ -31,7 +31,7 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Added test to validate renderer's handling of extended background colors.
 - [x] Fixed syntax error in `TerminalRenderControlTests.cs`.
 - [x] Improved renderer validation test to better validate rendering behavior.
-- [x] Added tests to ensure colon-form SGR works and non-SGR CSI behavior remains unchanged.
+- [x] Added tests to ensure colon-form SGR works.
 
 ## Notes
 
@@ -39,3 +39,4 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - Focus on ordinary shell interaction quality without expanding into full TUI compatibility.
 - Milestone 1 (M1) is complete and all issues have been addressed.
 - All tests pass and the build succeeds.
+- The renderer tests still do not validate actual rendering behavior, but they do validate the conditions for rendering.

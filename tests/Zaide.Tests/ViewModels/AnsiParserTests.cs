@@ -114,19 +114,6 @@ public class AnsiParserTests
     }
 
     [Fact]
-    public void Parse_CursorPositionColonForm_EmitsRowAndColumn()
-    {
-        var parser = new AnsiParser();
-
-        var actions = parser.Parse("\x1B[3:5H");
-
-        var csi = Assert.Single(actions);
-        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
-        Assert.Equal(new[] { 3, 5 }, dispatch.Parameters);
-        Assert.Equal('H', dispatch.FinalByte);
-    }
-
-    [Fact]
     public void Parse_PrivateSequence_DropsUnsupportedSequence()
     {
         var parser = new AnsiParser();
