@@ -101,6 +101,32 @@ public class AnsiParserTests
     }
 
     [Fact]
+    public void Parse_SgrTrueColorColonForm_EmitsParameters()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[38:2:255:105:180m");
+
+        var csi = Assert.Single(actions);
+        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
+        Assert.Equal(new[] { 38, 2, 255, 105, 180 }, dispatch.Parameters);
+        Assert.Equal('m', dispatch.FinalByte);
+    }
+
+    [Fact]
+    public void Parse_CursorPositionColonForm_EmitsRowAndColumn()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[3:5H");
+
+        var csi = Assert.Single(actions);
+        var dispatch = Assert.IsType<CsiDispatchAction>(csi);
+        Assert.Equal(new[] { 3, 5 }, dispatch.Parameters);
+        Assert.Equal('H', dispatch.FinalByte);
+    }
+
+    [Fact]
     public void Parse_PrivateSequence_DropsUnsupportedSequence()
     {
         var parser = new AnsiParser();

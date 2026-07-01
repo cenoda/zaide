@@ -29,9 +29,13 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Fixed extended background colors not being painted in the renderer.
 - [x] Fixed colon-form truecolor sequence parsing in `AnsiParser`.
 - [x] Added test to validate renderer's handling of extended background colors.
+- [x] Fixed syntax error in `TerminalRenderControlTests.cs`.
+- [x] Improved renderer validation test to better validate rendering behavior.
+- [x] Added tests to ensure colon-form SGR works and non-SGR CSI behavior remains unchanged.
 
 ## Notes
 
 - Ensure all changes align with the goals and boundaries defined in the `IMPLEMENTATION_PLAN.md`.
 - Focus on ordinary shell interaction quality without expanding into full TUI compatibility.
 - Milestone 1 (M1) is complete and all issues have been addressed.
+- All tests pass and the build succeeds.
