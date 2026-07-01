@@ -17,7 +17,7 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Improved test coverage with stronger assertions for scrollback integrity.
 - [x] Added `WaitForRestartCompletionAsync()` method for async testing support.
 - [x] Cleaned up code formatting for better readability.
-- [ ] Note: The running-session restart path is implemented but has async testing limitations. The non-running path is fully tested and the implementation works correctly in production.
+- [x] Fixed running-session restart path test to properly exercise the real restart flow.
 
 ### M4: Docs and Exit Audit
 - [ ] Update `docs/roadmap/PHASES.md` upon completion of Phase 3.7.

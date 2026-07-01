@@ -595,38 +595,28 @@ public class TerminalViewModelTests
         Assert.True(eventRaised);
     }
 
-    [Fact(Skip = "Async testing limitation - the running-session restart path is implemented but complex to test with RunInline")]
+    [Fact]
     public async Task Restart_WhenRunning_RaisesRestartedEventAfterProcessExit()
     {
-        // This test is skipped due to async testing limitations.
-        // The running-session restart path is implemented in TerminalViewModel.OnProcessExited()
-        // where it calls EnsureStartedAsync() and then raises Restarted event.
-        // However, testing this with the RunInline test infrastructure is complex
-        // because the async lambda in _uiPost doesn't execute properly in tests.
-        
-        // The implementation is correct and works in production, but this test
-        // would require a more sophisticated testing approach to verify.
-        
         var service = new Mock<ITerminalService>();
+        service.SetupGet(s => s.IsRunning).Returns(true);
         service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.Setup(s => s.StopAsync(It.IsAny<CancellationToken>()))
                .Returns(Task.CompletedTask);
         var vm = CreateViewModel(service);
 
-        // Start the terminal
         await vm.EnsureStartedAsync();
         Assert.True(vm.IsRunning);
 
         bool eventRaised = false;
         vm.Restarted += () => eventRaised = true;
 
-        // Initiate restart while running
         await vm.RestartAsync();
-        
-        // Simulate process exit to trigger the restart completion
         service.Raise(s => s.ProcessExited += null);
-        
-        // The event should have been raised after the running-session restart completes
-        // But due to async testing limitations, this assertion may fail
+
+        await vm.WaitForRestartCompletionAsync();
+
         Assert.True(eventRaised, "Restarted event should be raised after running-session restart completes");
     }
 
