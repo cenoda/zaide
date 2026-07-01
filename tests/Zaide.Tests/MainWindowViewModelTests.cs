@@ -40,7 +40,8 @@ public class MainWindowViewModelTests
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel);
+        var townhallViewModel = new TownhallViewModel();
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel);
         vm.Activate();
         return vm;
     }
@@ -160,8 +161,9 @@ public class MainWindowViewModelTests
         terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("pty failed"));
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var townhallViewModel = new TownhallViewModel();
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel);
         vm.Activate();
 
         await terminalViewModel.EnsureStartedAsync();

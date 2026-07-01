@@ -17,7 +17,7 @@ namespace Zaide;
 
 /// <summary>
 /// Main application window. Layout built in C# per DESIGN.md §1.
-/// Phase 0: 3-panel grid + bottom panel toggle. Phase 1: file tree sidebar.
+/// Refactor-3: agent-first layout with nav + mode-switched left panel + townhall + editor.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
@@ -25,8 +25,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly GridSplitter _bottomPanelSplitter;
     private readonly Border _bottomPanel;
+
+    private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
+    private readonly SourceControlPlaceholder _sourceControlPlaceholder;
+    private readonly TownhallView _townhallView;
     private readonly TerminalPanel _terminalPanel;
+
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -35,30 +40,26 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         InitializeComponent();
 
-        // === Window Chrome (M5) ===
         Title = "Zaide";
         Width = 1280;
         Height = 800;
-        MinWidth = 800;
+        MinWidth = 960;
         MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-        // === Build Layout (M2, Phase 2) ===
-        (_bottomSplitterRow, _bottomPanelRow, _bottomPanelSplitter, _bottomPanel, _fileTreeView, _terminalPanel) = BuildLayout();
+        (_bottomSplitterRow, _bottomPanelRow, _bottomPanelSplitter, _bottomPanel, _navBar, _fileTreeView, _sourceControlPlaceholder, _townhallView, _terminalPanel) = BuildLayout();
 
-        // === ReactiveUI Bindings (M3, Phase 2) ===
         this.WhenActivated(disposables =>
         {
-            // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
             _terminalPanel.ViewModel = ViewModel.TerminalViewModel;
+            _townhallView.ViewModel = ViewModel.TownhallViewModel;
+            _navBar.ActiveMode = ViewModel.ActiveLeftPanelMode;
 
-            // Activate VM subscriptions (save errors, file-open) and clean up
-            ViewModel!.Activate();
+            ViewModel.Activate();
             disposables.Add(Disposable.Create(() => ViewModel!.Dispose()));
 
-            // Wire EditorTabBar: collection + events (with disposal)
-            var editorTabs = ViewModel!.EditorTabs;
+            var editorTabs = ViewModel.EditorTabs;
             _editorTabBar.SetTabs(editorTabs.OpenTabs);
 
             void OnTabClicked(EditorViewModel tab) => editorTabs.ActiveTab = tab;
@@ -74,8 +75,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 _editorTabBar.TabCloseRequested -= OnTabCloseRequested;
             }));
 
-            // M5: unsaved-changes dialog. ViewModel raises ConfirmClose,
-            // MainWindow shows UnsavedDialog and feeds the result back.
             disposables.Add(editorTabs.ConfirmClose.RegisterHandler(async ctx =>
             {
                 var dialog = new UnsavedDialog { DataContext = ctx.Input };
@@ -83,7 +82,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ctx.SetOutput(result);
             }));
 
-            // Wire active tab → EditorView + tab bar highlight + welcome text
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
@@ -93,11 +91,21 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _welcomeText.IsVisible = active is null;
                 }));
 
-            // Ctrl+` toggle bottom panel. Key.Oem3 is the physical backtick key
-            // (to the left of 1 on US layout). OemTilde fails on many non-US
-            // keyboard layouts. Ctrl+J is the universal fallback.
-            // Guard against duplicates — WhenActivated may fire multiple times.
-            var toggleCmd = ViewModel!.ToggleBottomPanelCommand;
+            void ApplyLeftPanelMode(LeftPanelMode mode)
+            {
+                _navBar.ActiveMode = mode;
+                _fileTreeView.IsVisible = mode == LeftPanelMode.Explorer;
+                _sourceControlPlaceholder.IsVisible = mode == LeftPanelMode.SourceControl;
+            }
+
+            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.ActiveLeftPanelMode)
+                .Subscribe(ApplyLeftPanelMode));
+
+            void OnModeChanged(LeftPanelMode mode) => ViewModel.ActiveLeftPanelMode = mode;
+            _navBar.ModeChanged += OnModeChanged;
+            disposables.Add(Disposable.Create(() => _navBar.ModeChanged -= OnModeChanged));
+
+            var toggleCmd = ViewModel.ToggleBottomPanelCommand;
             foreach (var kb in KeyBindings.Where(k => k.Command == toggleCmd).ToList())
                 KeyBindings.Remove(kb);
 
@@ -112,9 +120,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 Command = toggleCmd
             });
 
-            // Ctrl+S: save the active tab. Placed on MainWindow because
-            // AvaloniaEdit's TextEditor intercepts Ctrl+S internally.
-            // Guard against duplicates — WhenActivated may fire multiple times.
             var saveGesture = new KeyGesture(Key.S, KeyModifiers.Control);
             foreach (var kb in KeyBindings.Where(k =>
                 k.Gesture?.Key == Key.S && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
@@ -123,15 +128,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             var saveBinding = new KeyBinding
             {
                 Gesture = saveGesture,
-                Command = ViewModel!.SaveActiveTabCommand
+                Command = ViewModel.SaveActiveTabCommand
             };
             KeyBindings.Add(saveBinding);
             disposables.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
 
-            // Welcome text: always shows the static message. StatusText is
-            // preserved for a future status bar, not bound to the welcome overlay.
-
-            // Bind bottom panel visibility → row height (instant toggle, no animation per Phase 0)
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
                 .Subscribe(visible =>
                 {
@@ -150,8 +151,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         _ = ViewModel.TerminalViewModel.EnsureStartedAsync();
                     }
                 }));
-            // M4: PickFolder handler — opens native folder dialog
-            disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
+
+            disposables.Add(ViewModel.PickFolder.RegisterHandler(async ctx =>
             {
                 var topLevel = TopLevel.GetTopLevel(this);
                 if (topLevel is null) { ctx.SetOutput(null); return; }
@@ -160,39 +161,33 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
             }));
 
-            // M4: Ctrl+O key binding (same pattern as Ctrl+S)
             var openFolderGesture = new KeyGesture(Key.O, KeyModifiers.Control);
             foreach (var kb in KeyBindings.Where(k =>
                 k.Gesture?.Key == Key.O && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
                 KeyBindings.Remove(kb);
+
             var openBinding = new KeyBinding
             {
                 Gesture = openFolderGesture,
-                Command = ViewModel!.OpenFolderCommand
+                Command = ViewModel.OpenFolderCommand
             };
             KeyBindings.Add(openBinding);
             disposables.Add(Disposable.Create(() => KeyBindings.Remove(openBinding)));
+
+            ApplyLeftPanelMode(ViewModel.ActiveLeftPanelMode);
         });
     }
 
-    /// <summary>
-    /// Builds the 3-panel grid layout with bottom panel placeholder.
-    /// Left: 260px sidebar | Center: * | Right: 320px agent area.
-    /// </summary>
-    private (RowDefinition bottomSplitterRow, RowDefinition bottomRow, GridSplitter bottomPanelSplitter, Border bottomPanel, FileTreeView fileTreeView, TerminalPanel terminalPanel) BuildLayout()
+    private (RowDefinition bottomSplitterRow, RowDefinition bottomRow, GridSplitter bottomPanelSplitter, Border bottomPanel, NavBar navBar, FileTreeView fileTreeView, SourceControlPlaceholder sourceControlPlaceholder, TownhallView townhallView, TerminalPanel terminalPanel) BuildLayout()
     {
         var grid = new Grid
         {
             ColumnDefinitions =
             {
-                // Sidebar (Fixed min width 180px, max width 500px) - M2
-                new ColumnDefinition { Width = new GridLength(260), MinWidth = 180, MaxWidth = 500 },
-                // GridSplitter between Sidebar and Center (4px wide, transparent) - M2
-                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
-                // Center: Editor + Tab Bar
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                // Right Agent Area (Fixed width 320px)
-                new ColumnDefinition { Width = new GridLength(320) }
+                new ColumnDefinition { Width = new GridLength(44), MinWidth = 44, MaxWidth = 44 }, // Nav
+                new ColumnDefinition { Width = new GridLength(260), MinWidth = 220, MaxWidth = 360 }, // Left panel
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 360 }, // Townhall
+                new ColumnDefinition { Width = new GridLength(420), MinWidth = 320, MaxWidth = 700 } // Editor
             },
             RowDefinitions =
             {
@@ -206,26 +201,32 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var bottomSplitterRow = grid.RowDefinitions[1];
         var bottomRow = grid.RowDefinitions[2];
 
-        // --- Left Sidebar (Phase 1: FileTreeView) ---
-        var sidebar = new FileTreeView();
-        Grid.SetColumn(sidebar, 0);
-        Grid.SetRow(sidebar, 0);
-        grid.Children.Add(sidebar);
+        var navBar = new NavBar();
+        Grid.SetColumn(navBar, 0);
+        Grid.SetRow(navBar, 0);
+        grid.Children.Add(navBar);
 
-        // --- GridSplitter (M2) ---
-        var splitter = new GridSplitter
+        var fileTreeView = new FileTreeView();
+        Grid.SetColumn(fileTreeView, 1);
+        Grid.SetRow(fileTreeView, 0);
+        grid.Children.Add(fileTreeView);
+
+        var sourceControlPlaceholder = new SourceControlPlaceholder
         {
-            Width = 4,
-            Background = Brushes.Transparent,
-            Cursor = new Cursor(StandardCursorType.SizeWestEast),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
+            IsVisible = false
         };
-        Grid.SetColumn(splitter, 1);
-        Grid.SetRow(splitter, 0);
-        grid.Children.Add(splitter);
+        Grid.SetColumn(sourceControlPlaceholder, 1);
+        Grid.SetRow(sourceControlPlaceholder, 0);
+        grid.Children.Add(sourceControlPlaceholder);
 
-        // --- Center Panel (Phase 2: Editor + Tab Bar) ---
+        var townhallView = new TownhallView
+        {
+            Margin = new Thickness(1, 0, 1, 0)
+        };
+        Grid.SetColumn(townhallView, 2);
+        Grid.SetRow(townhallView, 0);
+        grid.Children.Add(townhallView);
+
         _editorTabBar = new EditorTabBar();
         _editorView = new EditorView();
         _welcomeText = new TextBlock
@@ -237,7 +238,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        var center = new Grid
+        var editorArea = new Grid
         {
             RowDefinitions =
             {
@@ -245,7 +246,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
             Background = (IBrush?)Application.Current!.Resources["DeepBase"],
-            Margin = new Thickness(1, 0, 1, 0),
+            Margin = new Thickness(1, 0, 0, 0),
             Children =
             {
                 _editorTabBar,
@@ -256,19 +257,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(_editorTabBar, 0);
         Grid.SetRow(_editorView, 1);
         Grid.SetRow(_welcomeText, 1);
-        _welcomeText.IsVisible = true; // shown when no tabs are open
+        _welcomeText.IsVisible = true;
 
-        Grid.SetColumn(center, 2); // Center now in column 2 (after splitter)
-        Grid.SetRow(center, 0);
-        grid.Children.Add(center);
+        Grid.SetColumn(editorArea, 3);
+        Grid.SetRow(editorArea, 0);
+        grid.Children.Add(editorArea);
 
-        // --- Right Agent Area ---
-        var agentArea = BuildPanel("Agent Area", "DeepBase", 1, 0, 0, 0);
-        Grid.SetColumn(agentArea, 3); // Agent area now in column 3 (after center)
-        Grid.SetRow(agentArea, 0);
-        grid.Children.Add(agentArea);
-
-        // --- Bottom Panel Splitter ---
         var bottomPanelSplitter = new GridSplitter
         {
             Height = 4,
@@ -276,59 +270,29 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            ResizeDirection = GridResizeDirection.Rows
+            ResizeDirection = GridResizeDirection.Rows,
+            IsVisible = false
         };
-        bottomPanelSplitter.IsVisible = false;
-        Grid.SetColumn(bottomPanelSplitter, 0);
-        Grid.SetColumnSpan(bottomPanelSplitter, 4);
+        Grid.SetColumn(bottomPanelSplitter, 2);
+        Grid.SetColumnSpan(bottomPanelSplitter, 2);
         Grid.SetRow(bottomPanelSplitter, 1);
         grid.Children.Add(bottomPanelSplitter);
 
-        // --- Bottom Panel (hidden by default) ---
         var terminalPanel = new TerminalPanel();
         var bottomPanel = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
             Padding = new Thickness(0),
             Margin = new Thickness(0, 1, 0, 0),
-            Child = terminalPanel
+            Child = terminalPanel,
+            IsVisible = false
         };
-        bottomPanel.IsVisible = false;
-        Grid.SetColumn(bottomPanel, 0);
-        Grid.SetColumnSpan(bottomPanel, 4); // Span all columns (sidebar, splitter, center, agent)
+        Grid.SetColumn(bottomPanel, 2);
+        Grid.SetColumnSpan(bottomPanel, 2);
         Grid.SetRow(bottomPanel, 2);
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (bottomSplitterRow, bottomRow, bottomPanelSplitter, bottomPanel, sidebar, terminalPanel);
+        return (bottomSplitterRow, bottomRow, bottomPanelSplitter, bottomPanel, navBar, fileTreeView, sourceControlPlaceholder, townhallView, terminalPanel);
     }
-
-    /// <summary>
-    /// Creates a placeholder panel Border with themed palette colors + centered label.
-    /// Margins create subtle 1px separators per DESIGN.md §5.
-    /// </summary>
-    private static Border BuildPanel(
-        string label,
-        string backgroundResourceKey,
-        double marginLeft,
-        double marginTop,
-        double marginRight,
-        double marginBottom)
-    {
-        return new Border
-        {
-            Background = (IBrush?)Application.Current!.Resources[backgroundResourceKey],
-            Padding = new Thickness(16),
-            Margin = new Thickness(marginLeft, marginTop, marginRight, marginBottom),
-            Child = new TextBlock
-            {
-                Text = label,
-                Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-                FontSize = 14,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center
-            }
-        };
-    }
-
 }

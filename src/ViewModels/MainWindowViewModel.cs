@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Views;
 
 namespace Zaide.ViewModels;
 
@@ -16,6 +17,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isBottomPanelVisible;
     private string? _statusText = "Open a folder to begin";
     private CompositeDisposable? _disposables;
+    private LeftPanelMode _activeLeftPanelMode = LeftPanelMode.Explorer;
 
 
     public bool IsBottomPanelVisible
@@ -35,17 +37,26 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public Interaction<Unit, string?> PickFolder { get; }
     public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
 
+    public LeftPanelMode ActiveLeftPanelMode
+    {
+        get => _activeLeftPanelMode;
+        set => this.RaiseAndSetIfChanged(ref _activeLeftPanelMode, value);
+    }
+
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
     public TerminalViewModel TerminalViewModel { get; }
+    public TownhallViewModel TownhallViewModel { get; }
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                EditorTabViewModel editorTabViewModel,
-                               TerminalViewModel terminalViewModel)
+                               TerminalViewModel terminalViewModel,
+                               TownhallViewModel townhallViewModel)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalViewModel = terminalViewModel;
+        TownhallViewModel = townhallViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();

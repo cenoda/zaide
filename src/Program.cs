@@ -30,6 +30,7 @@ class Program
                     services.AddSingleton<MainWindowViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
                     services.AddSingleton<TerminalViewModel>();
+                    services.AddSingleton<TownhallViewModel>();
                     services.AddTransient<EditorViewModel>(sp =>
                         new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
                 },
