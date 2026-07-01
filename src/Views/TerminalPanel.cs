@@ -166,7 +166,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         if (clipboard is null) return;
         string? text = await clipboard.TryGetTextAsync();
         if (string.IsNullOrEmpty(text)) return;
-        await ViewModel.SendInputAsync(Encoding.UTF8.GetBytes(text));
+        await ViewModel.PasteAsync(text);
     }
 
     private void ForwardResize()

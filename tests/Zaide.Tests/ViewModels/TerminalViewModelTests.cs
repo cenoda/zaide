@@ -448,6 +448,58 @@ public class TerminalViewModelTests
     }
 
     [Fact]
+    public async Task PasteAsync_WhenBracketedPasteDisabled_SendsPlainUtf8()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        await vm.PasteAsync("test text");
+
+        service.Verify(
+            s => s.WriteAsync(
+                It.Is<byte[]>(data => Encoding.UTF8.GetString(data) == "test text"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task PasteAsync_WhenBracketedPasteEnabled_WrapsWithBracketedPasteMarkers()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        // Enable bracketed paste mode
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?2004h"));
+
+        await vm.PasteAsync("test text");
+
+        service.Verify(
+            s => s.WriteAsync(
+                It.Is<byte[]>(data => Encoding.UTF8.GetString(data) == "\x1B[200~test text\x1B[201~"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void Append_DecSetResetAction_UpdatesBracketedPasteState()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Enable bracketed paste mode
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?2004h"));
+        Assert.True(vm.IsBracketedPasteEnabled());
+
+        // Disable bracketed paste mode
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?2004l"));
+        Assert.False(vm.IsBracketedPasteEnabled());
+    }
+
+    [Fact]
     public void CursorPosition_UpdatesAfterWrite()
     {
         var service = new Mock<ITerminalService>();

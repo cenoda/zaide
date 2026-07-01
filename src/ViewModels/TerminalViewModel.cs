@@ -38,6 +38,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private int _currentRows;
     private int _pendingColumns;
     private int _pendingRows;
+    private bool _bracketedPasteEnabled;
 
     // ── view-bound properties ──────────────────────────────────────
 
@@ -124,6 +125,9 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         TerminalState.Error => StartupError is { Length: > 0 } e ? $"Error: {e}" : "Error",
         _ => string.Empty
     };
+
+    /// <summary>Whether bracketed paste mode is enabled.</summary>
+    public bool IsBracketedPasteEnabled() => _bracketedPasteEnabled;
 
     /// <summary>Clears the terminal surface.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
@@ -228,6 +232,24 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     public Task SendInputAsync(byte[] data) => _service.WriteAsync(data);
 
     /// <summary>
+    /// Forwards paste text to the shell, wrapping it with bracketed paste markers
+    /// if bracketed paste mode is enabled. Safe before startup or after exit —
+    /// the service treats writes as a no-op when not running.
+    /// </summary>
+    public async Task PasteAsync(string text)
+    {
+        if (!_bracketedPasteEnabled)
+        {
+            await SendInputAsync(Encoding.UTF8.GetBytes(text));
+            return;
+        }
+
+        // Wrap the text with bracketed paste markers
+        var bracketedText = $"\x1B[200~{text}\x1B[201~";
+        await SendInputAsync(Encoding.UTF8.GetBytes(bracketedText));
+    }
+
+    /// <summary>
     /// Forwards a terminal viewport resize to the PTY backend and the screen
     /// buffer. Safe to call before startup or after exit — the service treats
     /// it as a no-op. Only forwards to the service when the dimensions
@@ -328,6 +350,10 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                 case CsiDispatchAction csi:
                     ApplyCsi(csi);
                     break;
+
+                case DecSetResetAction dec:
+                    HandleDecSetReset(dec);
+                    break;
             }
         }
 
@@ -367,6 +393,14 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             case 'm':
                 _screen.SetSgr(csi.Parameters);
                 break;
+        }
+    }
+
+    private void HandleDecSetReset(DecSetResetAction dec)
+    {
+        if (dec.Mode == 2004)
+        {
+            _bracketedPasteEnabled = dec.Enabled;
         }
     }
 

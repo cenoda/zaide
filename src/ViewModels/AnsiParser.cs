@@ -190,7 +190,17 @@ internal sealed class AnsiParser
             return;
         }
 
-        actions.Add(new CsiDispatchAction(parameters, finalByte));
+        if (finalByte == 'h' || finalByte == 'l')
+        {
+            if (parameters.Length > 0 && parameters[0] == 2004)
+            {
+                actions.Add(new DecSetResetAction(parameters[0], finalByte == 'h'));
+            }
+        }
+        else
+        {
+            actions.Add(new CsiDispatchAction(parameters, finalByte));
+        }
     }
 
     private static bool HasSupportedCsiParameterBytes(string rawParameters)
@@ -289,7 +299,7 @@ internal sealed class AnsiParser
 
     private static bool IsSupportedCsiFinalByte(char ch)
     {
-        return ch is 'A' or 'B' or 'C' or 'D' or 'H' or 'J' or 'K' or 'm';
+        return ch is 'A' or 'B' or 'C' or 'D' or 'H' or 'J' or 'K' or 'm' or 'h' or 'l';
     }
 
     private static bool IsSupportedCsiParameterBytes(string rawParameters, char finalByte)
@@ -363,6 +373,8 @@ internal sealed record PrintAction(string Text) : AnsiAction;
 internal sealed record ExecuteAction(AnsiC0Control Control) : AnsiAction;
 
 internal sealed record CsiDispatchAction(int[] Parameters, char FinalByte) : AnsiAction;
+
+internal sealed record DecSetResetAction(int Mode, bool Enabled) : AnsiAction;
 
 internal enum AnsiC0Control
 {
