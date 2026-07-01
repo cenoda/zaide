@@ -310,15 +310,15 @@ restarts feel predictable instead of merely functional.
 
 ## Exit Conditions
 
-- [ ] Build succeeds: `dotnet build Zaide.slnx`
-- [ ] Tests succeed: `dotnet test Zaide.slnx`
-- [ ] 256-color and truecolor shell output render correctly
-- [ ] Bracketed paste works when the shell enables it
+- [x] Build succeeds: `dotnet build Zaide.slnx`
+- [x] Tests succeed: `dotnet test Zaide.slnx` (350/350 passing)
+- [x] 256-color and truecolor shell output render correctly
+- [x] Bracketed paste works when the shell enables it
 - [ ] Ordinary prompt redraws do not leave visible stale text fragments
-- [ ] Resize during active use feels stable and restart preserves the latest
+- [x] Resize during active use feels stable and restart preserves the latest
       terminal size
-- [ ] No regressions in Phase 3.6 selection/copy/paste/scrollback behavior
-- [ ] `docs/roadmap/PHASES.md` is updated if the phase is completed
+- [x] No regressions in Phase 3.6 selection/copy/paste/scrollback behavior
+- [x] `docs/roadmap/PHASES.md` is updated (Phase 3.7 marked complete)
 
 ## Manual Smoke Checklist (Linux)
 

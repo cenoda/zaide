@@ -84,7 +84,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] Make terminal restart safe across service and ViewModel layers
 - [x] Improve raw output experience within MVP bounds
 - [x] **3.6:** Terminal renderer foundation (ANSI/CSI parser, screen buffer, custom render control) — ✅ Complete
-- [ ] **3.7:** Interactive shell quality (clear, prompts, resize stability)
+- [x] **3.7:** Interactive shell quality (clear, prompts, resize stability) — ✅ Complete
 - [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
 - [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
 

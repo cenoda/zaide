@@ -7,6 +7,29 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 ### M2: Prompt and Paste Quality
 - [ ] Add transcript-style tests for prompt redraw patterns.
 
+### M4: Docs and Exit Audit
+- [ ] Update `docs/roadmap/PHASES.md` upon completion of Phase 3.7.
+- [ ] Review and update `docs/architecture/OVERVIEW.md` if necessary.
+- [ ] Run manual smoke tests for Phase 3.7 features.
+
+## Completed Items
+
+### M1: Extended Shell Color Fidelity
+- [x] Implement 256-color and truecolor support in `AnsiParser`, `TerminalScreen`, and `TerminalRenderControl`.
+- [x] Update `TerminalSnapshot` to expose extended color metadata.
+- [x] Add tests for 256-color SGR handling.
+- [x] Add tests for truecolor SGR handling.
+- [x] Manual smoke tests for 256-color and truecolor output.
+- [x] Fixed extended background colors not being painted in the renderer.
+- [x] Fixed colon-form truecolor sequence parsing in `AnsiParser`.
+- [x] Fixed syntax error in `TerminalRenderControlTests.cs`.
+- [x] Added tests to ensure colon-form SGR works.
+
+### M2: Prompt and Paste Quality
+- [x] Add bracketed paste mode support in `AnsiParser` and `TerminalViewModel`.
+- [x] Implement `PasteAsync` method in `TerminalViewModel` to wrap paste text with bracketed paste markers.
+- [x] Update `TerminalPanel.PasteAsync()` to call `ViewModel.PasteAsync(text)` instead of `SendInputAsync(bytes)` directly.
+
 ### M3: Resize and Session Stability
 - [x] Audit and tighten resize forwarding in `TerminalViewModel` and `TerminalPanel`.
 - [x] Ensure viewport behavior is consistent during resize and restart.
@@ -18,11 +41,6 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Added `WaitForRestartCompletionAsync()` method for async testing support.
 - [x] Cleaned up code formatting for better readability.
 - [x] Fixed running-session restart path test to properly exercise the real restart flow.
-
-### M4: Docs and Exit Audit
-- [ ] Update `docs/roadmap/PHASES.md` upon completion of Phase 3.7.
-- [ ] Review and update `docs/architecture/OVERVIEW.md` if necessary.
-- [x] M3 implementation completed successfully.
 
 ## Completed Items
 
