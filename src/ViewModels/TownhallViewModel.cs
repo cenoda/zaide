@@ -32,6 +32,13 @@ public class TownhallViewModel : ReactiveObject
 
     public TownhallViewModel()
     {
+    }
+
+    public void LoadDemoData()
+    {
+        if (Channels.Count > 0 || Messages.Count > 0 || Agents.Count > 0)
+            return;
+
         SeedData();
         if (Channels.Count > 0)
             SelectChannel(Channels[0].Id);

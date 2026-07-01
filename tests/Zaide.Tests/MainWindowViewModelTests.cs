@@ -11,6 +11,7 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
+using Zaide.Views;
 
 namespace Zaide.Tests;
 
@@ -169,5 +170,24 @@ public class MainWindowViewModelTests
         await terminalViewModel.EnsureStartedAsync();
 
         Assert.Equal("Terminal: pty failed", vm.StatusText);
+    }
+
+    [Fact]
+    public void ActiveLeftPanelMode_DefaultsToExplorer()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(LeftPanelMode.Explorer, vm.ActiveLeftPanelMode);
+    }
+
+    [Fact]
+    public void ActiveLeftPanelMode_CanSwitchModes()
+    {
+        var vm = CreateViewModel();
+
+        vm.ActiveLeftPanelMode = LeftPanelMode.SourceControl;
+        Assert.Equal(LeftPanelMode.SourceControl, vm.ActiveLeftPanelMode);
+
+        vm.ActiveLeftPanelMode = LeftPanelMode.Explorer;
+        Assert.Equal(LeftPanelMode.Explorer, vm.ActiveLeftPanelMode);
     }
 }
