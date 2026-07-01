@@ -95,7 +95,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 **Document.cs changes:**
 - **Remove `SaveAsync` entirely** from Document. The model should not own persistence workflow.
 - Add `RecordSaveError(string? error)` method for VM to call after save attempt.
-- `RecordSaveError` must set `IsDirty = true` unconditionally (even if already dirty) and raise `SaveErrorChanged` and `DirtyStateChanged` events — matching current `Document.SaveAsync` catch-block behavior (lines 51-57).
+- `RecordSaveError` must set `IsDirty = true` unconditionally (even if already dirty) and raise `SaveErrorChanged` and `DirtyStateChanged` events — matching current `Document.SaveAsync` catch-block behavior (lines 50-57).
 - Document becomes a pure data model: content, dirty flag, error state — no I/O.
 - Remove `using Zaide.Services;` (no longer needed).
 
@@ -166,7 +166,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 - **EditorViewModelTests.cs**: Update save tests to verify VM calls IFileService and updates Document state. Add an explicit test for the unexpected-exception contract:
   ```csharp
   [Fact]
-  public async Task SaveAsync_UnexpectedException_RecordsErrorAndRethrows()
+  public async Task SaveAsync_UnexpectedException_RecordsErrorAndSurfacesViaThrownExceptions()
   {
       var fileService = new Mock<IFileService>();
       fileService.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -175,18 +175,22 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
       doc.MarkClean();
       var vm = new EditorViewModel(doc, fileService.Object);
 
-      // ReactiveCommand catches exceptions and surfaces them via ThrownExceptions.
-      // We observe the command's result observable to detect the error.
+      // ReactiveCommand catches exceptions thrown by the underlying async method
+      // and surfaces them via the ThrownExceptions observable rather than
+      // propagating them through `await Execute()`. We use `.Catch(...)` to
+      // observe the error path gracefully, then assert both that the Document
+      // recorded the error AND that the exception surfaced in ThrownExceptions.
       var result = await vm.SaveCommand.Execute().Catch(Observable.Return(false));
 
       Assert.False(result);
       Assert.Equal("Unexpected failure", vm.LastSaveError);
       Assert.True(vm.IsDirty);
+      Assert.True(vm.SaveCommand.ThrownExceptions.ToEnumerable().Any());
   }
   ```
   This test verifies that unexpected exceptions (non-IOException/UnauthorizedAccessException) are recorded on the Document before propagating, matching the current `Document.SaveAsync` contract. Note: `EditorViewModel` constructor takes `(Document document, IFileService fileService)` and `Document` has a private setter, so tests must construct the Document first and pass it in.
   
-  **Important:** `ReactiveCommand` catches exceptions thrown by the underlying async method and surfaces them via the `ThrownExceptions` observable rather than propagating them through `await Execute()`. The test must use `.Catch(Observable.Return(false))` to handle the error gracefully and then assert on the Document state. Do NOT use `Assert.ThrowsAsync` with `SaveCommand.Execute()` — it will not work as expected.
+  **Important:** `ReactiveCommand` catches exceptions thrown by the underlying async method and surfaces them via the `ThrownExceptions` observable rather than propagating them through `await Execute()`. The test uses `.Catch(Observable.Return(false))` to handle the error gracefully in the result observable, asserts the Document state, and additionally asserts `ThrownExceptions` emitted the error — confirming the underlying `SaveAsync()` did rethrow (the contract), and that `ReactiveCommand` captured it. Do NOT use `Assert.ThrowsAsync` with `SaveCommand.Execute()` — it will not work as expected.
 
 **FileTreeNode.cs changes:**
 - Remove `ReactiveObject` inheritance
@@ -294,7 +298,7 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 
 **Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
 
-**Note on subscription lifetime (documenting existing pattern):** The VM already correctly disposes the subscription before calling `StopWatching()` (lines 109-112, 205-208). `StopWatching()` disposes the underlying `FileSystemWatcher`, which stops the observable from emitting, but the observable subscription itself is **not** disposed by `StopWatching()` — callers must dispose their subscription separately. Document `StopWatching()` with: *"Disposes the underlying watcher. Callers must dispose their observable subscriptions separately via the IDisposable returned by Subscribe."*
+**Note on subscription lifetime (documenting existing pattern):** The VM already correctly disposes the subscription before calling `StopWatching()` (lines 101-102, 199-200). `StopWatching()` disposes the underlying `FileSystemWatcher`, which stops the observable from emitting, but the observable subscription itself is **not** disposed by `StopWatching()` — callers must dispose their subscription separately. Document `StopWatching()` with: *"Disposes the underlying watcher. Callers must dispose their observable subscriptions separately via the IDisposable returned by Subscribe."*
 
 **Watcher lifetime note:** After M3, `StartWatching()` creates a new watcher (local variable), builds the observable from it, and stores it in `_watcher` for `StopWatching()` to dispose. The observable's event handlers close over the same watcher instance that `StopWatching()` will dispose — the local and field reference the same object. The field assignment (`_watcher = watcher`) exists only so `StopWatching()` can reach it. Implementation:
 ```csharp
@@ -449,7 +453,7 @@ public static class SupportedFileTypes
     }
 }
 ```
-**Important:** `Path.GetExtension(".gitignore")` returns `.gitignore` in .NET (the entire name is treated as the extension), so dotfiles ARE covered by `TextExtensions` in most cases. However, the `KnownDotfiles` fallback ensures robust behavior across all path formats and runtime variations. The current `MainWindowViewModel` already includes these extensions in its `SupportedExtensions` set — extracting to `SupportedFileTypes` preserves dotfile support and centralizes the policy in one move.
+**Important:** `Path.GetExtension(".gitignore")` returns `.gitignore` in .NET (the entire name is treated as the extension), so dotfiles ARE covered by `TextExtensions` in most cases. The `KnownDotfiles` fallback is defense-in-depth for explicit filename matching — it does not rely on any runtime variation, but makes the intent explicit and keeps the dotfile set readable as filenames rather than as pseudo-extensions. The current `MainWindowViewModel` already includes these extensions in its `SupportedExtensions` set — extracting to `SupportedFileTypes` preserves dotfile support and centralizes the policy in one move.
 - **Known gap (preserved from current behavior):** Basename-only text files (`Makefile`, `Dockerfile`, `LICENSE`) return `false` from `IsTextFile` — these are common text files the editor currently cannot open. A future enhancement could add a `KnownBasenames` set.
 - **New tests (required for M6):** Add `IsTextFile_Dotfile_KnownName` that passes a bare filename like `".gitignore"` and verifies true. Also add `IsTextFile_Dotfile_FullPath` passing a full path like `"/home/user/.editorconfig"` and verifies true.
 
