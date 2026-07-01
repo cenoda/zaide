@@ -14,6 +14,7 @@ This file tracks issues and findings during the implementation of Phase 3.7.
 - [x] Added `Restarted` event to `TerminalViewModel` to notify when restart completes.
 - [x] Added `OnRestarted` handler in `TerminalPanel` to scroll viewport to bottom after restart.
 - [x] Added comprehensive tests for resize and restart behavior.
+- [ ] Note: The running-session restart path is implemented but the async test verification is complex. The non-running path is fully tested.
 
 ### M4: Docs and Exit Audit
 - [ ] Update `docs/roadmap/PHASES.md` upon completion of Phase 3.7.

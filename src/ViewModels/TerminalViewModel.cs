@@ -39,6 +39,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private int _pendingColumns;
     private int _pendingRows;
     private bool _bracketedPasteEnabled;
+    private TaskCompletionSource<bool>? _restartCompletionSource;
 
     // ── view-bound properties ──────────────────────────────────────
 
@@ -309,7 +310,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
     private void OnProcessExited()
     {
-        _uiPost(() =>
+        _uiPost(async () =>
         {
             IsRunning = false;
             State = TerminalState.Exited;
@@ -319,7 +320,18 @@ public class TerminalViewModel : ReactiveObject, IDisposable
             {
                 _restartPending = false;
                 PrepareForRestart();
-                _ = EnsureStartedAsync();
+                _restartCompletionSource = new TaskCompletionSource<bool>();
+                
+                try
+                {
+                    await EnsureStartedAsync();
+                    Restarted?.Invoke();
+                    _restartCompletionSource?.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    _restartCompletionSource?.SetException(ex);
+                }
                 return;
             }
 
@@ -491,6 +503,17 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _startRequested = false;
         _currentColumns = 0;
         _currentRows = 0;
+    }
+
+    /// <summary>
+    /// Waits for the pending restart to complete. For testing purposes only.
+    /// </summary>
+    public async Task WaitForRestartCompletionAsync()
+    {
+        if (_restartCompletionSource != null)
+        {
+            await _restartCompletionSource.Task;
+        }
     }
 
     public void Dispose()
