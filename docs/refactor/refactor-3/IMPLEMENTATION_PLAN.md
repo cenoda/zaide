@@ -205,6 +205,33 @@ Verify the following before changing code:
 This milestone exists so later regressions are measured against reality, not
 memory.
 
+### M0.5: Palette Rematch
+
+The concept.png uses a different color palette than the current DESIGN.md
+"Ayaka Violet" system. Refactor 3 includes a palette update to match the
+concept.
+
+| Token | Old (Ayaka Violet) | New (concept.png) | Usage |
+|-------|-------------------|-------------------|-------|
+| Primary Accent | `#8FA5DE` Periwinkle Violet | `#066ADB` Bright Blue | Active tabs, primary buttons, focus, links |
+| Soft Accent | `#C2C2E5` Lavender | `#3ED3E4` Cyan Teal | Code types, secondary indicators |
+| Warning | *(not defined)* | `#FCBB47` Amber | Warnings, modified indicators |
+| Success | *(not defined)* | `#28A745` Green | Added indicators, active dots, sync |
+| Deep Base | `#142043` Blue-Purple | `#0A0F19` Near-Black Navy | Window/panel backgrounds |
+| Panel Surface | *(same as base)* | `#0B121D` Lighter Navy | Elevated panels, code areas |
+| Text Active | `#E3E4F4` | `#E3E4F4` (unchanged) | High-contrast text |
+| Text Secondary | *(not defined)* | `#8B95A5` Muted Blue-Gray | Timestamps, line numbers |
+| Separator | *(not defined)* | `#070C16` Darkest | 1px panel separators |
+
+This palette change is already applied in `docs/DESIGN.md` section 7.
+
+Implementation:
+
+- Update `App.axaml` resource dictionary with new accent brushes
+- Update any hardcoded color values in view files to use the new tokens
+- Verify the overall darkness matches the concept (near-black backgrounds,
+  not blue-purple)
+
 ### M1: Main Window Layout Transition
 
 Change `src/MainWindow.axaml.cs` so the shell becomes:

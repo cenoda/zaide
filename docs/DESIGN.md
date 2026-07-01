@@ -152,11 +152,16 @@ Zaide should feel as polished as VS Code or Warp at a glance:
 - **No flicker:** Layout stable on first paint. No cascade of elements appearing.
 - **Smooth resize:** No layout jumps or blank areas during window resize.
 - **Text rendering:** Crisp at all DPI. No blurry text on HiDPI.
-- **Color palette:** Monochromatic dark base with "Ayaka Violet" accent system:
-  - **Primary Accent:** `#8FA5DE` (Periwinkle Violet — for active tabs, primary buttons, focus borders)
-  - **Soft Accent:** `#C2C2E5` (Soft Cryo Lavender — for selection, hover states, badges)
-  - **Deep Base:** `#142043` (Midnight Blue-Purple — for sidebars, panel backgrounds)
+- **Color palette:** Monochromatic dark base with blue accent system (matched to concept.png):
+  - **Primary Accent:** `#066ADB` (Bright Blue — for active tabs, primary buttons, focus borders, links)
+  - **Secondary Accent:** `#3ED3E4` (Cyan Teal — for code type highlights, secondary indicators)
+  - **Warning Accent:** `#FCBB47` (Amber — for warnings, modified indicators, alerts)
+  - **Success Accent:** `#28A745` (Green — for added indicators, active status dots, sync)
+  - **Deep Base:** `#0A0F19` (Near-Black Navy — for window and panel backgrounds)
+  - **Panel Surface:** `#0B121D` (Slightly Lighter Navy — for elevated panels, code areas)
   - **Text Active:** `#E3E4F4` (Pale Ice Blue-White — for high-contrast text)
+  - **Text Secondary:** `#8B95A5` (Muted Blue-Gray — for timestamps, line numbers, labels)
+  - **Separator:** `#070C16` (Darkest — for 1px panel separators)
 - **Separator style:** Space or 1px semi-transparent line — never 2px+ solid borders.
 - **Focus states:** Clear but subtle — slight brightness shift, not thick outline.
 
