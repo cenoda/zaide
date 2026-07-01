@@ -207,7 +207,7 @@ internal sealed class AnsiParser
     {
         foreach (char ch in rawParameters)
         {
-            if ((ch >= '0' && ch <= '9') || ch == ';')
+            if ((ch >= '0' && ch <= '9') || ch == ';' || ch == '?')
             {
                 continue;
             }
@@ -237,7 +237,13 @@ internal sealed class AnsiParser
                 continue;
             }
 
-            if (!int.TryParse(parts[i], out values[i]))
+            var part = parts[i];
+            if (part.StartsWith('?'))
+            {
+                part = part.Substring(1);
+            }
+
+            if (!int.TryParse(part, out values[i]))
             {
                 parameters = Array.Empty<int>();
                 return false;
