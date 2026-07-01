@@ -95,7 +95,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 **Document.cs changes:**
 - **Remove `SaveAsync` entirely** from Document. The model should not own persistence workflow.
 - Add `RecordSaveError(string? error)` method for VM to call after save attempt.
-- `RecordSaveError` must raise `SaveErrorChanged` and `DirtyStateChanged` events (matching current behavior where `SaveAsync` raises both on failure).
+- `RecordSaveError` must set `IsDirty = true` unconditionally (even if already dirty) and raise `SaveErrorChanged` and `DirtyStateChanged` events — matching current `Document.SaveAsync` catch-block behavior (lines 51-57).
 - Document becomes a pure data model: content, dirty flag, error state — no I/O.
 - Remove `using Zaide.Services;` (no longer needed).
 
@@ -122,6 +122,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
   }
   ```
 - **Important:** Catch all exceptions to record the error (matching current `Document.SaveAsync` behavior which records `LastSaveError` before rethrowing). For expected save failures (`IOException`, `UnauthorizedAccessException`), return `false`. For unexpected exceptions, rethrow after recording the error. This preserves the exact current contract: the error is always recorded, but only I/O failures are handled gracefully.
+- **Note on ReactiveCommand and exception propagation:** The `SaveCommand` is a `ReactiveCommand`, which catches exceptions thrown by the underlying async method and surfaces them via the `ThrownExceptions` observable rather than propagating them through `await Execute()`. This means that for tests, the `.Catch(Observable.Return(false))` pattern is used to handle the error gracefully in the observable pipeline, and assertions check the Document state. The underlying implementation still rethrows for unexpected exceptions (which ReactiveCommand captures), ensuring the contract holds for direct callers of `SaveAsync()`.
 - This truly removes the service dependency from the model — the VM owns the use case.
 
 **Call-site updates (required for M1 to compile):**
@@ -191,6 +192,7 @@ Zaide.UI            → Avalonia views, ViewModels, UI composition
 - Remove `ReactiveObject` inheritance
 - **Implement `INotifyPropertyChanged` directly** (plain C# event, no ReactiveUI)
 - Replace `using ReactiveUI;` with `using System.ComponentModel;` (required for `INotifyPropertyChanged` and `PropertyChangedEventHandler`)
+- Keep `using System.Collections.ObjectModel;` (still needed for `ObservableCollection<FileTreeNode> Children`)
 - `IsExpanded` keeps its backing field + property change notification
 - Rationale: `TreeViewItem.IsExpanded` is bound two-way to `FileTreeNode.IsExpanded`. `ExpandAllCommand` / `CollapseAllCommand` set `IsExpanded` from the VM. Without `PropertyChanged`, source-to-target updates stop reflecting in realized tree items.
 - Implementation:
@@ -292,9 +294,9 @@ public interface IFileTreeService : IFileTreeQuery, IFileTreeWatcher
 
 **Contract note:** `StartWatching()` now returns `IObservable<FileChangeEvent>` directly. This eliminates the nullable `FileChanges` property and the race condition where the VM accesses `FileChanges!` before `StartWatching()` completes. The VM subscribes to the returned observable; `StopWatching()` disposes the underlying watcher. Tests should verify that `StartWatching()` returns a non-null observable.
 
-**Note on subscription lifetime:** `StopWatching()` disposes the underlying `FileSystemWatcher`, which stops the observable from emitting. However, the observable subscription itself is **not** disposed by `StopWatching()` — callers must dispose their subscription separately (typically before calling `StopWatching()` during restart). The VM code already follows this pattern: dispose subscription, then stop watcher. Document `StopWatching()` with: *"Disposes the underlying watcher. Callers must dispose their observable subscriptions separately via the IDisposable returned by Subscribe."*
+**Note on subscription lifetime (documenting existing pattern):** The VM already correctly disposes the subscription before calling `StopWatching()` (lines 109-112, 205-208). `StopWatching()` disposes the underlying `FileSystemWatcher`, which stops the observable from emitting, but the observable subscription itself is **not** disposed by `StopWatching()` — callers must dispose their subscription separately. Document `StopWatching()` with: *"Disposes the underlying watcher. Callers must dispose their observable subscriptions separately via the IDisposable returned by Subscribe."*
 
-**Watcher lifetime rule (critical):** The returned observable must capture a **local** `FileSystemWatcher` instance, not the field `_watcher`. Currently the observables close over `_watcher` (a field), and `StopWatching()` disposes and nulls it. After M3, `StartWatching()` creates a new watcher, builds the observable from it, and returns the observable. The field `_watcher` is still needed for `StopWatching()` to dispose, but the observable's event subscriptions must reference the same instance. Implementation pattern:
+**Watcher lifetime note:** After M3, `StartWatching()` creates a new watcher (local variable), builds the observable from it, and stores it in `_watcher` for `StopWatching()` to dispose. The observable's event handlers close over the same watcher instance that `StopWatching()` will dispose — the local and field reference the same object. The field assignment (`_watcher = watcher`) exists only so `StopWatching()` can reach it. Implementation:
 ```csharp
 public IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false)
 {
@@ -337,14 +339,14 @@ This order prevents the subscription from receiving events from a stale watcher 
 - Remove all `FileChanges!` null-forgiving operators
 - Keep existing subscription disposal order: dispose before `StopWatching()`
 
-**Note on existing test updates:** The current `FileTreeServiceTests.cs` tests that call `StartWatching()` (which currently returns `void`) must be updated to handle the new `IObservable<FileChangeEvent>` return type. Any test asserting on the `FileChanges` property must be rewritten to subscribe to the returned observable instead. The 3 existing `IsIgnored`-related tests remain unchanged since `IsIgnored` stays public.
+**Note on new test additions:** The current `FileTreeServiceTests.cs` has no `StartWatching` tests today. After M3, add new tests to `FileTreeServiceTests` covering `StartWatching()` returns a non-null observable and proper event delivery (see exit checks below). No existing tests need rewriting, but the 3 `IsIgnored`-related tests remain unchanged since `IsIgnored` stays public.
 
 **M3 exit checks (API contract change):**
 - [ ] No `FileChanges!` null-forgiving operator remains in `FileTreeViewModel.cs`
 - [ ] No nullable `FileChanges` property exists in `IFileTreeWatcher` or `FileTreeService`
 - [ ] `StartWatching()` returns `IObservable<FileChangeEvent>` (not void)
 - [ ] Watcher subscription tests cover: open-folder flow, hidden-toggle restart flow
-- [ ] `FileTreeServiceTests` verify `StartWatching()` returns non-null observable
+- [ ] Add new `FileTreeServiceTests` verifying `StartWatching()` returns non-null observable
 - [ ] Tests for `ShouldSkip(name, includeHidden)` covering: hidden file with `includeHidden=false` → true, hidden file with `includeHidden=true` → false, DefaultIgnores entry → true regardless of flag
 - [ ] Event-delivery tests: create/rename/delete a file in the watched directory and verify the observable emits the corresponding `FileChangeEvent`
 - [ ] Restart test: stop and restart the watcher, then create a file — verify the new observable emits events (no stale subscription from the old watcher)
@@ -427,8 +429,8 @@ public static class SupportedFileTypes
 
     // Dotfiles like .editorconfig, .gitignore, .gitattributes are
     // supported by their full filename, not just extension, because
-    // Path.GetExtension returns the full name for dotfiles (e.g., ".gitignore"),
-    // but for robustness we also check filename if extension lookup fails.
+    // Path.GetExtension returns the full name for dotfiles (e.g., ".gitignore").
+    // The KnownDotfiles fallback is defense-in-depth for explicit filename matching.
     // Pure basename-only files (e.g., "Makefile", "Dockerfile") are NOT supported
     // by this policy — they return empty extension and IsTextFile returns false.
     private static readonly HashSet<string> KnownDotfiles = new(StringComparer.OrdinalIgnoreCase)
@@ -448,6 +450,7 @@ public static class SupportedFileTypes
 }
 ```
 **Important:** `Path.GetExtension(".gitignore")` returns `.gitignore` in .NET (the entire name is treated as the extension), so dotfiles ARE covered by `TextExtensions` in most cases. However, the `KnownDotfiles` fallback ensures robust behavior across all path formats and runtime variations. The current `MainWindowViewModel` already includes these extensions in its `SupportedExtensions` set — extracting to `SupportedFileTypes` preserves dotfile support and centralizes the policy in one move.
+- **Known gap (preserved from current behavior):** Basename-only text files (`Makefile`, `Dockerfile`, `LICENSE`) return `false` from `IsTextFile` — these are common text files the editor currently cannot open. A future enhancement could add a `KnownBasenames` set.
 - **New tests (required for M6):** Add `IsTextFile_Dotfile_KnownName` that passes a bare filename like `".gitignore"` and verifies true. Also add `IsTextFile_Dotfile_FullPath` passing a full path like `"/home/user/.editorconfig"` and verifies true.
 
 **MainWindowViewModel changes:**
@@ -507,6 +510,7 @@ public static class SupportedFileTypes
   - Restore `AvaloniaScheduler.Instance` usage in `FileTreeViewModel` (remove injected scheduler)
   - Restore `SupportedExtensions` in `MainWindowViewModel` (remove `SupportedFileTypes` class)
   - Remove `IFileTreeService` interface (revert to concrete `FileTreeService` dependency)
+  - Delete `src/Services/IFileTreeQuery.cs`, `IFileTreeWatcher.cs`, `IFileTreeService.cs`
 
 ## Future Refactor (Out of Scope)
 
