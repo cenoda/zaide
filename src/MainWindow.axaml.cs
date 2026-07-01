@@ -273,8 +273,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             ResizeDirection = GridResizeDirection.Rows,
             IsVisible = false
         };
-        Grid.SetColumn(bottomPanelSplitter, 2);
-        Grid.SetColumnSpan(bottomPanelSplitter, 2);
+        Grid.SetColumn(bottomPanelSplitter, 0);
+        Grid.SetColumnSpan(bottomPanelSplitter, 4);
         Grid.SetRow(bottomPanelSplitter, 1);
         grid.Children.Add(bottomPanelSplitter);
 
@@ -287,8 +287,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Child = terminalPanel,
             IsVisible = false
         };
-        Grid.SetColumn(bottomPanel, 2);
-        Grid.SetColumnSpan(bottomPanel, 2);
+        Grid.SetColumn(bottomPanel, 0);
+        Grid.SetColumnSpan(bottomPanel, 4);
         Grid.SetRow(bottomPanel, 2);
         grid.Children.Add(bottomPanel);
 

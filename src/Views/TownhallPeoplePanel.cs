@@ -59,11 +59,6 @@ public class TownhallPeoplePanel : UserControl
         this.GetObservable(AgentsProperty).Subscribe(_ => RenderAgents(), _ => { }, () => { });
     }
 
-    public void Refresh()
-    {
-        RenderAgents();
-    }
-
     private void RenderAgents()
     {
         _peoplePanel.Children.Clear();

@@ -68,11 +68,6 @@ public class TownhallChatPanel : UserControl
         this.GetObservable(MessagesProperty).Subscribe(_ => RenderMessages(), _ => { }, () => { });
     }
 
-    public void Refresh()
-    {
-        RenderMessages();
-    }
-
     private void RenderMessages()
     {
         _messagesPanel.Children.Clear();

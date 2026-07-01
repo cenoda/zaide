@@ -3,6 +3,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using ReactiveUI;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -13,6 +14,8 @@ public class TownhallView : UserControl
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallPeoplePanel _peoplePanel;
     private readonly TownhallInputArea _inputArea;
+
+    private IDisposable? _viewModelBindings;
 
     public static readonly StyledProperty<TownhallViewModel?> ViewModelProperty =
         AvaloniaProperty.Register<TownhallView, TownhallViewModel?>(nameof(ViewModel));
@@ -67,39 +70,82 @@ public class TownhallView : UserControl
 
         _channelPanel.ChannelSelected += channelId =>
         {
-            if (ViewModel is null) return;
-            ViewModel.SelectChannel(channelId);
-            RefreshFromViewModel();
+            ViewModel?.SelectChannel(channelId);
         };
 
         _inputArea.DraftChanged += text =>
         {
-            if (ViewModel is null) return;
-            ViewModel.DraftText = text;
+            if (ViewModel is not null && ViewModel.DraftText != text)
+                ViewModel.DraftText = text;
         };
 
         _inputArea.SendClicked += () =>
         {
-            if (ViewModel is null) return;
-            ViewModel.SendMessage();
-            RefreshFromViewModel();
+            ViewModel?.SendMessage();
         };
 
-        this.GetObservable(ViewModelProperty).Subscribe(_ => RefreshFromViewModel(), _ => { }, () => { });
+        this.GetObservable(ViewModelProperty).Subscribe(OnViewModelChanged);
     }
 
-    private void RefreshFromViewModel()
+    private void OnViewModelChanged(TownhallViewModel? vm)
     {
-        if (ViewModel is null)
+        _viewModelBindings?.Dispose();
+        _viewModelBindings = null;
+
+        if (vm is null)
+        {
+            _channelPanel.Channels = Array.Empty<Models.Channel>();
+            _chatPanel.Messages = Array.Empty<Models.TownhallMessage>();
+            _peoplePanel.Agents = Array.Empty<Models.WorkspaceAgent>();
+            _inputArea.DraftText = string.Empty;
             return;
+        }
 
-        _channelPanel.Channels = ViewModel.Channels.ToList();
-        _chatPanel.Messages = ViewModel.Messages.ToList();
-        _peoplePanel.Agents = ViewModel.Agents.ToList();
-        _inputArea.DraftText = ViewModel.DraftText;
+        var disposable = new System.Reactive.Disposables.CompositeDisposable();
 
-        _channelPanel.Refresh();
-        _chatPanel.Refresh();
-        _peoplePanel.Refresh();
+        disposable.Add(vm.WhenAnyValue(x => x.ActiveChannelId)
+            .Subscribe(_ =>
+            {
+                _channelPanel.Channels = vm.Channels.ToList();
+                _chatPanel.Messages = vm.Messages.ToList();
+            }));
+
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler messagesChanged = (_, _) =>
+        {
+            _chatPanel.Messages = vm.Messages.ToList();
+        };
+        vm.Messages.CollectionChanged += messagesChanged;
+        disposable.Add(System.Reactive.Disposables.Disposable.Create(() =>
+            vm.Messages.CollectionChanged -= messagesChanged));
+
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler agentsChanged = (_, _) =>
+        {
+            _peoplePanel.Agents = vm.Agents.ToList();
+        };
+        vm.Agents.CollectionChanged += agentsChanged;
+        disposable.Add(System.Reactive.Disposables.Disposable.Create(() =>
+            vm.Agents.CollectionChanged -= agentsChanged));
+
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler channelsChanged = (_, _) =>
+        {
+            _channelPanel.Channels = vm.Channels.ToList();
+        };
+        vm.Channels.CollectionChanged += channelsChanged;
+        disposable.Add(System.Reactive.Disposables.Disposable.Create(() =>
+            vm.Channels.CollectionChanged -= channelsChanged));
+
+        disposable.Add(vm.WhenAnyValue(x => x.DraftText)
+            .Subscribe(text =>
+            {
+                if (_inputArea.DraftText != text)
+                    _inputArea.DraftText = text;
+            }));
+
+        _channelPanel.Channels = vm.Channels.ToList();
+        _chatPanel.Messages = vm.Messages.ToList();
+        _peoplePanel.Agents = vm.Agents.ToList();
+        _inputArea.DraftText = vm.DraftText;
+
+        _viewModelBindings = disposable;
     }
 }

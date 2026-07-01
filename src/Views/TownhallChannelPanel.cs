@@ -61,11 +61,6 @@ public class TownhallChannelPanel : UserControl
         this.GetObservable(ChannelsProperty).Subscribe(_ => RenderChannels());
     }
 
-    public void Refresh()
-    {
-        RenderChannels();
-    }
-
     private void RenderChannels()
     {
         _listPanel.Children.Clear();
