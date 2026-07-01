@@ -30,7 +30,18 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         _renderControl.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         _renderControl.AddHandler(InputElement.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"] };
+        // "TERMINAL / LOGS" header matching concept
+        var terminalLabel = new TextBlock
+        {
+            Text = "TERMINAL / LOGS",
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+
+        _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"] };
         _clearButton = BuildToolbarButton("Clear");
         _restartButton = BuildToolbarButton("Restart");
         var buttonStrip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Children = { _clearButton, _restartButton } };
@@ -38,14 +49,23 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         {
             ColumnDefinitions =
             {
+                new ColumnDefinition { Width = GridLength.Auto },
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                 new ColumnDefinition { Width = GridLength.Auto }
             },
-            Children = { _statusText, buttonStrip }
+            Children = { terminalLabel, _statusText, buttonStrip }
         };
-        Grid.SetColumn(_statusText, 0);
-        Grid.SetColumn(buttonStrip, 1);
-        var toolbar = new Border { Background = (IBrush?)Application.Current!.Resources["DeepBase"], Padding = new Thickness(16, 6, 16, 6), Child = toolbarGrid };
+        Grid.SetColumn(terminalLabel, 0);
+        Grid.SetColumn(_statusText, 1);
+        Grid.SetColumn(buttonStrip, 2);
+        var toolbar = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
+            Padding = new Thickness(0, 6, 12, 6),
+            Child = toolbarGrid,
+            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderThickness = new Thickness(0, 1, 0, 0)
+        };
         var root = new Grid
         {
             RowDefinitions =

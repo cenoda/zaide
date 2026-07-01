@@ -23,38 +23,40 @@ public class TownhallPeoplePanel : UserControl
 
     public TownhallPeoplePanel()
     {
+        // Section header
         var header = new TextBlock
         {
             Text = "PEOPLE",
             FontSize = 11,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
-            Margin = new Thickness(10, 10, 10, 8)
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            Margin = new Thickness(12, 10, 12, 8)
         };
 
         _peoplePanel = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 6,
-            Margin = new Thickness(8, 0, 8, 8)
+            Spacing = 4,
+            Margin = new Thickness(6, 0, 6, 6)
         };
 
-        var root = new Grid
+        var separator = new Border
         {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"]
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        Grid.SetRow(header, 0);
-        Grid.SetRow(_peoplePanel, 1);
-        root.Children.Add(header);
-        root.Children.Add(_peoplePanel);
+        Background = (IBrush?)Application.Current!.Resources["PanelDeep"];
 
-        Content = root;
+        Content = new DockPanel
+        {
+            Children =
+            {
+                new Border { Child = header, [DockPanel.DockProperty] = Dock.Top },
+                separator,
+                _peoplePanel
+            }
+        };
 
         this.GetObservable(AgentsProperty).Subscribe(_ => RenderAgents(), _ => { }, () => { });
     }
@@ -67,74 +69,76 @@ public class TownhallPeoplePanel : UserControl
 
         foreach (var agent in Agents)
         {
+            // Avatar circle with first letter
+            var avatarLetter = agent.Name.Length > 0 ? agent.Name[0].ToString() : "?";
+            var avatar = new Border
+            {
+                Width = 26,
+                Height = 26,
+                CornerRadius = new CornerRadius(13),
+                Background = (IBrush?)Application.Current!.Resources["ActiveHighlight"],
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = avatarLetter,
+                    FontSize = 11,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+
+            // Status dot
             var statusDot = new Border
             {
-                Width = 8,
-                Height = 8,
-                CornerRadius = new CornerRadius(4),
+                Width = 7,
+                Height = 7,
+                CornerRadius = new CornerRadius(3.5),
                 Background = ResolveStatusBrush(agent.Status),
                 VerticalAlignment = VerticalAlignment.Center
             };
 
+            // Name
             var name = new TextBlock
             {
                 Text = agent.Name,
                 FontSize = 12,
                 Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
             };
 
+            // Status label
             var status = new TextBlock
             {
                 Text = agent.Status.ToString().ToLowerInvariant(),
                 FontSize = 10,
-                Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
-                VerticalAlignment = VerticalAlignment.Center
+                Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0)
             };
 
-            var row = new Grid
+            // Row: avatar + dot + name + status
+            var row = new StackPanel
             {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = GridLength.Auto },
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-                }
-            };
-
-            var details = new StackPanel
-            {
-                Orientation = Orientation.Vertical,
+                Orientation = Orientation.Horizontal,
                 Spacing = 0,
-                Margin = new Thickness(8, 0, 0, 0),
-                Children = { name, status }
+                Margin = new Thickness(6, 2),
+                Children = { avatar, statusDot, name, status }
             };
 
-            Grid.SetColumn(statusDot, 0);
-            Grid.SetColumn(details, 1);
-            row.Children.Add(statusDot);
-            row.Children.Add(details);
-
-            var card = new Border
-            {
-                Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
-                BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(8, 6, 8, 6),
-                Child = row
-            };
-
-            _peoplePanel.Children.Add(card);
+            _peoplePanel.Children.Add(row);
         }
     }
 
-    private static IBrush? ResolveStatusBrush(WorkspaceAgentStatus status)
+    private static IBrush ResolveStatusBrush(WorkspaceAgentStatus status)
     {
-        return status switch
+        return (IBrush)(status switch
         {
-            WorkspaceAgentStatus.Active => new SolidColorBrush(Color.Parse("#28A745")),
-            WorkspaceAgentStatus.Busy => new SolidColorBrush(Color.Parse("#FCBB47")),
-            _ => new SolidColorBrush(Color.Parse("#8B95A5"))
-        };
+            WorkspaceAgentStatus.Active => Application.Current!.Resources["Success"],
+            WorkspaceAgentStatus.Busy => Application.Current!.Resources["Warning"],
+            _ => Application.Current!.Resources["TextSecondary"]
+        });
     }
 }

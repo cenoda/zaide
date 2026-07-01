@@ -3,6 +3,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using ReactiveUI;
 using Zaide.ViewModels;
 
@@ -26,12 +27,73 @@ public class TownhallView : UserControl
         set => SetValue(ViewModelProperty, value);
     }
 
+    private TextBlock _channelHeader = null!;
+
     public TownhallView()
     {
         _channelPanel = new TownhallChannelPanel();
         _chatPanel = new TownhallChatPanel();
         _peoplePanel = new TownhallPeoplePanel();
         _inputArea = new TownhallInputArea();
+
+        // Top header bar: "# channel-name ˅" on left, people count icon on right
+        _channelHeader = new TextBlock
+        {
+            Text = "# townhall-main",
+            FontSize = 14,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+
+        var dropdownChevron = new TextBlock
+        {
+            Text = "˅",
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0)
+        };
+
+        var channelTitleRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 0,
+            Children = { _channelHeader, dropdownChevron }
+        };
+
+        var peopleCount = new TextBlock
+        {
+            Text = "👥 5",
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0)
+        };
+
+        var topBar = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Height = 40,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
+        };
+        Grid.SetColumn(channelTitleRow, 0);
+        Grid.SetColumn(peopleCount, 1);
+        topBar.Children.Add(channelTitleRow);
+        topBar.Children.Add(peopleCount);
+
+        var topBarBorder = new Border
+        {
+            Child = topBar,
+            [DockPanel.DockProperty] = Dock.Top,
+            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
+            BorderThickness = new Thickness(0, 0, 0, 1)
+        };
 
         var contentGrid = new Grid
         {
@@ -66,7 +128,10 @@ public class TownhallView : UserControl
         contentGrid.Children.Add(_peoplePanel);
         contentGrid.Children.Add(_inputArea);
 
-        Content = contentGrid;
+        Content = new DockPanel
+        {
+            Children = { topBarBorder, contentGrid }
+        };
 
         _channelPanel.ChannelSelected += channelId =>
         {
@@ -108,6 +173,10 @@ public class TownhallView : UserControl
             {
                 _channelPanel.Channels = vm.Channels.ToList();
                 _chatPanel.Messages = vm.Messages.ToList();
+
+                // Update header with active channel name
+                var active = vm.Channels.FirstOrDefault(c => c.Id == vm.ActiveChannelId);
+                _channelHeader.Text = active is not null ? $"# {active.Name}" : "# townhall-main";
             }));
 
         System.Collections.Specialized.NotifyCollectionChangedEventHandler messagesChanged = (_, _) =>
@@ -145,6 +214,10 @@ public class TownhallView : UserControl
         _chatPanel.Messages = vm.Messages.ToList();
         _peoplePanel.Agents = vm.Agents.ToList();
         _inputArea.DraftText = vm.DraftText;
+
+        // Set initial channel header
+        var initialChannel = vm.Channels.FirstOrDefault(c => c.Id == vm.ActiveChannelId);
+        _channelHeader.Text = initialChannel is not null ? $"# {initialChannel.Name}" : "# townhall-main";
 
         _viewModelBindings = disposable;
     }

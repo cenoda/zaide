@@ -27,26 +27,44 @@ public class TownhallInputArea : UserControl
     {
         _inputBox = new TextBox
         {
-            PlaceholderText = "Type a message...",
-            FontSize = 12,
+            PlaceholderText = "Message #townhall-main",
+            FontSize = 13,
             Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10, 8, 10, 8)
+            Padding = new Thickness(10, 8, 10, 8),
+            MinHeight = 34
         };
 
-        var sendButton = new Button
+        // Send button — icon-like triangle
+        var sendIcon = new TextBlock
         {
-            Content = "Send",
-            FontSize = 12,
-            Padding = new Thickness(12, 8, 12, 8),
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccent"],
+            Text = "▶",
+            FontSize = 11,
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-            BorderThickness = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var sendButton = new Border
+        {
+            Width = 34,
+            Height = 34,
+            Background = (IBrush?)Application.Current!.Resources["PrimaryAccent"],
             CornerRadius = new CornerRadius(6),
-            Cursor = new Cursor(StandardCursorType.Hand)
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = sendIcon,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        sendButton.PointerPressed += (_, e) =>
+        {
+            if (sendButton.IsVisible)
+                SendClicked?.Invoke();
+            e.Handled = true;
         };
 
         _inputBox.GetObservable(TextBox.TextProperty).Subscribe(text =>
@@ -58,8 +76,6 @@ public class TownhallInputArea : UserControl
                 DraftChanged?.Invoke(value);
             }
         });
-
-        sendButton.Click += (_, _) => SendClicked?.Invoke();
 
         var root = new Grid
         {

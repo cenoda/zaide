@@ -186,7 +186,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             {
                 new ColumnDefinition { Width = new GridLength(44), MinWidth = 44, MaxWidth = 44 }, // Nav
                 new ColumnDefinition { Width = new GridLength(260), MinWidth = 220, MaxWidth = 360 }, // Left panel
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 360 }, // Townhall
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 300 }, // Townhall
                 new ColumnDefinition { Width = new GridLength(420), MinWidth = 320, MaxWidth = 700 } // Editor
             },
             RowDefinitions =
@@ -219,10 +219,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(sourceControlPlaceholder, 0);
         grid.Children.Add(sourceControlPlaceholder);
 
-        var townhallView = new TownhallView
-        {
-            Margin = new Thickness(1, 0, 1, 0)
-        };
+        var townhallView = new TownhallView();
         Grid.SetColumn(townhallView, 2);
         Grid.SetRow(townhallView, 0);
         grid.Children.Add(townhallView);
@@ -245,8 +242,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
-            Margin = new Thickness(1, 0, 0, 0),
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"],
             Children =
             {
                 _editorTabBar,
@@ -281,9 +277,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var terminalPanel = new TerminalPanel();
         var bottomPanel = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
+            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
             Padding = new Thickness(0),
-            Margin = new Thickness(0, 1, 0, 0),
             Child = terminalPanel,
             IsVisible = false
         };

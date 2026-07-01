@@ -25,6 +25,26 @@
         <SolidColorBrush x:Key="SurfacePanel" Color="{StaticResource SurfacePanelColor}" />
         <SolidColorBrush x:Key="SurfaceBorder" Color="{StaticResource SurfaceBorderColor}" />
 
+        <!-- Derived accent colors -->
+        <Color x:Key="WarningColor">#FCBB47</Color>
+        <Color x:Key="SuccessColor">#28A745</Color>
+        <Color x:Key="TextSecondaryColor">#8B95A5</Color>
+        <Color x:Key="SeparatorColor">#1A2535</Color>
+        <Color x:Key="HoverSurfaceColor">#121D2B</Color>
+        <SolidColorBrush x:Key="Warning" Color="{StaticResource WarningColor}" />
+        <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
+        <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource TextSecondaryColor}" />
+        <SolidColorBrush x:Key="Separator" Color="{StaticResource SeparatorColor}" />
+        <SolidColorBrush x:Key="HoverSurface" Color="{StaticResource HoverSurfaceColor}" />
+
+        <!-- Semantic derived colors -->
+        <Color x:Key="TextContentColor">#C0C6D4</Color>
+        <Color x:Key="ActiveHighlightColor">#1A2535</Color>
+        <Color x:Key="CloseHoverColor">#223ED3E4</Color>
+        <SolidColorBrush x:Key="TextContent" Color="{StaticResource TextContentColor}" />
+        <SolidColorBrush x:Key="ActiveHighlight" Color="{StaticResource ActiveHighlightColor}" />
+        <SolidColorBrush x:Key="CloseHover" Color="{StaticResource CloseHoverColor}" />
+
         <!-- Override AvaloniaEdit SearchPanel to use Zaide palette -->
         <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelColor}" />
         <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SurfaceBorderColor}" />

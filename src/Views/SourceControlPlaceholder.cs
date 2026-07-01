@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 
@@ -9,49 +10,74 @@ public class SourceControlPlaceholder : UserControl
 {
     public SourceControlPlaceholder()
     {
-        var header = new TextBlock
+        // Section header: "SOURCE CONTROL" + close button
+        var sectionLabel = new TextBlock
         {
             Text = "SOURCE CONTROL",
-            FontSize = 12,
+            FontSize = 11,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-            Margin = new Thickness(12, 10, 12, 8)
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
         };
 
+        var closeButton = new TextBlock
+        {
+            Text = "×",
+            FontSize = 14,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+
+        var headerRow = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Height = 32,
+            Background = Brushes.Transparent
+        };
+        Grid.SetColumn(sectionLabel, 0);
+        Grid.SetColumn(closeButton, 1);
+        headerRow.Children.Add(sectionLabel);
+        headerRow.Children.Add(closeButton);
+
+        // Placeholder body
         var bodyText = new TextBlock
         {
-            Text = "Placeholder (behavior deferred in Refactor 3)",
+            Text = "Placeholder\n(behavior deferred in Refactor 3)",
             FontSize = 12,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center
         };
 
-        var body = new Border
+        var separator = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
-            BorderThickness = new Thickness(1),
-            Margin = new Thickness(12, 0, 12, 12),
-            CornerRadius = new CornerRadius(6),
-            Child = bodyText
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        var root = new Grid
+        Background = (IBrush?)Application.Current!.Resources["PanelDeep"];
+
+        Content = new DockPanel
         {
-            RowDefinitions =
+            Children =
             {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"]
+                new Border { Child = headerRow, [DockPanel.DockProperty] = Dock.Top },
+                separator,
+                new Border
+                {
+                    Child = bodyText,
+                    [DockPanel.DockProperty] = Dock.Top,
+                    Margin = new Thickness(12, 16, 12, 12)
+                }
+            }
         };
-
-        Grid.SetRow(header, 0);
-        Grid.SetRow(body, 1);
-        root.Children.Add(header);
-        root.Children.Add(body);
-
-        Content = root;
     }
 }

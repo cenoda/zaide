@@ -33,16 +33,52 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
     public FileTreeView()
     {
-        Padding = new Thickness(16);
+        Padding = new Thickness(0);
 
-        // --- Header (clickable folder path) ---
+        // --- Section header: "EXPLORER" + close button (matches concept) ---
+        var sectionLabel = new TextBlock
+        {
+            Text = "EXPLORER",
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+
+        var closeButton = new TextBlock
+        {
+            Text = "×",
+            FontSize = 14,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+
+        var headerRow = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Height = 32,
+            Background = Brushes.Transparent
+        };
+        Grid.SetColumn(sectionLabel, 0);
+        Grid.SetColumn(closeButton, 1);
+        headerRow.Children.Add(sectionLabel);
+        headerRow.Children.Add(closeButton);
+
+        // --- Folder path (clickable) ---
         _headerText = new TextBlock
         {
             Text = "Open Folder...",
-            FontSize = 13,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
             Cursor = new Cursor(StandardCursorType.Hand),
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(12, 0, 12, 6)
         };
 
         _headerText.PointerPressed += async (_, _) =>
@@ -183,20 +219,30 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
 
         // --- Layout ---
-        var headerBorder = new Border
+        var headerRowHost = new Border
         {
-            Child = _headerText,
-            [DockPanel.DockProperty] = Dock.Top,
-            Padding = new Thickness(0, 0, 0, 4),
-            BorderBrush = (IBrush?)Application.Current!.Resources["SoftAccent"],
-            BorderThickness = new Thickness(0, 0, 0, 1)
+            Child = headerRow,
+            [DockPanel.DockProperty] = Dock.Top
         };
 
-        Background = (IBrush?)Application.Current!.Resources["DeepBase"];
+        var folderPathHost = new Border
+        {
+            Child = _headerText,
+            [DockPanel.DockProperty] = Dock.Top
+        };
+
+        var separator = new Border
+        {
+            Height = 1,
+            [DockPanel.DockProperty] = Dock.Top,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
+        };
+
+        Background = (IBrush?)Application.Current!.Resources["PanelDeep"];
 
         Content = new DockPanel
         {
-            Children = { headerBorder, _treeView }
+            Children = { headerRowHost, separator, folderPathHost, _treeView }
         };
 
         // --- Reactive bindings ---

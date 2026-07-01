@@ -78,17 +78,39 @@ public partial class EditorTabBar : UserControl
         };
 
         // Translate vertical mouse wheel → horizontal scrolling.
-        // By default ScrollViewer only scrolls vertically on wheel events.
         _scrollViewer.PointerWheelChanged += (_, e) =>
         {
-            // Multiply by 50 px/notch — Linux wheel deltas are tiny otherwise.
             var delta = e.Delta.Y * 50;
             _scrollViewer.Offset = new Vector(
                 _scrollViewer.Offset.X - delta, _scrollViewer.Offset.Y);
             e.Handled = true;
         };
 
-        Content = _scrollViewer;
+        // "Shared in #townhall" indicator on the right side (matches concept)
+        var sharedIndicator = new TextBlock
+        {
+            Text = "👥 Shared in #townhall",
+            FontSize = 11,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0)
+        };
+
+        var tabBarRow = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Background = (IBrush?)Application.Current!.Resources["PanelDeep"]
+        };
+        Grid.SetColumn(_scrollViewer, 0);
+        Grid.SetColumn(sharedIndicator, 1);
+        tabBarRow.Children.Add(_scrollViewer);
+        tabBarRow.Children.Add(sharedIndicator);
+
+        Content = tabBarRow;
     }
 
     /// <summary>
@@ -233,7 +255,7 @@ public partial class EditorTabBar : UserControl
         };
 
         closeButton.PointerEntered += (_, _) =>
-            closeButton.Background = new SolidColorBrush(Color.Parse("#223ED3E4"));
+            closeButton.Background = (IBrush?)Application.Current!.Resources["CloseHover"];
         closeButton.PointerExited += (_, _) => closeButton.Background = Brushes.Transparent;
         closeButton.PointerPressed += (_, e) =>
         {

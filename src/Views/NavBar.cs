@@ -17,6 +17,8 @@ public class NavBar : UserControl
 {
     private readonly Border _explorerButton;
     private readonly Border _sourceControlButton;
+    private readonly TextBlock _explorerIcon;
+    private readonly TextBlock _sourceControlIcon;
 
     public static readonly StyledProperty<LeftPanelMode> ActiveModeProperty =
         AvaloniaProperty.Register<NavBar, LeftPanelMode>(nameof(ActiveMode), LeftPanelMode.Explorer);
@@ -31,31 +33,72 @@ public class NavBar : UserControl
 
     public NavBar()
     {
-        Width = 40;
-        MinWidth = 40;
-        MaxWidth = 40;
+        Width = 44;
+        MinWidth = 44;
+        MaxWidth = 44;
 
-        var appLogo = new TextBlock
+        // Logo — rounded circle with "Z" letter (matches concept's "A" logo)
+        var logoText = new TextBlock
         {
             Text = "Z",
-            FontSize = 14,
+            FontSize = 13,
             FontWeight = FontWeight.Bold,
             Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        _explorerButton = BuildIconButton("≡", "Explorer", LeftPanelMode.Explorer);
-        _sourceControlButton = BuildIconButton("⑂", "Source Control", LeftPanelMode.SourceControl);
+        var logoContainer = new Border
+        {
+            Width = 28,
+            Height = 28,
+            CornerRadius = new CornerRadius(8),
+            Background = (IBrush?)Application.Current!.Resources["PrimaryAccent"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 8, 0, 12),
+            Child = logoText
+        };
+
+        _explorerIcon = new TextBlock
+        {
+            Text = "≡",
+            FontSize = 16,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        _sourceControlIcon = new TextBlock
+        {
+            Text = "⑂",
+            FontSize = 16,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        _explorerButton = BuildIconButton(_explorerIcon, LeftPanelMode.Explorer);
+        _sourceControlButton = BuildIconButton(_sourceControlIcon, LeftPanelMode.SourceControl);
 
         var topStack = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 8,
-            Children = { BuildLogoContainer(appLogo), _explorerButton, _sourceControlButton }
+            Spacing = 4,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Children = { logoContainer, _explorerButton, _sourceControlButton }
         };
 
-        var settings = BuildIconButton("⚙", "Settings (deferred)", ActiveMode);
+        // Settings icon at bottom
+        var settingsIcon = new TextBlock
+        {
+            Text = "⚙",
+            FontSize = 14,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var settings = BuildIconButton(settingsIcon, ActiveMode);
 
         var root = new Grid
         {
@@ -64,7 +107,6 @@ public class NavBar : UserControl
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto }
             },
-            Margin = new Thickness(0),
             Background = (IBrush?)Application.Current!.Resources["DeepBase"]
         };
 
@@ -80,33 +122,18 @@ public class NavBar : UserControl
         RefreshVisualState();
     }
 
-    private static Border BuildLogoContainer(Control content) => new()
+    private Border BuildIconButton(TextBlock icon, LeftPanelMode modeForClick)
     {
-        Height = 36,
-        Margin = new Thickness(4, 8, 4, 4),
-        Background = Brushes.Transparent,
-        Child = content
-    };
-
-    private Border BuildIconButton(string glyph, string toolTip, LeftPanelMode modeForClick)
-    {
-        var text = new TextBlock
-        {
-            Text = glyph,
-            FontSize = 13,
-            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
         var border = new Border
         {
-            Height = 30,
-            Margin = new Thickness(4, 0, 4, 0),
+            Width = 36,
+            Height = 32,
+            Margin = new Thickness(4, 2),
             CornerRadius = new CornerRadius(6),
             Background = Brushes.Transparent,
-            Child = text,
-            Cursor = new Cursor(StandardCursorType.Hand)
+            Child = icon,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            HorizontalAlignment = HorizontalAlignment.Center
         };
 
         border.PointerPressed += (_, e) =>
@@ -132,9 +159,13 @@ public class NavBar : UserControl
     private void RefreshVisualState()
     {
         var activeBrush = (IBrush?)Application.Current!.Resources["PrimaryAccent"];
-        var inactiveBrush = Brushes.Transparent;
+        var activeForeground = (IBrush?)Application.Current!.Resources["TextActive"];
+        var inactiveForeground = (IBrush?)Application.Current!.Resources["TextSecondary"];
 
-        _explorerButton.Background = ActiveMode == LeftPanelMode.Explorer ? activeBrush : inactiveBrush;
-        _sourceControlButton.Background = ActiveMode == LeftPanelMode.SourceControl ? activeBrush : inactiveBrush;
+        _explorerButton.Background = ActiveMode == LeftPanelMode.Explorer ? activeBrush : Brushes.Transparent;
+        _explorerIcon.Foreground = ActiveMode == LeftPanelMode.Explorer ? activeForeground : inactiveForeground;
+
+        _sourceControlButton.Background = ActiveMode == LeftPanelMode.SourceControl ? activeBrush : Brushes.Transparent;
+        _sourceControlIcon.Foreground = ActiveMode == LeftPanelMode.SourceControl ? activeForeground : inactiveForeground;
     }
 }

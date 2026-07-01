@@ -25,20 +25,21 @@ public class TownhallChatPanel : UserControl
 
     public TownhallChatPanel()
     {
+        // Section header
         var header = new TextBlock
         {
             Text = "TOWNHALL",
-            FontSize = 12,
+            FontSize = 11,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
             Margin = new Thickness(12, 10, 12, 8)
         };
 
         _messagesPanel = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 8,
-            Margin = new Thickness(12, 0, 12, 12)
+            Spacing = 12,
+            Margin = new Thickness(12, 8, 12, 12)
         };
 
         _scrollViewer = new ScrollViewer
@@ -48,22 +49,23 @@ public class TownhallChatPanel : UserControl
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
 
-        var root = new Grid
+        var separator = new Border
         {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        Grid.SetRow(header, 0);
-        Grid.SetRow(_scrollViewer, 1);
-        root.Children.Add(header);
-        root.Children.Add(_scrollViewer);
+        Background = (IBrush?)Application.Current!.Resources["SurfaceBase"];
 
-        Content = root;
+        Content = new DockPanel
+        {
+            Children =
+            {
+                new Border { Child = header, [DockPanel.DockProperty] = Dock.Top },
+                separator,
+                _scrollViewer
+            }
+        };
 
         this.GetObservable(MessagesProperty).Subscribe(_ => RenderMessages(), _ => { }, () => { });
     }
@@ -76,45 +78,88 @@ public class TownhallChatPanel : UserControl
 
         foreach (var message in Messages)
         {
+            // Sender avatar circle (first letter)
+            var avatarLetter = message.SenderId.Length > 0 ? message.SenderId[0].ToString() : "?";
+            var avatar = new Border
+            {
+                Width = 32,
+                Height = 32,
+                CornerRadius = new CornerRadius(16),
+                Background = (IBrush?)Application.Current!.Resources["ActiveHighlight"],
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Child = new TextBlock
+                {
+                    Text = avatarLetter,
+                    FontSize = 13,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+
+            // Sender name
             var sender = new TextBlock
             {
                 Text = message.SenderId,
-                FontSize = 11,
+                FontSize = 12,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"]
+                Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+                VerticalAlignment = VerticalAlignment.Center
             };
 
+            // Timestamp
+            var timestamp = new TextBlock
+            {
+                Text = message.Timestamp.ToLocalTime().ToString("HH:mm"),
+                FontSize = 10,
+                Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+
+            // Header row: sender + timestamp
+            var headerRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 0,
+                Children = { sender, timestamp }
+            };
+
+            // Message content
             var content = new TextBlock
             {
                 Text = message.Content,
                 FontSize = 13,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = (IBrush?)Application.Current!.Resources["TextActive"]
+                Foreground = (IBrush?)Application.Current!.Resources["TextContent"],
+                Margin = new Thickness(0, 4, 0, 0)
             };
 
-            var timestamp = new TextBlock
+            // Text column (name + content)
+            var textColumn = new StackPanel
             {
-                Text = message.Timestamp.ToLocalTime().ToString("HH:mm"),
-                FontSize = 10,
-                Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
-                HorizontalAlignment = HorizontalAlignment.Right
+                Orientation = Orientation.Vertical,
+                Spacing = 0,
+                Children = { headerRow, content }
             };
 
-            var card = new Border
+            // Message row: avatar + text
+            var messageRow = new Grid
             {
-                Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
-                BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBorder"],
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(10, 8, 10, 8),
-                Child = new StackPanel
+                ColumnDefinitions =
                 {
-                    Spacing = 4,
-                    Children = { sender, content, timestamp }
+                    new ColumnDefinition { Width = GridLength.Auto },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
                 }
             };
+            Grid.SetColumn(avatar, 0);
+            Grid.SetColumn(textColumn, 1);
+            messageRow.Children.Add(avatar);
+            messageRow.Children.Add(textColumn);
 
-            _messagesPanel.Children.Add(card);
+            _messagesPanel.Children.Add(messageRow);
         }
 
         _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, double.MaxValue);

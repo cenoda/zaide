@@ -25,38 +25,40 @@ public class TownhallChannelPanel : UserControl
 
     public TownhallChannelPanel()
     {
+        // Section header
         var header = new TextBlock
         {
             Text = "CHANNELS",
             FontSize = 11,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
-            Margin = new Thickness(10, 10, 10, 8)
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondary"],
+            Margin = new Thickness(12, 10, 12, 8)
         };
 
         _listPanel = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 4,
+            Spacing = 2,
             Margin = new Thickness(6, 0, 6, 6)
         };
 
-        var root = new Grid
+        var separator = new Border
         {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"]
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBorder"]
         };
 
-        Grid.SetRow(header, 0);
-        Grid.SetRow(_listPanel, 1);
-        root.Children.Add(header);
-        root.Children.Add(_listPanel);
+        Background = (IBrush?)Application.Current!.Resources["PanelDeep"];
 
-        Content = root;
+        Content = new DockPanel
+        {
+            Children =
+            {
+                new Border { Child = header, [DockPanel.DockProperty] = Dock.Top },
+                separator,
+                _listPanel
+            }
+        };
 
         this.GetObservable(ChannelsProperty).Subscribe(_ => RenderChannels());
     }
@@ -69,37 +71,72 @@ public class TownhallChannelPanel : UserControl
 
         foreach (var channel in Channels)
         {
-            var text = new TextBlock
+            var isActive = channel.IsActive;
+
+            var hashPrefix = new TextBlock
             {
-                Text = channel.Name,
+                Text = "# ",
                 FontSize = 12,
-                Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+                FontWeight = FontWeight.SemiBold,
+                Foreground = isActive
+                    ? (IBrush?)Application.Current!.Resources["TextActive"]
+                    : (IBrush?)Application.Current!.Resources["TextSecondary"],
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            var row = new Border
+            var channelName = new TextBlock
+            {
+                Text = channel.Name,
+                FontSize = 12,
+                Foreground = isActive
+                    ? (IBrush?)Application.Current!.Resources["TextActive"]
+                    : (IBrush?)Application.Current!.Resources["TextSecondary"],
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 0,
+                Margin = new Thickness(6, 1),
+                Children = { hashPrefix, channelName }
+            };
+
+            var border = new Border
             {
                 Height = 28,
-                Padding = new Thickness(8, 0, 8, 0),
-                CornerRadius = new CornerRadius(6),
-                Background = channel.IsActive
-                    ? (IBrush?)Application.Current!.Resources["PrimaryAccent"]
+                Padding = new Thickness(6, 0),
+                CornerRadius = new CornerRadius(5),
+                Background = isActive
+                    ? (IBrush?)Application.Current!.Resources["ActiveHighlight"]
                     : Brushes.Transparent,
                 Cursor = new Cursor(StandardCursorType.Hand),
-                Child = text
+                Child = row
             };
 
             var channelId = channel.Id;
-            row.PointerPressed += (_, e) =>
+            border.PointerPressed += (_, e) =>
             {
-                if (!e.GetCurrentPoint(row).Properties.IsLeftButtonPressed)
+                if (!e.GetCurrentPoint(border).Properties.IsLeftButtonPressed)
                     return;
 
                 ChannelSelected?.Invoke(channelId);
                 e.Handled = true;
             };
 
-            _listPanel.Children.Add(row);
+            // Hover effect
+            border.PointerEntered += (_, _) =>
+            {
+                if (!isActive)
+                    border.Background = (IBrush?)Application.Current!.Resources["HoverSurface"];
+            };
+            border.PointerExited += (_, _) =>
+            {
+                if (!isActive)
+                    border.Background = Brushes.Transparent;
+            };
+
+            _listPanel.Children.Add(border);
         }
     }
 }
