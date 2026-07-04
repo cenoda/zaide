@@ -146,6 +146,40 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public void InitialState_LeftPanelModeIsExplorer()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(LeftPanelMode.Explorer, vm.LeftPanelMode);
+        Assert.True(vm.IsExplorerMode);
+        Assert.False(vm.IsSourceControlMode);
+    }
+
+    [Fact]
+    public void SwitchToSourceControl_SetsModeToSourceControl()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(LeftPanelMode.Explorer, vm.LeftPanelMode);
+
+        vm.SwitchToSourceControlCommand.Execute().Subscribe();
+        Assert.Equal(LeftPanelMode.SourceControl, vm.LeftPanelMode);
+        Assert.False(vm.IsExplorerMode);
+        Assert.True(vm.IsSourceControlMode);
+    }
+
+    [Fact]
+    public void SwitchToExplorer_SetsModeToExplorer()
+    {
+        var vm = CreateViewModel();
+        vm.SwitchToSourceControlCommand.Execute().Subscribe();
+        Assert.Equal(LeftPanelMode.SourceControl, vm.LeftPanelMode);
+
+        vm.SwitchToExplorerCommand.Execute().Subscribe();
+        Assert.Equal(LeftPanelMode.Explorer, vm.LeftPanelMode);
+        Assert.True(vm.IsExplorerMode);
+        Assert.False(vm.IsSourceControlMode);
+    }
+
+    [Fact]
     public async Task TerminalStartupError_UpdatesStatusText()
     {
         var services = new ServiceCollection();

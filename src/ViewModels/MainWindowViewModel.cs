@@ -11,11 +11,21 @@ using Zaide.Services;
 
 namespace Zaide.ViewModels;
 
+/// <summary>
+/// Defines which panel is shown in the left content slot.
+/// </summary>
+public enum LeftPanelMode
+{
+    Explorer,
+    SourceControl
+}
+
 public class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private bool _isBottomPanelVisible;
     private string? _statusText = "Open a folder to begin";
     private CompositeDisposable? _disposables;
+    private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
 
 
     public bool IsBottomPanelVisible
@@ -30,10 +40,21 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         set => this.RaiseAndSetIfChanged(ref _statusText, value);
     }
 
+    public LeftPanelMode LeftPanelMode
+    {
+        get => _leftPanelMode;
+        set => this.RaiseAndSetIfChanged(ref _leftPanelMode, value);
+    }
+
+    public bool IsExplorerMode => LeftPanelMode == LeftPanelMode.Explorer;
+    public bool IsSourceControlMode => LeftPanelMode == LeftPanelMode.SourceControl;
+
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
     public Interaction<Unit, string?> PickFolder { get; }
     public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToExplorerCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToSourceControlCommand { get; }
 
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
@@ -55,6 +76,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             if (path is not null)
                 await FileTreeViewModel.OpenFolderCommand.Execute(path);
         });
+        SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
+        SwitchToSourceControlCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.SourceControl; });
     }
 
     /// <summary>

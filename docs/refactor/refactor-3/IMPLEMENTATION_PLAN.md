@@ -2,7 +2,7 @@
 
 ## Status
 
-**Planned.**
+**In progress — M0 and M0.5 complete, M1 in progress.**
 
 This plan implements the already-decided drift recorded in
 `docs/refactor/refactor-3/DRIFT_DECISION.md`.
@@ -114,7 +114,7 @@ Column breakdown:
    output with categorized log entries.
 
 6. **Status bar** (bottom): Thin bar showing app name, cursor position,
-   language, project name, branch, and AI model info.
+   language, project, branch, and AI model info.
 
 All panel boundaries use `GridSplitter` controls so every column and row
 boundary can be drag-resized by the user. Specifically:
@@ -266,16 +266,17 @@ Each milestone's exit check should produce the following artifacts where applica
 
 ## Milestones
 
-| Milestone | Description | Exit Signal |
-|-----------|-------------|-------------|
-| M0 | Confirm baseline health and current layout assumptions | Build/tests green and current shell understood |
-| M1 | Main window layout transition with nav bar | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor |
-| M2 | Townhall domain/view-model foundation | Townhall has channel list, message model, agent status with avatars, and state model |
-| M3 | Townhall view integration | Center panel shows people sidebar, channels sidebar, chat area, and input |
-| M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface |
-| M5 | Terminal/logs alignment and categorization | Bottom area works under center+right, shows categorized [BUILD]/[AGENT]/[LOG] entries |
-| M6 | Source Control panel and status bar | SC panel shows branch selector, change list, staging, commit input; status bar shows app info |
-| M7 | Regression sweep and doc sync | Existing workflows stable, docs match reality |
+| Milestone | Description | Exit Signal | Status |
+|-----------|-------------|-------------|--------|
+| M0 | Confirm baseline health and current layout assumptions | Build/tests green and current shell understood | ✅ Complete |
+| M0.5 | Palette rematch to concept.png colors | App.axaml tokens updated, no hardcoded legacy hex values remain | ✅ Complete |
+| M1 | Main window layout transition with nav bar + MainWindowViewModel nav-mode state + tests | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor; VM exposes LeftPanelMode with switch commands; tests verify mode switching | 🔄 In progress |
+| M2 | Townhall domain/view-model foundation | Townhall has channel list, message model, agent status with avatars, and state model | ⬜ Pending |
+| M3 | Townhall view integration | Center panel shows people sidebar, channels sidebar, chat area, and input | ⬜ Pending |
+| M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface | ⬜ Pending |
+| M5 | Terminal/logs alignment and categorization | Bottom area works under center+right, shows categorized [BUILD]/[AGENT]/[LOG] entries | ⬜ Pending |
+| M6 | Source Control panel and status bar | SC panel shows branch selector, change list, staging, commit input; status bar shows app info | ⬜ Pending |
+| M7 | Regression sweep and doc sync | Existing workflows stable, docs match reality | ⬜ Pending |
 
 ---
 
@@ -288,7 +289,7 @@ modified. This map prevents scope creep and makes PR reviews easier.
 |-----------|---------------|----------------|
 | M0 | — | — (verification only) |
 | M0.5 | — | `src/App.axaml`, `src/Views/EditorTabBar.cs`, any view with hardcoded colors |
-| M1 | `src/Views/NavBar.cs` | `src/MainWindow.axaml.cs` (layout built in C# per DESIGN.md §1) |
+| M1 | `src/Views/NavBar.cs` | `src/MainWindow.axaml.cs` (layout built in C# per DESIGN.md §1), `src/ViewModels/MainWindowViewModel.cs` (add LeftPanelMode enum, mode property, switch commands), `tests/Zaide.Tests/MainWindowViewModelTests.cs` (add mode-switching tests) |
 | M2 | `src/Models/Channel.cs`, `src/Models/TownhallMessage.cs`, `src/Models/WorkspaceAgent.cs`, `src/Models/TownhallState.cs`, `src/ViewModels/TownhallViewModel.cs` | `src/Program.cs` (register TownhallViewModel in DI) |
 | M2-T | `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs` | — |
 | M3 | `src/Views/TownhallView.cs`, `src/Views/TownhallPeoplePanel.cs`, `src/Views/TownhallChannelPanel.cs`, `src/Views/TownhallChatPanel.cs`, `src/Views/TownhallInputArea.cs` | `src/MainWindow.axaml.cs` (wire Townhall into center column) |
@@ -303,7 +304,7 @@ All new files follow one-class-per-file naming per `docs/CONVENTIONS.md`.
 
 ## Milestone Details
 
-### M0: Baseline Verification
+### M0: Baseline Verification ✅
 
 Verify the following before changing code:
 
@@ -316,7 +317,7 @@ Verify the following before changing code:
 This milestone exists so later regressions are measured against reality, not
 memory.
 
-### M0.5: Palette Rematch
+### M0.5: Palette Rematch ✅
 
 The concept.png uses a different color palette than the current DESIGN.md
 "Ayaka Violet" system. Refactor 3 includes a palette update to match the
@@ -694,7 +695,7 @@ Views not listed here inherit from the global tokens above.
 | Scrollbar thumbs | `RadiusFull` | Rounded ends |
 | Warning message containers | `RadiusMd (8px)` | Distinct from normal messages |
 
-### M1: Main Window Layout Transition
+### M1: Main Window Layout Transition (In Progress)
 
 Rewrite the layout in `src/MainWindow.axaml.cs` (`BuildLayout` method) so
 the shell grid/topology becomes (`src/MainWindow.axaml` stays minimal per
@@ -708,14 +709,33 @@ DESIGN.md §1):
 - bottom: terminal/logs (spanning content area under center + right only)
 - status bar: thin bar at the very bottom, full width
 
-Implementation intent:
+#### MainWindowViewModel Changes
+
+Add left-panel mode state to `MainWindowViewModel`:
+
+- Define `LeftPanelMode` enum with values `Explorer` and `SourceControl`
+- Add `_leftPanelMode` private field (default `Explorer`)
+- Add `LeftPanelMode` reactive property
+- Add `IsExplorerMode` and `IsSourceControlMode` computed properties
+- Add `SwitchToExplorerCommand` and `SwitchToSourceControlCommand` reactive commands
+- Wire commands to update `LeftPanelMode`
+
+#### Tests
+
+Add tests to `MainWindowViewModelTests`:
+
+- `InitialState_LeftPanelModeIsExplorer` — verify default is Explorer
+- `SwitchToSourceControl_SetsModeToSourceControl` — verify switching to SC
+- `SwitchToExplorer_SetsModeToExplorer` — verify switching back to Explorer
+
+#### Layout Implementation
 
 - Add a narrow vertical nav bar on the far left with icons for Explorer
   (active) and Source Control. This provides the navigation affordance shown
   in the concept and reserves the structural slot for future panel switching.
 - Keep the file tree in the left content panel in Explorer mode.
 - Add Source Control mode in the same left-panel slot (full SC panel implemented
-  in M6; M1 sets up the slot structure).
+  in M6; M1 sets up the slot structure with a placeholder).
 - Move the editor from center to right.
 - Replace the current right-side placeholder model with a real center
   Townhall surface (initially a simple container; M2/M3 add content).
@@ -1194,6 +1214,7 @@ These expectations define minimum validation depth per milestone.
   - Build passes.
   - Manual layout validation against LC-1..LC-12 at default width and 960 px.
   - Confirm nav bar mode switching (Explorer ↔ Source Control).
+  - Unit tests verify `MainWindowViewModel.LeftPanelMode` initial state and switching.
 
 - **M2 (Townhall models/viewmodel):**
   - Add/extend unit tests for `TownhallViewModel` and state behavior:
@@ -1254,4 +1275,4 @@ It is not the end state.
 
 ---
 
-*Last updated: 2026-07-01*
+*Last updated: 2026-07-04*
