@@ -67,7 +67,7 @@ public partial class EditorTabBar : UserControl
 
         // Resolve brushes now — safe because the constructor only runs when
         // the control is created, which happens inside a running application.
-        _activeTabBrush = Application.Current?.Resources["PrimaryAccent"] as IBrush;
+        _activeTabBrush = Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
 
         _scrollViewer = new ScrollViewer
         {
@@ -212,7 +212,7 @@ public partial class EditorTabBar : UserControl
             Text = "×",
             FontSize = 14,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false
@@ -233,7 +233,7 @@ public partial class EditorTabBar : UserControl
         };
 
         closeButton.PointerEntered += (_, _) =>
-            closeButton.Background = new SolidColorBrush(Color.Parse("#223ED3E4"));
+            closeButton.Background = new SolidColorBrush(Color.Parse("#12FFFFFF"));
         closeButton.PointerExited += (_, _) => closeButton.Background = Brushes.Transparent;
         closeButton.PointerPressed += (_, e) =>
         {
@@ -261,7 +261,7 @@ public partial class EditorTabBar : UserControl
         {
             Child = grid,
             Background = _inactiveTabBrush,
-            BorderBrush = (IBrush?)Application.Current!.Resources["DeepBase"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = new Thickness(0),
             MinHeight = 36,

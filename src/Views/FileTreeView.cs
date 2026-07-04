@@ -40,7 +40,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         {
             Text = "Open Folder...",
             FontSize = 13,
-            Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             Cursor = new Cursor(StandardCursorType.Hand),
             Margin = new Thickness(0, 0, 0, 8)
         };
@@ -69,7 +69,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     var tb = new TextBlock
                     {
                         Text = node.Name,
-                        Foreground = (IBrush?)Application.Current!.Resources["TextActive"]
+                        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"]
                     };
 
                     // M3: Bind TreeViewItem.IsExpanded ↔ FileTreeNode.IsExpanded (two-way)
@@ -188,11 +188,11 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             Child = _headerText,
             [DockPanel.DockProperty] = Dock.Top,
             Padding = new Thickness(0, 0, 0, 4),
-            BorderBrush = (IBrush?)Application.Current!.Resources["SoftAccent"],
+            BorderBrush = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             BorderThickness = new Thickness(0, 0, 0, 1)
         };
 
-        Background = (IBrush?)Application.Current!.Resources["DeepBase"];
+        Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
 
         Content = new DockPanel
         {

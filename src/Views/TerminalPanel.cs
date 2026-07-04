@@ -30,7 +30,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         _renderControl.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         _renderControl.AddHandler(InputElement.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = (IBrush?)Application.Current!.Resources["SoftAccent"] };
+        _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"] };
         _clearButton = BuildToolbarButton("Clear");
         _restartButton = BuildToolbarButton("Restart");
         var buttonStrip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Children = { _clearButton, _restartButton } };
@@ -45,7 +45,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         };
         Grid.SetColumn(_statusText, 0);
         Grid.SetColumn(buttonStrip, 1);
-        var toolbar = new Border { Background = (IBrush?)Application.Current!.Resources["DeepBase"], Padding = new Thickness(16, 6, 16, 6), Child = toolbarGrid };
+        var toolbar = new Border { Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"], Padding = new Thickness(16, 6, 16, 6), Child = toolbarGrid };
         var root = new Grid
         {
             RowDefinitions =
@@ -85,8 +85,8 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private static Button BuildToolbarButton(string label) => new()
     {
         Content = label, FontSize = 12, Padding = new Thickness(12, 4, 12, 4),
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanel"],
-        Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+        Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
+        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
         BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(6),
         Cursor = new Cursor(StandardCursorType.Hand)
     };

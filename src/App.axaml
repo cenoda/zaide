@@ -5,29 +5,37 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <!-- Palette raw colors (shared source of truth — matched to concept.png) -->
-        <Color x:Key="PrimaryAccentColor">#066ADB</Color>
-        <Color x:Key="SoftAccentColor">#3ED3E4</Color>
-        <Color x:Key="DeepBaseColor">#0A0F19</Color>
-        <Color x:Key="TextActiveColor">#E3E4F4</Color>
-        <Color x:Key="SurfaceBaseColor">#0B121D</Color>
-        <Color x:Key="PanelDeepColor">#0D1520</Color>
-        <Color x:Key="SurfacePanelColor">#0E1825</Color>
-        <Color x:Key="SurfaceBorderColor">#152030</Color>
+        <!-- Palette raw colors (Refactor 3 token scheme — matched to concept.png) -->
+        <Color x:Key="PrimaryAccentBrushColor">#066ADB</Color>
+        <Color x:Key="SecondaryAccentBrushColor">#3ED3E4</Color>
+        <Color x:Key="WarningBrushColor">#FCBB47</Color>
+        <Color x:Key="SuccessBrushColor">#28A745</Color>
+        <Color x:Key="SurfaceBaseBrushColor">#0A0F19</Color>
+        <Color x:Key="SurfacePanelBrushColor">#0B121D</Color>
+        <Color x:Key="PanelDeepBrushColor">#0D1520</Color>
+        <Color x:Key="TextPrimaryBrushColor">#E3E4F4</Color>
+        <Color x:Key="TextSecondaryBrushColor">#8B95A5</Color>
+        <Color x:Key="SeparatorBrushColor">#070C16</Color>
+        <Color x:Key="IdleBrushColor">#5A6070</Color>
 
         <!-- Palette brushes (derived from the colors above) -->
-        <SolidColorBrush x:Key="PrimaryAccent" Color="{StaticResource PrimaryAccentColor}" />
-        <SolidColorBrush x:Key="SoftAccent" Color="{StaticResource SoftAccentColor}" />
-        <SolidColorBrush x:Key="DeepBase" Color="{StaticResource DeepBaseColor}" />
-        <SolidColorBrush x:Key="TextActive" Color="{StaticResource TextActiveColor}" />
-        <SolidColorBrush x:Key="SurfaceBase" Color="{StaticResource SurfaceBaseColor}" />
-        <SolidColorBrush x:Key="PanelDeep" Color="{StaticResource PanelDeepColor}" />
-        <SolidColorBrush x:Key="SurfacePanel" Color="{StaticResource SurfacePanelColor}" />
-        <SolidColorBrush x:Key="SurfaceBorder" Color="{StaticResource SurfaceBorderColor}" />
+        <SolidColorBrush x:Key="PrimaryAccentBrush" Color="{StaticResource PrimaryAccentBrushColor}" />
+        <SolidColorBrush x:Key="SecondaryAccentBrush" Color="{StaticResource SecondaryAccentBrushColor}" />
+        <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningBrushColor}" />
+        <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessBrushColor}" />
+        <SolidColorBrush x:Key="SurfaceBaseBrush" Color="{StaticResource SurfaceBaseBrushColor}" />
+        <SolidColorBrush x:Key="SurfacePanelBrush" Color="{StaticResource SurfacePanelBrushColor}" />
+        <SolidColorBrush x:Key="PanelDeepBrush" Color="{StaticResource PanelDeepBrushColor}" />
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryBrushColor}" />
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryBrushColor}" />
+        <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource SeparatorBrushColor}" />
+        <SolidColorBrush x:Key="IdleBrush" Color="{StaticResource IdleBrushColor}" />
+        <!-- BusyBrush reuses WarningBrushColor (amber) for visual consistency -->
+        <SolidColorBrush x:Key="BusyBrush" Color="{StaticResource WarningBrushColor}" />
 
         <!-- Override AvaloniaEdit SearchPanel to use Zaide palette -->
-        <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelColor}" />
-        <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SurfaceBorderColor}" />
+        <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelBrushColor}" />
+        <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SeparatorBrushColor}" />
     </Application.Resources>
 
     <Application.Styles>

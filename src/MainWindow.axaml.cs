@@ -200,7 +200,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(0) },
                 new RowDefinition { Height = new GridLength(0) }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBase"]
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
         };
 
         var bottomSplitterRow = grid.RowDefinitions[1];
@@ -231,7 +231,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _welcomeText = new TextBlock
         {
             Text = "Open a file to begin",
-            Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
             FontSize = 14,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
@@ -244,7 +244,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            Background = (IBrush?)Application.Current!.Resources["DeepBase"],
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
             Margin = new Thickness(1, 0, 1, 0),
             Children =
             {
@@ -263,7 +263,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(center);
 
         // --- Right Agent Area ---
-        var agentArea = BuildPanel("Agent Area", "DeepBase", 1, 0, 0, 0);
+        var agentArea = BuildPanel("Agent Area", "SurfaceBaseBrush", 1, 0, 0, 0);
         Grid.SetColumn(agentArea, 3); // Agent area now in column 3 (after center)
         Grid.SetRow(agentArea, 0);
         grid.Children.Add(agentArea);
@@ -288,7 +288,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var terminalPanel = new TerminalPanel();
         var bottomPanel = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["PanelDeep"],
+            Background = (IBrush?)Application.Current!.Resources["PanelDeepBrush"],
             Padding = new Thickness(0),
             Margin = new Thickness(0, 1, 0, 0),
             Child = terminalPanel
@@ -323,7 +323,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Child = new TextBlock
             {
                 Text = label,
-                Foreground = (IBrush?)Application.Current!.Resources["TextActive"],
+                Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                 FontSize = 14,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center

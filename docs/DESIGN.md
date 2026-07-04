@@ -152,16 +152,25 @@ Zaide should feel as polished as VS Code or Warp at a glance:
 - **No flicker:** Layout stable on first paint. No cascade of elements appearing.
 - **Smooth resize:** No layout jumps or blank areas during window resize.
 - **Text rendering:** Crisp at all DPI. No blurry text on HiDPI.
-- **Color palette:** Monochromatic dark base with blue accent system (matched to concept.png):
-  - **Primary Accent:** `#066ADB` (Bright Blue — for active tabs, primary buttons, focus borders, links)
-  - **Secondary Accent:** `#3ED3E4` (Cyan Teal — for code type highlights, secondary indicators)
-  - **Warning Accent:** `#FCBB47` (Amber — for warnings, modified indicators, alerts)
-  - **Success Accent:** `#28A745` (Green — for added indicators, active status dots, sync)
-  - **Deep Base:** `#0A0F19` (Near-Black Navy — for window and panel backgrounds)
-  - **Panel Surface:** `#0B121D` (Slightly Lighter Navy — for elevated panels, code areas)
-  - **Text Active:** `#E3E4F4` (Pale Ice Blue-White — for high-contrast text)
-  - **Text Secondary:** `#8B95A5` (Muted Blue-Gray — for timestamps, line numbers, labels)
-  - **Separator:** `#070C16` (Darkest — for 1px panel separators)
+  - **Color palette:** Monochromatic dark base with blue accent system (matched to concept.png).
+    All views must use these tokens by resource key name via `DynamicResource`
+    or `Application.Current!.Resources[...]`. No hardcoded hex values in view code.
+    See `docs/refactor/refactor-3/IMPLEMENTATION_PLAN.md` M0.5 for per-component assignments.
+
+    | Token Key | Hex | Name | Usage |
+    |-----------|-----|------|-------|
+    | `PrimaryAccentBrush` | `#066ADB` | Bright Blue | Active tabs, primary buttons, focus rings, links, "Commit Staged" button |
+    | `SecondaryAccentBrush` | `#3ED3E4` | Cyan Teal | Code type highlights, secondary indicators, terminal status text |
+    | `WarningBrush` | `#FCBB47` | Amber | Warning badges, modified indicators (M), amber status dots |
+    | `SuccessBrush` | `#28A745` | Green | Added indicators (A), active status dots, sync indicators |
+    | `SurfaceBaseBrush` | `#0A0F19` | Near-Black Navy | Window background, nav bar background, deepest panel base |
+    | `SurfacePanelBrush` | `#0B121D` | Lighter Navy | Elevated panels (editor, terminal), code areas, input fields |
+    | `PanelDeepBrush` | `#0D1520` | Deep Panel | Bottom panel background, agent area |
+    | `TextPrimaryBrush` | `#E3E4F4` | Pale Ice Blue-White | All primary text: code content, names, labels |
+    | `TextSecondaryBrush` | `#8B95A5` | Muted Blue-Gray | Timestamps, line numbers, placeholder text, auxiliary labels |
+    | `SeparatorBrush` | `#070C16` | Darkest | 1px panel separators, grid lines |
+    | `IdleBrush` | `#5A6070` | Muted Slate | Idle status dots, disabled/inactive elements |
+    | `BusyBrush` | `#FCBB47` | Amber | Busy status dots (same as WarningBrush for visual consistency) |
 - **Separator style:** Space or 1px semi-transparent line — never 2px+ solid borders.
 - **Focus states:** Clear but subtle — slight brightness shift, not thick outline.
 
