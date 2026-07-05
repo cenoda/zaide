@@ -6,6 +6,7 @@ using System;
 using System.Reactive.Concurrency;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Models;
 
 namespace Zaide;
 
@@ -28,6 +29,8 @@ class Program
                     services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
                     services.AddSingleton<FileTreeViewModel>();
                     services.AddSingleton<MainWindowViewModel>();
+                    services.AddSingleton<TownhallState>();
+                    services.AddSingleton<TownhallViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
                     services.AddSingleton<TerminalViewModel>();
                     services.AddTransient<EditorViewModel>(sp =>

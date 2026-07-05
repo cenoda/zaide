@@ -271,7 +271,7 @@ Each milestone's exit check should produce the following artifacts where applica
 | M0 | Confirm baseline health and current layout assumptions | Build/tests green and current shell understood | ✅ Complete |
 | M0.5 | Palette rematch to concept.png colors | App.axaml tokens updated, no hardcoded legacy hex values remain | ✅ Complete |
 | M1 | Main window layout transition with nav bar + MainWindowViewModel nav-mode state + tests | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor; VM exposes LeftPanelMode with switch commands; tests verify mode switching | ✅ Complete |
-| M2 | Townhall domain/view-model foundation | Townhall has channel list, message model, agent status with avatars, and state model | ⬜ Pending |
+| M2 | Townhall domain/view-model foundation with per-channel messages and bindable channel states | Townhall has channel list, message model, agent status with avatars, state model with ChannelMessages dictionary; Channels implement INotifyPropertyChanged for IsActive; ViewModel raises PropertyChanged for Messages on switch | ✅ Complete |
 | M3 | Townhall view integration | Center panel shows people sidebar, channels sidebar, chat area, and input | ⬜ Pending |
 | M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface | ⬜ Pending |
 | M5 | Terminal/logs alignment and categorization | Bottom area works under center+right, shows categorized [BUILD]/[AGENT]/[LOG] entries | ⬜ Pending |
