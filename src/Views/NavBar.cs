@@ -23,8 +23,8 @@ public class NavBar : Panel, IDisposable
     private readonly Border _sourceControlButton;
     private readonly Border _explorerActiveIndicator;
     private readonly Border _sourceControlActiveIndicator;
-    private readonly PathIcon _explorerIcon;
-    private readonly PathIcon _sourceControlIcon;
+    private readonly Control _explorerIcon;
+    private readonly Control _sourceControlIcon;
     private readonly Border _explorerHoverOverlay;
     private readonly Border _sourceControlHoverOverlay;
     private CompositeDisposable? _disposables;
@@ -57,6 +57,7 @@ public class NavBar : Panel, IDisposable
             CornerRadius = new CornerRadius(2),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
             IsVisible = true // Explorer is active by default
         };
 
@@ -68,6 +69,7 @@ public class NavBar : Panel, IDisposable
             CornerRadius = new CornerRadius(2),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
             IsVisible = false
         };
 
@@ -86,6 +88,7 @@ public class NavBar : Panel, IDisposable
             Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
             CornerRadius = new CornerRadius(8),
             IsVisible = false,
+            IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
@@ -95,6 +98,7 @@ public class NavBar : Panel, IDisposable
             Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
             CornerRadius = new CornerRadius(8),
             IsVisible = false,
+            IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
@@ -189,10 +193,14 @@ public class NavBar : Panel, IDisposable
                     _sourceControlActiveIndicator.IsVisible = !isExplorer;
 
                     // Icon color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
-                    _explorerIcon.Foreground = (IBrush?)Application.Current!.Resources[
-                        isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
-                    _sourceControlIcon.Foreground = (IBrush?)Application.Current!.Resources[
-                        !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
+                    IconFactory.SetForeground(
+                        _explorerIcon,
+                        (IBrush?)Application.Current!.Resources[
+                            isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
+                    IconFactory.SetForeground(
+                        _sourceControlIcon,
+                        (IBrush?)Application.Current!.Resources[
+                            !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
                 }));
     }
 
