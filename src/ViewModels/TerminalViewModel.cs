@@ -45,6 +45,13 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private int _nextLogId;
     private bool _isLogView;
 
+    /// <summary>
+    /// Accumulates partial lines across output chunks so that a line split
+    /// across two chunks produces a single <see cref="LogEntry"/>.
+    /// Contains text after the last '\n' from the previous chunk.
+    /// </summary>
+    private string _logLineBuffer = string.Empty;
+
     // ── view-bound properties ──────────────────────────────────────
 
     private TerminalSnapshot? _screenSnapshot;
@@ -401,21 +408,47 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
         UpdateSnapshot();
 
-        // Categorize each line of the newly appended text and add as log entries
+        // Categorize each complete line and add as log entries.
+        // Partial lines (text after the last '\n') are buffered across chunks.
         AppendLogEntries(text);
     }
 
     /// <summary>
-    /// Splits raw output text into lines, categorizes each, and adds to
-    /// <see cref="LogEntries"/>.
+    /// Splits raw output text into complete lines, categorizes each, and adds to
+    /// <see cref="LogEntries"/>. Partial lines (text after the last '\n') are
+    /// buffered in <see cref="_logLineBuffer"/> and prepended to the next chunk.
     /// </summary>
     private void AppendLogEntries(string text)
     {
         if (string.IsNullOrEmpty(text))
             return;
 
-        // Split on newlines; preserve line boundaries for categorization
-        var lines = text.Split('\n');
+        // Prepend any buffered partial line from the previous chunk
+        string combined = _logLineBuffer + text;
+        _logLineBuffer = string.Empty;
+
+        // Find the last newline to determine what's a complete line vs. partial
+        int lastNewline = combined.LastIndexOf('\n');
+
+        if (lastNewline < 0)
+        {
+            // No newline at all in this chunk — entire text is a partial line
+            _logLineBuffer = combined;
+            return;
+        }
+
+        // Everything up to the last newline contains complete lines
+        string completePart = combined.Substring(0, lastNewline);
+        // Everything after the last newline is a partial line for the next chunk
+        string partialPart = combined.Substring(lastNewline + 1);
+
+        if (partialPart.Length > 0)
+        {
+            _logLineBuffer = partialPart;
+        }
+
+        // Split the complete part into individual lines and categorize each
+        var lines = completePart.Split('\n');
         var now = DateTimeOffset.Now;
 
         foreach (var line in lines)
@@ -564,6 +597,11 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _screen.CursorPosition(1, 1);
         _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
         UpdateSnapshot();
+
+        // Also clear the categorized log entries so the log view matches
+        LogEntries.Clear();
+        _nextLogId = 0;
+        _logLineBuffer = string.Empty;
     }
 
     private void PrepareForRestart()

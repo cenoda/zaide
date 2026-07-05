@@ -685,4 +685,200 @@ public class TerminalViewModelTests
         Assert.Equal(60, vm.ScreenSnapshot!.Columns);
         Assert.Equal(15, vm.ScreenSnapshot.Rows);
     }
+
+    // ── M5: LogEntries behavior ───────────────────────────────────
+
+    [Fact]
+    public void OutputReceived_AddsLogEntry()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello world\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.Equal("hello world", vm.LogEntries[0].Content);
+        Assert.Equal(LogCategory.Log, vm.LogEntries[0].Category);
+        Assert.False(vm.LogEntries[0].HasWarning);
+    }
+
+    [Fact]
+    public void OutputReceived_MultipleLines_CreatesMultipleLogEntries()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("line1\nline2\nline3\n"));
+
+        Assert.Equal(3, vm.LogEntries.Count);
+        Assert.Equal("line1", vm.LogEntries[0].Content);
+        Assert.Equal("line2", vm.LogEntries[1].Content);
+        Assert.Equal("line3", vm.LogEntries[2].Content);
+    }
+
+    [Fact]
+    public void OutputReceived_ChunkBoundary_ReassemblesPartialLine()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // First chunk: partial line without newline
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello "));
+        Assert.Empty(vm.LogEntries);
+
+        // Second chunk: completes the line with newline
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("world\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.Equal("hello world", vm.LogEntries[0].Content);
+    }
+
+    [Fact]
+    public void OutputReceived_ChunkBoundary_MultipleChunks_ReassemblesCorrectly()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("part1 "));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("part2 "));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("part3\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.Equal("part1 part2 part3", vm.LogEntries[0].Content);
+    }
+
+    [Fact]
+    public void OutputReceived_ChunkBoundary_CompleteLineThenPartial()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // First chunk: one complete line + start of next line
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("line1\npartial "));
+        Assert.Single(vm.LogEntries);
+        Assert.Equal("line1", vm.LogEntries[0].Content);
+
+        // Second chunk: completes the partial line
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("rest\n"));
+
+        Assert.Equal(2, vm.LogEntries.Count);
+        Assert.Equal("line1", vm.LogEntries[0].Content);
+        Assert.Equal("partial rest", vm.LogEntries[1].Content);
+    }
+
+    [Fact]
+    public void OutputReceived_CategorizesBuildOutput()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("[BUILD] Build succeeded\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.Equal(LogCategory.Build, vm.LogEntries[0].Category);
+    }
+
+    [Fact]
+    public void OutputReceived_CategorizesAgentOutput()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("[AGENT] Task completed\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.Equal(LogCategory.Agent, vm.LogEntries[0].Category);
+    }
+
+    [Fact]
+    public void OutputReceived_WarningLine_SetsHasWarning()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("warning: something\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.True(vm.LogEntries[0].HasWarning);
+    }
+
+    [Fact]
+    public void OutputReceived_ExceptionLine_SetsHasWarning()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("System.Exception: crash\n"));
+
+        Assert.Single(vm.LogEntries);
+        Assert.True(vm.LogEntries[0].HasWarning);
+    }
+
+    [Fact]
+    public void LogEntries_CappedAt1000()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Generate 1100 lines of output
+        var sb = new StringBuilder();
+        for (int i = 0; i < 1100; i++)
+        {
+            sb.Append($"line{i}\n");
+        }
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes(sb.ToString()));
+
+        Assert.Equal(1000, vm.LogEntries.Count);
+        // The first 100 lines should have been removed; entry 0 should be "line100"
+        Assert.Equal("line100", vm.LogEntries[0].Content);
+        Assert.Equal("line1099", vm.LogEntries[^1].Content);
+    }
+
+    [Fact]
+    public async Task ClearCommand_WhenNotRunning_ClearsLogEntries()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("line1\nline2\nline3\n"));
+        Assert.Equal(3, vm.LogEntries.Count);
+
+        await vm.ClearCommand.Execute();
+
+        Assert.Empty(vm.LogEntries);
+    }
+
+    [Fact]
+    public void IsLogView_DefaultIsFalse()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        Assert.False(vm.IsLogView);
+    }
+
+    [Fact]
+    public void IsLogView_CanBeToggled()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        vm.IsLogView = true;
+        Assert.True(vm.IsLogView);
+
+        vm.IsLogView = false;
+        Assert.False(vm.IsLogView);
+    }
+
+    [Fact]
+    public void LogEntry_HasCorrectTag()
+    {
+        var build = new LogEntry(1, LogCategory.Build, "build", DateTimeOffset.Now);
+        var agent = new LogEntry(2, LogCategory.Agent, "agent", DateTimeOffset.Now);
+        var log = new LogEntry(3, LogCategory.Log, "log", DateTimeOffset.Now);
+
+        Assert.Equal("[BUILD]", build.Tag);
+        Assert.Equal("[AGENT]", agent.Tag);
+        Assert.Equal("[LOG]", log.Tag);
+    }
 }
