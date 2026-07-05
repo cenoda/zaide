@@ -251,12 +251,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var fileTreeView = new FileTreeView();
         Grid.SetColumn(fileTreeView, 1);
         Grid.SetRow(fileTreeView, 0);
+        Grid.SetRowSpan(fileTreeView, 3);
         grid.Children.Add(fileTreeView);
 
         var sourceControlPanel = new SourceControlPanel();
         sourceControlPanel.IsVisible = false; // Hidden by default (Explorer mode)
         Grid.SetColumn(sourceControlPanel, 1);
         Grid.SetRow(sourceControlPanel, 0);
+        Grid.SetRowSpan(sourceControlPanel, 3);
         grid.Children.Add(sourceControlPanel);
 
         // --- Column 2: Splitter (left panel ↔ townhall) ---
@@ -272,6 +274,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             GridLayoutResizeHelper.PreservePixelColumnAndNormalizeStarColumns(grid, 1, 3, 5);
         Grid.SetColumn(leftSplitter, 2);
         Grid.SetRow(leftSplitter, 0);
+        Grid.SetRowSpan(leftSplitter, 3);
         grid.Children.Add(leftSplitter);
 
         // --- Column 3: Center — Townhall (real M3 view) ---
