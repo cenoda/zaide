@@ -5,18 +5,18 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <!-- Palette raw colors (Refactor 3 token scheme — matched to concept.png) -->
-        <Color x:Key="PrimaryAccentBrushColor">#066ADB</Color>
-        <Color x:Key="SecondaryAccentBrushColor">#3ED3E4</Color>
-        <Color x:Key="WarningBrushColor">#FCBB47</Color>
-        <Color x:Key="SuccessBrushColor">#28A745</Color>
-        <Color x:Key="SurfaceBaseBrushColor">#0A0F19</Color>
-        <Color x:Key="SurfacePanelBrushColor">#0B121D</Color>
-        <Color x:Key="PanelDeepBrushColor">#0D1520</Color>
-        <Color x:Key="TextPrimaryBrushColor">#E3E4F4</Color>
-        <Color x:Key="TextSecondaryBrushColor">#8B95A5</Color>
-        <Color x:Key="SeparatorBrushColor">#070C16</Color>
-        <Color x:Key="IdleBrushColor">#5A6070</Color>
+        <!-- Modern Dark IDE Palette (resembling GitHub Dark, VS Code Dark+, JetBrains Dark) -->
+        <Color x:Key="PrimaryAccentBrushColor">#0E6AEB</Color>
+        <Color x:Key="SecondaryAccentBrushColor">#5B94F5</Color>
+        <Color x:Key="WarningBrushColor">#D28F18</Color>
+        <Color x:Key="SuccessBrushColor">#237234</Color>
+        <Color x:Key="SurfaceBaseBrushColor">#1E1E1E</Color>
+        <Color x:Key="SurfacePanelBrushColor">#252526</Color>
+        <Color x:Key="PanelDeepBrushColor">#181818</Color>
+        <Color x:Key="TextPrimaryBrushColor">#CCCCCC</Color>
+        <Color x:Key="TextSecondaryBrushColor">#8B8B8B</Color>
+        <Color x:Key="SeparatorBrushColor">#2D2D2D</Color>
+        <Color x:Key="IdleBrushColor">#6E6E6E</Color>
 
         <!-- Palette brushes (derived from the colors above) -->
         <SolidColorBrush x:Key="PrimaryAccentBrush" Color="{StaticResource PrimaryAccentBrushColor}" />
