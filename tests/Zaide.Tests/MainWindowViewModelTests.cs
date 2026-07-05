@@ -44,7 +44,8 @@ public class MainWindowViewModelTests
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel, scViewModel);
+        var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -203,7 +204,8 @@ public class MainWindowViewModelTests
 
         var scState2 = new SourceControlState();
         var scViewModel2 = new SourceControlViewModel(scState2);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel2, scViewModel2);
+        var workspace2 = sp.GetRequiredService<Workspace>();
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
         await terminalViewModel.EnsureStartedAsync();

@@ -182,7 +182,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         });
     }
 
-    private static FuncDataTemplate<FileChange> CreateChangeItemTemplate(bool isStaged)
+    private FuncDataTemplate<FileChange> CreateChangeItemTemplate(bool isStaged)
     {
         return new FuncDataTemplate<FileChange>((change, _) =>
         {
@@ -236,7 +236,22 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 BorderThickness = new Thickness(0),
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                 HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                Tag = change
+            };
+            stageButton.Click += (_, _) =>
+            {
+                if (change is null) return;
+                // Walk up to find the SourceControlPanel to get its ViewModel
+                var parent = stageButton.Parent;
+                while (parent is not null && parent is not SourceControlPanel)
+                    parent = parent.Parent;
+                var vm = (parent as SourceControlPanel)?.ViewModel;
+                if (vm is null) return;
+                if (isStaged)
+                    vm.UnstageFileCommand.Execute(change).Subscribe();
+                else
+                    vm.StageFileCommand.Execute(change).Subscribe();
             };
 
             var row = new Grid

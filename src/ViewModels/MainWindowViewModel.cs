@@ -7,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Models;
 using Zaide.Services;
 
 namespace Zaide.ViewModels;
@@ -92,13 +93,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                EditorTabViewModel editorTabViewModel,
                                TerminalViewModel terminalViewModel,
                                TownhallViewModel townhallViewModel,
-                               SourceControlViewModel sourceControlViewModel)
+                               SourceControlViewModel sourceControlViewModel,
+                               Workspace workspace)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalViewModel = terminalViewModel;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
+        WorkspaceProjectName = workspace.ProjectName;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();
@@ -106,7 +109,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         {
             var path = await PickFolder.Handle(Unit.Default);
             if (path is not null)
+            {
+                workspace.SetProjectFromPath(path);
+                WorkspaceProjectName = workspace.ProjectName;
                 await FileTreeViewModel.OpenFolderCommand.Execute(path);
+            }
         });
         SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
         SwitchToSourceControlCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.SourceControl; });

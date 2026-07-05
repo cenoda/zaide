@@ -18,12 +18,10 @@ namespace Zaide.Views;
 /// </summary>
 public class StatusBar : ReactiveUserControl<MainWindowViewModel>
 {
-    private readonly TextBlock _appNameText;
     private readonly TextBlock _caretText;
     private readonly TextBlock _languageText;
     private readonly TextBlock _projectText;
     private readonly TextBlock _branchText;
-    private readonly TextBlock _modelText;
 
     public StatusBar()
     {
@@ -31,7 +29,7 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
 
         // App name — PrimaryAccentBrush
-        _appNameText = new TextBlock
+        var appNameText = new TextBlock
         {
             Text = "\u2699 Zaide",
             Foreground = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
@@ -76,17 +74,18 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // AI model
-        _modelText = new TextBlock
+        // AI model (right-aligned)
+        var modelText = new TextBlock
         {
             Text = "powered by Avisnis 12",
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 0, 12, 0)
         };
 
-        // Separator helper
+        // Separator
         TextBlock Separator() => new()
         {
             Text = "│",
@@ -96,46 +95,14 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             Margin = new Thickness(8, 0, 8, 0)
         };
 
-        // Layout: horizontal strip, left-to-right
-        var panel = new DockPanel
-        {
-            LastChildFill = true,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            Children =
-            {
-                _appNameText,
-                Separator(),
-                _caretText,
-                Separator(),
-                _languageText,
-                Separator(),
-                _projectText,
-                Separator(),
-                _branchText,
-                Separator(),
-                _modelText,
-                // Spacer fills remaining space (LastChildFill)
-                new Panel()
-            }
-        };
-
-        // Use DockPanel layout: first items left, last fills
-        DockPanel.SetDock(_appNameText, Dock.Left);
-        // Remaining items use Dock.Left too via explicit ordering
-        ArrangeDockLeft(panel, Separator(), _appNameText);
-        ArrangeDockLeft(panel, Separator(), _caretText);
-        ArrangeDockLeft(panel, Separator(), _languageText);
-        ArrangeDockLeft(panel, Separator(), _projectText);
-        ArrangeDockLeft(panel, Separator(), _branchText);
-
-        // Rebuild simpler: use a horizontal StackPanel within the DockPanel
-        var stack = new StackPanel
+        // Left-aligned stack: app name | caret | language | project | branch
+        var leftStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
-                _appNameText,
+                appNameText,
                 Separator(),
                 _caretText,
                 Separator(),
@@ -143,13 +110,11 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
                 Separator(),
                 _projectText,
                 Separator(),
-                _branchText,
-                Separator(),
-                _modelText
+                _branchText
             }
         };
 
-        // Use a Grid for simpler layout
+        // Grid: left stack auto-width, model text fills remaining
         var layout = new Grid
         {
             ColumnDefinitions =
@@ -159,21 +124,12 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             },
             Children =
             {
-                stack,
-                new TextBlock
-                {
-                    // Right-align the model text
-                    Text = "powered by Avisnis 12",
-                    Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                    FontSize = 12,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    Margin = new Thickness(0, 0, 12, 0)
-                }
+                leftStack,
+                modelText
             }
         };
-        Grid.SetColumn(stack, 0);
-        Grid.SetColumn(layout.Children[1], 1);
+        Grid.SetColumn(leftStack, 0);
+        Grid.SetColumn(modelText, 1);
 
         Content = layout;
 
@@ -206,11 +162,6 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             d.Add(ViewModel.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
                 .Subscribe(branch => _branchText.Text = branch));
         });
-    }
-
-    private static void ArrangeDockLeft(Panel panel, params Control[] controls)
-    {
-        // Not used — simplified to StackPanel above
     }
 
     private static string GetLanguageFromFilePath(string? filePath)
