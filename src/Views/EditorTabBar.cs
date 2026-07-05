@@ -233,12 +233,17 @@ public partial class EditorTabBar : UserControl
 
     private Border BuildTabItem(EditorViewModel vm)
     {
+        var icon = IconFactory.Create(
+            FileIconKeyResolver.GetIconKey(vm.FilePath),
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            12);
+
         var label = new TextBlock
         {
             [!TextBlock.TextProperty] = new Avalonia.Data.Binding("DisplayName"),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 8, 0),
+            Margin = new Thickness(8, 0, 8, 0),
             MaxWidth = 200
         };
         label.DataContext = vm;
@@ -283,11 +288,14 @@ public partial class EditorTabBar : UserControl
             ColumnDefinitions =
             {
                 new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition { Width = GridLength.Auto },
                 new ColumnDefinition { Width = GridLength.Auto }
             }
         };
-        Grid.SetColumn(label, 0);
-        Grid.SetColumn(closeButton, 1);
+        Grid.SetColumn(icon, 0);
+        Grid.SetColumn(label, 1);
+        Grid.SetColumn(closeButton, 2);
+        grid.Children.Add(icon);
         grid.Children.Add(label);
         grid.Children.Add(closeButton);
 

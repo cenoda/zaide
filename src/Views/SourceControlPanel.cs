@@ -34,13 +34,26 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
 
         // --- Header ---
-        var header = new TextBlock
+        var header = new StackPanel
         {
-            Text = "Source Control",
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 14,
-            FontWeight = FontWeight.Bold,
-            Margin = new Thickness(12, 16, 12, 8)
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Margin = new Thickness(12, 16, 12, 8),
+            Children =
+            {
+                IconFactory.Create(
+                    "Icon.GitBranch",
+                    (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+                    14),
+                new TextBlock
+                {
+                    Text = "Source Control",
+                    Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+                    FontSize = 14,
+                    FontWeight = FontWeight.Bold,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            }
         };
 
         // --- Branch Selector ---
@@ -213,6 +226,11 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 }
             };
 
+            var fileIcon = IconFactory.Create(
+                FileIconKeyResolver.GetIconKey(change.FilePath),
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                12);
+
             // File path
             var filePath = new TextBlock
             {
@@ -220,7 +238,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                 FontSize = 12,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0)
+                Margin = new Thickness(6, 0, 0, 0)
             };
 
             // Stage/Unstage button
@@ -259,6 +277,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 ColumnDefinitions =
                 {
                     new ColumnDefinition { Width = new GridLength(20) },
+                    new ColumnDefinition { Width = GridLength.Auto },
                     new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                     new ColumnDefinition { Width = new GridLength(24) }
                 },
@@ -266,12 +285,14 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 Children =
                 {
                     statusIcon,
+                    fileIcon,
                     filePath,
                     stageButton
                 }
             };
-            Grid.SetColumn(filePath, 1);
-            Grid.SetColumn(stageButton, 2);
+            Grid.SetColumn(fileIcon, 1);
+            Grid.SetColumn(filePath, 2);
+            Grid.SetColumn(stageButton, 3);
 
             return row;
         });

@@ -74,7 +74,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 build: (node, _) =>
                 {
                     var icon = IconFactory.Create(
-                        GetIconKeyForNode(node),
+                        FileIconKeyResolver.GetIconKey(node.Name, node.IsDirectory),
                         (IBrush?)Application.Current!.Resources[
                             node.IsDirectory ? "SecondaryAccentBrush" : "TextSecondaryBrush"],
                         14);
@@ -304,23 +304,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             return selected.FullPath;
 
         return ViewModel.RootPath;
-    }
-
-    private static string GetIconKeyForNode(FileTreeNode node)
-    {
-        if (node.IsDirectory)
-            return "Icon.Folder";
-
-        var ext = System.IO.Path.GetExtension(node.Name).ToLowerInvariant();
-        return ext switch
-        {
-            ".cs" or ".ts" or ".js" or ".jsx" or ".tsx" or ".json" or ".xml" or ".html" or ".css" or ".axaml" => "Icon.Code",
-            ".md" or ".txt" or ".log" => "Icon.Text",
-            ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" => "Icon.Image",
-            ".sln" or ".slnx" or ".csproj" => "Icon.Project",
-            ".editorconfig" or ".gitignore" or ".yml" or ".yaml" or ".toml" => "Icon.Config",
-            _ => "Icon.Unknown"
-        };
     }
 
     /// <summary>

@@ -237,23 +237,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         var name = string.IsNullOrEmpty(vm.FileName) ? "Untitled" : vm.FileName;
         _fileInfoText.Text = $"{name}  —  diff/edit";
         _fileInfoIconHost.Content = IconFactory.Create(
-            GetIconKeyForFile(vm.FilePath),
+            FileIconKeyResolver.GetIconKey(vm.FilePath),
             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             12);
-    }
-
-    private static string GetIconKeyForFile(string filePath)
-    {
-        var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        return ext switch
-        {
-            ".cs" or ".ts" or ".js" or ".jsx" or ".tsx" or ".json" or ".xml" or ".html" or ".css" or ".axaml" => "Icon.Code",
-            ".md" or ".txt" => "Icon.Text",
-            ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" => "Icon.Image",
-            ".sln" or ".slnx" or ".csproj" => "Icon.Project",
-            ".editorconfig" or ".gitignore" or ".yml" or ".yaml" or ".toml" => "Icon.Config",
-            _ => "Icon.Unknown"
-        };
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
