@@ -57,6 +57,12 @@ Every library explained in plain English — what it does, why you'd want it, an
 | **Microsoft.Data.Sqlite** | .NET's official SQLite binding. | Single-file database for townhall logs, agent history, project metadata. |
 | **Dapper** | Lightweight micro-ORM (optional). | Simple query mapping without Entity Framework overhead. |
 
+## ICONS & ASSETS
+
+| Library | What It Does | Why You Want It |
+|---------|-------------|-----------------|
+| **Phosphor Icons (embedded PathIcon)** | 8 vector icons from MIT-licensed Phosphor set. Embedded as `StreamGeometry` in `src/Styles/Icons.axaml`. | No NuGet required. Vector crisp. Monochrome. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
+
 ---
 
 ## Technical Decisions (Resolved)
