@@ -35,32 +35,47 @@ This is a product-direction choice, not a cosmetic layout tweak.
 
 | Layer | Component | Status |
 |-------|-----------|--------|
-| **Left** | File tree sidebar | ✅ Done |
-| **Center** | Tabbed editor with syntax highlighting (AvaloniaEdit) | ✅ Done |
-| **Right** | Agent area (placeholder panel) | ✅ Done (shell only) |
-| **Bottom** | Terminal (Linux PTY-backed shell) | ✅ Done |
+| **Far-left** | Nav bar (icon-only vertical strip) | ✅ Done |
+| **Left** | File tree sidebar (Explorer mode) | ✅ Done |
+| **Left** | Source Control panel (SC mode) | ✅ Done |
+| **Center** | Townhall workspace (people/channels sidebar + chat area + input) | ✅ Done |
+| **Right** | Editor (tabbed, syntax highlighting) | ✅ Done |
+| **Bottom** | Terminal / Logs (Linux PTY-backed shell with categorized output) | ✅ Done |
+| **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | ✅ Done |
 
-### Target layout direction:
+### Current layout (post-Refactor-3):
 
 ```
-┌──────────┬────────────────────────────────────┬──────────────┐
-│ Files    │ Townhall                           │ Editor       │
-│ (Tree)   │ active thread, agent discussion,   │ focused file │
-│          │ user intervention, task state      │ diff/edit    │
-├──────────┴────────────────────────────────────┴──────────────┤
-│ Terminal / Logs                                                │
-└────────────────────────────────────────────────────────────────┘
+┌──────┬──────────┬──────────────────────────────────┬────────────────────┐
+│      │          │                                  │                    │
+│ Nav  │ Explorer │     Townhall                    │   Editor           │
+│ Bar  │  /       │     (people/channels sidebar +   │   (focused code +  │
+│      │  SC      │      chat area + input)          │    status info)    │
+│      │          │                                  │                    │
+├──────┴──────────┴──────────────────────────────────┴────────────────────┤
+│ Terminal / Logs (categorized output)                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Status Bar (app info, cursor position, language, project, branch, AI model) │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Implemented layers (Refactor 3):
+
+| Layer | Component | Description |
+|-------|-----------|-------------|
+| Agent-first layout transition | ✅ Complete | Townhall is now the visual center, editor repositioned as focused implementation surface |
+| Townhall | ✅ Complete | Shared activity thread with people/channels sidebar, chat area, and input |
+| Source Control panel | ✅ Complete | Real panel with branch selector, change list, staging area, and commit input |
+| Status Bar | ✅ Complete | Shows app name, cursor position, language, project, branch, and AI model |
+| Categorized Logs | ✅ Complete | Terminal output categorized as [BUILD], [AGENT], [LOG] with colored indicators |
 
 ### Planned layers (future):
 
 | Layer | Phase | Description |
 |-------|-------|-------------|
-| Agent-first layout transition | 4 | Move Townhall into the visual center and reposition the editor as a focused implementation surface |
-| Townhall | 4 | Shared activity thread for agent work, review, and user intervention |
 | Agent Panels | 5 | Dedicated agent surfaces when specialized views are needed |
 | Agent Router | 6 | @mention routing between agents |
-| Git Integration | 7 | Status, diff, commit from sidebar |
+| Git Integration | 7 | Real git operations (branching, staging, committing with actual repo) |
 
 Zaide should still work without full agent infrastructure, but the product is no
 longer editor-first. The agent layer is becoming the main stage, not an add-on.

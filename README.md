@@ -25,23 +25,28 @@ and keeps the editor visible as a focused execution surface. We are not trying
 to bolt chat onto a conventional IDE. We are trying to build an IDE where the
 main narrative is agent collaboration, review, and intervention.
 
-## Current Layout
+## Current Layout (Post-Refactor-3)
 
 ```
-┌──────────┬────────────────────────┬──────────────────┐
-│          │                        │   Agent Area     │
-│  Files   │        Editor          │   (placeholder)  │
-│  (Tree)  │    (tabbed, syntax     │                  │
-│          │     highlighting)      │                  │
-├──────────┴────────────────────────┴──────────────────┤
-│  [Terminal]                                Ctrl+`     │
-└──────────────────────────────────────────────────────┘
+┌──────┬──────────┬──────────────────────────────────┬────────────────────┐
+│      │          │                                  │                    │
+│ Nav  │ Explorer │     Townhall                    │   Editor           │
+│ Bar  │  /       │     (people/channels sidebar +   │   (focused code +  │
+│      │  SC      │      chat area + input)          │    status info)    │
+│      │          │                                  │                    │
+├──────┴──────────┴──────────────────────────────────┴────────────────────┤
+│ Terminal / Logs (categorized output)                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Status Bar (app info, cursor position, language, project, branch, AI model) │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Left:** File tree sidebar
-- **Center:** Tabbed code editor with syntax highlighting (AvaloniaEdit)
-- **Right:** Agent area placeholder
-- **Bottom:** Terminal panel (Linux PTY-backed shell), toggled with Ctrl+`
+- **Far-left:** Nav bar (icon-only vertical strip for switching between Explorer and Source Control modes)
+- **Left:** File tree sidebar (Explorer mode) or Source Control panel (SC mode)
+- **Center:** Townhall workspace with people/channels sidebar, chat area, and input
+- **Right:** Editor (tabbed, syntax highlighting) with townhall link and focused file info
+- **Bottom:** Terminal / Logs panel with categorized [BUILD]/[AGENT]/[LOG] output
+- **Bottom:** Status bar showing app name, cursor position, language, project, branch, and AI model
 
 ## Target Layout Direction
 
@@ -77,8 +82,11 @@ not as a conventional editor with an AI sidebar.
 | Editor with tabs, save, syntax highlighting | 2 | ✅ Done |
 | Indent guides in editor | 2.1 | ✅ Done |
 | Terminal (Linux PTY) | 3 | ✅ Done |
-| Agent-first layout transition | 4 | ⏳ Planned |
-| Townhall foundations | 4 | ⏳ Planned |
+| Agent-first layout transition | 4 | ✅ Complete |
+| Townhall foundations | 4 | ✅ Complete |
+| Source Control panel | 4 | ✅ Complete |
+| Status bar | 4 | ✅ Complete |
+| Categorized logs | 4 | ✅ Complete |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
@@ -89,6 +97,7 @@ not as a conventional editor with an AI sidebar.
 |---------|-------------|--------|
 | refactor-1 | Document/Workspace extraction | ✅ Complete |
 | refactor-2 | Layer boundary cleanup | ✅ Complete |
+| refactor-3 | Agent-first layout transition | ✅ Complete |
 
 ### Refactor-2: Layer Boundary Cleanup (2025-01-20)
 

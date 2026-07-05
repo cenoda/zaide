@@ -88,16 +88,16 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
 - [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
 
-## Phase 4: Agent-First Layout Transition
-- [ ] Move Townhall into the visual center of the app
-- [ ] Reposition the editor as a focused implementation surface, still always visible
-- [ ] Preserve fast file-tree, editor, and terminal workflows during the layout pivot
-- [ ] Establish Townhall as the default attention surface for agent activity and user intervention
+## Phase 4: Agent-First Layout Transition ✅ Complete
+- [x] Move Townhall into the visual center of the app
+- [x] Reposition the editor as a focused implementation surface, still always visible
+- [x] Preserve fast file-tree, editor, and terminal workflows during the layout pivot
+- [x] Establish Townhall as the default attention surface for agent activity and user intervention
 
-### Phase 4.1: Townhall Foundations
-- [ ] Townhall thread renders in the center workspace
-- [ ] Auto-log: timestamped entries for agent actions
-- [ ] Scrollable, filterable log
+### Phase 4.1: Townhall Foundations ✅ Complete
+- [x] Townhall thread renders in the center workspace
+- [x] Auto-log: timestamped entries for agent actions
+- [x] Scrollable, filterable log
 - [ ] Clear distinction between agent actions and user actions
 
 ## Phase 5: Agent Panels
@@ -113,6 +113,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 |---------|-------------|--------|
 | refactor-1 | Document/Workspace extraction | ✅ Complete |
 | refactor-2 | Layer boundary cleanup | ✅ Complete |
+| refactor-3 | Agent-first layout transition | ✅ Complete |
 
 ### refactor-2: Layer Boundary Cleanup
 
@@ -125,6 +126,22 @@ Cleaned up layer boundaries within the single-project structure (preparation for
 - **M7:** Stabilization — 340 tests pass
 
 **Deferred:** Terminal pure logic namespace change (M2), FileTreeNode domain/UI split (M4), UI-post abstraction (M8)
+
+### refactor-3: Agent-First Layout Transition
+
+Transformed Zaide from an editor-first IDE layout to an agent-first workspace layout:
+
+- **M0:** Baseline verification — confirmed build/tests green and current layout
+- **M0.5:** Palette update to match concept colors (Ayaka Violet → concept.png palette)
+- **M1:** Main window layout transition with nav bar and left-panel mode switching
+- **M2:** Townhall domain/view-model foundation with channels, messages, and agents
+- **M3:** Townhall view integration with people/channels sidebar and chat area
+- **M4:** Editor adaptation with townhall link and focused file info bar
+- **M5:** Terminal/logs categorization with [BUILD]/[AGENT]/[LOG] tags
+- **M6:** Source Control panel and status bar implementation
+- **M7:** Regression sweep and documentation sync
+
+**Result:** Townhall is now the visual center, editor remains always visible as focused implementation surface, all existing workflows preserved and stable.
 - [ ] Agent panel ↔ Townhall: actions appear in both
 
 ## Phase 6: Agent-to-Agent Router
