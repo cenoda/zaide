@@ -18,32 +18,9 @@ The target architecture is **agent-first**:
 
 This is a product-direction choice, not a cosmetic layout tweak.
 
-## Current Architecture
+## Current Architecture (Post-Refactor-3)
 
-```
-┌──────────┬────────────────────────┬──────────────────┐
-│          │                        │   Agent Area     │
-│  Files   │        Editor          │   (placeholder)  │
-│  (Tree)  │    (tabbed, syntax     │                  │
-│          │     highlighting)      │                  │
-├──────────┴────────────────────────┴──────────────────┤
-│  [Terminal]                                Ctrl+`     │
-└──────────────────────────────────────────────────────┘
-```
-
-### Current layers (implemented):
-
-| Layer | Component | Status |
-|-------|-----------|--------|
-| **Far-left** | Nav bar (icon-only vertical strip) | ✅ Done |
-| **Left** | File tree sidebar (Explorer mode) | ✅ Done |
-| **Left** | Source Control panel (SC mode) | ✅ Done |
-| **Center** | Townhall workspace (people/channels sidebar + chat area + input) | ✅ Done |
-| **Right** | Editor (tabbed, syntax highlighting) | ✅ Done |
-| **Bottom** | Terminal / Logs (Linux PTY-backed shell with categorized output) | ✅ Done |
-| **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | ✅ Done |
-
-### Current layout (post-Refactor-3):
+The agent-first layout is now live:
 
 ```
 ┌──────┬──────────┬──────────────────────────────────┬────────────────────┐
@@ -58,6 +35,18 @@ This is a product-direction choice, not a cosmetic layout tweak.
 │ Status Bar (app info, cursor position, language, project, branch, AI model) │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Current layers (implemented):
+
+| Layer | Component | Status |
+|-------|-----------|--------|
+| **Far-left** | Nav bar (icon-only vertical strip) | ✅ Done |
+| **Left** | File tree sidebar (Explorer mode) | ✅ Done |
+| **Left** | Source Control panel (SC mode) | ✅ Done |
+| **Center** | Townhall workspace (people/channels sidebar + chat area + input) | ✅ Done |
+| **Right** | Editor (tabbed, syntax highlighting) | ✅ Done |
+| **Bottom** | Terminal / Logs (Linux PTY-backed shell with categorized output) | ✅ Done |
+| **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | ✅ Done |
 
 ### Implemented layers (Refactor 3):
 

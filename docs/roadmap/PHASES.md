@@ -96,8 +96,10 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 
 ### Phase 4.1: Townhall Foundations ✅ Complete
 - [x] Townhall thread renders in the center workspace
-- [x] Auto-log: timestamped entries for agent actions
-- [x] Scrollable, filterable log
+- [x] Channel switching and message sending
+- [x] People panel with agent status indicators
+- [ ] Auto-log: timestamped entries for agent actions (not yet implemented)
+- [ ] Scrollable, filterable log (not yet implemented)
 - [ ] Clear distinction between agent actions and user actions
 
 ## Phase 5: Agent Panels

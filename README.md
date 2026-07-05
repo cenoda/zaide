@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 3 (Terminal) ✅ Complete — agent-first layout transition planned next.
+**Status:** Phase 4 (Agent-First Layout) ✅ Complete — Townhall is now the primary workspace.
 
 ## Philosophy
 
@@ -17,13 +17,13 @@ One agent codes, another reviews. They argue. You get better code.
 
 ## Product Direction
 
-Zaide is moving away from the classic "editor in the middle, AI on the side"
+Zaide has moved away from the classic "editor in the middle, AI on the side"
 shape.
 
-The next UI transition makes the **agent conversation the primary workspace**
-and keeps the editor visible as a focused execution surface. We are not trying
-to bolt chat onto a conventional IDE. We are trying to build an IDE where the
-main narrative is agent collaboration, review, and intervention.
+The agent conversation is now the **primary workspace** with Townhall at the
+visual center, while the editor remains visible as a focused execution surface.
+This is not chat bolted onto a conventional IDE — it is an IDE where the main
+narrative is agent collaboration, review, and user intervention.
 
 ## Current Layout (Post-Refactor-3)
 
