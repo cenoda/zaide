@@ -71,8 +71,8 @@ public class TownhallView : Panel, IDisposable
         // Sidebar: people (top) | separator | channels (bottom)
         var sidebar = new Grid
         {
-            Width = 140,
             MinWidth = 100,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             RowDefinitions =
             {
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
