@@ -117,7 +117,7 @@ This refactor closes those gaps without expanding scope.
 - `docs/DESIGN.md` reflects the current intent (no contradiction between
   plan and design doc at the start of this refactor).
 
-## ⚠️ Pre-Flight Finding (must be reconciled before M0 starts)
+## ⚠️ Pre-Flight Finding (must be reconciled before M1 / before visual polish starts)
 
 A live-code audit of the current `main` state revealed that the
 "current state" the plan assumed for entry conditions does **not**
@@ -152,15 +152,15 @@ These are objective pass/fail gates evaluated at M7 sign-off.
 |----|-----------|---------------|
 | VC-1 | `MainWindow` has `Window.TransparencyLevelHint` set to a non-empty value | Read `MainWindow.axaml.cs` and inspect the property assignment |
 | VC-2 | On Windows, the title bar / sidebar area shows visible backdrop blur | Screenshot at default size, compare against a known blur-on reference (or the design doc) |
-| VC-3 | `SurfacePanelBrush` differs in luminance from `SurfaceBaseBrush` by ≥ 8 L\* units (CIELAB) | Run `dotnet script tools/check-luminance.csx --base 0x0A0F19 --panel 0x141C2A` (script provided in M1); assert `ΔL\* ≥ 8`. If the proposed hexes fail, the script is the source of truth — pick different hexes and re-run. |
-| VC-4 | Every `TextBlock` in `src/Views/`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` uses one of the typography tokens (or `TextStyles` helper). No direct `FontSize=` / `FontWeight=` literals in view code except inside `TextStyles` itself | Run `grep -rnE 'FontSize\s*=\|FontWeight\s*=' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and confirm only `TextStyles` matches. **M0.5 must scope this correctly — the previous scan missed `MainWindow.axaml.cs:283-290` and `UnsavedDialog.axaml:11-22`.** |
+| VC-3 | `SurfacePanelBrush` differs in luminance from `SurfaceBaseBrush` by ≥ 8 L\* units (CIELAB) | Run `dotnet script tools/check-luminance.csx 0x0A0F19 0x1A2540` (script provided in M1, takes two positional hex args); assert `ΔL\* ≥ 8`. If the proposed hexes fail, the script is the source of truth — pick different hexes and re-run. |
+| VC-4 | Every `TextBlock` in `src/Views/`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` uses one of the typography tokens (or `TextStyles` helper). No direct `FontSize=` / `FontWeight=` literals in view code except inside `TextStyles` itself | Run `grep -rnE 'FontSize\s*=|FontWeight\s*=' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and confirm only `TextStyles` matches. **M0.5 must scope this correctly — the previous scan missed `MainWindow.axaml.cs:283-290` and `UnsavedDialog.axaml:11-22`.** |
 | VC-5 | File tree row hover changes background by ≥ 1 luminance step | Manual hover check + automated visual diff in tests if feasible |
 | VC-6 | File tree active row shows a 2px left border in `PrimaryAccentBrush` | Manual check or screenshot at default size |
 | VC-7 | Chat panel: 3 consecutive messages from the same sender render as 1 header + 3 content lines (sender name on first only) | Send 3 messages from one agent, screenshot |
 | VC-8 | Chat input field is multi-line and grows up to 5 lines | Type 8 lines of text, screenshot |
 | VC-9 | Status bar segments are `Button` controls (clickable affordance), not `TextBlock` | Read `StatusBar.cs`, confirm `Button` usage |
 | VC-10 | Status bar no longer contains the `│` character | Run `grep -n '│' src/Views/StatusBar.cs`, expect zero matches |
-| VC-11 | All panel padding / margin values reference `Spacing*` tokens by key, not numeric literals (except inside `TextStyles` and the token definitions in `App.axaml`) | Run `grep -rnE 'Margin\s*=\s*new Thickness\|Padding\s*=\s*new Thickness' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and audit each hit. The previous scan missed `MainWindow.axaml.cs:321,360` and `UnsavedDialog.axaml:11`. M0.5 adds the missing tokens, M5 performs the audit. |
+| VC-11 | All panel padding / margin values reference `Spacing*` tokens by key, not numeric literals (except inside `TextStyles` and the token definitions in `App.axaml`) | Run `grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and audit each hit. The previous scan missed `MainWindow.axaml.cs:321,360` and `UnsavedDialog.axaml:11`. M0.5 adds the missing tokens, M5 performs the audit. |
 | VC-12 | Every animation uses 150–200ms duration with `CubicEaseOut` / `CubicEaseIn` easing (no `Linear`, no instant jump cuts) | Run the positive-allowlist guard at `tools/check-animations.sh` (provided in M6). It greps for any `TimeSpan.FromMilliseconds(` followed by a number outside `[150, 200]`, any `new LinearEase`, and any `new Animation {` with a duration field. Expected: zero hits. |
 | VC-13 | All existing tests still pass: `dotnet test Zaide.slnx`. Build emits **no new warnings** beyond the 1 pre-existing xUnit analyzer warning in `TownhallViewModelTests.cs:325` (acknowledged in M0.5-C) | Run the test command, expect zero failures. Run `dotnet build` and diff the warning list against the M0 baseline. |
 | VC-14 | No new files in `src/Views/` that bypass the typography / spacing token system (spot-check the diff) | Code review at M7 |
@@ -230,12 +230,12 @@ Each milestone's exit check should produce, where applicable:
 | M0 | `docs/refactor/refactor-4/verification/m0-default.png`, `m0-min.png` | — (verification only) |
 | M0.5 | `tools/check-luminance.csx` (placeholder; populated in M1) | `src/App.axaml` (apply navy palette from DESIGN.md §7; add `Spacing*` and `Radius*` resource keys); `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` (fix or acknowledge the analyzer warning); this plan file (gate change reflected in M0/M7 exit conditions and VC-13) |
 | M1 | `tools/check-luminance.csx` (CIELAB L\* comparator — see M1.3) | `src/MainWindow.axaml.cs` (set `TransparencyLevelHint`), `src/App.axaml` (bump `SurfacePanelBrush`, `PanelDeepBrush`, add solid-color fallback brush), `src/Views/TownhallView.cs` (replace 1px `Border` separator with background contrast), `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs` (background tokens) |
-| M2 | `src/Styles/TextStyles.cs` (helper class) | Every `src/Views/*.cs` that creates a `TextBlock` directly — replace `FontSize=` / `FontWeight=` literals with `TextStyles.Body(...)`, `TextStyles.Header(...)`, `TextStyles.Caption(...)`, `TextStyles.Brand(...)` |
+| M2 | `src/Styles/TextStyles.cs` (helper class) | Every `src/Views/*.cs`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` that creates a `TextBlock` with `FontSize=` / `FontWeight=` literals — replace with `TextStyles.Body(...)`, `TextStyles.Header(...)`, `TextStyles.Caption(...)`, `TextStyles.Brand(...)` (e.g. `MainWindow.axaml.cs:283-290` and `UnsavedDialog.axaml:11-22`) |
 | M2-T | `tests/Zaide.Tests/Views/TextStylesTests.cs` (style helper unit tests) | — |
 | M3 | — | `src/Views/FileTreeView.cs` (hover + active row state, indent guide visibility), `src/Views/FileIconKeyResolver.cs` (verify color tokens map to `IconFactory` resources), `src/Views/IconFactory.cs` (verify all file types resolve to colored glyphs) |
 | M4 | — | `src/Views/TownhallChatPanel.cs` (grouping, avatar rendering, timestamp placement), `src/Views/TownhallInputArea.cs` (multi-line, auto-grow, keyboard hint), `src/Views/TownhallPeoplePanel.cs` (avatar gradient / status ring) |
 | M4-T | `tests/Zaide.Tests/Views/TownhallChatPanelGroupingTests.cs` | — |
-| M5 | — | `src/Views/StatusBar.cs` (segments as `Button`, drop `│`, shrink credit), every `src/Views/*.cs` (replace numeric `Margin`/`Padding` with `Spacing*` tokens) |
+| M5 | — | `src/Views/StatusBar.cs` (segments as `Button`, drop `│`, shrink credit), every `src/Views/*.cs`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` (replace numeric `Margin`/`Padding` with `Spacing*` tokens — `MainWindow.axaml.cs:321,360` and `UnsavedDialog.axaml:11` are known offenders) |
 | M6 | — | `src/Views/NavBar.cs` (mode switch slide + fade), `src/Views/EditorTabBar.cs` (tab crossfade), `src/Views/FileTreeView.cs` (hover fade), `src/Views/TownhallInputArea.cs` (send button press scale) |
 | M7 | `docs/refactor/refactor-4/verification/m{1..7}-default.png` (one per milestone) | `docs/DESIGN.md` (typography scale, animation patterns), `docs/architecture/OVERVIEW.md` (note polish refactor), `docs/roadmap/PHASES.md` (mark refactor complete) |
 
@@ -439,23 +439,50 @@ reasons, regenerate alternatives with this constraint:
 The script (`tools/check-luminance.csx`, .NET-script format):
 
 ```csharp
-#r "nuget: Colorful, 2.0.5"
-using Colorful;
-using System.Drawing;
+// tools/check-luminance.csx — CIELAB L* (D65) comparator for two hex colors.
+// Usage: dotnet script tools/check-luminance.csx 0x0A0F19 0x1A2540
+// Exits 0 if ΔL* >= 8, 1 otherwise. No external dependencies.
+using System;
 
-// Convert sRGB hex to CIELAB L* (D65).
-double RgbToLStar(int r, int g, int b) { /* ... */ }
+static int Hex(string h) => Convert.ToInt32(h.TrimStart('#'), 16);
+static int R(int v) => (v >> 16) & 0xFF;
+static int G(int v) => (v >>  8) & 0xFF;
+static int B(int v) =>  v        & 0xFF;
 
-int Hex(string h) => System.Convert.ToInt32(h.TrimStart('#'), 16);
-int R(int v) => (v >> 16) & 0xFF;
-int G(int v) => (v >>  8) & 0xFF;
-int B(int v) =>  v        & 0xFF;
+// sRGB → linear (inverse companding, D65)
+static double SrgbToLinear(byte c)
+{
+    double cs = c / 255.0;
+    return cs <= 0.04045 ? cs / 12.92 : Math.Pow((cs + 0.055) / 1.055, 2.4);
+}
+
+// Linear RGB → CIE L* (D65). Yn = 1.
+static double LinearToLStar(double r, double g, double b)
+{
+    // sRGB D65 → XYZ
+    double x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
+    double y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+    // XYZ → L*
+    const double eps  = 216.0 / 24389.0;       // (6/29)^3
+    const double kap  = 24389.0 / 27.0;        // (29/3)^3
+    double fy = y > eps ? Math.Pow(y, 1.0 / 3.0) : (kap * y + 16.0) / 116.0;
+    return 116.0 * fy - 16.0;
+}
+
+static double RgbToLStar(int r, int g, int b) =>
+    LinearToLStar(SrgbToLinear((byte)r), SrgbToLinear((byte)g), SrgbToLinear((byte)b));
+
+if (Args.Length < 2)
+{
+    Console.Error.WriteLine("Usage: dotnet script tools/check-luminance.csx <hex1> <hex2>");
+    Environment.Exit(2);
+}
 
 string a = Args[0], b = Args[1];
-var (la, _, _) = (RgbToLStar(R(Hex(a)), G(Hex(a)), B(Hex(a))), 0, 0);
-var (lb, _, _) = (RgbToLStar(R(Hex(b)), G(Hex(b)), B(Hex(b))), 0, 0);
+double la = RgbToLStar(R(Hex(a)), G(Hex(a)), B(Hex(a)));
+double lb = RgbToLStar(R(Hex(b)), G(Hex(b)), B(Hex(b)));
 double dL = Math.Abs(la - lb);
-Console.WriteLine($"ΔL* = {dL:F2}  (gate: 8.00)");
+Console.WriteLine($"L*({a}) = {la:F2}  L*({b}) = {lb:F2}  ΔL* = {dL:F2}  (gate: 8.00)");
 Environment.Exit(dL >= 8.0 ? 0 : 1);
 ```
 
@@ -627,8 +654,8 @@ token: a 4–6% white overlay (`#0AFFFFFF`) per Refactor 3 M0.5.
 If `ControlTheme` is too heavy for the existing tree implementation,
 add a lightweight `PointerEntered` / `PointerExited` handler that
 toggles a `Background` brush on the row border. Whichever path is
-taken, the behavior must be hover-in / hover-out at 120ms fade per
-DESIGN.md §4.
+taken, the behavior must be hover-in / hover-out at 150ms fade per
+DESIGN.md §4 and the single animation budget (M6.2).
 
 #### M3.3 — Active row
 
@@ -869,7 +896,7 @@ Notes:
   high-frequency and the user expects a tight response).
 - **Press / mode switch** uses 180–200ms (slightly slower, more
   committed).
-- **No 60ms, 80ms, 100ms, or 120ms** is allowed anywhere in the
+- **No 60ms, 80ms, 100ms, 120ms, or any duration outside 150–200ms** is allowed anywhere in the
   codebase. If you find yourself reaching for one, you are not
   using the `Animations` helper.
 
