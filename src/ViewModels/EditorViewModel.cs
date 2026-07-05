@@ -82,6 +82,26 @@ public class EditorViewModel : ReactiveObject
     public string? LastSaveError => Document.LastSaveError;
 
     /// <summary>
+    /// Current caret line position (1-based). Updated by EditorView.
+    /// </summary>
+    private int _caretLine = 1;
+    public int CaretLine
+    {
+        get => _caretLine;
+        set => this.RaiseAndSetIfChanged(ref _caretLine, value);
+    }
+
+    /// <summary>
+    /// Current caret column position (1-based). Updated by EditorView.
+    /// </summary>
+    private int _caretColumn = 1;
+    public int CaretColumn
+    {
+        get => _caretColumn;
+        set => this.RaiseAndSetIfChanged(ref _caretColumn, value);
+    }
+
+    /// <summary>
     /// ReactiveCommand for saving the file.
     /// </summary>
     public ReactiveCommand<Unit, bool> SaveCommand { get; }

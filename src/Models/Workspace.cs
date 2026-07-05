@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Zaide.Models
@@ -12,13 +13,28 @@ namespace Zaide.Models
 
         public Document? ActiveDocument { get; private set; }
 
-public Document OpenDocument(string path, string content)
-    {
-        if (_documents.TryGetValue(path, out var existingDocument))
+        /// <summary>
+        /// The project/workspace folder name, or "Zaide" if no folder is open.
+        /// </summary>
+        public string ProjectName { get; private set; } = "Zaide";
+
+        /// <summary>
+        /// Sets the project name from a folder path.
+        /// </summary>
+        public void SetProjectFromPath(string? folderPath)
         {
-            ActiveDocument = existingDocument;
-            return existingDocument;
+            ProjectName = !string.IsNullOrEmpty(folderPath)
+                ? Path.GetFileName(folderPath)
+                : "Zaide";
         }
+
+        public Document OpenDocument(string path, string content)
+        {
+            if (_documents.TryGetValue(path, out var existingDocument))
+            {
+                ActiveDocument = existingDocument;
+                return existingDocument;
+            }
 
             var document = new Document(path, content);
             _documents[path] = document;

@@ -42,7 +42,9 @@ public class MainWindowViewModelTests
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel);
+        var scState = new SourceControlState();
+        var scViewModel = new SourceControlViewModel(scState);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel, scViewModel);
         vm.Activate();
         return vm;
     }
@@ -199,7 +201,9 @@ public class MainWindowViewModelTests
         var townhallState2 = new TownhallState();
         var townhallViewModel2 = new TownhallViewModel(townhallState2);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel2);
+        var scState2 = new SourceControlState();
+        var scViewModel2 = new SourceControlViewModel(scState2);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel2, scViewModel2);
         vm.Activate();
 
         await terminalViewModel.EnsureStartedAsync();

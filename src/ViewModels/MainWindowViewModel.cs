@@ -76,16 +76,29 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public EditorTabViewModel EditorTabs { get; }
     public TerminalViewModel TerminalViewModel { get; }
     public TownhallViewModel TownhallViewModel { get; }
+    public SourceControlViewModel SourceControlViewModel { get; }
+
+    /// <summary>
+    /// Project name for the status bar. Derived from Workspace.
+    /// </summary>
+    private string? _workspaceProjectName;
+    public string? WorkspaceProjectName
+    {
+        get => _workspaceProjectName;
+        set => this.RaiseAndSetIfChanged(ref _workspaceProjectName, value);
+    }
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                EditorTabViewModel editorTabViewModel,
                                TerminalViewModel terminalViewModel,
-                               TownhallViewModel townhallViewModel)
+                               TownhallViewModel townhallViewModel,
+                               SourceControlViewModel sourceControlViewModel)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalViewModel = terminalViewModel;
         TownhallViewModel = townhallViewModel;
+        SourceControlViewModel = sourceControlViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();

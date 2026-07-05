@@ -275,7 +275,7 @@ Each milestone's exit check should produce the following artifacts where applica
 | M3 | Townhall view integration | Center panel shows people sidebar, channels sidebar, chat area, and input | ⬜ Pending |
 | M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface | ⬜ Pending |
 | M5 | Terminal/logs alignment and categorization | Bottom area works under center+right, shows categorized [BUILD]/[AGENT]/[LOG] entries | ⬜ Pending |
-| M6 | Source Control panel and status bar | SC panel shows branch selector, change list, staging, commit input; status bar shows app info | ⬜ Pending |
+| M6 | Source Control panel and status bar | SC panel shows branch selector, change list, staging, commit input; status bar shows app info | ✅ Complete |
 | M7 | Regression sweep and doc sync | Existing workflows stable, docs match reality | ⬜ Pending |
 
 ---

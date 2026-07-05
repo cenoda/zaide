@@ -17,14 +17,16 @@ namespace Zaide;
 
 /// <summary>
 /// Main application window. Layout built in C# per DESIGN.md §1.
-/// Refactor 3 M3: nav bar | left-panel mode slot (Explorer/SC) | townhall | editor.
+/// Refactor 3 M6: nav bar | left-panel mode slot (Explorer/SC) | townhall | editor.
+/// Status bar at the bottom.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
-    private readonly Border _sourceControlPlaceholder;
+    private readonly SourceControlPanel _sourceControlPanel;
     private readonly TownhallView _townhallView;
+    private readonly StatusBar _statusBar;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -33,6 +35,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private GridSplitter _bottomPanelSplitter = null!;
     private readonly RowDefinition _bottomSplitterRow;
     private readonly RowDefinition _bottomPanelRow;
+    private readonly RowDefinition _statusBarRow;
 
     public MainWindow()
     {
@@ -46,9 +49,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-        // === Build Layout (M3: nav bar | left slot | townhall | editor) ===
-        (_navBar, _fileTreeView, _sourceControlPlaceholder, _townhallView,
-         _terminalPanel, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow) = BuildLayout();
+        // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
+        (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
+         _terminalPanel, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
 
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
@@ -62,6 +65,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
             _terminalPanel.ViewModel = ViewModel.TerminalViewModel;
+
+            // Wire SourceControlPanel to its ViewModel
+            _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
+
+            // Wire StatusBar to ViewModel
+            _statusBar.ViewModel = ViewModel;
 
             // Activate VM subscriptions (save errors, file-open) and clean up
             ViewModel!.Activate();
@@ -103,13 +112,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _welcomeText.IsVisible = active is null;
                 }));
 
-            // Left panel mode switching: show file tree or SC placeholder
+            // Left panel mode switching: show file tree or SC panel
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.LeftPanelMode)
                 .Subscribe(mode =>
                 {
                     var isExplorer = mode == LeftPanelMode.Explorer;
                     _fileTreeView.IsVisible = isExplorer;
-                    _sourceControlPlaceholder.IsVisible = !isExplorer;
+                    _sourceControlPanel.IsVisible = !isExplorer;
                 }));
 
             // Ctrl+` toggle bottom panel
@@ -188,12 +197,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     }
 
     /// <summary>
-    /// Builds the M3 layout: nav bar | left-panel mode slot | townhall | editor.
-    /// Bottom panel spans under center + right only. Status bar slot reserved.
+    /// Builds the M6 layout: nav bar | left-panel mode slot | townhall | editor.
+    /// Bottom panel spans under center + right only. Status bar at the bottom.
     /// </summary>
-    private (NavBar navBar, FileTreeView fileTreeView, Border scPlaceholder, TownhallView townhallView,
-             TerminalPanel terminalPanel, Border bottomPanel, GridSplitter bottomPanelSplitter,
-             RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow) BuildLayout()
+    private (NavBar navBar, FileTreeView fileTreeView, SourceControlPanel sourceControlPanel, TownhallView townhallView,
+             StatusBar statusBar, TerminalPanel terminalPanel, Border bottomPanel, GridSplitter bottomPanelSplitter,
+             RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow, RowDefinition statusBarRow) BuildLayout()
     {
         var grid = new Grid
         {
@@ -220,14 +229,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(0) },
                 // 2: Bottom panel
                 new RowDefinition { Height = new GridLength(0) },
-                // 3: Status bar (reserved, 0 height for now — M6)
-                new RowDefinition { Height = new GridLength(0) }
+                // 3: Status bar (24px, always visible)
+                new RowDefinition { Height = new GridLength(24, GridUnitType.Pixel) }
             },
             Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"]
         };
 
         var bottomSplitterRow = grid.RowDefinitions[1];
         var bottomPanelRow = grid.RowDefinitions[2];
+        var statusBarRow = grid.RowDefinitions[3];
 
         // --- Column 0: Nav Bar ---
         var navBar = new NavBar();
@@ -242,22 +252,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(fileTreeView, 0);
         grid.Children.Add(fileTreeView);
 
-        var scPlaceholder = new Border
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            Child = new TextBlock
-            {
-                Text = "Source Control",
-                Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                FontSize = 14,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center
-            },
-            IsVisible = false // Hidden by default (Explorer mode)
-        };
-        Grid.SetColumn(scPlaceholder, 1);
-        Grid.SetRow(scPlaceholder, 0);
-        grid.Children.Add(scPlaceholder);
+        var sourceControlPanel = new SourceControlPanel();
+        sourceControlPanel.IsVisible = false; // Hidden by default (Explorer mode)
+        Grid.SetColumn(sourceControlPanel, 1);
+        Grid.SetRow(sourceControlPanel, 0);
+        grid.Children.Add(sourceControlPanel);
 
         // --- Column 2: Splitter (left panel ↔ townhall) ---
         var leftSplitter = new GridSplitter
@@ -310,9 +309,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            // M4: SurfacePanelBrush for quieter right-column feel (not SurfaceBaseBrush).
-            // The editor code area still uses SurfaceBaseBrush internally via EditorView,
-            // but the outer panel reads as a slightly elevated utility surface.
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Margin = new Thickness(1, 0, 0, 0),
             Children =
@@ -362,8 +358,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(bottomPanel, 2);
         grid.Children.Add(bottomPanel);
 
+        // --- Status Bar (full width, row 3) ---
+        var statusBar = new StatusBar();
+        Grid.SetColumn(statusBar, 0);
+        Grid.SetColumnSpan(statusBar, 6); // Full width
+        Grid.SetRow(statusBar, 3);
+        grid.Children.Add(statusBar);
+
         Content = grid;
-        return (navBar, fileTreeView, scPlaceholder, townhallView,
-                terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow);
+        return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
+                terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 }

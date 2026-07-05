@@ -144,6 +144,17 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                         UpdateFileInfoBar(ViewModel);
                 }));
 
+            // Caret position tracking: push line/column to ViewModel
+            void OnCaretChanged(object? s, EventArgs e)
+            {
+                if (ViewModel is null) return;
+                var caret = _textEditor.TextArea.Caret;
+                ViewModel.CaretLine = caret.Line;
+                ViewModel.CaretColumn = caret.Column;
+            }
+            _textEditor.TextArea.Caret.PositionChanged += OnCaretChanged;
+            d.Add(Disposable.Create(() => _textEditor.TextArea.Caret.PositionChanged -= OnCaretChanged));
+
             _textEditor.TextChanged += OnTextChanged;
             d.Add(Disposable.Create(() => _textEditor.TextChanged -= OnTextChanged));
         });
