@@ -2,7 +2,7 @@
 
 ## Status
 
-**In progress — M0 and M0.5 complete, M1 in progress.**
+**In progress — M0, M0.5, and M1 complete.**
 
 This plan implements the already-decided drift recorded in
 `docs/refactor/refactor-3/DRIFT_DECISION.md`.
@@ -270,7 +270,7 @@ Each milestone's exit check should produce the following artifacts where applica
 |-----------|-------------|-------------|--------|
 | M0 | Confirm baseline health and current layout assumptions | Build/tests green and current shell understood | ✅ Complete |
 | M0.5 | Palette rematch to concept.png colors | App.axaml tokens updated, no hardcoded legacy hex values remain | ✅ Complete |
-| M1 | Main window layout transition with nav bar + MainWindowViewModel nav-mode state + tests | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor; VM exposes LeftPanelMode with switch commands; tests verify mode switching | 🔄 In progress |
+| M1 | Main window layout transition with nav bar + MainWindowViewModel nav-mode state + tests | Main window reads as nav bar \| left-panel mode slot (Explorer/SC) \| townhall \| editor; VM exposes LeftPanelMode with switch commands; tests verify mode switching | ✅ Complete |
 | M2 | Townhall domain/view-model foundation | Townhall has channel list, message model, agent status with avatars, and state model | ⬜ Pending |
 | M3 | Townhall view integration | Center panel shows people sidebar, channels sidebar, chat area, and input | ⬜ Pending |
 | M4 | Editor/right-column adaptation | Editor visible with townhall link; right column reads as focused code surface | ⬜ Pending |
@@ -1275,4 +1275,4 @@ It is not the end state.
 
 ---
 
-*Last updated: 2026-07-04*
+*Last updated: 2026-07-05*
