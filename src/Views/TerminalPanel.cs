@@ -155,14 +155,11 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             // Warning icon prefix
             if (entry.HasWarning)
             {
-                var warningIcon = new TextBlock
-                {
-                    Text = "\u26A0",
-                    FontSize = 14,
-                    Foreground = (IBrush)res["WarningBrush"]!,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 2, 0)
-                };
+                var warningIcon = IconFactory.Create(
+                    "Icon.Warning",
+                    (IBrush)res["WarningBrush"]!,
+                    14);
+                warningIcon.Margin = new Thickness(0, 0, 2, 0);
                 row.Children.Insert(0, warningIcon);
             }
 

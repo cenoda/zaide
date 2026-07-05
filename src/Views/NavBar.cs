@@ -23,8 +23,8 @@ public class NavBar : Panel, IDisposable
     private readonly Border _sourceControlButton;
     private readonly Border _explorerActiveIndicator;
     private readonly Border _sourceControlActiveIndicator;
-    private readonly TextBlock _explorerIconText;
-    private readonly TextBlock _sourceControlIconText;
+    private readonly PathIcon _explorerIcon;
+    private readonly PathIcon _sourceControlIcon;
     private readonly Border _explorerHoverOverlay;
     private readonly Border _sourceControlHoverOverlay;
     private CompositeDisposable? _disposables;
@@ -71,24 +71,14 @@ public class NavBar : Panel, IDisposable
             IsVisible = false
         };
 
-        // Icon text — starts with Explorer active (PrimaryAccentBrush), SC inactive (TextSecondaryBrush)
-        _explorerIconText = new TextBlock
-        {
-            Text = "\uD83D\uDCC1",
-            FontSize = 16,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"]
-        };
+        // Icon geometry — starts with Explorer active (PrimaryAccentBrush), SC inactive (TextSecondaryBrush)
+        _explorerIcon = IconFactory.Create(
+            "Icon.Folder",
+            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"]);
 
-        _sourceControlIconText = new TextBlock
-        {
-            Text = "\uD83D\uDD04",
-            FontSize = 16,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]
-        };
+        _sourceControlIcon = IconFactory.Create(
+            "Icon.GitBranch",
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]);
 
         // Hover overlay: 7% white, fills the icon button area
         _explorerHoverOverlay = new Border
@@ -116,7 +106,7 @@ public class NavBar : Panel, IDisposable
             Children =
             {
                 _explorerActiveIndicator,
-                _explorerIconText,
+                _explorerIcon,
                 _explorerHoverOverlay
             }
         };
@@ -128,7 +118,7 @@ public class NavBar : Panel, IDisposable
             Children =
             {
                 _sourceControlActiveIndicator,
-                _sourceControlIconText,
+                _sourceControlIcon,
                 _sourceControlHoverOverlay
             }
         };
@@ -198,10 +188,10 @@ public class NavBar : Panel, IDisposable
                     _explorerActiveIndicator.IsVisible = isExplorer;
                     _sourceControlActiveIndicator.IsVisible = !isExplorer;
 
-                    // Icon text color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
-                    _explorerIconText.Foreground = (IBrush?)Application.Current!.Resources[
+                    // Icon color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
+                    _explorerIcon.Foreground = (IBrush?)Application.Current!.Resources[
                         isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
-                    _sourceControlIconText.Foreground = (IBrush?)Application.Current!.Resources[
+                    _sourceControlIcon.Foreground = (IBrush?)Application.Current!.Resources[
                         !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
                 }));
     }

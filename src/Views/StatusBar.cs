@@ -29,13 +29,18 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
 
         // App name — PrimaryAccentBrush
+        var appNameIcon = IconFactory.Create(
+            "Icon.Config",
+            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
+            14);
+
         var appNameText = new TextBlock
         {
-            Text = "\u2699 Zaide",
+            Text = "Zaide",
             Foreground = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 0, 0)
+            Margin = new Thickness(4, 0, 0, 0)
         };
 
         // Caret position
@@ -96,13 +101,21 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         };
 
         // Left-aligned stack: app name | caret | language | project | branch
+        var appNameStack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0),
+            Children = { appNameIcon, appNameText }
+        };
+
         var leftStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
-                appNameText,
+                appNameStack,
                 Separator(),
                 _caretText,
                 Separator(),

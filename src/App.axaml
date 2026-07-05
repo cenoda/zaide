@@ -5,6 +5,11 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Zaide/Styles/Icons.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
         <!-- Modern Dark IDE Palette (resembling GitHub Dark, VS Code Dark+, JetBrains Dark) -->
         <Color x:Key="PrimaryAccentBrushColor">#0E6AEB</Color>
         <Color x:Key="SecondaryAccentBrushColor">#5B94F5</Color>
@@ -36,6 +41,7 @@
         <!-- Override AvaloniaEdit SearchPanel to use Zaide palette -->
         <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelBrushColor}" />
         <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SeparatorBrushColor}" />
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>

@@ -128,14 +128,12 @@ public class TownhallChatPanel : Panel
         StackPanel contentStack;
         if (message.Type == TownhallMessageType.Warning)
         {
-            var warningIcon = new TextBlock
-            {
-                Text = "\u26A0",
-                FontSize = 14,
-                Foreground = (IBrush?)Application.Current!.Resources["WarningBrush"],
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, 0, 4, 0)
-            };
+            var warningIcon = IconFactory.Create(
+                "Icon.Warning",
+                (IBrush?)Application.Current!.Resources["WarningBrush"],
+                14);
+            warningIcon.VerticalAlignment = VerticalAlignment.Top;
+            warningIcon.Margin = new Thickness(0, 0, 4, 0);
 
             contentStack = new StackPanel
             {

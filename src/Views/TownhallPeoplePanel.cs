@@ -35,13 +35,10 @@ public class TownhallPeoplePanel : Panel
                     FontWeight = FontWeight.Bold,
                     VerticalAlignment = VerticalAlignment.Center
                 },
-                new TextBlock
-                {
-                    Text = "\uD83D\uDD14",
-                    FontSize = 14,
-                    Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                IconFactory.Create(
+                    "Icon.Bell",
+                    (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                    14)
             }
         };
 
@@ -198,14 +195,11 @@ public class TownhallPeoplePanel : Panel
         // Warning icon if HasWarning
         if (agent.HasWarning)
         {
-            var warningIcon = new TextBlock
-            {
-                Text = "\u26A0",
-                FontSize = 14,
-                Foreground = (IBrush?)Application.Current!.Resources["WarningBrush"],
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0)
-            };
+            var warningIcon = IconFactory.Create(
+                "Icon.Warning",
+                (IBrush?)Application.Current!.Resources["WarningBrush"],
+                14);
+            warningIcon.Margin = new Thickness(4, 0, 0, 0);
             contentStack.Children.Add(warningIcon);
         }
 

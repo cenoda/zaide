@@ -103,14 +103,11 @@ public class TownhallChannelPanel : Panel
         // Pin icon for pinned channels
         if (channel.IsPinned)
         {
-            var pinIcon = new TextBlock
-            {
-                Text = "\uD83D\uDCCC",
-                FontSize = 12,
-                Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0)
-            };
+            var pinIcon = IconFactory.Create(
+                "Icon.Pin",
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                12);
+            pinIcon.Margin = new Thickness(4, 0, 0, 0);
             contentStack.Children.Add(pinIcon);
         }
 
