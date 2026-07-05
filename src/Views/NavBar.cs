@@ -225,6 +225,7 @@ public class NavBar : Panel, IDisposable
         {
             Width = 32,
             Height = 32,
+            Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(8),
             Cursor = new Cursor(StandardCursorType.Hand)
         };
