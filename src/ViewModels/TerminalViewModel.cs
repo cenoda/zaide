@@ -590,15 +590,17 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         if (IsRunning)
         {
             await _service.WriteAsync(ClearInput);
-            return;
+        }
+        else
+        {
+            _screen.EraseDisplay(3);
+            _screen.CursorPosition(1, 1);
+            _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
+            UpdateSnapshot();
         }
 
-        _screen.EraseDisplay(3);
-        _screen.CursorPosition(1, 1);
-        _screen.SetSgr(new[] { 0 }); // reset active attributes (SGR reset)
-        UpdateSnapshot();
-
-        // Also clear the categorized log entries so the log view matches
+        // Clear the categorized log entries in both branches so the log view
+        // matches the cleared terminal state regardless of session status.
         LogEntries.Clear();
         _nextLogId = 0;
         _logLineBuffer = string.Empty;

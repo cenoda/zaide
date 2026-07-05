@@ -849,6 +849,33 @@ public class TerminalViewModelTests
     }
 
     [Fact]
+    public async Task ClearCommand_WhenRunning_ClearsLogEntries()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        service.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("line1\nline2\nline3\n"));
+        Assert.Equal(3, vm.LogEntries.Count);
+
+        await vm.ClearCommand.Execute();
+
+        // Log entries should be cleared even when the terminal is running
+        Assert.Empty(vm.LogEntries);
+        // Ctrl+L should still have been sent to the service
+        service.Verify(
+            s => s.WriteAsync(
+                It.Is<byte[]>(data => data.Length == 1 && data[0] == 0x0C),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public void IsLogView_DefaultIsFalse()
     {
         var service = new Mock<ITerminalService>();
