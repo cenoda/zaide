@@ -166,6 +166,8 @@ public class TownhallView : Panel, IDisposable
                 chatArea
             }
         };
+        sidebarChatSplitter.DragCompleted += (_, _) =>
+            GridLayoutResizeHelper.PreservePixelColumnAndNormalizeStarColumns(mainGrid, 0, 2);
         Grid.SetColumn(sidebarChatSplitter, 1);
         Grid.SetColumn(chatArea, 2);
 

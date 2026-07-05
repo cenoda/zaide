@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Controls.Primitives;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
@@ -267,6 +268,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
+        leftSplitter.DragCompleted += (_, _) =>
+            GridLayoutResizeHelper.PreservePixelColumnAndNormalizeStarColumns(grid, 1, 3, 5);
         Grid.SetColumn(leftSplitter, 2);
         Grid.SetRow(leftSplitter, 0);
         grid.Children.Add(leftSplitter);
@@ -297,6 +300,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
+        rightSplitter.DragCompleted += (_, _) =>
+            GridLayoutResizeHelper.NormalizeStarColumns(grid, 3, 5);
         Grid.SetColumn(rightSplitter, 4);
         Grid.SetRow(rightSplitter, 0);
         grid.Children.Add(rightSplitter);
