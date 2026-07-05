@@ -61,7 +61,7 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 | Library | What It Does | Why You Want It |
 |---------|-------------|-----------------|
-| **Phosphor Icons (embedded PathIcon)** | Vector icons from the MIT-licensed Phosphor set. Embedded as `StreamGeometry` in `src/Styles/Icons.axaml` and rendered through `PathIcon`. | No NuGet required. Vector crisp. Monochrome. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
+| **Phosphor Icons (embedded Path)** | Vector icons from the MIT-licensed Phosphor set. Embedded as `StreamGeometry` in `src/Styles/Icons.axaml` and rendered through non-hit-test `Viewbox` + `Path` controls. | No NuGet required. Vector crisp. Monochrome. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
 
 ---
 
