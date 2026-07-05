@@ -92,13 +92,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ctx.SetOutput(result);
             }));
 
-            // Wire active tab → EditorView + tab bar highlight + welcome text
+            // Wire active tab → EditorView + tab bar highlight + welcome text + townhall link
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
                     _editorView.ViewModel = active;
                     _editorView.IsVisible = active is not null;
                     _editorTabBar.SetActiveTab(active);
+                    _editorTabBar.SetTownhallLinkVisible(active is not null);
                     _welcomeText.IsVisible = active is null;
                 }));
 
@@ -301,7 +302,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(rightSplitter, 0);
         grid.Children.Add(rightSplitter);
 
-        // --- Column 5: Right — Editor ---
+        // --- Column 5: Right — Editor (quieter, utility-focused surface) ---
         var editorPanel = new Grid
         {
             RowDefinitions =
@@ -309,7 +310,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
+            // M4: SurfacePanelBrush for quieter right-column feel (not SurfaceBaseBrush).
+            // The editor code area still uses SurfaceBaseBrush internally via EditorView,
+            // but the outer panel reads as a slightly elevated utility surface.
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Margin = new Thickness(1, 0, 0, 0),
             Children =
             {

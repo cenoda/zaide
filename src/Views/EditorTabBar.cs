@@ -34,6 +34,7 @@ public partial class EditorTabBar : UserControl
 {
     private readonly ScrollViewer _scrollViewer;
     private readonly StackPanel _tabsPanel;
+    private readonly TextBlock _townhallLink;
     private readonly Dictionary<EditorViewModel, Border> _tabItems = new();
     private readonly Dictionary<EditorViewModel, IDisposable> _hoverSubscriptions = new();
     private readonly Dictionary<EditorViewModel, CancellationTokenSource> _hoverCts = new();
@@ -88,7 +89,42 @@ public partial class EditorTabBar : UserControl
             e.Handled = true;
         };
 
-        Content = _scrollViewer;
+        // M4: "Shared in #townhall" label — right of tabs, SecondaryAccentBrush,
+        // hidden by default. Visibility controlled by MainWindow via SetTownhallLinkVisible.
+        _townhallLink = new TextBlock
+        {
+            Text = "Shared in #townhall",
+            Foreground = (IBrush?)Application.Current?.Resources["SecondaryAccentBrush"],
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 12, 0),
+            IsVisible = false
+        };
+
+        // Layout: tabs scroll on the left, link label on the right.
+        var layout = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            }
+        };
+        Grid.SetColumn(_scrollViewer, 0);
+        Grid.SetColumn(_townhallLink, 1);
+        layout.Children.Add(_scrollViewer);
+        layout.Children.Add(_townhallLink);
+
+        Content = layout;
+    }
+
+    /// <summary>
+    /// Shows or hides the "Shared in #townhall" link label.
+    /// M4: visible only when a tab is open.
+    /// </summary>
+    public void SetTownhallLinkVisible(bool visible)
+    {
+        _townhallLink.IsVisible = visible;
     }
 
     /// <summary>

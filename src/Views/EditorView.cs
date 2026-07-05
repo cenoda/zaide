@@ -24,6 +24,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
+    private readonly TextBlock _fileInfoBar;
 
     // Guard flag: true while the View is pushing text to the editor,
     // preventing OnTextChanged from bouncing it back to the ViewModel.
@@ -64,7 +65,32 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             _textEditor.TextArea.TextView,
             new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
 
-        Content = _textEditor;
+        // M4: Focused file info bar — shows current file name and "diff/edit" indicator.
+        // Styled with TextSecondaryBrush for a quieter, utility-focused appearance.
+        _fileInfoBar = new TextBlock
+        {
+            Text = "diff/edit",
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            FontSize = 12,
+            Padding = new Thickness(12, 6, 12, 6),
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        // Layout: code area fills star, file info bar at bottom (auto height).
+        var layout = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                new RowDefinition { Height = GridLength.Auto }
+            }
+        };
+        Grid.SetRow(_textEditor, 0);
+        Grid.SetRow(_fileInfoBar, 1);
+        layout.Children.Add(_textEditor);
+        layout.Children.Add(_fileInfoBar);
+
+        Content = layout;
 
         this.WhenActivated(d =>
         {
