@@ -67,6 +67,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         // M4: Focused file info bar — shows current file name and "diff/edit" indicator.
         // Styled with TextSecondaryBrush for a quieter, utility-focused appearance.
+        // Text is updated reactively when the ViewModel changes (see WhenActivated).
         _fileInfoBar = new TextBlock
         {
             Text = "diff/edit",
@@ -118,12 +119,29 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                 .Subscribe(obj =>
                 {
                     if (obj is EditorViewModel vm)
+                    {
                         ApplyFileMode(vm.FilePath);
+                        UpdateFileInfoBar(vm);
+                    }
                     else
                     {
                         _textEditor.Text = string.Empty;
                         _indentGuideRenderer.IsEnabled = false;
+                        _fileInfoBar.Text = "diff/edit";
                     }
+                }));
+
+            // File name updates: track FilePath changes on the current ViewModel
+            // and update the file info bar text accordingly.
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Select(vm => vm is EditorViewModel evm
+                    ? evm.WhenAnyValue(x => x.FileName)
+                    : Observable.Never<string>())
+                .Switch()
+                .Subscribe(_ =>
+                {
+                    if (ViewModel is not null)
+                        UpdateFileInfoBar(ViewModel);
                 }));
 
             _textEditor.TextChanged += OnTextChanged;
@@ -171,6 +189,16 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         // later, extract a helper like ShouldEnableForFile(ext) or gate on
         // GetGrammarScope returning non-null.
         _indentGuideRenderer.IsEnabled = ext == ".cs";
+    }
+
+    /// <summary>
+    /// Updates the focused file info bar text to show the current file name
+    /// and "diff/edit" indicator.
+    /// </summary>
+    private void UpdateFileInfoBar(EditorViewModel vm)
+    {
+        var name = string.IsNullOrEmpty(vm.FileName) ? "Untitled" : vm.FileName;
+        _fileInfoBar.Text = $"{name}  —  diff/edit";
     }
 
     private void OnTextChanged(object? sender, EventArgs e)
