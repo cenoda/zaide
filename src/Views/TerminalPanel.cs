@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -22,6 +23,9 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private readonly Button _clearButton;
     private readonly Button _restartButton;
     private readonly TextBlock _statusText;
+    private readonly ListBox _logListBox;
+    private readonly Button _toggleViewButton;
+    private readonly Grid _contentArea;
 
     public TerminalPanel()
     {
@@ -30,10 +34,55 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         _renderControl.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         _renderControl.AddHandler(InputElement.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"] };
+        // ── Header: "Terminal / Logs" ──────────────────────────────
+        var headerText = new TextBlock
+        {
+            Text = "Terminal / Logs",
+            FontSize = 13,
+            FontWeight = FontWeight.Bold,
+            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        _statusText = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"]
+        };
+
+        _toggleViewButton = new Button
+        {
+            Content = "Logs",
+            FontSize = 12,
+            Padding = new Thickness(8, 2, 8, 2),
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(4),
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+
         _clearButton = BuildToolbarButton("Clear");
         _restartButton = BuildToolbarButton("Restart");
-        var buttonStrip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Children = { _clearButton, _restartButton } };
+
+        var leftStrip = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { headerText, _statusText }
+        };
+
+        var rightStrip = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { _toggleViewButton, _clearButton, _restartButton }
+        };
+
         var toolbarGrid = new Grid
         {
             ColumnDefinitions =
@@ -41,11 +90,91 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                 new ColumnDefinition { Width = GridLength.Auto }
             },
-            Children = { _statusText, buttonStrip }
+            Children = { leftStrip, rightStrip }
         };
-        Grid.SetColumn(_statusText, 0);
-        Grid.SetColumn(buttonStrip, 1);
-        var toolbar = new Border { Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"], Padding = new Thickness(16, 6, 16, 6), Child = toolbarGrid };
+        Grid.SetColumn(leftStrip, 0);
+        Grid.SetColumn(rightStrip, 1);
+
+        var toolbar = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
+            Padding = new Thickness(16, 6, 16, 6),
+            Child = toolbarGrid
+        };
+
+        // ── Log list view ──────────────────────────────────────────
+        _logListBox = new ListBox
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            IsVisible = false
+        };
+
+        var res = Application.Current!.Resources;
+
+        // Item template for log entries
+        _logListBox.ItemTemplate = new FuncDataTemplate<LogEntry>((entry, _) =>
+        {
+            if (entry is null) return null;
+
+            // Tag badge color based on category
+            var tagColor = entry.Category switch
+            {
+                LogCategory.Build => (IBrush)res["TextPrimaryBrush"]!,
+                LogCategory.Agent => (IBrush)res["SecondaryAccentBrush"]!,
+                LogCategory.Log => (IBrush)res["TextSecondaryBrush"]!,
+                _ => (IBrush)res["TextSecondaryBrush"]!
+            };
+
+            var tagBlock = new TextBlock
+            {
+                Text = entry.Tag,
+                FontSize = 11,
+                Foreground = tagColor,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 4, 0)
+            };
+
+            var contentBlock = new TextBlock
+            {
+                Text = entry.Content,
+                FontSize = 12,
+                Foreground = (IBrush)res["TextPrimaryBrush"]!,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.NoWrap,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                Children = { tagBlock, contentBlock }
+            };
+
+            // Warning icon prefix
+            if (entry.HasWarning)
+            {
+                var warningIcon = new TextBlock
+                {
+                    Text = "\u26A0",
+                    FontSize = 14,
+                    Foreground = (IBrush)res["WarningBrush"]!,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 2, 0)
+                };
+                row.Children.Insert(0, warningIcon);
+            }
+
+            return row;
+        });
+
+        // ── Content area: render control + log list ────────────────
+        _contentArea = new Grid
+        {
+            Children = { _renderControl, _logListBox }
+        };
+
         var root = new Grid
         {
             RowDefinitions =
@@ -55,11 +184,12 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             }
         };
         Grid.SetRow(toolbar, 0);
-        Grid.SetRow(_renderControl, 1);
+        Grid.SetRow(_contentArea, 1);
         root.Children.Add(toolbar);
-        root.Children.Add(_renderControl);
+        root.Children.Add(_contentArea);
         Content = root;
 
+        // ── Bindings ───────────────────────────────────────────────
         this.WhenActivated(d =>
         {
             d.Add(this.OneWayBind(ViewModel, vm => vm.ScreenSnapshot, v => v._renderControl.Snapshot));
@@ -69,6 +199,30 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             d.Add(this.OneWayBind(ViewModel, vm => vm.StatusLabel, v => v._statusText.Text));
             d.Add(this.BindCommand(ViewModel, vm => vm.ClearCommand, v => v._clearButton));
             d.Add(this.BindCommand(ViewModel, vm => vm.RestartCommand, v => v._restartButton));
+
+            // Bind log entries to the list box
+            d.Add(this.OneWayBind(ViewModel, vm => vm.LogEntries, v => v._logListBox.ItemsSource));
+
+            // Toggle between terminal and log view
+            d.Add(this.Bind(ViewModel, vm => vm.IsLogView, v => v._logListBox.IsVisible));
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.IsLogView)
+                .Subscribe(isLogView =>
+                {
+                    _renderControl.IsVisible = !isLogView;
+                    _toggleViewButton.Content = isLogView ? "Terminal" : "Logs";
+                }));
+
+            // Toggle button click
+            var toggleSub = Observable.FromEventPattern<RoutedEventArgs>(
+                h => _toggleViewButton.Click += h,
+                h => _toggleViewButton.Click -= h)
+                .Subscribe(_ =>
+                {
+                    if (ViewModel is not null)
+                        ViewModel.IsLogView = !ViewModel.IsLogView;
+                });
+            d.Add(toggleSub);
+
             if (ViewModel != null)
             {
                 ViewModel.Restarted += OnRestarted;

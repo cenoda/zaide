@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,6 +42,8 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private int _pendingRows;
     private bool _bracketedPasteEnabled;
     private TaskCompletionSource<bool>? _restartCompletionSource;
+    private int _nextLogId;
+    private bool _isLogView;
 
     // ── view-bound properties ──────────────────────────────────────
 
@@ -143,6 +147,26 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// Event raised when the terminal restart completes.
     /// </summary>
     public event Action? Restarted;
+
+    // ── M5: categorized log entries ──────────────────────────────
+
+    /// <summary>
+    /// Observable collection of categorized log entries derived from terminal output.
+    /// </summary>
+    public ObservableCollection<LogEntry> LogEntries { get; } = new();
+
+    /// <summary>
+    /// Whether the bottom panel is currently showing the log list view instead of the
+    /// raw terminal render control.
+    /// </summary>
+    public bool IsLogView
+    {
+        get => _isLogView;
+        set => this.RaiseAndSetIfChanged(ref _isLogView, value);
+    }
+
+    // ── ctor ──────────────────────────────────────────────────────
+
     /// <summary>Production constructor used by the DI container.</summary>
     public TerminalViewModel(ITerminalService terminalService)
         : this(terminalService, action => Dispatcher.UIThread.Post(action))
@@ -326,7 +350,7 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                 _restartPending = false;
                 PrepareForRestart();
                 _restartCompletionSource = new TaskCompletionSource<bool>();
-                
+
                 try
                 {
                     await EnsureStartedAsync();
@@ -340,14 +364,15 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                 return;
             }
 
-            Append("\r\n[Process exited]\r\n");
+            string exitMsg = "\r\n[Process exited]\r\n";
+            Append(exitMsg);
         });
     }
 
     /// <summary>
     /// Parses decoded text through the ANSI parser and applies all resulting
     /// actions to the screen buffer, then projects a new snapshot for view
-    /// binding.
+    /// binding. Also categorizes and stores log entries for the M5 log view.
     /// </summary>
     private void Append(string text)
     {
@@ -375,6 +400,44 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         }
 
         UpdateSnapshot();
+
+        // Categorize each line of the newly appended text and add as log entries
+        AppendLogEntries(text);
+    }
+
+    /// <summary>
+    /// Splits raw output text into lines, categorizes each, and adds to
+    /// <see cref="LogEntries"/>.
+    /// </summary>
+    private void AppendLogEntries(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        // Split on newlines; preserve line boundaries for categorization
+        var lines = text.Split('\n');
+        var now = DateTimeOffset.Now;
+
+        foreach (var line in lines)
+        {
+            string trimmed = line.TrimEnd('\r');
+            if (string.IsNullOrEmpty(trimmed))
+                continue;
+
+            var (category, hasWarning) = LogCategorizer.Categorize(trimmed);
+            LogEntries.Add(new LogEntry(
+                _nextLogId++,
+                category,
+                trimmed,
+                now,
+                hasWarning));
+
+            // Cap the log entries to prevent unbounded memory growth
+            if (LogEntries.Count > 1000)
+            {
+                LogEntries.RemoveAt(0);
+            }
+        }
     }
 
     private void ApplyCsi(CsiDispatchAction csi)
