@@ -29,6 +29,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 {
     private readonly TreeView _treeView;
     private readonly TextBlock _headerText;
+    private readonly Control _headerIcon;
     private IDisposable? _openFolderSubscription;
 
     public FileTreeView()
@@ -36,13 +37,19 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         Padding = new Thickness(16);
 
         // --- Header (clickable folder path) ---
+        _headerIcon = IconFactory.Create(
+            "Icon.Folder",
+            (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
+            14);
+
         _headerText = new TextBlock
         {
             Text = "Open Folder...",
             FontSize = 13,
             Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             Cursor = new Cursor(StandardCursorType.Hand),
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(6, 0, 0, 8),
+            VerticalAlignment = VerticalAlignment.Center
         };
 
         _headerText.PointerPressed += async (_, _) =>
@@ -66,16 +73,31 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 match: _ => true,
                 build: (node, _) =>
                 {
+                    var icon = IconFactory.Create(
+                        GetIconKeyForNode(node),
+                        (IBrush?)Application.Current!.Resources[
+                            node.IsDirectory ? "SecondaryAccentBrush" : "TextSecondaryBrush"],
+                        14);
+
                     var tb = new TextBlock
                     {
                         Text = node.Name,
-                        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"]
+                        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    var row = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 6,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Children = { icon, tb }
                     };
 
                     // M3: Bind TreeViewItem.IsExpanded ↔ FileTreeNode.IsExpanded (two-way)
-                    tb.AttachedToVisualTree += (_, _) =>
+                    row.AttachedToVisualTree += (_, _) =>
                     {
-                        var tvi = tb.FindAncestorOfType<TreeViewItem>();
+                        var tvi = row.FindAncestorOfType<TreeViewItem>();
                         if (tvi is not null)
                         {
                             var binding = new Binding(nameof(FileTreeNode.IsExpanded))
@@ -86,7 +108,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         }
                     };
 
-                    return tb;
+                    return row;
                 },
                 itemsSelector: node => node.Children
             )
@@ -185,7 +207,12 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         // --- Layout ---
         var headerBorder = new Border
         {
-            Child = _headerText,
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _headerIcon, _headerText }
+            },
             [DockPanel.DockProperty] = Dock.Top,
             Padding = new Thickness(0, 0, 0, 4),
             BorderBrush = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
@@ -277,6 +304,23 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             return selected.FullPath;
 
         return ViewModel.RootPath;
+    }
+
+    private static string GetIconKeyForNode(FileTreeNode node)
+    {
+        if (node.IsDirectory)
+            return "Icon.Folder";
+
+        var ext = System.IO.Path.GetExtension(node.Name).ToLowerInvariant();
+        return ext switch
+        {
+            ".cs" or ".ts" or ".js" or ".jsx" or ".tsx" or ".json" or ".xml" or ".html" or ".css" or ".axaml" => "Icon.Code",
+            ".md" or ".txt" or ".log" => "Icon.Text",
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" => "Icon.Image",
+            ".sln" or ".slnx" or ".csproj" => "Icon.Project",
+            ".editorconfig" or ".gitignore" or ".yml" or ".yaml" or ".toml" => "Icon.Config",
+            _ => "Icon.Unknown"
+        };
     }
 
     /// <summary>

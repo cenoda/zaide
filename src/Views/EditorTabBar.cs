@@ -243,16 +243,10 @@ public partial class EditorTabBar : UserControl
         };
         label.DataContext = vm;
 
-        var closeGlyph = new TextBlock
-        {
-            Text = "×",
-            FontSize = 14,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false
-        };
+        var closeGlyph = IconFactory.Create(
+            "Icon.X",
+            (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
+            12);
 
         var closeButton = new Border
         {
@@ -265,6 +259,7 @@ public partial class EditorTabBar : UserControl
             CornerRadius = new CornerRadius(4),
             Cursor = new Cursor(StandardCursorType.Hand),
             Opacity = 0,
+            Padding = new Thickness(4),
             Child = closeGlyph
         };
 

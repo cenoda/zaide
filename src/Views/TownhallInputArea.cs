@@ -65,14 +65,10 @@ public class TownhallInputArea : Panel
         };
 
         // Send button (arrow icon)
-        var sendIcon = new TextBlock
-        {
-            Text = "\u2191", // up arrow
-            FontSize = 16,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        var sendIcon = IconFactory.Create(
+            "Icon.ArrowUp",
+            (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            14);
 
         _sendButton = new Border
         {
@@ -92,14 +88,10 @@ public class TownhallInputArea : Panel
             Width = 28,
             Height = 28,
             CornerRadius = new CornerRadius(9999),
-            Child = new TextBlock
-            {
-                Text = "+",
-                FontSize = 16,
-                Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            },
+            Child = IconFactory.Create(
+                "Icon.Plus",
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                14),
             Cursor = new Cursor(StandardCursorType.Hand),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 4, 0)

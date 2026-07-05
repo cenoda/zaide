@@ -29,18 +29,24 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 
     public TerminalPanel()
     {
+        var resourceDictionary = Application.Current!.Resources;
         _renderControl = new TerminalRenderControl();
         _renderControl.ContextMenu = BuildContextMenu();
         _renderControl.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         _renderControl.AddHandler(InputElement.TextInputEvent, OnTextInput, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         // ── Header: "Terminal / Logs" ──────────────────────────────
+        var headerIcon = IconFactory.Create(
+            "Icon.Terminal",
+            (IBrush?)resourceDictionary["SecondaryAccentBrush"],
+            14);
+
         var headerText = new TextBlock
         {
             Text = "Terminal / Logs",
             FontSize = 13,
             FontWeight = FontWeight.Bold,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            Foreground = (IBrush?)resourceDictionary["TextPrimaryBrush"],
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -48,7 +54,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         {
             VerticalAlignment = VerticalAlignment.Center,
             FontSize = 12,
-            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"]
+            Foreground = (IBrush?)resourceDictionary["SecondaryAccentBrush"]
         };
 
         _toggleViewButton = new Button
@@ -64,15 +70,15 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Margin = new Thickness(8, 0, 0, 0)
         };
 
-        _clearButton = BuildToolbarButton("Clear");
-        _restartButton = BuildToolbarButton("Restart");
+        _clearButton = BuildToolbarButton("Icon.Broom", "Clear");
+        _restartButton = BuildToolbarButton("Icon.ArrowClockwise", "Restart");
 
         var leftStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { headerText, _statusText }
+            Children = { headerIcon, headerText, _statusText }
         };
 
         var rightStrip = new StackPanel
@@ -110,7 +116,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             IsVisible = false
         };
 
-        var res = Application.Current!.Resources;
+        var res = resourceDictionary;
 
         // Item template for log entries
         _logListBox.ItemTemplate = new FuncDataTemplate<LogEntry>((entry, _) =>
@@ -233,14 +239,35 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         });
     }
 
-    private static Button BuildToolbarButton(string label) => new()
+    private static Button BuildToolbarButton(string iconKey, string label)
     {
-        Content = label, FontSize = 12, Padding = new Thickness(12, 4, 12, 4),
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-        BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(6),
-        Cursor = new Cursor(StandardCursorType.Hand)
-    };
+        var resources = Application.Current!.Resources;
+        return new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children =
+                {
+                    IconFactory.Create(iconKey, (IBrush?)resources["TextPrimaryBrush"], 12),
+                    new TextBlock
+                    {
+                        Text = label,
+                        FontSize = 12,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            },
+            Padding = new Thickness(10, 4, 10, 4),
+            Background = (IBrush?)resources["SurfacePanelBrush"],
+            Foreground = (IBrush?)resources["TextPrimaryBrush"],
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(6),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+    }
 
     private ContextMenu BuildContextMenu()
     {

@@ -4,6 +4,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
@@ -24,7 +25,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
-    private readonly TextBlock _fileInfoBar;
+    private readonly ContentControl _fileInfoIconHost;
+    private readonly TextBlock _fileInfoText;
 
     // Guard flag: true while the View is pushing text to the editor,
     // preventing OnTextChanged from bouncing it back to the ViewModel.
@@ -68,13 +70,33 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         // M4: Focused file info bar — shows current file name and "diff/edit" indicator.
         // Styled with TextSecondaryBrush for a quieter, utility-focused appearance.
         // Text is updated reactively when the ViewModel changes (see WhenActivated).
-        _fileInfoBar = new TextBlock
+        _fileInfoIconHost = new ContentControl
+        {
+            Content = IconFactory.Create(
+                "Icon.Unknown",
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                12),
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        _fileInfoText = new TextBlock
         {
             Text = "diff/edit",
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             FontSize = 12,
-            Padding = new Thickness(12, 6, 12, 6),
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        var fileInfoBar = new Border
+        {
+            Padding = new Thickness(12, 6, 12, 6),
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _fileInfoIconHost, _fileInfoText }
+            }
         };
 
         // Layout: code area fills star, file info bar at bottom (auto height).
@@ -87,9 +109,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             }
         };
         Grid.SetRow(_textEditor, 0);
-        Grid.SetRow(_fileInfoBar, 1);
+        Grid.SetRow(fileInfoBar, 1);
         layout.Children.Add(_textEditor);
-        layout.Children.Add(_fileInfoBar);
+        layout.Children.Add(fileInfoBar);
 
         Content = layout;
 
@@ -127,7 +149,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
                     {
                         _textEditor.Text = string.Empty;
                         _indentGuideRenderer.IsEnabled = false;
-                        _fileInfoBar.Text = "diff/edit";
+                        _fileInfoIconHost.Content = IconFactory.Create(
+                            "Icon.Unknown",
+                            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                            12);
+                        _fileInfoText.Text = "diff/edit";
                     }
                 }));
 
@@ -209,7 +235,25 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private void UpdateFileInfoBar(EditorViewModel vm)
     {
         var name = string.IsNullOrEmpty(vm.FileName) ? "Untitled" : vm.FileName;
-        _fileInfoBar.Text = $"{name}  —  diff/edit";
+        _fileInfoText.Text = $"{name}  —  diff/edit";
+        _fileInfoIconHost.Content = IconFactory.Create(
+            GetIconKeyForFile(vm.FilePath),
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            12);
+    }
+
+    private static string GetIconKeyForFile(string filePath)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        return ext switch
+        {
+            ".cs" or ".ts" or ".js" or ".jsx" or ".tsx" or ".json" or ".xml" or ".html" or ".css" or ".axaml" => "Icon.Code",
+            ".md" or ".txt" => "Icon.Text",
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" => "Icon.Image",
+            ".sln" or ".slnx" or ".csproj" => "Icon.Project",
+            ".editorconfig" or ".gitignore" or ".yml" or ".yaml" or ".toml" => "Icon.Config",
+            _ => "Icon.Unknown"
+        };
     }
 
     private void OnTextChanged(object? sender, EventArgs e)

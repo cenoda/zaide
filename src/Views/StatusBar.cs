@@ -117,13 +117,13 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             {
                 appNameStack,
                 Separator(),
-                _caretText,
+                BuildStatusSegment("Icon.Selection", _caretText),
                 Separator(),
-                _languageText,
+                BuildStatusSegment("Icon.Code", _languageText),
                 Separator(),
-                _projectText,
+                BuildStatusSegment("Icon.Project", _projectText),
                 Separator(),
-                _branchText
+                BuildStatusSegment("Icon.GitBranch", _branchText)
             }
         };
 
@@ -175,6 +175,24 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             d.Add(ViewModel.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
                 .Subscribe(branch => _branchText.Text = branch));
         });
+    }
+
+    private static StackPanel BuildStatusSegment(string iconKey, TextBlock text)
+    {
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                IconFactory.Create(
+                    iconKey,
+                    (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                    12),
+                text
+            }
+        };
     }
 
     private static string GetLanguageFromFilePath(string? filePath)

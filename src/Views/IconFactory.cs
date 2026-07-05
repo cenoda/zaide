@@ -1,8 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 namespace Zaide.Views;
 
@@ -10,12 +12,16 @@ public static class IconFactory
 {
     public static Viewbox Create(string resourceKey, IBrush? foreground, double size = 16)
     {
+        var geometry = ResolveIconGeometry(resourceKey);
         var path = new Path
         {
-            Data = (Geometry)Application.Current!.Resources[resourceKey]!,
+            Data = geometry,
             Width = 256,
             Height = 256,
-            Fill = foreground,
+            Stroke = foreground,
+            StrokeThickness = 16,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round,
             Stretch = Stretch.Uniform,
             IsHitTestVisible = false
         };
@@ -32,11 +38,25 @@ public static class IconFactory
         };
     }
 
+    private static Geometry ResolveIconGeometry(string resourceKey)
+    {
+        var app = Application.Current
+            ?? throw new InvalidOperationException("Application is not initialized.");
+
+        if (app.TryFindResource(resourceKey, app.ActualThemeVariant, out var value) &&
+            value is Geometry geometry)
+        {
+            return geometry;
+        }
+
+        throw new InvalidOperationException($"Icon resource '{resourceKey}' was not found.");
+    }
+
     public static void SetForeground(Control icon, IBrush? foreground)
     {
         if (icon is Viewbox { Child: Path path })
         {
-            path.Fill = foreground;
+            path.Stroke = foreground;
         }
     }
 }
