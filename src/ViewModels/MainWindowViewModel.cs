@@ -26,6 +26,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private string? _statusText = "Open a folder to begin";
     private CompositeDisposable? _disposables;
     private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
+    private bool _isExplorerMode = true;
+    private bool _isSourceControlMode;
 
 
     public bool IsBottomPanelVisible
@@ -43,11 +45,25 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public LeftPanelMode LeftPanelMode
     {
         get => _leftPanelMode;
-        set => this.RaiseAndSetIfChanged(ref _leftPanelMode, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _leftPanelMode, value);
+            IsExplorerMode = value == LeftPanelMode.Explorer;
+            IsSourceControlMode = value == LeftPanelMode.SourceControl;
+        }
     }
 
-    public bool IsExplorerMode => LeftPanelMode == LeftPanelMode.Explorer;
-    public bool IsSourceControlMode => LeftPanelMode == LeftPanelMode.SourceControl;
+    public bool IsExplorerMode
+    {
+        get => _isExplorerMode;
+        private set => this.RaiseAndSetIfChanged(ref _isExplorerMode, value);
+    }
+
+    public bool IsSourceControlMode
+    {
+        get => _isSourceControlMode;
+        private set => this.RaiseAndSetIfChanged(ref _isSourceControlMode, value);
+    }
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }

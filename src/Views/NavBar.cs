@@ -14,6 +14,8 @@ namespace Zaide.Views;
 /// <summary>
 /// Far-left icon-only vertical nav bar (~40px) for switching between
 /// Explorer and Source Control left-panel modes.
+/// Active icon uses PrimaryAccentBrush; inactive uses TextSecondaryBrush.
+/// Hover shows a #12FFFFFF (7% white) overlay per M0.5 spec.
 /// </summary>
 public class NavBar : Panel, IDisposable
 {
@@ -21,6 +23,10 @@ public class NavBar : Panel, IDisposable
     private readonly Border _sourceControlButton;
     private readonly Border _explorerActiveIndicator;
     private readonly Border _sourceControlActiveIndicator;
+    private readonly TextBlock _explorerIconText;
+    private readonly TextBlock _sourceControlIconText;
+    private readonly Border _explorerHoverOverlay;
+    private readonly Border _sourceControlHoverOverlay;
     private CompositeDisposable? _disposables;
 
     /// <summary>
@@ -65,13 +71,75 @@ public class NavBar : Panel, IDisposable
             IsVisible = false
         };
 
+        // Icon text — starts with Explorer active (PrimaryAccentBrush), SC inactive (TextSecondaryBrush)
+        _explorerIconText = new TextBlock
+        {
+            Text = "\uD83D\uDCC1",
+            FontSize = 16,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"]
+        };
+
+        _sourceControlIconText = new TextBlock
+        {
+            Text = "\uD83D\uDD04",
+            FontSize = 16,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]
+        };
+
+        // Hover overlay: 7% white, fills the icon button area
+        _explorerHoverOverlay = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+            CornerRadius = new CornerRadius(8),
+            IsVisible = false,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+
+        _sourceControlHoverOverlay = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+            CornerRadius = new CornerRadius(8),
+            IsVisible = false,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+
         // Explorer icon button
-        _explorerButton = CreateIconButton("\uD83D\uDCC1", "Explorer");
-        _explorerButton.Child = CreateIconContent("\uD83D\uDCC1", _explorerActiveIndicator);
+        _explorerButton = CreateIconButton("Explorer");
+        _explorerButton.Child = new Panel
+        {
+            Children =
+            {
+                _explorerActiveIndicator,
+                _explorerIconText,
+                _explorerHoverOverlay
+            }
+        };
 
         // Source Control icon button
-        _sourceControlButton = CreateIconButton("\uD83D\uDD04", "Source Control");
-        _sourceControlButton.Child = CreateIconContent("\uD83D\uDD04", _sourceControlActiveIndicator);
+        _sourceControlButton = CreateIconButton("Source Control");
+        _sourceControlButton.Child = new Panel
+        {
+            Children =
+            {
+                _sourceControlActiveIndicator,
+                _sourceControlIconText,
+                _sourceControlHoverOverlay
+            }
+        };
+
+        // Hover enter/exit on explorer button
+        _explorerButton.PointerEntered += (_, _) => { _explorerHoverOverlay.IsVisible = true; };
+        _explorerButton.PointerExited += (_, _) => { _explorerHoverOverlay.IsVisible = false; };
+
+        // Hover enter/exit on source control button
+        _sourceControlButton.PointerEntered += (_, _) => { _sourceControlHoverOverlay.IsVisible = true; };
+        _sourceControlButton.PointerExited += (_, _) => { _sourceControlHoverOverlay.IsVisible = false; };
 
         // Layout: vertical stack of icons centered in the 40px column
         var iconStack = new StackPanel
@@ -119,17 +187,26 @@ public class NavBar : Panel, IDisposable
 
         if (_viewModel is null) return;
 
-        // Update active indicators when mode changes
+        // Update active indicators and icon colors when mode changes
         _disposables.Add(
             _viewModel.WhenAnyValue(x => x.LeftPanelMode)
                 .Subscribe(mode =>
                 {
-                    _explorerActiveIndicator.IsVisible = mode == LeftPanelMode.Explorer;
-                    _sourceControlActiveIndicator.IsVisible = mode == LeftPanelMode.SourceControl;
+                    var isExplorer = mode == LeftPanelMode.Explorer;
+
+                    // Active indicator visibility
+                    _explorerActiveIndicator.IsVisible = isExplorer;
+                    _sourceControlActiveIndicator.IsVisible = !isExplorer;
+
+                    // Icon text color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
+                    _explorerIconText.Foreground = (IBrush?)Application.Current!.Resources[
+                        isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
+                    _sourceControlIconText.Foreground = (IBrush?)Application.Current!.Resources[
+                        !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
                 }));
     }
 
-    private static Border CreateIconButton(string icon, string tooltip)
+    private static Border CreateIconButton(string tooltip)
     {
         var button = new Border
         {
@@ -140,29 +217,6 @@ public class NavBar : Panel, IDisposable
         };
         ToolTip.SetTip(button, tooltip);
         return button;
-    }
-
-    private static Panel CreateIconContent(string icon, Border activeIndicator)
-    {
-        var iconText = new TextBlock
-        {
-            Text = icon,
-            FontSize = 16,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]
-        };
-
-        var panel = new Panel
-        {
-            Children =
-            {
-                activeIndicator,
-                iconText
-            }
-        };
-
-        return panel;
     }
 
     public void Dispose()
