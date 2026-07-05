@@ -121,11 +121,10 @@ public class TownhallChannelPanel : Panel
             Cursor = new Cursor(StandardCursorType.Hand)
         };
 
-        // Active channel highlight
+        // Active channel highlight: tinted background behind readable content
         if (channel.IsActive)
         {
-            row.Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
-            row.Opacity = 0.15;
+            row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
             row.CornerRadius = new CornerRadius(4);
         }
 

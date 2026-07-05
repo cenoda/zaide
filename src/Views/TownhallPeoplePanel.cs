@@ -144,12 +144,55 @@ public class TownhallPeoplePanel : Panel
             VerticalAlignment = VerticalAlignment.Center
         };
 
+        // Status label
+        var statusLabel = new TextBlock
+        {
+            Text = agent.Status switch
+            {
+                AgentStatus.Active => "active",
+                AgentStatus.Busy => "busy",
+                AgentStatus.Idle => "idle",
+                _ => "idle"
+            },
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0)
+        };
+
+        // Role label
+        var roleLabel = new TextBlock
+        {
+            Text = agent.Role,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0)
+        };
+
+        var nameAndMeta = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 0,
+            Children =
+            {
+                nameText,
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 4,
+                    Children = { roleLabel, statusLabel }
+                }
+            }
+        };
+
         var contentStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { avatarPanel, nameText }
+            Children = { avatarPanel, nameAndMeta }
         };
 
         // Warning icon if HasWarning

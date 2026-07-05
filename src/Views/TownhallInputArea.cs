@@ -26,6 +26,11 @@ public class TownhallInputArea : Panel
     public event Action? SendRequested;
 
     /// <summary>
+    /// Fired when the input text changes (for bidirectional draft sync).
+    /// </summary>
+    public event EventHandler? TextChanged;
+
+    /// <summary>
     /// Gets or sets the text in the input field.
     /// </summary>
     public string InputText
@@ -133,6 +138,9 @@ public class TownhallInputArea : Panel
                 TriggerSend();
             }
         };
+
+        // Propagate text changes for bidirectional draft sync
+        _inputField.TextChanged += (_, args) => TextChanged?.Invoke(this, args);
     }
 
     private void TriggerSend()

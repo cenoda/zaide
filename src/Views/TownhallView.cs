@@ -5,10 +5,13 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
+using Zaide.Models;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -27,6 +30,7 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallInputArea _inputArea;
     private CompositeDisposable? _disposables;
+    private ObservableCollection<TownhallMessage>? _currentMessages;
 
     /// <summary>
     /// Gets or sets the ViewModel. When set, wires all reactive bindings.
@@ -205,7 +209,7 @@ public class TownhallView : Panel, IDisposable
         _channelPanel.SetChannels(_viewModel.Channels);
 
         // Populate chat panel with initial messages
-        _chatPanel.SetMessages(_viewModel.Messages);
+        SetChatMessages(_viewModel.Messages);
 
         // Update placeholder text based on active channel
         UpdatePlaceholder();
@@ -216,25 +220,68 @@ public class TownhallView : Panel, IDisposable
                 .Subscribe(_ =>
                 {
                     _channelPanel.SetChannels(_viewModel.Channels);
-                    _chatPanel.SetMessages(_viewModel.Messages);
+                    SetChatMessages(_viewModel.Messages);
                     UpdatePlaceholder();
                 }));
 
-        // React to messages changes (new message sent)
+        // React to Messages reference changes (channel switch replaces the collection).
         _disposables.Add(
             _viewModel.WhenAnyValue(x => x.Messages)
                 .Subscribe(messages =>
                 {
-                    _chatPanel.SetMessages(messages);
+                    SetChatMessages(messages);
                 }));
 
-        // Sync draft changes: when ViewModel drafts changes (e.g., cleared after send), update input
+        // Sync draft changes: when ViewModel draft changes (e.g., cleared after send), update input
         _disposables.Add(
             _viewModel.WhenAnyValue(x => x.DraftText)
                 .Subscribe(draft =>
                 {
                     _inputArea.InputText = draft;
                 }));
+
+        // Wire input TextChanged to push back to ViewModel for bidirectional draft sync
+        _disposables.Add(
+            Observable.FromEventPattern(
+                h => _inputArea.TextChanged += h,
+                h => _inputArea.TextChanged -= h)
+            .Subscribe(_ =>
+            {
+                if (_viewModel is not null)
+                    _viewModel.DraftText = _inputArea.InputText;
+            }));
+    }
+
+    /// <summary>
+    /// Sets the chat messages and subscribes to CollectionChanged for live appends.
+    /// </summary>
+    private void SetChatMessages(ObservableCollection<TownhallMessage>? messages)
+    {
+        // Unsubscribe from previous collection
+        if (_currentMessages is not null)
+        {
+            _currentMessages.CollectionChanged -= OnCurrentMessagesChanged;
+        }
+
+        _currentMessages = messages;
+        if (messages is not null)
+        {
+            _chatPanel.SetMessages(messages);
+        }
+
+        // Subscribe to CollectionChanged for live appends (e.g., SendMessageCommand)
+        if (messages is not null)
+        {
+            messages.CollectionChanged += OnCurrentMessagesChanged;
+        }
+    }
+
+    private void OnCurrentMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (_currentMessages is not null)
+        {
+            _chatPanel.SetMessages(_currentMessages);
+        }
     }
 
     private void UpdatePlaceholder()
@@ -253,6 +300,10 @@ public class TownhallView : Panel, IDisposable
 
     public void Dispose()
     {
+        if (_currentMessages is not null)
+        {
+            _currentMessages.CollectionChanged -= OnCurrentMessagesChanged;
+        }
         _disposables?.Dispose();
         _disposables = null;
     }
