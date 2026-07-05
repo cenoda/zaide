@@ -75,14 +75,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
     public TerminalViewModel TerminalViewModel { get; }
+    public TownhallViewModel TownhallViewModel { get; }
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                EditorTabViewModel editorTabViewModel,
-                               TerminalViewModel terminalViewModel)
+                               TerminalViewModel terminalViewModel,
+                               TownhallViewModel townhallViewModel)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalViewModel = terminalViewModel;
+        TownhallViewModel = townhallViewModel;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();

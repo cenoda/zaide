@@ -1,0 +1,259 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using System;
+using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using ReactiveUI;
+using Zaide.ViewModels;
+
+namespace Zaide.Views;
+
+/// <summary>
+/// Composite Townhall view: the center column of the main window.
+/// Internal structure:
+/// - Left vertical sidebar (~140px): People panel (top) and Channels panel (bottom)
+/// - Right: Chat message area and input area
+/// Matches M3 spec and M0.5 palette.
+/// </summary>
+public class TownhallView : Panel, IDisposable
+{
+    private readonly TownhallPeoplePanel _peoplePanel;
+    private readonly TownhallChannelPanel _channelPanel;
+    private readonly TownhallChatPanel _chatPanel;
+    private readonly TownhallInputArea _inputArea;
+    private CompositeDisposable? _disposables;
+
+    /// <summary>
+    /// Gets or sets the ViewModel. When set, wires all reactive bindings.
+    /// </summary>
+    public TownhallViewModel? ViewModel
+    {
+        get => _viewModel;
+        set
+        {
+            _viewModel = value;
+            WireViewModel();
+        }
+    }
+    private TownhallViewModel? _viewModel;
+
+    public TownhallView()
+    {
+        // --- Left sidebar (people + channels) ---
+        _peoplePanel = new TownhallPeoplePanel
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+        };
+
+        // Vertical separator between people and channels
+        var sidebarSeparator = new Border
+        {
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(12, 0)
+        };
+
+        _channelPanel = new TownhallChannelPanel
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+        };
+
+        // Sidebar: people (top) | separator | channels (bottom)
+        var sidebar = new Grid
+        {
+            Width = 140,
+            MinWidth = 100,
+            RowDefinitions =
+            {
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            },
+            Children =
+            {
+                _peoplePanel,
+                sidebarSeparator,
+                _channelPanel
+            }
+        };
+        Grid.SetRow(sidebarSeparator, 1);
+        Grid.SetRow(_channelPanel, 2);
+
+        // GridSplitter between people and channels sections
+        var sidebarSplitter = new GridSplitter
+        {
+            Height = 4,
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            ResizeDirection = GridResizeDirection.Rows
+        };
+        Grid.SetRow(sidebarSplitter, 1);
+        // Place splitter above the separator visually (same row, but splitter is interactive)
+        sidebar.Children.Add(sidebarSplitter);
+
+        // --- Right side: chat + input ---
+        _chatPanel = new TownhallChatPanel
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+        };
+
+        _inputArea = new TownhallInputArea
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+        };
+
+        var inputSeparator = new Border
+        {
+            Height = 1,
+            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        // Chat area: chat messages (fills) | separator | input area (auto)
+        var chatArea = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto }
+            },
+            Children =
+            {
+                _chatPanel,
+                inputSeparator,
+                _inputArea
+            }
+        };
+        Grid.SetRow(inputSeparator, 1);
+        Grid.SetRow(_inputArea, 2);
+
+        // GridSplitter between sidebar and chat area
+        var sidebarChatSplitter = new GridSplitter
+        {
+            Width = 4,
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeWestEast),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+
+        // Main layout: sidebar | splitter | chat area
+        var mainGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(140), MinWidth = 100 },
+                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+            },
+            Children =
+            {
+                sidebar,
+                sidebarChatSplitter,
+                chatArea
+            }
+        };
+        Grid.SetColumn(sidebarChatSplitter, 1);
+        Grid.SetColumn(chatArea, 2);
+
+        var outerBorder = new Border
+        {
+            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
+            Padding = new Thickness(1, 0, 0, 0),
+            Child = mainGrid
+        };
+
+        Children.Add(outerBorder);
+
+        // Wire input area send event
+        _inputArea.SendRequested += OnSendRequested;
+    }
+
+    private void OnSendRequested()
+    {
+        if (_viewModel is null) return;
+
+        // Sync text from input to ViewModel draft, then send
+        _viewModel.DraftText = _inputArea.InputText;
+        _viewModel.SendMessageCommand.Execute().Subscribe();
+    }
+
+    private void WireViewModel()
+    {
+        _disposables?.Dispose();
+        _disposables = new CompositeDisposable();
+
+        if (_viewModel is null) return;
+
+        // Populate people panel
+        _peoplePanel.SetAgents(_viewModel.Agents);
+
+        // Populate channel panel
+        _channelPanel.SetOnChannelSelected(channelId =>
+        {
+            _viewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+        });
+        _channelPanel.SetChannels(_viewModel.Channels);
+
+        // Populate chat panel with initial messages
+        _chatPanel.SetMessages(_viewModel.Messages);
+
+        // Update placeholder text based on active channel
+        UpdatePlaceholder();
+
+        // React to active channel changes: update channel list highlight and messages
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.ActiveChannelId)
+                .Subscribe(_ =>
+                {
+                    _channelPanel.SetChannels(_viewModel.Channels);
+                    _chatPanel.SetMessages(_viewModel.Messages);
+                    UpdatePlaceholder();
+                }));
+
+        // React to messages changes (new message sent)
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.Messages)
+                .Subscribe(messages =>
+                {
+                    _chatPanel.SetMessages(messages);
+                }));
+
+        // Sync draft changes: when ViewModel drafts changes (e.g., cleared after send), update input
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.DraftText)
+                .Subscribe(draft =>
+                {
+                    _inputArea.InputText = draft;
+                }));
+    }
+
+    private void UpdatePlaceholder()
+    {
+        if (_viewModel?.ActiveChannelId is not null)
+        {
+            var activeChannel = _viewModel.Channels.FirstOrDefault(c => c.IsActive);
+            if (activeChannel is not null)
+            {
+                _inputArea.PlaceholderText = $"Message #{activeChannel.Name}";
+                return;
+            }
+        }
+        _inputArea.PlaceholderText = "Message...";
+    }
+
+    public void Dispose()
+    {
+        _disposables?.Dispose();
+        _disposables = null;
+    }
+}

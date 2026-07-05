@@ -17,14 +17,14 @@ namespace Zaide;
 
 /// <summary>
 /// Main application window. Layout built in C# per DESIGN.md §1.
-/// Refactor 3 M1: nav bar | left-panel mode slot (Explorer/SC) | townhall | editor.
+/// Refactor 3 M3: nav bar | left-panel mode slot (Explorer/SC) | townhall | editor.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
     private readonly Border _sourceControlPlaceholder;
-    private readonly Border _townhallPlaceholder;
+    private readonly TownhallView _townhallView;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -46,8 +46,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-        // === Build Layout (M1: nav bar | left slot | townhall | editor) ===
-        (_navBar, _fileTreeView, _sourceControlPlaceholder, _townhallPlaceholder,
+        // === Build Layout (M3: nav bar | left slot | townhall | editor) ===
+        (_navBar, _fileTreeView, _sourceControlPlaceholder, _townhallView,
          _terminalPanel, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow) = BuildLayout();
 
         // === ReactiveUI Bindings ===
@@ -55,6 +55,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         {
             // Wire NavBar to ViewModel
             _navBar.ViewModel = ViewModel;
+
+            // Wire TownhallView to its ViewModel
+            _townhallView.ViewModel = ViewModel!.TownhallViewModel;
 
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
@@ -184,10 +187,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     }
 
     /// <summary>
-    /// Builds the M1 layout: nav bar | left-panel mode slot | townhall | editor.
+    /// Builds the M3 layout: nav bar | left-panel mode slot | townhall | editor.
     /// Bottom panel spans under center + right only. Status bar slot reserved.
     /// </summary>
-    private (NavBar navBar, FileTreeView fileTreeView, Border scPlaceholder, Border townhallPlaceholder,
+    private (NavBar navBar, FileTreeView fileTreeView, Border scPlaceholder, TownhallView townhallView,
              TerminalPanel terminalPanel, Border bottomPanel, GridSplitter bottomPanelSplitter,
              RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow) BuildLayout()
     {
@@ -268,7 +271,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(leftSplitter, 0);
         grid.Children.Add(leftSplitter);
 
-        // --- Column 3: Center — Townhall ---
+        // --- Column 3: Center — Townhall (real M3 view) ---
         _editorTabBar = new EditorTabBar();
         _editorView = new EditorView();
         _welcomeText = new TextBlock
@@ -280,22 +283,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        var townhallPlaceholder = new Border
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            Child = new TextBlock
-            {
-                Text = "Townhall",
-                Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                FontSize = 18,
-                FontWeight = FontWeight.Bold,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center
-            }
-        };
-        Grid.SetColumn(townhallPlaceholder, 3);
-        Grid.SetRow(townhallPlaceholder, 0);
-        grid.Children.Add(townhallPlaceholder);
+        var townhallView = new TownhallView();
+        Grid.SetColumn(townhallView, 3);
+        Grid.SetRow(townhallView, 0);
+        grid.Children.Add(townhallView);
 
         // --- Column 4: Splitter (townhall ↔ editor) ---
         var rightSplitter = new GridSplitter
@@ -368,7 +359,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanel);
 
         Content = grid;
-        return (navBar, fileTreeView, scPlaceholder, townhallPlaceholder,
+        return (navBar, fileTreeView, scPlaceholder, townhallView,
                 terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow);
     }
 }
