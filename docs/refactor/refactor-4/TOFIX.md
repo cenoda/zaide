@@ -9,13 +9,7 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-### M2 — Pre-existing test failures blocking full test pass
-
-- [ ] **Pre-existing ReactiveUI init failure in 18 tests** — *`src/ViewModels/FileTreeViewModel.cs:231`, all callers in `tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs` and `tests/Zaide.Tests/MainWindowViewModelTests.cs`*
-      `dotnet test Zaide.slnx --no-build` returns `Failed: 18, Passed: 395, Total: 413`. The root cause is `ReactiveUI has not been initialized` thrown from `ReactiveNotifyPropertyChangedMixin..cctor` while the `FileTreeViewModel` constructor calls `WhenAnyValue(...)` in its parameter list.
-      This is **pre-existing** at commit `c971bdd` (the M1 baseline immediately preceding the M2 commit `71396fd`); M2 did not introduce it. Reproduced at the parent commit with the same `18 failed / 395 passed / 413 total` result.
-      The fix is to give `FileTreeViewModelTests` the same `static` constructor pattern that `MainWindowViewModelTests` already uses: `RxAppBuilder.CreateReactiveUIBuilder().BuildApp()` in the type initializer. That fix is out of scope for M2 (typography only) and should be handled in a follow-up commit.
-      Mitigation for M2 verification: the M2-relevant `TextStylesTests` suite passes 18/18 in isolation under the same xUnit collection; the failure is localized to `FileTreeViewModelTests` and a downstream `MainWindowViewModelTests` cascade.
+No open items. M1 and M2 completed.
 
 ---
 
@@ -38,6 +32,10 @@ Convention: see `docs-rules.md` §5.
 - [x] **M2 Typography System completion** — *`src/Styles/TextStyles.cs`, `src/Views/*.cs`, `src/MainWindow.axaml.cs`, `src/Views/UnsavedDialog.axaml`*
       Raw `FontSize=` / `FontWeight=` literals remained on several `TextBlock` instances across the views. The placeholder at `docs/refactor/refactor-4/verification/m2-default.png` was ASCII text, not a real screenshot, and `TOFIX.md` falsely claimed it was done.
       Fix: M2 - Replaced all in-scope `TextBlock` typography literals with `TextStyles.Header/Body/Caption/Brand`, preserved reactive `.Text` mutation for dynamic text, removed the fake placeholder, and captured a real 1280x800 PNG screenshot of the running app.
+
+- [x] **ReactiveUI test initialization gap** — *`tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs`*
+      `dotnet test Zaide.slnx --no-build` failed in 18 tests because `FileTreeViewModelTests` constructed `FileTreeViewModel` without initializing ReactiveUI first, causing `ReactiveNotifyPropertyChangedMixin..cctor` to throw when the view model used `WhenAnyValue(...)`.
+      Fix: Added the same `RxAppBuilder.CreateReactiveUIBuilder().BuildApp()` static test-class initializer pattern already used in `MainWindowViewModelTests`, restoring a green full-suite run.
 
 ---
 
@@ -65,9 +63,10 @@ Convention: see `docs-rules.md` §5.
 | Check | Status |
 |-------|--------|
 | `TextStyles.cs` created with Header, Body, Caption, Brand methods | ✅ DONE |
-| `TextStylesTests.cs` created and passing | ✅ PASS (18/18 tests in isolation) |
+| `TextStylesTests.cs` created and passing | ✅ PASS (18/18) |
 | `TextStylesTests` brush contract verification | ✅ PASS — verifies SolidColorBrush fallback, distinct roles for Header/Body/Caption/Brand, and the navy palette fallback hexes (`#E3E4F4`, `#8B95A5`, `#066ADB`) |
-| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings) |
+| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings / 0 errors) |
+| Full `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (413/413 tests) |
 | Typography literals in view code updated with TextStyles usage | ✅ DONE |
 | VC-4 grep clean except documented intentional exceptions | ✅ PASS |
 | Screenshot at `docs/refactor/refactor-4/verification/m2-default.png` | ✅ DONE (real 1280x800 PNG) |

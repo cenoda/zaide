@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
+using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -11,6 +12,11 @@ namespace Zaide.Tests.ViewModels;
 
 public class FileTreeViewModelTests
 {
+    static FileTreeViewModelTests()
+    {
+        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
+    }
+
     private readonly FileTreeService _service = new();
     private readonly IScheduler _scheduler = CurrentThreadScheduler.Instance;
 
