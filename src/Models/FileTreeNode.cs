@@ -16,6 +16,15 @@ public class FileTreeNode : INotifyPropertyChanged
     public string Name { get; set; } = string.Empty;
     public string FullPath { get; set; } = string.Empty;
     public bool IsDirectory { get; init; }
+
+    /// <summary>
+    /// M3.4: Nesting level relative to the root. Root children have
+    /// <c>Depth = 0</c>; each child directory is one level deeper.
+    /// Set by <c>FileTreeService.EnumerateDirectory</c> and surfaced
+    /// to the view for indent-guide rendering.
+    /// </summary>
+    public int Depth { get; set; }
+
     public ObservableCollection<FileTreeNode> Children { get; } = new();
 
     public bool IsExpanded

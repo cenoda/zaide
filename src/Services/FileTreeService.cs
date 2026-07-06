@@ -39,6 +39,13 @@ public class FileTreeService : IFileTreeService
         if (!Directory.Exists(path))
             throw new DirectoryNotFoundException($"Directory not found: {path}");
 
+        return EnumerateDirectory(path, includeHidden, depth: 0);
+    }
+
+    // M3.4: Recursive overload that tags each node with its nesting
+    // depth so the view can render indent guides per level.
+    private List<FileTreeNode> EnumerateDirectory(string path, bool includeHidden, int depth)
+    {
         var root = new DirectoryInfo(path);
         var nodes = new List<FileTreeNode>();
 
@@ -52,12 +59,13 @@ public class FileTreeService : IFileTreeService
                 Name = dir.Name,
                 FullPath = dir.FullName,
                 IsDirectory = true,
-                IsExpanded = false
+                IsExpanded = false,
+                Depth = depth
             };
 
             try
             {
-                var children = EnumerateDirectory(dir.FullName, includeHidden);
+                var children = EnumerateDirectory(dir.FullName, includeHidden, depth + 1);
                 foreach (var child in children)
                     node.Children.Add(child);
             }
@@ -77,7 +85,8 @@ public class FileTreeService : IFileTreeService
             {
                 Name = file.Name,
                 FullPath = file.FullName,
-                IsDirectory = false
+                IsDirectory = false,
+                Depth = depth
             });
         }
 

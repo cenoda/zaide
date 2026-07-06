@@ -121,4 +121,65 @@ public class FileTreeServiceTests
                 Directory.Delete(root, recursive: true);
         }
     }
+
+    // M3.4: depth tagging
+    [Fact]
+    public void EnumerateDirectory_RootChildren_HaveDepthZero()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid());
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "sub"));
+            File.WriteAllText(Path.Combine(root, "file.txt"), "x");
+
+            var nodes = _service.EnumerateDirectory(root);
+
+            Assert.All(nodes, n => Assert.Equal(0, n.Depth));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void EnumerateDirectory_NestedChildren_HaveIncreasingDepth()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid());
+        try
+        {
+            var level1 = Directory.CreateDirectory(Path.Combine(root, "level1"));
+            var level2 = level1.CreateSubdirectory("level2");
+            var level3 = level2.CreateSubdirectory("level3");
+            File.WriteAllText(Path.Combine(level3.FullName, "deep.txt"), "x");
+            File.WriteAllText(Path.Combine(level2.FullName, "mid.txt"), "x");
+            File.WriteAllText(Path.Combine(level1.FullName, "top.txt"), "x");
+
+            var nodes = _service.EnumerateDirectory(root);
+
+            var level1Node = nodes.First(n => n.Name == "level1");
+            Assert.Equal(0, level1Node.Depth);
+
+            var level2Node = level1Node.Children.First(n => n.Name == "level2");
+            Assert.Equal(1, level2Node.Depth);
+
+            var level3Node = level2Node.Children.First(n => n.Name == "level3");
+            Assert.Equal(2, level3Node.Depth);
+
+            var deepFile = level3Node.Children.First(n => n.Name == "deep.txt");
+            Assert.Equal(3, deepFile.Depth);
+
+            var midFile = level2Node.Children.First(n => n.Name == "mid.txt");
+            Assert.Equal(2, midFile.Depth);
+
+            var topFile = level1Node.Children.First(n => n.Name == "top.txt");
+            Assert.Equal(1, topFile.Depth);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
 }
