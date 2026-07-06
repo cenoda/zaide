@@ -50,6 +50,23 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
+        // M1: Enable backdrop blur via TransparencyLevelHint.
+        // Priority order: AcrylicBlur → Blur → Transparent.
+        // Avalonia picks the first level the platform supports.
+        // - Windows 10/11: AcrylicBlur renders.
+        // - macOS: Blur renders via NSVisualEffectView.
+        // - Linux KDE: Blur renders.
+        // - Linux GNOME / tiling WMs: Falls back to Transparent (no blur).
+        //   In that case, panels use SurfacePanelBrush / SurfaceBaseBrush
+        //   which are near-opaque solid dark colors — the UI still looks
+        //   intentional without blur (DESIGN.md §2 fallback path).
+        TransparencyLevelHint = new[]
+        {
+            WindowTransparencyLevel.AcrylicBlur,
+            WindowTransparencyLevel.Blur,
+            WindowTransparencyLevel.Transparent
+        };
+
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
          _terminalPanel, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();

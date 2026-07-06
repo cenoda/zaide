@@ -9,9 +9,9 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-### ⚠️ Pre-Flight Finding (M0 verification completed)
+### M1 — Backdrop Blur and Elevation Contrast
 
-No open items. M0.5 completed.
+No open items. M1 completed.
 
 ---
 
@@ -49,6 +49,23 @@ No open items. M0.5 completed.
   trail for this refactor.
 - If an item blocks a milestone, flag it in the PR description and
   link back to this file.
+
+---
+
+## M1 Verification Summary (completed)
+
+| Check | Status |
+|-------|--------|
+| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (402/402 tests) |
+| Luminance gate (VC-3): `SurfaceBase(#0A0F19)` → `SurfacePanel(#1A2540)` | ✅ PASS (ΔL* = 10.72 ≥ 8.00) |
+| Luminance gate (VC-3): `SurfaceBase(#0A0F19)` → `SurfaceRaised(#243352)` | ✅ PASS (ΔL* = 17.10 ≥ 8.00) |
+| Screenshot at `m1-default.png` | ✅ Done (captured by user) |
+| `TOFIX.md` updated | ✅ Done |
+| `TransparencyLevelHint` on MainWindow + UnsavedDialog | ✅ Done |
+| Elevation contrast bump applied | ✅ Done |
+| 1px Border separators removed (panel contrast only) | ✅ Done (GridSplitter preserved) |
+| `SurfaceRaisedBrush` applied to all file-tree MenuItems | ✅ Done |
 
 ---
 

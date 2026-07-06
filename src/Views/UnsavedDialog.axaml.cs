@@ -16,6 +16,17 @@ public partial class UnsavedDialog : Window
     {
         InitializeComponent();
 
+        // M1.5: Enable backdrop blur on the dialog window.
+        // Priority order matches MainWindow: AcrylicBlur → Blur → Transparent.
+        // On platforms without compositor support, falls back to a solid
+        // SurfaceRaisedBrush background (no blur, still looks intentional).
+        TransparencyLevelHint = new[]
+        {
+            WindowTransparencyLevel.AcrylicBlur,
+            WindowTransparencyLevel.Blur,
+            WindowTransparencyLevel.Transparent
+        };
+
         SaveButton.Click += OnSave;
         DontSaveButton.Click += OnDontSave;
         CancelButton.Click += OnCancel;

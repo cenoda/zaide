@@ -114,19 +114,33 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             )
         };
 
+        // M1.5: Helper to create a MenuItem with SurfaceRaisedBrush background.
+        MenuItem CreateStyledMenuItem(string header)
+        {
+            return new MenuItem
+            {
+                Header = header,
+                Background = (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"]
+            };
+        }
+
         // M3: Context Menu for tree nodes
+        // M1.5: All MenuItems get SurfaceRaisedBrush background so the popup reads
+        // as an elevated layer against SurfacePanelBrush underneath.
+        // MenuFlyout popup blur is platform-dependent and out of scope; the
+        // solid-background MenuItems ensure the menu looks intentional without blur.
         var contextMenu = new MenuFlyout();
-        var openItem = new MenuItem { Header = "Open" };
+        var openItem = CreateStyledMenuItem("Open");
         openItem.Click += (_, _) =>
         {
             if (_treeView.SelectedItem is FileTreeNode selected && !selected.IsDirectory)
                 ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
         };
 
-        var expandAllItem = new MenuItem { Header = "Expand All" };
+        var expandAllItem = CreateStyledMenuItem("Expand All");
         expandAllItem.Click += (_, _) => ViewModel!.ExpandAllCommand.Execute().Subscribe();
 
-        var collapseAllItem = new MenuItem { Header = "Collapse All" };
+        var collapseAllItem = CreateStyledMenuItem("Collapse All");
         collapseAllItem.Click += (_, _) => ViewModel!.CollapseAllCommand.Execute().Subscribe();
 
         contextMenu.Items.Add(openItem);
@@ -135,7 +149,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         // M1: New File / New Folder
         contextMenu.Items.Add(new Separator());
-        var newFileItem = new MenuItem { Header = "New File" };
+        var newFileItem = CreateStyledMenuItem("New File");
         newFileItem.Click += async (_, _) =>
         {
             var parentDir = GetParentDirForCreation();
@@ -150,7 +164,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
         contextMenu.Items.Add(newFileItem);
 
-        var newFolderItem = new MenuItem { Header = "New Folder" };
+        var newFolderItem = CreateStyledMenuItem("New Folder");
         newFolderItem.Click += async (_, _) =>
         {
             var parentDir = GetParentDirForCreation();
@@ -167,18 +181,15 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         // M2: Show Hidden Files toggle
         contextMenu.Items.Add(new Separator());
-        var showHiddenItem = new MenuItem
-        {
-            Header = "Show Hidden Files",
-            ToggleType = MenuItemToggleType.CheckBox
-        };
+        var showHiddenItem = CreateStyledMenuItem("Show Hidden Files");
+        showHiddenItem.ToggleType = MenuItemToggleType.CheckBox;
         // Bind IsChecked to ShowHiddenFiles via WhenActivated below
         showHiddenItem.Click += (_, _) => ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
         contextMenu.Items.Add(showHiddenItem);
 
         // M3: Copy Path / Copy Relative Path
         contextMenu.Items.Add(new Separator());
-        var copyPathItem = new MenuItem { Header = "Copy Path" };
+        var copyPathItem = CreateStyledMenuItem("Copy Path");
         copyPathItem.Click += (_, _) =>
         {
             if (_treeView.SelectedItem is FileTreeNode selected)
@@ -186,7 +197,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
         contextMenu.Items.Add(copyPathItem);
 
-        var copyRelativePathItem = new MenuItem { Header = "Copy Relative Path" };
+        var copyRelativePathItem = CreateStyledMenuItem("Copy Relative Path");
         copyRelativePathItem.Click += (_, _) =>
         {
             if (_treeView.SelectedItem is FileTreeNode selected)

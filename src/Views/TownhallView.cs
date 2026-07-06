@@ -54,21 +54,15 @@ public class TownhallView : Panel, IDisposable
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
         };
 
-        // Vertical separator between people and channels
-        var sidebarSeparator = new Border
-        {
-            Height = 1,
-            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = new Thickness(12, 0)
-        };
-
         _channelPanel = new TownhallChannelPanel
         {
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
         };
 
-        // Sidebar: people (top) | separator | channels (bottom)
+        // Sidebar: people (top) | channels (bottom)
+        // M1.4: Removed 1px Border separator; panels are separated by background
+        // contrast against the SurfaceBaseBrush window background instead.
+        // The interactive GridSplitter between sections is preserved.
         var sidebar = new Grid
         {
             MinWidth = 100,
@@ -82,14 +76,12 @@ public class TownhallView : Panel, IDisposable
             Children =
             {
                 _peoplePanel,
-                sidebarSeparator,
                 _channelPanel
             }
         };
-        Grid.SetRow(sidebarSeparator, 1);
         Grid.SetRow(_channelPanel, 2);
 
-        // GridSplitter between people and channels sections
+        // GridSplitter between people and channels sections (preserved — M1.4 only removes the 1px Border separator, not the interactive splitter)
         var sidebarSplitter = new GridSplitter
         {
             Height = 4,
@@ -100,7 +92,6 @@ public class TownhallView : Panel, IDisposable
             ResizeDirection = GridResizeDirection.Rows
         };
         Grid.SetRow(sidebarSplitter, 1);
-        // Place splitter above the separator visually (same row, but splitter is interactive)
         sidebar.Children.Add(sidebarSplitter);
 
         // --- Right side: chat + input ---
