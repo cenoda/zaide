@@ -41,7 +41,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
     public FileTreeView()
     {
-        Padding = new Thickness(16);
+        Padding = LayoutTokens.Uniform(LayoutTokens.SpacingLg);
 
         // --- Header (clickable folder path) ---
         _headerIcon = IconFactory.Create(
@@ -51,7 +51,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         _headerText = TextStyles.Caption("Open Folder...");
         _headerText.Cursor = new Cursor(StandardCursorType.Hand);
-        _headerText.Margin = new Thickness(6, 0, 0, 8);
+        _headerText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs, 0, 0, LayoutTokens.SpacingSm);
         _headerText.VerticalAlignment = VerticalAlignment.Center;
 
         _headerText.PointerPressed += async (_, _) =>
@@ -165,7 +165,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     var content = new StackPanel
                     {
                         Orientation = Orientation.Horizontal,
-                        Spacing = 6,
+                        Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
                         VerticalAlignment = VerticalAlignment.Center,
                         Children = { icon, tb }
                     };
@@ -180,7 +180,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         Orientation = Orientation.Horizontal,
                         VerticalAlignment = VerticalAlignment.Stretch,
                         HorizontalAlignment = HorizontalAlignment.Left,
-                        Spacing = 0
+                        Spacing = LayoutTokens.SpacingNone
                     };
                     // M3.4: pull the spacing token into a typed local so
                     // we do not unbox a possibly-null object.
@@ -193,7 +193,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         {
                             Width = 1,
                             Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
-                            Margin = new Thickness(0, 2, spacingSm - 1, 2)
+                            // M5-allow: The 1px compensation keeps the 1px guide centered inside an 8px depth slot.
+                            Margin = LayoutTokens.Inset(0, LayoutTokens.SpacingXxs, spacingSm - 1, LayoutTokens.SpacingXxs)
                         });
                     }
 
@@ -215,7 +216,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                             new ColumnDefinition(GridLength.Auto), // indent guides
                             new ColumnDefinition(GridLength.Star)  // icon + text
                         },
-                        Margin = new Thickness(0)
+                        Margin = LayoutTokens.NoneThickness
                     };
                     Grid.SetColumn(activeStrip, 0);
                     Grid.SetColumn(indentStrip, 1);
@@ -230,7 +231,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     var rowBorder = new Border
                     {
                         Background = rowBackground,
-                        Padding = new Thickness(4, 2, 8, 2),
+                        Padding = LayoutTokens.Inset(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
                         Child = rowGrid
                     };
                     // M3.2: 150ms brush transition on the row's Background.
@@ -408,7 +409,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 Children = { _headerIcon, _headerText }
             },
             [DockPanel.DockProperty] = Dock.Top,
-            Padding = new Thickness(0, 0, 0, 4),
+            Padding = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingXs),
             BorderBrush = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             BorderThickness = new Thickness(0, 0, 0, 1)
         };
@@ -574,16 +575,16 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         {
             PlaceholderText = prompt,
             MinWidth = 300,
-            Margin = new Thickness(8)
+            Margin = LayoutTokens.Uniform(LayoutTokens.SpacingSm)
         };
 
-        var okButton = new Button { Content = "OK", Margin = new Thickness(4) };
-        var cancelButton = new Button { Content = "Cancel", Margin = new Thickness(4) };
+        var okButton = new Button { Content = "OK", Margin = LayoutTokens.Uniform(LayoutTokens.SpacingXs) };
+        var cancelButton = new Button { Content = "Cancel", Margin = LayoutTokens.Uniform(LayoutTokens.SpacingXs) };
         var buttonPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-            Margin = new Thickness(0, 0, 8, 8),
+            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm),
             Children = { okButton, cancelButton }
         };
 
@@ -591,7 +592,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         {
             Children =
             {
-                new TextBlock { Text = prompt, Margin = new Thickness(8, 8, 8, 0) },
+                new TextBlock { Text = prompt, Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, 0) },
                 textBox,
                 buttonPanel
             }

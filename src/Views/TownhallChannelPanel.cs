@@ -26,12 +26,12 @@ public class TownhallChannelPanel : Panel
     public TownhallChannelPanel()
     {
         var header = TextStyles.Header("Channels");
-        header.Margin = new Thickness(12, 12, 12, 4);
+        header.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
 
         _channelList = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 0
+            Spacing = LayoutTokens.SpacingNone
         };
 
         var scrollViewer = new ScrollViewer
@@ -86,7 +86,7 @@ public class TownhallChannelPanel : Panel
         var contentStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 4,
+            Spacing = LayoutTokens.SpacingXs,
             VerticalAlignment = VerticalAlignment.Center,
             Children = { nameText }
         };
@@ -98,13 +98,13 @@ public class TownhallChannelPanel : Panel
                 "Icon.Pin",
                 (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
                 12);
-            pinIcon.Margin = new Thickness(4, 0, 0, 0);
+            pinIcon.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
             contentStack.Children.Add(pinIcon);
         }
 
         var row = new Border
         {
-            Padding = new Thickness(12, 6, 12, 6),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = contentStack,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
@@ -113,7 +113,7 @@ public class TownhallChannelPanel : Panel
         if (channel.IsActive)
         {
             row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
-            row.CornerRadius = new CornerRadius(4);
+            row.CornerRadius = LayoutTokens.RadiusSm;
         }
 
         // Hover effect
@@ -122,7 +122,7 @@ public class TownhallChannelPanel : Panel
             if (!channel.IsActive)
             {
                 row.Background = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
-                row.CornerRadius = new CornerRadius(4);
+                row.CornerRadius = LayoutTokens.RadiusSm;
             }
         };
         row.PointerExited += (_, _) =>
@@ -130,7 +130,7 @@ public class TownhallChannelPanel : Panel
             if (!channel.IsActive)
             {
                 row.Background = null;
-                row.CornerRadius = new CornerRadius(0);
+                row.CornerRadius = LayoutTokens.NoneRadius;
             }
         };
 

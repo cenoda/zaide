@@ -12,6 +12,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
 using Zaide.Models;
+using Zaide.Styles;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -165,7 +166,8 @@ public class TownhallView : Panel, IDisposable
         var outerBorder = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
-            Padding = new Thickness(1, 0, 0, 0),
+            // M5-allow: M1 introduced the 1px left seam so the Townhall surface stays visually separated.
+            Padding = LayoutTokens.Inset(1, 0, 0, 0),
             Child = mainGrid
         };
 

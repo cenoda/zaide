@@ -52,13 +52,13 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         {
             Content = "Logs",
             FontSize = 12,
-            Padding = new Thickness(8, 2, 8, 2),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand),
-            Margin = new Thickness(8, 0, 0, 0)
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0)
         };
 
         _clearButton = BuildToolbarButton("Icon.Broom", "Clear");
@@ -67,7 +67,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         var leftStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
+            Spacing = LayoutTokens.SpacingSm,
             VerticalAlignment = VerticalAlignment.Center,
             Children = { headerIcon, headerText, _statusText }
         };
@@ -75,7 +75,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         var rightStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 4,
+            Spacing = LayoutTokens.SpacingXs,
             HorizontalAlignment = HorizontalAlignment.Right,
             Children = { _toggleViewButton, _clearButton, _restartButton }
         };
@@ -95,7 +95,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         var toolbar = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
-            Padding = new Thickness(16, 6, 16, 6),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = toolbarGrid
         };
 
@@ -125,7 +125,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 
             var tagBlock = TextStyles.Caption(entry.Tag);
             tagBlock.Foreground = tagColor;
-            tagBlock.Margin = new Thickness(0, 0, 4, 0);
+            tagBlock.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0);
 
             var contentBlock = TextStyles.Body(entry.Content);
             contentBlock.TextWrapping = TextWrapping.NoWrap;
@@ -134,7 +134,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             var row = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 4,
+                Spacing = LayoutTokens.SpacingXs,
                 Children = { tagBlock, contentBlock }
             };
 
@@ -145,7 +145,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                     "Icon.Warning",
                     (IBrush)res["WarningBrush"]!,
                     14);
-                warningIcon.Margin = new Thickness(0, 0, 2, 0);
+                warningIcon.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXxs, 0);
                 row.Children.Insert(0, warningIcon);
             }
 
@@ -230,7 +230,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Content = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 6,
+                Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
                 VerticalAlignment = VerticalAlignment.Center,
                 Children =
                 {
@@ -238,11 +238,11 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                     labelText
                 }
             },
-            Padding = new Thickness(10, 4, 10, 4),
+            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm + LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs, LayoutTokens.SpacingSm + LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs),
             Background = (IBrush?)resources["SurfacePanelBrush"],
             Foreground = (IBrush?)resources["TextPrimaryBrush"],
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -19,6 +20,7 @@ namespace Zaide.Views;
 /// </summary>
 public class StatusBar : ReactiveUserControl<MainWindowViewModel>
 {
+    private static readonly ICommand StatusSegmentCommand = ReactiveCommand.Create(() => { });
     private readonly TextBlock _caretText;
     private readonly TextBlock _languageText;
     private readonly TextBlock _projectText;
@@ -35,9 +37,9 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             14);
 
-         var appNameText = TextStyles.Brand("Zaide");
+        var appNameText = TextStyles.Brand("Zaide");
         appNameText.VerticalAlignment = VerticalAlignment.Center;
-        appNameText.Margin = new Thickness(4, 0, 0, 0);
+        appNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
         // Caret position (dynamic text)
         _caretText = TextStyles.Caption("");
@@ -54,42 +56,30 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         // AI model (right-aligned, static text)
         var modelText = TextStyles.Caption("powered by Avisnis 12");
         modelText.HorizontalAlignment = HorizontalAlignment.Right;
-        modelText.Margin = new Thickness(0, 0, 12, 0);
+        modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
+        modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
-        // Separator
-        TextBlock Separator() => new()
-        {
-            Text = "│",
-            Foreground = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 8, 0)
-        };
-
-        // Left-aligned stack: app name | caret | language | project | branch
-        var appNameStack = new StackPanel
+        // Left-aligned stack: app name caret language project branch
+        var appNameButton = BuildStatusSegmentButton(new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 0, 0),
             Children = { appNameIcon, appNameText }
-        };
+        });
 
         var leftStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
+            Spacing = LayoutTokens.SpacingMd,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, 0, 0),
             Children =
             {
-                appNameStack,
-                Separator(),
-                BuildStatusSegment("Icon.Selection", _caretText),
-                Separator(),
-                BuildStatusSegment("Icon.Code", _languageText),
-                Separator(),
-                BuildStatusSegment("Icon.Project", _projectText),
-                Separator(),
-                BuildStatusSegment("Icon.GitBranch", _branchText)
+                appNameButton,
+                BuildStatusSegmentButton("Icon.Selection", _caretText),
+                BuildStatusSegmentButton("Icon.Code", _languageText),
+                BuildStatusSegmentButton("Icon.Project", _projectText),
+                BuildStatusSegmentButton("Icon.GitBranch", _branchText)
             }
         };
 
@@ -143,12 +133,12 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         });
     }
 
-    private static StackPanel BuildStatusSegment(string iconKey, TextBlock text)
+    private static Button BuildStatusSegmentButton(string iconKey, TextBlock text)
     {
-        return new StackPanel
+        return BuildStatusSegmentButton(new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 4,
+            Spacing = LayoutTokens.SpacingXs,
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
@@ -158,7 +148,39 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
                     12),
                 text
             }
+        });
+    }
+
+    private static Button BuildStatusSegmentButton(Control content)
+    {
+        var button = new Button
+        {
+            Content = content,
+            Command = StatusSegmentCommand,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
+            CornerRadius = LayoutTokens.RadiusSm,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
         };
+
+        var hoverBrush = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
+        var pressedBrush = new SolidColorBrush(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF));
+
+        button.PointerEntered += (_, _) =>
+        {
+            if (!button.IsPressed)
+            {
+                button.Background = hoverBrush;
+            }
+        };
+        button.PointerExited += (_, _) => button.Background = Brushes.Transparent;
+        button.PointerPressed += (_, _) => button.Background = pressedBrush;
+        button.PointerReleased += (_, _) =>
+            button.Background = button.IsPointerOver ? hoverBrush : Brushes.Transparent;
+
+        return button;
     }
 
     private static string GetLanguageFromFilePath(string? filePath)

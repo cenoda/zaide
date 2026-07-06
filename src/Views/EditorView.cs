@@ -85,11 +85,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
 
         var fileInfoBar = new Border
         {
-            Padding = new Thickness(12, 6, 12, 6),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 6,
+                Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
                 VerticalAlignment = VerticalAlignment.Center,
                 Children = { _fileInfoIconHost, _fileInfoText }
             }

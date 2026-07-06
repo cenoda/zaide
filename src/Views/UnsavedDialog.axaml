@@ -8,13 +8,13 @@
         CanResize="False"
         ShowInTaskbar="False">
 
-    <StackPanel Margin="20" Spacing="16">
+    <StackPanel Margin="{StaticResource SpacingXl}" Spacing="{StaticResource SpacingLg}">
         <TextBlock x:Name="MessageText"
                    TextWrapping="Wrap" />
 
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right"
-                    Spacing="8">
+                    Spacing="{StaticResource SpacingSm}">
             <Button x:Name="SaveButton" Content="Save" Width="90" />
             <Button x:Name="DontSaveButton" Content="Don't Save" Width="90" />
             <Button x:Name="CancelButton" Content="Cancel" Width="90" />

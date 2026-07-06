@@ -9,7 +9,7 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-No open items. M1, M2, M3, and M4 completed.
+No open items. M1, M2, M3, M4, and M5 completed.
 
 ---
 
@@ -63,6 +63,14 @@ No open items. M1, M2, M3, and M4 completed.
       - `docs/refactor/refactor-4/verification/m4-grouped-capture.png` — supporting copy of the same focused M4 capture.
       Intentional verification note:
       - The M4 screenshot was captured from a focused Townhall verification window composed from the live M4 controls under Xvfb so VC-7 grouping and VC-8 input growth could be proven in one frame without starting any M5/M6 chrome work. No M5/M6 behavior or styling was introduced.
+
+- [x] **M5 Status bar + spacing density** — *`src/Views/StatusBar.cs`, `src/Styles/LayoutTokens.cs`, `src/Views/**/*.cs`, `src/MainWindow.axaml.cs`, `src/Views/UnsavedDialog.axaml`*
+      The status bar still rendered static `TextBlock` segments separated by literal `│` glyphs, the model credit sat at the same visual hierarchy as the actionable segments, and the M5 spacing grep still found raw `Margin` / `Padding` / numeric `Spacing` literals across the live view surface.
+      Fix: Converted the actionable status segments in `StatusBar.cs` to borderless `Button` controls with no-op stub commands plus subtle hover/press backgrounds, removed every literal `│`, kept the far-right `powered by Avisnis 12` credit as a muted 11px `TextBlock`, and added `LayoutTokens.cs` so the M5 spacing/radius audit could replace the remaining raw layout literals across the in-scope C# views and `UnsavedDialog.axaml` with shared token references. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `469/469` tests pass.
+      Verification artifacts:
+      - `docs/refactor/refactor-4/verification/m5-default.png` — real 1280x800 PNG capture of the live app after the M5 status-bar and spacing pass.
+      - `grep -n '│' src/Views/StatusBar.cs` — zero matches.
+      - M5 spacing grep — only tokenized `UnsavedDialog.axaml` lines remain because the broad regex also matches XAML token references.
 
 ---
 
@@ -194,6 +202,36 @@ src/Views/TerminalPanel.cs:54:            FontSize = 12,
 | VC-7 (grouping) | ✅ PASS |
 | VC-8 (multi-line input up to 5 lines) | ✅ PASS |
 | Screenshot at `m4-default.png` | ✅ DONE |
+
+---
+
+## M5 Verification Summary (completed)
+
+| Check | Status |
+|-------|--------|
+| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings / 0 errors) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (469/469 tests) |
+| M5.1: actionable status segments use `Button` controls | ✅ DONE |
+| M5.1: status buttons are borderless at idle with subtle hover/press background | ✅ DONE |
+| M5.2: literal `│` separators removed from `StatusBar.cs` | ✅ PASS (`grep -n '│' src/Views/StatusBar.cs` → no matches) |
+| M5.3: `powered by Avisnis 12` stays a right-aligned 11px muted `TextBlock` | ✅ DONE |
+| M5.4: spacing/radius audit applied across in-scope views + `MainWindow.axaml.cs` + `UnsavedDialog.axaml` | ✅ DONE |
+| VC-9 (status bar segments are `Button` controls) | ✅ PASS |
+| VC-10 (no `│` in `StatusBar.cs`) | ✅ PASS |
+| VC-11 (spacing grep audited; remaining hits are token references only) | ✅ PASS |
+| Screenshot at `m5-default.png` | ✅ DONE |
+
+### Remaining VC-11 grep hits
+
+```
+src/Views/UnsavedDialog.axaml:11:    <StackPanel Margin="{StaticResource SpacingXl}" Spacing="{StaticResource SpacingLg}">
+src/Views/UnsavedDialog.axaml:17:                    Spacing="{StaticResource SpacingSm}">
+```
+
+| File:Line | Why it remains |
+|-----------|----------------|
+| `UnsavedDialog.axaml:11` | Broad regex match only. Both `Margin` and `Spacing` already point at `SpacingXl` / `SpacingLg` token references, so this is compliant M5 token usage rather than a raw literal. |
+| `UnsavedDialog.axaml:17` | Broad regex match only. `Spacing` already points at the `SpacingSm` token reference, so this is compliant M5 token usage rather than a raw literal. |
 
 ---
 

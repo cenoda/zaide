@@ -8,6 +8,7 @@ using ReactiveUI;
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using Zaide.Styles;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -55,7 +56,7 @@ public class NavBar : Panel, IDisposable
             Width = 3,
             Height = 20,
             Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            CornerRadius = new CornerRadius(2),
+            CornerRadius = LayoutTokens.RadiusSm,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
@@ -67,7 +68,7 @@ public class NavBar : Panel, IDisposable
             Width = 3,
             Height = 20,
             Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            CornerRadius = new CornerRadius(2),
+            CornerRadius = LayoutTokens.RadiusSm,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
@@ -87,7 +88,7 @@ public class NavBar : Panel, IDisposable
         _explorerHoverOverlay = new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = LayoutTokens.RadiusMd,
             IsVisible = false,
             IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -97,7 +98,7 @@ public class NavBar : Panel, IDisposable
         _sourceControlHoverOverlay = new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = LayoutTokens.RadiusMd,
             IsVisible = false,
             IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -142,7 +143,7 @@ public class NavBar : Panel, IDisposable
             Orientation = Orientation.Vertical,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 4,
+            Spacing = LayoutTokens.SpacingXs,
             Children =
             {
                 _explorerButton,
@@ -226,7 +227,7 @@ public class NavBar : Panel, IDisposable
             Width = 32,
             Height = 32,
             Background = Brushes.Transparent,
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = LayoutTokens.RadiusMd,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
         ToolTip.SetTip(button, tooltip);

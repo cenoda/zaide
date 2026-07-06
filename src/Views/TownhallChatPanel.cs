@@ -27,7 +27,7 @@ public class TownhallChatPanel : Panel
         _messageList = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 0
+            Spacing = LayoutTokens.SpacingNone
         };
 
         _scrollViewer = new ScrollViewer
@@ -92,7 +92,7 @@ public class TownhallChatPanel : Panel
 
             var timestamp = TextStyles.Caption(FormatTimestamp(message.Timestamp));
             timestamp.VerticalAlignment = VerticalAlignment.Center;
-            timestamp.Margin = new Thickness(6, 0, 0, 0);
+            timestamp.Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs, 0, 0, 0);
 
             var senderMeta = new StackPanel
             {
@@ -106,10 +106,10 @@ public class TownhallChatPanel : Panel
                 Name = "MessageHeaderRow",
                 ColumnDefinitions =
                 {
-                    new ColumnDefinition { Width = new GridLength(28) },
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-                },
-                Margin = new Thickness(0, 0, 0, 2),
+                new ColumnDefinition { Width = new GridLength(28) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+            },
+                Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingXxs),
                 Children = { avatar, senderMeta }
             };
             Grid.SetColumn(senderMeta, 1);
@@ -130,12 +130,12 @@ public class TownhallChatPanel : Panel
                 (IBrush?)Application.Current!.Resources["WarningBrush"],
                 14);
             warningIcon.VerticalAlignment = VerticalAlignment.Top;
-            warningIcon.Margin = new Thickness(0, 0, 4, 0);
+            warningIcon.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0);
 
             contentStack = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 4,
+                Spacing = LayoutTokens.SpacingXs,
                 Children = { warningIcon, contentText }
             };
         }
@@ -149,14 +149,18 @@ public class TownhallChatPanel : Panel
         }
 
         // Indent content past avatar
-        contentStack.Margin = new Thickness(36, 0, 0, 0);
+        contentStack.Margin = LayoutTokens.Inset(
+            LayoutTokens.SpacingXxl + LayoutTokens.SpacingMd,
+            0,
+            0,
+            0);
         messageContainer.Children.Add(contentStack);
 
         var row = new Border
         {
             Padding = renderHeader
-                ? new Thickness(16, 12, 16, 4)
-                : new Thickness(16, 2, 16, 4),
+                ? LayoutTokens.Inset(LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingXs)
+                : LayoutTokens.Inset(LayoutTokens.SpacingLg, LayoutTokens.SpacingXxs, LayoutTokens.SpacingLg, LayoutTokens.SpacingXs),
             Child = messageContainer
         };
 
@@ -164,7 +168,7 @@ public class TownhallChatPanel : Panel
         if (message.Type == TownhallMessageType.Warning)
         {
             row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0xFC, 0xBB, 0x47));
-            row.CornerRadius = new CornerRadius(8);
+            row.CornerRadius = LayoutTokens.RadiusMd;
         }
 
         return row;

@@ -331,7 +331,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            Margin = new Thickness(1, 0, 0, 0),
+            // M5-allow: M1 introduced the 1px panel seam as a visual divider, not semantic spacing.
+            Margin = LayoutTokens.Inset(1, 0, 0, 0),
             Children =
             {
                 _editorTabBar,
@@ -369,8 +370,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var bottomPanel = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            Padding = new Thickness(0),
-            Margin = new Thickness(0, 1, 0, 0),
+            Padding = LayoutTokens.NoneThickness,
+            // M5-allow: M1 introduced the 1px top seam above the bottom panel to preserve the raised-layer split.
+            Margin = LayoutTokens.Inset(0, 1, 0, 0),
             Child = terminalPanel
         };
         bottomPanel.IsVisible = false;

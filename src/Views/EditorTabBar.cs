@@ -64,7 +64,7 @@ public partial class EditorTabBar : UserControl
         _tabsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 0
+            Spacing = LayoutTokens.SpacingNone
         };
 
         // Resolve brushes now — safe because the constructor only runs when
@@ -95,7 +95,7 @@ public partial class EditorTabBar : UserControl
         _townhallLink = TextStyles.Body("Shared in #townhall");
         _townhallLink.Foreground = (IBrush?)Application.Current?.Resources["SecondaryAccentBrush"];
         _townhallLink.VerticalAlignment = VerticalAlignment.Center;
-        _townhallLink.Margin = new Thickness(12, 0, 12, 0);
+        _townhallLink.Margin = LayoutTokens.Horizontal(LayoutTokens.SpacingMd);
         _townhallLink.IsVisible = false;
 
         // Layout: tabs scroll on the left, link label on the right.
@@ -240,7 +240,7 @@ public partial class EditorTabBar : UserControl
             [!TextBlock.TextProperty] = new Avalonia.Data.Binding("DisplayName"),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 8, 0),
+            Margin = LayoutTokens.Horizontal(LayoutTokens.SpacingSm),
             MaxWidth = 200
         };
         label.DataContext = vm;
@@ -256,12 +256,12 @@ public partial class EditorTabBar : UserControl
             Height = 20,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 4, 0),
+            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0),
             Background = Brushes.Transparent,
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand),
             Opacity = 0,
-            Padding = new Thickness(4),
+            Padding = LayoutTokens.Uniform(LayoutTokens.SpacingXs),
             Child = closeGlyph
         };
 
@@ -302,7 +302,7 @@ public partial class EditorTabBar : UserControl
             Background = _inactiveTabBrush,
             BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
             BorderThickness = new Thickness(0, 0, 1, 0),
-            Padding = new Thickness(0),
+            Padding = LayoutTokens.NoneThickness,
             MinHeight = 36,
             Cursor = new Cursor(StandardCursorType.Hand),
             HorizontalAlignment = HorizontalAlignment.Left

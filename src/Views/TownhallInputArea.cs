@@ -66,7 +66,7 @@ public class TownhallInputArea : Panel
             MaxLines = 5,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
-            Padding = new Thickness(12, 8, 12, 8)
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm)
         };
 
         // Send button (arrow icon)
@@ -80,12 +80,12 @@ public class TownhallInputArea : Panel
         {
             Width = 32,
             Height = 32,
-            CornerRadius = new CornerRadius(9999),
+            CornerRadius = LayoutTokens.RadiusFull,
             Background = (IBrush?)Application.Current?.Resources["PrimaryAccentBrush"] ?? new SolidColorBrush(Color.Parse("#066ADB")),
             Child = sendIcon,
             Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0),
             RenderTransformOrigin = RelativePoint.Center,
             RenderTransform = new ScaleTransform(1, 1)
         };
@@ -95,7 +95,7 @@ public class TownhallInputArea : Panel
         {
             Width = 28,
             Height = 28,
-            CornerRadius = new CornerRadius(9999),
+            CornerRadius = LayoutTokens.RadiusFull,
             Child = CreateIconOrFallback(
                 "Icon.Plus",
                 "+",
@@ -103,7 +103,7 @@ public class TownhallInputArea : Panel
                 14),
             Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 4, 0)
+            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0)
         };
 
         // Layout: [+ button] [input field (fills)] [send button]
@@ -120,7 +120,11 @@ public class TownhallInputArea : Panel
         inputRow.Children.Add(_sendButton);
 
         var hintLabel = TextStyles.Caption("⏎ to send · ⇧⏎ for newline");
-        hintLabel.Margin = new Thickness(32, 4, 0, 0);
+        hintLabel.Margin = LayoutTokens.Inset(
+            LayoutTokens.SpacingXxl + LayoutTokens.SpacingSm,
+            LayoutTokens.SpacingXs,
+            0,
+            0);
 
         var contentStack = new StackPanel
         {
@@ -134,7 +138,7 @@ public class TownhallInputArea : Panel
 
         var container = new Border
         {
-            Padding = new Thickness(8),
+            Padding = LayoutTokens.Uniform(LayoutTokens.SpacingSm),
             Child = contentStack
         };
 

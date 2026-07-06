@@ -38,8 +38,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         var header = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            Margin = new Thickness(12, 16, 12, 8),
+            Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Children =
             {
                 IconFactory.Create(
@@ -54,7 +54,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _branchSelector = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = new Thickness(12, 0, 12, 12),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd),
             PlaceholderText = "Select branch",
             Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
             Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
@@ -63,23 +63,23 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 
         // --- Unstaged Changes Header ---
         _unstagedHeader = TextStyles.Caption("Unstaged Changes");
-        _unstagedHeader.Margin = new Thickness(12, 4, 12, 4);
+        _unstagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
 
         // --- Unstaged Changes List ---
         _unstagedList = new ItemsControl
         {
-            Margin = new Thickness(0)
+            Margin = LayoutTokens.NoneThickness
         };
         _unstagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: false);
 
         // --- Staged Section Header ---
         _stagedHeader = TextStyles.Caption("Staged Changes");
-        _stagedHeader.Margin = new Thickness(12, 8, 12, 4);
+        _stagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
 
         // --- Staged Changes List ---
         _stagedList = new ItemsControl
         {
-            Margin = new Thickness(0)
+            Margin = LayoutTokens.NoneThickness
         };
         _stagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: true);
 
@@ -89,7 +89,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             PlaceholderText = "Commit message...",
             AcceptsReturn = false,
             Height = 32,
-            Margin = new Thickness(12, 8, 12, 4),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
             Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
             Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
             BorderThickness = new Thickness(0),
@@ -101,7 +101,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         {
             Content = "Commit Staged",
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = new Thickness(12, 4, 12, 16),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingLg),
             Height = 30,
             Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
@@ -206,7 +206,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             {
                 Width = 20,
                 Height = 20,
-                CornerRadius = new CornerRadius(4),
+                CornerRadius = LayoutTokens.RadiusSm,
                 Child = statusText
             };
 
@@ -218,7 +218,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             // File path
             var filePath = TextStyles.Body(change.FilePath);
             filePath.VerticalAlignment = VerticalAlignment.Center;
-            filePath.Margin = new Thickness(6, 0, 0, 0);
+            filePath.Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs, 0, 0, 0);
 
             // Stage/Unstage button
             var stageButton = new Button
@@ -227,7 +227,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 Width = 20,
                 Height = 20,
                 FontSize = 12,
-                Padding = new Thickness(0),
+                Padding = LayoutTokens.NoneThickness,
                 Background = Brushes.Transparent,
                 Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
                 BorderThickness = new Thickness(0),
@@ -260,7 +260,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                     new ColumnDefinition { Width = new GridLength(24) }
                 },
-                Margin = new Thickness(12, 4, 12, 4),
+                Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
                 Children =
                 {
                     statusIcon,

@@ -31,7 +31,7 @@ public static class TownhallAvatarFactory
         {
             Width = size,
             Height = size,
-            CornerRadius = new CornerRadius(9999),
+            CornerRadius = LayoutTokens.RadiusFull,
             Background = new LinearGradientBrush
             {
                 StartPoint = new RelativePoint(0.5, 0, RelativeUnit.Relative),
@@ -49,8 +49,9 @@ public static class TownhallAvatarFactory
         {
             Width = size - 2,
             Height = size - 2,
-            Margin = new Thickness(1),
-            CornerRadius = new CornerRadius(9999),
+            // M5-allow: The avatar ring is inset by 1px so the stroke stays fully inside the circular fill.
+            Margin = LayoutTokens.Uniform(1),
+            CornerRadius = LayoutTokens.RadiusFull,
             BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(Color.FromArgb(
                 0x4D,
@@ -64,13 +65,14 @@ public static class TownhallAvatarFactory
         {
             Width = statusDotSize,
             Height = statusDotSize,
-            CornerRadius = new CornerRadius(9999),
+            CornerRadius = LayoutTokens.RadiusFull,
             Background = statusBrush,
             BorderThickness = new Thickness(1),
             BorderBrush = surfaceBrush,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 1, 1),
+            // M5-allow: The status dot uses a 1px offset so its outline tucks into the avatar edge cleanly.
+            Margin = LayoutTokens.Inset(0, 0, 1, 1),
             IsHitTestVisible = false
         };
 

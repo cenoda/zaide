@@ -24,8 +24,8 @@ public class TownhallPeoplePanel : Panel
         var header = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 4,
-            Margin = new Thickness(12, 16, 12, 8),
+            Spacing = LayoutTokens.SpacingXs,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Children =
             {
                 TextStyles.Header("People"),
@@ -39,7 +39,7 @@ public class TownhallPeoplePanel : Panel
         _agentList = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Spacing = 0
+            Spacing = LayoutTokens.SpacingNone
         };
 
         var scrollViewer = new ScrollViewer
@@ -100,25 +100,25 @@ public class TownhallPeoplePanel : Panel
             _ => "idle"
         });
         statusLabel.VerticalAlignment = VerticalAlignment.Center;
-        statusLabel.Margin = new Thickness(4, 0, 0, 0);
+        statusLabel.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
         // Role label
         var roleLabel = TextStyles.Caption(agent.Role);
         roleLabel.VerticalAlignment = VerticalAlignment.Center;
-        roleLabel.Margin = new Thickness(4, 0, 0, 0);
+        roleLabel.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
         var nameAndMeta = new StackPanel
         {
             Orientation = Orientation.Vertical,
             VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 0,
+            Spacing = LayoutTokens.SpacingNone,
             Children =
             {
                 nameText,
                 new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Spacing = 4,
+                    Spacing = LayoutTokens.SpacingXs,
                     Children = { roleLabel, statusLabel }
                 }
             }
@@ -127,7 +127,7 @@ public class TownhallPeoplePanel : Panel
         var contentStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
+            Spacing = LayoutTokens.SpacingSm,
             VerticalAlignment = VerticalAlignment.Center,
             Children = { avatarPanel, nameAndMeta }
         };
@@ -139,13 +139,13 @@ public class TownhallPeoplePanel : Panel
                 "Icon.Warning",
                 (IBrush?)Application.Current!.Resources["WarningBrush"],
                 14);
-            warningIcon.Margin = new Thickness(4, 0, 0, 0);
+            warningIcon.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
             contentStack.Children.Add(warningIcon);
         }
 
         var row = new Border
         {
-            Padding = new Thickness(12, 8, 12, 8),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Child = contentStack,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
@@ -154,12 +154,12 @@ public class TownhallPeoplePanel : Panel
         row.PointerEntered += (_, _) =>
         {
             row.Background = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
-            row.CornerRadius = new CornerRadius(4);
+            row.CornerRadius = LayoutTokens.RadiusSm;
         };
         row.PointerExited += (_, _) =>
         {
             row.Background = null;
-            row.CornerRadius = new CornerRadius(0);
+            row.CornerRadius = LayoutTokens.NoneRadius;
         };
 
         return row;
