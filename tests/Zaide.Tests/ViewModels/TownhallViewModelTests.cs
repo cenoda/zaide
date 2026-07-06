@@ -322,7 +322,7 @@ public class TownhallViewModelTests
 
         // Verify Messages collection now references the other channel's messages
         // ai-status channel should have 1 message with "System check complete"
-        Assert.Equal(1, vm.Messages.Count);
+        Assert.Single(vm.Messages);
         Assert.Contains("System check complete", vm.Messages[0].Content);
 
         // Switch back to initial channel and verify messages are restored

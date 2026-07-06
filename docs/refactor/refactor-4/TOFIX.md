@@ -11,18 +11,19 @@ Convention: see `docs-rules.md` §5.
 
 ### ⚠️ Pre-Flight Finding (M0 verification completed)
 
-- [ ] **Palette mismatch - gray VS Code-like vs navy tokens** — *`src/App.axaml`*
-      The current palette (`#1E1E1E`, `#252526`, `#181818`, `#0E6AEB`, `#5B94F5`) is gray VS Code-like, not the navy tokens documented in DESIGN.md §7.
-      Expected by plan: `SurfaceBaseBrush=#0A0F19`, `PrimaryAccentBrush=#066ADB`, etc.
-      Fix hint: M0.5-A - re-apply the navy palette from DESIGN.md §7 to App.axaml.
-
-- [ ] **Missing Spacing/Radius tokens** — *`src/App.axaml`*
-      Only color brushes exist; no `Spacing*` or `Radius*` resource keys documented in Refactor 3 M0.5.
-      Fix hint: M0.5-B - add the `Spacing*` and `Radius*` resource keys to App.axaml.
+No open items. M0.5 completed.
 
 ---
 
 ## Resolved Items
+
+- [x] **Palette mismatch - gray VS Code-like vs navy tokens** — *`src/App.axaml`*
+      The current palette (`#1E1E1E`, `#252526`, `#181818`, `#0E6AEB`, `#5B94F5`) was gray VS Code-like, not the navy tokens documented in DESIGN.md §7.
+      Fix: M0.5-A - Replaced all 12 palette colors with DESIGN.md §7 navy values (`SurfaceBaseBrush=#0A0F19`, `PrimaryAccentBrush=#066ADB`, etc.)
+
+- [x] **Missing Spacing/Radius tokens** — *`src/App.axaml`*
+      Only color brushes existed; no `Spacing*` or `Radius*` resource keys documented in Refactor 3 M0.5.
+      Fix: M0.5-B - Added 7 spacing tokens (`SpacingXxs`, `SpacingXs`, `SpacingSm`, `SpacingMd`, `SpacingLg`, `SpacingXl`, `SpacingXxl`) and 5 radius tokens (`RadiusSm`, `RadiusMd`, `RadiusLg`, `RadiusXl`, `RadiusFull`)
 
 - [x] **M0 verification artifacts captured** — *`docs/refactor/refactor-4/verification/`*
       Baseline build log, test results, and both required screenshots (`m0-default.png`, `m0-min.png`) were captured. M0 verification is complete.
@@ -64,39 +65,5 @@ Convention: see `docs-rules.md` §5.
 
 ---
 
-## Findings
-
-### Palette Colors - Gray VS Code Theme, Not Navy
-
-Live palette in `src/App.axaml`:
-- `PrimaryAccentBrushColor`: `#0E6AEB` (VS Code blue)
-- `SurfaceBaseBrushColor`: `#1E1E1E` (VS Code dark)
-- `SurfacePanelBrushColor`: `#252526` (VS Code lighter gray)
-- `PanelDeepBrushColor`: `#181818` (darker VS Code)
-
-Plan assumption (M0.5):
-- `PrimaryAccentBrush`: `#066ADB` ("Ayaka Blue" per DESIGN.md)
-- `SurfaceBaseBrush`: `#0A0F19` (near-black navy)
-- `SurfacePanelBrush`: `#0B121D` (lighter navy)
-
-**Impact:** M1 onward requires navy palette. Must be fixed before M1 starts.
-
-### Missing Spacing and Radius Tokens
-
-Only color resources exist in `App.axaml`. No spacing tokens (`SpacingXs`, `SpacingSm`, `SpacingMd`, etc.) or radius tokens (`RadiusSm`, `RadiusMd`, `RadiusLg`) are defined.
-
-**Impact:** M3 (file tree polish), M5 (status bar density), and other milestones depend on these tokens.
-
-### Warning Baseline Drift
-
-The captured M0 build baseline is clean (`0 warnings`), recorded in
-`docs/refactor/refactor-4/verification/m0-warnings.txt`.
-
-Earlier audit snapshots intermittently showed `xUnit2013` at
-`TownhallViewModelTests.cs:325`, so this refactor should continue to
-treat that warning as a possible regression to fix in place rather than
-as an allowed baseline.
-
----
-
 *Last updated: 2026-07-06*
+
