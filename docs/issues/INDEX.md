@@ -6,6 +6,7 @@
 | 002 | Editor shows blank content after opening file from tree | BUG | critical | closed |
 | 003 | Tab close button (×) never appears on hover | BUG | medium | closed |
 | 004 | Shared icons render invisible across non-nav surfaces | BUG | high | closed |
+| 005 | `dotnet test` hangs under redirected output | BUG | high | closed |
 
 ---
 
