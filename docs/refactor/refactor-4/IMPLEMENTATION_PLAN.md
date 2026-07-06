@@ -129,7 +129,7 @@ M0 (verification) and M1 (backdrop blur).
 |---|---|---|---|
 | Palette colors in `App.axaml` are gray VS Code-like (`#1E1E1E`, `#252526`, `#181818`, `#0E6AEB`, `#5B94F5`, etc.) — not the navy tokens documented in `docs/DESIGN.md` §7. | Plan assumes the Refactor 3 M0.5 palette is already live. | M0.5-A: re-apply the navy palette from DESIGN.md §7 to `App.axaml`. **This is a precondition for VC-3.** |
 | `Spacing*` / `Radius*` tokens do not exist in `App.axaml`. Only color brushes are defined. | Plan says they were defined in Refactor 3 M0.5. | M0.5-B: add the `Spacing*` and `Radius*` resource keys from Refactor 3 M0.5 to `App.axaml`. **This is a precondition for VC-11 and M5.** |
-| `dotnet build Zaide.slnx` currently emits **1 warning** at `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` — an `xUnit2013` analyzer warning on the line `Assert.Equal(1, vm.Messages.Count);`. The xUnit analyzer wants `Assert.Single(vm.Messages);` instead. | Plan's exit gate is "zero warnings." | M0.5-C **fixes the warning in place** at the start of the refactor: change `Assert.Equal(1, vm.Messages.Count);` to `Assert.Single(vm.Messages);`. The sibling `Assert.Equal(2, vm.Messages.Count);` at line 331 does **not** trigger the same warning (xUnit2013 only flags `Count == 0` / `Count == 1` patterns, where `Assert.Empty` / `Assert.Single` apply); leave line 331 alone. After the fix, the baseline is empty and the gate remains "no new warnings." M0 captures the pre-fix baseline to `verification/m0-warnings.txt` for the audit trail. |
+| `dotnet build Zaide.slnx` currently emits **0 warnings / 0 errors** on the live M0 verification run. Earlier audit snapshots intermittently recorded 1 `xUnit2013` analyzer warning at `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` on `Assert.Equal(1, vm.Messages.Count);`, but the sequential M0 baseline capture finished clean. | Plan's exit gate is "zero warnings." | M0.5-C becomes a **standing procedure, not a precondition**: if the `xUnit2013` warning reappears during Refactor 4, treat it as a regression and fix it in place (`Assert.Equal(1, vm.Messages.Count);` → `Assert.Single(vm.Messages);`). Do not re-bake that warning into the baseline. The captured M0 baseline at `verification/m0-warnings.txt` is the source of truth. |
 | `TownhallInputArea` already has `AcceptsReturn=true`, `TextWrapping=Wrap`, `MaxHeight=96`, padding, and Enter-to-send. It is **not** a single-line `TextBox`. | Plan's M4 says "replace the single-line TextBox." | M4 rewritten: finish the multi-line behavior (`MaxLines=5`, hint text, tests), not replace. |
 | `FileIconKeyResolver` already groups many extensions into shared icons (`Icon.Code` for `.cs/.ts/.js/.json/.axaml/...`). `Icons.axaml` defines `Icon.Folder`, `Icon.Code`, `Icon.Text`, `Icon.Image`, `Icon.Config`, `Icon.Markup`, `Icon.Project`, `Icon.Unknown` — **no `Icon.File` key exists.** | Plan's M3 says "fall back to `Icon.File`." | M3 rewritten: keep resolver's shared-icon grouping (per-category is a single colored glyph, not per-extension), and use `Icon.Unknown` as the fallback (it exists). |
 | `MainWindow.axaml.cs:283-290` and `src/Views/UnsavedDialog.axaml:11-22` contain `FontSize=`, `FontWeight=`, `Margin=`, and `Padding=` literals. | Plan's VC-4 and VC-11 only scan `src/Views/`. | VC-4 and VC-11 expanded to scan `src/MainWindow.axaml.cs` and `src/Views/*.axaml` as well. |
@@ -162,7 +162,7 @@ These are objective pass/fail gates evaluated at M7 sign-off.
 | VC-10 | Status bar no longer contains the `│` character | Run `grep -n '│' src/Views/StatusBar.cs`, expect zero matches |
 | VC-11 | All panel padding, margin, and `Spacing` values reference `Spacing*` tokens by key, not numeric literals (except inside `TextStyles`, the token definitions in `App.axaml`, and `// M5-allow: ...` justified lines) | Run `grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness|Spacing\s*=\s*[0-9]+|Margin\s*=\s*"|Padding\s*=\s*"|Spacing\s*=\s*"' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and audit each hit. The pattern now covers both C# (`Spacing = 4`, `Spacing = 0`) and XAML (`Spacing="4"`, `Spacing="16"`) literals. The earlier scan missed `MainWindow.axaml.cs:321,360`, `UnsavedDialog.axaml:11`, and **all C# `Spacing = <int>` literals** (e.g. `TownhallPeoplePanel.cs:26`, `TownhallChannelPanel.cs:39`, `FileTreeView.cs:92`). M0.5 adds the missing tokens, M5 performs the audit. |
 | VC-12 | Every animation uses 150–200ms duration with `CubicEaseOut` / `CubicEaseIn` easing (no `Linear`, no instant jump cuts) | Run the positive-allowlist guard at `tools/check-animations.sh` (provided in M6). It greps for: (a) `new LinearEase(` outside `src/Views/Animations.cs`; (b) `new Animation\s*\{` outside the helper; (c) raw Avalonia transition types (`DoubleTransition`, `BrushTransition`, `TransformOperationsTransition`, `ThicknessTransition`, `IntegerTransition`, `VectorTransition`) outside the helper; (d) raw `Transitions\s*\{` collections outside the helper; (e) inside the helper, every `TimeSpan.FromMilliseconds(<n>)` must have `150 <= n <= 200`. **The guard does NOT flag `TimeSpan.FromMilliseconds(...)` used as a timer or `Throttle` argument** (e.g. the 530ms cursor blink and 100ms resize debounce). Expected: zero hits. |
-| VC-13 | All existing tests still pass: `dotnet test Zaide.slnx`. Build emits **no new warnings** versus the M0 baseline file. **The M0 baseline is 1 warning** — `xUnit2013` at `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` (acknowledged in M0.5-C). M0.5-C fixes it in place, after which the post-M0.5 baseline is empty. If a different warning re-emerges during Refactor 4, fix the source rather than rebasing the baseline. | Run the test command, expect zero failures. Run `dotnet build` and diff the warning list against `verification/m0-warnings.txt` (the captured M0 baseline of 1 warning). |
+| VC-13 | All existing tests still pass: `dotnet test Zaide.slnx`. Build emits **no new warnings** versus the M0 baseline file. **The current M0 baseline is empty (0 warnings / 0 errors)** per the captured M0 verification run. If a warning appears later in Refactor 4, fix the source rather than rebasing the baseline. | Run the test command, expect zero failures. Run `dotnet build` and diff the warning list against `verification/m0-warnings.txt` (the captured M0 baseline file). |
 | VC-14 | No new files in `src/Views/` that bypass the typography / spacing token system (spot-check the diff) | Code review at M7 |
 
 ---
@@ -212,7 +212,7 @@ Each milestone's exit check should produce, where applicable:
 | Milestone | Description | Exit Signal | Status |
 |-----------|-------------|-------------|--------|
 | M0 | Baseline verification + before screenshots | Build/tests green; baseline screenshots captured; **drift audit appended to PR description** | ⬜ Not started |
-| M0.5 | Baseline reconciliation | Navy palette + `Spacing*`/`Radius*` tokens live in `App.axaml`; `xUnit2013` warning at `TownhallViewModelTests.cs:325` fixed (`Assert.Equal(1, vm.Messages.Count);` → `Assert.Single(vm.Messages);`); baseline post-M0.5 is empty; gate is "no new warnings" | ⬜ Not started |
+| M0.5 | Baseline reconciliation | Navy palette + `Spacing*`/`Radius*` tokens live in `App.axaml`; warnings baseline remains clean; if `xUnit2013` reappears, it is fixed in place rather than rebased; gate is "no new warnings" | ⬜ Not started |
 | M1 | Backdrop blur + elevation contrast | `Window.TransparencyLevelHint` set; `SurfacePanelBrush` / `PanelDeepBrush` bumped; `tools/check-luminance.csx` confirms `ΔL\* ≥ 8`; fallback path documented | ⬜ Not started |
 | M2 | Typography system (TextStyles) | `TextStyles` helper exists; all views use it; 3 weights × 4 sizes applied consistently; section headers visibly different from body text | ⬜ Not started |
 | M3 | File tree polish | Per-file-type colored icons rendered; hover state visible; active row has `PrimaryAccentBrush` left border; indent guides visible | ⬜ Not started |
@@ -228,7 +228,7 @@ Each milestone's exit check should produce, where applicable:
 | Milestone | Files Created | Files Modified |
 |-----------|---------------|----------------|
 | M0 | `docs/refactor/refactor-4/verification/m0-default.png`, `m0-min.png` | — (verification only) |
-| M0.5 | `tools/check-luminance.csx` (placeholder; populated in M1) | `src/App.axaml` (apply navy palette from DESIGN.md §7; add `Spacing*` and `Radius*` resource keys); `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` (fix `xUnit2013` warning: `Assert.Equal(1, vm.Messages.Count);` → `Assert.Single(vm.Messages);`); this plan file (gate change reflected in M0/M7 exit conditions and VC-13) |
+| M0.5 | `tools/check-luminance.csx` (placeholder; populated in M1) | `src/App.axaml` (apply navy palette from DESIGN.md §7; add `Spacing*` and `Radius*` resource keys); this plan file (gate change reflected in M0/M7 exit conditions and VC-13). If `xUnit2013` reappears at `TownhallViewModelTests.cs:325`, fix it in place instead of rebasing the baseline. |
 | M1 | `tools/check-luminance.csx` (CIELAB L\* comparator — see M1.3) | `src/MainWindow.axaml.cs` (set `TransparencyLevelHint`), `src/Views/UnsavedDialog.axaml.cs` (set `TransparencyLevelHint` on the dialog window — see M1.5), `src/App.axaml` (bump `SurfacePanelBrush`, `PanelDeepBrush`, add solid-color fallback brush), `src/Views/TownhallView.cs` (replace 1px `Border` separator with background contrast), `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs` (background tokens). File-tree `MenuFlyout` (in `FileTreeView.cs`) is left flat-dark with a styled `Background` on `MenuItem`; popup-window blur is platform-dependent and out of scope (see M1.5). |
 | M2 | `src/Styles/TextStyles.cs` (helper class) | Every `src/Views/*.cs`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` that creates a `TextBlock` with `FontSize=` / `FontWeight=` literals — replace with `TextStyles.Body(...)`, `TextStyles.Header(...)`, `TextStyles.Caption(...)`, `TextStyles.Brand(...)` (e.g. `MainWindow.axaml.cs:283-290` and `UnsavedDialog.axaml:11-22`) |
 | M2-T | `tests/Zaide.Tests/Views/TextStylesTests.cs` (style helper unit tests) | — |
@@ -253,13 +253,12 @@ Before changing any code:
 
 - [ ] `dotnet build Zaide.slnx` baseline is captured to
       `docs/refactor/refactor-4/verification/m0-warnings.txt`. The
-      **current baseline is 1 warning** — `xUnit2013` at
-      `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` on
-      `Assert.Equal(1, vm.Messages.Count);`. The xUnit analyzer wants
-      `Assert.Single(vm.Messages);`. The gate is "no new warnings
-      beyond this baseline" (see VC-13). M0.5-C fixes the warning in
-      M0.5; the post-M0.5 baseline is empty and stays empty through
-      M7 unless a regression re-introduces one.
+      **current baseline is 0 warnings / 0 errors** on the live M0
+      verification run. The gate is "no new warnings beyond this
+      baseline" (see VC-13). If the intermittent `xUnit2013` warning at
+      `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`
+      reappears later, M0.5-C treats it as a regression fix, not a new
+      allowed baseline.
 - [ ] `dotnet test Zaide.slnx --no-build` passes with zero failures
 - [ ] Capture a baseline screenshot at default window size →
       `docs/refactor/refactor-4/verification/m0-default.png`
@@ -340,20 +339,22 @@ wrap them at use site:
 The exact XAML form is implementation detail; the **gate** is that
 M5's spacing audit (VC-11) can reference the tokens by name.
 
-#### M0.5-C — Fix the xUnit2013 warning at `TownhallViewModelTests.cs:325`
+#### M0.5-C — Warning-regression procedure (`xUnit2013` if it reappears)
 
-The current build emits **1 `xUnit2013` warning** at
-`tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`. The
-flagged line is:
+The live M0 verification run captured a **clean baseline**
+(`0 Warning(s) / 0 Error(s)`) in
+`docs/refactor/refactor-4/verification/m0-warnings.txt`.
+
+However, earlier audit snapshots intermittently reported an
+`xUnit2013` warning at
+`tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` on:
 
 ```csharp
 Assert.Equal(1, vm.Messages.Count);
 ```
 
-The xUnit analyzer (`xUnit2013` — "Use equality assertions on
-collections") wants the call rewritten to `Assert.Single(...)` so
-the assertion checks the collection directly rather than its `Count`.
-The fix:
+If that warning reappears during Refactor 4, treat it as a regression
+to fix in place:
 
 ```csharp
 // before
@@ -367,15 +368,10 @@ Assert.Single(vm.Messages);
 does **not** trigger the same warning — the analyzer only flags
 `Assert.Equal(<int>, <IEnumerable>.Count)` when the expected count is
 `0` or `1` (where it can be replaced by `Assert.Empty` / `Assert.Single`
-semantically). Leave line 331 alone.
+semantically). Leave line 331 alone unless a future analyzer message
+proves otherwise.
 
-After the fix, `dotnet build Zaide.slnx` should report
-`0 Warning(s) / 0 Error(s)`. Re-capture the baseline to
-`verification/m0-warnings.txt` (now empty) and from M0.5 onwards the
-gate is "no warnings" (which is equivalent to "no new warnings" once
-the baseline is empty).
-
-If, during Refactor 4, a new warning appears:
+If, during Refactor 4, a warning appears:
 
 1. **Do not bake it into the baseline.** Treat the warning as a
    regression to fix, not a target to allowlist.
@@ -1105,10 +1101,11 @@ match reality.
 #### M7.1 — Full regression
 
 - [ ] `dotnet build Zaide.slnx` passes with **no new warnings**
-      versus the M0 baseline file. The M0 baseline is 1 warning
-      (`xUnit2013` at `TownhallViewModelTests.cs:325`); M0.5-C fixes
-      it. The post-M0.5 baseline is empty and stays empty through
-      M7 (see M0.5-C and VC-13).
+      versus the M0 baseline file. The captured M0 baseline is clean
+      (`0 Warning(s) / 0 Error(s)`). If `xUnit2013` at
+      `TownhallViewModelTests.cs:325` reappears, M0.5-C treats it as a
+      regression fix rather than a rebased baseline (see M0.5-C and
+      VC-13).
 - [ ] `dotnet test Zaide.slnx --no-build` passes with zero failures
 - [ ] `tools/check-luminance.csx` exits 0 (VC-3)
 - [ ] `tools/check-animations.sh` exits 0 (VC-12)
