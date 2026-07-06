@@ -98,30 +98,37 @@ public class FileIconKeyResolverTests
     }
 
     /// <summary>
-    /// CanM3.1 guarantee: every supported text-file extension from
-    /// <see cref="SupportedFileTypes"/> resolves to a non-null icon key.
-    /// This is the canary for the per-category mapping. It does not
-    /// assert the specific category (some extensions are not yet
-    /// categorized), only that the resolver returns *something*.
+    /// M3.1 canary: every extension in the editor's supported set
+    /// (<see cref="SupportedFileTypes.AllSupportedExtensions"/>) must
+    /// resolve to a non-null icon key. This is what guarantees the
+    /// file tree never renders a blank icon for a known-supported
+    /// file. We read the extension list from the source of truth so
+    /// this test cannot silently drift if SupportedFileTypes changes.
     /// </summary>
     [Fact]
     public void GetIconKey_ResolvesNonNull_ForEverySupportedExtension()
     {
-        // Build a set of "file<ext>" for every supported extension.
-        // The resolver is intentionally per-category, so the test is
-        // restricted to a non-null, non-empty string — not a specific key.
-        var supportedExts = new[]
-        {
-            ".cs", ".json", ".md", ".txt", ".xml", ".axaml", ".csproj",
-            ".sln", ".slnx", ".props", ".targets", ".config",
-            ".gitignore", ".gitattributes", ".yml", ".yaml", ".css", ".html",
-            ".js", ".ts", ".fs", ".vb", ".xaml", ".resx", ".razor", ".cshtml", ".svg"
-        };
-
-        foreach (var ext in supportedExts)
+        // Iterate the live editor policy. The test fails the day
+        // someone adds an extension to SupportedFileTypes that the
+        // resolver does not yet cover.
+        foreach (var ext in SupportedFileTypes.AllSupportedExtensions)
         {
             var key = FileIconKeyResolver.GetIconKey("file" + ext, isDirectory: false);
             Assert.False(string.IsNullOrEmpty(key), $"Resolver returned null/empty for {ext}");
         }
+    }
+
+    /// <summary>
+    /// Companion to the canary above: the same iteration must also
+    /// return a non-empty key for the empty / unknown-extension case.
+    /// </summary>
+    [Fact]
+    public void GetIconKey_ResolvesNonNull_ForUnknownAndEmptyInputs()
+    {
+        Assert.Equal("Icon.Unknown", FileIconKeyResolver.GetIconKey("README", isDirectory: false));
+        Assert.Equal("Icon.Unknown", FileIconKeyResolver.GetIconKey("file.exe", isDirectory: false));
+        Assert.Equal("Icon.Unknown", FileIconKeyResolver.GetIconKey("noext", isDirectory: false));
+        Assert.Equal("Icon.Unknown", FileIconKeyResolver.GetIconKey(string.Empty, isDirectory: false));
+        Assert.Equal("Icon.Unknown", FileIconKeyResolver.GetIconKey(null, isDirectory: false));
     }
 }

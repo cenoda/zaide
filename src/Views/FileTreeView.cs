@@ -7,6 +7,8 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
@@ -230,6 +232,23 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         Background = rowBackground,
                         Padding = new Thickness(4, 2, 8, 2),
                         Child = rowGrid
+                    };
+                    // M3.2: 150ms brush transition on the row's Background.
+                    // Per the M3.2 spec, the hover fade must be 150ms
+                    // (DESIGN.md §4 / M6.2 single animation budget). A
+                    // BrushTransition on the Border's Background animates
+                    // automatically when the hover handler swaps the brush.
+                    // This is the standard Avalonia path — no custom
+                    // animation helper is required, and it keeps the fade
+                    // in the M6 budget when the helper lands in M6.
+                    rowBorder.Transitions = new Transitions
+                    {
+                        new BrushTransition
+                        {
+                            Property = Border.BackgroundProperty,
+                            Duration = TimeSpan.FromMilliseconds(150),
+                            Easing = new CubicEaseOut()
+                        }
                     };
                     // M3.3: tag the row so RepaintAllFileTreeRows can find
                     // it by walking the visual tree. The Tag holds the

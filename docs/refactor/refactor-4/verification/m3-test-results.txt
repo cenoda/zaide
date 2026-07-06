@@ -4,4 +4,4 @@ VSTest version 18.0.2-dev (x64)
 Starting test execution, please wait...
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   459, Skipped:     0, Total:   459, Duration: 5 s - Zaide.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:   460, Skipped:     0, Total:   460, Duration: 5 s - Zaide.Tests.dll (net10.0)

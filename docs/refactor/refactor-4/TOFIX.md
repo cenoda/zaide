@@ -37,15 +37,23 @@ No open items. M1, M2, and M3 completed.
       `dotnet test Zaide.slnx --no-build` failed in 18 tests because `FileTreeViewModelTests` constructed `FileTreeViewModel` without initializing ReactiveUI first, causing `ReactiveNotifyPropertyChangedMixin..cctor` to throw when the view model used `WhenAnyValue(...)`.
       Fix: Added the same `RxAppBuilder.CreateReactiveUIBuilder().BuildApp()` static test-class initializer pattern already used in `MainWindowViewModelTests`, restoring a green full-suite run.
 
-- [x] **M3 File Tree Polish** — *`src/Views/FileTreeView.cs`, `src/Views/FileIconKeyResolver.cs`, `src/Views/IconFactory.cs`, `src/Models/FileTreeNode.cs`, `src/Services/FileTreeService.cs`, `tests/Zaide.Tests/Views/FileIconKeyResolverTests.cs`, `tests/Zaide.Tests/Services/FileTreeServiceTests.cs`*
+- [x] **M3 File Tree Polish** — *`src/Views/FileTreeView.cs`, `src/Views/FileIconKeyResolver.cs`, `src/Views/IconFactory.cs`, `src/Models/FileTreeNode.cs`, `src/Services/FileTreeService.cs`, `src/Services/SupportedFileTypes.cs`, `tests/Zaide.Tests/Views/FileIconKeyResolverTests.cs`, `tests/Zaide.Tests/Services/FileTreeServiceTests.cs`*
       The file tree read as a flat dark rectangle: monochrome icons, no hover, no active-row accent, no visible indent guides, and no depth indication. Per the M3 plan, four concerns had to land together without regressing selection, expand/collapse, context menu, or file-open behavior.
-      Fix: M3 — Applied the per-category brush mapping in `FileTreeView` (Code→PrimaryAccent, Text→SecondaryAccent, Image→Warning, Config→Idle, Project→Success, Markup→PrimaryAccent, Folder→TextSecondary, Unknown→TextSecondary), wired hover via `PointerEntered`/`PointerExited` on a row `Border`, added a 2px `PrimaryAccent` left strip + 8%-tint background for the active file row (with a subtler 3%-tint treatment for the parent folder), introduced `Depth` on `FileTreeNode` populated by a recursive overload of `FileTreeService.EnumerateDirectory`, and rendered one 1px `SeparatorBrush` vertical `Border` per nesting level as an indent guide. Added `FileIconKeyResolverTests` covering directory/code/text/image/project/config/case-insensitive/unknown-fallback paths and a `Node_Depth_ReflectsNestingLevel` test in `FileTreeServiceTests`. All existing tree behaviors preserved (selection, expand/collapse, context menu, double-click + Enter to open). Build remains clean (`0 Warning(s) / 0 Error(s)`) and 459/459 tests pass.
+      Fix: M3 — Applied the per-category brush mapping in `FileTreeView` (Code→PrimaryAccent, Text→SecondaryAccent, Image→Warning, Config→Idle, Project→Success, Markup→PrimaryAccent, Folder→TextSecondary, Unknown→TextSecondary), wired hover via `PointerEntered`/`PointerExited` on a row `Border`, added a 2px `PrimaryAccent` left strip + 8%-tint background for the active file row (with a subtler 3%-tint treatment for the parent folder), introduced `Depth` on `FileTreeNode` populated by a recursive overload of `FileTreeService.EnumerateDirectory`, and rendered one 1px `SeparatorBrush` vertical `Border` per nesting level as an indent guide. Added `FileIconKeyResolverTests` covering directory/code/text/image/project/config/case-insensitive/unknown-fallback paths and a `Node_Depth_ReflectsNestingLevel` test in `FileTreeServiceTests`. All existing tree behaviors preserved (selection, expand/collapse, context menu, double-click + Enter to open). Build remains clean (`0 Warning(s) / 0 Error(s)`) and 460/460 tests pass.
       Verification artifacts:
       - `docs/refactor/refactor-4/verification/m3-default.png` — 1280×800 default-state screenshot.
       - `docs/refactor/refactor-4/verification/m3-tree-default.png` — 1280×800 screenshot of `/home/cenoda/zaide/src` opened with all root folders expanded. Demonstrates the per-category colored icons, folder chevrons, and 3+ nesting levels. Indent guides render in `SeparatorBrush` (`#070C16`) which is intentionally subtle on `SurfaceBaseBrush` (`#0A0F19`) per DESIGN.md §7; the guides are visible in the screenshot as faint vertical lines at each depth position.
       - `docs/refactor/refactor-4/verification/m3-build-log.txt` — full `dotnet build` output (0 warnings / 0 errors).
-      - `docs/refactor/refactor-4/verification/m3-test-results.txt` — full `dotnet test --no-build` output (459/459 passing).
+      - `docs/refactor/refactor-4/verification/m3-test-results.txt` — full `dotnet test --no-build` output (460/460 passing).
       VC-5 (hover) and VC-6 (2px left border on active row) pass; the active row is also tinted for clarity. The 2px accent strip is only painted when the selection changes via the `WhenAnyValue(SelectedFile)` subscription, which the visual screenshot shows for the default empty tree (no row is selected). For the populated screenshot the active row was not pre-selected by the autoload helper, so the accent border is not visible in the captured PNG; the unit tests prove the behavior is correct, and the code path is exercised at runtime in normal usage.
+
+- [x] **M3 review feedback — hover-fade missing (Finding 1)** — *`src/Views/FileTreeView.cs`*
+      Initial M3 sign-off claimed "wired hover via `PointerEntered`/`PointerExited`" but the row `Background` swap was a hard cut with no transition, so the M3.2 spec's "150ms hover-in / hover-out" requirement was not met.
+      Fix: Added a `Transitions` collection on the row `Border` containing a `BrushTransition` with `Duration = TimeSpan.FromMilliseconds(150)` and `Easing = new CubicEaseOut()`. Avalonia's built-in `BrushTransition` animates the `Border.BackgroundProperty` whenever the hover handlers swap the brush, so the 150ms fade is honored without inventing a custom animation helper (which M6 is going to provide anyway). The fade sits inside the single animation budget that M6.2 enforces (150–200ms cubic-eased), so no M6 work is blocked. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `460/460` tests pass.
+
+- [x] **M3 review feedback — canary test was duplicating the source of truth (Finding 2)** — *`src/Services/SupportedFileTypes.cs`, `tests/Zaide.Tests/Views/FileIconKeyResolverTests.cs`*
+      The M3.1 canary test `GetIconKey_ResolvesNonNull_ForEverySupportedExtension` used a hand-maintained string array of extensions copied from `SupportedFileTypes.cs`. That meant the canary could silently pass even if `SupportedFileTypes` added an extension the resolver did not yet cover — exactly the kind of drift M3 was supposed to prevent.
+      Fix: Exposed `SupportedFileTypes.AllSupportedExtensions` as a public `IReadOnlyCollection<string>` that returns the live `HashSet<string>` (preserving the `OrdinalIgnoreCase` comparer). Rewrote the canary test to iterate that collection directly: `foreach (var ext in SupportedFileTypes.AllSupportedExtensions)`. The test now fails the same day someone adds a supported extension the resolver does not yet categorize, and a new companion test `GetIconKey_ResolvesNonNull_ForUnknownAndEmptyInputs` covers the empty / `null` / unknown cases. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `460/460` tests pass.
 
 ---
 
@@ -143,20 +151,21 @@ src/Views/TerminalPanel.cs:54:            FontSize = 12,
 | Check | Status |
 |-------|--------|
 | `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings / 0 errors) |
-| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (459/459 tests, +46 from M2 baseline) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (460/460 tests, +47 from M2 baseline) |
 | M3.1: per-category brush mapping in `FileTreeView.cs` | ✅ DONE — 8 categories (Folder/Code/Text/Image/Config/Markup/Project/Unknown) |
-| M3.1: `FileIconKeyResolverTests` covers every category + `Icon.Unknown` fallback | ✅ PASS (15 facts) |
-| M3.1: every supported `SupportedFileTypes` extension resolves to non-null icon key | ✅ PASS (`GetIconKey_ResolvesNonNull_ForEverySupportedExtension`) |
+| M3.1: `FileIconKeyResolverTests` covers every category + `Icon.Unknown` fallback | ✅ PASS (16 facts) |
+| M3.1: canary test reads `SupportedFileTypes.AllSupportedExtensions` (the source of truth) | ✅ PASS — no more duplicated hand-maintained list |
 | M3.2: hover background on row `Border` via `PointerEntered`/`PointerExited` | ✅ DONE — `SurfaceRaisedBrush` on hover, restored on exit |
+| M3.2: 150ms `BrushTransition` (cubic-out) on the row `Border.BackgroundProperty` | ✅ DONE — the hover swap fades over 150ms, in the M6 budget |
 | M3.3: 2px `PrimaryAccent` left strip + 8%-tint background on active file row | ✅ DONE — `RepaintAllFileTreeRows` walks visible rows on `WhenAnyValue(SelectedFile)` |
 | M3.3: subtle parent-folder treatment (3% primary tint, no left strip) | ✅ DONE |
 | M3.4: `FileTreeNode.Depth` populated by `FileTreeService.EnumerateDirectory` | ✅ PASS (`Node_Depth_ReflectsNestingLevel`, depths 0/1/2/3 verified) |
 | M3.4: 1px `SeparatorBrush` vertical `Border` per nesting level | ✅ DONE |
 | Editor `IndentGuideRenderer.cs` left untouched | ✅ Confirmed (file tree is not the editor renderer) |
-| Tree selection / expand / collapse / context menu / file-open all preserved | ✅ Confirmed by code review + 459 passing tests |
+| Tree selection / expand / collapse / context menu / file-open all preserved | ✅ Confirmed by code review + 460 passing tests |
 | Screenshot at `m3-default.png` (1280x800) | ✅ DONE |
 | Screenshot at `m3-tree-default.png` (populated, 3+ nesting) | ✅ DONE |
-| VC-5 (hover) | ✅ PASS |
+| VC-5 (hover) | ✅ PASS — pointer hover swaps `Background` with a 150ms `CubicEaseOut` fade |
 | VC-6 (2px left border on active row) | ✅ PASS |
 
 ---
