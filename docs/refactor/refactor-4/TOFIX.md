@@ -9,7 +9,7 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-No open items. M1, M2, and M3 completed.
+No open items. M1, M2, M3, and M4 completed.
 
 ---
 
@@ -54,6 +54,15 @@ No open items. M1, M2, and M3 completed.
 - [x] **M3 review feedback — canary test was duplicating the source of truth (Finding 2)** — *`src/Services/SupportedFileTypes.cs`, `tests/Zaide.Tests/Views/FileIconKeyResolverTests.cs`*
       The M3.1 canary test `GetIconKey_ResolvesNonNull_ForEverySupportedExtension` used a hand-maintained string array of extensions copied from `SupportedFileTypes.cs`. That meant the canary could silently pass even if `SupportedFileTypes` added an extension the resolver did not yet cover — exactly the kind of drift M3 was supposed to prevent.
       Fix: Exposed `SupportedFileTypes.AllSupportedExtensions` as a public `IReadOnlyCollection<string>` that returns the live `HashSet<string>` (preserving the `OrdinalIgnoreCase` comparer). Rewrote the canary test to iterate that collection directly: `foreach (var ext in SupportedFileTypes.AllSupportedExtensions)`. The test now fails the same day someone adds a supported extension the resolver does not yet categorize, and a new companion test `GetIconKey_ResolvesNonNull_ForUnknownAndEmptyInputs` covers the empty / `null` / unknown cases. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `460/460` tests pass.
+
+- [x] **M4 Chat panel rebuild** — *`src/Views/TownhallChatPanel.cs`, `src/Views/TownhallInputArea.cs`, `src/Views/TownhallPeoplePanel.cs`, `src/Views/TownhallAvatarFactory.cs`, `tests/Zaide.Tests/Views/TownhallChatPanelGroupingTests.cs`, `tests/Zaide.Tests/Views/TownhallInputAreaTests.cs`*
+      `TownhallChatPanel` was still rendering every message with a full header, avatars were flat single-color circles, timestamps were detached from the sender line, and `TownhallInputArea` still used the old hard `MaxHeight=96` cap. M4 also required the send button press animation to stay exactly at `180ms`, not drift toward the later M6 helper.
+      Fix: Implemented sender/time-gap grouping (`same SenderId` and gap `< 5 minutes` suppresses repeated headers), moved timestamps inline as `TextStyles.Caption` (`HH:mm`, with date only for prior-day messages), introduced a shared `TownhallAvatarFactory` so people/chat avatars now use the same gradient + 1px inner accent ring + bottom-right status dot treatment, replaced the input cap with `MaxLines = 5`, added the keyboard hint label, and inlined a local `180ms` cubic-out send button scale animation. Added the required grouping and keyboard/input tests. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `469/469` tests pass.
+      Verification artifacts:
+      - `docs/refactor/refactor-4/verification/m4-default.png` — real PNG capture showing grouped consecutive user messages (`1 header + 3 content lines`), the polished avatar treatment, the input hint label, and the multi-line input grown to five visible lines.
+      - `docs/refactor/refactor-4/verification/m4-grouped-capture.png` — supporting copy of the same focused M4 capture.
+      Intentional verification note:
+      - The M4 screenshot was captured from a focused Townhall verification window composed from the live M4 controls under Xvfb so VC-7 grouping and VC-8 input growth could be proven in one frame without starting any M5/M6 chrome work. No M5/M6 behavior or styling was introduced.
 
 ---
 
@@ -167,6 +176,24 @@ src/Views/TerminalPanel.cs:54:            FontSize = 12,
 | Screenshot at `m3-tree-default.png` (populated, 3+ nesting) | ✅ DONE |
 | VC-5 (hover) | ✅ PASS — pointer hover swaps `Background` with a 150ms `CubicEaseOut` fade |
 | VC-6 (2px left border on active row) | ✅ PASS |
+
+---
+
+## M4 Verification Summary (completed)
+
+| Check | Status |
+|-------|--------|
+| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings / 0 errors) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (469/469 tests) |
+| M4.1: consecutive same-sender messages group under one header | ✅ PASS — covered by `ThreeConsecutiveSameSender_RendersOneHeader`, `SenderSwitch_RendersNewHeader`, `FiveMinuteGap_StillRendersNewHeader`, `DifferentSenders_AlwaysRenderHeaders` |
+| M4.2: chat + people avatars use gradient background, 1px inner accent ring, and bottom-right status dot | ✅ DONE |
+| M4.3: timestamps moved inline next to sender name and use caption styling | ✅ DONE |
+| M4.4: input uses `MaxLines = 5` and preserves Enter/Shift+Enter behavior | ✅ PASS — covered by `InputField_AcceptsReturn_IsTrue`, `InputField_TextWrapping_IsWrap`, `InputField_MaxLines_IsFive`, `EnterKey_TriggersSend`, `ShiftEnterKey_DoesNotTriggerSend` |
+| M4.4: keyboard hint label visible | ✅ DONE |
+| M4.5: send button press animation stays exactly `180ms` | ✅ DONE — local inline animation only; no M6 helper introduced |
+| VC-7 (grouping) | ✅ PASS |
+| VC-8 (multi-line input up to 5 lines) | ✅ PASS |
+| Screenshot at `m4-default.png` | ✅ DONE |
 
 ---
 

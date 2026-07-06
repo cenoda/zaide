@@ -78,25 +78,6 @@ public class TownhallPeoplePanel : Panel
 
     private static Border CreateAgentRow(WorkspaceAgent agent)
     {
-        // Avatar circle with initials
-        var initials = agent.Name.Length > 0
-            ? agent.Name[..1].ToUpperInvariant()
-            : "?";
-
-        var avatarCircle = new Border
-        {
-            Width = 32,
-            Height = 32,
-            CornerRadius = new CornerRadius(9999),
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            Child = TextStyles.Body(initials)
-        };
-        // Re-style: avatar initials use centered PrimaryAccentBrush background circle
-        ((TextBlock)avatarCircle.Child).HorizontalAlignment = HorizontalAlignment.Center;
-        ((TextBlock)avatarCircle.Child).VerticalAlignment = VerticalAlignment.Center;
-        ((TextBlock)avatarCircle.Child).Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"];
-
-        // Status dot
         var statusBrushKey = agent.Status switch
         {
             AgentStatus.Active => "SuccessBrush",
@@ -105,23 +86,7 @@ public class TownhallPeoplePanel : Panel
             _ => "IdleBrush"
         };
 
-        var statusDot = new Border
-        {
-            Width = 8,
-            Height = 8,
-            CornerRadius = new CornerRadius(9999),
-            Background = (IBrush?)Application.Current!.Resources[statusBrushKey],
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 1, 1)
-        };
-
-        var avatarPanel = new Panel
-        {
-            Width = 32,
-            Height = 32,
-            Children = { avatarCircle, statusDot }
-        };
+        var avatarPanel = TownhallAvatarFactory.Create(agent.Name, statusBrushKey, 32, 8);
 
         // Name text
         var nameText = TextStyles.Body(agent.Name);

@@ -5,7 +5,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using Zaide.Models;
 using Zaide.Styles;
 
@@ -49,58 +48,74 @@ public class TownhallChatPanel : Panel
     {
         _messageList.Children.Clear();
 
+        TownhallMessage? previousMessage = null;
         foreach (var message in messages)
         {
-            _messageList.Children.Add(CreateMessageRow(message));
+            var renderHeader = ShouldRenderHeader(previousMessage, message);
+            _messageList.Children.Add(CreateMessageRow(message, renderHeader));
+            previousMessage = message;
         }
 
         // Scroll to bottom (newest messages)
         _scrollViewer.ScrollToEnd();
     }
 
-    private static Border CreateMessageRow(TownhallMessage message)
+    private static bool ShouldRenderHeader(TownhallMessage? previousMessage, TownhallMessage message)
     {
-        // Avatar circle with initials
-        var initials = message.SenderName.Length > 0
-            ? message.SenderName[..1].ToUpperInvariant()
-            : "?";
-
-        var avatarCircle = new Border
+        if (previousMessage is null)
         {
-            Width = 28,
-            Height = 28,
-            CornerRadius = new CornerRadius(9999),
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            Child = TextStyles.Body(initials)
+            return true;
+        }
+
+        if (!string.Equals(message.SenderId, previousMessage.SenderId, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var timeGap = message.Timestamp - previousMessage.Timestamp;
+        return timeGap < TimeSpan.Zero || timeGap >= TimeSpan.FromMinutes(5);
+    }
+
+    private static Border CreateMessageRow(TownhallMessage message, bool renderHeader)
+    {
+        var messageContainer = new StackPanel
+        {
+            Orientation = Orientation.Vertical
         };
-        // Re-style: avatar initials use centered PrimaryAccentBrush background circle
-        ((TextBlock)avatarCircle.Child).HorizontalAlignment = HorizontalAlignment.Center;
-        ((TextBlock)avatarCircle.Child).VerticalAlignment = VerticalAlignment.Center;
-        ((TextBlock)avatarCircle.Child).Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"];
 
-        // Sender name
-        var senderName = TextStyles.Header(message.SenderName);
-        senderName.VerticalAlignment = VerticalAlignment.Center;
-
-        // Timestamp
-        var timestamp = TextStyles.Caption(message.Timestamp.ToLocalTime().ToString("HH:mm"));
-        timestamp.VerticalAlignment = VerticalAlignment.Center;
-        timestamp.HorizontalAlignment = HorizontalAlignment.Right;
-
-        // Header row: avatar + sender name + timestamp
-        var headerRow = new Grid
+        if (renderHeader)
         {
-            ColumnDefinitions =
+            var avatar = TownhallAvatarFactory.Create(message.SenderName, "SuccessBrush", 28, 8);
+
+            var senderName = TextStyles.Header(message.SenderName);
+            senderName.VerticalAlignment = VerticalAlignment.Center;
+
+            var timestamp = TextStyles.Caption(FormatTimestamp(message.Timestamp));
+            timestamp.VerticalAlignment = VerticalAlignment.Center;
+            timestamp.Margin = new Thickness(6, 0, 0, 0);
+
+            var senderMeta = new StackPanel
             {
-                new ColumnDefinition { Width = new GridLength(28) },
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                new ColumnDefinition { Width = GridLength.Auto }
-            },
-            Margin = new Thickness(0, 0, 0, 2),
-            Children = { avatarCircle, senderName, timestamp }
-        };
-        Grid.SetColumn(senderName, 1);
-        Grid.SetColumn(timestamp, 2);
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { senderName, timestamp }
+            };
+
+            var headerRow = new Grid
+            {
+                Name = "MessageHeaderRow",
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new GridLength(28) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                },
+                Margin = new Thickness(0, 0, 0, 2),
+                Children = { avatar, senderMeta }
+            };
+            Grid.SetColumn(senderMeta, 1);
+
+            messageContainer.Children.Add(headerRow);
+        }
 
         // Message content
         var contentText = TextStyles.Body(message.Content);
@@ -135,16 +150,13 @@ public class TownhallChatPanel : Panel
 
         // Indent content past avatar
         contentStack.Margin = new Thickness(36, 0, 0, 0);
-
-        var messageContainer = new StackPanel
-        {
-            Orientation = Orientation.Vertical,
-            Children = { headerRow, contentStack }
-        };
+        messageContainer.Children.Add(contentStack);
 
         var row = new Border
         {
-            Padding = new Thickness(16, 12, 16, 12),
+            Padding = renderHeader
+                ? new Thickness(16, 12, 16, 4)
+                : new Thickness(16, 2, 16, 4),
             Child = messageContainer
         };
 
@@ -156,5 +168,13 @@ public class TownhallChatPanel : Panel
         }
 
         return row;
+    }
+
+    private static string FormatTimestamp(DateTimeOffset timestamp)
+    {
+        var localTimestamp = timestamp.ToLocalTime();
+        return localTimestamp.Date == DateTimeOffset.Now.Date
+            ? localTimestamp.ToString("HH:mm")
+            : localTimestamp.ToString("MMM d HH:mm");
     }
 }

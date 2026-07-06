@@ -1,11 +1,15 @@
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Transformation;
+using Avalonia.Styling;
 using System;
-using System.Reactive;
-using ReactiveUI;
+using System.Threading.Tasks;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -17,6 +21,7 @@ namespace Zaide.Views;
 /// </summary>
 public class TownhallInputArea : Panel
 {
+    private static readonly TimeSpan SendButtonPressAnimationDuration = TimeSpan.FromMilliseconds(180);
     private readonly TextBox _inputField;
     private readonly Border _sendButton;
 
@@ -55,19 +60,20 @@ public class TownhallInputArea : Panel
         {
             PlaceholderText = "Message...",
             Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            Foreground = (IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),
             BorderThickness = new Thickness(0),
             MinHeight = 32,
-            MaxHeight = 96,
+            MaxLines = 5,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             Padding = new Thickness(12, 8, 12, 8)
         };
 
         // Send button (arrow icon)
-        var sendIcon = IconFactory.Create(
+        var sendIcon = CreateIconOrFallback(
             "Icon.ArrowUp",
-            (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            "↑",
+            (IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),
             14);
 
         _sendButton = new Border
@@ -75,11 +81,13 @@ public class TownhallInputArea : Panel
             Width = 32,
             Height = 32,
             CornerRadius = new CornerRadius(9999),
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
+            Background = (IBrush?)Application.Current?.Resources["PrimaryAccentBrush"] ?? new SolidColorBrush(Color.Parse("#066ADB")),
             Child = sendIcon,
-            Cursor = new Cursor(StandardCursorType.Hand),
+            Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0)
+            Margin = new Thickness(4, 0, 0, 0),
+            RenderTransformOrigin = RelativePoint.Center,
+            RenderTransform = new ScaleTransform(1, 1)
         };
 
         // "+" attachment button
@@ -88,11 +96,12 @@ public class TownhallInputArea : Panel
             Width = 28,
             Height = 28,
             CornerRadius = new CornerRadius(9999),
-            Child = IconFactory.Create(
+            Child = CreateIconOrFallback(
                 "Icon.Plus",
-                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                "+",
+                (IBrush?)Application.Current?.Resources["TextSecondaryBrush"] ?? new SolidColorBrush(Color.Parse("#8B95A5")),
                 14),
-            Cursor = new Cursor(StandardCursorType.Hand),
+            Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 4, 0)
         };
@@ -110,16 +119,33 @@ public class TownhallInputArea : Panel
         inputRow.Children.Add(_inputField);
         inputRow.Children.Add(_sendButton);
 
+        var hintLabel = TextStyles.Caption("⏎ to send · ⇧⏎ for newline");
+        hintLabel.Margin = new Thickness(32, 4, 0, 0);
+
+        var contentStack = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Children =
+            {
+                inputRow,
+                hintLabel
+            }
+        };
+
         var container = new Border
         {
             Padding = new Thickness(8),
-            Child = inputRow
+            Child = contentStack
         };
 
         Children.Add(container);
 
         // Send button click
-        _sendButton.PointerPressed += (_, _) => TriggerSend();
+        _sendButton.PointerPressed += (_, _) =>
+        {
+            _ = AnimateSendButtonPressAsync();
+            TriggerSend();
+        };
 
         // Enter to send, Shift+Enter for newline
         _inputField.KeyDown += (_, e) =>
@@ -142,5 +168,74 @@ public class TownhallInputArea : Panel
             return;
 
         SendRequested?.Invoke();
+    }
+
+    private async Task AnimateSendButtonPressAsync()
+    {
+        if (_sendButton.RenderTransform is not ScaleTransform transform)
+        {
+            transform = new ScaleTransform(1, 1);
+            _sendButton.RenderTransform = transform;
+        }
+
+        transform.ScaleX = 0.95;
+        transform.ScaleY = 0.95;
+
+        var animation = new Animation
+        {
+            Duration = SendButtonPressAnimationDuration,
+            Easing = new CubicEaseOut(),
+            Children =
+            {
+                new KeyFrame
+                {
+                    Cue = new Cue(0d),
+                    Setters =
+                    {
+                        new Setter(ScaleTransform.ScaleXProperty, 0.95d),
+                        new Setter(ScaleTransform.ScaleYProperty, 0.95d)
+                    }
+                },
+                new KeyFrame
+                {
+                    Cue = new Cue(1d),
+                    Setters =
+                    {
+                        new Setter(ScaleTransform.ScaleXProperty, 1d),
+                        new Setter(ScaleTransform.ScaleYProperty, 1d)
+                    }
+                }
+            }
+        };
+
+        await animation.RunAsync(transform);
+    }
+
+    private static Control CreateIconOrFallback(string resourceKey, string fallbackText, IBrush foreground, double size)
+    {
+        if (Application.Current is { } app &&
+            app.TryFindResource(resourceKey, app.ActualThemeVariant, out _))
+        {
+            return IconFactory.Create(resourceKey, foreground, size);
+        }
+
+        var fallback = TextStyles.Caption(fallbackText);
+        fallback.FontSize = size;
+        fallback.Foreground = foreground;
+        fallback.HorizontalAlignment = HorizontalAlignment.Center;
+        fallback.VerticalAlignment = VerticalAlignment.Center;
+        return fallback;
+    }
+
+    private static Cursor? CreateHandCursorOrNull()
+    {
+        try
+        {
+            return new Cursor(StandardCursorType.Hand);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 }
