@@ -129,7 +129,7 @@ M0 (verification) and M1 (backdrop blur).
 |---|---|---|---|
 | Palette colors in `App.axaml` are gray VS Code-like (`#1E1E1E`, `#252526`, `#181818`, `#0E6AEB`, `#5B94F5`, etc.) — not the navy tokens documented in `docs/DESIGN.md` §7. | Plan assumes the Refactor 3 M0.5 palette is already live. | M0.5-A: re-apply the navy palette from DESIGN.md §7 to `App.axaml`. **This is a precondition for VC-3.** |
 | `Spacing*` / `Radius*` tokens do not exist in `App.axaml`. Only color brushes are defined. | Plan says they were defined in Refactor 3 M0.5. | M0.5-B: add the `Spacing*` and `Radius*` resource keys from Refactor 3 M0.5 to `App.axaml`. **This is a precondition for VC-11 and M5.** |
-| `dotnet build` currently emits 1 xUnit analyzer warning in `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` (analyzer suggests adding `await` or similar). | Plan's exit gate is "zero warnings." | M0.5-C: fix the warning, or change the gate to "no new warnings" (recommended — see VC-13 revision below). |
+| `dotnet build` currently emits **0 warnings / 0 errors** (clean baseline as of the audit). Earlier audit snapshots recorded 1 xUnit analyzer warning at `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`, but live re-verification shows that warning no longer reproduces. | Plan's exit gate is "zero warnings." | M0.5-C becomes a **standing procedure, not a precondition**: at M0, capture the warnings baseline to `verification/m0-warnings.txt`. The gate remains "no new warnings" (see VC-13). If a warning re-emerges during Refactor 4, treat it as a regression and fix the source — do not re-bake it into the baseline. |
 | `TownhallInputArea` already has `AcceptsReturn=true`, `TextWrapping=Wrap`, `MaxHeight=96`, padding, and Enter-to-send. It is **not** a single-line `TextBox`. | Plan's M4 says "replace the single-line TextBox." | M4 rewritten: finish the multi-line behavior (`MaxLines=5`, hint text, tests), not replace. |
 | `FileIconKeyResolver` already groups many extensions into shared icons (`Icon.Code` for `.cs/.ts/.js/.json/.axaml/...`). `Icons.axaml` defines `Icon.Folder`, `Icon.Code`, `Icon.Text`, `Icon.Image`, `Icon.Config`, `Icon.Markup`, `Icon.Project`, `Icon.Unknown` — **no `Icon.File` key exists.** | Plan's M3 says "fall back to `Icon.File`." | M3 rewritten: keep resolver's shared-icon grouping (per-category is a single colored glyph, not per-extension), and use `Icon.Unknown` as the fallback (it exists). |
 | `MainWindow.axaml.cs:283-290` and `src/Views/UnsavedDialog.axaml:11-22` contain `FontSize=`, `FontWeight=`, `Margin=`, and `Padding=` literals. | Plan's VC-4 and VC-11 only scan `src/Views/`. | VC-4 and VC-11 expanded to scan `src/MainWindow.axaml.cs` and `src/Views/*.axaml` as well. |
@@ -160,9 +160,9 @@ These are objective pass/fail gates evaluated at M7 sign-off.
 | VC-8 | Chat input field is multi-line and grows up to 5 lines | Type 8 lines of text, screenshot |
 | VC-9 | Status bar segments are `Button` controls (clickable affordance), not `TextBlock` | Read `StatusBar.cs`, confirm `Button` usage |
 | VC-10 | Status bar no longer contains the `│` character | Run `grep -n '│' src/Views/StatusBar.cs`, expect zero matches |
-| VC-11 | All panel padding / margin values reference `Spacing*` tokens by key, not numeric literals (except inside `TextStyles` and the token definitions in `App.axaml`) | Run `grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and audit each hit. The previous scan missed `MainWindow.axaml.cs:321,360` and `UnsavedDialog.axaml:11`. M0.5 adds the missing tokens, M5 performs the audit. |
+| VC-11 | All panel padding, margin, and `Spacing` values reference `Spacing*` tokens by key, not numeric literals (except inside `TextStyles`, the token definitions in `App.axaml`, and `// M5-allow: ...` justified lines) | Run `grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness|Spacing\s*=\s*[0-9]+|Margin\s*=\s*"|Padding\s*=\s*"|Spacing\s*=\s*"' src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml` and audit each hit. The pattern now covers both C# (`Spacing = 4`, `Spacing = 0`) and XAML (`Spacing="4"`, `Spacing="16"`) literals. The earlier scan missed `MainWindow.axaml.cs:321,360`, `UnsavedDialog.axaml:11`, and **all C# `Spacing = <int>` literals** (e.g. `TownhallPeoplePanel.cs:26`, `TownhallChannelPanel.cs:39`, `FileTreeView.cs:92`). M0.5 adds the missing tokens, M5 performs the audit. |
 | VC-12 | Every animation uses 150–200ms duration with `CubicEaseOut` / `CubicEaseIn` easing (no `Linear`, no instant jump cuts) | Run the positive-allowlist guard at `tools/check-animations.sh` (provided in M6). It greps for any `TimeSpan.FromMilliseconds(` followed by a number outside `[150, 200]`, any `new LinearEase`, and any `new Animation {` with a duration field. Expected: zero hits. |
-| VC-13 | All existing tests still pass: `dotnet test Zaide.slnx`. Build emits **no new warnings** beyond the 1 pre-existing xUnit analyzer warning in `TownhallViewModelTests.cs:325` (acknowledged in M0.5-C) | Run the test command, expect zero failures. Run `dotnet build` and diff the warning list against the M0 baseline. |
+| VC-13 | All existing tests still pass: `dotnet test Zaide.slnx`. Build emits **no new warnings** versus the M0 baseline file. **The current M0 baseline is empty (0 warnings, 0 errors)** — see M0.5-C. If a warning re-emerges during Refactor 4, fix the source rather than rebasing the baseline. | Run the test command, expect zero failures. Run `dotnet build` and diff the warning list against `verification/m0-warnings.txt` (the empty baseline). |
 | VC-14 | No new files in `src/Views/` that bypass the typography / spacing token system (spot-check the diff) | Code review at M7 |
 
 ---
@@ -212,7 +212,7 @@ Each milestone's exit check should produce, where applicable:
 | Milestone | Description | Exit Signal | Status |
 |-----------|-------------|-------------|--------|
 | M0 | Baseline verification + before screenshots | Build/tests green; baseline screenshots captured; **drift audit appended to PR description** | ⬜ Not started |
-| M0.5 | Baseline reconciliation | Navy palette + `Spacing*`/`Radius*` tokens live in `App.axaml`; pre-existing xUnit warning acknowledged or fixed; gate changed to "no new warnings" | ⬜ Not started |
+| M0.5 | Baseline reconciliation | Navy palette + `Spacing*`/`Radius*` tokens live in `App.axaml`; warnings baseline captured to `verification/m0-warnings.txt` (currently empty); gate is "no new warnings" | ⬜ Not started |
 | M1 | Backdrop blur + elevation contrast | `Window.TransparencyLevelHint` set; `SurfacePanelBrush` / `PanelDeepBrush` bumped; `tools/check-luminance.csx` confirms `ΔL\* ≥ 8`; fallback path documented | ⬜ Not started |
 | M2 | Typography system (TextStyles) | `TextStyles` helper exists; all views use it; 3 weights × 4 sizes applied consistently; section headers visibly different from body text | ⬜ Not started |
 | M3 | File tree polish | Per-file-type colored icons rendered; hover state visible; active row has `PrimaryAccentBrush` left border; indent guides visible | ⬜ Not started |
@@ -228,8 +228,8 @@ Each milestone's exit check should produce, where applicable:
 | Milestone | Files Created | Files Modified |
 |-----------|---------------|----------------|
 | M0 | `docs/refactor/refactor-4/verification/m0-default.png`, `m0-min.png` | — (verification only) |
-| M0.5 | `tools/check-luminance.csx` (placeholder; populated in M1) | `src/App.axaml` (apply navy palette from DESIGN.md §7; add `Spacing*` and `Radius*` resource keys); `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` (fix or acknowledge the analyzer warning); this plan file (gate change reflected in M0/M7 exit conditions and VC-13) |
-| M1 | `tools/check-luminance.csx` (CIELAB L\* comparator — see M1.3) | `src/MainWindow.axaml.cs` (set `TransparencyLevelHint`), `src/App.axaml` (bump `SurfacePanelBrush`, `PanelDeepBrush`, add solid-color fallback brush), `src/Views/TownhallView.cs` (replace 1px `Border` separator with background contrast), `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs` (background tokens) |
+| M0.5 | `tools/check-luminance.csx` (placeholder; populated in M1) | `src/App.axaml` (apply navy palette from DESIGN.md §7; add `Spacing*` and `Radius*` resource keys); this plan file (gate change reflected in M0/M7 exit conditions and VC-13). M0.5-C is a standing procedure (capture baseline; no live warning to fix). |
+| M1 | `tools/check-luminance.csx` (CIELAB L\* comparator — see M1.3) | `src/MainWindow.axaml.cs` (set `TransparencyLevelHint`), `src/Views/UnsavedDialog.axaml.cs` (set `TransparencyLevelHint` on the dialog window — see M1.5), `src/App.axaml` (bump `SurfacePanelBrush`, `PanelDeepBrush`, add solid-color fallback brush), `src/Views/TownhallView.cs` (replace 1px `Border` separator with background contrast), `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs` (background tokens). File-tree `MenuFlyout` (in `FileTreeView.cs`) is left flat-dark with a styled `Background` on `MenuItem`; popup-window blur is platform-dependent and out of scope (see M1.5). |
 | M2 | `src/Styles/TextStyles.cs` (helper class) | Every `src/Views/*.cs`, `src/MainWindow.axaml.cs`, and `src/Views/*.axaml` that creates a `TextBlock` with `FontSize=` / `FontWeight=` literals — replace with `TextStyles.Body(...)`, `TextStyles.Header(...)`, `TextStyles.Caption(...)`, `TextStyles.Brand(...)` (e.g. `MainWindow.axaml.cs:283-290` and `UnsavedDialog.axaml:11-22`) |
 | M2-T | `tests/Zaide.Tests/Views/TextStylesTests.cs` (style helper unit tests) | — |
 | M3 | — | `src/Views/FileTreeView.cs` (hover + active row state, indent guide visibility), `src/Views/FileIconKeyResolver.cs` (verify color tokens map to `IconFactory` resources), `src/Views/IconFactory.cs` (verify all file types resolve to colored glyphs) |
@@ -251,12 +251,15 @@ go in `App.axaml` per tier 1.
 
 Before changing any code:
 
-- [ ] `dotnet build Zaide.slnx` passes; the **baseline warning list** is
-      saved to `docs/refactor/refactor-4/verification/m0-warnings.txt`.
-      The 1 known xUnit analyzer warning at
-      `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` is
-      expected and acknowledged. (Gate is "no new warnings," not "zero
-      warnings" — see M0.5-C and VC-13.)
+- [ ] `dotnet build Zaide.slnx` passes with **0 warnings / 0 errors**;
+      the baseline is saved to
+      `docs/refactor/refactor-4/verification/m0-warnings.txt` (expected
+      to be empty unless a warning re-emerges). Gate is "no new
+      warnings" (see VC-13). Earlier audit snapshots recorded 1 xUnit
+      analyzer warning at
+      `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`; live
+      re-verification confirms it no longer reproduces — do not bake
+      it back into the baseline if a transient future warning appears.
 - [ ] `dotnet test Zaide.slnx --no-build` passes with zero failures
 - [ ] Capture a baseline screenshot at default window size →
       `docs/refactor/refactor-4/verification/m0-default.png`
@@ -337,20 +340,28 @@ wrap them at use site:
 The exact XAML form is implementation detail; the **gate** is that
 M5's spacing audit (VC-11) can reference the tokens by name.
 
-#### M0.5-C — Acknowledge or fix the xUnit analyzer warning
+#### M0.5-C — Standing procedure for warnings (no live warning to fix)
 
-Open `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325` and
-either:
+This sub-step is a **standing procedure**, not a precondition. The
+earlier audit recorded 1 xUnit analyzer warning at
+`tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`; live
+re-verification confirms it no longer reproduces. The baseline at M0
+is empty (0 warnings). The procedure for handling any future warning
+is:
 
-- **(preferred)** Fix the analyzer warning by adding the suggested
-  `await` or restructuring the assertion. Verify the test still passes.
-- **(fallback)** Add a one-line comment above the test explaining why
-  the warning is intentional (e.g., awaiting would change the test
-  contract), then update this plan's M0/M7 exit conditions and VC-13
-  to read "no new warnings" (already done — the gate is "no new
-  warnings" not "zero warnings"). Save the analyzer output to
-  `docs/refactor/refactor-4/verification/m0-warnings.txt` as the
-  baseline.
+1. **Do not bake the warning into the baseline.** The gate is "no
+   new warnings" (see VC-13). A warning is a regression to fix, not
+   a target to allowlist.
+2. **Investigate the warning's source.** Read the message, locate
+   the file, and decide whether to fix the code or refactor the
+   triggering pattern.
+3. **If the warning re-emerges during Refactor 4, fix the source
+   before merging the milestone that introduced it.** Document the
+   fix in the milestone PR description.
+
+The saved baseline file `verification/m0-warnings.txt` is the source
+of truth for "what warnings existed at M0." If it is empty, the
+target is "no warnings" until M7 — easier than a one-line allowance.
 
 #### M0.5 Exit Conditions
 
@@ -500,6 +511,46 @@ between sidebar and chat area. Per DESIGN.md §7, panels are separated
 by "1px gap or subtle opacity difference — not thick borders." Audit
 every view file for `Border` use with `Height=1` or `Width=1` and
 replace with the appropriate `Margin` gap + background contrast.
+
+#### M1.5 — Apply `TransparencyLevelHint` to all elevated `Window` surfaces
+
+The earlier plan only wired `TransparencyLevelHint` into
+`MainWindow.axaml.cs`, but the design doc scopes Refactor 4 to
+"elevated panels like dialogs, dropdowns, and popups." M1.5 extends
+the transparency hint to every `Window` in the app.
+
+1. **`src/Views/UnsavedDialog.axaml.cs`** — set
+   `TransparencyLevelHint` in the constructor to the same
+   priority-ordered list as `MainWindow`:
+   ```csharp
+   TransparencyLevelHint = new[]
+   {
+       WindowTransparencyLevel.AcrylicBlur,
+       WindowTransparencyLevel.Blur,
+       WindowTransparencyLevel.Transparent
+   };
+   ```
+   The existing `CanResize="False"`, `ShowInTaskbar="False"`,
+   `WindowStartupLocation="CenterOwner"` properties are kept.
+
+2. **File-tree `MenuFlyout` (in `src/Views/FileTreeView.cs:118`).**
+   `MenuFlyout` is a control, not a `Window`, and its popup surface
+   is owned by the platform's overlay host. Setting
+   `TransparencyLevelHint` on the `MenuFlyout` itself is not
+   supported by Avalonia. M1.5 instead styles the popup items so
+   they read as part of the elevated surface even when the popup
+   host cannot blur:
+   - Set `Background` on the `MenuFlyout` (or the `MenuItem`s) to
+     `SurfaceRaisedBrush` so the menu reads as an elevated layer
+     against the `SurfacePanelBrush` underneath.
+   - Set `Padding` to a `Spacing*` token (M0.5-B).
+   - This is a styling change, not a transparency change; popup
+     blur itself remains platform-dependent and out of scope.
+
+3. **Other popup surfaces.** `TabItem` close buttons, `Button`
+   hover popups, and any future `ToolTip` / `Popup` are out of
+   scope. M1.5 establishes the pattern; future popups apply the
+   same `SurfaceRaisedBrush` background as a minimum bar.
 
 #### M1 Exit Conditions
 
@@ -664,12 +715,34 @@ The currently selected file shows a 2px left border in
 accent tint, `#15066ADB`). Add the same treatment for the parent
 folder of the active file (subtle, not the same intensity).
 
-#### M3.4 — Indent guide visibility
+#### M3.4 — File-tree indent guide visibility (NEW, not the editor renderer)
 
-`IndentGuideRenderer.cs` exists. Audit its current alpha / brush and
-verify it is actually visible in a screenshot. If invisible, bump
-the alpha from ~0.2 to ~0.4 against the panel background. Do not
-introduce a new brush — use `SeparatorBrush` with adjusted opacity.
+`IndentGuideRenderer.cs` exists but is wired **only into `EditorView`
+(`src/Views/EditorView.cs:27, 66-68, 228`) — not the file tree**. The
+editor's `FuncTreeDataTemplate` row (`src/Views/FileTreeView.cs:69-95`)
+is a flat `StackPanel` with no indent guide. Following the previous
+plan's wording would polish the editor and still leave the file tree
+unchanged. M3.4 re-scopes to the **file tree** specifically.
+
+Implementation:
+
+1. In the `FuncTreeDataTemplate` row builder
+   (`src/Views/FileTreeView.cs:74-111`), read `node.Depth` (or the
+   equivalent already exposed by `FileTreeNode` / `FileTreeViewModel`)
+   and apply `Margin.Left = depth * SpacingMd` (using the M0.5-B
+   token).
+2. Add a 1px-wide vertical `Border` with `SeparatorBrush` at the
+   left edge of each row at the indent position, height = row height
+   (or `Stretch`), so each level of nesting shows a visible vertical
+   guide.
+3. If `FileTreeNode` does not currently expose depth, add it in
+   `FileTreeViewModel` and surface a test in
+   `tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs`
+   (`Node_Depth_ReflectsNestingLevel`).
+4. **Do not touch `IndentGuideRenderer.cs` or `EditorView.cs`.** The
+   editor's indent guides (code indentation) are a different surface
+   and outside M3's scope. Re-verify they still render in the
+   `m3-default.png` screenshot (regression check, not a change).
 
 #### M3 Exit Conditions
 
@@ -823,10 +896,15 @@ Replace numeric literals with the `Spacing*` token keys from M0.5-B:
 - `RadiusSm` (4px), `RadiusMd` (8px), `RadiusLg` (12px),
   `RadiusXl` (16px), `RadiusFull`
 
-Audit command (run from repo root):
+Audit command (run from repo root). **The earlier regex missed C#
+`Spacing = <int>` literals**, which appear in `TownhallPeoplePanel.cs:26`
+(`Spacing = 4`), `TownhallChannelPanel.cs:39` (`Spacing = 0`),
+`FileTreeView.cs:92` (`Spacing = 6`), `EditorView.cs:96`
+(`Spacing = 6`), and other view headers/lists. The corrected regex
+covers both C# and XAML `Spacing` literals:
 
 ```bash
-grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness|Margin\s*=\s*"|Padding\s*=\s*"|Spacing\s*=\s*"' \
+grep -rnE 'Margin\s*=\s*new Thickness|Padding\s*=\s*new Thickness|Spacing\s*=\s*[0-9]+|Margin\s*=\s*"|Padding\s*=\s*"|Spacing\s*=\s*"' \
   src/Views/ src/MainWindow.axaml.cs src/Views/*.axaml
 ```
 
@@ -905,51 +983,83 @@ content). Only user-initiated state transitions.
 
 #### M6.3 — Animation budget guard (positive allowlist)
 
-The previous plan's regex `new LinearEase\|TimeSpan\.FromMilliseconds([^12][0-9][0-9])` was broken — it missed `100`, `80`, `60`, and any value `> 200`. M6.3 replaces it with a
-**positive-allowlist** guard at `tools/check-animations.sh`:
+The previous plan's regex `new LinearEase\|TimeSpan\.FromMilliseconds([^12][0-9][0-9])` was broken — it missed `100`, `80`, `60`, and any value `> 200`. Worse, the M6.3 rule that banned **any** `TimeSpan.FromMilliseconds(` in `src/Views/` would flag legitimate non-animation timings that already exist:
+
+- `src/Views/TerminalRenderControl.cs:155` — `CursorBlinkInterval = TimeSpan.FromMilliseconds(530)` (terminal cursor blink)
+- `src/Views/TerminalPanel.cs:236` — `.Throttle(TimeSpan.FromMilliseconds(100))` (resize debounce)
+
+Neither is a UI transition; both are timer / throttling primitives.
+The corrected guard targets **animation-specific** types and
+patterns, not raw `TimeSpan` literals:
 
 ```bash
 #!/usr/bin/env bash
-# Fails if any animation helper in src/Views/Animations.cs is
-# bypassed or any out-of-band duration appears.
+# Fails if any animation in src/Views/ bypasses the Animations helper
+# or uses an out-of-budget duration. Does NOT flag timer/throttle
+# primitives (DispatcherTimer, Throttle, etc.) — those are not
+# transitions and are out of scope for VC-12.
 set -e
 
 bad=0
-
-# 1) No direct TimeSpan.FromMilliseconds( in view code.
-#    All animation durations must come from the Animations helper.
-if grep -rnE 'TimeSpan\.FromMilliseconds\(' src/Views/ \
-     | grep -v 'src/Views/Animations.cs' ; then
-  echo "ERROR: direct TimeSpan.FromMilliseconds in view code"
-  bad=1
-fi
-
-# 2) No new LinearEase in view code.
-if grep -rnE 'new LinearEase\(' src/Views/ \
-     | grep -v 'src/Views/Animations.cs' ; then
-  echo "ERROR: new LinearEase in view code"
-  bad=1
-fi
-
-# 3) No new Animation { ... } in view code (must use the helper).
-if grep -rnE 'new Animation\s*\{' src/Views/ \
-     | grep -v 'src/Views/Animations.cs' ; then
-  echo "ERROR: inline new Animation in view code"
-  bad=1
-fi
-
-# 4) Animations helper itself: every numeric duration must be in [150, 200].
 helper=src/Views/Animations.cs
-for ms in $(grep -oE 'TimeSpan\.FromMilliseconds\([0-9]+\)' "$helper" \
-           | grep -oE '[0-9]+'); do
-  if [ "$ms" -lt 150 ] || [ "$ms" -gt 200 ]; then
-    echo "ERROR: $helper has out-of-budget duration ${ms}ms"
-    bad=1
-  fi
-done
+
+# 1) No raw LinearEase outside the helper.
+if grep -rnE 'new LinearEase\(' src/Views/ \
+     | grep -v "${helper}" ; then
+  echo "ERROR: new LinearEase in view code (use CubicEaseOut/In)"
+  bad=1
+fi
+
+# 2) No raw Animation { ... } outside the helper.
+if grep -rnE 'new Animation\s*\{' src/Views/ \
+     | grep -v "${helper}" ; then
+  echo "ERROR: inline new Animation in view code (use Animations helper)"
+  bad=1
+fi
+
+# 3) No raw Avalonia transition types outside the helper. These are
+#    the classes that drive property animations on a control's
+#    Transitions collection — the actual mechanism VC-12 polices.
+if grep -rnE 'new (DoubleTransition|BrushTransition|TransformOperationsTransition|ThicknessTransition|IntegerTransition|VectorTransition)\s*\(' src/Views/ \
+     | grep -v "${helper}" ; then
+  echo "ERROR: raw Avalonia transition type in view code (use Animations helper)"
+  bad=1
+fi
+
+# 4) No raw Transitions { ... } collections outside the helper.
+if grep -rnE 'new Transitions\s*\{' src/Views/ \
+     | grep -v "${helper}" ; then
+  echo "ERROR: inline Transitions collection in view code (use Animations helper)"
+  bad=1
+fi
+
+# 5) Animations helper itself: every numeric duration must be in [150, 200].
+if [ -f "$helper" ]; then
+  for ms in $(grep -oE 'TimeSpan\.FromMilliseconds\([0-9]+\)' "$helper" \
+             | grep -oE '[0-9]+'); do
+    if [ "$ms" -lt 150 ] || [ "$ms" -gt 200 ]; then
+      echo "ERROR: $helper has out-of-budget duration ${ms}ms"
+      bad=1
+    fi
+  done
+fi
 
 exit $bad
 ```
+
+This guard:
+
+- **Catches:** raw `LinearEase`, `Animation { ... }`, Avalonia
+  transition types (`DoubleTransition`, `BrushTransition`,
+  `TransformOperationsTransition`, `ThicknessTransition`,
+  `IntegerTransition`, `VectorTransition`), and `Transitions { ... }`
+  collections declared outside the helper.
+- **Ignores:** `TimeSpan.FromMilliseconds(...)` used as a timer
+  interval or `Throttle` argument (e.g. cursor blink, resize
+  debounce). Those are not transitions; policing them is out of
+  scope for VC-12.
+- **Polices the helper itself:** every duration in
+  `src/Views/Animations.cs` must be in `[150, 200]`.
 
 Wire `tools/check-animations.sh` into the M7 regression sweep
 (must exit 0 before M7 can be marked complete). It is the source
@@ -973,9 +1083,8 @@ match reality.
 #### M7.1 — Full regression
 
 - [ ] `dotnet build Zaide.slnx` passes with **no new warnings**
-      versus the M0 baseline (the 1 pre-existing xUnit analyzer
-      warning at `tests/Zaide.Tests/ViewModels/TownhallViewModelTests.cs:325`
-      is acknowledged; see M0.5-C and VC-13)
+      versus the M0 baseline file (currently empty; see M0.5-C and
+      VC-13)
 - [ ] `dotnet test Zaide.slnx --no-build` passes with zero failures
 - [ ] `tools/check-luminance.csx` exits 0 (VC-3)
 - [ ] `tools/check-animations.sh` exits 0 (VC-12)
