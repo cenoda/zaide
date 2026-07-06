@@ -9,7 +9,13 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-No open items. M1 and M2 completed.
+### M2 — Pre-existing test failures blocking full test pass
+
+- [ ] **Pre-existing ReactiveUI init failure in 18 tests** — *`src/ViewModels/FileTreeViewModel.cs:231`, all callers in `tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs` and `tests/Zaide.Tests/MainWindowViewModelTests.cs`*
+      `dotnet test Zaide.slnx --no-build` returns `Failed: 18, Passed: 395, Total: 413`. The root cause is `ReactiveUI has not been initialized` thrown from `ReactiveNotifyPropertyChangedMixin..cctor` while the `FileTreeViewModel` constructor calls `WhenAnyValue(...)` in its parameter list.
+      This is **pre-existing** at commit `c971bdd` (the M1 baseline immediately preceding the M2 commit `71396fd`); M2 did not introduce it. Reproduced at the parent commit with the same `18 failed / 395 passed / 413 total` result.
+      The fix is to give `FileTreeViewModelTests` the same `static` constructor pattern that `MainWindowViewModelTests` already uses: `RxAppBuilder.CreateReactiveUIBuilder().BuildApp()` in the type initializer. That fix is out of scope for M2 (typography only) and should be handled in a follow-up commit.
+      Mitigation for M2 verification: the M2-relevant `TextStylesTests` suite passes 18/18 in isolation under the same xUnit collection; the failure is localized to `FileTreeViewModelTests` and a downstream `MainWindowViewModelTests` cascade.
 
 ---
 
@@ -59,7 +65,8 @@ No open items. M1 and M2 completed.
 | Check | Status |
 |-------|--------|
 | `TextStyles.cs` created with Header, Body, Caption, Brand methods | ✅ DONE |
-| `TextStylesTests.cs` created and passing | ✅ PASS (11/11 tests) |
+| `TextStylesTests.cs` created and passing | ✅ PASS (18/18 tests in isolation) |
+| `TextStylesTests` brush contract verification | ✅ PASS — verifies SolidColorBrush fallback, distinct roles for Header/Body/Caption/Brand, and the navy palette fallback hexes (`#E3E4F4`, `#8B95A5`, `#066ADB`) |
 | `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings) |
 | Typography literals in view code updated with TextStyles usage | ✅ DONE |
 | VC-4 grep clean except documented intentional exceptions | ✅ PASS |

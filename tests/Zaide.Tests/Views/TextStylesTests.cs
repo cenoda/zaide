@@ -78,33 +78,94 @@ namespace Zaide.Tests.Views
         }
 
         [Fact]
-        public void Foreground_FallBackToExpectedColor_WhenNoResources()
+        public void Foreground_IsNonNullIBrush_ForEveryStyle()
         {
-            // This test verifies the fallback behavior when Avalonia resources
-            // are not available (e.g., in a unit test without a running app).
-            // Each style method falls back to a hardcoded SolidColorBrush when
-            // Application.Current?.Resources returns null or missing entries.
+            // Sanity: every TextStyles method must yield a non-null Foreground
+            // regardless of whether Avalonia resources are present. Without
+            // this, the views would render invisible text in any environment
+            // where Application.Current is null.
+            Assert.NotNull(TextStyles.Header("h").Foreground);
+            Assert.NotNull(TextStyles.Body("b").Foreground);
+            Assert.NotNull(TextStyles.Caption("c").Foreground);
+            Assert.NotNull(TextStyles.Brand("br").Foreground);
+        }
 
-            // Arrange & Act
-            var header = TextStyles.Header("");
-            var body = TextStyles.Body("");
-            var caption = TextStyles.Caption("");
-            var brand = TextStyles.Brand("");
+        [Fact]
+        public void Foreground_IsSolidColorBrush_ForEveryStyle()
+        {
+            // The M2 fallback path must produce a SolidColorBrush (not a
+            // resource key or null), so the text is always renderable.
+            Assert.IsType<SolidColorBrush>(TextStyles.Header("h").Foreground);
+            Assert.IsType<SolidColorBrush>(TextStyles.Body("b").Foreground);
+            Assert.IsType<SolidColorBrush>(TextStyles.Caption("c").Foreground);
+            Assert.IsType<SolidColorBrush>(TextStyles.Brand("br").Foreground);
+        }
 
-            // Assert - All should have a non-null Foreground
-            Assert.NotNull(header.Foreground);
-            Assert.NotNull(body.Foreground);
-            Assert.NotNull(caption.Foreground);
-            Assert.NotNull(brand.Foreground);
+        [Fact]
+        public void Foreground_Header_FallsBackToNavyPrimary_WhenNoResource()
+        {
+            // Without Avalonia resources, Header falls back to #E3E4F4
+            // (TextPrimaryBrush fallback). This proves the fallback resolves
+            // to the navy palette, not an arbitrary color.
+            var header = TextStyles.Header("h");
+            var brush = Assert.IsType<SolidColorBrush>(header.Foreground);
+            Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+        }
 
-            // Verify fallback colors by type
-            // Header/Body fallback to #E3E4F4 (TextPrimaryBrush)
-            Assert.IsAssignableFrom<IBrush>(header.Foreground);
-            Assert.IsAssignableFrom<IBrush>(body.Foreground);
-            // Caption falls back to #8B95A5 (TextSecondaryBrush)
-            Assert.IsAssignableFrom<IBrush>(caption.Foreground);
-            // Brand falls back to #066ADB (PrimaryAccentBrush)
-            Assert.IsAssignableFrom<IBrush>(brand.Foreground);
+        [Fact]
+        public void Foreground_Body_FallsBackToNavyPrimary_WhenNoResource()
+        {
+            var body = TextStyles.Body("b");
+            var brush = Assert.IsType<SolidColorBrush>(body.Foreground);
+            Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+        }
+
+        [Fact]
+        public void Foreground_Caption_FallsBackToMutedSecondary_WhenNoResource()
+        {
+            // Caption must use the muted secondary color, not the primary
+            // text color. This guards against accidentally routing Caption
+            // through TextPrimaryBrush.
+            var caption = TextStyles.Caption("c");
+            var brush = Assert.IsType<SolidColorBrush>(caption.Foreground);
+            Assert.Equal(Color.Parse("#8B95A5"), brush.Color);
+        }
+
+        [Fact]
+        public void Foreground_Brand_FallsBackToAccent_WhenNoResource()
+        {
+            // Brand must use the accent color (PrimaryAccentBrush fallback),
+            // not the primary text color. Without this check, the "powered by
+            // Zaide" app name would lose its brand color.
+            var brand = TextStyles.Brand("br");
+            var brush = Assert.IsType<SolidColorBrush>(brand.Foreground);
+            Assert.Equal(Color.Parse("#066ADB"), brush.Color);
+        }
+
+        [Fact]
+        public void Foreground_Caption_AndBrand_AreDistinct()
+        {
+            // Caption is muted, Brand is vivid. The four styles must use
+            // three distinct brush roles -- not one. This guards the M2
+            // typography hierarchy: muted vs. accent vs. primary.
+            var captionColor = ((SolidColorBrush)TextStyles.Caption("c").Foreground!).Color;
+            var brandColor = ((SolidColorBrush)TextStyles.Brand("br").Foreground!).Color;
+            var headerColor = ((SolidColorBrush)TextStyles.Header("h").Foreground!).Color;
+
+            Assert.NotEqual(captionColor, brandColor);
+            Assert.NotEqual(captionColor, headerColor);
+            Assert.NotEqual(brandColor, headerColor);
+        }
+
+        [Fact]
+        public void Foreground_HeaderAndBody_SharePrimaryColor()
+        {
+            // Header and Body are both primary text styles. They must
+            // resolve to the same fallback color so the typography
+            // hierarchy is consistent.
+            var headerColor = ((SolidColorBrush)TextStyles.Header("h").Foreground!).Color;
+            var bodyColor = ((SolidColorBrush)TextStyles.Body("b").Foreground!).Color;
+            Assert.Equal(headerColor, bodyColor);
         }
 
         [Fact]
