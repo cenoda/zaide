@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Zaide.ViewModels;
+using Zaide.Styles;
 using Zaide.Views;
 
 namespace Zaide;
@@ -297,14 +298,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // --- Column 3: Center — Townhall (real M3 view) ---
         _editorTabBar = new EditorTabBar();
         _editorView = new EditorView();
-        _welcomeText = new TextBlock
-        {
-            Text = "Open a file to begin",
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 14,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
+        _welcomeText = TextStyles.Body("Open a file to begin");
+        _welcomeText.VerticalAlignment = VerticalAlignment.Center;
+        _welcomeText.HorizontalAlignment = HorizontalAlignment.Center;
 
         var townhallView = new TownhallView();
         Grid.SetColumn(townhallView, 3);

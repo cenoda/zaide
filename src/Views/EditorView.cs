@@ -12,6 +12,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using TextMateSharp.Grammars;
 using Zaide.ViewModels;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -79,13 +80,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
         };
 
-        _fileInfoText = new TextBlock
-        {
-            Text = "diff/edit",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-        };
+        _fileInfoText = TextStyles.Caption("diff/edit");
+        _fileInfoText.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
 
         var fileInfoBar = new Border
         {

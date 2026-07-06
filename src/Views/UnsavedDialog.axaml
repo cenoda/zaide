@@ -10,8 +10,7 @@
 
     <StackPanel Margin="20" Spacing="16">
         <TextBlock x:Name="MessageText"
-                   TextWrapping="Wrap"
-                   FontSize="14" />
+                   TextWrapping="Wrap" />
 
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right"

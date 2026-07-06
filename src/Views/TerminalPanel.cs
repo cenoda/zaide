@@ -14,6 +14,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.ViewModels;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -41,21 +42,11 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             (IBrush?)resourceDictionary["SecondaryAccentBrush"],
             14);
 
-        var headerText = new TextBlock
-        {
-            Text = "Terminal / Logs",
-            FontSize = 13,
-            FontWeight = FontWeight.Bold,
-            Foreground = (IBrush?)resourceDictionary["TextPrimaryBrush"],
-            VerticalAlignment = VerticalAlignment.Center
-        };
+         var headerText = TextStyles.Header("Terminal / Logs");
+        headerText.VerticalAlignment = VerticalAlignment.Center;
 
-        _statusText = new TextBlock
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            FontSize = 12,
-            Foreground = (IBrush?)resourceDictionary["SecondaryAccentBrush"]
-        };
+        _statusText = TextStyles.Caption("");
+        _statusText.VerticalAlignment = VerticalAlignment.Center;
 
         _toggleViewButton = new Button
         {
@@ -132,24 +123,13 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                 _ => (IBrush)res["TextSecondaryBrush"]!
             };
 
-            var tagBlock = new TextBlock
-            {
-                Text = entry.Tag,
-                FontSize = 11,
-                Foreground = tagColor,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 4, 0)
-            };
+            var tagBlock = TextStyles.Caption(entry.Tag);
+            tagBlock.Foreground = tagColor;
+            tagBlock.Margin = new Thickness(0, 0, 4, 0);
 
-            var contentBlock = new TextBlock
-            {
-                Text = entry.Content,
-                FontSize = 12,
-                Foreground = (IBrush)res["TextPrimaryBrush"]!,
-                VerticalAlignment = VerticalAlignment.Center,
-                TextWrapping = TextWrapping.NoWrap,
-                TextTrimming = TextTrimming.CharacterEllipsis
-            };
+            var contentBlock = TextStyles.Body(entry.Content);
+            contentBlock.TextWrapping = TextWrapping.NoWrap;
+            contentBlock.TextTrimming = TextTrimming.CharacterEllipsis;
 
             var row = new StackPanel
             {
@@ -242,6 +222,9 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private static Button BuildToolbarButton(string iconKey, string label)
     {
         var resources = Application.Current!.Resources;
+        var labelText = TextStyles.Caption(label);
+        labelText.VerticalAlignment = VerticalAlignment.Center;
+
         return new Button
         {
             Content = new StackPanel
@@ -252,12 +235,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                 Children =
                 {
                     IconFactory.Create(iconKey, (IBrush?)resources["TextPrimaryBrush"], 12),
-                    new TextBlock
-                    {
-                        Text = label,
-                        FontSize = 12,
-                        VerticalAlignment = VerticalAlignment.Center
-                    }
+                    labelText
                 }
             },
             Padding = new Thickness(10, 4, 10, 4),

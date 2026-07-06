@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using Zaide.Models;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -27,14 +28,7 @@ public class TownhallPeoplePanel : Panel
             Margin = new Thickness(12, 16, 12, 8),
             Children =
             {
-                new TextBlock
-                {
-                    Text = "People",
-                    Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                    FontSize = 13,
-                    FontWeight = FontWeight.Bold,
-                    VerticalAlignment = VerticalAlignment.Center
-                },
+                TextStyles.Header("People"),
                 IconFactory.Create(
                     "Icon.Bell",
                     (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
@@ -95,15 +89,12 @@ public class TownhallPeoplePanel : Panel
             Height = 32,
             CornerRadius = new CornerRadius(9999),
             Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            Child = new TextBlock
-            {
-                Text = initials,
-                Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                FontSize = 13,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
+            Child = TextStyles.Body(initials)
         };
+        // Re-style: avatar initials use centered PrimaryAccentBrush background circle
+        ((TextBlock)avatarCircle.Child).HorizontalAlignment = HorizontalAlignment.Center;
+        ((TextBlock)avatarCircle.Child).VerticalAlignment = VerticalAlignment.Center;
+        ((TextBlock)avatarCircle.Child).Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"];
 
         // Status dot
         var statusBrushKey = agent.Status switch
@@ -133,39 +124,23 @@ public class TownhallPeoplePanel : Panel
         };
 
         // Name text
-        var nameText = new TextBlock
-        {
-            Text = agent.Name,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 13,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        var nameText = TextStyles.Body(agent.Name);
+        nameText.VerticalAlignment = VerticalAlignment.Center;
 
         // Status label
-        var statusLabel = new TextBlock
-        {
-            Text = agent.Status switch
-            {
-                AgentStatus.Active => "active",
-                AgentStatus.Busy => "busy",
-                AgentStatus.Idle => "idle",
-                _ => "idle"
-            },
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 11,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0)
-        };
+        var statusLabel = TextStyles.Caption(agent.Status switch {
+            AgentStatus.Active => "active",
+            AgentStatus.Busy => "busy",
+            AgentStatus.Idle => "idle",
+            _ => "idle"
+        });
+        statusLabel.VerticalAlignment = VerticalAlignment.Center;
+        statusLabel.Margin = new Thickness(4, 0, 0, 0);
 
         // Role label
-        var roleLabel = new TextBlock
-        {
-            Text = agent.Role,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 11,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0)
-        };
+        var roleLabel = TextStyles.Caption(agent.Role);
+        roleLabel.VerticalAlignment = VerticalAlignment.Center;
+        roleLabel.Margin = new Thickness(4, 0, 0, 0);
 
         var nameAndMeta = new StackPanel
         {

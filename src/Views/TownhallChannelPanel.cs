@@ -8,6 +8,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using Zaide.Models;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -24,14 +25,8 @@ public class TownhallChannelPanel : Panel
 
     public TownhallChannelPanel()
     {
-        var header = new TextBlock
-        {
-            Text = "Channels",
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 13,
-            FontWeight = FontWeight.Bold,
-            Margin = new Thickness(12, 12, 12, 4)
-        };
+        var header = TextStyles.Header("Channels");
+        header.Margin = new Thickness(12, 12, 12, 4);
 
         _channelList = new StackPanel
         {
@@ -82,15 +77,11 @@ public class TownhallChannelPanel : Panel
     private Border CreateChannelRow(Channel channel)
     {
         // Channel name with # prefix
-        var nameText = new TextBlock
-        {
-            Text = $"#{channel.Name}",
-            FontSize = 13,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = channel.IsActive
-                ? (IBrush?)Application.Current!.Resources["TextPrimaryBrush"]
-                : (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]
-        };
+        var nameText = TextStyles.Body($"#{channel.Name}");
+        nameText.VerticalAlignment = VerticalAlignment.Center;
+        nameText.Foreground = channel.IsActive
+            ? (IBrush?)Application.Current!.Resources["TextPrimaryBrush"]
+            : (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
         var contentStack = new StackPanel
         {

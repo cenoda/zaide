@@ -10,6 +10,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Zaide.Styles;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -91,15 +92,11 @@ public partial class EditorTabBar : UserControl
 
         // M4: "Shared in #townhall" label — right of tabs, SecondaryAccentBrush,
         // hidden by default. Visibility controlled by MainWindow via SetTownhallLinkVisible.
-        _townhallLink = new TextBlock
-        {
-            Text = "Shared in #townhall",
-            Foreground = (IBrush?)Application.Current?.Resources["SecondaryAccentBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 12, 0),
-            IsVisible = false
-        };
+        _townhallLink = TextStyles.Body("Shared in #townhall");
+        _townhallLink.Foreground = (IBrush?)Application.Current?.Resources["SecondaryAccentBrush"];
+        _townhallLink.VerticalAlignment = VerticalAlignment.Center;
+        _townhallLink.Margin = new Thickness(12, 0, 12, 0);
+        _townhallLink.IsVisible = false;
 
         // Layout: tabs scroll on the left, link label on the right.
         var layout = new Grid

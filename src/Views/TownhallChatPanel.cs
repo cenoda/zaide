@@ -7,6 +7,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Zaide.Models;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -70,35 +71,21 @@ public class TownhallChatPanel : Panel
             Height = 28,
             CornerRadius = new CornerRadius(9999),
             Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            Child = new TextBlock
-            {
-                Text = initials,
-                Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
+            Child = TextStyles.Body(initials)
         };
+        // Re-style: avatar initials use centered PrimaryAccentBrush background circle
+        ((TextBlock)avatarCircle.Child).HorizontalAlignment = HorizontalAlignment.Center;
+        ((TextBlock)avatarCircle.Child).VerticalAlignment = VerticalAlignment.Center;
+        ((TextBlock)avatarCircle.Child).Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"];
 
         // Sender name
-        var senderName = new TextBlock
-        {
-            Text = message.SenderName,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 13,
-            FontWeight = FontWeight.Bold,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        var senderName = TextStyles.Header(message.SenderName);
+        senderName.VerticalAlignment = VerticalAlignment.Center;
 
         // Timestamp
-        var timestamp = new TextBlock
-        {
-            Text = message.Timestamp.ToLocalTime().ToString("HH:mm"),
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 11,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
+        var timestamp = TextStyles.Caption(message.Timestamp.ToLocalTime().ToString("HH:mm"));
+        timestamp.VerticalAlignment = VerticalAlignment.Center;
+        timestamp.HorizontalAlignment = HorizontalAlignment.Right;
 
         // Header row: avatar + sender name + timestamp
         var headerRow = new Grid
@@ -116,13 +103,8 @@ public class TownhallChatPanel : Panel
         Grid.SetColumn(timestamp, 2);
 
         // Message content
-        var contentText = new TextBlock
-        {
-            Text = message.Content,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 14,
-            TextWrapping = TextWrapping.Wrap
-        };
+        var contentText = TextStyles.Body(message.Content);
+        contentText.TextWrapping = TextWrapping.Wrap;
 
         // Warning icon for warning messages
         StackPanel contentStack;

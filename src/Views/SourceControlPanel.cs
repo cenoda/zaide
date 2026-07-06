@@ -12,6 +12,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.ViewModels;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -45,14 +46,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     "Icon.GitBranch",
                     (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                     14),
-                new TextBlock
-                {
-                    Text = "Source Control",
-                    Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                    FontSize = 14,
-                    FontWeight = FontWeight.Bold,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                TextStyles.Header("Source Control")
             }
         };
 
@@ -68,12 +62,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         };
 
         // --- Unstaged Changes Header ---
-        _unstagedHeader = new TextBlock
-        {
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            Margin = new Thickness(12, 4, 12, 4)
-        };
+        _unstagedHeader = TextStyles.Caption("Unstaged Changes");
+        _unstagedHeader.Margin = new Thickness(12, 4, 12, 4);
 
         // --- Unstaged Changes List ---
         _unstagedList = new ItemsControl
@@ -83,12 +73,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _unstagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: false);
 
         // --- Staged Section Header ---
-        _stagedHeader = new TextBlock
-        {
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            Margin = new Thickness(12, 8, 12, 4)
-        };
+        _stagedHeader = TextStyles.Caption("Staged Changes");
+        _stagedHeader.Margin = new Thickness(12, 8, 12, 4);
 
         // --- Staged Changes List ---
         _stagedList = new ItemsControl
@@ -210,20 +196,18 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 _ => ("?", "#8B95A5")
             };
 
+            var statusText = TextStyles.Caption(statusChar);
+            statusText.FontWeight = FontWeight.Bold;
+            statusText.Foreground = new SolidColorBrush(Color.Parse(statusColor));
+            statusText.HorizontalAlignment = HorizontalAlignment.Center;
+            statusText.VerticalAlignment = VerticalAlignment.Center;
+
             var statusIcon = new Border
             {
                 Width = 20,
                 Height = 20,
                 CornerRadius = new CornerRadius(4),
-                Child = new TextBlock
-                {
-                    Text = statusChar,
-                    Foreground = new SolidColorBrush(Color.Parse(statusColor)),
-                    FontSize = 11,
-                    FontWeight = FontWeight.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                Child = statusText
             };
 
             var fileIcon = IconFactory.Create(
@@ -232,14 +216,9 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 12);
 
             // File path
-            var filePath = new TextBlock
-            {
-                Text = change.FilePath,
-                Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                FontSize = 12,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(6, 0, 0, 0)
-            };
+            var filePath = TextStyles.Body(change.FilePath);
+            filePath.VerticalAlignment = VerticalAlignment.Center;
+            filePath.Margin = new Thickness(6, 0, 0, 0);
 
             // Stage/Unstage button
             var stageButton = new Button

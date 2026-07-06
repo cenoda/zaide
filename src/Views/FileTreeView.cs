@@ -17,6 +17,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.ViewModels;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -42,15 +43,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             14);
 
-        _headerText = new TextBlock
-        {
-            Text = "Open Folder...",
-            FontSize = 13,
-            Foreground = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-            Margin = new Thickness(6, 0, 0, 8),
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        _headerText = TextStyles.Caption("Open Folder...");
+        _headerText.Cursor = new Cursor(StandardCursorType.Hand);
+        _headerText.Margin = new Thickness(6, 0, 0, 8);
+        _headerText.VerticalAlignment = VerticalAlignment.Center;
 
         _headerText.PointerPressed += async (_, _) =>
         {

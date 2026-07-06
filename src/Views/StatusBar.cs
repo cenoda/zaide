@@ -8,6 +8,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.ViewModels;
+using Zaide.Styles;
 
 namespace Zaide.Views;
 
@@ -34,61 +35,26 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             14);
 
-        var appNameText = new TextBlock
-        {
-            Text = "Zaide",
-            Foreground = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0)
-        };
+         var appNameText = TextStyles.Brand("Zaide");
+        appNameText.VerticalAlignment = VerticalAlignment.Center;
+        appNameText.Margin = new Thickness(4, 0, 0, 0);
 
-        // Caret position
-        _caretText = new TextBlock
-        {
-            Text = "Ln 1, Col 1",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        // Caret position (dynamic text)
+        _caretText = TextStyles.Caption("");
 
-        // Language
-        _languageText = new TextBlock
-        {
-            Text = "C#",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        // Language (dynamic text)
+        _languageText = TextStyles.Caption("C#");
 
-        // Project
-        _projectText = new TextBlock
-        {
-            Text = "Zaide",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        // Project (dynamic text)
+        _projectText = TextStyles.Caption("Zaide");
 
-        // Branch
-        _branchText = new TextBlock
-        {
-            Text = "master",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        // Branch (dynamic text)
+        _branchText = TextStyles.Caption("master");
 
-        // AI model (right-aligned)
-        var modelText = new TextBlock
-        {
-            Text = "powered by Avisnis 12",
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 0, 12, 0)
-        };
+        // AI model (right-aligned, static text)
+        var modelText = TextStyles.Caption("powered by Avisnis 12");
+        modelText.HorizontalAlignment = HorizontalAlignment.Right;
+        modelText.Margin = new Thickness(0, 0, 12, 0);
 
         // Separator
         TextBlock Separator() => new()
