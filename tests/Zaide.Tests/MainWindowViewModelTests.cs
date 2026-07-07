@@ -53,6 +53,27 @@ public class MainWindowViewModelTests
         return vm;
     }
 
+    private static MainWindowViewModel CreateViewModel(ITerminalHost terminalHost)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Zaide.Models.Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeService = new FileTreeService();
+        var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scState = new SourceControlState();
+        var scViewModel = new SourceControlViewModel(scState);
+        var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+        return vm;
+    }
+
     [Fact]
     public void InitialState_IsBottomPanelHidden()
     {
@@ -217,5 +238,23 @@ public class MainWindowViewModelTests
         await terminalHost2.EnsureActiveSessionStartedAsync();
 
         Assert.Equal("Terminal: pty failed", vm.StatusText);
+    }
+
+    [Fact]
+    public void ToggleBottomPanel_DoesNotDestroySessions()
+    {
+        var service = new Mock<ITerminalService>();
+        var terminalVm = new TerminalViewModel(service.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalVm);
+        var terminalHost = new TerminalHost(factory.Object);
+        var vm = CreateViewModel(terminalHost);
+
+        vm.ToggleBottomPanelCommand.Execute().Subscribe();
+        vm.ToggleBottomPanelCommand.Execute().Subscribe();
+        vm.ToggleBottomPanelCommand.Execute().Subscribe();
+
+        service.Verify(s => s.Dispose(), Times.Never);
+        Assert.Same(terminalVm, terminalHost.ActiveSession);
     }
 }
