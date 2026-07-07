@@ -31,12 +31,21 @@ public class TerminalRenderControl : Control
     public static readonly StyledProperty<bool> CursorVisibleProperty =
         AvaloniaProperty.Register<TerminalRenderControl, bool>(nameof(CursorVisible));
 
+    /// <summary>
+    /// Mirrors <see cref="TerminalViewModel.IsAlternateScreenActive"/>. While a
+    /// full-screen TUI owns the terminal, manual scrollback and selection are
+    /// suppressed so no main-buffer cells can leak into the view.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsAlternateScreenActiveProperty =
+        AvaloniaProperty.Register<TerminalRenderControl, bool>(nameof(IsAlternateScreenActive));
+
     static TerminalRenderControl()
     {
         AffectsRender<TerminalRenderControl>(SnapshotProperty);
         AffectsRender<TerminalRenderControl>(CursorRowProperty);
         AffectsRender<TerminalRenderControl>(CursorColProperty);
         AffectsRender<TerminalRenderControl>(CursorVisibleProperty);
+        AffectsRender<TerminalRenderControl>(IsAlternateScreenActiveProperty);
     }
 
     public TerminalSnapshot? Snapshot
@@ -61,6 +70,12 @@ public class TerminalRenderControl : Control
     {
         get => GetValue(CursorVisibleProperty);
         set => SetValue(CursorVisibleProperty, value);
+    }
+
+    public bool IsAlternateScreenActive
+    {
+        get => GetValue(IsAlternateScreenActiveProperty);
+        set => SetValue(IsAlternateScreenActiveProperty, value);
     }
 
     // ── font and metrics ──────────────────────────────────────────
@@ -205,6 +220,19 @@ public class TerminalRenderControl : Control
         this.GetObservable(CursorVisibleProperty).Subscribe(_ => ResetCursorBlink());
         this.GetObservable(CursorRowProperty).Subscribe(_ => ResetCursorBlink());
         this.GetObservable(CursorColProperty).Subscribe(_ => ResetCursorBlink());
+
+        // Drop any active selection when a full-screen TUI takes over so the
+        // main buffer cannot be copied mid-session.
+        this.GetObservable(IsAlternateScreenActiveProperty).Subscribe(active =>
+        {
+            if (active)
+            {
+                _selectionAnchor = null;
+                _selectionEnd = null;
+                _isSelecting = false;
+                InvalidateVisual();
+            }
+        });
 
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -360,6 +388,14 @@ public class TerminalRenderControl : Control
 
     public bool TryGetSelectedText(out string? text)
     {
+        // While a full-screen TUI is open, the main buffer must not be exposed
+        // through selection/copy even if a stale selection exists.
+        if (!IsMainBufferSelectionEnabled(IsAlternateScreenActive))
+        {
+            text = null;
+            return false;
+        }
+
         var snapshot = Snapshot;
         if (snapshot is null || !HasSelection())
         {
@@ -370,6 +406,15 @@ public class TerminalRenderControl : Control
         text = BuildSelectedText(snapshot, _selectionAnchor!.Value, _selectionEnd!.Value);
         return !string.IsNullOrEmpty(text);
     }
+
+    /// <summary>
+    /// Whether main-buffer selection, manual scrollback, and copy are permitted.
+    /// Suppressed while a full-screen TUI owns the terminal so no main-buffer
+    /// cells can leak into the view; this is the single decision point the
+    /// pointer/scroll/copy handlers consult.
+    /// </summary>
+    internal static bool IsMainBufferSelectionEnabled(bool isAlternateScreenActive) =>
+        !isAlternateScreenActive;
 
     /// <summary>
     /// Returns the viewport to the live bottom so newly arriving shell output
@@ -428,6 +473,12 @@ public class TerminalRenderControl : Control
             return;
         }
 
+        // No main-buffer selection while a full-screen TUI owns the surface.
+        if (IsAlternateScreenActive)
+        {
+            return;
+        }
+
         Focus();
         if (!TryMapPointerToCell(e.GetPosition(this), Snapshot, out var cell))
         {
@@ -445,7 +496,7 @@ public class TerminalRenderControl : Control
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (!_isSelecting || Snapshot is null)
+        if (!_isSelecting || Snapshot is null || IsAlternateScreenActive)
         {
             return;
         }
@@ -484,6 +535,12 @@ public class TerminalRenderControl : Control
     {
         var snapshot = Snapshot;
         if (snapshot is null)
+        {
+            return;
+        }
+
+        // No manual scrollback into the main buffer while a full-screen TUI is open.
+        if (IsAlternateScreenActive)
         {
             return;
         }

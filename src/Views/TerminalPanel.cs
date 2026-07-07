@@ -179,6 +179,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             d.Add(this.OneWayBind(ViewModel, vm => vm.CursorRow, v => v._renderControl.CursorRow));
             d.Add(this.OneWayBind(ViewModel, vm => vm.CursorCol, v => v._renderControl.CursorCol));
             d.Add(this.OneWayBind(ViewModel, vm => vm.CursorVisible, v => v._renderControl.CursorVisible));
+            d.Add(this.OneWayBind(ViewModel, vm => vm.IsAlternateScreenActive, v => v._renderControl.IsAlternateScreenActive));
             d.Add(this.OneWayBind(ViewModel, vm => vm.StatusLabel, v => v._statusText.Text));
             d.Add(this.BindCommand(ViewModel, vm => vm.ClearCommand, v => v._clearButton));
             d.Add(this.BindCommand(ViewModel, vm => vm.RestartCommand, v => v._restartButton));

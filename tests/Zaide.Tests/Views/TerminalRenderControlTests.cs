@@ -155,4 +155,26 @@ public class TerminalRenderControlTests
 
         Assert.Equal("abc", selected);
     }
+
+    // ── M3: alt-screen selection/scrollback isolation ─────────────
+
+    [Fact]
+    public void IsAlternateScreenActiveProperty_IsRegistered()
+    {
+        var prop = TerminalRenderControl.IsAlternateScreenActiveProperty;
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(bool), prop.PropertyType);
+        Assert.Equal("IsAlternateScreenActive", prop.Name);
+        Assert.Equal(typeof(TerminalRenderControl), prop.OwnerType);
+        Assert.IsType<StyledProperty<bool>>(prop);
+    }
+
+    [Fact]
+    public void IsMainBufferSelectionEnabled_DisabledWhileAlternateScreenActive()
+    {
+        // The view gates main-buffer selection, manual scrollback, and copy on
+        // this single decision; a full-screen TUI must not leak main cells.
+        Assert.True(TerminalRenderControl.IsMainBufferSelectionEnabled(false));
+        Assert.False(TerminalRenderControl.IsMainBufferSelectionEnabled(true));
+    }
 }
