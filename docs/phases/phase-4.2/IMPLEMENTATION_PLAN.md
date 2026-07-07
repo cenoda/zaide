@@ -20,6 +20,15 @@ shape that was never implemented — see the truth-sync fix in
 `docs/phases/phase-4.1/IMPLEMENTATION_PLAN.md`). The actual live shape,
 verified against `src/Models/TownhallMessage.cs` after 4.1 M2/M3 landed:
 
+**M1 Classification Rule (2026-07-08):** An entry is classified as "chat"
+if and only if its `Kind` is `TownhallMessageKind.Chat`. All other `Kind`
+values (`ChannelEvent`, `AgentAction`, `AgentThink`, `ToolCall`,
+`ToolResult`, `AgentError`, `System`) are classified as "action/log" entries.
+This rule is the sole basis for distinguishing chat messages from
+action/log entries; it relies only on the existing `Kind` field and does
+not introduce new fields, properties, or behavior. The rule is recorded here
+for use by M2+ (implementation untouched in M1).
+
 - `TownhallMessage` (class name unchanged — 4.1 widened it in place rather
   than introducing a new type) still has `Id`, `SenderId`, `SenderName`,
   `SenderAvatar`, `Content`, `Timestamp`, plus the 4.1 additions: `Kind`
