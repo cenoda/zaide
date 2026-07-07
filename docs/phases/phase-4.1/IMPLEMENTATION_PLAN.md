@@ -141,7 +141,7 @@ Decision to make and record here before M1 starts (revised after audit,
 | M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ✅ Done (2026-07-08) |
 | M1 | Agent-format decision recorded + entry-kind taxonomy defined (including forward-looking kinds) | Design doc section above reviewed; no code yet | ✅ Done (2026-07-08) |
 | M2 | New Townhall activity entry model implemented | Model tests for entry kinds, timestamps, `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` | ✅ Done (2026-07-08) |
-| M3 | `TownhallState`/`TownhallViewModel` updated to compile against new shape | Existing + rewritten ViewModel tests pass, no behavior change | ⬜ |
+| M3 | `TownhallState`/`TownhallViewModel` updated to compile against new shape | Existing + rewritten ViewModel tests pass, no behavior change | ✅ Done (2026-07-08) — no code changes needed; M2 mechanical fixes already covered M3 |
 | M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ⬜ |
 
 ## Planned Change Shape
@@ -160,11 +160,11 @@ Decision to make and record here before M1 starts (revised after audit,
 
 ## Exit Conditions
 
-- [ ] Agent-format decision is recorded in this document and matches what's implemented
-- [ ] `TownhallMessage`/replacement entry type supports a real kind taxonomy beyond `Normal`/`Warning`/`System`, including the forward-looking kinds with no producer yet
-- [ ] `SourceProvider`, `SourceModel`, and `ThreadId` exist as nullable first-class fields (unpopulated in Phase 4 is fine)
-- [ ] No provider abstraction (`IAgentProvider`, `AgentRegistry`, enums) was added — confirmed still deferred to Phase 5/6
-- [ ] `TownhallState` and `TownhallViewModel` compile and behave the same as before from a user-visible standpoint (no UI change yet)
-- [ ] `TownhallViewModelTests.cs` updated and passing
-- [ ] `dotnet build` and `dotnet test` pass
-- [ ] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.1 complete
+- [x] Agent-format decision is recorded in this document and matches what's implemented
+- [x] `TownhallMessage`/replacement entry type supports a real kind taxonomy beyond `Normal`/`Warning`/`System`, including the forward-looking kinds with no producer yet
+- [x] `SourceProvider`, `SourceModel`, and `ThreadId` exist as nullable first-class fields (unpopulated in Phase 4 is fine)
+- [x] No provider abstraction (`IAgentProvider`, `AgentRegistry`, enums) was added — confirmed still deferred to Phase 5/6
+- [x] `TownhallState` and `TownhallViewModel` compile and behave the same as before from a user-visible standpoint (no UI change yet)
+- [x] `TownhallViewModelTests.cs` updated and passing (no edits needed; never referenced the old `TownhallMessageType`/`Type` shape)
+- [x] `dotnet build` and `dotnet test` pass (589 passed, 0 failed, 0 warnings as of 2026-07-08)
+- [ ] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.1 complete (pending M4)
