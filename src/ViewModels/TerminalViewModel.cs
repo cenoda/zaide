@@ -21,7 +21,9 @@ namespace Zaide.ViewModels;
 /// single-threaded across chunk boundaries) and then marshals the buffer
 /// mutation onto the UI thread before raising snapshot changes.</para>
 ///
-/// Registered as a Singleton — one terminal session for the app lifetime.
+/// Created per session via <see cref="ITerminalSessionFactory"/> — each
+/// <see cref="TerminalViewModel"/> owns one <see cref="ITerminalService"/>
+/// and is independent from other instances. Dispose to release the session.
 /// </summary>
 public class TerminalViewModel : ReactiveObject, IDisposable
 {
@@ -246,9 +248,9 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// this deliberately clears that gate and resets the cached viewport size
     /// before starting again. If the shell is currently running, the service is
     /// asked to terminate it and a fresh shell is started as soon as the exit
-    /// event arrives. The singleton service is reused, so event subscriptions
-    /// are not re-added and cannot duplicate. No-op only when the ViewModel is
-    /// disposed.
+    /// event arrives. The per-session <see cref="ITerminalService"/> is reused,
+    /// so event subscriptions are not re-added and cannot duplicate. No-op only
+    /// when the ViewModel is disposed.
     /// </summary>
     public async Task RestartAsync()
     {

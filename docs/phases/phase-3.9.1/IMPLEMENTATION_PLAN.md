@@ -21,7 +21,9 @@
 
 ## Planning Status
 
-**Draft.** Phase 3.9 intentionally stopped before terminal tabs because the current app architecture still assumes exactly one terminal session. Phase 3.9.1 introduces the smallest possible session-hosting layer needed to support multiple terminals in the bottom panel without rewriting the PTY backend or broadening into a general workspace subsystem.
+**M1: Complete.** Phase 3.9 introduced the full terminal UX (render control, search, scrollback, selection, logs) but intentionally stopped before terminal tabs because the app architecture still assumed exactly one terminal session. M1 removes that blocker by introducing `ITerminalSessionFactory` and `ITerminalHost` so `ITerminalService` and `TerminalViewModel` are instantiable per session. The existing single-session behavior is preserved as the first consumer of the new seam.
+
+Current architecture (post-M1):
 
 Verified live seams on 2026-07-07:
 
@@ -143,7 +145,7 @@ This is the lowest-risk fit for the current code because `TerminalPanel` and `Te
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests/live seams verified and architecture choice pinned down | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ⬜ Build/test/code-audit ready; manual Linux smoke pending |
-| M1 | Per-session creation seam: make terminal service/view-model instantiable per tab without regressing single-session behavior | targeted VM/service tests + build/test | ⬜ |
+| M1 | Per-session creation seam: make terminal service/view-model instantiable per tab without regressing single-session behavior | targeted VM/service tests + build/test | ✅ Complete (`ITerminalSessionFactory` + `ITerminalHost` wired, 549 tests pass) |
 | M2 | Terminal tab host: collection, active-tab switching, create/close/dispose lifecycle | host-viewmodel tests for session isolation and disposal | ⬜ |
 | M3 | Bottom-panel UI integration: tab strip + active session surface + focus/start behavior | focused UI/view tests + manual tab switching smoke | ⬜ |
 | M4 | Docs sync and exit audit | `dotnet build`, `dotnet test`, roadmap/doc sync, Linux smoke, TOFIX update | ⬜ |
