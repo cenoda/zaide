@@ -65,8 +65,8 @@ history — without changing the outer Townhall layout or adding agent panels.
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ⬜ |
-| M1 | Rendering-path decision (branch-in-panel vs. dual path) + filter-control design decision, recorded in this doc | Design note reviewed | ⬜ |
+| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ✅ Done (2026-07-08) |
+| M1 | Rendering-path decision (branch-in-panel vs. dual path) + filter-control design decision, recorded in this doc | Design note reviewed | ✅ Done (2026-07-08) |
 | M2 | Visual distinction between chat and action/log entries implemented | View tests for rendering by entry kind | ⬜ |
 | M3 | Filter control implemented and wired to the active channel's rendered list | View tests for filter behavior; manual scroll check | ⬜ |
 | M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, `DESIGN.md` verification checklist, phase-4 umbrella status updated | ⬜ |
