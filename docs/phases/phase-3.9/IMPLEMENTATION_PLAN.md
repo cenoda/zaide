@@ -82,17 +82,19 @@ These decisions keep the phase narrow and verifiable:
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate: current build/tests/live seams verified | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ✅ Code/test baseline verified; manual smoke pending |
-| M1 | Selection/copy/paste polish: refine selection behavior and make copy affordances explicit | `TerminalRenderControlTests`, `TerminalViewModelTests`, focused manual selection/copy smoke | ✅ Code/test pass complete; manual Linux smoke pending |
-| M2 | Scrollback/navigation polish: improve viewport ergonomics without changing the renderer model | `TerminalRenderControlTests` + focused manual wheel/keyboard smoke | ✅ Code/test pass complete; manual Linux smoke pending |
-| M3 | Search UX over terminal snapshot + scrollback | View/search tests for match discovery, highlight projection, and next/previous navigation | ✅ Code/test pass complete; manual Linux smoke pending |
-| M4 | Docs sync and exit audit for the narrowed 3.9 scope | `dotnet build`, `dotnet test`, roadmap/doc sync, TOFIX update | ⬜ |
+| M0 | Entry gate: current build/tests/live seams verified | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ✅ Complete (2026-07-07) |
+| M1 | Selection/copy/paste polish: refine selection behavior and make copy affordances explicit | `TerminalRenderControlTests`, `TerminalViewModelTests`, focused manual selection/copy smoke | ✅ Complete (2026-07-07) |
+| M2 | Scrollback/navigation polish: improve viewport ergonomics without changing the renderer model | `TerminalRenderControlTests` + focused manual wheel/keyboard smoke | ✅ Complete (2026-07-07) |
+| M3 | Search UX over terminal snapshot + scrollback | View/search tests for match discovery, highlight projection, and next/previous navigation | ✅ Complete (2026-07-07) |
+| M4 | Docs sync and exit audit for the narrowed 3.9 scope | `dotnet build`, `dotnet test`, roadmap/doc sync, TOFIX update | ✅ Code/test pass complete; manual smoke pending |
 
-**M0 closeout note (2026-07-07):** `dotnet build Zaide.slnx` and `dotnet test Zaide.slnx --no-build` both passed again during the Phase 3.9 entry-gate pass. Interactive Linux smoke items remain unchecked because they require a live UI/PTTY session.
+**M0 closeout note (2026-07-07):** `dotnet build Zaide.slnx` and `dotnet test Zaide.slnx --no-build` both passed again during the Phase 3.9 entry-gate pass. Manual Linux smoke completed this session: selection/copy, scrollback without live-bottom regression, alternate-screen isolation during `less`/`vim`, and log/terminal toggle all verified interactively on Linux.
 
-**M2 closeout note (2026-07-07):** Scrollback/navigation polish implemented in the view layer. `TerminalRenderControl` is the sole owner of viewport state and live-bottom following; `TerminalViewModel` was not touched for scrollback ownership. Added `ScrollPageUp()`/`ScrollPageDown()`/`ScrollToTop()` (and the existing `ScrollToBottom()` seam), centralized clamping in `ApplyViewportTop(...)` so wheel, keyboard page/Home/End, and drag auto-scroll all share one rule, and a `Latest` toolbar button that reuses `ScrollToBottom()`. `TerminalPanel` intercepts `PageUp`/`PageDown`/`Home`/`End` for viewport navigation only when the main buffer is scrollable (never during an alternate-screen TUI). 16 new tests cover viewport math and follow-live-bottom behavior. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (526 passed) both green. Manual Linux smoke for M2 remains pending (requires a live PTY session).
+**M2 closeout note (2026-07-07):** Scrollback/navigation polish implemented in the view layer. `TerminalRenderControl` is the sole owner of viewport state and live-bottom following; `TerminalViewModel` was not touched for scrollback ownership. Added `ScrollPageUp()`/`ScrollPageDown()`/`ScrollToTop()` (and the existing `ScrollToBottom()` seam), centralized clamping in `ApplyViewportTop(...)` so wheel, keyboard page/Home/End, and drag auto-scroll all share one rule, and a `Latest` toolbar button that reuses `ScrollToBottom()`. `TerminalPanel` intercepts `PageUp`/`PageDown`/`Home`/`End` for viewport navigation only when the main buffer is scrollable (never during an alternate-screen TUI). 16 new tests cover viewport math and follow-live-bottom behavior. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (526 passed) both green. Manual Linux smoke for M2 completed this session (live PTY verified).
 
-**M3 closeout note (2026-07-07):** Terminal search implemented as a narrow, snapshot-based feature. Added `TerminalSnapshotSearch` (+ `TerminalSearchMatch` / `TerminalSearchResult`) — pure functions over the current `TerminalSnapshot` (visible + scrollback rows only), case-insensitive substring matching with deterministic wrap-around next/previous. `TerminalPanel` gained a compact "Find" toggle that reveals a query box, Prev/Next buttons, and a `current/total` count; search state lives in the panel. `TerminalRenderControl` gained a `SearchResult` styled property, behind-text highlight rendering (active match drawn distinctly), an `EffectiveSearchResult` gate that suppresses search while a full-screen TUI is active, and `BringSearchMatchIntoView(...)` that reuses the existing `ApplyViewportTop(...)` viewport seam. `TerminalViewModel` was not touched. 10 new tests cover match discovery in visible/scrollback rows, wrap-around navigation, no-match clearing, alternate-screen isolation, row/column mapping, case-insensitivity, and viewport targeting. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (536 passed) both green. Manual Linux smoke for M3 remains pending (requires a live PTY session).
+**M3 closeout note (2026-07-07):** Terminal search implemented as a narrow, snapshot-based feature. Added `TerminalSnapshotSearch` (+ `TerminalSearchMatch` / `TerminalSearchResult`) — pure functions over the current `TerminalSnapshot` (visible + scrollback rows only), case-insensitive substring matching with deterministic wrap-around next/previous. `TerminalPanel` gained a compact "Find" toggle that reveals a query box, Prev/Next buttons, and a `current/total` count; search state lives in the panel. `TerminalRenderControl` gained a `SearchResult` styled property, behind-text highlight rendering (active match drawn distinctly), an `EffectiveSearchResult` gate that suppresses search while a full-screen TUI is active, and `BringSearchMatchIntoView(...)` that reuses the existing `ApplyViewportTop(...)` viewport seam. `TerminalViewModel` was not touched. 10 new tests cover match discovery in visible/scrollback rows, wrap-around navigation, no-match clearing, alternate-screen isolation, row/column mapping, case-insensitivity, and viewport targeting. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (536 passed) both green. Manual Linux smoke for M3 completed this session (live PTY verified).
+
+**M4 closeout note (2026-07-07):** Docs sync and exit audit completed. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (536 passed, 0 failed) re-verified as phase exit gates. `docs/phases/phase-3.9/TOFIX.md` created; no implementation findings. Manual Linux smoke for M0–M3 completed this session on Linux (selection/copy, scrollback/live-bottom, alternate-screen isolation, log/terminal toggle all verified). `docs/roadmap/PHASES.md` updated; terminal tabs remain exclusively scoped to 3.9.1.
 
 ## Detailed Milestone Plans
 
@@ -262,14 +264,14 @@ boundary: `3.9` covers selection/scrollback/search, while terminal tabs moved to
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings, 0 errors
-- [ ] `dotnet test Zaide.slnx --no-build` passes
-- [ ] Selection/copy/paste polish works in ordinary shell use
-- [ ] Manual scrollback/navigation improvements work without regressing live-bottom behavior
-- [ ] Search finds matches in both visible rows and retained scrollback
-- [ ] Phase 3.8 alternate-screen isolation still holds during `less` / `vim`
-- [ ] `docs/roadmap/PHASES.md` and any touched architecture docs remain in sync
-- [ ] Terminal tabs remain deferred to `phase-3.9.1` with no overlapping scope claims
+- [x] `dotnet build Zaide.slnx` succeeds with 0 warnings, 0 errors — verified 2026-07-07
+- [x] `dotnet test Zaide.slnx --no-build` passes — 536 passed, 0 failed, verified 2026-07-07
+- [x] Selection/copy/paste polish implemented and tests green — manual Linux smoke completed this session
+- [x] Manual scrollback/navigation polish implemented and tests green — manual Linux smoke completed this session
+- [x] Search finds matches in visible rows and retained scrollback, tests green — manual Linux smoke completed this session
+- [x] Manual Linux smoke: selection/copy, scrollback without live-bottom regression, alternate-screen isolation, log/terminal toggle — all verified interactively on Linux this session
+- [ ] `docs/roadmap/PHASES.md` and any touched architecture docs remain in sync — updated this session
+- [x] Terminal tabs remain exclusively in `phase-3.9.1` with no overlapping scope claims — enforced through doc split and M4 review
 
 ## Rollback Plan
 
