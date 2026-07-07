@@ -17,10 +17,10 @@ public class TownhallViewModelTests
     }
 
     /// <summary>
-    /// Verifies that initial sample data is loaded correctly.
+    /// Verifies that initial session seed state is loaded correctly.
     /// </summary>
     [Fact]
-    public void InitialState_SampleChannelsExist()
+    public void InitialState_SeedChannelsExist()
     {
         var vm = CreateViewModel();
 
@@ -130,7 +130,7 @@ public class TownhallViewModelTests
 
         // Get initial count (should be 2 for townhall-main channel)
         var initialCount = vm.Messages.Count;
-        Assert.Equal(2, initialCount);  // Two sample messages in townhall-main
+        Assert.Equal(2, initialCount);  // Two seeded starter messages in townhall-main
 
         // Set draft text and send
         vm.DraftText = "Test message";
@@ -329,7 +329,7 @@ public class TownhallViewModelTests
         // Switch back to initial channel and verify messages are restored
         vm.SelectChannelCommand.Execute(initialActiveId).Subscribe();
         Assert.Equal(initialActiveId, vm.ActiveChannelId);
-        // townhall-main now has original 2 samples + the ChannelEvent logged on return switch
+        // townhall-main now has original 2 seeded starter messages + the ChannelEvent logged on return switch
         Assert.Equal(3, vm.Messages.Count);
         Assert.Contains("Townhall workspace", vm.Messages[0].Content);
     }

@@ -11,7 +11,7 @@ namespace Zaide.ViewModels;
 /// ViewModel for the Townhall workspace.
 /// Exposes channels, messages, agents, and draft state as reactive properties.
 /// Commands: select channel, send message.
-/// Uses simple in-memory sample data only.
+/// Initializes explicit in-memory session seed state for first run.
 /// Messages are stored per-channel in TownhallState.ChannelMessages.
 /// </summary>
 public class TownhallViewModel : ReactiveObject
@@ -131,8 +131,8 @@ public class TownhallViewModel : ReactiveObject
     {
         _state = state;
 
-        // Initialize sample data
-        InitializeSampleData();
+        // Initialize explicit session seed state
+        InitializeSessionState();
 
         // Setup reactive properties based on state
         Channels = _state.Channels;
@@ -197,9 +197,13 @@ public class TownhallViewModel : ReactiveObject
         messagesList.Add(entry);
     }
 
-    private void InitializeSampleData()
+    /// <summary>
+    /// Initializes explicit initial session state for first run using in-memory seed data.
+    /// Seeds channels, agents, and starter messages required for a usable Townhall workspace.
+    /// </summary>
+    private void InitializeSessionState()
     {
-        // Create sample channels
+        // Create initial channels
         var townhallMain = new Channel { Id = "channel-1", Name = "townhall-main", IsPinned = true };
         var aiStatus = new Channel { Id = "channel-2", Name = "ai-status", IsPinned = false };
         var codebaseRefactoring = new Channel { Id = "channel-3", Name = "codebase-refactor", IsPinned = true };
@@ -208,7 +212,7 @@ public class TownhallViewModel : ReactiveObject
         _state.Channels.Add(aiStatus);
         _state.Channels.Add(codebaseRefactoring);
 
-        // Create sample messages for each channel (per-channel storage)
+        // Create starter messages for each channel (per-channel storage)
         var townhallMessages = new ObservableCollection<TownhallMessage>();
         var aiStatusMessages = new ObservableCollection<TownhallMessage>();
         var refactoringMessages = new ObservableCollection<TownhallMessage>();
@@ -258,7 +262,7 @@ public class TownhallViewModel : ReactiveObject
         // Set initial active channel (which also sets IsActive flags and Messages collection)
         ActiveChannelId = townhallMain.Id;
 
-        // Create sample agents
+        // Create initial agents
         var user = new WorkspaceAgent { Id = "user-1", Name = "User", Avatar = "avatar-user", Role = "user", Status = AgentStatus.Active, HasWarning = false };
         var agent1 = new WorkspaceAgent { Id = "agent-1", Name = "Zaide Agent", Avatar = "avatar-agent", Role = "agent", Status = AgentStatus.Active, HasWarning = false };
 
