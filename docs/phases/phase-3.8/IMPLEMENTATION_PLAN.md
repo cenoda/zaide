@@ -7,7 +7,7 @@
 - [x] Re-read `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `docs/CONVENTIONS.md`
 - [x] Verify current terminal scope boundary against `docs/phases/phase-3.9/BRIEF.md`
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx` (builds and runs in one step)
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build` (after successful build, avoids file-lock noise)
 - [ ] Manually confirm the current Phase 3.7 baseline still works on Linux:
   - [ ] Shell starts and shows a prompt
   - [ ] 256-color and truecolor output still render correctly
@@ -82,7 +82,37 @@ These are the concrete compatibility gaps implied by the current code and docs:
 - Richer screen-control behavior is still limited to the ordinary shell subset
   from Phase 3.7
 - The current tests prove shell-quality behavior, but they do not yet codify
-  transcript-style TUI transitions for `vim` / `less` / `htop`-style flows
+  transcript-style TUI transitions for the guaranteed set: `less` open-exit and a minimal
+  `vim` open-exit/edit-quit path.
+
+## Guaranteed Transcript Set (Phase 3.8 Scope)
+
+**Guaranteed automated transcript set for Phase 3.8:**
+
+1. `less` open-exit — enter pager, scroll a few pages, quit; main shell surface restored intact.
+2. Minimal `vim` open-exit/edit-quit path — open file, make a small edit, save and quit; main shell surface restored intact.
+
+These two transcripts define the minimum compatibility bar. They exercise alternate-screen entry/exit, saved-cursor behavior, and basic screen-control sequences (`H/J/K/m`, `?1049`) without requiring scroll regions.
+
+**DECSTBM (scroll-region) scoping rule:**
+
+- DECSTBM remains **out of scope for Phase 3.8 by default**.
+- It is pulled in only if a captured transcript from the guaranteed target set above cannot be supported without it — i.e., if `less` or `vim` fails to restore the shell surface correctly and investigation shows scroll-region sequences are the blocker.
+- If DECSTBM is added, implementation must stay narrow: only the top/bottom margin pair (`CSI top;bottom r`), no left/right margins.
+
+**Stretch / manual validation targets (not required compatibility proofs):**
+
+- `htop`, `nano`, and other redraw-heavy TUIs are smoke-targets for manual verification only. They are not hard compatibility contracts for this phase unless DECSTBM is explicitly pulled in via the rule above.
+- If a stretch target breaks without DECSTBM, capture the transcript, evaluate against the scoping rule, and decide whether to add it to Phase 3.8 or defer to a follow-up.
+
+**Phase boundary summary:**
+
+| In scope (guaranteed) | Out of scope (unless proven necessary) |
+|-----------------------|----------------------------------------|
+| Alternate screen (`?1047`/`?1049`) | DECSTBM / scroll regions |
+| Save/restore cursor (`ESC 7/8`, `?1048`) | Mouse reporting, focus reporting |
+| Main-screen restoration on exit | Full redraw fidelity for every TUI layout |
+| Restart/crash recovery with alt-screen active | `htop` compatibility (unless DECSTBM pulled in) |
 
 ## Milestones (Incremental)
 
@@ -207,16 +237,10 @@ buffer, so full-screen apps would overwrite the user’s main shell history.
      surface isolated from the main scrollback history.
 
 9. **Alt-screen scrollback isolation (M2/M3 requirement):**
-   - While `TerminalScreen.IsAlternateActive` is true, `TerminalViewModel.UpdateSnapshot()`
-     must project **no** main-screen scrollback rows into the public snapshot — only
-     the alternate screen's own content and its retained scrollback.
-   - The view layer (`TerminalRenderControl`) must not expose manual scrollback or
-     selection that can leak main-buffer cells while a full-screen app (e.g. `vim`,
-     `less`, `htop`) is open. Selection/scrollback on the main buffer are deferred
-     until alt-screen mode exits.
-   - This is an explicit contract, not just an internal detail: tests in M2 and M3
-     must verify that snapshot content during alt-screen contains zero rows from the
-     main screen's retained scrollback history.
+   - The alternate screen is a temporary full-screen surface with **no independent scrollback**. It has exactly `currentRows` visible rows and zero retained history — it is not another scrollback history source.
+   - While `TerminalScreen.IsAlternateActive` is true, `TerminalViewModel.UpdateSnapshot()` must project only the alternate screen's visible cells (rows 0 through `currentRows-1`) into the public snapshot. No main-screen scrollback rows are exposed.
+   - The view layer (`TerminalRenderControl`) must not expose manual scrollback or selection that can leak main-buffer cells while a full-screen app (e.g. `vim`, `less`, `htop`) is open. Selection/scrollback on the main buffer are deferred until alt-screen mode exits.
+   - This is an explicit contract, not just an internal detail: tests in M2 and M3 must verify that snapshot content during alt-screen contains zero rows from the main screen's retained scrollback history.
 
 **Tests (M2):**
 
@@ -227,7 +251,6 @@ buffer, so full-screen apps would overwrite the user’s main shell history.
 - `Dec1049_EnableThenDisable_RestoresMainScreenAndCursor`
 - `Resize_WhileInAlternateScreen_ResizesBothBuffers`
 - `EraseDisplay3_WhileInAlternateScreen_ClearsAltScreenOnly`
-- any pure-screen tests needed for narrow scroll-region behavior if added
 
 ### M3: ViewModel Integration and Transcript Compatibility
 
@@ -260,13 +283,16 @@ must be proven with transcript-style tests.
      will dump ANSI-heavy garbage or massive redraw noise into the log view during
      alt-screen sessions. This is a real product regression path that must be decided
      before implementation.
-   - **Decision pending from user:** Choose one of:
-     - **(a) Suppress** — skip `AppendLogEntries()` entirely while alt-screen is active
-     - **(b) Filter** — still categorize but drop ANSI-heavy / redraw-noise lines during
-       alt-screen mode
-     - **(c) Leave noisy** — accept the log pollution as a known limitation for this phase
-   - Whichever option is chosen, document it explicitly in-plan and add an M3 test
-     that verifies the chosen behavior.
+   - **Decision: (a) Suppress.** While `TerminalScreen.IsAlternateActive` is true,
+     skip `AppendLogEntries()` entirely — do not categorize or append any decoded lines
+     to the log view. Rationale: TUI redraw traffic carries no useful shell I/O signal;
+     logging it pollutes the user-facing log with noise that cannot be meaningfully
+     interpreted. Shell prompt detection and command output only occur on the main screen,
+     so suppression during alt-screen mode does not lose real data.
+   - Implementation: Add a guard at the top of `AppendLogEntries()` (or in its call site)
+     that checks `IsAlternateActive` and returns early if true.
+   - M3 test: verify that entering/exiting a full-screen app produces no spurious log
+     entries from TUI redraw traffic.
 
 6. Restart / crash recovery with alt-screen active:
    - If the shell exits (or crashes) while in alt-screen mode, the screen must
@@ -303,7 +329,7 @@ must be proven with transcript-style tests.
 - [ ] Update `docs/architecture/OVERVIEW.md` only if the terminal behavior
       contract meaningfully changed
 - [ ] `dotnet build Zaide.slnx` succeeds
-- [ ] `dotnet test Zaide.slnx` succeeds (single command, builds and runs)
+- [ ] `dotnet test Zaide.slnx --no-build` succeeds (after successful build)
 - [ ] Linux manual smoke checklist passes
 
 ## Limitations (by design)
@@ -321,11 +347,12 @@ must be proven with transcript-style tests.
 ## Exit Conditions
 
 - [ ] `dotnet build Zaide.slnx` succeeds
-- [ ] `dotnet test Zaide.slnx` succeeds
+- [ ] `dotnet test Zaide.slnx --no-build` succeeds (after successful build)
 - [ ] Alternate screen enter/exit restores the main shell surface correctly
 - [ ] Saved-cursor behavior required by the supported transcript set works
-- [ ] At least one `vim`/`less`/`htop`-style transcript path is covered by
-      automated tests
+- [ ] Guaranteed automated transcripts covered:
+  - [ ] `less` open-exit transcript passes (enter pager, scroll pages, quit; shell restored intact)
+  - [ ] Minimal `vim` open-exit/edit-quit transcript passes (open file, edit, save/quit; shell restored intact)
 - [ ] No regressions in Phase 3.7 shell quality, selection, copy, paste,
       resize, restart, or main-screen scrollback behavior
 - [ ] `docs/roadmap/PHASES.md` is updated when the phase is complete
