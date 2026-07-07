@@ -13,9 +13,9 @@ terminal correctness under more demanding screen-control patterns.
 
 ## Intended Outcome
 
-- Better cursor addressing support
-- Alternate screen buffer support
-- Scroll-region and richer screen-control behavior
+- Cursor save/restore support (ESC 7/8, DECSET/DECRST ?1048)
+- Alternate screen buffer support (DECSET/DECRST ?1047, ?1049)
+- Narrow scroll-region support (DECSTBM `CSI top;bottom r`) if justified by target transcripts
 - Higher compatibility with full-screen terminal applications
 - Fewer visual mismatches in editor- and dashboard-style terminal programs
 
