@@ -24,7 +24,8 @@ class Program
                 {
                     services.AddSingleton<Models.Workspace>();
                     services.AddSingleton<IFileService, FileService>();
-                    services.AddSingleton<ITerminalService, LinuxTerminalService>();
+                    services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
+                    services.AddSingleton<ITerminalHost, TerminalHost>();
                     services.AddSingleton<IFileTreeService, FileTreeService>();
                     services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
                     services.AddSingleton<FileTreeViewModel>();
@@ -32,7 +33,6 @@ class Program
                     services.AddSingleton<TownhallState>();
                     services.AddSingleton<TownhallViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
-                    services.AddSingleton<TerminalViewModel>();
                     services.AddSingleton<SourceControlState>();
                     services.AddSingleton<SourceControlViewModel>();
                     services.AddTransient<EditorViewModel>(sp =>

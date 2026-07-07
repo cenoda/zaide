@@ -24,11 +24,11 @@ public partial class App : Application
             var vm = Services.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { ViewModel = vm };
 
-            // Dispose the terminal service on exit so the child bash
+            // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.
             desktop.Exit += (_, _) =>
             {
-                Services.GetService<ITerminalService>()?.Dispose();
+                Services.GetService<ITerminalHost>()?.Dispose();
             };
         }
 

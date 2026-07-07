@@ -1100,4 +1100,91 @@ public class TerminalViewModelTests
         service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049l"));
         Assert.Single(vm.LogEntries);
     }
+
+    // ── M1: Per-Session Independence ────────────────────────────────────
+
+    [Fact]
+    public void TwoInstances_DoNotShareScreenState()
+    {
+        var service1 = new Mock<ITerminalService>();
+        var service2 = new Mock<ITerminalService>();
+
+        using var vm1 = CreateViewModel(service1);
+        using var vm2 = CreateViewModel(service2);
+
+        service1.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello from session 1"));
+        service2.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("hello from session 2"));
+
+        Assert.Contains("session 1", GetScreenText(vm1));
+        Assert.Contains("session 2", GetScreenText(vm2));
+
+        // session 2 does not see session 1's output
+        Assert.DoesNotContain("session 1", GetScreenText(vm2));
+        // session 1 does not see session 2's output
+        Assert.DoesNotContain("session 2", GetScreenText(vm1));
+    }
+
+    [Fact]
+    public void TwoInstances_DoNotShareLogEntries()
+    {
+        var service1 = new Mock<ITerminalService>();
+        var service2 = new Mock<ITerminalService>();
+
+        using var vm1 = CreateViewModel(service1);
+        using var vm2 = CreateViewModel(service2);
+
+        service1.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("entry one\r\n"));
+        service2.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("entry two\r\n"));
+
+        Assert.Contains(vm1.LogEntries, le => le.Content.Contains("entry one", StringComparison.Ordinal));
+        Assert.DoesNotContain(vm1.LogEntries, le => le.Content.Contains("entry two", StringComparison.Ordinal));
+        Assert.Contains(vm2.LogEntries, le => le.Content.Contains("entry two", StringComparison.Ordinal));
+        Assert.DoesNotContain(vm2.LogEntries, le => le.Content.Contains("entry one", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task DisposingOneSession_DoesNotAffectOther()
+    {
+        var service1 = new Mock<ITerminalService>();
+        var service2 = new Mock<ITerminalService>();
+
+        using var vm1 = CreateViewModel(service1);
+        var vm2 = CreateViewModel(service2);
+
+        // Dispose session 2 only
+        vm2.Dispose();
+
+        // vm1 can still receive output
+        service1.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("still alive"));
+        Assert.NotNull(vm1.ScreenSnapshot);
+        Assert.Contains("still alive", GetScreenText(vm1));
+
+        // vm2 no longer receives output
+        service2.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("dead"));
+        // No snapshot update expected for disposed vm2
+    }
+
+    [Fact]
+    public async Task EnsureStartedAsync_CanBeCalledOnIndependentInstances()
+    {
+        var service1 = new Mock<ITerminalService>();
+        service1.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        service1.SetupGet(s => s.IsRunning).Returns(true);
+
+        var service2 = new Mock<ITerminalService>();
+        service2.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        service2.SetupGet(s => s.IsRunning).Returns(true);
+
+        using var vm1 = CreateViewModel(service1);
+        using var vm2 = CreateViewModel(service2);
+
+        await vm1.EnsureStartedAsync();
+        await vm2.EnsureStartedAsync();
+
+        service1.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        service2.Verify(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
 }

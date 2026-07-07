@@ -75,7 +75,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
-    public TerminalViewModel TerminalViewModel { get; }
+    public ITerminalHost TerminalHost { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
 
@@ -91,14 +91,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                EditorTabViewModel editorTabViewModel,
-                               TerminalViewModel terminalViewModel,
+                               ITerminalHost terminalHost,
                                TownhallViewModel townhallViewModel,
                                SourceControlViewModel sourceControlViewModel,
                                Workspace workspace)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
-        TerminalViewModel = terminalViewModel;
+        TerminalHost = terminalHost;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
         WorkspaceProjectName = workspace.ProjectName;
@@ -141,7 +141,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .Subscribe(msg => StatusText = $"Open failed: {msg}"));
 
         _disposables.Add(
-            this.WhenAnyValue(x => x.TerminalViewModel.StartupError)
+            TerminalHost.StartupError
                 .Where(err => err is not null)
                 .Subscribe(err => StatusText = $"Terminal: {err}"));
 

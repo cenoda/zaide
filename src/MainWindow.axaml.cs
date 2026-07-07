@@ -85,7 +85,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
-            _terminalPanel.ViewModel = ViewModel.TerminalViewModel;
+            _terminalPanel.ViewModel = ViewModel!.TerminalHost.ActiveSession;
 
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
@@ -183,7 +183,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     if (visible)
                     {
                         _terminalPanel.FocusTerminal();
-                        _ = ViewModel.TerminalViewModel.EnsureStartedAsync();
+                        _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
                     }
                 }));
 

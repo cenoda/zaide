@@ -40,12 +40,15 @@ public class MainWindowViewModelTests
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Moq.Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -199,16 +202,19 @@ public class MainWindowViewModelTests
         terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("pty failed"));
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory2 = new Moq.Mock<ITerminalSessionFactory>();
+        factory2.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost2 = new TerminalHost(factory2.Object);
         var townhallState2 = new TownhallState();
         var townhallViewModel2 = new TownhallViewModel(townhallState2);
 
         var scState2 = new SourceControlState();
         var scViewModel2 = new SourceControlViewModel(scState2);
         var workspace2 = sp.GetRequiredService<Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalViewModel, townhallViewModel2, scViewModel2, workspace2);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
-        await terminalViewModel.EnsureStartedAsync();
+        await terminalHost2.EnsureActiveSessionStartedAsync();
 
         Assert.Equal("Terminal: pty failed", vm.StatusText);
     }
