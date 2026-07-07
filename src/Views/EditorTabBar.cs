@@ -157,12 +157,19 @@ public partial class EditorTabBar : UserControl
     public void SetActiveTab(EditorViewModel? tab)
     {
         if (_activeTab is not null && _tabItems.TryGetValue(_activeTab, out var prevBorder))
+        {
             prevBorder.Background = _inactiveTabBrush;
+            Animations.Transition(prevBorder, Animations.TabFadeOut());
+        }
 
         _activeTab = tab;
 
         if (tab is not null && _tabItems.TryGetValue(tab, out var activeBorder))
+        {
             activeBorder.Background = _activeTabBrush;
+            activeBorder.Opacity = 0.72;
+            Animations.Transition(activeBorder, Animations.TabFadeIn());
+        }
     }
 
     private void OnTabsChanged(object? sender, NotifyCollectionChangedEventArgs e)

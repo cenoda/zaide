@@ -1,11 +1,8 @@
 using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Transformation;
 using Avalonia.Styling;
 using System;
 using System.Threading.Tasks;
@@ -184,7 +181,7 @@ public class TownhallInputArea : Panel
         transform.ScaleX = 0.95;
         transform.ScaleY = 0.95;
 
-        await Animations.CreateScaleBounce(0.95d, 1d).RunAsync(transform);
+        await Animations.RunAsync(transform, Animations.CreateScaleBounce(0.95d, 1d));
     }
 
     private static Control CreateIconOrFallback(string resourceKey, string fallbackText, IBrush foreground, double size)

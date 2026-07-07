@@ -9,7 +9,7 @@ Convention: see `docs-rules.md` §5.
 
 ## Open Items
 
-No open items. M1, M2, M3, M4, and M5 completed.
+No open items. M1, M2, M3, M4, M5, and M6 completed.
 
 ---
 
@@ -71,6 +71,14 @@ No open items. M1, M2, M3, M4, and M5 completed.
       - `docs/refactor/refactor-4/verification/m5-default.png` — real 1280x800 PNG capture of the live app after the M5 status-bar and spacing pass.
       - `grep -n '│' src/Views/StatusBar.cs` — zero matches.
       - M5 spacing grep — only tokenized `UnsavedDialog.axaml` lines remain because the broad regex also matches XAML token references.
+
+- [x] **M6 Animation polish** — *`src/Views/Animations.cs`, `src/Views/HorizontalDirection.cs`, `src/MainWindow.axaml.cs`, `src/Views/NavBar.cs`, `src/Views/EditorTabBar.cs`, `src/Views/FileTreeView.cs`, `src/Views/TownhallInputArea.cs`, `tools/check-animations.sh`, `tests/Zaide.Tests/Views/AnimationsTests.cs`*
+      The initial M6 attempt drifted away from the plan in several ways: `Animations.cs` exposed the wrong public contract, used an invalid `220ms` slide default, applied `CubicEaseOut` to disappearing transitions, and only migrated the Townhall send-button bounce while leaving the file-tree hover and panel/tab mode switches on raw or missing transition paths.
+      Fix: Rebuilt `Animations.cs` to the exact M6 public surface (`FadeIn`, `FadeOut`, `SlideIn`, `SlideOut`, `Transition`) with a strict 150/180/200ms budget and correct cubic easing split (`Out` for appearing, `In` for disappearing), added `HorizontalDirection`, kept `CreateScaleBounce` internal at `180ms`, migrated the Townhall send-button press to that helper, replaced the file-tree raw `Transitions`/`BrushTransition` path with helper-driven hover animation, added a NavBar mode animation, added editor-tab crossfade, and wired the real left-panel Explorer/Source Control slide in `MainWindow.axaml.cs` so the actual parent integration point animates both surfaces during mode swaps. Added `tools/check-animations.sh` as the VC-12 positive-allowlist guard and `AnimationsTests.cs` for the required duration/easing contracts. Re-built and re-tested: `0 Warning(s) / 0 Error(s)`, `480/480` tests pass.
+      Verification artifacts:
+      - `docs/refactor/refactor-4/verification/m6-default.png` — real 1280x800 PNG capture of the live app after the M6 animation pass.
+      - `bash tools/check-animations.sh` — exits `0` with no findings.
+      - `rg -n "new Animation\\s*\\{|new Transitions\\s*\\{|new (DoubleTransition|BrushTransition|TransformOperationsTransition|ThicknessTransition|IntegerTransition|VectorTransition)\\s*\\(" src/Views` — zero matches outside `Animations.cs`.
 
 ---
 
@@ -235,4 +243,38 @@ src/Views/UnsavedDialog.axaml:17:                    Spacing="{StaticResource Sp
 
 ---
 
-*Last updated: 2026-07-06*
+## M6 Verification Summary (completed)
+
+| Check | Status |
+|-------|--------|
+| `dotnet build Zaide.slnx` passes | ✅ PASS (0 warnings / 0 errors) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (480/480 tests) |
+| M6 helper public contract matches the plan exactly | ✅ DONE |
+| Default durations stay within 150/180/200ms budget | ✅ DONE |
+| Fade/slide easing split is `CubicEaseOut` in / `CubicEaseIn` out | ✅ DONE |
+| Townhall send-button press uses internal `CreateScaleBounce` helper | ✅ DONE |
+| File-tree hover no longer uses raw `Transitions` / `BrushTransition` | ✅ DONE |
+| Nav bar mode animation implemented | ✅ DONE |
+| Editor tab switch crossfade implemented | ✅ DONE |
+| Real left-panel Explorer/Source Control parent-mode slide implemented in `MainWindow.axaml.cs` | ✅ DONE |
+| `tools/check-animations.sh` exits 0 | ✅ PASS |
+| VC-12 static guard grep clean | ✅ PASS |
+| Screenshot at `m6-default.png` | ✅ DONE |
+
+### M6 Command Outputs
+
+`bash tools/check-animations.sh`
+
+```
+(no output; exit 0)
+```
+
+`rg -n "new Animation\\s*\\{|new Transitions\\s*\\{|new (DoubleTransition|BrushTransition|TransformOperationsTransition|ThicknessTransition|IntegerTransition|VectorTransition)\\s*\\(" src/Views`
+
+```
+(no matches)
+```
+
+---
+
+*Last updated: 2026-07-07*

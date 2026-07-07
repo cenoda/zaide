@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -11,6 +12,7 @@ using System;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Zaide.ViewModels;
 using Zaide.Styles;
 using Zaide.Views;
@@ -133,12 +135,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // Left panel mode switching: show file tree or SC panel
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.LeftPanelMode)
-                .Subscribe(mode =>
-                {
-                    var isExplorer = mode == LeftPanelMode.Explorer;
-                    _fileTreeView.IsVisible = isExplorer;
-                    _sourceControlPanel.IsVisible = !isExplorer;
-                }));
+                .Subscribe(mode => _ = AnimateLeftPanelModeSwitchAsync(mode)));
 
             // Ctrl+` toggle bottom panel
             var toggleCmd = ViewModel!.ToggleBottomPanelCommand;
@@ -267,6 +264,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // --- Column 1: Left Panel (Explorer / Source Control) ---
         var fileTreeView = new FileTreeView();
+        fileTreeView.RenderTransform = new TranslateTransform();
         Grid.SetColumn(fileTreeView, 1);
         Grid.SetRow(fileTreeView, 0);
         Grid.SetRowSpan(fileTreeView, 3);
@@ -274,6 +272,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         var sourceControlPanel = new SourceControlPanel();
         sourceControlPanel.IsVisible = false; // Hidden by default (Explorer mode)
+        sourceControlPanel.RenderTransform = new TranslateTransform();
         Grid.SetColumn(sourceControlPanel, 1);
         Grid.SetRow(sourceControlPanel, 0);
         Grid.SetRowSpan(sourceControlPanel, 3);
@@ -390,6 +389,28 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         Content = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
-                terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+            terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+    }
+
+    private async Task AnimateLeftPanelModeSwitchAsync(LeftPanelMode mode)
+    {
+        var showExplorer = mode == LeftPanelMode.Explorer;
+        var entering = showExplorer ? (Visual)_fileTreeView : _sourceControlPanel;
+        var exiting = showExplorer ? (Visual)_sourceControlPanel : _fileTreeView;
+        var enterDirection = showExplorer ? HorizontalDirection.Left : HorizontalDirection.Right;
+        var exitDirection = showExplorer ? HorizontalDirection.Right : HorizontalDirection.Left;
+
+        entering.IsVisible = true;
+        entering.Opacity = 0;
+        exiting.IsVisible = true;
+        exiting.Opacity = 1;
+
+        await Task.WhenAll(
+            Animations.RunAsync((Animatable)entering, Animations.PanelEnter(enterDirection)),
+            Animations.RunAsync((Animatable)exiting, Animations.PanelExit(exitDirection)));
+
+        entering.Opacity = 1;
+        exiting.Opacity = 0;
+        exiting.IsVisible = false;
     }
 }

@@ -8,6 +8,7 @@ using ReactiveUI;
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Zaide.Styles;
 using Zaide.ViewModels;
 
@@ -23,6 +24,8 @@ public class NavBar : Panel, IDisposable
 {
     private readonly Border _explorerButton;
     private readonly Border _sourceControlButton;
+    private readonly Panel _explorerVisual;
+    private readonly Panel _sourceControlVisual;
     private readonly Border _explorerActiveIndicator;
     private readonly Border _sourceControlActiveIndicator;
     private readonly Path _explorerIcon;
@@ -107,7 +110,7 @@ public class NavBar : Panel, IDisposable
 
         // Explorer icon button
         _explorerButton = CreateIconButton("Explorer");
-        _explorerButton.Child = new Panel
+        _explorerVisual = new Panel
         {
             Children =
             {
@@ -116,10 +119,12 @@ public class NavBar : Panel, IDisposable
                 _explorerHoverOverlay
             }
         };
+        _explorerVisual.RenderTransform = new TranslateTransform();
+        _explorerButton.Child = _explorerVisual;
 
         // Source Control icon button
         _sourceControlButton = CreateIconButton("Source Control");
-        _sourceControlButton.Child = new Panel
+        _sourceControlVisual = new Panel
         {
             Children =
             {
@@ -128,6 +133,8 @@ public class NavBar : Panel, IDisposable
                 _sourceControlHoverOverlay
             }
         };
+        _sourceControlVisual.RenderTransform = new TranslateTransform();
+        _sourceControlButton.Child = _sourceControlVisual;
 
         // Hover enter/exit on explorer button
         _explorerButton.PointerEntered += (_, _) => { _explorerHoverOverlay.IsVisible = true; };
@@ -199,7 +206,35 @@ public class NavBar : Panel, IDisposable
                         isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
                     _sourceControlIcon.Stroke = (IBrush?)Application.Current!.Resources[
                         !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
+
+                    _ = AnimateModeSwitchAsync(isExplorer);
                 }));
+    }
+
+    private async Task AnimateModeSwitchAsync(bool isExplorer)
+    {
+        if (_explorerVisual.RenderTransform is not TranslateTransform)
+        {
+            _explorerVisual.RenderTransform = new TranslateTransform();
+        }
+
+        if (_sourceControlVisual.RenderTransform is not TranslateTransform)
+        {
+            _sourceControlVisual.RenderTransform = new TranslateTransform();
+        }
+
+        if (isExplorer)
+        {
+            await Task.WhenAll(
+                Animations.RunAsync(_explorerVisual, Animations.NavEnter(HorizontalDirection.Left)),
+                Animations.RunAsync(_sourceControlVisual, Animations.NavExit(HorizontalDirection.Right)));
+        }
+        else
+        {
+            await Task.WhenAll(
+                Animations.RunAsync(_explorerVisual, Animations.NavExit(HorizontalDirection.Left)),
+                Animations.RunAsync(_sourceControlVisual, Animations.NavEnter(HorizontalDirection.Right)));
+        }
     }
 
     private static Path CreateNavIcon(string data, IBrush? stroke)

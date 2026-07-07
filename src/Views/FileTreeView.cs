@@ -7,8 +7,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
@@ -242,15 +240,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     // This is the standard Avalonia path — no custom
                     // animation helper is required, and it keeps the fade
                     // in the M6 budget when the helper lands in M6.
-                    rowBorder.Transitions = new Transitions
-                    {
-                        new BrushTransition
-                        {
-                            Property = Border.BackgroundProperty,
-                            Duration = TimeSpan.FromMilliseconds(150),
-                            Easing = new CubicEaseOut()
-                        }
-                    };
                     // M3.3: tag the row so RepaintAllFileTreeRows can find
                     // it by walking the visual tree. The Tag holds the
                     // FileTreeNode so the repaint can map each row to its
@@ -262,13 +251,19 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     // On exit, restore the selection-aware paint.
                     rowBorder.PointerEntered += (_, _) =>
                     {
-                        rowBorder.Background = hoverBrush;
+                        var animationTask = Animations.RunAsync(rowBorder, Animations.HoverBackground(
+                            rowBorder.Background ?? defaultRowBrush!,
+                            hoverBrush ?? defaultRowBrush!));
                     };
                     rowBorder.PointerExited += (_, _) =>
                     {
                         // Restore the active-row paint: re-evaluates against
                         // the current view-model selection state.
-                        PaintRowForSelection(rowBorder, activeStrip, node);
+                        var selectionBrush = ResolveSelectionBrush(node, rowBorder, defaultRowBrush, activeBgBrush, parentFolderBgBrush);
+                        var animationTask = Animations.RunAsync(rowBorder, Animations.HoverBackground(
+                            rowBorder.Background ?? defaultRowBrush!,
+                            selectionBrush));
+                        activeStrip.Background = ResolveActiveStripBrush(node, rowBorder, activeBrush);
                     };
 
                     // M3.3 / M3.4: After the row is added to the visual tree,
@@ -650,5 +645,51 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             window.Show();
 
         return await tcs.Task;
+    }
+
+    private static IBrush ResolveSelectionBrush(
+        FileTreeNode node,
+        Border rowBorder,
+        IBrush? defaultRowBrush,
+        IBrush activeBgBrush,
+        IBrush parentFolderBgBrush)
+    {
+        if (rowBorder.DataContext is FileTreeNode currentNode)
+        {
+            node = currentNode;
+        }
+
+        var control = rowBorder.FindAncestorOfType<FileTreeView>();
+        var selected = control?.ViewModel?.SelectedFile;
+
+        if (selected is null)
+        {
+            return defaultRowBrush ?? Brushes.Transparent;
+        }
+
+        if (ReferenceEquals(selected, node))
+        {
+            return activeBgBrush;
+        }
+
+        if (node.IsDirectory && !string.IsNullOrEmpty(selected.FullPath)
+            && selected.FullPath.StartsWith(node.FullPath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        {
+            return parentFolderBgBrush;
+        }
+
+        return defaultRowBrush ?? Brushes.Transparent;
+    }
+
+    private static IBrush ResolveActiveStripBrush(FileTreeNode node, Border rowBorder, IBrush? activeBrush)
+    {
+        if (rowBorder.DataContext is FileTreeNode currentNode)
+        {
+            node = currentNode;
+        }
+
+        var control = rowBorder.FindAncestorOfType<FileTreeView>();
+        var selected = control?.ViewModel?.SelectedFile;
+        return ReferenceEquals(selected, node) ? activeBrush ?? Brushes.Transparent : Brushes.Transparent;
     }
 }
