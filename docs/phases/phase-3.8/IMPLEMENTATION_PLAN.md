@@ -6,14 +6,14 @@
 - [x] Re-read `docs/phases/phase-3.7/IMPLEMENTATION_PLAN.md` and closeout state
 - [x] Re-read `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `docs/CONVENTIONS.md`
 - [x] Verify current terminal scope boundary against `docs/phases/phase-3.9/BRIEF.md`
-- [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build` (after successful build, avoids file-lock noise)
-- [ ] Manually confirm the current Phase 3.7 baseline still works on Linux:
-  - [ ] Shell starts and shows a prompt
-  - [ ] 256-color and truecolor output still render correctly
-  - [ ] Bracketed paste still behaves safely
-  - [ ] Resize/restart still feel stable
-  - [ ] Selection/copy/scrollback still work in the current renderer
+- [x] Verify current build succeeds: `dotnet build Zaide.slnx` — 0 warnings, 0 errors (verified 2026-07-07)
+- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build` — 480 passed, 0 failed (verified 2026-07-07)
+- [x] Manually confirm the current Phase 3.7 baseline still works on Linux:
+  - [x] Shell starts and shows a prompt
+  - [x] 256-color and truecolor output still render correctly
+  - [x] Bracketed paste still behaves safely
+  - [x] Resize/restart still feel stable
+  - [x] Selection/copy/scrollback still work in the current renderer
 - [x] Confirm no new NuGet packages are needed for this phase
 
 ## Planning Status
