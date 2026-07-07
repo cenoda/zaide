@@ -87,6 +87,18 @@ history — without changing the outer Townhall layout or adding agent panels.
 4. Confirm scrolling remains correct when the filtered list changes length.
 5. Run the `DESIGN.md` Verification Checklist explicitly before calling M4 done.
 
+## M1 Design Decisions
+
+**Rendering-path decision (M1):** Confirmed — extend `TownhallChatPanel` (specifically `CreateMessageRow` and the header logic in `SetMessages`) to branch on `Kind` when building each row. `Chat` rows keep the existing full bubble + header style. All non-`Chat` kinds (`ChannelEvent`, `AgentAction`, `AgentThink`, `ToolCall`, `ToolResult`, `AgentError`, `System`) share one compact visual treatment (timestamp + icon + single-line summary). Phase 4.2 only produces `Chat` and `ChannelEvent` in practice; anything beyond the single shared compact style for other kinds is forward-looking and kept minimal per YAGNI.
+
+**Filter-control decision (M1):** Use a small segmented toggle (Avalonia `ToggleButton` group or equivalent following existing ReactiveUI patterns) placed inside the existing chat/input column, immediately above the message list / chat panel header area. Three states exactly: All / Chat-only / Activity-only. Binds to a new `FilterMode` enum property on `TownhallViewModel` (with `ReactiveCommand` for changes) using `WhenAnyValue`/`OneWayBind` per `docs/CONVENTIONS.md`.
+
+**DESIGN.md compliance plan (M1):** 
+- Row styling uses only tokens from DESIGN.md §8 table: `SurfacePanelBrush` for backgrounds, `TextSecondaryBrush` for timestamps/summaries in compact rows, `IdleBrush` or `PrimaryAccentBrush` for icons, `WarningBrush` only for `AgentError` if distinguished within compact (but shared compact keeps it simple).
+- No hardcoded colors or `FontSize=`/`FontWeight=` literals (route through `TextStyles` and `LayoutTokens`).
+- Filter control respects 16px panel padding and 8px element gaps.
+- Any visibility transition on filter change uses 150–200ms `CubicEaseOut` per §4.
+
 ## Exit Conditions
 
 - [ ] Chat and action/log entries are visually distinct in the Townhall chat panel
