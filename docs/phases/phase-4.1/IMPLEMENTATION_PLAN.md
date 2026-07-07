@@ -9,7 +9,7 @@
 
 ## Planning Status
 
-**Draft.**
+**Complete (2026-07-08).**
 
 Phase 4 was originally one wide plan covering data model, auto-logging, UI, and
 docs sync. It is now split; this sub-phase covers only the data model and the
@@ -142,7 +142,7 @@ Decision to make and record here before M1 starts (revised after audit,
 | M1 | Agent-format decision recorded + entry-kind taxonomy defined (including forward-looking kinds) | Design doc section above reviewed; no code yet | ✅ Done (2026-07-08) |
 | M2 | New Townhall activity entry model implemented | Model tests for entry kinds, timestamps, `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` | ✅ Done (2026-07-08) |
 | M3 | `TownhallState`/`TownhallViewModel` updated to compile against new shape | Existing + rewritten ViewModel tests pass, no behavior change | ✅ Done (2026-07-08) — no code changes needed; M2 mechanical fixes already covered M3 |
-| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ⬜ |
+| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ✅ Done (2026-07-08) |
 
 ## Planned Change Shape
 
@@ -167,4 +167,4 @@ Decision to make and record here before M1 starts (revised after audit,
 - [x] `TownhallState` and `TownhallViewModel` compile and behave the same as before from a user-visible standpoint (no UI change yet)
 - [x] `TownhallViewModelTests.cs` updated and passing (no edits needed; never referenced the old `TownhallMessageType`/`Type` shape)
 - [x] `dotnet build` and `dotnet test` pass (589 passed, 0 failed, 0 warnings as of 2026-07-08)
-- [ ] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.1 complete (pending M4)
+- [x] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.1 complete
