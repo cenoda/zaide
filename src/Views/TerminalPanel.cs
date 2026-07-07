@@ -29,6 +29,16 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private readonly Button _toggleViewButton;
     private readonly Grid _contentArea;
 
+    // ── Search (M3) ────────────────────────────────────────────────
+    private readonly Button _searchToggleButton;
+    private readonly Panel _searchGroup;
+    private readonly TextBox _searchBox;
+    private readonly Button _searchPrevButton;
+    private readonly Button _searchNextButton;
+    private readonly TextBlock _searchCount;
+    private string _searchQuery = "";
+    private TerminalSearchResult? _searchResult;
+
     public TerminalPanel()
     {
         var resourceDictionary = Application.Current!.Resources;
@@ -69,6 +79,41 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         // existing bottom-follow seam rather than inventing a second mechanism.
         _latestButton = BuildToolbarButton("Icon.ChevronDown", "Latest");
 
+        // ── Search group (M3) ──────────────────────────────────────
+        // Toggle reveals a compact search strip: query box, prev/next, count.
+        // Kept visually consistent with the toolbar and intentionally narrow.
+        _searchToggleButton = BuildToolbarButton("Icon.Search", "Find");
+
+        _searchBox = new TextBox
+        {
+            Width = 180,
+            FontSize = 12,
+            PlaceholderText = "Find in terminal",
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
+            BorderThickness = new Thickness(1),
+            CornerRadius = LayoutTokens.RadiusSm,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _searchBox.TextChanged += OnSearchTextChanged;
+        _searchBox.KeyDown += OnSearchBoxKeyDown;
+
+        _searchPrevButton = BuildSmallButton("Prev");
+        _searchNextButton = BuildSmallButton("Next");
+
+        _searchCount = TextStyles.Caption("");
+        _searchCount.VerticalAlignment = VerticalAlignment.Center;
+        _searchCount.TextAlignment = TextAlignment.Right;
+        _searchCount.Width = 44;
+
+        _searchGroup = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXs,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsVisible = false,
+            Children = { _searchBox, _searchPrevButton, _searchNextButton, _searchCount }
+        };
+
         var leftStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -82,7 +127,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { _toggleViewButton, _latestButton, _clearButton, _restartButton }
+            Children = { _toggleViewButton, _searchToggleButton, _latestButton, _clearButton, _restartButton, _searchGroup }
         };
 
         var toolbarGrid = new Grid
@@ -219,6 +264,43 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                 .Subscribe(_ => _renderControl.ScrollToBottom(clearSelection: true));
             d.Add(latestSub);
 
+            // ── Search (M3) ─────────────────────────────────────────
+            // Toggle reveals/hides the compact search strip and clears state.
+            var searchToggleSub = Observable.FromEventPattern<RoutedEventArgs>(
+                h => _searchToggleButton.Click += h,
+                h => _searchToggleButton.Click -= h)
+                .Subscribe(_ => ToggleSearch());
+            d.Add(searchToggleSub);
+
+            var prevSub = Observable.FromEventPattern<RoutedEventArgs>(
+                h => _searchPrevButton.Click += h,
+                h => _searchPrevButton.Click -= h)
+                .Subscribe(_ => NavigateSearch(previous: true));
+            d.Add(prevSub);
+
+            var nextSub = Observable.FromEventPattern<RoutedEventArgs>(
+                h => _searchNextButton.Click += h,
+                h => _searchNextButton.Click -= h)
+                .Subscribe(_ => NavigateSearch(previous: false));
+            d.Add(nextSub);
+
+            // While a full-screen TUI owns the terminal, search must not expose
+            // hidden main-buffer content: hide and clear the search strip.
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.IsAlternateScreenActive)
+                .Subscribe(active =>
+                {
+                    if (active)
+                    {
+                        ClearSearch();
+                        _searchGroup.IsVisible = false;
+                    }
+                }));
+
+            // Keep matches fresh as the snapshot changes (new output arrives),
+            // but do not yank the viewport when only the buffer advances.
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.ScreenSnapshot)
+                .Subscribe(_ => RefreshSearch(jumpToActive: false)));
+
             if (ViewModel != null)
             {
                 ViewModel.Restarted += OnRestarted;
@@ -260,6 +342,22 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         };
     }
 
+    /// <summary>Small text-only button used for search prev/next navigation.</summary>
+    private static Button BuildSmallButton(string label)
+    {
+        var resources = Application.Current!.Resources;
+        return new Button
+        {
+            Content = TextStyles.Caption(label),
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Background = (IBrush?)resources["SurfacePanelBrush"],
+            Foreground = (IBrush?)resources["TextPrimaryBrush"],
+            BorderThickness = new Thickness(0),
+            CornerRadius = LayoutTokens.RadiusSm,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+    }
+
     private ContextMenu BuildContextMenu()
     {
         var copyItem = new MenuItem { Header = "Copy" };
@@ -283,6 +381,124 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     }
 
     public void FocusTerminal() => _renderControl.Focus();
+
+    // ── Search (M3) ────────────────────────────────────────────────
+
+    private void ToggleSearch()
+    {
+        bool nowVisible = !_searchGroup.IsVisible;
+        _searchGroup.IsVisible = nowVisible;
+        if (nowVisible)
+        {
+            _searchBox.Focus();
+        }
+        else
+        {
+            ClearSearch();
+        }
+    }
+
+    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        string text = _searchBox.Text ?? "";
+        if (text == _searchQuery)
+        {
+            // Avoid re-processing a programmatic clear that already ran.
+            return;
+        }
+
+        _searchQuery = text;
+        RefreshSearch(jumpToActive: true);
+    }
+
+    private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            NavigateSearch(previous: false);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            ClearSearch();
+            FocusTerminal();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Recomputes matches for the current query against the live snapshot.
+    /// While <see cref="TerminalViewModel.IsAlternateScreenActive"/> is true the
+    /// result is suppressed so no hidden main-buffer content can surface.
+    /// </summary>
+    private void RefreshSearch(bool jumpToActive)
+    {
+        if (string.IsNullOrEmpty(_searchQuery) || ViewModel?.ScreenSnapshot is null)
+        {
+            _searchResult = null;
+        }
+        else
+        {
+            _searchResult = TerminalSnapshotSearch.Search(ViewModel.ScreenSnapshot, _searchQuery);
+        }
+
+        _renderControl.SearchResult = EffectiveSearchResult();
+        UpdateSearchControls();
+
+        if (jumpToActive && _searchResult is { HasMatches: true })
+        {
+            _renderControl.BringSearchMatchIntoView(_searchResult.ActiveMatch!.Value);
+        }
+    }
+
+    private void NavigateSearch(bool previous)
+    {
+        if (_searchResult is not { HasMatches: true })
+        {
+            return;
+        }
+
+        _searchResult = previous ? _searchResult.MoveToPrevious() : _searchResult.MoveToNext();
+        _renderControl.SearchResult = EffectiveSearchResult();
+        _renderControl.BringSearchMatchIntoView(_searchResult.ActiveMatch!.Value);
+        UpdateSearchControls();
+    }
+
+    private void ClearSearch()
+    {
+        _searchQuery = "";
+        _searchResult = null;
+        _renderControl.SearchResult = null;
+        if (_searchBox.Text != "")
+        {
+            _searchBox.Text = "";
+        }
+
+        UpdateSearchControls();
+    }
+
+    /// <summary>
+    /// The result to hand the renderer: <c>null</c> while a full-screen TUI owns
+    /// the terminal, mirroring the renderer's own <c>EffectiveSearchResult</c> gate.
+    /// </summary>
+    private TerminalSearchResult? EffectiveSearchResult() =>
+        (ViewModel?.IsAlternateScreenActive ?? false) ? null : _searchResult;
+
+    private void UpdateSearchControls()
+    {
+        bool hasMatches = _searchResult is { HasMatches: true };
+        _searchPrevButton.IsEnabled = hasMatches;
+        _searchNextButton.IsEnabled = hasMatches;
+
+        if (hasMatches)
+        {
+            _searchCount.Text = $"{_searchResult!.ActiveIndex + 1}/{_searchResult.MatchCount}";
+        }
+        else
+        {
+            _searchCount.Text = string.IsNullOrEmpty(_searchQuery) ? "" : "0/0";
+        }
+    }
 
     private async void OnKeyDown(object? sender, KeyEventArgs e)
     {

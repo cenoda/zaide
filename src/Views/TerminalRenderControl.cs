@@ -39,6 +39,15 @@ public class TerminalRenderControl : Control
     public static readonly StyledProperty<bool> IsAlternateScreenActiveProperty =
         AvaloniaProperty.Register<TerminalRenderControl, bool>(nameof(IsAlternateScreenActive));
 
+    /// <summary>
+    /// Current terminal search result, projected from <see cref="TerminalPanel"/>.
+    /// When set, matches are highlighted and the active match is drawn distinctly.
+    /// Ignored while a full-screen TUI owns the terminal (see
+    /// <see cref="EffectiveSearchResult"/>) so no main-buffer content can leak.
+    /// </summary>
+    public static readonly StyledProperty<TerminalSearchResult?> SearchResultProperty =
+        AvaloniaProperty.Register<TerminalRenderControl, TerminalSearchResult?>(nameof(SearchResult));
+
     static TerminalRenderControl()
     {
         AffectsRender<TerminalRenderControl>(SnapshotProperty);
@@ -46,6 +55,7 @@ public class TerminalRenderControl : Control
         AffectsRender<TerminalRenderControl>(CursorColProperty);
         AffectsRender<TerminalRenderControl>(CursorVisibleProperty);
         AffectsRender<TerminalRenderControl>(IsAlternateScreenActiveProperty);
+        AffectsRender<TerminalRenderControl>(SearchResultProperty);
     }
 
     public TerminalSnapshot? Snapshot
@@ -76,6 +86,12 @@ public class TerminalRenderControl : Control
     {
         get => GetValue(IsAlternateScreenActiveProperty);
         set => SetValue(IsAlternateScreenActiveProperty, value);
+    }
+
+    public TerminalSearchResult? SearchResult
+    {
+        get => GetValue(SearchResultProperty);
+        set => SetValue(SearchResultProperty, value);
     }
 
     // ── font and metrics ──────────────────────────────────────────
@@ -168,6 +184,13 @@ public class TerminalRenderControl : Control
     private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
     private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
     private static readonly TimeSpan CursorBlinkInterval = TimeSpan.FromMilliseconds(530);
+
+    // Search highlight fills. The active match is drawn distinctly (stronger
+    // opacity) so the user can tell which occurrence navigation will land on.
+    private static readonly IBrush MatchHighlightBrush =
+        new SolidColorBrush(Color.FromArgb(70, 255, 214, 102));
+    private static readonly IBrush ActiveMatchHighlightBrush =
+        new SolidColorBrush(Color.FromArgb(170, 255, 196, 0));
 
     private bool _isFocused;
     private bool _isCursorBlinkOn = true;
@@ -284,6 +307,7 @@ public class TerminalRenderControl : Control
         if (cw <= 0 || lh <= 0) return;
 
         int viewportTop = GetViewportTop(snapshot);
+        var search = EffectiveSearchResult;
         for (int row = 0; row < rows; row++)
         {
             int absoluteRow = viewportTop + row;
@@ -293,6 +317,14 @@ public class TerminalRenderControl : Control
                 context.FillRectangle(
                     new SolidColorBrush(selectionBackground),
                     new Rect(selectionStartCol * cw, y, (selectionEndCol - selectionStartCol + 1) * cw, lh));
+            }
+
+            // Search highlights are drawn behind the cell text. For cells with
+            // their own background the fill wins, which is an acceptable edge
+            // case; default terminal cells keep the highlight visible.
+            if (search is not null)
+            {
+                DrawSearchHighlights(context, search, absoluteRow, y, cw, lh);
             }
 
             for (int col = 0; col < cols; col++)
@@ -442,6 +474,15 @@ public class TerminalRenderControl : Control
     /// </summary>
     internal static bool IsMainBufferSelectionEnabled(bool isAlternateScreenActive) =>
         !isAlternateScreenActive;
+
+    /// <summary>
+    /// The search result to actually render. Returns <c>null</c> while a
+    /// full-screen TUI owns the terminal, so highlighting can never expose
+    /// hidden main-buffer content during <c>less</c> / <c>vim</c> sessions. This
+    /// is the single seam the search UI consults for the alternate-screen gate.
+    /// </summary>
+    internal TerminalSearchResult? EffectiveSearchResult =>
+        IsMainBufferSelectionEnabled(IsAlternateScreenActive) ? SearchResult : null;
 
     /// <summary>
     /// Returns the viewport to the live bottom so newly arriving shell output
@@ -1048,6 +1089,66 @@ public class TerminalRenderControl : Control
     private void _renderSelectionLiveBottomState()
     {
         _followLiveBottom = false;
+    }
+
+    /// <summary>
+    /// Draws highlight rectangles for every search match on <paramref name="absoluteRow"/>,
+    /// behind the cell text. The active match uses a stronger fill so it stands out.
+    /// </summary>
+    private void DrawSearchHighlights(
+        DrawingContext context,
+        TerminalSearchResult search,
+        int absoluteRow,
+        double y,
+        double cw,
+        double lh)
+    {
+        TerminalSearchMatch? active = search.ActiveMatch;
+        foreach (var match in search.Matches)
+        {
+            if (match.Row != absoluteRow)
+            {
+                continue;
+            }
+
+            bool isActive = active.HasValue && active.Value.Equals(match);
+            var brush = isActive ? ActiveMatchHighlightBrush : MatchHighlightBrush;
+            context.FillRectangle(
+                brush,
+                new Rect(match.StartCol * cw, y, (match.EndCol - match.StartCol) * cw, lh));
+        }
+    }
+
+    /// <summary>
+    /// Scrolls the viewport (through the existing <see cref="ApplyViewportTop"/>
+    /// seam) so the given search match row becomes visible, without inventing a
+    /// parallel scroll state. No-op while a full-screen TUI owns the surface.
+    /// If the match is already on screen, the viewport is left untouched.
+    /// </summary>
+    public void BringSearchMatchIntoView(TerminalSearchMatch match)
+    {
+        if (!IsMainBufferSelectionEnabled(IsAlternateScreenActive))
+        {
+            return;
+        }
+
+        var snapshot = Snapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        int top = GetViewportTop(snapshot);
+        int visibleRows = snapshot.Rows;
+        if (match.Row >= top && match.Row < top + visibleRows)
+        {
+            return;
+        }
+
+        int maxTop = GetMaxViewportTop(snapshot);
+        // Center the match vertically when possible; clamp keeps it on screen.
+        int target = Math.Clamp(match.Row - visibleRows / 2, 0, maxTop);
+        ApplyViewportTop(target);
     }
 
     private static Cursor? CreateIbeamCursorOrNull()
