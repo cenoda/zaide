@@ -132,6 +132,8 @@ They will be revisited when their respective phases begin.
 | **Persistence** | SQLite (structured data) + JSON (settings) | Time-series activity history needs queries. JSON for simple key-value settings. |
 | **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons compile in. Agent avatars stored as file refs for live replacement. |
 | **Plugin Architecture** | Interface + DI manual registration | Core interfaces (`IAgent`, `IPlugin`) defined when agent layer begins. .NET 10 Keyed Services for plugin DI later. |
+| **Multi-provider agent architecture** | `IAgentProvider` abstraction + `AgentRegistry` service managing N agents, each with its own provider/model configuration | Raised during Phase 4 planning audit (2026-07-08). Explicitly deferred to Phase 5/6: Phase 4 has no agent execution engine to abstract yet, so building the provider abstraction now would be speculative. Phase 4.1 only reserves `SourceProvider`/`SourceModel`/`ThreadId` as nullable fields on the Townhall activity entry model so this later work doesn't force a breaking schema change. See `docs/phases/phase-4.1/IMPLEMENTATION_PLAN.md` Agent Format Decision. |
+| **Agent wire format** | Undecided — candidate: OpenAI-compatible chat-completion shape as lowest common denominator | No provider is chosen yet. Revisit when Phase 5/6 actually wires a real agent client; don't decide speculatively. |
 
 ---
 
