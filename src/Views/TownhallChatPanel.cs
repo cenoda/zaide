@@ -78,6 +78,16 @@ public class TownhallChatPanel : Panel
 
     private static Border CreateMessageRow(TownhallMessage message, bool renderHeader)
     {
+        if (message.Kind == TownhallMessageKind.Chat)
+        {
+            return CreateChatMessageRow(message, renderHeader);
+        }
+
+        return CreateCompactMessageRow(message);
+    }
+
+    private static Border CreateChatMessageRow(TownhallMessage message, bool renderHeader)
+    {
         var messageContainer = new StackPanel
         {
             Orientation = Orientation.Vertical
@@ -121,32 +131,11 @@ public class TownhallChatPanel : Panel
         var contentText = TextStyles.Body(message.Content);
         contentText.TextWrapping = TextWrapping.Wrap;
 
-        // Warning icon for warning messages
-        StackPanel contentStack;
-        if (message.Kind == TownhallMessageKind.System)
+        var contentStack = new StackPanel
         {
-            var warningIcon = IconFactory.Create(
-                "Icon.Warning",
-                (IBrush?)Application.Current!.Resources["WarningBrush"],
-                14);
-            warningIcon.VerticalAlignment = VerticalAlignment.Top;
-            warningIcon.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0);
-
-            contentStack = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = LayoutTokens.SpacingXs,
-                Children = { warningIcon, contentText }
-            };
-        }
-        else
-        {
-            contentStack = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Children = { contentText }
-            };
-        }
+            Orientation = Orientation.Horizontal,
+            Children = { contentText }
+        };
 
         // Indent content past avatar
         contentStack.Margin = LayoutTokens.Inset(
@@ -164,12 +153,46 @@ public class TownhallChatPanel : Panel
             Child = messageContainer
         };
 
-        // Warning message background tint
-        if (message.Kind == TownhallMessageKind.System)
+        return row;
+    }
+
+    /// <summary>
+    /// Creates a compact single-line row for non-Chat activity entries (log style).
+    /// Uses theme tokens only per DESIGN.md §8. One generic icon for all non-Chat kinds (YAGNI).
+    /// </summary>
+    private static Border CreateCompactMessageRow(TownhallMessage message)
+    {
+        var resources = Application.Current?.Resources;
+        var iconBrush = message.Kind == TownhallMessageKind.System
+            ? (IBrush?)(resources?["WarningBrush"])
+            : (IBrush?)(resources?["TextSecondaryBrush"]);
+        var icon = IconFactory.Create("Icon.Info", iconBrush, 12);
+        icon.VerticalAlignment = VerticalAlignment.Center;
+        icon.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0);
+
+        var timestamp = TextStyles.Caption(FormatTimestamp(message.Timestamp));
+        timestamp.VerticalAlignment = VerticalAlignment.Center;
+        timestamp.Foreground = (IBrush?)(resources?["TextSecondaryBrush"]);
+
+        var summary = TextStyles.Caption(message.Content);
+        summary.VerticalAlignment = VerticalAlignment.Center;
+        summary.Foreground = (IBrush?)(resources?["TextSecondaryBrush"]);
+        summary.TextTrimming = TextTrimming.CharacterEllipsis;
+
+        var rowContent = new StackPanel
         {
-            row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0xFC, 0xBB, 0x47));
-            row.CornerRadius = LayoutTokens.RadiusMd;
-        }
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXs,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { icon, timestamp, summary }
+        };
+
+        var row = new Border
+        {
+            Padding = LayoutTokens.Inset(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
+            Background = (IBrush?)(resources?["SurfacePanelBrush"]),
+            Child = rowContent
+        };
 
         return row;
     }
