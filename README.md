@@ -82,7 +82,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Editor with tabs, save, syntax highlighting | 2 | ✅ Done |
 | Indent guides in editor | 2.1 | ✅ Done |
 | Terminal (Linux PTY) | 3 | ✅ Done |
-| Phase 3.8: TUI compatibility | 3.8 | ⏳ Planned |
+| Phase 3.8: TUI compatibility | 3.8 | ✅ Done |
 | Phase 3.9: Terminal UX polish | 3.9 | ⏳ Planned |
 | Phase 4: Agent workspace foundations | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |

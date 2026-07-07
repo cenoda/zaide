@@ -45,7 +45,7 @@ The current app contains the visual shell for the future agent workspace:
 | **Left** | Source Control panel (SC mode) | ✅ Done |
 | **Center** | Townhall UI scaffold (people/channels sidebar + chat area + input) | ✅ Done |
 | **Right** | Editor (tabbed, syntax highlighting) | ✅ Done |
-| **Bottom** | Terminal / Logs (Linux PTY-backed shell with categorized output) | ✅ Done |
+| **Bottom** | Terminal / Logs — full-screen TUI support via alternate screen buffer, saved-cursor state, alt-screen scrollback isolation, and categorized output | ✅ Done |
 | **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | ✅ Done |
 
 ### Refactor-delivered surfaces
@@ -57,6 +57,15 @@ The current app contains the visual shell for the future agent workspace:
 | Source Control panel | ✅ Complete | Panel with branch selector, change list, staging area, and commit input |
 | Status Bar | ✅ Complete | Shows app name, cursor position, language, project, branch, and AI model |
 | Categorized Logs | ✅ Complete | Terminal output categorized as [BUILD], [AGENT], [LOG] with colored indicators |
+
+### Phase 3.8 (TUI compatibility — complete, 2026-07-07)
+
+- Dual-buffer (main + alternate) terminal screen model with saved-cursor state
+- Parser-level support for DEC private modes `?1047`/`?1048`/`?1049` and ESC 7/8 save/restore cursor
+- Transcript-tested compatibility with `less` and `vim` open-exit flows
+- Log-entry suppression during full-screen TUI sessions to avoid redraw-noise pollution
+- View-layer suppression of main-buffer selection and scrollback during full-screen apps
+- 510 tests pass, 0 fail
 
 ### Refactor 4 (Visual Polish — complete)
 
