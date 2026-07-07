@@ -87,7 +87,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] **3.7:** Interactive shell quality (clear, prompts, resize stability) — ✅ Complete
 - [x] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior) — ✅ Complete (2026-07-07)
 - [x] **3.9:** Terminal UX polish (selection, scrollback, search) — ✅ Complete (2026-07-07); all exit conditions met including interactive Linux smoke; terminal tabs deferred to 3.9.1
-- [ ] **3.9.1:** Terminal tabs (multi-session bottom-panel workflow) — next phase
+- [x] **3.9.1:** Terminal tabs (multi-session bottom-panel workflow) — ✅ Complete (2026-07-07); lightweight terminal tabs with per-tab sessions, session host/factory seam, view-layer panel caching, and tab strip UI
 
 ## Phase 4: Agent Workspace Foundations
 - [ ] Convert the current Townhall-centered UI scaffold into a real shared workspace

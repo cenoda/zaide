@@ -111,8 +111,8 @@ public class TerminalHostTests
         using var host1 = CreateHost(service1);
         using var host2 = CreateHost(service2);
 
-        Assert.NotSame(host1.ActiveSession, host2.ActiveSession);
-        Assert.NotSame(host1.ActiveSession.LogEntries, host2.ActiveSession.LogEntries);
+        Assert.NotSame(host1.ActiveSession!, host2.ActiveSession!);
+        Assert.NotSame(host1.ActiveSession!.LogEntries, host2.ActiveSession!.LogEntries);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class TerminalHostTests
             mocks[0].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("tab1 output"));
             mocks[1].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("tab2 output"));
 
-        Assert.Contains("tab1 output", GetScreenText(host.Tabs[0].Session));
+            Assert.Contains("tab1 output", GetScreenText(host.Tabs[0].Session));
             Assert.Contains("tab2 output", GetScreenText(host.Tabs[1].Session));
         }
     }
@@ -466,4 +466,3 @@ public class TerminalHostTests
         Assert.Equal("tab1 failed", lastError);
     }
 }
-

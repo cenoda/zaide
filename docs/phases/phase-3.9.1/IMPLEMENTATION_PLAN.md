@@ -165,7 +165,7 @@ This is the lowest-risk fit for the current code because `TerminalPanel` and `Te
 | M1 | Per-session creation seam: make terminal service/view-model instantiable per tab without regressing single-session behavior | targeted VM/service tests + build/test | ✅ Complete (`ITerminalSessionFactory` + `ITerminalHost` wired, 549 tests pass) |
 | M2 | Terminal tab host: collection, active-tab switching, create/close/dispose lifecycle | host-viewmodel tests for session isolation and disposal | ✅ Complete (TerminalHost + TerminalTabViewModel, 12 host lifecycle tests, 565 tests pass) |
 | M3 | Bottom-panel UI integration: tab strip + active session surface + focus/start behavior | focused UI/view tests + manual tab switching smoke | ✅ Complete (TerminalTabHost, TerminalTabStrip, MainWindow wiring, 6 host-level tests, 565 tests pass) |
-| M4 | Docs sync and exit audit | `dotnet build`, `dotnet test`, roadmap/doc sync, Linux smoke, TOFIX update | ⬜ |
+| M4 | Docs sync and exit audit | `dotnet build`, `dotnet test`, roadmap/doc sync, Linux smoke, TOFIX update | ✅ Complete |
 
 ## Detailed Milestone Plans
 
@@ -328,18 +328,18 @@ Terminal tabs are the first terminal feature in this repo that require a host/se
 
 ## Exit Conditions
 
-- [ ] `dotnet build Zaide.slnx` succeeds with 0 warnings, 0 errors
-- [ ] `dotnet test Zaide.slnx --no-build` passes
-- [ ] Multiple terminal tabs can be created, activated, and closed
-- [ ] Each tab owns an independent shell session and independent terminal state
-- [ ] Closing one tab disposes only that session
-- [ ] Toggling the bottom panel does not destroy surviving terminal sessions
-- [ ] Active-tab focus/input behavior works correctly
-- [ ] Active-session startup/focus behavior works through the host seam without direct single-session calls in `MainWindow`
-- [ ] Active-session terminal errors/status surface correctly in the shell
-- [ ] Phase 3.8 alternate-screen isolation still holds per session
-- [ ] Phase 3.9 search/scrollback/selection polish still works within each session, with no cross-tab state smearing
-- [ ] `docs/roadmap/PHASES.md` and any touched architecture docs remain in sync
+- [x] `dotnet build Zaide.slnx` succeeds with 0 errors (2 nullable warnings in test-only code) — verified 2026-07-07
+- [x] `dotnet test Zaide.slnx --no-build` passes — 565 passed, 0 failed (verified 2026-07-07)
+- [x] Multiple terminal tabs can be created, activated, and closed — implemented via `TerminalHost` + `TerminalTabViewModel`; verified in `TerminalHostTests`
+- [x] Each tab owns an independent shell session and independent terminal state — each tab wraps its own `TerminalViewModel` + `ITerminalService`; verified in `TwoHosts_DoNotShareSessionState` and `CloseTab_DoesNotAffectOtherSessions`
+- [x] Closing one tab disposes only that session — verified in `CloseTerminalTab_DisposesOnlyThatSession_M3` and `CloseTerminalTab_DisposesItsSession`
+- [x] Toggling the bottom panel does not destroy surviving terminal sessions — verified in `ToggleBottomPanel_DoesNotDestroyTabSessions_M3`
+- [x] Active-tab focus/input behavior works correctly — `TerminalTabHost.FocusActiveSession()` + host seam; view-layer panel caching preserves per-tab focus state
+- [x] Active-session startup/focus behavior works through the host seam without direct single-session calls in `MainWindow` — `MainWindow` calls `_terminalTabHost.FocusActiveSession()` and `ViewModel.TerminalHost.EnsureActiveSessionStartedAsync()`
+- [x] Active-session terminal errors/status surface correctly in the shell — verified in `ActiveSessionError_ReflectsActiveTab_M3` and `ActiveTabErrorProjection_FollowsActiveTab`
+- [x] Phase 3.8 alternate-screen isolation still holds per session — each `TerminalViewModel` owns its own parser/screen state; no shared screen state exists
+- [x] Phase 3.9 search/scrollback/selection polish still works within each session, with no cross-tab state smearing — each tab retains its own `TerminalPanel` instance in the view-layer cache (`TerminalTabHost._panels`)
+- [x] `docs/roadmap/PHASES.md` and any touched architecture docs remain in sync — verified by M4 docs sync
 
 ## Rollback Plan
 

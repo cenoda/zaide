@@ -16,13 +16,13 @@ composition changes that are larger than ordinary UX polish. Splitting the work
 keeps Phase 3.9 focused on selection, scrollback, and search, while giving
 terminal-session management its own scope and checkpoints.
 
-## Intended Outcome
+## Intended Outcome (Achieved ✅)
 
-- Multiple terminal tabs in the bottom panel
-- One shell session per tab
-- Clear active-tab switching and focus behavior
-- Predictable tab creation, closing, and disposal
-- Terminal tabs that feel integrated without introducing pane/split complexity
+- Multiple terminal tabs in the bottom panel — ✅ tabs created via `TerminalHost.NewTabCommand`, displayed in `TerminalTabStrip`
+- One shell session per tab — ✅ each tab owns its own `TerminalViewModel` + `ITerminalService`
+- Clear active-tab switching and focus behavior — ✅ `TerminalHost.ActivateTabCommand` + `TerminalTabHost.FocusActiveSession()`
+- Predictable tab creation, closing, and disposal — ✅ verified in `TerminalHostTests` lifecycle tests
+- Terminal tabs that feel integrated without introducing pane/split complexity — ✅ `TerminalTabHost` retains per-tab panels in the view layer; tab strip renders controls inline with the bottom panel
 
 ## Boundaries
 

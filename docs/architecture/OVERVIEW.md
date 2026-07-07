@@ -72,6 +72,16 @@ The current app contains the visual shell for the future agent workspace:
 - Typography scale via `TextStyles`, animation helpers, spacing tokens, elevation contrast, file tree polish, chat rebuild, status bar, glass/fallback
 - All regression gates (build, test, luminance VC-3, animations, VC-4/VC-11 audits) passed at M7
 
+### Phase 3.9.1 (Terminal Tabs — complete, 2026-07-07)
+
+- `ITerminalSessionFactory` / `TerminalSessionFactory` — creates one `ITerminalService` + `TerminalViewModel` pair per call, enabling independent per-tab shell sessions
+- `ITerminalHost` / `TerminalHost` — owns the tab collection, active-tab switching, create/close/dispose lifecycle, and active-session error projection
+- `TerminalTabViewModel` — per-tab record with title, active state, and session reference
+- `TerminalTabHost` (view layer) — retains one `TerminalPanel` per tab in a `Dictionary` cache so each session keeps its own search, viewport, selection, and log-view state; shows only the active tab's panel
+- `TerminalTabStrip` (view layer) — renders tab title labels, active-highlight, new-tab (+), and close-tab (×) controls
+- `MainWindow` wires `TerminalTabHost` in the bottom panel; focus/startup routed through the view host seam without direct single-session calls
+- 565 tests pass, 0 fail
+
 ### Planned layers
 
 | Layer | Phase | Description |
