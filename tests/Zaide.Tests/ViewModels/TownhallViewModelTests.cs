@@ -107,7 +107,7 @@ public class TownhallViewModelTests
         // Before selection: verify active channel has IsActive=true, others false
         var initialChannel = vm.Channels.FirstOrDefault(c => c.Id == initialActiveId);
         Assert.True(initialChannel!.IsActive);
-        
+
         var otherChannel = vm.Channels.FirstOrDefault(c => c.Id == otherChannelId);
         Assert.False(otherChannel!.IsActive);
 
@@ -292,7 +292,7 @@ public class TownhallViewModelTests
         // Get initial active channel and its message count/content
         var initialActiveId = vm.ActiveChannelId;
         Assert.NotNull(initialActiveId);
-        
+
         var initialMessageCount = vm.Messages.Count;
         Assert.True(initialMessageCount > 0, "Initial active channel should have messages");
 
@@ -313,22 +313,82 @@ public class TownhallViewModelTests
         }
 
         Assert.NotNull(otherChannelId);
-        
+
         // Execute the switch
         vm.SelectChannelCommand.Execute(otherChannelId).Subscribe();
-        
+
         // Verify active channel changed
         Assert.Equal(otherChannelId, vm.ActiveChannelId);
 
         // Verify Messages collection now references the other channel's messages
-        // ai-status channel should have 1 message with "System check complete"
-        Assert.Single(vm.Messages);
+        // ai-status channel has its original message + the auto-logged ChannelEvent from the switch
+        Assert.Equal(2, vm.Messages.Count);
         Assert.Contains("System check complete", vm.Messages[0].Content);
+        Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[1].Kind);
 
         // Switch back to initial channel and verify messages are restored
         vm.SelectChannelCommand.Execute(initialActiveId).Subscribe();
         Assert.Equal(initialActiveId, vm.ActiveChannelId);
-        Assert.Equal(2, vm.Messages.Count);
+        // townhall-main now has original 2 samples + the ChannelEvent logged on return switch
+        Assert.Equal(3, vm.Messages.Count);
         Assert.Contains("Townhall workspace", vm.Messages[0].Content);
+    }
+
+    /// <summary>
+    /// Verifies that sending a message produces an entry with Kind == Chat.
+    /// </summary>
+    [Fact]
+    public void SendMessage_ProducesChatKindEntry()
+    {
+        var vm = CreateViewModel();
+        vm.DraftText = "Hello from test";
+        vm.SendMessageCommand.Execute().Subscribe();
+
+        var last = vm.Messages[vm.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.Chat, last.Kind);
+        Assert.Equal("Hello from test", last.Content);
+    }
+
+    /// <summary>
+    /// Verifies that switching channels produces a ChannelEvent entry in the new channel.
+    /// </summary>
+    [Fact]
+    public void SelectChannel_ProducesChannelEventEntry()
+    {
+        var vm = CreateViewModel();
+        var initialId = vm.ActiveChannelId;
+        Assert.NotNull(initialId);
+
+        string? otherId = vm.Channels.FirstOrDefault(c => c.Id != initialId)?.Id;
+        Assert.NotNull(otherId);
+
+        var targetChannel = vm.Channels.First(c => c.Id == otherId);
+        vm.SelectChannelCommand.Execute(otherId).Subscribe();
+
+        // The event is appended to the newly active channel's collection
+        var messagesInNew = vm.Messages; // now points to other
+        var last = messagesInNew[messagesInNew.Count - 1];
+        Assert.Equal(TownhallMessageKind.ChannelEvent, last.Kind);
+        Assert.Equal($"Switched to #{targetChannel.Name}", last.Content);
+        Assert.Equal("user-1", last.SenderId);
+        Assert.Equal("User", last.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that switching to the same channel does not produce a duplicate entry.
+    /// </summary>
+    [Fact]
+    public void SelectChannel_SameChannel_NoDuplicateEntry()
+    {
+        var vm = CreateViewModel();
+        var initialId = vm.ActiveChannelId;
+        Assert.NotNull(initialId);
+
+        var initialCount = vm.Messages.Count;
+
+        // Re-select same channel (setter no-ops)
+        vm.SelectChannelCommand.Execute(initialId).Subscribe();
+
+        Assert.Equal(initialCount, vm.Messages.Count);
     }
 }

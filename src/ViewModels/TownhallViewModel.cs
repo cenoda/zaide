@@ -87,6 +87,18 @@ public class TownhallViewModel : ReactiveObject
 
             _state.ActiveChannelId = value;
 
+            // Log channel switch event to the *newly active* channel (only for actual switches, not initial activation)
+            if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(oldActiveId))
+            {
+                var channel = _state.Channels.FirstOrDefault(c => c.Id == value);
+                var channelName = channel?.Name ?? value;
+                LogActivity(
+                    kind: TownhallMessageKind.ChannelEvent,
+                    content: $"Switched to #{channelName}",
+                    senderId: "user-1",
+                    senderName: "User");
+            }
+
             // Update the Messages collection to reflect current channel's messages
             if (!string.IsNullOrEmpty(value) && _state.ChannelMessages.TryGetValue(value, out var channelMsgs))
             {
@@ -142,32 +154,47 @@ public class TownhallViewModel : ReactiveObject
             if (_state.ActiveChannelId is null)
                 return;
 
-            // Ensure the channel has a messages list in the dictionary
-            if (!_state.ChannelMessages.ContainsKey(_state.ActiveChannelId))
-            {
-                _state.ChannelMessages[_state.ActiveChannelId] = new ObservableCollection<TownhallMessage>();
-            }
-
-            var messagesList = _state.ChannelMessages[_state.ActiveChannelId];
-
-            // Create new message
-            var newMessage = new TownhallMessage
-            {
-                Id = Guid.NewGuid().ToString(),
-                SenderId = "user-1",
-                SenderName = "User",
-                SenderAvatar = "avatar-user",
-                Content = draft,
-                Timestamp = DateTimeOffset.UtcNow,
-                Kind = TownhallMessageKind.Chat
-            };
-
-            // Add to active channel's messages collection (also adds to Messages since they're the same object)
-            messagesList.Add(newMessage);
+            LogActivity(
+                kind: TownhallMessageKind.Chat,
+                content: draft,
+                senderId: "user-1",
+                senderName: "User");
 
             // Clear draft after sending
             DraftText = string.Empty;
         });
+    }
+
+    /// <summary>
+    /// Appends a classified activity entry to the active channel's message collection.
+    /// Uses the M1 rule: Kind == Chat classifies as chat; all other kinds are action/log.
+    /// Ensures the channel entry exists in ChannelMessages.
+    /// </summary>
+    private void LogActivity(TownhallMessageKind kind, string content, string senderId, string senderName)
+    {
+        if (_state.ActiveChannelId is null)
+            return;
+
+        // Ensure the channel has a messages list in the dictionary
+        if (!_state.ChannelMessages.ContainsKey(_state.ActiveChannelId))
+        {
+            _state.ChannelMessages[_state.ActiveChannelId] = new ObservableCollection<TownhallMessage>();
+        }
+
+        var messagesList = _state.ChannelMessages[_state.ActiveChannelId];
+
+        var entry = new TownhallMessage
+        {
+            Id = Guid.NewGuid().ToString(),
+            SenderId = senderId,
+            SenderName = senderName,
+            SenderAvatar = senderId == "user-1" ? "avatar-user" : "avatar-agent",
+            Content = content,
+            Timestamp = DateTimeOffset.UtcNow,
+            Kind = kind
+        };
+
+        messagesList.Add(entry);
     }
 
     private void InitializeSampleData()
