@@ -266,6 +266,22 @@ internal sealed class TerminalScreen
     /// Captures the active buffer's current cursor row/column into the saved
     /// cursor state (ESC 7 / DEC 1048). Does not capture SGR attributes.
     /// </summary>
+    /// <summary>
+    /// Resets all transient TUI state so a freshly started shell begins on the
+    /// main screen. Exits the alternate screen (without restoring the saved
+    /// cursor) and invalidates any saved-cursor state. The main screen contents
+    /// and scrollback are preserved.
+    /// </summary>
+    public void ResetForRestart()
+    {
+        if (IsAlternateActive)
+        {
+            _active = _main;
+        }
+
+        _savedCursor = new SavedCursorState(-1, -1);
+    }
+
     public void SaveCursor() =>
         _savedCursor = new SavedCursorState(_active.CursorRow, _active.CursorCol);
 

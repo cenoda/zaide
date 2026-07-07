@@ -908,4 +908,175 @@ public class TerminalViewModelTests
         Assert.Equal("[AGENT]", agent.Tag);
         Assert.Equal("[LOG]", log.Tag);
     }
+
+    // ── M3: TUI / alternate-screen integration ────────────────────
+
+    [Fact]
+    public void Append_EnterAlternateScreen_SwitchesToCleanSurface()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("prompt$ "));
+        Assert.Contains("prompt$", GetScreenText(vm));
+        Assert.False(vm.IsAlternateScreenActive);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        Assert.True(vm.IsAlternateScreenActive);
+
+        // The alternate screen is a clean surface; main content is not shown.
+        Assert.DoesNotContain("prompt$", GetScreenText(vm));
+    }
+
+    [Fact]
+    public void Append_EnterThenExitAlternateScreen_RestoresMainSurface()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("prompt$ ls\r\n"));
+        Assert.Contains("prompt$ ls", GetScreenText(vm));
+        Assert.False(vm.IsAlternateScreenActive);
+
+        // Full-screen app session.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("TUI REDRAW"));
+        Assert.True(vm.IsAlternateScreenActive);
+        Assert.Contains("TUI REDRAW", GetScreenText(vm));
+
+        // Quit the app — main shell surface returns intact.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049l"));
+        Assert.False(vm.IsAlternateScreenActive);
+        Assert.Contains("prompt$ ls", GetScreenText(vm));
+        Assert.DoesNotContain("TUI REDRAW", GetScreenText(vm));
+    }
+
+    [Fact]
+    public void Append_LessStylePager_LeavesPromptBackOnScreen()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Original shell prompt + history before pager opens.
+        service.Raise(s => s.OutputReceived += null,
+            Encoding.UTF8.GetBytes("user@host:~$ cat README.md\r\n"));
+
+        // less opens (alternate screen) and draws a few "pages" of redraw noise.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        for (int page = 0; page < 5; page++)
+        {
+            service.Raise(s => s.OutputReceived += null,
+                Encoding.UTF8.GetBytes($"\x1B[2J\x1B[HREADME line {page}\x1B[6n"));
+        }
+
+        Assert.True(vm.IsAlternateScreenActive);
+        Assert.Contains("README line 4", GetScreenText(vm));
+
+        // less quits — the original prompt/history must be restored.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049l"));
+        Assert.False(vm.IsAlternateScreenActive);
+        Assert.Contains("user@host:~$ cat README.md", GetScreenText(vm));
+    }
+
+    [Fact]
+    public void Append_RedrawHeavyStatus_DoesNotGetStuckInAlternateScreen()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("dashboard on\r\n"));
+
+        // A redraw-heavy status application alternates whole-screen repaints.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2J\x1B[HCpu: 12%"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2J\x1B[HMem: 40%"));
+        Assert.True(vm.IsAlternateScreenActive);
+
+        // It exits, as real TUIs do, and the terminal must not be stuck.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049l"));
+        Assert.False(vm.IsAlternateScreenActive);
+        Assert.Contains("dashboard on", GetScreenText(vm));
+    }
+
+    [Fact]
+    public void Append_SaveRestoreCursor_RedrawsAtOriginalCell()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        // Write a baseline line, then write text and save the cursor there.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("ABCDEFGH\r\n"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2;1HSAVED\x1B" + "7"));
+
+        // Redraw elsewhere, then restore the cursor and continue writing.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[4;1HOTHER"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B" + "8X"));
+
+        // The trailing write lands back at the saved cell, extending "SAVED".
+        Assert.Contains("SAVEDX", GetScreenText(vm));
+    }
+
+    [Fact]
+    public async Task ShellExit_WhileInAlternateScreen_RestoresMainBuffer()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        service.SetupGet(s => s.IsRunning).Returns(true);
+        var vm = CreateViewModel(service);
+
+        await vm.EnsureStartedAsync();
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("session prompt$ "));
+
+        // A full-screen app is open when the shell dies unexpectedly.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("FULLSCREEN"));
+        Assert.True(vm.IsAlternateScreenActive);
+
+        // Process exits while alt-screen active.
+        service.SetupGet(s => s.IsRunning).Returns(false);
+        service.Raise(s => s.ProcessExited += null);
+
+        Assert.False(vm.IsAlternateScreenActive);
+        Assert.Contains("[Process exited]", GetScreenText(vm));
+        // The main shell surface is what the user sees, not the TUI.
+        Assert.Contains("session prompt$", GetScreenText(vm));
+        Assert.DoesNotContain("FULLSCREEN", GetScreenText(vm));
+        Assert.Equal(TerminalState.Exited, vm.State);
+    }
+
+    [Fact]
+    public void Append_OrdinaryShellOutput_StillProjectsCorrectly()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("line one\r\nline two\r\n"));
+        Assert.Contains("line one", GetScreenText(vm));
+        Assert.Contains("line two", GetScreenText(vm));
+        Assert.False(vm.IsAlternateScreenActive);
+    }
+
+    [Fact]
+    public void Append_NoLogEntries_WhileAlternateScreenActive()
+    {
+        var service = new Mock<ITerminalService>();
+        var vm = CreateViewModel(service);
+
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("prompt$ \r\n"));
+        Assert.Single(vm.LogEntries);
+
+        // Enter a full-screen app and emit noisy redraw traffic.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049h"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2J\x1B[Hnoise line\r\n"));
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[2J\x1B[Hmore noise\r\n"));
+        Assert.True(vm.IsAlternateScreenActive);
+
+        // No new log entries were produced by the TUI traffic.
+        Assert.Single(vm.LogEntries);
+
+        // Exiting the app must not retroactively flush the suppressed partial lines.
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("\x1B[?1049l"));
+        Assert.Single(vm.LogEntries);
+    }
 }

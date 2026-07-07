@@ -141,6 +141,13 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// <summary>Whether bracketed paste mode is enabled.</summary>
     public bool IsBracketedPasteEnabled() => _bracketedPasteEnabled;
 
+    /// <summary>
+    /// Whether a full-screen TUI is currently active (alternate screen buffer).
+    /// The view layer uses this to suspend main-buffer selection / scrollback
+    /// while a full-screen app is open.
+    /// </summary>
+    public bool IsAlternateScreenActive => _screen.IsAlternateActive;
+
     /// <summary>Clears the terminal surface.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
 
@@ -371,6 +378,14 @@ public class TerminalViewModel : ReactiveObject, IDisposable
                 return;
             }
 
+            // If the shell exited while a full-screen TUI was open, revert to the
+            // main buffer first so the alternative screen does not smear into the
+            // final output and the user returns to their shell surface.
+            if (_screen.IsAlternateActive)
+            {
+                _screen.ExitAlternateScreen();
+            }
+
             string exitMsg = "\r\n[Process exited]\r\n";
             Append(exitMsg);
         });
@@ -384,8 +399,9 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     private void Append(string text)
     {
         IReadOnlyList<AnsiAction> actions = _parser.Parse(text.AsSpan());
-        foreach (var action in actions)
+        for (int i = 0; i < actions.Count; i++)
         {
+            var action = actions[i];
             switch (action)
             {
                 case PrintAction p:
@@ -402,6 +418,42 @@ public class TerminalViewModel : ReactiveObject, IDisposable
 
                 case DecSetResetAction dec:
                     HandleDecSetReset(dec);
+                    break;
+
+                // Alternate-screen switches. DEC 1049 pairs the switch with a
+                // save/restore of the cursor that must apply to the *previous*
+                // buffer, so the following Save/RestoreCursorAction is coalesced
+                // into the screen switch rather than applied to the new buffer.
+                case AlternateScreenAction alt:
+                    bool saveCursor = false;
+                    bool restoreCursor = false;
+                    if (alt.Enabled && i + 1 < actions.Count && actions[i + 1] is SaveCursorAction)
+                    {
+                        saveCursor = true;
+                        i++;
+                    }
+                    else if (!alt.Enabled && i + 1 < actions.Count && actions[i + 1] is RestoreCursorAction)
+                    {
+                        restoreCursor = true;
+                        i++;
+                    }
+
+                    if (alt.Enabled)
+                    {
+                        _screen.EnterAlternateScreen(saveCursor);
+                    }
+                    else
+                    {
+                        _screen.ExitAlternateScreen(restoreCursor);
+                    }
+                    break;
+
+                case SaveCursorAction:
+                    _screen.SaveCursor();
+                    break;
+
+                case RestoreCursorAction:
+                    _screen.RestoreCursor();
                     break;
             }
         }
@@ -420,6 +472,16 @@ public class TerminalViewModel : ReactiveObject, IDisposable
     /// </summary>
     private void AppendLogEntries(string text)
     {
+        // M3: full-screen TUI traffic carries no useful shell I/O signal and
+        // would pollute the log view. Suppress categorisation entirely while
+        // the alternate screen is active, and drop any partial line buffered
+        // before entry so nothing leaks back after exit.
+        if (_screen.IsAlternateActive)
+        {
+            _logLineBuffer = string.Empty;
+            return;
+        }
+
         if (string.IsNullOrEmpty(text))
             return;
 
@@ -611,6 +673,11 @@ public class TerminalViewModel : ReactiveObject, IDisposable
         _startRequested = false;
         _currentColumns = 0;
         _currentRows = 0;
+
+        // A fresh shell must start on the main screen. Clear any leftover
+        // alternate-screen or saved-cursor state from the previous session
+        // (e.g. a shell that crashed while a full-screen TUI was open).
+        _screen.ResetForRestart();
     }
 
     /// <summary>
