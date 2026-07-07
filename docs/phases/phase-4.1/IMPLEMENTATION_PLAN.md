@@ -138,9 +138,9 @@ Decision to make and record here before M1 starts (revised after audit,
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ⬜ |
-| M1 | Agent-format decision recorded + entry-kind taxonomy defined (including forward-looking kinds) | Design doc section above reviewed; no code yet | ⬜ |
-| M2 | New Townhall activity entry model implemented | Model tests for entry kinds, timestamps, `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` | ⬜ |
+| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ✅ Done (2026-07-08) |
+| M1 | Agent-format decision recorded + entry-kind taxonomy defined (including forward-looking kinds) | Design doc section above reviewed; no code yet | ✅ Done (2026-07-08) |
+| M2 | New Townhall activity entry model implemented | Model tests for entry kinds, timestamps, `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` | ✅ Done (2026-07-08) |
 | M3 | `TownhallState`/`TownhallViewModel` updated to compile against new shape | Existing + rewritten ViewModel tests pass, no behavior change | ⬜ |
 | M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ⬜ |
 
