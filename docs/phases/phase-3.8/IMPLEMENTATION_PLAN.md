@@ -7,7 +7,7 @@
 - [x] Re-read `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `docs/CONVENTIONS.md`
 - [x] Verify current terminal scope boundary against `docs/phases/phase-3.9/BRIEF.md`
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx` (builds and runs in one step)
 - [ ] Manually confirm the current Phase 3.7 baseline still works on Linux:
   - [ ] Shell starts and shows a prompt
   - [ ] 256-color and truecolor output still render correctly
@@ -164,9 +164,28 @@ buffer, so full-screen apps would overwrite the user’s main shell history.
 2. Keep retained shell scrollback attached to the main screen. Alternate screen
    should behave as a temporary full-screen surface, not as another scrollback
    history source.
-3. Add saved cursor state with clear ownership rules:
-   - save/restore should preserve row/column
-   - decide explicitly whether active attributes are included and test that rule
+3. **Saved-cursor contract (pin down explicitly):**
+   - Define a `SavedCursorState` value type in `TerminalScreen` that captures:
+     - Row and column (required)
+     - Active SGR attributes at time of save — **NOT captured** for Phase 3.8
+     - Origin mode flag (`?6`) if added to this phase (currently not planned)
+     - Scroll-region margins via DECSTBM (`CSI top;bottom r`) if added to this phase
+       (currently not planned)
+   - **Decision on SGR capture:** For Phase 3.8, saved cursor captures row/column only.
+     SGR state is NOT captured — restore leaves the current active attributes unchanged.
+     Attributes in `TerminalScreen` are global write state, not cursor-owned state, so
+     save/restore of the cursor cannot meaningfully include them without a separate
+     attribute-save mechanism. If a target transcript proves attribute preservation is
+     required, it can be added as part of a broader SGR save/restore feature in a
+     follow-up phase.
+   - Save/restore invalidation rules:
+     - `Resize()` does NOT invalidate saved cursor coordinates (they are clamped).
+     - `EraseDisplay(2)` or `EraseDisplay(3)` does NOT invalidate saved cursor state.
+     - Entering alt-screen via `?1047` or `?1049` does NOT invalidate saved cursor.
+     - Restart/clear (`PrepareForRestart()`) DOES invalidate saved cursor state.
+   - No save/restore action type exists yet in the parser — M1 must add it before M2
+     can reference it.
+
 4. Support the common behavioral contract:
    - entering alternate screen preserves the main screen state
    - exiting alternate screen restores the prior main screen state
@@ -186,6 +205,18 @@ buffer, so full-screen apps would overwrite the user’s main shell history.
    - Does NOT clear the main screen's retained scrollback.
    - This matches the common xterm contract where alt-screen is a temporary
      surface isolated from the main scrollback history.
+
+9. **Alt-screen scrollback isolation (M2/M3 requirement):**
+   - While `TerminalScreen.IsAlternateActive` is true, `TerminalViewModel.UpdateSnapshot()`
+     must project **no** main-screen scrollback rows into the public snapshot — only
+     the alternate screen's own content and its retained scrollback.
+   - The view layer (`TerminalRenderControl`) must not expose manual scrollback or
+     selection that can leak main-buffer cells while a full-screen app (e.g. `vim`,
+     `less`, `htop`) is open. Selection/scrollback on the main buffer are deferred
+     until alt-screen mode exits.
+   - This is an explicit contract, not just an internal detail: tests in M2 and M3
+     must verify that snapshot content during alt-screen contains zero rows from the
+     main screen's retained scrollback history.
 
 **Tests (M2):**
 
@@ -223,10 +254,20 @@ must be proven with transcript-style tests.
    rendering remain deterministic across restart and resize.
 4. Codify transcript-level compatibility around a few concrete TUI-style flows
    instead of trying to simulate whole applications end-to-end.
-5. Guard Phase 3.7 behavior explicitly:
-   - shell prompt path still works
-   - scrollback/selection do not regress on the main screen
-   - bracketed paste path remains intact
+5. **Log-view side effect decision (M3 requirement):**
+   - `TerminalViewModel.AppendLogEntries()` currently categorizes raw decoded output
+     lines independently of terminal emulation state, which means full-screen apps
+     will dump ANSI-heavy garbage or massive redraw noise into the log view during
+     alt-screen sessions. This is a real product regression path that must be decided
+     before implementation.
+   - **Decision pending from user:** Choose one of:
+     - **(a) Suppress** — skip `AppendLogEntries()` entirely while alt-screen is active
+     - **(b) Filter** — still categorize but drop ANSI-heavy / redraw-noise lines during
+       alt-screen mode
+     - **(c) Leave noisy** — accept the log pollution as a known limitation for this phase
+   - Whichever option is chosen, document it explicitly in-plan and add an M3 test
+     that verifies the chosen behavior.
+
 6. Restart / crash recovery with alt-screen active:
    - If the shell exits (or crashes) while in alt-screen mode, the screen must
      automatically revert to the main buffer before the `[Process exited]`
@@ -250,8 +291,8 @@ must be proven with transcript-style tests.
 
 - Run `less` and confirm entering/exiting returns to the prior shell screen
 - Run `vim`, quit, and confirm the normal shell prompt/history return intact
-- Run `htop` or another full-screen dashboard and confirm the display does not
-  smear ordinary shell state into the app surface
+- Run a full-screen TUI (`htop` if available, otherwise any other full-screen app)
+  and confirm the display does not smear ordinary shell state into the app surface
 - After quitting a full-screen app, verify selection/copy and manual scrollback
   still behave on the restored main screen
 
@@ -262,7 +303,7 @@ must be proven with transcript-style tests.
 - [ ] Update `docs/architecture/OVERVIEW.md` only if the terminal behavior
       contract meaningfully changed
 - [ ] `dotnet build Zaide.slnx` succeeds
-- [ ] `dotnet test Zaide.slnx --no-build` succeeds
+- [ ] `dotnet test Zaide.slnx` succeeds (single command, builds and runs)
 - [ ] Linux manual smoke checklist passes
 
 ## Limitations (by design)
@@ -295,8 +336,8 @@ must be proven with transcript-style tests.
 - [ ] Run `less README.md`, quit, and confirm the original shell view returns
 - [ ] Run `vim` on a small file, quit, and confirm the original shell view
       returns intact
-- [ ] Run `htop` or another full-screen TUI, exit, and confirm the shell prompt
-      and history are restored
+- [ ] Run a full-screen TUI (`htop` if available, otherwise `nano` or any other
+      full-screen app), exit, and confirm the shell prompt and history are restored
 - [ ] Scroll up on the main shell, enter/exit a full-screen app, and confirm
       main-screen scrollback still behaves correctly afterward
 - [ ] Copy selected text after exiting a full-screen app and confirm clipboard
