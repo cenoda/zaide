@@ -9,10 +9,10 @@
 
 ## Planning Status
 
-**Draft — depends on 4.1.**
+**Complete (2026-07-08).**
 
-This sub-phase assumes 4.1's activity entry model already exists. It does
-not redesign that model; it wires real-world actions into it. See
+This sub-phase assumed 4.1's activity entry model already existed. It wired
+real-world actions into it without redesigning that model. See
 `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` for the umbrella.
 
 **Corrected 2026-07-08** (this section previously described a `Role`-based
@@ -40,7 +40,7 @@ for use by M2+ (implementation untouched in M1).
 - `TownhallState.ChannelMessages` is still
   `Dictionary<string, ObservableCollection<TownhallMessage>>`, unchanged
   in structure by 4.1 (only the element type's shape widened).
-- `TownhallViewModel.InitializeSampleData()` still hardcodes 3 sample
+- `TownhallViewModel.InitializeSessionState()` still hardcodes 3 seed
   channels, 2 sample agents, and a handful of sample messages, and
   `SendMessageCommand` still constructs `TownhallMessage` directly inline.
   4.1 did not touch how or when messages are constructed — only the shape
@@ -89,7 +89,7 @@ explicit session-state initialization — without adding new UI or filtering.
 | M1 | Classification rules defined (chat vs. action/log) | Design note in this doc reviewed | ✅ Done (2026-07-08) |
 | M2 | Auto-log on send-message and channel-switch | ViewModel tests asserting generated entries per action | ✅ Done (2026-07-08) |
 | M3 | Sample-only initialization replaced with explicit session-state seeding | ViewModel tests confirming no behavior regression | ✅ Done (2026-07-08) — `InitializeSampleData()` renamed to `InitializeSessionState()`, all "sample" wording removed from src/tests, same seeded content, no behavior change |
-| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ⬜ |
+| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ✅ Done (2026-07-08) |
 
 ## Planned Change Shape
 
@@ -110,9 +110,9 @@ explicit session-state initialization — without adding new UI or filtering.
 
 ## Exit Conditions
 
-- [ ] Sending a message and switching channels both produce timestamped, correctly-classified activity entries automatically
-- [ ] `TownhallViewModel` no longer relies on `InitializeSampleData()`; initialization is explicit session-state seeding
-- [ ] Classification rules (chat vs. action/log) are documented and implemented consistently
-- [ ] `TownhallViewModelTests.cs` covers auto-logging behavior
-- [ ] `dotnet build` and `dotnet test` pass
-- [ ] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.2 complete
+- [x] Sending a message and switching channels both produce timestamped, correctly-classified activity entries automatically
+- [x] `TownhallViewModel` no longer relies on `InitializeSampleData()`; initialization is explicit session-state seeding
+- [x] Classification rules (chat vs. action/log) are documented and implemented consistently
+- [x] `TownhallViewModelTests.cs` covers auto-logging behavior
+- [x] `dotnet build` and `dotnet test` pass
+- [x] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.2 complete
