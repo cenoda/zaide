@@ -763,4 +763,184 @@ public class TerminalScreenTests
         Assert.Throws<ArgumentOutOfRangeException>(
             () => screen.ExecuteC0((AnsiC0Control)999));
     }
+
+    // ── M2: alternate screen & saved cursor ──────────────────────
+
+    [Fact]
+    public void EnterAlternateScreen_PresentsCleanTemporaryBuffer()
+    {
+        var screen = new TerminalScreen(5, 3);
+        screen.WriteText("main");
+
+        screen.EnterAlternateScreen();
+        Assert.True(screen.IsAlternateActive);
+
+        for (int r = 0; r < 3; r++)
+            Assert.Equal("     ", screen.GetLine(r).ToString());
+
+        Assert.Equal(0, screen.CursorRow);
+        Assert.Equal(0, screen.CursorCol);
+        Assert.Equal(0, screen.ScrollbackRowCount);
+    }
+
+    [Fact]
+    public void ExitAlternateScreen_RestoresMainBufferContents()
+    {
+        var screen = new TerminalScreen(5, 3);
+        screen.WriteText("main");
+        screen.CursorPosition(1, 1);
+
+        screen.EnterAlternateScreen();
+        Assert.True(screen.IsAlternateActive);
+        screen.WriteText("alt!");
+
+        screen.ExitAlternateScreen();
+        Assert.False(screen.IsAlternateActive);
+
+        // Main content and cursor are restored exactly.
+        Assert.Equal("main ", screen.GetLine(0).ToString());
+        Assert.Equal(0, screen.CursorRow);
+        Assert.Equal(0, screen.CursorCol);
+    }
+
+    [Fact]
+    public void AlternateScreen_DoesNotDestroyMainScrollback()
+    {
+        var screen = new TerminalScreen(3, 2);
+        screen.WriteText("abc");
+        screen.WriteText("def");
+        screen.WriteText("ghi"); // main now has 2 scrollback rows
+        Assert.Equal(2, screen.ScrollbackRowCount);
+
+        // Round-trip through a full-screen app that scrolls the alt buffer.
+        screen.EnterAlternateScreen();
+        screen.WriteText("ABCDEFGHIJKLMNOP");
+        screen.ExitAlternateScreen();
+
+        // Main scrollback survived the alternate-screen session intact.
+        Assert.Equal(2, screen.ScrollbackRowCount);
+        Assert.Equal('a', screen.GetScrollbackRow(0)[0].Char);
+        Assert.Equal('d', screen.GetScrollbackRow(1)[0].Char);
+    }
+
+    [Fact]
+    public void SaveCursor_RestoreCursor_ReturnsToPreviousCell()
+    {
+        var screen = new TerminalScreen(10, 5);
+        screen.CursorPosition(3, 3); // 1-based → (2,2)
+        int row = screen.CursorRow;
+        int col = screen.CursorCol;
+
+        screen.SaveCursor();
+        screen.CursorPosition(5, 5);
+        Assert.NotEqual(row, screen.CursorRow);
+        Assert.NotEqual(col, screen.CursorCol);
+
+        screen.RestoreCursor();
+        Assert.Equal(row, screen.CursorRow);
+        Assert.Equal(col, screen.CursorCol);
+        Assert.Equal(2, screen.CursorRow);
+        Assert.Equal(2, screen.CursorCol);
+    }
+
+    [Fact]
+    public void Dec1049_EnableThenDisable_RestoresMainScreenAndCursor()
+    {
+        var screen = new TerminalScreen(5, 3);
+        screen.WriteText("main");
+        int mainRow = screen.CursorRow;
+        int mainCol = screen.CursorCol;
+
+        // ?1049h — save cursor and switch to a clean alternate screen.
+        screen.EnterAlternateScreen(saveCursor: true);
+        Assert.True(screen.IsAlternateActive);
+        Assert.True(screen.SavedCursor.IsValid);
+
+        screen.WriteText("alt!");
+
+        // ?1049l — restore cursor and switch back to the main screen.
+        screen.ExitAlternateScreen(restoreCursor: true);
+        Assert.False(screen.IsAlternateActive);
+
+        Assert.Equal("main ", screen.GetLine(0).ToString());
+        Assert.Equal(mainRow, screen.CursorRow);
+        Assert.Equal(mainCol, screen.CursorCol);
+    }
+
+    [Fact]
+    public void Resize_WhileInAlternateScreen_ResizesBothBuffers()
+    {
+        var screen = new TerminalScreen(5, 3);
+        screen.WriteText("main");
+        screen.EnterAlternateScreen();
+        screen.WriteText("alt!");
+        Assert.True(screen.IsAlternateActive);
+
+        screen.Resize(8, 6);
+
+        // Alternate buffer is resized and keeps its content.
+        Assert.Equal(8, screen.Columns);
+        Assert.Equal(6, screen.Rows);
+        Assert.Equal("alt!    ", screen.GetLine(0).ToString());
+
+        // Main buffer is also resized (no stale dimensions after exit).
+        screen.ExitAlternateScreen();
+        Assert.Equal(8, screen.Columns);
+        Assert.Equal(6, screen.Rows);
+        Assert.Equal("main    ", screen.GetLine(0).ToString());
+    }
+
+    [Fact]
+    public void EraseDisplay3_WhileInAlternateScreen_ClearsAltScreenOnly()
+    {
+        var screen = new TerminalScreen(3, 2);
+        screen.WriteText("abc");
+        screen.WriteText("def");
+        screen.WriteText("ghi"); // main now has 2 scrollback rows
+        int mainScrollback = screen.ScrollbackRowCount;
+        Assert.Equal(2, mainScrollback);
+
+        screen.EnterAlternateScreen();
+        screen.WriteText("XYZ");
+        screen.EraseDisplay(3);
+
+        // Alt surface cleared, alt retains no scrollback.
+        Assert.Equal(0, screen.ScrollbackRowCount);
+        Assert.Equal("   ", screen.GetLine(0).ToString());
+        Assert.Equal("   ", screen.GetLine(1).ToString());
+
+        // Main scrollback is untouched by the alt-screen erase.
+        screen.ExitAlternateScreen();
+        Assert.Equal(mainScrollback, screen.ScrollbackRowCount);
+    }
+
+    [Fact]
+    public void SaveCursor_RestoreCursor_ClampsAfterResize()
+    {
+        var screen = new TerminalScreen(10, 10);
+        screen.CursorPosition(8, 8); // 1-based → (7,7)
+        screen.SaveCursor();
+
+        screen.Resize(5, 5);
+
+        // Saved cursor is clamped to the new bounds, not invalidated.
+        Assert.Equal(4, screen.SavedCursor.Row);
+        Assert.Equal(4, screen.SavedCursor.Col);
+
+        screen.RestoreCursor();
+        Assert.Equal(4, screen.CursorRow);
+        Assert.Equal(4, screen.CursorCol);
+    }
+
+    [Fact]
+    public void AlternateScreen_HasNoRetainedScrollback()
+    {
+        var screen = new TerminalScreen(3, 2);
+        screen.EnterAlternateScreen();
+        Assert.True(screen.IsAlternateActive);
+
+        // Scroll the alternate buffer hard; it must expose zero scrollback rows.
+        screen.WriteText(new string('Q', 3 * 5));
+        Assert.Equal(0, screen.ScrollbackRowCount);
+    }
 }
