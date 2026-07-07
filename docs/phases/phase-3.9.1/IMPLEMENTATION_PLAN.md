@@ -28,27 +28,42 @@ Current architecture (post-M1):
 Verified live seams on 2026-07-07:
 
 - `src/Program.cs`
-  - currently registers `ITerminalService` as singleton `LinuxTerminalService`
-  - currently registers `TerminalViewModel` as a singleton
-  - this is the main architecture seam that blocks one-terminal-per-tab behavior today
+  - now registers `ITerminalSessionFactory` → `TerminalSessionFactory` and
+    `ITerminalHost` → `TerminalHost` (instead of the old singleton
+    `ITerminalService`/`TerminalViewModel`). Sessions are created per tab via
+    the factory, not as app-wide singletons.
+  - this is the DI seam that unblocks one-terminal-per-tab behavior
 - `src/ViewModels/TerminalViewModel.cs`
-  - currently models exactly one terminal session and owns lifecycle, parser/screen state, logs, search-visible snapshot projection, and restart/clear commands
-  - constructor already accepts `ITerminalService` and has a seam-friendly internal test constructor, which makes per-session instantiation feasible
+  - models one terminal session and owns lifecycle, parser/screen state, logs,
+    search-visible snapshot projection, and restart/clear commands
+  - constructor already accepts `ITerminalService` and has a seam-friendly
+    internal test constructor, which makes per-session instantiation feasible
 - `src/Views/TerminalPanel.cs`
-  - currently expects one `TerminalViewModel` and already encapsulates the full terminal UI surface (toolbar, render control, logs, search, input forwarding)
-  - importantly, it also owns meaningful per-session **view-layer state** today: search query/results live in `TerminalPanel`, and viewport/selection/search-highlight state live in `TerminalRenderControl`
-  - this means a single shared panel rebound across tabs would smear or discard session-local UI state unless that state were migrated elsewhere
+  - currently expects one `TerminalViewModel` and already encapsulates the full
+    terminal UI surface (toolbar, render control, logs, search, input forwarding)
+  - importantly, it also owns meaningful per-session **view-layer state** today:
+    search query/results live in `TerminalPanel`, and viewport/selection/search-
+    highlight state live in `TerminalRenderControl`
+  - this means a single shared panel rebound across tabs would smear or discard
+    session-local UI state unless that state were migrated elsewhere
 - `src/MainWindow.axaml.cs`
-  - currently creates exactly one `TerminalPanel` and directly performs `_terminalPanel.FocusTerminal()` plus `ViewModel.TerminalViewModel.EnsureStartedAsync()` when the bottom panel opens
-  - bottom-panel composition will need a tab strip / host surface **and** a host-level focus/start seam instead of direct single-session calls
-  - this is the natural place for a view-layer `TerminalPanel` cache or a dedicated view-host, so retained panels stay out of ViewModels
+  - currently creates exactly one `TerminalPanel` and directly performs
+    `_terminalPanel.FocusTerminal()` when the bottom panel opens; startup is
+    routed through `TerminalHost.EnsureActiveSessionStartedAsync()`
+  - bottom-panel composition will need a tab strip / host surface **and** a
+    host-level focus seam wired through to the active tab's panel
+  - this is the natural place for a view-layer `TerminalPanel` cache or a
+    dedicated view-host, so retained panels stay out of ViewModels
 - `src/ViewModels/MainWindowViewModel.cs`
-  - currently exposes one `TerminalViewModel` property
-  - shell-level commands and bottom-panel visibility already live here, making it the likely host location for terminal-tab coordination
-  - it also currently subscribes directly to `TerminalViewModel.StartupError` for status-bar surfacing, so terminal-error ownership must be redefined for multi-session behavior
+  - now exposes `ITerminalHost` instead of a concrete `TerminalViewModel`.
+    `TerminalHost.StartupError` is subscribed for status-bar surfacing.
+  - shell-level commands and bottom-panel visibility already live here, making
+    it the likely host location for terminal-tab coordination
 - `src/Services/ITerminalService.cs` and `src/Services/LinuxTerminalService.cs`
-  - current service contract is already per-session by shape (`StartAsync`, `WriteAsync`, `StopAsync`, `Resize`, events)
-  - backend rewrite is not needed; the missing piece is lifecycle/factory ownership, not PTY capability
+  - current service contract is already per-session by shape
+    (`StartAsync`, `WriteAsync`, `StopAsync`, `Resize`, events)
+  - backend rewrite is not needed; the missing piece is lifecycle/factory
+    ownership, not PTY capability
 - Current focused tests already exist in:
   - `tests/Zaide.Tests/ViewModels/TerminalViewModelTests.cs`
   - `tests/Zaide.Tests/Services/LinuxTerminalServiceTests.cs`
