@@ -12,6 +12,28 @@ using Zaide.ViewModels;
 
 namespace Zaide.Views;
 
+/// <summary>
+/// Helper to create <see cref="Cursor"/> instances while gracefully falling
+/// back when <c>ICursorFactory</c> is not available (e.g. in test harnesses
+/// without the headless platform).
+/// </summary>
+internal static class CursorHelper
+{
+    public static Cursor? TryCreateHand()
+    {
+        try
+        {
+            return new Cursor(StandardCursorType.Hand);
+        }
+        catch (InvalidOperationException)
+        {
+            // ICursorFactory not registered — test environment without
+            // headless platform. Return null; the consumer must handle it.
+            return null;
+        }
+    }
+}
+
 public class TerminalTabStrip : UserControl
 {
     private readonly StackPanel _tabsPanel;
@@ -214,7 +236,8 @@ public class TerminalTabStrip : UserControl
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = LayoutTokens.Uniform(LayoutTokens.SpacingXxs),
             Child = closeIcon,
-            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0)
+            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0),
+            Cursor = CursorHelper.TryCreateHand()
         };
         closeButton.PointerPressed += (_, e) =>
         {
@@ -245,7 +268,8 @@ public class TerminalTabStrip : UserControl
             Padding = LayoutTokens.Horizontal(LayoutTokens.SpacingXs),
             MinHeight = 28,
             CornerRadius = LayoutTokens.RadiusSm,
-            Margin = LayoutTokens.Inset(0, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs)
+            Margin = LayoutTokens.Inset(0, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs),
+            Cursor = CursorHelper.TryCreateHand()
         };
         border.Child = grid;
         border.PointerPressed += (_, e) =>
@@ -274,7 +298,8 @@ public class TerminalTabStrip : UserControl
             Height = 24,
             Padding = LayoutTokens.NoneThickness,
             Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness
+            BorderThickness = LayoutTokens.NoneThickness,
+            Cursor = CursorHelper.TryCreateHand()
         };
     }
 }
