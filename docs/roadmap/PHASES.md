@@ -1,7 +1,7 @@
 # Zaide — Development Roadmap
 
-Build a strong IDE foundation first, then pivot the product toward an
-agent-first workspace. Each phase must be complete before moving to the next.
+Build a strong IDE foundation first, then turn the UI scaffold into a real
+agent workspace. Each phase must be complete before moving to the next.
 
 ---
 
@@ -88,19 +88,15 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [ ] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior)
 - [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
 
-## Phase 4: Agent-First Layout Transition ✅ Complete
-- [x] Move Townhall into the visual center of the app
-- [x] Reposition the editor as a focused implementation surface, still always visible
-- [x] Preserve fast file-tree, editor, and terminal workflows during the layout pivot
-- [x] Establish Townhall as the default attention surface for agent activity and user intervention
+## Phase 4: Agent Workspace Foundations
+- [ ] Convert the current Townhall-centered UI scaffold into a real shared workspace
+- [ ] Auto-log timestamped entries for user and agent actions
+- [ ] Clear distinction between chat messages and action/log events
+- [ ] Scrollable, filterable activity history
+- [ ] Preserve fast file-tree, editor, and terminal workflows while real agent-workspace behavior lands
 
-### Phase 4.1: Townhall Foundations ✅ Complete
-- [x] Townhall thread renders in the center workspace
-- [x] Channel switching and message sending
-- [x] People panel with agent status indicators
-- [ ] Auto-log: timestamped entries for agent actions (not yet implemented)
-- [ ] Scrollable, filterable log (not yet implemented)
-- [ ] Clear distinction between agent actions and user actions
+Refactor-3 and refactor-4 provided layout remapping and polish only. They do
+not count as formal Phase 4 completion on their own.
 
 ## Phase 5: Agent Panels
 - [ ] Add dedicated agent surfaces without demoting Townhall from the primary workspace
@@ -115,8 +111,8 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 |---------|-------------|--------|
 | refactor-1 | Document/Workspace extraction | ✅ Complete |
 | refactor-2 | Layer boundary cleanup | ✅ Complete |
-| refactor-3 | Agent-first layout transition | ✅ Complete |
-| refactor-4 | Visual polish pass (typography, animation, spacing, elevation, file tree, chat, status) | ✅ Complete |
+| refactor-3 | Townhall/editor shell remap and UI scaffold | ✅ Complete |
+| refactor-4 | Visual polish pass on the remapped UI surfaces | ✅ Complete |
 
 ### refactor-2: Layer Boundary Cleanup
 
@@ -130,9 +126,9 @@ Cleaned up layer boundaries within the single-project structure (preparation for
 
 **Deferred:** Terminal pure logic namespace change (M2), FileTreeNode domain/UI split (M4), UI-post abstraction (M8)
 
-### refactor-3: Agent-First Layout Transition
+### refactor-3: Townhall/Editor Shell Remap
 
-Transformed Zaide from an editor-first IDE layout to an agent-first workspace layout:
+Remapped the shell visually so later agent-workspace phases have a place to land:
 
 - **M0:** Baseline verification — confirmed build/tests green and current layout
 - **M0.5:** Palette update to match concept colors (Ayaka Violet → concept.png palette)
@@ -144,13 +140,13 @@ Transformed Zaide from an editor-first IDE layout to an agent-first workspace la
 - **M6:** Source Control panel and status bar implementation
 - **M7:** Regression sweep and documentation sync
 
-**Result:** Townhall is now the visual center, editor remains always visible as focused implementation surface, all existing workflows preserved and stable.
-- [ ] Agent panel ↔ Townhall: actions appear in both
+**Result:** The UI scaffold now exposes a Townhall-centered shell, but this is
+still preparatory layout work rather than completed Phase 4 behavior.
 
 ### refactor-4: Visual Polish Pass
 M7 regression sweep + doc sync complete:
 - All gates passed: `dotnet build` (0 warnings), `dotnet test` (480 pass), luminance ΔL*=10.72 (VC-3), `check-animations.sh` (0), VC-4 limited to documented intentional exceptions, VC-11 limited to token-reference-only grep hits.
-- Docs updated: DESIGN.md (typography scale + animation mark), OVERVIEW.md (chronology), PHASES.md (complete).
+- Docs updated: DESIGN.md (typography scale + animation mark), OVERVIEW.md (chronology), PHASES.md.
 - No new behavior; polish only.
 
 ## Phase 6: Agent-to-Agent Router
@@ -176,10 +172,10 @@ M7 regression sweep + doc sync complete:
 | 2 | Phase 1 file tree works, can select files |
 | 3 | Phase 2 editor works, can edit and save |
 | 4 | Phase 3 terminal UI normalization complete |
-| 5 | Phase 4 layout transition and Townhall foundations render correctly |
+| 5 | Phase 4 Townhall activity model works as a real shared workspace |
 | 6 | Phase 5 agent panels render and accept input |
 | 7 | Phase 6 agent routing works |
 
 ---
 
-*Last updated: 2026-07-01*
+*Last updated: 2026-07-07*

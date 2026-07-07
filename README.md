@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 4 (Agent-First Layout) ✅ Complete — Townhall is now the primary workspace.
+**Status:** Refactor-3/4 UI scaffold is in place. Formal Phase 4 is not complete yet.
 
 ## Philosophy
 
@@ -17,15 +17,15 @@ One agent codes, another reviews. They argue. You get better code.
 
 ## Product Direction
 
-Zaide has moved away from the classic "editor in the middle, AI on the side"
+Zaide is moving away from the classic "editor in the middle, AI on the side"
 shape.
 
-The agent conversation is now the **primary workspace** with Townhall at the
-visual center, while the editor remains visible as a focused execution surface.
-This is not chat bolted onto a conventional IDE — it is an IDE where the main
-narrative is agent collaboration, review, and user intervention.
+The current app already contains a Townhall-centered UI scaffold, but that
+layout work should not be confused with completed agent-workspace behavior.
+Phase 4 is where the Townhall surface becomes a real shared workflow area
+instead of a visual mapping only.
 
-## Current Layout (Post-Refactor-3)
+## Current Layout (UI Scaffold From Refactor-3/4)
 
 ```
 ┌──────┬──────────┬──────────────────────────────────┬────────────────────┐
@@ -43,7 +43,7 @@ narrative is agent collaboration, review, and user intervention.
 
 - **Far-left:** Nav bar (icon-only vertical strip for switching between Explorer and Source Control modes)
 - **Left:** File tree sidebar (Explorer mode) or Source Control panel (SC mode)
-- **Center:** Townhall workspace with people/channels sidebar, chat area, and input
+- **Center:** Townhall UI scaffold with people/channels sidebar, chat area, and input
 - **Right:** Editor (tabbed, syntax highlighting) with townhall link and focused file info
 - **Bottom:** Terminal / Logs panel with categorized [BUILD]/[AGENT]/[LOG] output
 - **Bottom:** Status bar showing app name, cursor position, language, project, branch, and AI model
@@ -65,8 +65,8 @@ narrative is agent collaboration, review, and user intervention.
 - **Right:** Editor, always available but no longer the visual center of the app
 - **Bottom:** Terminal and runtime/log surface
 
-This shift is intentional. Zaide should read as an agent-native workspace first,
-not as a conventional editor with an AI sidebar.
+This shift is intentional. Zaide should eventually read as an agent-native
+workspace first, not as a conventional editor with an AI sidebar.
 
 ## Status
 
@@ -82,11 +82,9 @@ not as a conventional editor with an AI sidebar.
 | Editor with tabs, save, syntax highlighting | 2 | ✅ Done |
 | Indent guides in editor | 2.1 | ✅ Done |
 | Terminal (Linux PTY) | 3 | ✅ Done |
-| Agent-first layout transition | 4 | ✅ Complete |
-| Townhall foundations | 4 | ✅ Complete |
-| Source Control panel | 4 | ✅ Complete |
-| Status bar | 4 | ✅ Complete |
-| Categorized logs | 4 | ✅ Complete |
+| Phase 3.8: TUI compatibility | 3.8 | ⏳ Planned |
+| Phase 3.9: Terminal UX polish | 3.9 | ⏳ Planned |
+| Phase 4: Agent workspace foundations | 4 | ⏳ Planned |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
@@ -97,7 +95,8 @@ not as a conventional editor with an AI sidebar.
 |---------|-------------|--------|
 | refactor-1 | Document/Workspace extraction | ✅ Complete |
 | refactor-2 | Layer boundary cleanup | ✅ Complete |
-| refactor-3 | Agent-first layout transition | ✅ Complete |
+| refactor-3 | Townhall/editor shell remap and UI scaffold | ✅ Complete |
+| refactor-4 | Visual polish pass on the remapped UI | ✅ Complete |
 
 ### Refactor-2: Layer Boundary Cleanup (2025-01-20)
 
@@ -124,9 +123,10 @@ Cleaned up layer boundaries within the single-project structure:
 
 ## Future Direction
 
-The next stages focus on making the center of gravity agent-first:
+The next stages focus on turning the current UI scaffold into a real
+agent-workspace workflow:
 
-- **Townhall** — the primary shared workspace for agent activity, discussion, and user intervention
+- **Phase 4** — make Townhall operational with action logging, real activity history, and clear user/agent distinctions
 - **Editor** — still visible and powerful, but framed as the implementation surface
 - **Agent panels** — individual UIs for each agent when dedicated surfaces are needed
 - **@mention routing** — agents can request review from each other

@@ -2,11 +2,10 @@
 
 ## Status
 
-**Decided.**
+**Historical layout decision.**
 
-Refactor 3 is no longer treated as a narrow layout refactor or a conventional
-implementation plan. It is the explicit product/UI drift from an editor-first
-IDE shell toward an agent-first workspace.
+This document records the visual direction explored in Refactor 3. It should
+not be treated as proof that formal Phase 4 was completed.
 
 ---
 
@@ -17,20 +16,20 @@ they did not state the real intent strongly enough.
 
 That was misleading.
 
-The real purpose of refactor-3 is to record and authorize a deliberate drift in
-Zaide's center of gravity:
+The real purpose of refactor-3 is to record and authorize a deliberate visual
+drift in Zaide's center of gravity:
 
 - away from "editor in the middle, AI on the side"
 - toward "agent conversation in the center, editor as execution surface"
 
-This document replaces the earlier refactor-3 plan so contributors do not treat
-the change as a cosmetic panel shuffle.
+This document exists so contributors do not treat the change as a cosmetic
+panel shuffle only.
 
 ---
 
 ## Decision
 
-Zaide is now explicitly **agent-first** in product direction.
+Refactor 3 established the **visual direction** for an agent-first workspace.
 
 That means:
 
@@ -41,14 +40,14 @@ That means:
 - Future Townhall, agent-panel, and routing work should reinforce this center of
   gravity instead of recreating a classic IDE plus chat sidebar
 
-This is an intentional drift, not accidental doc drift and not a temporary
-experiment.
+This is an intentional layout drift, not formal completion of the later Phase 4
+agent-workspace behavior.
 
 ---
 
 ## Previous Layout Model
 
-The current implemented shell is still the older layout:
+The pre-refactor shell followed the older layout:
 
 ```text
 ┌──────────┬────────────────────────┬──────────────────┐
@@ -59,14 +58,14 @@ The current implemented shell is still the older layout:
 └───────────────────────────────────────────────────────────┘
 ```
 
-This layout is functional and stable, but it still reads as a conventional
+This layout was functional and stable, but it still read as a conventional
 editor-first IDE.
 
 ---
 
 ## Target Direction
 
-The decided direction is:
+The visual direction established by Refactor 3 is:
 
 ```text
 ┌──────────┬────────────────────────────────────┬──────────────┐
@@ -92,8 +91,8 @@ default visual and workflow priority.
 
 ## What Changed Conceptually
 
-Refactor 3 should now be read as a change in **product stance**, not just in
-panel placement.
+Refactor 3 should be read as a change in **layout direction**, not as the point
+where the full agent workspace became real.
 
 Before:
 
@@ -101,10 +100,10 @@ Before:
 - agent capability layered on later
 - chat/agent UI treated as attached or secondary
 
-After:
+After this refactor:
 
-- agent-first
-- Townhall becomes the center of the working session
+- the shell visually points toward an agent-first workflow
+- Townhall becomes the center of the mapped layout
 - editor supports implementation, inspection, and intervention
 - later agent features must fit this center-first model
 
@@ -118,7 +117,7 @@ This decision does **not** mean:
 - immediate agent-to-agent routing
 - immediate persistence or Git features
 - removing the editor from the main shell
-- downgrading file tree or terminal into throwaway UI
+- claiming that UI remapping alone completed Phase 4
 
 The drift is about **what the main screen privileges**, not about pretending the
 rest of the IDE stops mattering.
@@ -129,45 +128,29 @@ rest of the IDE stops mattering.
 
 From this point on:
 
-- root-level docs must describe Zaide as moving toward an agent-first workspace
-- Phase 4 work should be framed as the layout transition plus Townhall
-  foundations
+- root-level docs should describe Zaide as moving toward an agent-first workspace
+- Phase 4 work should be framed as the point where the Townhall scaffold gains
+  real workflow behavior
 - Phase 5 agent surfaces must not demote Townhall from the visual center
-- future implementation plans should inherit this decision instead of reopening
-  the editor-first baseline
+- future implementation plans should inherit this visual direction instead of
+  reopening the editor-first baseline
 
 If a later plan contradicts this, it must do so explicitly and justify why the
 product direction changed again.
 
 ---
 
-## Implementation Guidance
-
-When the implementation plan is rewritten later, it should preserve the spirit
-of this decision:
-
-- keep the shell stable enough that existing editor/file-tree/terminal workflows
-  do not collapse
-- move visual attention to Townhall first
-- keep the editor present and strong, but no longer central by default
-- avoid language that reduces the pivot to "swap these two columns"
-
-The implementation can be incremental.
-The direction is not incremental.
-
----
-
 ## Relationship To Root Docs
 
-This decision is already reflected at the root level in:
+This decision is reflected at the root level in:
 
 - `README.md`
 - `docs/architecture/OVERVIEW.md`
 - `docs/roadmap/PHASES.md`
 
-Those documents define the public-facing product direction.
-This document exists to explain why refactor-3 changed shape so dramatically.
+Those documents define the public-facing product direction. This document is
+only the historical explanation for why Refactor 3 changed the shell shape.
 
 ---
 
-*Last updated: 2026-07-01*
+*Last updated: 2026-07-07*
