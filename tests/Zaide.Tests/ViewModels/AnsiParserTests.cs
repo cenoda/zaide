@@ -402,12 +402,154 @@ public class AnsiParserTests
     }
 
     [Fact]
-    public void Parse_DcsSequenceTerminatedByEscBackslash_IsDropped()
+    public void Parse_DecSet1047_EmitsAlternateScreenEnable()
     {
         var parser = new AnsiParser();
 
-        var actions = parser.Parse("\x1BPdemo\x1B\\");
+        var actions = parser.Parse("\x1B[?1047h");
 
-        Assert.Empty(actions);
+        var alt = Assert.Single(actions);
+        var action = Assert.IsType<AlternateScreenAction>(alt);
+        Assert.True(action.Enabled);
+    }
+
+    [Fact]
+    public void Parse_DecReset1047_EmitsAlternateScreenDisable()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[?1047l");
+
+        var alt = Assert.Single(actions);
+        var action = Assert.IsType<AlternateScreenAction>(alt);
+        Assert.False(action.Enabled);
+    }
+
+    [Fact]
+    public void Parse_DecSet1048_EmitsSaveCursor()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[?1048h");
+
+        var cursor = Assert.Single(actions);
+        Assert.IsType<SaveCursorAction>(cursor);
+    }
+
+    [Fact]
+    public void Parse_DecReset1048_EmitsRestoreCursor()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[?1048l");
+
+        var cursor = Assert.Single(actions);
+        Assert.IsType<RestoreCursorAction>(cursor);
+    }
+
+    [Fact]
+    public void Parse_DecSet1049_EmitsCombinedAltScreenAndCursorSave()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[?1049h");
+
+        Assert.Collection(
+            actions,
+            action => Assert.IsType<AlternateScreenAction>(action),
+            action => Assert.IsType<SaveCursorAction>(action));
+        Assert.True(((AlternateScreenAction)actions[0]).Enabled);
+    }
+
+    [Fact]
+    public void Parse_DecReset1049_EmitsCombinedAltScreenAndCursorRestore()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B[?1049l");
+
+        Assert.Collection(
+            actions,
+            action => Assert.IsType<AlternateScreenAction>(action),
+            action => Assert.IsType<RestoreCursorAction>(action));
+        Assert.False(((AlternateScreenAction)actions[0]).Enabled);
+    }
+
+    [Fact]
+    public void Parse_Esc7_EmitsSaveCursorAction()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B" + "7");
+
+        var cursor = Assert.Single(actions);
+        Assert.IsType<SaveCursorAction>(cursor);
+    }
+
+    [Fact]
+    public void Parse_Esc8_EmitsRestoreCursorAction()
+    {
+        var parser = new AnsiParser();
+
+        var actions = parser.Parse("\x1B" + "8");
+
+        var cursor = Assert.Single(actions);
+        Assert.IsType<RestoreCursorAction>(cursor);
+    }
+
+    [Fact]
+    public void Parse_DecSet1047_SplitAcrossChunks_CompletesOnSecondCall()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B[?104");
+        var second = parser.Parse("7h");
+
+        Assert.Empty(first);
+        var alt = Assert.Single(second);
+        var action = Assert.IsType<AlternateScreenAction>(alt);
+        Assert.True(action.Enabled);
+    }
+
+    [Fact]
+    public void Parse_DecReset1048_SplitAcrossChunks_CompletesOnSecondCall()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B[?104");
+        var second = parser.Parse("8l");
+
+        Assert.Empty(first);
+        var cursor = Assert.Single(second);
+        Assert.IsType<RestoreCursorAction>(cursor);
+    }
+
+    [Fact]
+    public void Parse_DecSet1049_SplitAtQuestionMark_CompletesOnSecondCall()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B[?");
+        var second = parser.Parse("1049h");
+
+        Assert.Empty(first);
+        Assert.Collection(
+            second,
+            action => Assert.IsType<AlternateScreenAction>(action),
+            action => Assert.IsType<SaveCursorAction>(action));
+    }
+
+    [Fact]
+    public void Parse_DecSet1047_SplitAtFinalByte_CompletesOnSecondCall()
+    {
+        var parser = new AnsiParser();
+
+        var first = parser.Parse("\x1B[?1047");
+        var second = parser.Parse("h");
+
+        Assert.Empty(first);
+        var alt = Assert.Single(second);
+        var action = Assert.IsType<AlternateScreenAction>(alt);
+        Assert.True(action.Enabled);
     }
 }

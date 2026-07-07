@@ -95,7 +95,13 @@ internal sealed class AnsiParser
                 _state = ParserState.EscapeCharsetDesignator;
                 break;
             case '7':
+                _state = ParserState.Ground;
+                actions.Add(new SaveCursorAction());
+                break;
             case '8':
+                _state = ParserState.Ground;
+                actions.Add(new RestoreCursorAction());
+                break;
             case '=':
             case '>':
             case 'c':
@@ -192,9 +198,26 @@ internal sealed class AnsiParser
 
         if (finalByte == 'h' || finalByte == 'l')
         {
-            if (parameters.Length > 0 && parameters[0] == 2004)
+            bool enabled = finalByte == 'h';
+
+            if (parameters.Length > 0)
             {
-                actions.Add(new DecSetResetAction(parameters[0], finalByte == 'h'));
+                switch (parameters[0])
+                {
+                    case 2004:
+                        actions.Add(new DecSetResetAction(parameters[0], enabled));
+                        break;
+                    case 1047:
+                        actions.Add(new AlternateScreenAction(enabled));
+                        break;
+                    case 1048:
+                        actions.Add(enabled ? new SaveCursorAction() : new RestoreCursorAction());
+                        break;
+                    case 1049:
+                        actions.Add(new AlternateScreenAction(enabled));
+                        actions.Add(enabled ? new SaveCursorAction() : new RestoreCursorAction());
+                        break;
+                }
             }
         }
         else
@@ -381,6 +404,12 @@ internal sealed record ExecuteAction(AnsiC0Control Control) : AnsiAction;
 internal sealed record CsiDispatchAction(int[] Parameters, char FinalByte) : AnsiAction;
 
 internal sealed record DecSetResetAction(int Mode, bool Enabled) : AnsiAction;
+
+internal sealed record AlternateScreenAction(bool Enabled) : AnsiAction;
+
+internal sealed record SaveCursorAction : AnsiAction;
+
+internal sealed record RestoreCursorAction : AnsiAction;
 
 internal enum AnsiC0Control
 {
