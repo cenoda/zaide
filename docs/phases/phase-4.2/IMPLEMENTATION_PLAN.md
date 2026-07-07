@@ -11,17 +11,33 @@
 
 **Draft — depends on 4.1.**
 
-This sub-phase assumes 4.1's activity entry model already exists (kind
-taxonomy, `Role`/`Content`/`Metadata` shape, no `TownhallMessage`-only
-assumption). It does not redesign that model; it wires real-world actions
-into it. See `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` for the umbrella.
+This sub-phase assumes 4.1's activity entry model already exists. It does
+not redesign that model; it wires real-world actions into it. See
+`docs/phases/phase-4/IMPLEMENTATION_PLAN.md` for the umbrella.
 
-Known constraints going in (from 4.1 and prior verification):
+**Corrected 2026-07-08** (this section previously described a `Role`-based
+shape that was never implemented — see the truth-sync fix in
+`docs/phases/phase-4.1/IMPLEMENTATION_PLAN.md`). The actual live shape,
+verified against `src/Models/TownhallMessage.cs` after 4.1 M2/M3 landed:
 
-- `TownhallViewModel.InitializeSampleData()` hardcodes 3 sample channels, 2
-  sample agents, and a handful of sample messages. This sub-phase is where
-  that sample-only assumption should actually be replaced with explicit,
-  minimal session-state initialization — not deferred further.
+- `TownhallMessage` (class name unchanged — 4.1 widened it in place rather
+  than introducing a new type) still has `Id`, `SenderId`, `SenderName`,
+  `SenderAvatar`, `Content`, `Timestamp`, plus the 4.1 additions: `Kind`
+  (`TownhallMessageKind`: `Chat`, `ChannelEvent`, `AgentAction`,
+  `AgentThink`, `ToolCall`, `ToolResult`, `AgentError`, `System`),
+  `SourceProvider` (`string?`), `SourceModel` (`string?`), `ThreadId`
+  (`string?`), `Metadata` (`Dictionary<string, string>?`). There is no
+  `Role` field — origin is conveyed via `SenderId`/`SenderName` + `Kind`.
+- `TownhallState.ChannelMessages` is still
+  `Dictionary<string, ObservableCollection<TownhallMessage>>`, unchanged
+  in structure by 4.1 (only the element type's shape widened).
+- `TownhallViewModel.InitializeSampleData()` still hardcodes 3 sample
+  channels, 2 sample agents, and a handful of sample messages, and
+  `SendMessageCommand` still constructs `TownhallMessage` directly inline.
+  4.1 did not touch how or when messages are constructed — only the shape
+  being constructed. This sub-phase is where the sample-only assumption
+  should actually be replaced with explicit, minimal session-state
+  initialization — not deferred further.
 - `SelectChannelCommand` and `SendMessageCommand` are the only two
   user-triggered actions today. Both are the natural first sources of
   auto-logged entries.

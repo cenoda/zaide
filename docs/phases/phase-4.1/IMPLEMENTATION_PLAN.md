@@ -17,7 +17,7 @@ agent wire-format decision that the model depends on. See
 `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` for the umbrella and the other
 sub-phases (4.2 auto-logging, 4.3 UI, 4.4 docs sync).
 
-Verified live seams (2026-07-08):
+Verified live seams (2026-07-08, pre-implementation baseline):
 
 - `src/Models/TownhallMessage.cs`
   - flat shape: `Id`, `SenderId`, `SenderName`, `SenderAvatar`, `Content`,
@@ -47,6 +47,19 @@ Verified live seams (2026-07-08):
   `WorkspaceAgent` is a UI presence model only (`Id`, `Name`, `Avatar`,
   `Role`, `Status`, `HasWarning`) — no execution, no API client, no
   model/provider field.
+
+**Post-implementation state (2026-07-08, after M2/M3):** the seams above
+describe the pre-4.1 baseline and are kept as-is for historical record. The
+actual implemented shape is documented in "Agent Format Decision" and
+reflected live in `src/Models/TownhallMessage.cs`: `TownhallMessage` now has
+`Kind: TownhallMessageKind` (not `Type`/`TownhallMessageType`) with the
+expanded taxonomy, plus `SourceProvider`, `SourceModel`, `ThreadId`, and
+`Metadata`. `TownhallState`, `TownhallViewModel`, and `TownhallView` are
+unchanged in structure (per M3 — no code changes were needed there).
+`TownhallViewModel` still uses `InitializeSampleData()` and still
+constructs `TownhallMessage` directly in `SendMessageCommand` — 4.1 only
+widened the shape being constructed, it did not touch how or when messages
+are constructed. That remains 4.2's job.
 
 ## Scope
 
@@ -106,9 +119,12 @@ activity-entry schema needs to not paint itself into a corner.
 Decision to make and record here before M1 starts (revised after audit,
 2026-07-08):
 
-- Model an agent-originated entry with provider-agnostic fields:
-  `Role` (`user` / `agent` / `system` — mirrors common chat-completion
-  shapes without committing to one), free-text `Content`, and:
+- Model an agent-originated entry with provider-agnostic fields. Origin
+  (user / agent / system) is already conveyed by the existing `SenderId`/
+  `SenderName` fields combined with the new `Kind` taxonomy — a separate
+  `Role` field was considered but rejected as redundant with that existing
+  distinction, and is **not** part of the implemented shape. The added
+  fields are `Content` (already existed) plus:
   - `SourceProvider` (`string?`) — free-text provider identifier
     (e.g. `"openai"`, `"anthropic"`, `"local"`). First-class field, not a
     metadata bag entry, so consumers don't need to know a bag schema to
@@ -160,7 +176,7 @@ Decision to make and record here before M1 starts (revised after audit,
 
 ## Exit Conditions
 
-- [x] Agent-format decision is recorded in this document and matches what's implemented
+- [x] Agent-format decision is recorded in this document and matches what's implemented (corrected 2026-07-08: removed `Role` from the documented decision — it was never implemented and is redundant with existing `SenderId`/`SenderName`/`Kind`)
 - [x] `TownhallMessage`/replacement entry type supports a real kind taxonomy beyond `Normal`/`Warning`/`System`, including the forward-looking kinds with no producer yet
 - [x] `SourceProvider`, `SourceModel`, and `ThreadId` exist as nullable first-class fields (unpopulated in Phase 4 is fine)
 - [x] No provider abstraction (`IAgentProvider`, `AgentRegistry`, enums) was added — confirmed still deferred to Phase 5/6
