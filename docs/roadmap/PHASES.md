@@ -86,7 +86,8 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] **3.6:** Terminal renderer foundation (ANSI/CSI parser, screen buffer, custom render control) — ✅ Complete
 - [x] **3.7:** Interactive shell quality (clear, prompts, resize stability) — ✅ Complete
 - [x] **3.8:** TUI compatibility (alternate screen, richer screen-control behavior) — ✅ Complete (2026-07-07)
-- [ ] **3.9:** Terminal UX polish (selection, scrollback, search, terminal tabs)
+- [ ] **3.9:** Terminal UX polish (selection, scrollback, search)
+- [ ] **3.9.1:** Terminal tabs (multi-session bottom-panel workflow)
 
 ## Phase 4: Agent Workspace Foundations
 - [ ] Convert the current Townhall-centered UI scaffold into a real shared workspace
