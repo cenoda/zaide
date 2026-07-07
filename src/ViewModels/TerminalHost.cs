@@ -80,6 +80,10 @@ public sealed class TerminalHost : ReactiveObject, ITerminalHost
         tab.IsActive = true;
         _tabs.Add(tab);
         ActiveTab = tab;
+
+        // Auto-start the new tab's session so the user sees a shell prompt
+        // immediately without having to click Restart.
+        _ = EnsureActiveSessionStartedAsync();
     }
 
     public void CloseTab(TerminalTabViewModel tab)
@@ -122,6 +126,11 @@ public sealed class TerminalHost : ReactiveObject, ITerminalHost
 
         tab.IsActive = true;
         ActiveTab = tab;
+
+        // Auto-start the activated tab's session if it hasn't been started yet.
+        // EnsureStartedAsync is idempotent via its _startRequested guard, so this
+        // is a no-op for already-started sessions.
+        _ = EnsureActiveSessionStartedAsync();
     }
 
     public void Dispose()
