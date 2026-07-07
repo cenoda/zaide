@@ -58,6 +58,10 @@ The agent-first layout is now live:
 | Status Bar | ✅ Complete | Shows app name, cursor position, language, project, branch, and AI model |
 | Categorized Logs | ✅ Complete | Terminal output categorized as [BUILD], [AGENT], [LOG] with colored indicators |
 
+### Refactor 4 (Visual Polish — complete)
+- Typography scale via `TextStyles`, animation helpers, spacing tokens, elevation contrast, file tree polish, chat rebuild, status bar, glass/fallback.
+- All regression gates (build, test, luminance VC-3, animations, VC-4/VC-11 audits) passed at M7.
+
 ### Planned layers (future):
 
 | Layer | Phase | Description |

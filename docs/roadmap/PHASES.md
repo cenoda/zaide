@@ -116,6 +116,7 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 | refactor-1 | Document/Workspace extraction | ✅ Complete |
 | refactor-2 | Layer boundary cleanup | ✅ Complete |
 | refactor-3 | Agent-first layout transition | ✅ Complete |
+| refactor-4 | Visual polish pass (typography, animation, spacing, elevation, file tree, chat, status) | ✅ Complete |
 
 ### refactor-2: Layer Boundary Cleanup
 
@@ -145,6 +146,12 @@ Transformed Zaide from an editor-first IDE layout to an agent-first workspace la
 
 **Result:** Townhall is now the visual center, editor remains always visible as focused implementation surface, all existing workflows preserved and stable.
 - [ ] Agent panel ↔ Townhall: actions appear in both
+
+### refactor-4: Visual Polish Pass
+M7 regression sweep + doc sync complete:
+- All gates passed: `dotnet build` (0 warnings), `dotnet test` (480 pass), luminance ΔL*=10.72 (VC-3), `check-animations.sh` (0), VC-4 limited to documented intentional exceptions, VC-11 limited to token-reference-only grep hits.
+- Docs updated: DESIGN.md (typography scale + animation mark), OVERVIEW.md (chronology), PHASES.md (complete).
+- No new behavior; polish only.
 
 ## Phase 6: Agent-to-Agent Router
 - [ ] @mention syntax parsing

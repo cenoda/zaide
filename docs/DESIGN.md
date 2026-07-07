@@ -82,11 +82,11 @@ Background = CanUseBlur()
 ---
 
 ## 4. Animation
-
 - **Duration:** All animations 150–200ms. No slower. No instant jump cuts.
 - **Easing:** `CubicEaseOut` for appearing, `CubicEaseIn` for disappearing. No linear.
 - **Morphing:** Panel resize, tab switch, panel open/close should interpolate smoothly.
 - **Avoid:** Spinners, loading bars, flashing. Prefer skeleton states or subtle opacity fades.
+- **Implemented:** Per Refactor 4 (animation helper pattern in `Animations.cs` and `check-animations.sh` guard).
 
 ```csharp
 // Avalonia animation example — panel slide
@@ -104,8 +104,12 @@ var animation = new Animation
 
 ---
 
-## 5. Spacing & Layout
+## 5. Typography (Refactor 4)
+- Global scale: 3 weights (Regular/SemiBold/Bold) × 4 sizes (11/12/13/15 px) via `TextStyles` helper.
+- All `TextBlock` usage routes through `TextStyles` (no direct `FontSize=` / `FontWeight=` literals in Views).
+- Implemented per Refactor 4.
 
+## 6. Spacing & Layout
 - **Panel padding:** 16px inner padding minimum on all content containers.
 - **Element gap:** 8px between adjacent controls (buttons, inputs, labels).
 - **Sidebar width:** Default 260px. Resizable via GridSplitter.
@@ -116,7 +120,7 @@ var animation = new Animation
 
 ---
 
-## 6. Reactive UI (Decision: ReactiveUI)
+## 7. Reactive UI (Decision: ReactiveUI)
 
 > **MVVM framework chosen: ReactiveUI.** Rationale: Zaide's agent-to-agent model
 > requires complex reactive pipelines (throttled streams, observable state merging,
@@ -145,7 +149,7 @@ this.WhenActivated(d =>
 
 ---
 
-## 7. Visual Quality Baseline
+## 8. Visual Quality Baseline
 
 Zaide should feel as polished as VS Code or Warp at a glance:
 

@@ -277,4 +277,57 @@ src/Views/UnsavedDialog.axaml:17:                    Spacing="{StaticResource Sp
 
 ---
 
+## M7 Verification Summary (completed)
+
+| Check | Status |
+|-------|--------|
+| `dotnet build Zaide.slnx` passes with no new warnings vs. M0 baseline | ✅ PASS (0 warnings / 0 errors) |
+| `dotnet test Zaide.slnx --no-build` passes | ✅ PASS (480/480 tests) |
+| `dotnet run --project tools/check-luminance -- 0x0A0F19 0x1A2540` | ✅ PASS (`delta L* = 10.72`) |
+| `bash tools/check-animations.sh` exits 0 | ✅ PASS |
+| VC-4 audit grep | ✅ PASS — limited to documented intentional exceptions only |
+| VC-11 audit grep | ✅ PASS — limited to tokenized `UnsavedDialog.axaml` references only |
+| `docs/DESIGN.md` synced to shipped typography + animation rules | ✅ DONE |
+| `docs/architecture/OVERVIEW.md` notes Refactor 4 chronology | ✅ DONE |
+| `docs/roadmap/PHASES.md` marks Refactor 4 complete | ✅ DONE |
+| Final screenshots `m7-default.png` and `m7-min.png` captured | ✅ DONE |
+| Manual verification checklist reviewed against shipped UI | ✅ DONE |
+| No-new-behavior statement recorded | ✅ DONE — M7 is regression verification and doc sync only |
+
+### M7 Command Outputs
+
+`dotnet build Zaide.slnx`
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+```
+
+`dotnet test Zaide.slnx --no-build`
+
+```
+Passed!  - Failed:     0, Passed:   480, Skipped:     0, Total:   480
+```
+
+`dotnet run --project tools/check-luminance -- 0x0A0F19 0x1A2540`
+
+```
+L*(0x0A0F19) = 4.30  L*(0x1A2540) = 15.02  delta L* = 10.72  (gate: 8.00)
+```
+
+`bash tools/check-animations.sh`
+
+```
+(no output; exit 0)
+```
+
+### M7 Artifacts
+
+- `docs/refactor/refactor-4/verification/m7-default.png` — final default-size screenshot
+- `docs/refactor/refactor-4/verification/m7-min.png` — final minimum-width screenshot
+- `docs/refactor/refactor-4/verification/README.md` — consolidated artifact index and final verification notes
+
+---
+
 *Last updated: 2026-07-07*
