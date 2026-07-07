@@ -159,7 +159,7 @@ public class TownhallViewModel : ReactiveObject
                 SenderAvatar = "avatar-user",
                 Content = draft,
                 Timestamp = DateTimeOffset.UtcNow,
-                Type = TownhallMessageType.Normal
+                Kind = TownhallMessageKind.Chat
             };
 
             // Add to active channel's messages collection (also adds to Messages since they're the same object)
@@ -195,7 +195,7 @@ public class TownhallViewModel : ReactiveObject
             SenderAvatar = "avatar-user",
             Content = "Welcome to the Townhall workspace!",
             Timestamp = DateTimeOffset.UtcNow.AddMinutes(-5),
-            Type = TownhallMessageType.Normal
+            Kind = TownhallMessageKind.Chat
         };
         var message2 = new TownhallMessage
         {
@@ -205,7 +205,7 @@ public class TownhallViewModel : ReactiveObject
             SenderAvatar = "avatar-agent",
             Content = "I can help you with code review and refactoring tasks.",
             Timestamp = DateTimeOffset.UtcNow.AddMinutes(-4),
-            Type = TownhallMessageType.Normal
+            Kind = TownhallMessageKind.Chat
         };
         townhallMessages.Add(message1);
         townhallMessages.Add(message2);
@@ -219,7 +219,7 @@ public class TownhallViewModel : ReactiveObject
             SenderAvatar = "avatar-agent",
             Content = "System check complete. All systems nominal.",
             Timestamp = DateTimeOffset.UtcNow.AddMinutes(-3),
-            Type = TownhallMessageType.Normal
+            Kind = TownhallMessageKind.Chat
         };
         aiStatusMessages.Add(aiMessage1);
 

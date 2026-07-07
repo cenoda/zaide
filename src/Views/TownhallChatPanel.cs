@@ -123,7 +123,7 @@ public class TownhallChatPanel : Panel
 
         // Warning icon for warning messages
         StackPanel contentStack;
-        if (message.Type == TownhallMessageType.Warning)
+        if (message.Kind == TownhallMessageKind.System)
         {
             var warningIcon = IconFactory.Create(
                 "Icon.Warning",
@@ -165,7 +165,7 @@ public class TownhallChatPanel : Panel
         };
 
         // Warning message background tint
-        if (message.Type == TownhallMessageType.Warning)
+        if (message.Kind == TownhallMessageKind.System)
         {
             row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0xFC, 0xBB, 0x47));
             row.CornerRadius = LayoutTokens.RadiusMd;
