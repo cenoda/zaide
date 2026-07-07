@@ -83,8 +83,9 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Indent guides in editor | 2.1 | ✅ Done |
 | Terminal (Linux PTY) | 3 | ✅ Done |
 | Phase 3.8: TUI compatibility | 3.8 | ✅ Done |
-| Phase 3.9: Terminal UX polish | 3.9 | ⏳ Planned |
-| Phase 4: Agent workspace foundations | 4 | ⏳ Planned |
+| Phase 3.9: Terminal UX polish | 3.9 | ✅ Done |
+| Phase 3.9.1: Terminal tabs | 3.9.1 | ✅ Done |
+| Phase 4: Agent workspace foundations | 4 | ⏳ Planned (sub-phases 4.1–4.4 drafted, not implemented) |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
