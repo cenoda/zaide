@@ -1,5 +1,6 @@
 using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
 using Xunit;
 using Zaide.ViewModels;
 using Zaide.Views;
@@ -14,6 +15,11 @@ namespace Zaide.Tests.Views;
 /// </summary>
 public class TerminalRenderControlTests
 {
+    static TerminalRenderControlTests()
+    {
+        EnsureApplication();
+    }
+
     [Fact]
     public void SnapshotProperty_IsRegistered()
     {
@@ -176,5 +182,133 @@ public class TerminalRenderControlTests
         // this single decision; a full-screen TUI must not leak main cells.
         Assert.True(TerminalRenderControl.IsMainBufferSelectionEnabled(false));
         Assert.False(TerminalRenderControl.IsMainBufferSelectionEnabled(true));
+    }
+
+    // ── M1: selection/copy/paste polish ────────────────────────────
+
+    private static TerminalSnapshot BuildWordLineSnapshot()
+    {
+        // Single viewport row: "foo bar-baz  qux"
+        string line = "foo bar-baz  qux";
+        var cells = new TerminalCell[16];
+        for (int i = 0; i < line.Length; i++)
+        {
+            cells[i] = new TerminalCell(line[i], -1, -1, false, false);
+        }
+
+        return new TerminalSnapshot(
+            16,
+            1,
+            new[] { line },
+            cells,
+            System.Array.Empty<string>(),
+            System.Array.Empty<TerminalCell>());
+    }
+
+    [Fact]
+    public void TryGetWordSelectionRange_SelectsWholeWord_AroundClickedCell()
+    {
+        var snapshot = BuildWordLineSnapshot();
+
+        // Click inside "bar" (index 4..6), expect selection of just "bar".
+        bool ok = TerminalRenderControl.TryGetWordSelectionRange(snapshot, (0, 5), out var start, out var end);
+
+        Assert.True(ok);
+        Assert.Equal((0, 4), start);
+        Assert.Equal((0, 6), end);
+    }
+
+    [Fact]
+    public void TryGetWordSelectionRange_TreatsHyphenAsBoundary()
+    {
+        var snapshot = BuildWordLineSnapshot();
+
+        // "baz" starts at index 8 within "bar-baz".
+        bool ok = TerminalRenderControl.TryGetWordSelectionRange(snapshot, (0, 9), out var start, out var end);
+
+        Assert.True(ok);
+        Assert.Equal((0, 8), start);
+        Assert.Equal((0, 10), end);
+    }
+
+    [Fact]
+    public void BuildSelectedText_SelectsWholeWord_OnWordSelectionRange()
+    {
+        var snapshot = BuildWordLineSnapshot();
+
+        TerminalRenderControl.TryGetWordSelectionRange(snapshot, (0, 5), out var start, out var end);
+        string selected = TerminalRenderControl.BuildSelectedText(snapshot, start, end);
+
+        Assert.Equal("bar", selected);
+    }
+
+    [Fact]
+    public void GetLineSelectionRange_CoversFullLogicalLine()
+    {
+        var snapshot = BuildWordLineSnapshot();
+
+        TerminalRenderControl.GetLineSelectionRange(snapshot, 0, out var start, out var end);
+
+        Assert.Equal((0, 0), start);
+        Assert.Equal((0, 15), end);
+    }
+
+    [Fact]
+    public void BuildSelectedText_SelectsWholeLine_OnLineSelectionRange()
+    {
+        var snapshot = BuildWordLineSnapshot();
+
+        TerminalRenderControl.GetLineSelectionRange(snapshot, 0, out var start, out var end);
+        string selected = TerminalRenderControl.BuildSelectedText(snapshot, start, end);
+
+        Assert.Equal("foo bar-baz  qux", selected);
+    }
+
+    [Fact]
+    public void TryGetSelectedText_ReturnsFalse_WhenAlternateScreenActive()
+    {
+        var control = new TerminalRenderControl
+        {
+            Snapshot = BuildWordLineSnapshot(),
+            IsAlternateScreenActive = true
+        };
+
+        bool ok = control.TryGetSelectedText(out string? text);
+
+        Assert.False(ok);
+        Assert.Null(text);
+    }
+
+    [Fact]
+    public void ScrollToBottom_ClearsSelection_WhenRequested()
+    {
+        var control = new TerminalRenderControl
+        {
+            Snapshot = BuildWordLineSnapshot()
+        };
+
+        // Selection is a private concern; ScrollToBottom(clearSelection: true)
+        // is the public seam that must leave no selected text behind.
+        control.ScrollToBottom(clearSelection: true);
+
+        bool ok = control.TryGetSelectedText(out string? text);
+        Assert.False(ok);
+        Assert.Null(text);
+    }
+
+    private static void EnsureApplication()
+    {
+        if (Application.Current is App app)
+        {
+            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
+            {
+                app.Initialize();
+            }
+
+            return;
+        }
+
+        var createdApp = new App();
+        createdApp.Initialize();
     }
 }

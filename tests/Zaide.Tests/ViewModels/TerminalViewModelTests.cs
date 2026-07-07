@@ -485,6 +485,27 @@ public class TerminalViewModelTests
     }
 
     [Fact]
+    public async Task PasteAsync_WhenBracketedPasteEnabled_StillWrapsPasteAfterUiPolish()
+    {
+        var service = new Mock<ITerminalService>();
+        service.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
+        var vm = CreateViewModel(service);
+
+        string enableBracketedPaste = "\u001B[?2004h";
+        service.Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes(enableBracketedPaste));
+
+        await vm.PasteAsync("test text");
+
+        string expected = "\u001B[200~test text\u001B[201~";
+        service.Verify(
+            s => s.WriteAsync(
+                It.Is<byte[]>(data => Encoding.UTF8.GetString(data) == expected),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public void Append_DecSetResetAction_UpdatesBracketedPasteState()
     {
         var service = new Mock<ITerminalService>();
@@ -566,11 +587,11 @@ public class TerminalViewModelTests
         // Start, resize, stop, then restart
         await vm.EnsureStartedAsync();
         vm.Resize(100, 30);
-        
+
         // Simulate process exit
         service.SetupGet(s => s.IsRunning).Returns(false);
         service.Raise(s => s.ProcessExited += null);
-        
+
         await vm.RestartAsync();
 
         // Should forward the latest dimensions after restart (once during resize, once during restart)
@@ -647,13 +668,13 @@ public class TerminalViewModelTests
         Assert.NotNull(afterSnapshot);
         Assert.Equal(30, afterSnapshot.Columns);
         Assert.Equal(5, afterSnapshot.Rows);
-        
+
         // Verify that content is still present and accessible
         Assert.Contains("Line 1", afterSnapshot.Lines[0]);
-        
+
         // Verify that the screen buffer maintains its internal consistency
         Assert.Equal(afterSnapshot.Columns * afterSnapshot.Rows, afterSnapshot.Cells.Count);
-        
+
         // Verify that cells have reasonable content (not all null/empty)
         int nonEmptyCells = 0;
         foreach (var cell in afterSnapshot.Cells)

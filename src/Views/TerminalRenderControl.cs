@@ -122,13 +122,13 @@ public class TerminalRenderControl : Control
     private static Color[] Build256ColorPalette()
     {
         var palette = new Color[256];
-        
+
         // Standard ANSI colors (0-15)
         for (int i = 0; i < 16; i++)
         {
             palette[i] = AnsiColors[i];
         }
-        
+
         // 6x6x6 color cube (16-231)
         for (int r = 0; r < 6; r++)
         {
@@ -138,7 +138,7 @@ public class TerminalRenderControl : Control
                 {
                     int index = 16 + r * 36 + g * 6 + b;
                     if (index >= 232) break;
-                    
+
                     byte red = (byte)(r == 0 ? 0 : r * 40 + 55);
                     byte green = (byte)(g == 0 ? 0 : g * 40 + 55);
                     byte blue = (byte)(b == 0 ? 0 : b * 40 + 55);
@@ -146,14 +146,14 @@ public class TerminalRenderControl : Control
                 }
             }
         }
-        
+
         // Grayscale (232-255)
         for (int i = 232; i < 256; i++)
         {
             byte gray = (byte)((i - 232) * 10 + 8);
             palette[i] = Color.FromRgb(gray, gray, gray);
         }
-        
+
         return palette;
     }
 
@@ -177,6 +177,14 @@ public class TerminalRenderControl : Control
     private (int Row, int Col)? _selectionAnchor;
     private (int Row, int Col)? _selectionEnd;
     private readonly DispatcherTimer _cursorBlinkTimer;
+    private readonly DispatcherTimer _dragAutoScrollTimer;
+    private double _lastPointerY;
+    private int _pendingClickCount;
+    private DateTime _lastClickTime;
+    private (int Row, int Col)? _lastClickCell;
+
+    private static readonly TimeSpan MultiClickInterval = TimeSpan.FromMilliseconds(400);
+    private const int DragAutoScrollMarginPx = 24;
 
     // ── ctor ──────────────────────────────────────────────────────
 
@@ -184,7 +192,7 @@ public class TerminalRenderControl : Control
     {
         ClipToBounds = true;
         Focusable = true;
-        Cursor = new Cursor(StandardCursorType.Ibeam);
+        Cursor = CreateIbeamCursorOrNull();
 
         _typeface = new Typeface(DefaultFontFamily, FontStyle.Normal, FontWeight.Normal);
         MeasureCellMetrics();
@@ -203,6 +211,14 @@ public class TerminalRenderControl : Control
             _isCursorBlinkOn = !_isCursorBlinkOn;
             InvalidateVisual();
         };
+
+        // Drives auto-scroll while the pointer is dragging a selection past
+        // the top or bottom edge of the viewport.
+        _dragAutoScrollTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(50)
+        };
+        _dragAutoScrollTimer.Tick += (_, _) => TickDragAutoScroll();
 
         GotFocus += (_, _) =>
         {
@@ -230,6 +246,7 @@ public class TerminalRenderControl : Control
                 _selectionAnchor = null;
                 _selectionEnd = null;
                 _isSelecting = false;
+                _dragAutoScrollTimer.Stop();
                 InvalidateVisual();
             }
         });
@@ -374,16 +391,26 @@ public class TerminalRenderControl : Control
 
     private void MeasureCellMetrics()
     {
-        var ft = new FormattedText(
-            "M",
-            CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight,
-            _typeface,
-            _fontSize,
-            Brushes.Black);
+        try
+        {
+            var ft = new FormattedText(
+                "M",
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                _typeface,
+                _fontSize,
+                Brushes.Black);
 
-        CellWidth = Math.Ceiling(ft.Width);
-        LineHeight = Math.Ceiling(ft.Height);
+            CellWidth = Math.Ceiling(ft.Width);
+            LineHeight = Math.Ceiling(ft.Height);
+        }
+        catch (InvalidOperationException)
+        {
+            // No text-formatting platform service is registered (e.g. under
+            // headless unit tests with no windowing platform configured).
+            // Selection/copy logic does not depend on real pixel metrics, so
+            // leave the metrics at their default zero values.
+        }
     }
 
     public bool TryGetSelectedText(out string? text)
@@ -428,6 +455,7 @@ public class TerminalRenderControl : Control
             _selectionAnchor = null;
             _selectionEnd = null;
             _isSelecting = false;
+            _dragAutoScrollTimer.Stop();
         }
 
         InvalidateVisual();
@@ -485,9 +513,29 @@ public class TerminalRenderControl : Control
             return;
         }
 
-        _selectionAnchor = cell;
-        _selectionEnd = cell;
-        _isSelecting = true;
+        int clickCount = GetClickCount(cell);
+
+        if (clickCount == 2)
+        {
+            TryGetWordSelectionRange(Snapshot, cell, out var wordStart, out var wordEnd);
+            _selectionAnchor = wordStart;
+            _selectionEnd = wordEnd;
+            _isSelecting = false;
+        }
+        else if (clickCount >= 3)
+        {
+            GetLineSelectionRange(Snapshot, cell.Row, out var lineStart, out var lineEnd);
+            _selectionAnchor = lineStart;
+            _selectionEnd = lineEnd;
+            _isSelecting = false;
+        }
+        else
+        {
+            _selectionAnchor = cell;
+            _selectionEnd = cell;
+            _isSelecting = true;
+        }
+
         _renderSelectionLiveBottomState();
         e.Pointer.Capture(this);
         e.Handled = true;
@@ -500,6 +548,10 @@ public class TerminalRenderControl : Control
         {
             return;
         }
+
+        double y = e.GetPosition(this).Y;
+        _lastPointerY = y;
+        UpdateDragAutoScroll(y);
 
         if (!TryMapPointerToCell(e.GetPosition(this), Snapshot, out var cell))
         {
@@ -519,6 +571,7 @@ public class TerminalRenderControl : Control
         }
 
         _isSelecting = false;
+        _dragAutoScrollTimer.Stop();
         e.Pointer.Capture(null);
         e.Handled = true;
 
@@ -724,9 +777,197 @@ public class TerminalRenderControl : Control
 
     private static int GetSelectableLineLength(string line) => line.TrimEnd().Length;
 
+    /// <summary>
+    /// Determines the click count (1, 2, or 3+) for a press on the given cell,
+    /// based on elapsed time and cell proximity since the last press. Used to
+    /// drive single/double/triple-click selection behavior.
+    /// </summary>
+    private int GetClickCount((int Row, int Col) cell)
+    {
+        var now = DateTime.UtcNow;
+        bool sameCell = _lastClickCell == cell;
+        bool withinInterval = (now - _lastClickTime) <= MultiClickInterval;
+
+        if (sameCell && withinInterval)
+        {
+            _pendingClickCount++;
+        }
+        else
+        {
+            _pendingClickCount = 1;
+        }
+
+        _lastClickTime = now;
+        _lastClickCell = cell;
+
+        // Cap at 3 — anything beyond triple-click still selects the full line.
+        if (_pendingClickCount > 3)
+        {
+            _pendingClickCount = 3;
+        }
+
+        return _pendingClickCount;
+    }
+
+    /// <summary>
+    /// Whether a character participates in "word" boundaries for double-click
+    /// word selection. Matches common IDE conventions: letters, digits, and
+    /// underscore are part of a word; everything else (including punctuation
+    /// and whitespace) is a boundary.
+    /// </summary>
+    internal static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>
+    /// Expands a single clicked cell into the (start, end) range covering the
+    /// contiguous run of word characters under the click, for double-click
+    /// word selection. If the clicked cell is not a word character, selects
+    /// just that single cell.
+    /// </summary>
+    internal static bool TryGetWordSelectionRange(
+        TerminalSnapshot snapshot,
+        (int Row, int Col) cell,
+        out (int Row, int Col) start,
+        out (int Row, int Col) end)
+    {
+        string line = GetAbsoluteLine(snapshot, cell.Row);
+        int lineLength = GetSelectableLineLength(line);
+
+        if (lineLength == 0 || cell.Col >= lineLength)
+        {
+            start = cell;
+            end = cell;
+            return false;
+        }
+
+        if (!IsWordChar(line[cell.Col]))
+        {
+            start = cell;
+            end = cell;
+            return true;
+        }
+
+        int startCol = cell.Col;
+        while (startCol > 0 && IsWordChar(line[startCol - 1]))
+        {
+            startCol--;
+        }
+
+        int endCol = cell.Col;
+        while (endCol < lineLength - 1 && IsWordChar(line[endCol + 1]))
+        {
+            endCol++;
+        }
+
+        start = (cell.Row, startCol);
+        end = (cell.Row, endCol);
+        return true;
+    }
+
+    /// <summary>
+    /// Returns the (start, end) selection range covering the full logical
+    /// line at the given absolute row, for triple-click line selection.
+    /// </summary>
+    internal static void GetLineSelectionRange(
+        TerminalSnapshot snapshot,
+        int row,
+        out (int Row, int Col) start,
+        out (int Row, int Col) end)
+    {
+        string line = GetAbsoluteLine(snapshot, row);
+        int lineLength = GetSelectableLineLength(line);
+        int endCol = Math.Max(0, lineLength - 1);
+        start = (row, 0);
+        end = (row, endCol);
+    }
+
+    /// <summary>
+    /// Starts or stops the drag auto-scroll timer based on whether the
+    /// pointer is within the auto-scroll margin near the top/bottom edge
+    /// of the viewport while a drag selection is in progress.
+    /// </summary>
+    private void UpdateDragAutoScroll(double pointerY)
+    {
+        bool nearTop = pointerY < DragAutoScrollMarginPx;
+        bool nearBottom = pointerY > Bounds.Height - DragAutoScrollMarginPx;
+
+        if (nearTop || nearBottom)
+        {
+            if (!_dragAutoScrollTimer.IsEnabled)
+            {
+                _dragAutoScrollTimer.Start();
+            }
+        }
+        else
+        {
+            _dragAutoScrollTimer.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Scrolls the viewport by one row toward the drag direction and extends
+    /// the selection to the new edge row, while a drag selection is active
+    /// and the pointer remains near the top/bottom edge.
+    /// </summary>
+    private void TickDragAutoScroll()
+    {
+        var snapshot = Snapshot;
+        if (!_isSelecting || snapshot is null || IsAlternateScreenActive)
+        {
+            _dragAutoScrollTimer.Stop();
+            return;
+        }
+
+        int maxTop = Math.Max(0, snapshot.TotalRows - snapshot.Rows);
+        int currentTop = GetViewportTop(snapshot);
+        bool nearTop = _lastPointerY < DragAutoScrollMarginPx;
+        bool nearBottom = _lastPointerY > Bounds.Height - DragAutoScrollMarginPx;
+
+        int nextTop = currentTop;
+        if (nearTop)
+        {
+            nextTop = Math.Max(0, currentTop - 1);
+        }
+        else if (nearBottom)
+        {
+            nextTop = Math.Min(maxTop, currentTop + 1);
+        }
+
+        if (nextTop == currentTop)
+        {
+            return;
+        }
+
+        _viewportTop = nextTop;
+        _followLiveBottom = nextTop >= maxTop;
+
+        int edgeRow = nearTop ? nextTop : nextTop + snapshot.Rows - 1;
+        edgeRow = Math.Clamp(edgeRow, 0, snapshot.TotalRows - 1);
+        string line = GetAbsoluteLine(snapshot, edgeRow);
+        int lineLength = GetSelectableLineLength(line);
+        int col = Math.Max(0, lineLength - 1);
+        _selectionEnd = (edgeRow, col);
+
+        InvalidateVisual();
+    }
+
     private void _renderSelectionLiveBottomState()
     {
         _followLiveBottom = false;
+    }
+
+    private static Cursor? CreateIbeamCursorOrNull()
+    {
+        try
+        {
+            return new Cursor(StandardCursorType.Ibeam);
+        }
+        catch (InvalidOperationException)
+        {
+            // No windowing platform is registered (e.g. under headless unit
+            // tests). The render control is still fully usable without a
+            // custom pointer cursor in that context.
+            return null;
+        }
     }
 
     private void ResetCursorBlink()

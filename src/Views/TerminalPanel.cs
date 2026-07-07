@@ -42,7 +42,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             (IBrush?)resourceDictionary["SecondaryAccentBrush"],
             14);
 
-         var headerText = TextStyles.Header("Terminal / Logs");
+        var headerText = TextStyles.Header("Terminal / Logs");
         headerText.VerticalAlignment = VerticalAlignment.Center;
 
         _statusText = TextStyles.Caption("");
@@ -251,7 +251,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private ContextMenu BuildContextMenu()
     {
         var copyItem = new MenuItem { Header = "Copy" };
-        copyItem.Click += async (_, _) => await CopyAllVisibleTextAsync();
+        copyItem.Click += async (_, _) => await CopySelectionAsync();
+
+        var copyVisibleItem = new MenuItem { Header = "Copy Visible" };
+        copyVisibleItem.Click += async (_, _) => await CopyVisibleTextAsync();
 
         var pasteItem = new MenuItem { Header = "Paste" };
         pasteItem.Click += async (_, _) => await PasteAsync();
@@ -261,6 +264,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             ItemsSource = new object[]
             {
                 copyItem,
+                copyVisibleItem,
                 pasteItem
             }
         };
@@ -277,14 +281,14 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 
         if (ctrl && !alt && e.Key == Key.C && _renderControl.TryGetSelectedText(out _))
         {
-            await CopyAllVisibleTextAsync();
+            await CopySelectionAsync();
             e.Handled = true;
             return;
         }
 
         if (ctrl && shift && !alt)
         {
-            if (e.Key == Key.C) { await CopyAllVisibleTextAsync(); e.Handled = true; return; }
+            if (e.Key == Key.C) { await CopySelectionAsync(); e.Handled = true; return; }
             if (e.Key == Key.V) { await PasteAsync(); e.Handled = true; return; }
         }
         byte[]? bytes = TerminalKeyMapper.Map(e.Key, e.KeyModifiers);
@@ -307,15 +311,33 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 
     private Task SendInputAsync(byte[] bytes) => ViewModel?.SendInputAsync(bytes) ?? Task.CompletedTask;
 
-    private async Task CopyAllVisibleTextAsync()
+    /// <summary>
+    /// Copies the current selection only. Does not fall back to copying the
+    /// visible viewport — that ambiguous fallback is now the explicit
+    /// "Copy Visible" action so "Copy" never surprises the user with
+    /// unselected text.
+    /// </summary>
+    private async Task CopySelectionAsync()
+    {
+        if (!_renderControl.TryGetSelectedText(out string? selectedText) || string.IsNullOrEmpty(selectedText))
+        {
+            return;
+        }
+
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null) return;
+        await clipboard.SetTextAsync(selectedText);
+    }
+
+    /// <summary>
+    /// Copies the entire visible viewport, regardless of selection. This is
+    /// the deliberate fallback action for when the user wants the on-screen
+    /// content rather than a specific selection.
+    /// </summary>
+    private async Task CopyVisibleTextAsync()
     {
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard is null) return;
-        if (_renderControl.TryGetSelectedText(out string? selectedText))
-        {
-            await clipboard.SetTextAsync(selectedText);
-            return;
-        }
 
         var snapshot = ViewModel?.ScreenSnapshot;
         if (snapshot is null || snapshot.Lines.Count == 0) return;

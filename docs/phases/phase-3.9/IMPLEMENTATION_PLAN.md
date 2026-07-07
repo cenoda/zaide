@@ -5,8 +5,8 @@
 - [x] Read `docs/phases/phase-3.9/BRIEF.md`
 - [x] Re-read `docs/phases/phase-3.8/IMPLEMENTATION_PLAN.md` and `TOFIX.md`
 - [x] Re-read `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `docs/CONVENTIONS.md`
-- [x] Verify current build succeeds: `dotnet build Zaide.slnx` — 0 warnings, 0 errors (verified 2026-07-07)
-- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build` — 510 passed, 0 failed (verified 2026-07-07)
+- [x] Verify current build succeeds: `dotnet build Zaide.slnx` — 0 warnings, 0 errors (re-verified 2026-07-07 during M0)
+- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build` — 510 passed, 0 failed (re-verified 2026-07-07 during M0)
 - [x] Verify current code seams for selection, scrollback, copy/paste, and bottom-panel composition against live code
 - [x] Confirm no open `phase-3.8` TOFIX items remain
 - [ ] Manual baseline on Linux still feels stable:
@@ -82,11 +82,13 @@ These decisions keep the phase narrow and verifiable:
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate: current build/tests/live seams verified | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ✅ Ready |
-| M1 | Selection/copy/paste polish: refine selection behavior and make copy affordances explicit | `TerminalRenderControlTests`, `TerminalViewModelTests`, focused manual selection/copy smoke | ⬜ |
+| M0 | Entry gate: current build/tests/live seams verified | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ✅ Code/test baseline verified; manual smoke pending |
+| M1 | Selection/copy/paste polish: refine selection behavior and make copy affordances explicit | `TerminalRenderControlTests`, `TerminalViewModelTests`, focused manual selection/copy smoke | ✅ Code/test pass complete; manual Linux smoke pending |
 | M2 | Scrollback/navigation polish: improve viewport ergonomics without changing the renderer model | `TerminalRenderControlTests` + focused manual wheel/keyboard smoke | ⬜ |
 | M3 | Search UX over terminal snapshot + scrollback | View/search tests for match discovery, highlight projection, and next/previous navigation | ⬜ |
 | M4 | Docs sync and exit audit for the narrowed 3.9 scope | `dotnet build`, `dotnet test`, roadmap/doc sync, TOFIX update | ⬜ |
+
+**M0 closeout note (2026-07-07):** `dotnet build Zaide.slnx` and `dotnet test Zaide.slnx --no-build` both passed again during the Phase 3.9 entry-gate pass. Interactive Linux smoke items remain unchecked because they require a live UI/PTTY session.
 
 ## Detailed Milestone Plans
 
