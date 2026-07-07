@@ -85,8 +85,8 @@ explicit session-state initialization — without adding new UI or filtering.
 
 | Milestone | Description | Test | Status |
 |-----------|-------------|------|--------|
-| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ⬜ |
-| M1 | Classification rules defined (chat vs. action/log) | Design note in this doc reviewed | ⬜ |
+| M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ✅ Done (2026-07-08) |
+| M1 | Classification rules defined (chat vs. action/log) | Design note in this doc reviewed | ✅ Done (2026-07-08) |
 | M2 | Auto-log on send-message and channel-switch | ViewModel tests asserting generated entries per action | ⬜ |
 | M3 | Sample-only initialization replaced with explicit session-state seeding | ViewModel tests confirming no behavior regression | ⬜ |
 | M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, phase-4 umbrella status updated | ⬜ |
