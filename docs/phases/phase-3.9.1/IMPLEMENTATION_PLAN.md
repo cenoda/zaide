@@ -47,13 +47,15 @@ Verified live seams on 2026-07-07:
   - this means a single shared panel rebound across tabs would smear or discard
     session-local UI state unless that state were migrated elsewhere
 - `src/MainWindow.axaml.cs`
-  - currently creates exactly one `TerminalPanel` and directly performs
-    `_terminalPanel.FocusTerminal()` when the bottom panel opens; startup is
-    routed through `TerminalHost.EnsureActiveSessionStartedAsync()`
-  - bottom-panel composition will need a tab strip / host surface **and** a
-    host-level focus seam wired through to the active tab's panel
-  - this is the natural place for a view-layer `TerminalPanel` cache or a
-    dedicated view-host, so retained panels stay out of ViewModels
+  - M3: bottom panel hosts a `TerminalTabHost` instead of a single
+    `TerminalPanel`. The `TerminalTabHost` retains one `TerminalPanel` per
+    tab in a `Dictionary<TerminalTabViewModel, TerminalPanel>` cache owned
+    entirely in the view layer — no ViewModel holds a view reference.
+  - focus and startup are routed through the view host seam:
+    `_terminalTabHost.FocusActiveSession()` → active tab's panel focus +
+    `ViewModel.TerminalHost.EnsureActiveSessionStartedAsync()`
+  - `TerminalTabStrip` renders tab titles, active-highlight, new-tab (+)
+    and close-tab (×) controls bound to host commands
 - `src/ViewModels/MainWindowViewModel.cs`
   - now exposes `ITerminalHost` instead of a concrete `TerminalViewModel`.
     `TerminalHost.StartupError` is subscribed for status-bar surfacing.
@@ -161,8 +163,8 @@ This is the lowest-risk fit for the current code because `TerminalPanel` and `Te
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests/live seams verified and architecture choice pinned down | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ⬜ Build/test/code-audit ready; manual Linux smoke pending |
 | M1 | Per-session creation seam: make terminal service/view-model instantiable per tab without regressing single-session behavior | targeted VM/service tests + build/test | ✅ Complete (`ITerminalSessionFactory` + `ITerminalHost` wired, 549 tests pass) |
-| M2 | Terminal tab host: collection, active-tab switching, create/close/dispose lifecycle | host-viewmodel tests for session isolation and disposal | ⬜ |
-| M3 | Bottom-panel UI integration: tab strip + active session surface + focus/start behavior | focused UI/view tests + manual tab switching smoke | ⬜ |
+| M2 | Terminal tab host: collection, active-tab switching, create/close/dispose lifecycle | host-viewmodel tests for session isolation and disposal | ✅ Complete (TerminalHost + TerminalTabViewModel, 12 host lifecycle tests, 565 tests pass) |
+| M3 | Bottom-panel UI integration: tab strip + active session surface + focus/start behavior | focused UI/view tests + manual tab switching smoke | ✅ Complete (TerminalTabHost, TerminalTabStrip, MainWindow wiring, 6 host-level tests, 565 tests pass) |
 | M4 | Docs sync and exit audit | `dotnet build`, `dotnet test`, roadmap/doc sync, Linux smoke, TOFIX update | ⬜ |
 
 ## Detailed Milestone Plans

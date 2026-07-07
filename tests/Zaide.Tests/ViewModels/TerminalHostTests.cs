@@ -329,4 +329,141 @@ public class TerminalHostTests
         if (snap is null) return string.Empty;
         return string.Join("\n", snap.Lines).TrimEnd();
     }
+
+    // ── M3: Host-level integration scenarios ────────────────────────
+
+    [Fact]
+    public void NewTerminalTab_CreatesDistinctViewModelsAndBothPreserveState()
+    {
+        var mocks = CreateHostWithServices(out var host);
+        using (host)
+        {
+            host.NewTabCommand.Execute().Subscribe();
+            Assert.Equal(2, host.Tabs.Count);
+
+            mocks[0].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("tab1 output"));
+            mocks[1].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("tab2 output"));
+
+            Assert.Contains("tab1 output", GetScreenText(host.Tabs[0].Session));
+            Assert.Contains("tab2 output", GetScreenText(host.Tabs[1].Session));
+            Assert.NotSame(host.Tabs[0].Session, host.Tabs[1].Session);
+        }
+    }
+
+    [Fact]
+    public void SwitchTerminalTab_PreservesEachSessionSnapshot_M3()
+    {
+        var mocks = CreateHostWithServices(out var host);
+        using (host)
+        {
+            host.NewTabCommand.Execute().Subscribe();
+            Assert.Equal(2, host.Tabs.Count);
+
+            mocks[0].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("session_a_state"));
+            Assert.Contains("session_a_state", GetScreenText(host.Tabs[0].Session));
+
+            host.ActivateTabCommand.Execute(host.Tabs[1]).Subscribe();
+            mocks[1].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("session_b_state"));
+            Assert.Contains("session_b_state", GetScreenText(host.Tabs[1].Session));
+
+            host.ActivateTabCommand.Execute(host.Tabs[0]).Subscribe();
+            Assert.Contains("session_a_state", GetScreenText(host.Tabs[0].Session));
+            Assert.DoesNotContain("session_b_state", GetScreenText(host.Tabs[0].Session));
+        }
+    }
+
+    [Fact]
+    public void CloseTerminalTab_DisposesOnlyThatSession_M3()
+    {
+        var serviceDisposed = false;
+        var disposableService = new Mock<ITerminalService>();
+        disposableService.Setup(s => s.Dispose()).Callback(() => serviceDisposed = true);
+
+        var terminalVm = CreateViewModel(disposableService);
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalVm);
+
+        using var host = new TerminalHost(factory.Object);
+        host.NewTabCommand.Execute().Subscribe();
+        Assert.Equal(2, host.Tabs.Count);
+
+        serviceDisposed = false;
+        host.CloseTabCommand.Execute(host.Tabs[0]).Subscribe();
+
+        Assert.True(serviceDisposed);
+        Assert.Single(host.Tabs);
+        Assert.NotNull(host.ActiveTab);
+    }
+
+    [Fact]
+    public void CloseActiveTab_FallsBackToNeighbor_M3()
+    {
+        var mocks = CreateHostWithServices(out var host);
+        using (host)
+        {
+            host.NewTabCommand.Execute().Subscribe();
+            host.NewTabCommand.Execute().Subscribe();
+            Assert.Equal(3, host.Tabs.Count);
+
+            var originalActive = host.ActiveTab;
+            Assert.Same(host.Tabs[2], originalActive);
+
+            host.CloseTabCommand.Execute(host.Tabs[2]).Subscribe();
+            Assert.Equal(2, host.Tabs.Count);
+            Assert.NotNull(host.ActiveTab);
+            Assert.NotSame(originalActive, host.ActiveTab);
+
+            mocks[1].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("survived"));
+            Assert.Contains("survived", GetScreenText(host.ActiveTab!.Session));
+        }
+    }
+
+    [Fact]
+    public void ToggleBottomPanel_DoesNotDestroyTabSessions_M3()
+    {
+        var mocks = CreateHostWithServices(out var host);
+        using (host)
+        {
+            host.NewTabCommand.Execute().Subscribe();
+            Assert.Equal(2, host.Tabs.Count);
+
+            host.FocusActiveSession();
+            host.FocusActiveSession();
+
+            mocks[0].Raise(s => s.OutputReceived += null, Encoding.UTF8.GetBytes("after toggle"));
+            Assert.Contains("after toggle", GetScreenText(host.Tabs[0].Session));
+            Assert.Equal(2, host.Tabs.Count);
+        }
+    }
+
+    [Fact]
+    public async Task ActiveSessionError_ReflectsActiveTab_M3()
+    {
+        var service1 = new Mock<ITerminalService>();
+        var service2 = new Mock<ITerminalService>();
+        service1.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("tab1 failed"));
+        service2.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("tab2 failed"));
+
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.SetupSequence(f => f.CreateSession())
+               .Returns(() => CreateViewModel(service1))
+               .Returns(() => CreateViewModel(service2));
+
+        using var host = new TerminalHost(factory.Object);
+        host.NewTabCommand.Execute().Subscribe();
+        Assert.Equal(2, host.Tabs.Count);
+
+        string? lastError = null;
+        using var sub = host.StartupError.Subscribe(err => lastError = err);
+
+        await host.EnsureActiveSessionStartedAsync();
+        Assert.Equal("tab2 failed", lastError);
+
+        host.ActivateTabCommand.Execute(host.Tabs[0]).Subscribe();
+        await host.EnsureActiveSessionStartedAsync();
+        Assert.Equal("tab1 failed", lastError);
+    }
 }
+

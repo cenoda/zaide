@@ -23,6 +23,11 @@ namespace Zaide;
 /// Main application window. Layout built in C# per DESIGN.md §1.
 /// Refactor 3 M6: nav bar | left-panel mode slot (Explorer/SC) | townhall | editor.
 /// Status bar at the bottom.
+///
+/// M3 (Phase 3.9.1): The bottom panel is now a <see cref="TerminalTabHost"/>
+/// that retains one <see cref="TerminalPanel"/> per tab and exposes a
+/// <see cref="TerminalTabHost.FocusActiveSession"/> view seam. <c>MainWindow</c>
+/// no longer holds a single concrete terminal surface.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
@@ -34,7 +39,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
-    private TerminalPanel _terminalPanel = null!;
+    private TerminalTabHost _terminalTabHost = null!;
     private Border _bottomPanel = null!;
     private GridSplitter _bottomPanelSplitter = null!;
     private readonly RowDefinition _bottomSplitterRow;
@@ -72,7 +77,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
-         _terminalPanel, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+         _terminalTabHost, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
 
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
@@ -85,7 +90,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;
-            _terminalPanel.ViewModel = ViewModel!.TerminalHost.ActiveSession;
+
+            // M3: The bottom-panel host owns the per-tab TerminalPanel cache.
+            // Bind it to ITerminalHost — never to a single concrete session VM.
+            _terminalTabHost.SetHost(ViewModel!.TerminalHost);
 
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
@@ -167,7 +175,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             KeyBindings.Add(saveBinding);
             disposables.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
 
-            // Bind bottom panel visibility → row height
+            // Bind bottom panel visibility → row height.
+            // M3: focus and start are routed through the view host seam so the
+            // active tab's retained panel — not a single shared panel — gets focus.
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
                 .Subscribe(visible =>
                 {
@@ -182,7 +192,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
                     if (visible)
                     {
-                        _terminalPanel.FocusTerminal();
+                        _terminalTabHost.FocusActiveSession();
                         _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
                     }
                 }));
@@ -215,9 +225,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// <summary>
     /// Builds the M6 layout: nav bar | left-panel mode slot | townhall | editor.
     /// Bottom panel spans under center + right only. Status bar at the bottom.
+    ///
+    /// M3: the bottom panel hosts a <see cref="TerminalTabHost"/> instead of a
+    /// single <see cref="TerminalPanel"/>.
     /// </summary>
     private (NavBar navBar, FileTreeView fileTreeView, SourceControlPanel sourceControlPanel, TownhallView townhallView,
-             StatusBar statusBar, TerminalPanel terminalPanel, Border bottomPanel, GridSplitter bottomPanelSplitter,
+             StatusBar statusBar, TerminalTabHost terminalTabHost, Border bottomPanel, GridSplitter bottomPanelSplitter,
              RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow, RowDefinition statusBarRow) BuildLayout()
     {
         var grid = new Grid
@@ -365,14 +378,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanelSplitter);
 
         // --- Bottom Panel (spans columns 3-5: center + editor only) ---
-        var terminalPanel = new TerminalPanel();
+        // M3: TerminalTabHost retains one TerminalPanel per tab and switches
+        // the active tab's panel in the content area.
+        var terminalTabHost = new TerminalTabHost();
         var bottomPanel = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Padding = LayoutTokens.NoneThickness,
             // M5-allow: M1 introduced the 1px top seam above the bottom panel to preserve the raised-layer split.
             Margin = LayoutTokens.Inset(0, 1, 0, 0),
-            Child = terminalPanel
+            Child = terminalTabHost
         };
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 3);
@@ -389,7 +404,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         Content = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
-            terminalPanel, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+            terminalTabHost, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 
     private async Task AnimateLeftPanelModeSwitchAsync(LeftPanelMode mode)
