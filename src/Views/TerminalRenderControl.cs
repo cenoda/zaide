@@ -461,6 +461,104 @@ public class TerminalRenderControl : Control
         InvalidateVisual();
     }
 
+    /// <summary>
+    /// Scrolls the viewport up by one page (leaving a single overlap row, like
+    /// typical terminals). No-op while a full-screen TUI owns the surface.
+    /// </summary>
+    public void ScrollPageUp()
+    {
+        if (!IsMainBufferSelectionEnabled(IsAlternateScreenActive))
+        {
+            return;
+        }
+
+        var snapshot = Snapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        ApplyViewportTop(GetViewportTop(snapshot) - GetPageStep(snapshot));
+    }
+
+    /// <summary>
+    /// Scrolls the viewport down by one page (leaving a single overlap row).
+    /// Rejoins live-bottom following when it reaches the newest output.
+    /// No-op while a full-screen TUI owns the surface.
+    /// </summary>
+    public void ScrollPageDown()
+    {
+        if (!IsMainBufferSelectionEnabled(IsAlternateScreenActive))
+        {
+            return;
+        }
+
+        var snapshot = Snapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        ApplyViewportTop(GetViewportTop(snapshot) + GetPageStep(snapshot));
+    }
+
+    /// <summary>
+    /// Jumps the viewport to the top of all available snapshot rows
+    /// (scrollback + visible). No-op while a full-screen TUI owns the surface.
+    /// </summary>
+    public void ScrollToTop()
+    {
+        if (!IsMainBufferSelectionEnabled(IsAlternateScreenActive))
+        {
+            return;
+        }
+
+        if (Snapshot is null)
+        {
+            return;
+        }
+
+        ApplyViewportTop(0);
+    }
+
+    /// <summary>Whether the viewport is currently pinned to the live bottom.</summary>
+    internal bool IsFollowingLiveBottom => _followLiveBottom;
+
+    /// <summary>
+    /// The number of rows a single page-up / page-down step moves the viewport.
+    /// One overlap row is retained so context is preserved between pages.
+    /// </summary>
+    internal int GetPageStep(TerminalSnapshot snapshot) =>
+        Math.Max(1, snapshot.Rows - 1);
+
+    /// <summary>
+    /// The highest scrollable <c>viewportTop</c> for the given snapshot
+    /// (newest output shown at the bottom).
+    /// </summary>
+    internal int GetMaxViewportTop(TerminalSnapshot snapshot) =>
+        Math.Max(0, snapshot.TotalRows - snapshot.Rows);
+
+    /// <summary>
+    /// Centralizes clamping for every viewport movement (wheel, keyboard page,
+    /// keyboard home/end, drag auto-scroll). Keeps <see cref="_followLiveBottom"/>
+    /// in sync: arriving at the bottom row rejoins live-bottom following,
+    /// leaving it disables following so new output cannot yank the viewport.
+    /// </summary>
+    internal void ApplyViewportTop(int top)
+    {
+        var snapshot = Snapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        int maxTop = GetMaxViewportTop(snapshot);
+        int clamped = Math.Clamp(top, 0, maxTop);
+        _viewportTop = clamped;
+        _followLiveBottom = clamped >= maxTop;
+        InvalidateVisual();
+    }
+
     internal static string BuildSelectedText(
         TerminalSnapshot snapshot,
         (int Row, int Col) start,
@@ -598,7 +696,7 @@ public class TerminalRenderControl : Control
             return;
         }
 
-        int maxTop = Math.Max(0, snapshot.TotalRows - snapshot.Rows);
+        int maxTop = GetMaxViewportTop(snapshot);
         if (maxTop == 0 || Math.Abs(e.Delta.Y) < double.Epsilon)
         {
             return;
@@ -610,10 +708,8 @@ public class TerminalRenderControl : Control
             ? Math.Max(0, currentTop - step)
             : Math.Min(maxTop, currentTop + step);
 
-        _viewportTop = nextTop;
-        _followLiveBottom = nextTop >= maxTop;
+        ApplyViewportTop(nextTop);
         e.Handled = true;
-        InvalidateVisual();
     }
 
     private static Color GetThemeColor(string resourceKey, Color fallback)
@@ -634,7 +730,7 @@ public class TerminalRenderControl : Control
         return fallback;
     }
 
-    private int GetViewportTop(TerminalSnapshot snapshot)
+    internal int GetViewportTop(TerminalSnapshot snapshot)
     {
         int maxTop = Math.Max(0, snapshot.TotalRows - snapshot.Rows);
         if (_followLiveBottom)
@@ -937,8 +1033,7 @@ public class TerminalRenderControl : Control
             return;
         }
 
-        _viewportTop = nextTop;
-        _followLiveBottom = nextTop >= maxTop;
+        ApplyViewportTop(nextTop);
 
         int edgeRow = nearTop ? nextTop : nextTop + snapshot.Rows - 1;
         edgeRow = Math.Clamp(edgeRow, 0, snapshot.TotalRows - 1);

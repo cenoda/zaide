@@ -21,6 +21,7 @@ namespace Zaide.Views;
 public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 {
     private readonly TerminalRenderControl _renderControl;
+    private readonly Button _latestButton;
     private readonly Button _clearButton;
     private readonly Button _restartButton;
     private readonly TextBlock _statusText;
@@ -64,6 +65,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         _clearButton = BuildToolbarButton("Icon.Broom", "Clear");
         _restartButton = BuildToolbarButton("Icon.ArrowClockwise", "Restart");
 
+        // Lightweight "jump to latest" affordance: reuses the render control's
+        // existing bottom-follow seam rather than inventing a second mechanism.
+        _latestButton = BuildToolbarButton("Icon.ChevronDown", "Latest");
+
         var leftStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -77,7 +82,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { _toggleViewButton, _clearButton, _restartButton }
+            Children = { _toggleViewButton, _latestButton, _clearButton, _restartButton }
         };
 
         var toolbarGrid = new Grid
@@ -207,6 +212,13 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
                 });
             d.Add(toggleSub);
 
+            // Jump-to-latest reuses the render control's bottom-follow seam.
+            var latestSub = Observable.FromEventPattern<RoutedEventArgs>(
+                h => _latestButton.Click += h,
+                h => _latestButton.Click -= h)
+                .Subscribe(_ => _renderControl.ScrollToBottom(clearSelection: true));
+            d.Add(latestSub);
+
             if (ViewModel != null)
             {
                 ViewModel.Restarted += OnRestarted;
@@ -291,6 +303,35 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             if (e.Key == Key.C) { await CopySelectionAsync(); e.Handled = true; return; }
             if (e.Key == Key.V) { await PasteAsync(); e.Handled = true; return; }
         }
+
+        // Viewport navigation: consume PageUp/PageDown/Home/End so they scroll
+        // the terminal surface instead of being forwarded to the PTY. Only when
+        // the main buffer is scrollable — during a full-screen TUI the keys
+        // must still reach the application, so we fall through to terminal
+        // forwarding below and never suppress them here.
+        if (!ctrl && !alt && !_renderControl.IsAlternateScreenActive)
+        {
+            switch (e.Key)
+            {
+                case Key.PageUp:
+                    _renderControl.ScrollPageUp();
+                    e.Handled = true;
+                    return;
+                case Key.PageDown:
+                    _renderControl.ScrollPageDown();
+                    e.Handled = true;
+                    return;
+                case Key.Home:
+                    _renderControl.ScrollToTop();
+                    e.Handled = true;
+                    return;
+                case Key.End:
+                    _renderControl.ScrollToBottom(clearSelection: true);
+                    e.Handled = true;
+                    return;
+            }
+        }
+
         byte[]? bytes = TerminalKeyMapper.Map(e.Key, e.KeyModifiers);
         if (bytes is null) return;
         if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)

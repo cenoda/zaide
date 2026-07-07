@@ -84,11 +84,13 @@ These decisions keep the phase narrow and verifiable:
 |-----------|-------------|------|--------|
 | M0 | Entry gate: current build/tests/live seams verified | `dotnet build`, `dotnet test`, code audit, focused Linux smoke | ✅ Code/test baseline verified; manual smoke pending |
 | M1 | Selection/copy/paste polish: refine selection behavior and make copy affordances explicit | `TerminalRenderControlTests`, `TerminalViewModelTests`, focused manual selection/copy smoke | ✅ Code/test pass complete; manual Linux smoke pending |
-| M2 | Scrollback/navigation polish: improve viewport ergonomics without changing the renderer model | `TerminalRenderControlTests` + focused manual wheel/keyboard smoke | ⬜ |
+| M2 | Scrollback/navigation polish: improve viewport ergonomics without changing the renderer model | `TerminalRenderControlTests` + focused manual wheel/keyboard smoke | ✅ Code/test pass complete; manual Linux smoke pending |
 | M3 | Search UX over terminal snapshot + scrollback | View/search tests for match discovery, highlight projection, and next/previous navigation | ⬜ |
 | M4 | Docs sync and exit audit for the narrowed 3.9 scope | `dotnet build`, `dotnet test`, roadmap/doc sync, TOFIX update | ⬜ |
 
 **M0 closeout note (2026-07-07):** `dotnet build Zaide.slnx` and `dotnet test Zaide.slnx --no-build` both passed again during the Phase 3.9 entry-gate pass. Interactive Linux smoke items remain unchecked because they require a live UI/PTTY session.
+
+**M2 closeout note (2026-07-07):** Scrollback/navigation polish implemented in the view layer. `TerminalRenderControl` is the sole owner of viewport state and live-bottom following; `TerminalViewModel` was not touched for scrollback ownership. Added `ScrollPageUp()`/`ScrollPageDown()`/`ScrollToTop()` (and the existing `ScrollToBottom()` seam), centralized clamping in `ApplyViewportTop(...)` so wheel, keyboard page/Home/End, and drag auto-scroll all share one rule, and a `Latest` toolbar button that reuses `ScrollToBottom()`. `TerminalPanel` intercepts `PageUp`/`PageDown`/`Home`/`End` for viewport navigation only when the main buffer is scrollable (never during an alternate-screen TUI). 16 new tests cover viewport math and follow-live-bottom behavior. `dotnet build Zaide.slnx` (0 warnings, 0 errors) and `dotnet test Zaide.slnx --no-build` (526 passed) both green. Manual Linux smoke for M2 remains pending (requires a live PTY session).
 
 ## Detailed Milestone Plans
 

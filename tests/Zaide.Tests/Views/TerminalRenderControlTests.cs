@@ -296,6 +296,180 @@ public class TerminalRenderControlTests
         Assert.Null(text);
     }
 
+    // ── M2: scrollback / navigation polish ──────────────────────────
+
+    /// <summary>
+    /// Builds a snapshot with <paramref name="scrollbackCount"/> retained rows
+    /// above a <paramref name="rows"/>-tall viewport, all <paramref name="cols"/>
+    /// wide. The newest output lives in the visible viewport rows.
+    /// </summary>
+    private static TerminalSnapshot BuildScrollbackSnapshot(int rows, int cols, int scrollbackCount)
+    {
+        var lines = new string[rows];
+        var cells = new TerminalCell[rows * cols];
+        for (int r = 0; r < rows; r++)
+        {
+            lines[r] = new string('a', cols);
+            for (int c = 0; c < cols; c++)
+            {
+                cells[r * cols + c] = new TerminalCell('a', -1, -1, false, false);
+            }
+        }
+
+        var sb = new string[scrollbackCount];
+        var sbc = new TerminalCell[scrollbackCount * cols];
+        for (int r = 0; r < scrollbackCount; r++)
+        {
+            sb[r] = new string('b', cols);
+            for (int c = 0; c < cols; c++)
+            {
+                sbc[r * cols + c] = new TerminalCell('b', -1, -1, false, false);
+            }
+        }
+
+        return new TerminalSnapshot(cols, rows, lines, cells, sb, sbc);
+    }
+
+    [Fact]
+    public void GetViewportTop_FollowsLiveBottom_WhenEnabled()
+    {
+        // 10 visible rows + 20 scrollback rows => maxTop should be 20.
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl { Snapshot = snapshot };
+
+        // Live-bottom following is the default; viewport should sit at newest output.
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+        Assert.True(control.IsFollowingLiveBottom);
+
+        // New output arrives: scrollback grew to 30 rows, so newest output is now
+        // at 30. Following must track the new bottom without any user action.
+        var grown = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 30);
+        control.Snapshot = grown;
+        Assert.Equal(30, control.GetViewportTop(grown));
+    }
+
+    [Fact]
+    public void ScrollToBottom_RejoinsLatestOutput_AfterManualScrollback()
+    {
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl { Snapshot = snapshot };
+
+        // Manual scrollback leaves the bottom.
+        control.ScrollToTop();
+        Assert.Equal(0, control.GetViewportTop(snapshot));
+        Assert.False(control.IsFollowingLiveBottom);
+
+        // Jumping back to latest must rejoin the bottom.
+        control.ScrollToBottom();
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+        Assert.True(control.IsFollowingLiveBottom);
+    }
+
+    [Fact]
+    public void PageNavigation_ClampsWithinAvailableRows()
+    {
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl { Snapshot = snapshot };
+
+        // Page down repeatedly from the bottom must clamp at maxTop and rejoin.
+        for (int i = 0; i < 10; i++)
+        {
+            control.ScrollPageDown();
+        }
+
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+        Assert.True(control.IsFollowingLiveBottom);
+
+        // Page up repeatedly must clamp at the very top (0) without underflow.
+        for (int i = 0; i < 10; i++)
+        {
+            control.ScrollPageUp();
+        }
+
+        Assert.Equal(0, control.GetViewportTop(snapshot));
+        Assert.False(control.IsFollowingLiveBottom);
+    }
+
+    [Fact]
+    public void ManualScrollback_IgnoredWhileAlternateScreenActive()
+    {
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl
+        {
+            Snapshot = snapshot,
+            IsAlternateScreenActive = true
+        };
+
+        // While a full-screen TUI owns the surface, manual scrollback must not
+        // expose the main buffer. All navigation requests are no-ops and the
+        // viewport stays pinned to the live bottom of the alternate screen.
+        control.ScrollToTop();
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+
+        control.ScrollPageUp();
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+
+        control.ScrollPageDown();
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+    }
+
+    [Fact]
+    public void HomeEndNavigation_UsesSnapshotBounds()
+    {
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl { Snapshot = snapshot };
+
+        // Home jumps to the top of all available snapshot rows.
+        control.ScrollToTop();
+        Assert.Equal(0, control.GetViewportTop(snapshot));
+        Assert.False(control.IsFollowingLiveBottom);
+
+        // End jumps to the bottom (newest output) and rejoins live-bottom.
+        control.ScrollToBottom();
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+        Assert.True(control.IsFollowingLiveBottom);
+    }
+
+    [Fact]
+    public void GetPageStep_ReturnsRowsMinusOne_WithMinimumOne()
+    {
+        var control = new TerminalRenderControl();
+        var tall = BuildScrollbackSnapshot(rows: 25, cols: 4, scrollbackCount: 5);
+        Assert.Equal(24, control.GetPageStep(tall));
+
+        var single = BuildScrollbackSnapshot(rows: 1, cols: 4, scrollbackCount: 5);
+        Assert.Equal(1, control.GetPageStep(single));
+    }
+
+    [Fact]
+    public void GetMaxViewportTop_EqualsTotalRowsMinusVisibleRows()
+    {
+        var control = new TerminalRenderControl();
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        Assert.Equal(20, control.GetMaxViewportTop(snapshot));
+
+        // No scrollback => nothing to scroll.
+        var noScroll = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 0);
+        Assert.Equal(0, control.GetMaxViewportTop(noScroll));
+    }
+
+    [Fact]
+    public void ApplyViewportTop_ClampsToBounds_AndTogglesFollow()
+    {
+        var snapshot = BuildScrollbackSnapshot(rows: 10, cols: 4, scrollbackCount: 20);
+        var control = new TerminalRenderControl { Snapshot = snapshot };
+
+        // Below zero clamps to 0 and disables following.
+        control.ApplyViewportTop(-5);
+        Assert.Equal(0, control.GetViewportTop(snapshot));
+        Assert.False(control.IsFollowingLiveBottom);
+
+        // Beyond maxTop clamps to maxTop and rejoins live-bottom.
+        control.ApplyViewportTop(999);
+        Assert.Equal(20, control.GetViewportTop(snapshot));
+        Assert.True(control.IsFollowingLiveBottom);
+    }
+
     private static void EnsureApplication()
     {
         if (Application.Current is App app)
