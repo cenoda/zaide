@@ -21,7 +21,6 @@ namespace Zaide.Views;
 /// </summary>
 public class TownhallInputArea : Panel
 {
-    private static readonly TimeSpan SendButtonPressAnimationDuration = TimeSpan.FromMilliseconds(180);
     private readonly TextBox _inputField;
     private readonly Border _sendButton;
 
@@ -185,34 +184,7 @@ public class TownhallInputArea : Panel
         transform.ScaleX = 0.95;
         transform.ScaleY = 0.95;
 
-        var animation = new Animation
-        {
-            Duration = SendButtonPressAnimationDuration,
-            Easing = new CubicEaseOut(),
-            Children =
-            {
-                new KeyFrame
-                {
-                    Cue = new Cue(0d),
-                    Setters =
-                    {
-                        new Setter(ScaleTransform.ScaleXProperty, 0.95d),
-                        new Setter(ScaleTransform.ScaleYProperty, 0.95d)
-                    }
-                },
-                new KeyFrame
-                {
-                    Cue = new Cue(1d),
-                    Setters =
-                    {
-                        new Setter(ScaleTransform.ScaleXProperty, 1d),
-                        new Setter(ScaleTransform.ScaleYProperty, 1d)
-                    }
-                }
-            }
-        };
-
-        await animation.RunAsync(transform);
+        await Animations.CreateScaleBounce(0.95d, 1d).RunAsync(transform);
     }
 
     private static Control CreateIconOrFallback(string resourceKey, string fallbackText, IBrush foreground, double size)
