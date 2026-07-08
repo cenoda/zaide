@@ -2,11 +2,11 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 5.1.1 through 5.1.3 are complete
-- [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `docs/DESIGN.md`
-- [ ] Re-confirm the Phase 5.1 composition seam that Phase 5.2 will render through
+- [x] Confirm Phase 5.1.1 through 5.1.3 are complete
+- [x] Verify current build succeeds: `dotnet build Zaide.slnx`
+- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `docs/DESIGN.md`
+- [x] Re-confirm the Phase 5.1 composition seam that Phase 5.2 will render through
 
 ## Scope
 
@@ -52,12 +52,12 @@ Phase 5.2 should not reopen whole-shell exploration.
 
 ## Milestones
 
-| Milestone | Description | Test |
-|-----------|-------------|------|
-| M0 | Confirm placement and control boundaries from the Phase 5.1 seam | Repo review + manual layout inspection |
-| M1 | Render one dedicated agent-panel surface with status, output, and input regions | Build + view tests/manual smoke |
-| M2 | Expose minimal multiple-panel switching UI if the host already provides more than one seeded panel | ViewModel/view tests + manual smoke |
-| M3 | Verify the rendered result preserves Townhall primacy and does not destabilize the shell | `dotnet build Zaide.slnx`, manual shell smoke |
+| Milestone | Description | Test | Status |
+|-----------|-------------|------|--------|
+| M0 | Confirm placement and control boundaries from the Phase 5.1 seam | Repo review + manual layout inspection | ✅ Complete |
+| M1 | Render one dedicated agent-panel surface with status, output, and input regions | Build + view tests/manual smoke | ✅ Complete |
+| M2 | Expose minimal multiple-panel switching UI if the host already provides more than one seeded panel | ViewModel/view tests + manual smoke | ✅ Complete |
+| M3 | Verify the rendered result preserves Townhall primacy and does not destabilize the shell | `dotnet build Zaide.slnx`, manual shell smoke | ✅ Complete |
 
 ## Test Budget
 
@@ -83,13 +83,42 @@ Likely files to extend or add:
 
 ## Exit Conditions
 
-- [ ] At least one dedicated agent panel renders in the live shell
-- [ ] The panel exposes distinct status, output, and input surfaces
-- [ ] Any multiple-panel switching UI introduced in this slice works against the Phase 5.1 host seam
-- [ ] Townhall remains visually primary
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] Focused UI/view tests pass
+- [x] At least one dedicated agent panel renders in the live shell
+- [x] The panel exposes distinct status, output, and input surfaces
+- [x] Any multiple-panel switching UI introduced in this slice works against the Phase 5.1 host seam
+- [x] Townhall remains visually primary
+- [x] `dotnet build Zaide.slnx` passes
+- [x] Focused UI/view tests pass
 - [ ] Manual smoke covers rendering, switching (if present), resize sanity, and visual hierarchy
+
+## Implementation Summary
+
+### Files Added
+
+- `src/Views/AgentPanelView.cs` — Single agent-panel view with header (name + status), output history list, and draft input area. Binds directly to `AgentPanelState` via ReactiveUI. C# view per DESIGN.md policy.
+- `src/Views/AgentPanelHostView.cs` — Multi-panel view host that retains one `AgentPanelView` per `AgentPanelState`. Follows the `TerminalTabHost` pattern: tab strip with click-to-activate, "+" button to create new panels, content area showing the active panel's view. View-layer only — no ViewModel.
+
+### Files Modified
+
+- `src/MainWindow.axaml.cs` — Split column 5 (right side) into editor (top, 2*) and agent panel (bottom, 1*) separated by a horizontal `GridSplitter`. Wired `AgentPanelHostView.SetHost(ViewModel!.AgentPanelHost)` in `WhenActivated`.
+
+### Architecture Constraint Verification
+
+| Constraint | Status |
+|------------|--------|
+| No execution/runtime integration | ✅ Not added |
+| No Townhall mirroring | ✅ Not added |
+| No routing or persistence | ✅ Not added |
+| AgentPanelHost not widened | ✅ Unchanged |
+| Collection/selection not moved into MainWindowViewModel | ✅ Unchanged |
+| Terminal behavior unchanged | ✅ Unchanged |
+| No future-phase agent capabilities | ✅ Not added |
+
+## Next Steps
+
+- Phase 5.3: OpenAI provider execution seam (runtime integration)
+- Phase 5.4: Townhall mirroring
+- Phase 5.5: Documentation audit
 
 ## Rollback Plan
 

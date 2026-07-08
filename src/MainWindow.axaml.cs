@@ -40,6 +40,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
     private TerminalTabHost _terminalTabHost = null!;
+    private AgentPanelHostView _agentPanelHostView = null!;
     private Border _bottomPanel = null!;
     private GridSplitter _bottomPanelSplitter = null!;
     private readonly RowDefinition _bottomSplitterRow;
@@ -77,7 +78,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
-         _terminalTabHost, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+         _terminalTabHost, _agentPanelHostView, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
 
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
@@ -94,6 +95,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // M3: The bottom-panel host owns the per-tab TerminalPanel cache.
             // Bind it to ITerminalHost — never to a single concrete session VM.
             _terminalTabHost.SetHost(ViewModel!.TerminalHost);
+
+            // Wire the agent-panel host view to IAgentPanelHost
+            _agentPanelHostView.SetHost(ViewModel!.AgentPanelHost);
 
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
@@ -230,7 +234,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// single <see cref="TerminalPanel"/>.
     /// </summary>
     private (NavBar navBar, FileTreeView fileTreeView, SourceControlPanel sourceControlPanel, TownhallView townhallView,
-             StatusBar statusBar, TerminalTabHost terminalTabHost, Border bottomPanel, GridSplitter bottomPanelSplitter,
+             StatusBar statusBar, TerminalTabHost terminalTabHost, AgentPanelHostView agentPanelHostView,
+             Border bottomPanel, GridSplitter bottomPanelSplitter,
              RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow, RowDefinition statusBarRow) BuildLayout()
     {
         var grid = new Grid
@@ -334,7 +339,21 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(rightSplitter, 0);
         grid.Children.Add(rightSplitter);
 
-        // --- Column 5: Right — Editor (quieter, utility-focused surface) ---
+        // --- Column 5: Right — Editor (top) + Agent Panel (bottom) ---
+        // Split column 5 into editor (upper) and agent panel (lower) via
+        // a vertical splitter, keeping both surfaces inside the existing
+        // right-side shell column.
+        var rightSplitterH = new GridSplitter
+        {
+            Height = 4,
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            ResizeDirection = GridResizeDirection.Rows,
+            IsVisible = true
+        };
+
         var editorPanel = new Grid
         {
             RowDefinitions =
@@ -357,9 +376,28 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(_welcomeText, 1);
         _welcomeText.IsVisible = true;
 
-        Grid.SetColumn(editorPanel, 5);
+        var agentPanelHostView = new AgentPanelHostView();
+
+        var rightColumn = new Grid
+        {
+            RowDefinitions =
+            {
+                // 0: Editor panel (star, larger)
+                new RowDefinition { Height = new GridLength(2, GridUnitType.Star) },
+                // 1: Horizontal splitter
+                new RowDefinition { Height = new GridLength(4, GridUnitType.Pixel) },
+                // 2: Agent panel (star, smaller)
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            },
+            Children = { editorPanel, rightSplitterH, agentPanelHostView }
+        };
         Grid.SetRow(editorPanel, 0);
-        grid.Children.Add(editorPanel);
+        Grid.SetRow(rightSplitterH, 1);
+        Grid.SetRow(agentPanelHostView, 2);
+
+        Grid.SetColumn(rightColumn, 5);
+        Grid.SetRow(rightColumn, 0);
+        grid.Children.Add(rightColumn);
 
         // --- Bottom Panel Splitter (spans columns 3-5: center + editor only) ---
         var bottomPanelSplitter = new GridSplitter
@@ -404,7 +442,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         Content = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
-            terminalTabHost, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+            terminalTabHost, agentPanelHostView, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 
     private async Task AnimateLeftPanelModeSwitchAsync(LeftPanelMode mode)
