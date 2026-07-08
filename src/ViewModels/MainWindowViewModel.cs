@@ -67,6 +67,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
+    public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
     public Interaction<Unit, string?> PickFolder { get; }
     public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
@@ -106,6 +107,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         SourceControlViewModel = sourceControlViewModel;
         WorkspaceProjectName = workspace.ProjectName;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
+        HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();
         OpenFolderCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -180,6 +182,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private void ToggleBottomPanel()
     {
         IsBottomPanelVisible = !IsBottomPanelVisible;
+    }
+
+    private void HideBottomPanel()
+    {
+        IsBottomPanelVisible = false;
     }
 
     private async Task SaveActiveTabAsync()

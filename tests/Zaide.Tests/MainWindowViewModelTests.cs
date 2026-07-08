@@ -257,4 +257,25 @@ public class MainWindowViewModelTests
         service.Verify(s => s.Dispose(), Times.Never);
         Assert.Same(terminalVm, terminalHost.ActiveSession);
     }
+
+    [Fact]
+    public void HideBottomPanel_HidesPanelWithoutDestroyingLastSession()
+    {
+        var service = new Mock<ITerminalService>();
+        var terminalVm = new TerminalViewModel(service.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalVm);
+        var terminalHost = new TerminalHost(factory.Object);
+        var vm = CreateViewModel(terminalHost);
+
+        vm.ToggleBottomPanelCommand.Execute().Subscribe();
+        Assert.True(vm.IsBottomPanelVisible);
+
+        vm.HideBottomPanelCommand.Execute().Subscribe();
+
+        Assert.False(vm.IsBottomPanelVisible);
+        service.Verify(s => s.Dispose(), Times.Never);
+        Assert.Single(terminalHost.Tabs);
+        Assert.Same(terminalVm, terminalHost.ActiveSession);
+    }
 }

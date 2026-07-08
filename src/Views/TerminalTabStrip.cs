@@ -46,6 +46,8 @@ public class TerminalTabStrip : UserControl
     private readonly HashSet<TerminalTabViewModel> _subscribedTabs = new();
     private TerminalTabViewModel? _activeTab;
 
+    public event Action? LastTabCloseRequested;
+
     public TerminalTabStrip()
     {
         _activeBrush = Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
@@ -244,8 +246,14 @@ public class TerminalTabStrip : UserControl
             if (e.GetCurrentPoint(closeButton).Properties.IsLeftButtonPressed)
             {
                 e.Handled = true;
-                if (_host is not null)
+                if (TerminalTabCloseBehavior.ShouldHideBottomPanelInsteadOfClosing(_host, tab))
+                {
+                    LastTabCloseRequested?.Invoke();
+                }
+                else if (_host is not null)
+                {
                     _host.CloseTabCommand.Execute(tab).Subscribe();
+                }
             }
         };
 

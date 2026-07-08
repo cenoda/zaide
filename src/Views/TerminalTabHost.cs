@@ -30,10 +30,13 @@ public class TerminalTabHost : UserControl
     private ITerminalHost? _host;
     private TerminalTabViewModel? _activeTab;
 
+    public event Action? LastTabCloseRequested;
+
     public TerminalTabHost()
     {
         _strip = new TerminalTabStrip();
         _content = new ContentControl();
+        _strip.LastTabCloseRequested += () => LastTabCloseRequested?.Invoke();
 
         var grid = new Grid
         {

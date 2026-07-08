@@ -116,14 +116,18 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             void OnTabClicked(EditorViewModel tab) => editorTabs.ActiveTab = tab;
             void OnTabCloseRequested(EditorViewModel tab) =>
                 editorTabs.CloseTabCommand.Execute(tab).Subscribe();
+            void OnLastTerminalTabCloseRequested() =>
+                ViewModel!.HideBottomPanelCommand.Execute().Subscribe();
 
             _editorTabBar.TabClicked += OnTabClicked;
             _editorTabBar.TabCloseRequested += OnTabCloseRequested;
+            _terminalTabHost.LastTabCloseRequested += OnLastTerminalTabCloseRequested;
 
             disposables.Add(Disposable.Create(() =>
             {
                 _editorTabBar.TabClicked -= OnTabClicked;
                 _editorTabBar.TabCloseRequested -= OnTabCloseRequested;
+                _terminalTabHost.LastTabCloseRequested -= OnLastTerminalTabCloseRequested;
             }));
 
             // Unsaved-changes dialog

@@ -78,7 +78,7 @@ The current app contains the visual shell for the future agent workspace:
 - `ITerminalHost` / `TerminalHost` — owns the tab collection, active-tab switching, create/close/dispose lifecycle, and active-session error projection
 - `TerminalTabViewModel` — per-tab record with title, active state, and session reference
 - `TerminalTabHost` (view layer) — retains one `TerminalPanel` per tab in a `Dictionary` cache so each session keeps its own search, viewport, selection, and log-view state; shows only the active tab's panel
-- `TerminalTabStrip` (view layer) — renders tab title labels, active-highlight, new-tab (+), and close-tab (×) controls
+- `TerminalTabStrip` (view layer) — renders tab title labels, active-highlight, new-tab (+), and close-tab (×) controls; clicking `×` on the sole remaining tab hides the bottom terminal panel instead of disposing the last session
 - `MainWindow` wires `TerminalTabHost` in the bottom panel; focus/startup routed through the view host seam without direct single-session calls
 - 565 tests pass, 0 fail
 
