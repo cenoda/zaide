@@ -293,6 +293,10 @@ public class MainWindowViewModelTests
                 {
                     p.OutputHistory.Add("Assistant: Hello back");
                 }
+                else if (appendAssistantOutput && statusOnCompletion == "Error")
+                {
+                    p.OutputHistory.Add("Error: Request failed");
+                }
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
             })
@@ -462,9 +466,7 @@ public class MainWindowViewModelTests
     /// <summary>
     /// Verifies that after an error, the panel-visible error state is aligned with
     /// the Townhall-visible AgentError entry content.
-    /// When statusOnCompletion="Error", the mock coordinator appends only the user
-    /// message (the assistant output guard fires), so the last OutputHistory entry
-    /// is the user message prefixed with "User: ".
+    /// The realistic mock appends the "Error: ..." line when statusOnCompletion="Error".
     /// </summary>
     [Fact]
     public async Task SendAgentMessageAsync_ErrorContentMatchesPanelOutput()
@@ -476,25 +478,23 @@ public class MainWindowViewModelTests
 
         await vm.SendAgentMessageAsync(panel.PanelId, "Trigger error");
 
-        // Panel has only the user entry (assistant output skipped because statusOnCompletion="Error")
-        Assert.Single(panel.OutputHistory);
+        // Panel has user entry + realistic error entry from mock
+        Assert.Equal(2, panel.OutputHistory.Count);
         Assert.Equal("User: Trigger error", panel.OutputHistory[0]);
+        Assert.Equal("Error: Request failed", panel.OutputHistory[1]);
         Assert.Equal("Error", panel.Status);
 
-        // Townhall last entry should be an AgentError with content matching the last OutputHistory entry
+        // Townhall last entry should be an AgentError with the visible error output
         var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
         Assert.Equal(TownhallMessageKind.AgentError, lastEntry.Kind);
-        Assert.Equal("User: Trigger error", lastEntry.Content);
+        Assert.Equal("Error: Request failed", lastEntry.Content);
         Assert.Equal("agent-1", lastEntry.SenderId);
         Assert.Equal("Test Agent", lastEntry.SenderName);
     }
 
     /// <summary>
-    /// Verifies that when the panel has only the user entry in OutputHistory on error,
-    /// Townhall mirrors that entry as the AgentError content (not the fallback).
-    /// The fallback "Request failed" only applies when OutputHistory is empty,
-    /// which cannot happen when the panel exists because the mock always appends
-    /// the user message first.
+    /// Verifies that when appendAssistantOutput=false on error, the guard prevents
+    /// mirroring a non-error line; no AgentError is added to Townhall.
     /// </summary>
     [Fact]
     public async Task SendAgentMessageAsync_ErrorWithSingleOutput_UsesThatOutput()
@@ -504,6 +504,7 @@ public class MainWindowViewModelTests
         var channelId = vm.TownhallViewModel.Channels[0].Id;
         vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
 
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
         await vm.SendAgentMessageAsync(panel.PanelId, "Single output error");
 
         // Panel has only the user entry (appendAssistantOutput=false + status=Error)
@@ -511,12 +512,8 @@ public class MainWindowViewModelTests
         Assert.Equal("User: Single output error", panel.OutputHistory[0]);
         Assert.Equal("Error", panel.Status);
 
-        // Townhall last entry should be AgentError with the last OutputHistory entry content
-        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
-        Assert.Equal(TownhallMessageKind.AgentError, lastEntry.Kind);
-        Assert.Equal("User: Single output error", lastEntry.Content);
-        Assert.Equal("agent-1", lastEntry.SenderId);
-        Assert.Equal("Test Agent", lastEntry.SenderName);
+        // Guard ensures no AgentError is mirrored when last line is not "Error: "
+        Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count); // only the initial User mirror
     }
 
     /// <summary>

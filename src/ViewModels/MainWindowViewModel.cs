@@ -203,15 +203,16 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
         if (panel.Status == "Error")
         {
-            // Mirror the last error output entry as an AgentError.
-            var lastError = panel.OutputHistory.Count > 0
-                ? panel.OutputHistory[^1]
-                : "Request failed";
-            TownhallViewModel.AddMirroredActivity(
-                kind: TownhallMessageKind.AgentError,
-                content: lastError,
-                senderId: panel.AgentId,
-                senderName: panel.AgentName);
+            // Mirror only a real error output entry (not the preceding User: line) as AgentError.
+            var lastOutput = panel.OutputHistory.Count > 0 ? panel.OutputHistory[^1] : null;
+            if (lastOutput is not null && lastOutput.StartsWith("Error: "))
+            {
+                TownhallViewModel.AddMirroredActivity(
+                    kind: TownhallMessageKind.AgentError,
+                    content: lastOutput,
+                    senderId: panel.AgentId,
+                    senderName: panel.AgentName);
+            }
         }
         else
         {
