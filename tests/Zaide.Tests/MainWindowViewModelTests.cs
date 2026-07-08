@@ -420,6 +420,220 @@ public class MainWindowViewModelTests
         Assert.Equal("user-1", userEntry.SenderId);
     }
 
+    // ── Phase 5.4 M3: Alignment between panel-visible state and Townhall-visible state ──
+
+    /// <summary>
+    /// Verifies that after a successful send, the panel OutputHistory and Townhall messages
+    /// contain matching content for both the user request and the agent response.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_ContentMatchesPanelOutput()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeTownhallCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Hello from alignment test");
+
+        // Panel should have user entry + assistant entry
+        Assert.Equal(2, panel.OutputHistory.Count);
+        Assert.Equal("User: Hello from alignment test", panel.OutputHistory[0]);
+        Assert.Equal("Assistant: Hello back", panel.OutputHistory[1]);
+
+        // Townhall should have user entry + assistant entry
+        Assert.Equal(beforeTownhallCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        // User entry in Townhall should match the user message (without "User: " prefix)
+        var userEntry = vm.TownhallViewModel.Messages[beforeTownhallCount];
+        Assert.Equal("Hello from alignment test", userEntry.Content);
+        Assert.Equal("user-1", userEntry.SenderId);
+        Assert.Equal(TownhallMessageKind.Chat, userEntry.Kind);
+
+        // Agent entry in Townhall should match the assistant output (with "Assistant: " prefix)
+        var agentEntry = vm.TownhallViewModel.Messages[beforeTownhallCount + 1];
+        Assert.Equal("Assistant: Hello back", agentEntry.Content);
+        Assert.Equal("agent-1", agentEntry.SenderId);
+        Assert.Equal(TownhallMessageKind.Chat, agentEntry.Kind);
+    }
+
+    /// <summary>
+    /// Verifies that after an error, the panel-visible error state is aligned with
+    /// the Townhall-visible AgentError entry content.
+    /// When statusOnCompletion="Error", the mock coordinator appends only the user
+    /// message (the assistant output guard fires), so the last OutputHistory entry
+    /// is the user message prefixed with "User: ".
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_ErrorContentMatchesPanelOutput()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel(statusOnCompletion: "Error");
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Trigger error");
+
+        // Panel has only the user entry (assistant output skipped because statusOnCompletion="Error")
+        Assert.Single(panel.OutputHistory);
+        Assert.Equal("User: Trigger error", panel.OutputHistory[0]);
+        Assert.Equal("Error", panel.Status);
+
+        // Townhall last entry should be an AgentError with content matching the last OutputHistory entry
+        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.AgentError, lastEntry.Kind);
+        Assert.Equal("User: Trigger error", lastEntry.Content);
+        Assert.Equal("agent-1", lastEntry.SenderId);
+        Assert.Equal("Test Agent", lastEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that when the panel has only the user entry in OutputHistory on error,
+    /// Townhall mirrors that entry as the AgentError content (not the fallback).
+    /// The fallback "Request failed" only applies when OutputHistory is empty,
+    /// which cannot happen when the panel exists because the mock always appends
+    /// the user message first.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_ErrorWithSingleOutput_UsesThatOutput()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel(statusOnCompletion: "Error", appendAssistantOutput: false);
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Single output error");
+
+        // Panel has only the user entry (appendAssistantOutput=false + status=Error)
+        Assert.Single(panel.OutputHistory);
+        Assert.Equal("User: Single output error", panel.OutputHistory[0]);
+        Assert.Equal("Error", panel.Status);
+
+        // Townhall last entry should be AgentError with the last OutputHistory entry content
+        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.AgentError, lastEntry.Kind);
+        Assert.Equal("User: Single output error", lastEntry.Content);
+        Assert.Equal("agent-1", lastEntry.SenderId);
+        Assert.Equal("Test Agent", lastEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that when the panel OutputHistory has entries but none start with
+    /// "Assistant: ", the agent response is not mirrored into Townhall (guard clause).
+    /// Only the user message should appear in Townhall.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_NonAssistantResponse_NotMirrored()
+    {
+        // Create a coordinator that appends output without "Assistant: " prefix
+        var agentHost = new AgentPanelHost();
+        var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
+
+        var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
+        mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            {
+                var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
+                if (p is null) return;
+                p.OutputHistory.Add($"User: {msg}");
+                p.OutputHistory.Add("Status: Completed");  // Not "Assistant: " prefixed
+                p.Status = "Idle";
+                p.IsBusy = false;
+            })
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Moq.Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Moq.Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scState = new SourceControlState();
+        var scViewModel = new SourceControlViewModel(scState);
+        var workspace = sp.GetRequiredService<Workspace>();
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
+            mockCoordinator.Object, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Non-standard response");
+
+        // Panel has user + non-assistant status entry
+        Assert.Equal(2, panel.OutputHistory.Count);
+        Assert.Equal("User: Non-standard response", panel.OutputHistory[0]);
+        Assert.Equal("Status: Completed", panel.OutputHistory[1]);
+
+        // Only the user message should be mirrored (no "Assistant:" prefix match)
+        Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count);
+        Assert.Equal("Non-standard response", vm.TownhallViewModel.Messages[beforeCount].Content);
+    }
+
+    /// <summary>
+    /// Verifies that panel Status and Townhall message kind are aligned:
+    /// Status="Error" → Townhall gets AgentError; Status="Idle" → Townhall gets Chat.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_PanelStatusAlignsWithTownhallKind()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel(statusOnCompletion: "Idle");
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Status alignment check");
+
+        // After send, panel status should be Idle
+        Assert.Equal("Idle", panel.Status);
+
+        // Townhall last entry (agent response) should be Chat kind
+        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.Chat, lastEntry.Kind);
+    }
+
+    /// <summary>
+    /// Verifies that SendAgentMessageAsync produces exactly two Townhall entries
+    /// (user + response) in the correct order when successful.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_OrderIsUserThenResponse()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Order check");
+
+        // Exactly 2 new entries
+        Assert.Equal(beforeCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        // First new entry is user request
+        Assert.Equal("Order check", vm.TownhallViewModel.Messages[beforeCount].Content);
+        Assert.Equal("user-1", vm.TownhallViewModel.Messages[beforeCount].SenderId);
+
+        // Second new entry is agent response
+        Assert.Equal("Assistant: Hello back", vm.TownhallViewModel.Messages[beforeCount + 1].Content);
+        Assert.Equal("agent-1", vm.TownhallViewModel.Messages[beforeCount + 1].SenderId);
+    }
+
     [Fact]
     public void HideBottomPanel_HidesPanelWithoutDestroyingLastSession()
     {
