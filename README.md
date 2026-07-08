@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 4 complete — Townhall has explicit in-memory session seed data, auto-logging, kind-based visual rendering, and filtering.
+**Status:** Phase 5 complete — dedicated agent panels render in the right column, support direct input/execution, and mirror activity into Townhall while keeping it primary.
 
 ## Philosophy
 
@@ -44,7 +44,7 @@ layout work from refactor-3/4 is now backed by behavioral features.
 - **Far-left:** Nav bar (icon-only vertical strip for switching between Explorer and Source Control modes)
 - **Left:** File tree sidebar (Explorer mode) or Source Control panel (SC mode)
 - **Center:** Townhall UI scaffold with people/channels sidebar, chat area, and input
-- **Right:** Editor (tabbed, syntax highlighting) with townhall link and focused file info
+- **Right:** Editor (tabbed, syntax highlighting) with townhall link and focused file info; agent-panel host lives below the editor in the same column
 - **Bottom:** Terminal / Logs panel with categorized [BUILD]/[AGENT]/[LOG] output
 - **Bottom:** Status bar showing app name, cursor position, language, project, branch, and AI model
 
@@ -86,7 +86,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Phase 3.9: Terminal UX polish | 3.9 | ✅ Done |
 | Phase 3.9.1: Terminal tabs | 3.9.1 | ✅ Done |
 | Phase 4: Agent workspace foundations | 4 | ✅ Done |
-| Agent panels | 5 | ⏳ Planned |
+| Agent panels | 5 | ✅ Done |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
 
@@ -126,7 +126,7 @@ Cleaned up layer boundaries within the single-project structure:
 
 The next stages build on the Phase 4 Townhall activity surface:
 
-- **Agent panels** — individual UIs for each agent when dedicated surfaces are needed; Phase 5 now also includes one minimal real direct-execution path and Townhall visibility for direct-agent interactions
+- **Agent panels** — individual UIs for each agent (Phase 5 complete: render + direct input + one minimal execution path + Townhall mirroring)
 - **@mention routing** — agents can request review from each other
 - **Git integration** — status, diff, and commits from the sidebar
 - **Editor** — still visible and powerful, but framed as the implementation surface

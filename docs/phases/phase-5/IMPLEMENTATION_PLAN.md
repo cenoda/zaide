@@ -120,10 +120,10 @@ Phase 5 is intentionally split into narrow slices:
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
 | 5.1 | Agent panel state/model + host/composition seam umbrella (`5.1.1`–`5.1.3`) | Implemented |
-| 5.2 | Agent panel UI surfaces (status/output/input) | Planned |
-| 5.3 | Minimal direct-execution seam via one OpenAI-compatible endpoint | Planned |
-| 5.4 | Townhall integration for direct-agent interactions | Planned |
-| 5.5 | Docs sync + regression audit | Planned |
+| 5.2 | Agent panel UI surfaces (status/output/input) | Implemented |
+| 5.3 | Minimal direct-execution seam via one OpenAI-compatible endpoint | Implemented |
+| 5.4 | Townhall integration for direct-agent interactions | Implemented |
+| 5.5 | Docs sync + regression audit | Implemented |
 
 Phase 5.1 is itself split because it still carried too much decision weight:
 
@@ -201,28 +201,21 @@ The phase is complete only when all sub-phases are complete and these conditions
 are true in live code:
 
 - [x] A dedicated agent-panel state/host/composition seam exists and is covered by tests
-- [ ] At least one dedicated agent panel renders in the live shell without displacing Townhall from its primary role
-- [ ] A user can type into a dedicated agent panel input surface
-- [ ] Agent-specific output/status is visible in that panel
-- [ ] At least one panel can send one real request to one configured OpenAI-compatible endpoint and render the response
-- [ ] Multiple agent panels can be shown or switched through a controlled host seam
-- [ ] Direct-agent interactions remain visible to the shared workspace at the intended Phase 5 level
-- [ ] No provider registry/platform abstraction was added prematurely
-- [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 5 state
-- [ ] Build succeeds: `dotnet build Zaide.slnx`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Manual verification covers panel rendering, switching, input, real request path (when valid config is available), visible failure behavior, and Townhall visibility
+- [x] At least one dedicated agent panel renders in the live shell without displacing Townhall from its primary role
+- [x] A user can type into a dedicated agent panel input surface
+- [x] Agent-specific output/status is visible in that panel
+- [x] At least one panel can send one real request to one configured OpenAI-compatible endpoint and render the response
+- [x] Multiple agent panels can be shown or switched through a controlled host seam
+- [x] Direct-agent interactions remain visible to the shared workspace at the intended Phase 5 level
+- [x] No provider registry/platform abstraction was added prematurely
+- [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 5 state
+- [x] Build succeeds: `dotnet build Zaide.slnx`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Manual verification covers panel rendering, switching, input, real request path (when valid config is available), visible failure behavior, and Townhall visibility
 
 ## Exact Next Step
 
-Before writing Phase 5 code, start with `docs/phases/phase-5.1.1/IMPLEMENTATION_PLAN.md` only.
-
-That first slice should do exactly this:
-
-- record the host ownership decision
-- define the minimal single-panel model/ViewModel shape
-- keep the slice narrower than host implementation or shell wiring
-- leave provider execution, Townhall mirroring, and routing concerns for later sub-phases
+Phase 5 is complete (via 5.1–5.5). Next work begins with Phase 6 (see `docs/roadmap/PHASES.md`).
 
 ## Rollback Plan
 
