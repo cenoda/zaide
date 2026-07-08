@@ -2,11 +2,15 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 5.1.1 through 5.3 are complete
+These items must be verified before implementation begins — treated as hard gates:
+
+- [ ] Confirm Phase 5.1.1 through 5.3 are complete (agent panels, coordinator, host)
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
 - [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Re-check `src/ViewModels/TownhallViewModel.cs` and the Phase 4 activity model
-- [ ] Re-confirm which direct-agent events must appear in Townhall and which do not belong there yet
+- [ ] Confirm `AgentExecutionCoordinator` has no Townhall references in `src/ViewModels/AgentExecutionCoordinator.cs`
+- [ ] Confirm `MainWindowViewModel.SendAgentMessageAsync` is the current composition point in `src/ViewModels/MainWindowViewModel.cs`
+- [ ] Confirm `TownhallViewModel.LogActivity` is private and the surface method must be added in `src/ViewModels/TownhallViewModel.cs`
+- [ ] Confirm `IAgentExecutionCoordinator.SendAsync` returns `Task` (no result payload) in `src/ViewModels/IAgentExecutionCoordinator.cs`
 
 ## Scope
 
@@ -88,6 +92,16 @@ Preferred shape:
   entry to the active channel
 - Keep channel/message-list invariants inside `TownhallViewModel`
 
+### DI registration
+
+No new DI registrations are required for Phase 5.4. `TownhallViewModel` is
+already registered as a singleton in `Program.cs` (line 36) and is injected
+into `MainWindowViewModel` (line 101). `IAgentExecutionCoordinator` is already
+registered at line 53.
+
+If implementation introduces any new interface or class, update
+`src/Program.cs` accordingly.
+
 ### Message-kind mapping
 
 Use the existing `TownhallMessageKind` semantics:
@@ -129,8 +143,8 @@ provider internals unless Phase 5 already exposes them to the user.
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Verify the live seam and lock the mirroring decisions in this plan | Plan review against `src/` |
-| M1 | Add the narrow Townhall append surface needed by app-layer orchestration | Focused `TownhallViewModel` tests |
+| M0 | Verify pre-implementation gates and confirm live seam behavior matches lock decisions | Pre-impl checklist + targeted debug of panel state transitions |
+| M1 | Add the narrow Townhall append surface (public method on `TownhallViewModel`) | Focused `TownhallViewModel` tests |
 | M2 | Mirror direct request/response/error flow from `MainWindowViewModel.SendAgentMessageAsync(...)` into Townhall | Focused ViewModel/orchestration tests |
 | M3 | Verify panel-visible state and Townhall-visible state remain aligned for the direct interaction flow | ViewModel tests + manual smoke |
 
@@ -141,8 +155,8 @@ At minimum, budget tests for:
 - Townhall entry creation when a direct-agent request is sent
 - Townhall entry creation when a direct-agent response arrives
 - Townhall entry creation when the direct request fails visibly
-- no Townhall reference being introduced into provider services or `AgentExecutionCoordinator`
-- alignment between panel-visible and Townhall-visible state transitions
+- No Townhall reference being introduced into provider services or `AgentExecutionCoordinator`
+- Alignment between panel-visible and Townhall-visible state transitions
 
 Likely files to extend or add:
 
@@ -171,4 +185,4 @@ Likely files to extend or add:
 
 ## Rollback Plan
 
-- Commit hash to revert to: TBD when implementation begins
+- Revert to commit `8651d016e6e9b8c59cb00c228ccdadf19c3c9ad4` if implementation diverges from the locked decisions
