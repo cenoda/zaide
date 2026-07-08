@@ -1,40 +1,71 @@
-# Phase 5.1: Agent Panel State and Host Seam — Implementation Plan
+# Phase 5.1: Agent Panel State and Host Seam — Umbrella Plan
 
-## Pre-Implementation Verification
+## Planning Status
 
-- [ ] Confirm `docs/phases/phase-5/IMPLEMENTATION_PLAN.md` is the current umbrella
-- [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
-- [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `src/Program.cs`
+**Planned (2026-07-08).**
 
-## Scope
+The first draft of Phase 5.1 still bundled together three different kinds of
+work:
 
-**Goal:** Add the minimum state and host seam needed to represent dedicated
-agent panels in the existing shell.
+- deciding the state shape for a single agent panel
+- designing and implementing the multi-panel host seam
+- exposing that seam through main-window composition
 
-**In scope:**
+That is still too much architectural weight for one uninterrupted pass. Phase
+5.1 is now an umbrella. Each sub-phase gets its own
+`docs/phases/phase-5.1.x/IMPLEMENTATION_PLAN.md` and should stay narrow.
 
-- Agent panel model/ViewModel shape
-- Agent panel host seam (collection + active panel)
-- Minimal shell composition changes needed to expose that seam
+## Goal
 
-**Out of scope:**
+Lock in the minimum state and composition seams needed for agent panels without
+widening into full UI work, provider execution, or Townhall mirroring.
 
-- Real provider calls
-- Townhall integration details
-- Agent-to-agent routing
+## Why Split 5.1 Again
 
-## Milestones
+Phase 5.1 carries high decision weight even though it should remain a small
+implementation slice. If host ownership, panel state shape, and shell exposure
+all move at once, later Phase 5 work is likely to churn.
 
-| Milestone | Description | Test |
-|-----------|-------------|------|
-| M0 | Decide host ownership seam | Build + repo review |
-| M1 | Add minimal agent panel model/ViewModel | New ViewModel tests |
-| M2 | Add host seam and wire shell composition | Build + host tests |
+The split below is meant to reduce that risk:
 
-## Exit Conditions
+- `5.1.1` decides and implements the smallest useful single-panel state shape
+- `5.1.2` introduces the dedicated multi-panel host seam
+- `5.1.3` exposes that seam through `MainWindowViewModel`/DI and closes the
+  Phase 5.1 exit audit
 
-- [ ] A dedicated host seam exists for multiple agent panels
-- [ ] At least one agent panel can be represented in ViewModel state
+## Sub-Phases
+
+| Sub-phase | Scope | Status |
+|-----------|-------|--------|
+| [5.1.1](../phase-5.1.1/IMPLEMENTATION_PLAN.md) | Single-panel state shape + host ownership decision | Planned |
+| [5.1.2](../phase-5.1.2/IMPLEMENTATION_PLAN.md) | Multi-panel host seam + seeded panel collection/selection behavior | Planned |
+| [5.1.3](../phase-5.1.3/IMPLEMENTATION_PLAN.md) | `MainWindowViewModel`/DI composition seam + Phase 5.1 exit audit | Planned |
+
+## Out of Scope (all 5.1.x sub-phases)
+
+- Final agent-panel UI surfaces (`phase-5.2`)
+- Real provider calls or endpoint integration (`phase-5.3`)
+- Townhall mirroring for direct-agent interactions (`phase-5.4`)
+- Agent-to-agent routing or `@mention` semantics (Phase 6)
+- Persistence architecture or transcript storage
+- Shell redesign beyond the smallest seam exposure needed for later phases
+
+## Phase 5.1 Exit Conditions
+
+These are only satisfied once 5.1.1 through 5.1.3 are all complete:
+
+- [ ] A minimal single-agent panel ViewModel/state shape exists and is covered by tests
+- [ ] A dedicated host seam exists for a collection of agent panels and active-panel selection
+- [ ] `MainWindowViewModel` composes the host seam without moving host logic into code-behind
+- [ ] The Phase 5 shell exposure point is decided without committing Phase 5.2 UI details too early
 - [ ] `dotnet build Zaide.slnx` passes
-- [ ] Tests for the new host/panel seam pass
+- [ ] Tests for the new state/host/composition seams pass
+
+## Exact Next Step
+
+Before writing Phase 5.1 code, start with
+`docs/phases/phase-5.1.1/IMPLEMENTATION_PLAN.md` only.
+
+## Rollback Plan
+
+- Commit hash to revert to: TBD when implementation begins
