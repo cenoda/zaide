@@ -301,11 +301,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel!.ScreenSnapshot)
                 .Subscribe(_ => RefreshSearch(jumpToActive: false)));
 
-            if (ViewModel != null)
-            {
-                ViewModel.Restarted += OnRestarted;
-                d.Add(Disposable.Create(() => ViewModel.Restarted -= OnRestarted));
-            }
+            d.Add(TerminalPanelSubscriptions.SubscribeToRestarted(ViewModel, OnRestarted));
             d.Add(this.GetObservable(IsVisibleProperty).Subscribe(visible => { if (visible) FocusTerminal(); }));
             d.Add(_renderControl.GetObservable(BoundsProperty)
                 .Throttle(TimeSpan.FromMilliseconds(100))
