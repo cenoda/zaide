@@ -25,7 +25,7 @@ This change only affects the view layer; no ViewModel or test contract was alter
 ## Status
 
 - [x] Fix implemented and verified by build/test
-- [ ] Manual smoke test pending (visual confirmation of scrolling behavior)
+- [x] Manual smoke test confirmed: tab strip scrolls correctly with many panels
 
 ---
 
@@ -91,7 +91,7 @@ switch or filter change and asserts `FilteredMessages` updates.
 
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `MirroredActivity_UpdatesFilteredMessages_WithoutTabOrFilterChange`
-- [ ] Manual smoke test pending (visual confirmation of live Townhall refresh on agent send)
+- [x] Manual smoke test confirmed: Townhall Chat view updates live on agent-panel send without tab/filter switch
 
 ---
 
@@ -141,7 +141,7 @@ Updated tests in `tests/Zaide.Tests/ViewModels/AgentExecutionCoordinatorTests.cs
 
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `SendAsync_Failure_ClearsDraftInput` and `SendAsync_RepeatedEnter_ClearsDraftEachTime_NoDuplicateSend`
-- [ ] Manual smoke test pending (visual confirmation input box empties on send, including failed send)
+- [x] Manual smoke test confirmed: input box clears on send (including failed send), no duplicate re-send on repeated Enter
 
 ---
 
@@ -187,7 +187,7 @@ Updated tests in `tests/Zaide.Tests/Views/TownhallInputAreaTests.cs`:
 
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `InputField_AcceptsReturn_IsFalse` and `ShiftEnterKey_InsertsNewlineAtCaret`
-- [ ] Manual smoke test pending (visual confirmation Enter sends, Shift+Enter inserts newline)
+- [x] Manual smoke test confirmed: Enter sends, Shift+Enter inserts newline
 
 ---
 
@@ -225,7 +225,7 @@ this.RaisePropertyChanged(nameof(ActiveChannelId));
 ### Status
 
 - [x] Fix implemented and verified by build/test
-- [x] Manual smoke test pending (visual confirmation of channel highlight switching)
+- [x] Manual smoke test confirmed: channel highlight switches correctly on click
 
 ---
 
@@ -261,4 +261,4 @@ inputRow.Children.Add(_inputField);  // last = fills remaining space
 ### Status
 
 - [x] Fix implemented and verified by build/test
-- [ ] Manual smoke test pending (visual confirmation input width is stable across channel switches)
+- [x] Manual smoke test confirmed: input width is stable across channel switches

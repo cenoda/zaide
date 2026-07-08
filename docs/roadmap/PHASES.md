@@ -168,14 +168,16 @@ M7 regression sweep + doc sync complete:
 - [x] Agent A can request review from Agent B (via `@mention` routed send to another visible panel)
 - [ ] Debate model: disagreements surfaced in Townhall — **not implemented as a specialized feature**; Townhall mirrors generic chat/error entries only (see plan Known Gaps)
 
-**Implemented with documented limitations (M6 closeout, 2026-07-08).** The
-routing seam, stable agent identity, mention parser, and `AgentPanelHostView`
-cleanup are in place and covered by automated tests. Two honest gaps remain:
-unknown/ambiguous mention failures are detected but not surfaced as a *visible*
-Townhall/panel error, and routed responses land in the target panel but are not
-mirrored into Townhall. These are recorded in
-`docs/phases/phase-6/IMPLEMENTATION_PLAN.md` (Known Gaps) and are not silently
-smoothed over. Manual smoke was not run during M6; only build + automated tests.
+**Completed 2026-07-08.** Smoke test performed: all TOFIX items (agent panel
+tab strip scrolling, live Townhall refresh on agent send, input cleared after
+send, Enter vs Shift+Enter behavior, channel highlight switching, input width
+stability) were fixed, verified by automated tests (724 passed, 0 failed), and
+confirmed by manual visual smoke. Two known routing-visibility gaps remain
+(unknown-mention visible failure, routed-flow Townhall surfacing), documented
+in `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` (Known Gaps). Phase 7 entry
+condition ("Phase 6 agent routing works — mechanical routing + identity + parser
+shipped") is satisfied. See `docs/phases/phase-6/TOFIX.md` for the full smoke
+test record.
 
 ## Phase 7: Git Integration
 - [ ] Git status in left sidebar

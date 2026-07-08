@@ -542,19 +542,20 @@ Not met by live code at M6 (see Known Gaps):
       Townhall/panel error in the current thin seam
 - [ ] Townhall visibility of the *routed* flow — only direct send is mirrored
       today; routed responses land in the target panel but not in Townhall
-- [ ] Manual smoke (direct send, routed send, unknown mention, Townhall
-      visibility, panel-switch) was **not run** during M6; only build + automated
-      tests were executed
+- [x] Manual smoke (direct send, routed send, unknown mention, Townhall
+      visibility, panel-switch) was **run and confirmed** during Phase 6 smoke
+      test (2026-07-08); all TOFIX items verified and closed
 
 ## Exact Next Step
 
-Phase 6 is closed for M6 doc-sync/regression purposes, but two real routing
-visibility gaps remain (unknown-mention visible failure, and routed-flow Townhall
-surfacing). The next phase after Phase 6 is **Phase 7: Git Integration**
-(`git` status in the left sidebar, basic diff view, commit from the IDE, branch
-display). If the team wants the routing visibility gaps closed first, that work
-belongs in a Phase 6 follow-up (a Phase 6.1 seam that consumes `RouteResult` and
-mirrors routed/debate events into Townhall), not in Phase 7.
+Phase 6 is closed. All TOFIX items from smoke testing have been fixed, verified
+by automated tests, and confirmed by manual smoke. Two real routing visibility
+gaps remain (unknown-mention visible failure, and routed-flow Townhall surfacing)
+and are documented in Known Gaps above. The next phase is **Phase 7: Git
+Integration** (`git` status in the left sidebar, basic diff view, commit from the
+IDE, branch display). If the team wants the routing visibility gaps closed first,
+that work belongs in a Phase 6 follow-up (a Phase 6.1 seam that consumes
+`RouteResult` and mirrors routed/debate events into Townhall), not in Phase 7.
 
 ## Rollback Plan
 
