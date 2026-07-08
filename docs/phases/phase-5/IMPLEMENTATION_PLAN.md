@@ -119,7 +119,7 @@ Phase 5 is intentionally split into narrow slices:
 
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
-| 5.1 | Agent panel state/model + host/composition seam umbrella (`5.1.1`–`5.1.3`) | Planned |
+| 5.1 | Agent panel state/model + host/composition seam umbrella (`5.1.1`–`5.1.3`) | Implemented |
 | 5.2 | Agent panel UI surfaces (status/output/input) | Planned |
 | 5.3 | Minimal direct-execution seam via one OpenAI-compatible endpoint | Planned |
 | 5.4 | Townhall integration for direct-agent interactions | Planned |
@@ -129,9 +129,9 @@ Phase 5.1 is itself split because it still carried too much decision weight:
 
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
-| 5.1.1 | Single-panel state shape + host ownership decision | Planned |
-| 5.1.2 | Multi-panel host seam | Planned |
-| 5.1.3 | `MainWindowViewModel` / DI composition seam + 5.1 exit audit | Planned |
+| 5.1.1 | Single-panel state shape + host ownership decision | Implemented |
+| 5.1.2 | Multi-panel host seam | Implemented |
+| 5.1.3 | `MainWindowViewModel` / DI composition seam + 5.1 exit audit | Implemented |
 
 ## Phase Map
 
@@ -200,7 +200,7 @@ Likely files to extend or add across the phase:
 The phase is complete only when all sub-phases are complete and these conditions
 are true in live code:
 
-- [ ] A dedicated agent-panel state/host/composition seam exists and is covered by tests
+- [x] A dedicated agent-panel state/host/composition seam exists and is covered by tests
 - [ ] At least one dedicated agent panel renders in the live shell without displacing Townhall from its primary role
 - [ ] A user can type into a dedicated agent panel input surface
 - [ ] Agent-specific output/status is visible in that panel

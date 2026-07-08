@@ -1,11 +1,11 @@
 # Phase 5.1: Agent Panel State and Host Seam — Umbrella Plan
 
-## Planning Status
+## Implementation Status
 
-**Planned (2026-07-08).**
+**Implemented (2026-07-08).**
 
-The first draft of Phase 5.1 still bundled together three different kinds of
-work:
+All three Phase 5.1 sub-phases are complete. The umbrella split was necessary
+because the first draft bundled three different kinds of work:
 
 - deciding the state shape for a single agent panel
 - designing and implementing the multi-panel host seam
@@ -37,9 +37,9 @@ The split below is meant to reduce that risk:
 
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
-| [5.1.1](../phase-5.1.1/IMPLEMENTATION_PLAN.md) | Single-panel state shape + host ownership decision | Planned |
-| [5.1.2](../phase-5.1.2/IMPLEMENTATION_PLAN.md) | Multi-panel host seam + seeded panel collection/selection behavior | Planned |
-| [5.1.3](../phase-5.1.3/IMPLEMENTATION_PLAN.md) | `MainWindowViewModel`/DI composition seam + Phase 5.1 exit audit | Planned |
+| [5.1.1](../phase-5.1.1/IMPLEMENTATION_PLAN.md) | Single-panel state shape + host ownership decision | Implemented |
+| [5.1.2](../phase-5.1.2/IMPLEMENTATION_PLAN.md) | Multi-panel host seam + seeded panel collection/selection behavior | Implemented |
+| [5.1.3](../phase-5.1.3/IMPLEMENTATION_PLAN.md) | `MainWindowViewModel`/DI composition seam + Phase 5.1 exit audit | Implemented |
 
 ## Out of Scope (all 5.1.x sub-phases)
 
@@ -54,17 +54,17 @@ The split below is meant to reduce that risk:
 
 These are only satisfied once 5.1.1 through 5.1.3 are all complete:
 
-- [ ] A minimal single-agent panel ViewModel/state shape exists and is covered by tests
-- [ ] A dedicated host seam exists for a collection of agent panels and active-panel selection
-- [ ] `MainWindowViewModel` composes the host seam without moving host logic into code-behind
-- [ ] The Phase 5 shell exposure point is decided without committing Phase 5.2 UI details too early
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] Tests for the new state/host/composition seams pass
+- [x] A minimal single-agent panel state shape exists and is covered by tests (`AgentPanelState.cs`, 5.1.1)
+- [x] A dedicated host seam exists for a collection of agent panels and active-panel selection (`IAgentPanelHost`/`AgentPanelHost`, 5.1.2)
+- [x] `MainWindowViewModel` composes the host seam without moving host logic into code-behind (5.1.3 M1)
+- [x] The Phase 5 shell exposure point is decided without committing Phase 5.2 UI details too early (5.1.3 M0)
+- [x] `dotnet build Zaide.slnx` passes
+- [x] Tests for the new state/host/composition seams pass
 
 ## Exact Next Step
 
-Before writing Phase 5.1 code, start with
-`docs/phases/phase-5.1.1/IMPLEMENTATION_PLAN.md` only.
+Phase 5.1 is complete. The next phase is `docs/phases/phase-5.2/IMPLEMENTATION_PLAN.md`
+which will introduce agent-panel UI surfaces in the existing right-side shell column.
 
 ## Rollback Plan
 

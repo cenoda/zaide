@@ -75,7 +75,7 @@ Phase 5 sub-phases:
 
 - [x] `MainWindowViewModel` composes the agent-panel host seam (M1)
 - [x] `Program.cs` registers the new seam correctly (M1)
-- [ ] Phase 5.1 umbrella docs accurately reflect the resulting shape (M2)
+- [x] Phase 5.1 umbrella docs accurately reflect the resulting shape (M2)
 - [x] `dotnet build Zaide.slnx` passes
 - [x] Focused composition tests pass (M1)
 - [x] M0 decision recorded and confirmed against live precedent
