@@ -18,17 +18,18 @@ routing, or any feature expansion.
 
 ## Goal
 
-Make Phase 6 routing failures and routed-flow outcomes visible in Townhall and
-the UI, and add focused test coverage for the router seam.
+Make Phase 6 routing failures and routed-flow outcomes visible in Townhall,
+and add focused test coverage for the router seam. All Townhall mirroring
+changes belong in `MainWindowViewModel`; `AgentRouter` itself does not gain
+a Townhall dependency.
 
 ## Scope
 
 This phase covers only:
 
-- Consuming `RouteResult` in `SendAgentMessageAsync(...)` to surface routing failures
+- Consuming `RouteResult` in `SendAgentMessageAsync(...)` to surface routing failures in Townhall
 - Mirroring unknown-target and routed-flow outcomes into Townhall truthfully
-- Adding dedicated `AgentRouter` orchestration tests
-- Optional: visible panel/status feedback for routing failure
+- Adding dedicated `AgentRouter` orchestration tests (routing resolution and target execution only — no Townhall assertions at the router layer)
 
 This phase does **not** cover:
 
@@ -55,23 +56,61 @@ The following gaps are documented in Phase 6 Known Gaps and remain unfixed:
    - Router behavior covered indirectly via MentionParserTests and MainWindowViewModelTests
    - `RouteAndExecuteAsync` path lacks focused unit tests
 
+## M0 Locked Decisions
+
+### 1. Visibility surface: Townhall-only
+
+**Decision:** Phase 6.1 uses Townhall as the sole visibility surface for routing
+failures and routed-flow outcomes. No panel/status bar UI changes are required.
+
+**Rationale:** `AgentRouter` has no Townhall dependency and must not gain one
+(Phase 6 boundary, `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` line 530).
+All Townhall mirroring belongs in `MainWindowViewModel.SendAgentMessageAsync`,
+which already owns the thin composition seam. Panel/status feedback is out of
+scope for this phase.
+
+### 2. Routed-success mirroring reads from target panel, not RouteResult
+
+**Decision:** `RouteResult` carries only `Success`, `Request`, and `FailureReason`
+(`src/Models/RouteResult.cs`). It does **not** carry execution outcome, resolved
+target panel id, or mirrored output content. Routed-success mirroring must read
+post-execution state from the resolved target panel via
+`Request.TargetAgentName` + `IAgentPanelHost.Panels`.
+
+**Locked flow for routed success:**
+1. `SendAgentMessageAsync` receives `RouteResult` with `Success = true` and `Request.IsDirectSend = false`
+2. After `RouteAndExecuteAsync` completes, look up the target panel by `Request.TargetAgentName`
+3. Read the target panel's post-execution `OutputHistory` and `Status`
+4. Mirror the target panel's response into Townhall (same pattern as direct-send mirroring)
+
+### 3. Test ownership split
+
+**Decision:** `AgentRouterTests` covers routing resolution and target execution
+only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
+
+- `AgentRouterTests`: parse resolution, direct-send vs routed-send dispatch,
+  unknown/ambiguous target failure, no Townhall dependency
+- `MainWindowViewModelTests`: unknown-target Townhall error entry, routed-success
+  Townhall mirroring from target panel, direct-send mirroring (existing)
+
 ## Milestones
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Lock the 6.1 visibility seam: define how unknown-target errors, ambiguous-target errors, and routed-flow outcomes appear in Townhall; decide whether `RouteResult` drives both panel and Townhall feedback | Plan truth-sync + minimal POC |
-| M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync` to mirror visible failures and routed outcomes into Townhall | ViewModel tests for unknown target, routed success, ambiguous target |
-| M2 | Add dedicated `AgentRouterTests.cs` with coverage for parse resolution, target execution, and Townhall mirroring behavior | Focused router/orchestration tests |
-| M3 | Ensure status/panel feedback for routing failures (if any UI change is needed beyond Townhall) and verify build/tests green | Build + test verification |
+| M0 | Lock the 6.1 visibility decisions (Townhall-only, no panel/status UI change, RouteResult shape constraints, test ownership split) | Plan truth-sync |
+| M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync`: on parse failure mirror a Townhall error entry; on routed success read target panel output and mirror into Townhall | `MainWindowViewModelTests` for unknown target, routed success, ambiguous target |
+| M2 | Add dedicated `AgentRouterTests.cs` covering routing resolution and target execution only (no Townhall assertions) | Router tests for direct-send dispatch, routed-send dispatch, unknown/ambiguous failure |
+| M3 | Verify build/tests green; no UI changes beyond Townhall | Build + test verification |
 
 ## Likely Implementation Shape
 
-- `MainWindowViewModel.SendAgentMessageAsync` inspection of `RouteResult`
-  - On parse failure: mirror a visible error entry into Townhall
-  - On routed success: mirror target panel response into Townhall
-- `tests/Zaide.Tests/ViewModels/AgentRouterTests.cs` new file
+- `MainWindowViewModel.SendAgentMessageAsync` changes:
+  - Inspect `RouteResult` returned by `RouteAndExecuteAsync` (currently discarded via `_ = ...`)
+  - On parse failure (`result.Success == false`): mirror a visible error entry into Townhall
+  - On routed success (`result.Request.IsDirectSend == false`): look up target panel via `Request.TargetAgentName` + `IAgentPanelHost`, read its post-execution `OutputHistory`, mirror into Townhall
+- `tests/Zaide.Tests/ViewModels/AgentRouterTests.cs` new file — routing resolution and target execution only
 - No changes to `MentionParser` (already correct)
-- No changes to `AgentRouter` (already correct)
+- No changes to `AgentRouter` (already correct — no Townhall dependency)
 
 ## Out of Scope
 
@@ -90,9 +129,10 @@ The following gaps are documented in Phase 6 Known Gaps and remain unfixed:
 
 ## Exit Conditions
 
-- [ ] Unknown-target failures produce visible Townhall error entries
-- [ ] Routed-flow outcomes produce visible Townhall entries
-- [ ] Dedicated `AgentRouter` test file exists with passing tests
+- [ ] Unknown-target failures produce visible Townhall error entries (via `MainWindowViewModel`)
+- [ ] Routed-flow outcomes produce visible Townhall entries (target panel output mirrored via `MainWindowViewModel`)
+- [ ] Dedicated `AgentRouter` test file exists with passing tests (routing resolution + target execution only)
+- [ ] `AgentRouter` remains free of Townhall dependency
 - [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
 - [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
 
