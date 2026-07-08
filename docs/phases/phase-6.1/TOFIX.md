@@ -1,7 +1,9 @@
 # Phase 6.1 Audit TOFIX
 
 Non-blocking issues found while auditing `IMPLEMENTATION_PLAN.md` against live
-code before M2. None block M2/M3; recorded here so they are not lost.
+code before M2. None blocked M2/M3; recorded here so they were not lost.
+
+**All items resolved (2026-07-09).**
 
 ---
 
@@ -37,7 +39,9 @@ both `CreateViewModel` overloads (and the inline construction inside
 
 ### Status
 
-- [ ] Not fixed — out of Phase 6.1 scope (test-helper hygiene, pre-existing)
+- [x] Fixed — both `CreateViewModel` overloads and the inline construction in
+  `TerminalStartupError_UpdatesStatusText` now pass the shared `panelHost` into the
+  `MainWindowViewModel` constructor.
 
 ---
 
@@ -61,7 +65,9 @@ When M2 starts, set the M3 rollback anchor to the last green commit before M2
 
 ### Status
 
-- [ ] Not fixed — update when M2 begins
+- [x] Fixed — `IMPLEMENTATION_PLAN.md` M0 section now records the phase rollback
+  anchor as `9fe780f` (pre-M1) and the M2/M3 anchor as `e5f426b` (pre-M2), instead
+  of the M0 docs commit.
 
 ---
 

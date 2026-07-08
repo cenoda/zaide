@@ -58,7 +58,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -83,7 +83,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -250,7 +250,7 @@ public class MainWindowViewModelTests
         var panelHost2 = new AgentPanelHost();
         var parser2 = new MentionParser(panelHost2);
         var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, new AgentPanelHost(), coordinator2, router2, townhallViewModel2, scViewModel2, workspace2);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();

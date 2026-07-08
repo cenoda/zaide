@@ -13,8 +13,9 @@
 **M0 locked (2026-07-08).**
 
 All 4 planning decisions verified against live code. Build: 0 errors / 0 warnings.
-Tests: 724 passed / 0 failed. Rollback hash recorded for M3:
-`67a393d6757d285c567db1633b0edd693c43e5dd`.
+Tests: 724 passed / 0 failed. Rollback anchor for the phase (last green commit
+before M1): `9fe780f`. (M2/M3 rollback anchor: last green commit before M2
+— `e5f426b`, the M1 feature commit.)
 
 Doc correction: `MainWindowViewModelTests.cs` lives at `tests/Zaide.Tests/`
 (not `tests/Zaide.Tests/ViewModels/`), which is where the existing mirroring
