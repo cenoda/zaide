@@ -1,16 +1,26 @@
 # Phase 6.1: Routing Visibility Follow-up — Implementation Plan
 
-## Pre-Implementation Verification
+## Pre-Implementation Verification (M0 — Locked)
 
-- [ ] Confirm Phase 6 is complete (build + tests pass)
-- [ ] Re-check `src/ViewModels/MainWindowViewModel.cs` line 191-233 (SendAgentMessageAsync)
-- [ ] Re-check `src/ViewModels/AgentRouter.cs` for RouteAndExecuteAsync behavior
-- [ ] Re-check `src/Services/MentionParser.cs` for failure case returns
-- [ ] Confirm no dedicated router test file exists under `tests/Zaide.Tests/ViewModels/`
+- [x] Confirm Phase 6 is complete (build + tests pass)
+- [x] Re-check `src/ViewModels/MainWindowViewModel.cs` line 191-233 (SendAgentMessageAsync)
+- [x] Re-check `src/ViewModels/AgentRouter.cs` for RouteAndExecuteAsync behavior
+- [x] Re-check `src/Services/MentionParser.cs` for failure case returns
+- [x] Confirm no dedicated router test file exists under `tests/Zaide.Tests/ViewModels/`
 
 ## Planning Status
 
-**Planned (2026-07-08).**
+**M0 locked (2026-07-08).**
+
+All 4 planning decisions verified against live code. Build: 0 errors / 0 warnings.
+Tests: 724 passed / 0 failed. Rollback hash recorded for M3:
+`67a393d6757d285c567db1633b0edd693c43e5dd`.
+
+Doc correction: `MainWindowViewModelTests.cs` lives at `tests/Zaide.Tests/`
+(not `tests/Zaide.Tests/ViewModels/`), which is where the existing mirroring
+tests and `CreateMirrorTestViewModel` helper (lines 285-339) are defined.
+
+**Result: Plan is locked ✓ — proceed to M1.**
 
 This is a small follow-up phase to close the routing-visibility gaps documented in
 the Phase 6 Known Gaps section. It does **not** introduce git integration, multi-hop
@@ -123,7 +133,7 @@ only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Lock the 6.1 visibility decisions (Townhall-only, entry formats, RouteResult shape, edge cases, test ownership split) | Plan truth-sync |
+| M0 | Lock the 6.1 visibility decisions (Townhall-only, entry formats, RouteResult shape, edge cases, test ownership split) — **DONE** | Plan truth-sync |
 | M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync`: on parse failure mirror a Townhall error entry; on routed success read target panel output and mirror into Townhall | `MainWindowViewModelTests` for unknown target, routed success, ambiguous target, vanished target panel |
 | M2 | Add dedicated `AgentRouterTests.cs` covering routing resolution and target execution only (no Townhall assertions) | Router tests for direct-send dispatch, routed-send dispatch, all failure cases (unknown/ambiguous/multi/empty) |
 | M3 | Verify build/tests green; no UI changes beyond Townhall | Build + test verification |
