@@ -47,3 +47,24 @@ Code quality and planning issues found during the Phase 5.3 plan audit.
   coupling 5.3 directly to `TownhallViewModel`.
   If needed, prefer a small execution-event seam over a direct Townhall
   dependency so 5.4 can subscribe rather than refactor the core coordinator.
+
+- [ ] Record the explicit reactive-state choice in the plan before coding starts.
+  The current recommendation remains the smaller path: make `AgentPanelState`
+  reactive for coordinator-mutated scalar properties while leaving
+  `OutputHistory` on its existing `ObservableCollection<string>` seam.
+
+- [ ] Record the explicit send-trigger choice in the plan before coding starts.
+  The current recommendation is narrow Enter-to-send because the live input
+  already uses `AcceptsReturn = false`, unless implementation evidence shows a
+  send button is cleaner.
+
+- [ ] Record the explicit shell composition path before coding starts.
+  The plan should state who calls the coordinator from the UI path so
+  `MainWindow` remains a thin connector and `MainWindowViewModel` only exposes a
+  narrow delegating seam.
+
+- [ ] Treat panel view-interaction tests as conditional on practical existing
+  Avalonia test support.
+  If headless interaction tests are not already cheap in this repo, keep the UI
+  trigger narrow and rely on service/ViewModel coverage plus manual smoke rather
+  than widening Phase 5.3 into test-harness work.

@@ -99,6 +99,10 @@ For this slice, the send trigger should stay minimal:
 The trigger should route into the orchestration seam rather than teaching the
 view about provider execution.
 
+The current live `TextBox` already uses `AcceptsReturn = false`, so Enter-to-send
+is likely the narrowest path unless implementation evidence reveals a concrete
+UX or wiring problem.
+
 ## Service Boundary Rule
 
 The execution service added in this slice must not reference Views or ViewModels.
@@ -170,6 +174,10 @@ Recommendation for this slice: prefer the smaller path unless live implementatio
 proves otherwise. Making `AgentPanelState` reactive for the coordinator-mutated
 properties is likely narrower than introducing a whole new panel ViewModel layer.
 
+`OutputHistory` does not need the same treatment. It already updates through
+`ObservableCollection<string>`, so Phase 5.3 should avoid widening the state
+shape unnecessarily just to solve a problem that already has a working live seam.
+
 ## Testability Rule
 
 The service and orchestration seams in this slice must stay trivially testable:
@@ -195,6 +203,36 @@ That means:
 
 This is a forward-compatibility guideline, not a reason to widen 5.3 into full
 Townhall integration now.
+
+## Composition Decision Needed
+
+Before implementation begins, this slice must also record who actually invokes
+execution from the shell composition path.
+
+Recommended narrow path:
+
+- the view raises or forwards the send action
+- `MainWindow` acts only as a thin connection point
+- `MainWindowViewModel` exposes a thin delegating command or method
+- `AgentExecutionCoordinator` owns the real send/execution/state logic
+
+This preserves the current MVVM boundary while keeping `MainWindow` code-behind
+out of execution ownership.
+
+## Testing Practicality Note
+
+The test budget in this plan includes possible panel-view interaction coverage,
+but the current repo does not yet show an established headless test pattern for
+`tests/Zaide.Tests/Views/`.
+
+That means view-interaction coverage should be treated as conditional:
+
+- if the existing Avalonia test setup already supports the needed interaction
+  tests cheaply, add them
+- otherwise, keep the interaction logic minimal and cover the risk through
+  focused ViewModel/service tests plus manual smoke for the UI trigger
+
+Phase 5.3 should not widen itself just to pioneer a large new UI test harness.
 
 ## Milestones
 
@@ -268,6 +306,15 @@ audits of the current checkout:
   minimal input-action seam rather than assuming execution can already start.
 - Configuration and `HttpClient` testability should be decided explicitly before
   implementation to keep the first provider slice deterministic and narrow.
+- `OutputHistory` already has a working observable seam; the reactive-state work
+  is specifically about coordinator-mutated scalar properties such as `Status`
+  and `DraftInput`.
+- Enter-to-send is likely the smallest viable trigger because the current input
+  already uses `AcceptsReturn = false`.
+- The shell composition path must explicitly record who calls into the
+  coordinator so execution ownership does not drift into `MainWindow`.
+- View-interaction tests are desirable but should remain conditional on the
+  existing Avalonia test setup rather than assumed by default.
 
 ## Exit Conditions
 
