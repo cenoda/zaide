@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -152,7 +153,7 @@ public sealed class AgentExecutionCoordinatorTests
         Assert.Equal("User: Hello", panel.OutputHistory[0]);
         Assert.Contains("Error:", panel.OutputHistory[1]);
         Assert.Contains("API key", panel.OutputHistory[1], StringComparison.OrdinalIgnoreCase);
-        // Draft should not be cleared on config failure
+        // Draft is cleared on send initiation, even when the request fails
         Assert.Empty(panel.DraftInput);
     }
 
@@ -203,7 +204,7 @@ public sealed class AgentExecutionCoordinatorTests
     // ── Failed send ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task SendAsync_Failure_DoesNotClearDraftInput()
+    public async Task SendAsync_Failure_ClearsDraftInput()
     {
         var host = CreateHostWithPanel(out var panel);
         panel.DraftInput = "Hello";
@@ -212,8 +213,9 @@ public sealed class AgentExecutionCoordinatorTests
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
-        // Draft should NOT be cleared on failure
-        Assert.Equal("Hello", panel.DraftInput);
+        // Draft must be cleared on send initiation so the same text cannot be
+        // re-sent by pressing Enter again after a failed request.
+        Assert.Equal(string.Empty, panel.DraftInput);
         Assert.Equal("Error", panel.Status);
         Assert.False(panel.IsBusy);
     }
@@ -233,6 +235,35 @@ public sealed class AgentExecutionCoordinatorTests
         Assert.Contains("401", panel.OutputHistory[1]);
         Assert.Equal("Error", panel.Status);
         Assert.False(panel.IsBusy);
+    }
+
+    // ── Regression: draft must clear so the same text is not re-sent ────────
+
+    [Fact]
+    public async Task SendAsync_RepeatedEnter_ClearsDraftEachTime_NoDuplicateSend()
+    {
+        // Regression for the phase-6 smoke-test bug: typing "hi" and pressing
+        // Enter 3 times re-sent "hi" 3 times because the draft was only cleared
+        // on success. The draft must clear on every send initiation so a failed
+        // request cannot be re-sent by pressing Enter again.
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        // Simulate the user typing "hi" into the draft and pressing Enter 3 times.
+        for (var i = 0; i < 3; i++)
+        {
+            panel.DraftInput = "hi";
+            await coordinator.SendAsync(panel.PanelId, panel.DraftInput);
+            // After each send the draft must be empty, so the next Enter has
+            // nothing to re-send unless the user types again.
+            Assert.Equal(string.Empty, panel.DraftInput);
+        }
+
+        // Each Enter produced exactly one "User: hi" entry — no duplicates from
+        // a lingering draft.
+        Assert.Equal(3, panel.OutputHistory.Count(o => o == "User: hi"));
+        Assert.Equal(3, panel.OutputHistory.Count(o => o.StartsWith("Error:")));
     }
 
     // ── One-in-flight enforcement ───────────────────────────────────────────

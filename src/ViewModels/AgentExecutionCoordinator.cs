@@ -52,13 +52,16 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             // Append user message to output history
             panel.OutputHistory.Add($"User: {userMessage}");
 
+            // Consume the draft immediately so the input box clears and the same
+            // text cannot be re-sent by pressing Enter again (e.g. when the
+            // request later fails). The user can always re-type to retry.
+            panel.DraftInput = string.Empty;
+
             // Execute
             var result = await _executionService.ExecuteAsync(userMessage, ct).ConfigureAwait(false);
 
             if (result.IsSuccess)
             {
-                // Clear draft input only on successful send
-                panel.DraftInput = string.Empty;
                 panel.OutputHistory.Add($"Assistant: {result.ResponseText}");
                 panel.Status = "Idle";
             }

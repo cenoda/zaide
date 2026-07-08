@@ -92,4 +92,53 @@ switch or filter change and asserts `FilteredMessages` updates.
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `MirroredActivity_UpdatesFilteredMessages_WithoutTabOrFilterChange`
 - [ ] Manual smoke test pending (visual confirmation of live Townhall refresh on agent send)
-</tool_call>
+
+---
+
+## Issue: Agent Panel Input Not Cleared After Send (Duplicate Re-Send)
+
+During Phase 6 smoke testing, sending a message from an agent panel worked, but the typed text
+stayed in the input box. Typing `hi` and pressing Enter 3 times re-sent `hi` 3 times, because the
+draft was never cleared on a failed request.
+
+### Root Cause
+
+`AgentExecutionCoordinator.SendAsync` cleared `panel.DraftInput` **only in the success branch**
+(`if (result.IsSuccess) { panel.DraftInput = string.Empty; … }`). On any failure path — missing API
+key, missing base URL/model, HTTP error, or exception — the draft was left intact. The input box is
+two-way bound to `DraftInput` (`AgentPanelView` → `this.Bind(ViewModel, vm => vm.DraftInput, …)`),
+so the text remained and the next Enter re-sent it. The existing test
+`SendAsync_Failure_DoesNotClearDraftInput` even encoded this as intended behavior.
+
+### Fix Applied
+
+Moved the draft-clear to **send initiation**, before the execution call, so the input box empties
+regardless of outcome:
+
+```csharp
+panel.OutputHistory.Add($"User: {userMessage}");
+
+// Consume the draft immediately so the input box clears and the same
+// text cannot be re-sent by pressing Enter again (e.g. when the
+// request later fails). The user can always re-type to retry.
+panel.DraftInput = string.Empty;
+
+var result = await _executionService.ExecuteAsync(userMessage, ct).ConfigureAwait(false);
+```
+
+Updated tests in `tests/Zaide.Tests/ViewModels/AgentExecutionCoordinatorTests.cs`:
+- `SendAsync_Failure_DoesNotClearDraftInput` → `SendAsync_Failure_ClearsDraftInput` (asserts draft is empty after failure).
+- `SendAsync_MissingApiKey_AppendsErrorToOutput` now asserts the draft is cleared.
+- Added regression test `SendAsync_RepeatedEnter_ClearsDraftEachTime_NoDuplicateSend` simulating
+  typing `hi` and pressing Enter 3 times; asserts the draft is empty after each send and exactly
+  one `User: hi` entry exists per Enter (no duplicates from a lingering draft).
+
+### Verification
+
+- `dotnet test Zaide.slnx --no-build` → 723 passed, 0 failed (was 722 before the added regression test)
+
+### Status
+
+- [x] Fix implemented and verified by build/test
+- [x] Covered by `SendAsync_Failure_ClearsDraftInput` and `SendAsync_RepeatedEnter_ClearsDraftEachTime_NoDuplicateSend`
+- [ ] Manual smoke test pending (visual confirmation input box empties on send, including failed send)
