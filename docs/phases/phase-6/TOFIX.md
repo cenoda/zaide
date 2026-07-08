@@ -188,3 +188,77 @@ Updated tests in `tests/Zaide.Tests/Views/TownhallInputAreaTests.cs`:
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `InputField_AcceptsReturn_IsFalse` and `ShiftEnterKey_InsertsNewlineAtCaret`
 - [ ] Manual smoke test pending (visual confirmation Enter sends, Shift+Enter inserts newline)
+
+---
+
+## Issue: Townhall Channel Highlight Stuck on #townhall-main
+
+During Phase 6 smoke testing, clicking a different channel in the sidebar did not update the
+highlight — `#townhall-main` remained visually active and the input placeholder always said
+"Message #townhall-main". The sending logic and backend routing were correct; only the UI
+display was broken.
+
+### Root Cause
+
+`TownhallViewModel.ActiveChannelId` property setter never called
+`this.RaisePropertyChanged(nameof(ActiveChannelId))`. The `WhenAnyValue(x => x.ActiveChannelId)`
+subscription in `TownhallView` never fired after a channel click, so `_channelPanel.SetChannels()`
+was never called to re-render the channel list with updated `IsActive` flags.
+
+Additionally, the input area placeholder depended on the same stale `ActiveChannelId` value.
+
+### Fix Applied
+
+In `src/ViewModels/TownhallViewModel.cs`, added `this.RaisePropertyChanged(nameof(ActiveChannelId))`
+after `_state.ActiveChannelId = value` in the setter:
+
+```csharp
+_state.ActiveChannelId = value;
+this.RaisePropertyChanged(nameof(ActiveChannelId));
+```
+
+### Verification
+
+- `dotnet build src/Zaide.csproj` → 0 warnings, 0 errors
+- `dotnet test` → 724 passed, 0 failed
+
+### Status
+
+- [x] Fix implemented and verified by build/test
+- [x] Manual smoke test pending (visual confirmation of channel highlight switching)
+
+---
+
+## Issue: Townhall Chat Input Width Resizes With Placeholder Text
+
+During Phase 6 smoke testing, the Townhall chat input field's width changed depending on the
+placeholder text. After switching to `#ai-status`, the placeholder "Message #ai-status" caused
+the TextBox to shrink because the DockPanel layout was wrong.
+
+### Root Cause
+
+In `TownhallInputArea`, the DockPanel had children ordered as `[attachButton, _inputField,
+_sendButton]`. In a DockPanel, the **last child fills remaining space**, so `_sendButton`
+(Width=32) was being stretched to fill width instead of `_inputField`. The TextBox only took
+its measured content width (driven by placeholder text), causing the visual width to change
+with placeholder length.
+
+### Fix Applied
+
+In `src/Views/TownhallInputArea.cs`, reordered children so `_inputField` is last:
+
+```csharp
+inputRow.Children.Add(attachButton);
+inputRow.Children.Add(_sendButton);
+inputRow.Children.Add(_inputField);  // last = fills remaining space
+```
+
+### Verification
+
+- `dotnet build src/Zaide.csproj` → 0 warnings, 0 errors
+- `dotnet test` → 724 passed, 0 failed
+
+### Status
+
+- [x] Fix implemented and verified by build/test
+- [ ] Manual smoke test pending (visual confirmation input width is stable across channel switches)

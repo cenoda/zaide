@@ -106,7 +106,10 @@ public class TownhallInputArea : Panel
             Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0)
         };
 
-        // Layout: [+ button] [input field (fills)] [send button]
+        // Layout: [+ button] [send button] [input field (fills)]
+        // DockPanel: the LAST child always fills remaining space.
+        // Input field must be last so it stretches to fill; send button
+        // gets Dock.Right to stay at a fixed button width.
         var inputRow = new DockPanel
         {
             VerticalAlignment = VerticalAlignment.Center
@@ -116,8 +119,8 @@ public class TownhallInputArea : Panel
         DockPanel.SetDock(_sendButton, Dock.Right);
 
         inputRow.Children.Add(attachButton);
-        inputRow.Children.Add(_inputField);
         inputRow.Children.Add(_sendButton);
+        inputRow.Children.Add(_inputField);
 
         var hintLabel = TextStyles.Caption("⏎ to send · ⇧⏎ for newline");
         hintLabel.Margin = LayoutTokens.Inset(

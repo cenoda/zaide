@@ -105,7 +105,8 @@ public class TownhallView : Panel, IDisposable
 
         _inputArea = new TownhallInputArea
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
+            VerticalAlignment = VerticalAlignment.Bottom
         };
 
         // Segmented filter toggle (All / Chat / Activity) - placed above chat panel per M3
@@ -127,7 +128,7 @@ public class TownhallView : Panel, IDisposable
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        // Chat area: filter (auto) | chat messages (fills) | separator | input area (auto)
+        // Chat area: filter (auto) | chat messages (fills) | separator | input area (auto, grows with content up to MaxLines=5)
         var chatArea = new Grid
         {
             RowDefinitions =

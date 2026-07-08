@@ -113,6 +113,7 @@ public class TownhallViewModel : ReactiveObject
             }
 
             _state.ActiveChannelId = value;
+            this.RaisePropertyChanged(nameof(ActiveChannelId));
 
             // Log channel switch event to the *newly active* channel (only for actual switches, not initial activation)
             if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(oldActiveId))
