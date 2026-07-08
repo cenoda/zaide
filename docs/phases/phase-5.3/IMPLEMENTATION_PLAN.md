@@ -6,9 +6,9 @@
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
 - [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/Program.cs` and current service-registration seams
-- [ ] Decide the concrete request path for this slice: built-in `HttpClient` + manual JSON over a single OpenAI-compatible endpoint
-- [ ] Confirm where base URL, API key, and default model will come from before coding starts
-- [ ] Confirm no new library is required for the first request path
+- [x] Decide the concrete request path for this slice: built-in `HttpClient` + manual JSON over a single OpenAI-compatible endpoint
+- [x] Confirm where base URL, API key, and default model will come from before coding starts
+- [x] Confirm no new library is required for the first request path
 
 ## Scope
 
@@ -218,6 +218,140 @@ Recommended narrow path:
 
 This preserves the current MVVM boundary while keeping `MainWindow` code-behind
 out of execution ownership.
+
+## M0 Locked Decisions
+
+The following four M0 decisions are now explicitly recorded and locked. They
+govern the reactive-state path, the send-trigger path, the shell composition
+path, and the configuration source. Implementation in subsequent M1–M4
+milestones must conform to these decisions unless live-code evidence forces a
+revision — in which case this section must be updated first.
+
+### 1. Reactive-State Path
+
+**Decision:** Keep the slice narrow by making `AgentPanelState` reactive for
+coordinator-mutated scalar properties only. `OutputHistory` stays as
+`ObservableCollection<string>`.
+
+**Rationale:**
+- The live code binds `AgentPanelView` directly to `AgentPanelState` via
+  `ReactiveUserControl<AgentPanelState>`. Introducing a dedicated panel
+  ViewModel layer would widen Phase 5.3 unnecessarily.
+- `OutputHistory` already updates through `ObservableCollection<string>`, which
+  is sufficient for output rendering. No change needed there.
+- The coordinator-mutated scalar properties (`Status`, `DraftInput`) must
+  implement `INotifyPropertyChanged` or use `ReactiveObject` base to make
+  status-driven UI (busy/error/idle) and input enable/disable reliably
+  observable.
+- Making `AgentPanelState` extend `ReactiveObject` and converting `Status` /
+  `DraftInput` to reactive properties is the narrowest viable change.
+
+**Live-code verification:**
+- `src/Models/AgentPanelState.cs` — currently plain auto-properties for `Status`
+  and `DraftInput`. Needs `ReactiveObject` base + `RaiseAndSetIfChanged`.
+- `src/Views/AgentPanelView.cs` — already uses `ReactiveUserControl<AgentPanelState>`
+  with `OneWayBind`/`Bind` calls. The bindings will work once the model is
+  reactive.
+- `src/Views/AgentPanelHostView.cs` — constructs `AgentPanelView` per panel and
+  sets `ViewModel = panel`. No change needed to the host view.
+- No modifications to `AgentPanelHostView`, `MainWindowViewModel`, or
+  `MainWindow.axaml.cs` are required for this decision.
+
+### 2. Send-Trigger Path
+
+**Decision:** Use narrow Enter-to-send as the initial trigger because the
+current input already uses `AcceptsReturn = false`.
+
+**Rationale:**
+- `AgentPanelView._inputBox` already has `AcceptsReturn = false` (line 77 of
+  `AgentPanelView.cs`). This means pressing Enter in the input box currently
+  does nothing — it is a no-op key press.
+- Adding a `KeyDown` handler on the `TextBox` that detects `Key.Enter` and
+  forwards the send action into the coordinator seam is the narrowest viable
+  trigger.
+- A send button is deferred. If implementation reveals that Enter-to-send
+  creates a UX problem (e.g., users expect it to work but there is no visual
+  affordance), a send button can be added in M2 without changing this
+  decision — but it should remain additive only.
+- Execution logic must not live in the view event handler. The `KeyDown`
+  handler should call a method on a coordinator interface (or a delegating
+  command on `MainWindowViewModel`) rather than constructing HTTP requests
+  inside `AgentPanelView`.
+
+**Live-code verification:**
+- `src/Views/AgentPanelView.cs` — `_inputBox` has `AcceptsReturn = false` and
+  no `KeyDown` handler. The TextBox binding to `DraftInput` (line 112) is
+  two-way via `Bind`. An Enter handler can read `ViewModel.DraftInput`,
+  forward it, and clear it.
+- `src/Views/AgentPanelHostView.cs` — does not currently expose a send seam.
+  The send action will likely need to bubble up from `AgentPanelView` through
+  the host, or be wired via `MainWindow`. This is resolved by the shell
+  composition decision below.
+- No modifications to `AgentPanelHostView` are required for the trigger
+  itself — the `KeyDown` handler lives in `AgentPanelView`. The routing of the
+  send event up to the coordinator is covered by the composition decision.
+
+### 3. Shell Composition Path
+
+**Decision:** `MainWindow` remains a thin connector, `MainWindowViewModel`
+exposes only a thin delegating seam, and `AgentExecutionCoordinator` owns the
+actual execution/state logic.
+
+**Rationale:**
+- `MainWindow.axaml.cs` currently wires views to ViewModels in its
+  `WhenActivated` block. It should not own execution state or business logic.
+- `MainWindowViewModel` currently owns `AgentPanelHost` but has no
+  execution-related properties or commands. It needs a narrow delegating seam
+  (e.g., a `SendAgentMessageCommand` or `SendToAgent` method) that routes into
+  `AgentExecutionCoordinator`.
+- `AgentExecutionCoordinator` (to be implemented in M2/M3) composes
+  `IAgentPanelHost` and `IAgentExecutionService`. It owns per-panel lookup,
+  one-in-flight enforcement, state mutation, and output updates.
+- The view layer (`AgentPanelView` → `AgentPanelHostView` → `MainWindow`)
+  raises the send event. `MainWindow` forwards it to
+  `MainWindowViewModel.SendAgentMessageCommand`. The ViewModel delegates to
+  `AgentExecutionCoordinator`. The coordinator mutates the panel state. The
+  view reacts via bindings (reactive-state path, decision #1).
+
+**Live-code verification:**
+- `src/MainWindow.axaml.cs` — lines 84-230 contain the `WhenActivated` block.
+  No execution logic exists yet. The send wiring will be a thin addition here.
+- `src/ViewModels/MainWindowViewModel.cs` — has `IAgentPanelHost AgentPanelHost`
+  property (line 80). No send command exists yet. A `SendAgentMessageCommand`
+  delegating to the coordinator will be added.
+- `src/Program.cs` — DI registration will need `IAgentExecutionService`,
+  `AgentExecutionService`, `AgentExecutionOptions`, and
+  `AgentExecutionCoordinator` added, plus `HttpClient` registration.
+- `src/ViewModels/AgentExecutionCoordinator.cs` — not yet implemented. This
+  file will be created in M2/M3.
+
+### 4. M0 Configuration Decision
+
+**Decision:** Use `AGENT_API_URL`, `AGENT_API_KEY`, `AGENT_MODEL` from
+environment variables. Populate a narrow `AgentExecutionOptions` type in
+`Program.cs` during implementation.
+
+**Rationale:**
+- Secrets must not be hardcoded. Environment variables are the narrowest
+  configuration mechanism that keeps secrets out of the codebase and is
+  trivially testable (set env vars in test setup).
+- `AgentExecutionOptions` (to be created) will hold `BaseUrl`, `ApiKey`, and
+  `Model` as plain properties. It will be populated from environment variables
+  in `Program.cs` and injected into `AgentExecutionService`.
+- `AGENT_API_URL` defaults to `https://api.openai.com/v1`.
+- `AGENT_API_KEY` is required. Missing key produces an explicit visible failure
+  in the panel (Status = "Error", output entry describing the missing key).
+- `AGENT_MODEL` defaults to `gpt-4o-mini`.
+- No appsettings.json, no provider registry, no per-panel configuration in this
+  slice.
+
+**Live-code verification:**
+- `src/Program.cs` — lines 24-41 contain the DI container configuration. This
+  is where `AgentExecutionOptions` population and service registration will
+  be added.
+- No existing env-var reading infrastructure exists in `Program.cs`. The
+  implementation will read from `Environment.GetEnvironmentVariable` in a new
+  startup helper or inline in the container config lambda.
 
 ## Testing Practicality Note
 
