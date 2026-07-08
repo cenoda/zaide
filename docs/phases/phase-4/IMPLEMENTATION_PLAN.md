@@ -27,7 +27,7 @@ or persistence-heavy architecture work.
 |-----------|-------|--------|
 | [4.1](../phase-4.1/IMPLEMENTATION_PLAN.md) | Activity/event data model + agent-format decision | ✅ Complete (2026-07-08) |
 | [4.2](../phase-4.2/IMPLEMENTATION_PLAN.md) | Auto-logging + real session-state initialization | ✅ Complete (2026-07-08) |
-| [4.3](../phase-4.3/IMPLEMENTATION_PLAN.md) | Townhall activity history UI: rendering, filtering, scroll | ⬜ Draft (depends on 4.2) |
+| [4.3](../phase-4.3/IMPLEMENTATION_PLAN.md) | Townhall activity history UI: rendering, filtering, scroll | ✅ Complete (2026-07-08) |
 | [4.4](../phase-4.4/IMPLEMENTATION_PLAN.md) | Docs sync + exit audit for all of Phase 4 | ⬜ Draft (depends on 4.3) |
 
 ## Out of Scope (all sub-phases)

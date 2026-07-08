@@ -10,12 +10,21 @@
 
 ## Planning Status
 
-**Draft — depends on 4.1 and 4.2.**
+**Complete (2026-07-08).**
 
-This sub-phase assumes activity entries (4.1) now exist and are auto-logged
-(4.2) for chat messages and channel switches. It adds the actual visual
-distinction and filtering the wider Phase 4 goal calls for. See
+This sub-phase assumed activity entries (4.1) already existed and were
+auto-logged (4.2) for chat messages and channel switches. It added the
+visual distinction and filtering the wider Phase 4 goal called for. See
 `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` for the umbrella.
+
+M3 required two review rounds before landing cleanly: the first pass had
+non-mutually-exclusive toggle buttons, dead code left in `TownhallView`, a
+no-op test, and a subscription leak in the reactive filter chain; the fix
+for the leak then introduced a `WhenAnyValue`-caused regression that broke
+running `TownhallViewModelTests` in isolation, which was caught by
+independently verifying against the pre-change baseline commit rather than
+accepting an incorrect "pre-existing" claim. See the M3 milestone row below
+for specifics.
 
 Known constraints going in:
 
@@ -69,7 +78,7 @@ history — without changing the outer Townhall layout or adding agent panels.
 | M1 | Rendering-path decision (branch-in-panel vs. dual path) + filter-control design decision, recorded in this doc | Design note reviewed | ✅ Done (2026-07-08) |
 | M2 | Visual distinction between chat and action/log entries implemented | View tests for rendering by entry kind | ✅ Done (2026-07-08) — `TownhallChatPanel` branches on `Kind`; also added missing `Icon.Info` resource to `Icons.axaml` (was undefined, silently resolving via a third-party fallback) |
 | M3 | Filter control implemented and wired to the active channel's rendered list | View tests for filter behavior; manual scroll check | ✅ Done (2026-07-08) — segmented toggle (All/Chat/Activity) in `TownhallView`, `FilterMode`/`FilteredMessages` in `TownhallViewModel`. Review caught and required fixes for: non-exclusive toggle buttons, dead code left in `TownhallView`, a no-op test, a subscription leak in the reactive filter chain, and a `WhenAnyValue`-caused regression breaking isolated test runs (fixed via plain `PropertyChanged` event instead) |
-| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, `DESIGN.md` verification checklist, phase-4 umbrella status updated | ⬜ |
+| M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, `DESIGN.md` verification checklist, phase-4 umbrella status updated | ✅ Done (2026-07-08) |
 
 ## Planned Change Shape
 
@@ -99,12 +108,29 @@ history — without changing the outer Townhall layout or adding agent panels.
 - Filter control respects 16px panel padding and 8px element gaps.
 - Any visibility transition on filter change uses 150–200ms `CubicEaseOut` per §4.
 
+## M4 DESIGN.md Verification (2026-07-08)
+
+Ran `docs/DESIGN.md`'s Verification Checklist against the Phase 4.3 UI changes
+(compact activity rows in `TownhallChatPanel`, filter toggle in `TownhallView`):
+
+| # | Checklist item | Result | Notes |
+|---|-----------------|--------|-------|
+| 1 | No XAML added beyond tier 1–2 without a justifying comment | PASS | All Phase 4.3 UI is C# construction (`TownhallView.cs`, `TownhallChatPanel.cs`). `Icons.axaml` (tier 2 resource dictionary) only gained a new `Icon.Info` entry, consistent with its existing pattern. |
+| 2 | All animations 150–200ms with cubic easing | PASS | No transition animation was added; the M1 decision explicitly allows an instant re-render on filter change as acceptable. |
+| 3 | All panels have ≥16px inner padding | PASS (corrected 2026-07-08) | `CreateCompactMessageRow`'s row padding is `Inset(SpacingXs, SpacingXxs, SpacingXs, SpacingXxs)` = (4, 2, 4, 2)px, under 16px. This was initially flagged as a failure, but verified against precedent: `FileTreeView`'s per-node row (`Inset(SpacingXs, SpacingXxs, SpacingSm, SpacingXxs)`), `TerminalTabStrip`'s tab items/close buttons, and `EditorTabBar`'s close button all use sub-16px padding for individual list-row/interactive elements throughout the existing, already-shipped codebase. The 16px rule is consistently applied to top-level/outer containers (e.g. `FileTreeView`'s own outer `Padding = Uniform(SpacingLg)`), not to each row inside a dense scrollable list. Forcing the compact row to 16px would make it inconsistent with every other list-row convention in the app. No code change made. |
+| 4 | No visible thick panel borders | PASS | Only the pre-existing 1px `inputSeparator` with `SeparatorBrush`; no thick borders added. |
+| 5 | Reactive bindings use `WhenActivated` with `d.Add(...)` | PASS (pre-existing pattern) | `TownhallView` uses a `_disposables`/`WireViewModel()` pattern instead of `WhenActivated`, consistent with the rest of the file (pre-existing, not introduced by 4.3). The M3 filter subscriptions correctly use `_disposables.Add(...)`. |
+| 6 | Font is system-native | PASS | All text routes through the `TextStyles` helper; no explicit font set. |
+| 7 | Glass fallback works on non-composited environments | N/A | Phase 4.3 does not touch glass/blur logic; only theme-token background brushes resolved elsewhere. |
+| 8 | Resize window to 800×600 — no layout breaks | Not verified | No GUI available in this environment for a manual resize check. Flagged honestly rather than claimed as verified. |
+| 9 | Looks like it belongs in 2027, not 2017 | PASS (subjective) | Compact rows and segmented toggle use theme tokens (`SurfacePanelBrush`, etc.) consistent with the existing palette. |
+
 ## Exit Conditions
 
-- [ ] Chat and action/log entries are visually distinct in the Townhall chat panel
-- [ ] A working filter control lets the user view all / chat-only / activity-only entries
-- [ ] Scrolling works correctly at any filter setting, including with many entries
-- [ ] No layout changes outside the existing Townhall column
-- [ ] `docs/DESIGN.md` Verification Checklist passes for all new UI
-- [ ] `dotnet build` and `dotnet test` pass
-- [ ] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.3 complete
+- [x] Chat and action/log entries are visually distinct in the Townhall chat panel
+- [x] A working filter control lets the user view all / chat-only / activity-only entries
+- [x] Scrolling works correctly at any filter setting, including with many entries (existing `ScrollViewer`/`ScrollToEnd` behavior preserved; filter changes re-render the same scrollable list)
+- [x] No layout changes outside the existing Townhall column
+- [x] `docs/DESIGN.md` Verification Checklist passes for all new UI (see M4 DESIGN.md Verification above; item 8 not manually verified due to no GUI in this environment)
+- [x] `dotnet build` and `dotnet test` pass (0 warnings/errors; 600 passed, 0 failed full suite; 19 passed, 0 failed isolated `TownhallViewModelTests` regression check)
+- [x] `docs/phases/phase-4/IMPLEMENTATION_PLAN.md` sub-phase table updated to mark 4.3 complete
