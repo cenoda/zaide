@@ -5,7 +5,7 @@
 - [ ] Confirm `docs/phases/phase-5/IMPLEMENTATION_PLAN.md` is still the Phase 5 umbrella
 - [ ] Confirm `docs/phases/phase-5.1/IMPLEMENTATION_PLAN.md` is the current Phase 5.1 umbrella
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, `src/ViewModels/ITerminalHost.cs`, `src/ViewModels/TerminalHost.cs`, and `src/Program.cs`
 
 ## Live Baseline

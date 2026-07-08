@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 through 5.1.3 are complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `docs/DESIGN.md`
 - [ ] Re-confirm the Phase 5.1 composition seam that Phase 5.2 will render through
 
@@ -31,14 +31,15 @@
 
 ## Placement Decision
 
-For the first Phase 5 UI pass, treat this placement as the default unless live
+For the first Phase 5 UI pass, treat this placement as settled unless live
 implementation proves a concrete blocker:
 
 - Townhall stays in the center unchanged as the primary shared workspace.
-- The right-side surface remains the implementation area.
-- Agent panels are introduced as a controlled right-side adjunct through the
-  composition seam established in Phase 5.1, rather than as a new primary shell
-  column or a Townhall replacement.
+- No new top-level shell column is added.
+- Agent panels render inside the existing right-side shell column (`MainWindow`
+  column 5) through the composition seam established in Phase 5.1.
+- Phase 5.2 may split or compose inside that existing right column, but it must
+  not reopen the outer shell grid or treat Townhall as a replaceable surface.
 
 Phase 5.2 should not reopen whole-shell exploration.
 

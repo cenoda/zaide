@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 through 5.2 are complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/Program.cs` and current service-registration seams
 - [ ] Decide the concrete request path for this slice: built-in `HttpClient` + manual JSON over a single OpenAI-compatible endpoint
 - [ ] Confirm where base URL, API key, and default model will come from before coding starts

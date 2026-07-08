@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 through 5.4 are complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check the live code paths touched by Phase 5 rather than relying on prior plan wording
 
 ## Scope

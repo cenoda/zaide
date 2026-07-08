@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 is complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check the implemented single-panel types from Phase 5.1.1
 - [ ] Re-check `src/ViewModels/ITerminalHost.cs` and `src/ViewModels/TerminalHost.cs` as the live host-pattern precedent
 

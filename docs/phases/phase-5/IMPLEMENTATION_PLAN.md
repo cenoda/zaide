@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 4 is complete in live code/docs, not just roadmap wording
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, `src/ViewModels/TownhallViewModel.cs`, and `src/Program.cs` for the actual composition seams
 - [ ] Re-check `docs/DESIGN.md` before making shell-placement claims
 - [ ] Confirm the current shell can expose agent panels without rewriting the Townhall-centered layout
@@ -71,11 +71,15 @@ not in `MainWindow` code-behind and not as ad-hoc state directly inside
 ### 3. Shell reuse is mandatory
 
 Phase 5 must work within the current shell unless live implementation proves a
-concrete blocker. The default placement direction is:
+concrete blocker. The placement decision for the first implementation pass is:
 
-- Townhall unchanged in the center
-- right-side implementation area remains intact
-- agent panels appear through a controlled right-side adjunct/composition seam
+- Townhall remains unchanged in the center.
+- No new top-level shell column is added.
+- Agent panels are introduced inside the existing right-side column (`MainWindow`
+  column 5), through an internal composition seam owned by later Phase 5 work.
+- That means Phase 5.2 may split or compose within the existing right column,
+  but it must not reopen the outer shell grid or replace Townhall as the center
+  of gravity.
 
 Phase 5 is not permission to reopen whole-shell exploration.
 

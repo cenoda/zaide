@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 through 5.3 are complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/ViewModels/TownhallViewModel.cs` and the Phase 4 activity model
 - [ ] Re-confirm which direct-agent events must appear in Townhall and which do not belong there yet
 

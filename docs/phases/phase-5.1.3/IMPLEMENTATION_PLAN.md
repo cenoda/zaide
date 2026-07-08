@@ -4,7 +4,7 @@
 
 - [ ] Confirm Phase 5.1.1 and 5.1.2 are complete
 - [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx`
+- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Re-check `src/MainWindow.axaml.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `src/Program.cs`
 
 ## Scope
@@ -15,7 +15,7 @@
 
 - Inject host seam into `MainWindowViewModel`
 - Register the new seam in `Program.cs` if not already registered
-- Make the shell exposure point explicit enough that Phase 5.2 can build on it cleanly
+- Make the shell exposure point explicit enough that Phase 5.2 can build on it cleanly inside the existing right-side shell column
 - Close the Phase 5.1 docs and exit audit
 
 **Out of scope:**
@@ -37,7 +37,7 @@
 ## Limitations (by design)
 
 - This slice may expose the seam without any finished visual agent-panel surface yet
-- Shell placement may remain recorded as a composition decision rather than a final rendered layout until Phase 5.2
+- Shell placement may remain recorded as a composition decision rather than a final rendered layout until Phase 5.2, but the composition target is already fixed to the existing right-side shell column
 - No direct-agent execution path yet
 
 ## Exit Conditions
