@@ -68,7 +68,7 @@ history — without changing the outer Townhall layout or adding agent panels.
 | M0 | Entry gate and baseline verification | `dotnet build`, `dotnet test` | ✅ Done (2026-07-08) |
 | M1 | Rendering-path decision (branch-in-panel vs. dual path) + filter-control design decision, recorded in this doc | Design note reviewed | ✅ Done (2026-07-08) |
 | M2 | Visual distinction between chat and action/log entries implemented | View tests for rendering by entry kind | ✅ Done (2026-07-08) — `TownhallChatPanel` branches on `Kind`; also added missing `Icon.Info` resource to `Icons.axaml` (was undefined, silently resolving via a third-party fallback) |
-| M3 | Filter control implemented and wired to the active channel's rendered list | View tests for filter behavior; manual scroll check | ⬜ |
+| M3 | Filter control implemented and wired to the active channel's rendered list | View tests for filter behavior; manual scroll check | ✅ Done (2026-07-08) — segmented toggle (All/Chat/Activity) in `TownhallView`, `FilterMode`/`FilteredMessages` in `TownhallViewModel`. Review caught and required fixes for: non-exclusive toggle buttons, dead code left in `TownhallView`, a no-op test, a subscription leak in the reactive filter chain, and a `WhenAnyValue`-caused regression breaking isolated test runs (fixed via plain `PropertyChanged` event instead) |
 | M4 | Docs sync for this sub-phase + exit audit | `dotnet build`, `dotnet test`, `DESIGN.md` verification checklist, phase-4 umbrella status updated | ⬜ |
 
 ## Planned Change Shape
