@@ -47,7 +47,7 @@ This decision is locked for Phase 5.1.2 and later slices unless live implementat
 |-----------|-------------|------|--------|
 | M0 | Define the minimal host contract (`Panels`, `ActivePanel`, `CreatePanel`, `ActivatePanel`) | `IAgentPanelHost.cs` + build | Done |
 | M1 | Implement the host seam with panel collection ownership | `AgentPanelHost.cs` + host tests | Done |
-| M2 | Add active-panel selection/lifecycle behavior | Host tests + `dotnet test Zaide.slnx --no-build` | Done |
+| M2 | Add active-panel selection/lifecycle behavior including explicit same-panel no-op guard | Host tests + `dotnet test Zaide.slnx --no-build` | Done |
 
 ## Limitations (by design)
 
@@ -60,13 +60,13 @@ This decision is locked for Phase 5.1.2 and later slices unless live implementat
 
 - [x] A dedicated agent-panel host seam exists in code (`IAgentPanelHost` + `AgentPanelHost`)
 - [x] The host can represent multiple panels and an active panel
-- [x] Seeded panel collection and selection behavior are covered by tests (`AgentPanelHostTests` — 17 tests)
+- [x] Seeded panel collection and selection behavior are covered by tests (`AgentPanelHostTests` — 18 tests)
 - [x] `dotnet build Zaide.slnx` passes
 - [x] Focused host tests pass
 - [x] Build passes: 0 warnings, 0 errors
-- [x] Tests pass: 632 total (615 existing + 17 new), 0 failures
+- [x] Tests pass: 633 total (615 existing + 18 new), 0 failures
 - [x] No UI, execution, Townhall, routing, or persistence concerns introduced
-- [x] No DI registration or MainWindowViewModel changes made yet (scope: M1 only)
+- [x] No DI registration or MainWindowViewModel changes made yet (scope: M1+M2 only)
 - [x] Plan doc updated to reflect implemented state
 
 ## Rollback Plan

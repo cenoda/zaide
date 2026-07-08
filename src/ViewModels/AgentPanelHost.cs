@@ -64,6 +64,10 @@ public sealed class AgentPanelHost : IAgentPanelHost
         if (panel is null)
             return;
 
+        // Same-panel activation is a no-op.
+        if (panel == _activePanel)
+            return;
+
         _activePanel = panel;
     }
 }

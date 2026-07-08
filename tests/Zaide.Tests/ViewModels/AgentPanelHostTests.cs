@@ -187,6 +187,30 @@ public class AgentPanelHostTests
     }
 
     [Fact]
+    public void ActivatePanel_WithSamePanel_MultiPanel_IsNoOp()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+
+        // Switch to panel1
+        host.ActivatePanel(panel1.PanelId);
+        Assert.Same(panel1, host.ActivePanel);
+
+        // Same-panel activation: panel1 stays active
+        host.ActivatePanel(panel1.PanelId);
+        Assert.Same(panel1, host.ActivePanel);
+
+        // Switch to panel2
+        host.ActivatePanel(panel2.PanelId);
+        Assert.Same(panel2, host.ActivePanel);
+
+        // Same-panel activation: panel2 stays active
+        host.ActivatePanel(panel2.PanelId);
+        Assert.Same(panel2, host.ActivePanel);
+    }
+
+    [Fact]
     public void CreatePanel_AfterActivateNonExistent_StillWorks()
     {
         var host = CreateHost();
