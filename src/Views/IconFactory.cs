@@ -49,10 +49,17 @@ public static class IconFactory
             return new StreamGeometry();
         }
 
-        if (app.TryFindResource(resourceKey, app.ActualThemeVariant, out var value) &&
-            value is Geometry geometry)
+        try
         {
-            return geometry;
+            if (app.TryFindResource(resourceKey, ThemeVariant.Default, out var value) &&
+                value is Geometry geometry)
+            {
+                return geometry;
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            return new StreamGeometry();
         }
 
         throw new InvalidOperationException($"Icon resource '{resourceKey}' was not found.");

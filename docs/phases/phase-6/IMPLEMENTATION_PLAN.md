@@ -43,8 +43,10 @@ Verified against the current checkout on 2026-07-08:
 - `src/ViewModels/AgentPanelHost.cs` owns panel collection and active selection
   only; it has no routing, Townhall, or execution behavior.
 - `src/Views/AgentPanelHostView.cs` retains panel views correctly, but still
-  creates panels with placeholder identity values and has no cleanup/dispose
-  surface for future subscription growth.
+  creates panels with placeholder identity values. M5 added an explicit
+  `DetachHost()` cleanup path that detaches host-level and per-panel
+  subscriptions and releases retained views/tabs; `SetHost(...)` now rebinds
+  safely through it.
 - `src/ViewModels/TownhallViewModel.cs` remains the correct shared activity
   ledger seam for user-visible routing/debate history.
 - `src/ViewModels/AgentExecutionCoordinator.cs` is the right place for
@@ -412,7 +414,7 @@ types, host cleanup, or identity creation changes yet.
 | M2 | Add the tiny route request/result model and mention parsing seam | Focused parser/model tests |
 | M3 | Introduce the dedicated routing orchestration seam outside `MainWindowViewModel` and keep direct-send behavior working through delegation | Router/orchestration tests | ✅ Complete (M3) |
 | M4 | Add the first routed agent-to-agent flow and Townhall-visible routing/debate summary behavior | ViewModel/router/Townhall tests | ✅ Complete (M4) |
-| M5 | Add explicit cleanup for `AgentPanelHostView` subscriptions and verify routing-related view-host lifetime safety | View tests + focused lifetime assertions |
+| M5 | Add explicit cleanup for `AgentPanelHostView` subscriptions and verify routing-related view-host lifetime safety | View tests + focused lifetime assertions | ✅ Complete (M5) |
 | M6 | Docs sync, regression sweep, and manual smoke for direct send vs routed send behavior | `dotnet build`, `dotnet test`, manual smoke |
 
 ## Test Budget
@@ -476,7 +478,7 @@ Likely files to extend or add:
 - [x] Townhall remains the primary shared visibility surface for routing/debate activity
 - [x] `AgentExecutionCoordinator` remains free of Townhall and parsing policy
 - [x] No provider registry/platform abstraction was added
-- [ ] `AgentPanelHostView` has an explicit cleanup path for routing-related subscriptions
+- [x] `AgentPanelHostView` has an explicit cleanup path for routing-related subscriptions
 - [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
       match the implemented Phase 6 state
 - [x] Build succeeds: `dotnet build Zaide.slnx`

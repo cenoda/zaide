@@ -59,8 +59,6 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
     public AgentPanelView()
     {
-        var resources = Application.Current!.Resources;
-
         // --- Header: agent name + status ---
         _headerText = TextStyles.Header("");
         _headerText.VerticalAlignment = VerticalAlignment.Center;
@@ -78,7 +76,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
         var headerBorder = new Border
         {
-            Background = (IBrush?)resources["SurfaceBaseBrush"],
+            Background = ResolveBrush("SurfaceBaseBrush", "#121722"),
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Child = headerPanel
         };
@@ -123,7 +121,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
         var inputBorder = new Border
         {
-            Background = (IBrush?)resources["SurfaceBaseBrush"],
+            Background = ResolveBrush("SurfaceBaseBrush", "#121722"),
             BorderThickness = new Thickness(0),
             Child = _inputBox
         };
@@ -137,7 +135,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto }
             },
-            Background = (IBrush?)resources["SurfacePanelBrush"],
+            Background = ResolveBrush("SurfacePanelBrush", "#0B0F17"),
             Children = { headerBorder, _outputList, inputBorder }
         };
         Grid.SetRow(headerBorder, 0);
@@ -173,5 +171,21 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             return;
 
         SendRequested?.Invoke(panelId, message);
+    }
+
+    private static IBrush ResolveBrush(string resourceKey, string fallbackColor)
+    {
+        try
+        {
+            if (Application.Current?.Resources[resourceKey] is IBrush brush)
+                return brush;
+        }
+        catch (InvalidOperationException)
+        {
+            // Test hosts may construct views without a UI-thread-owned
+            // Application. Use the palette fallback in that case.
+        }
+
+        return new SolidColorBrush(Color.Parse(fallbackColor));
     }
 }

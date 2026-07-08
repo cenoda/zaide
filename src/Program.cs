@@ -51,6 +51,7 @@ class Program
                     });
                     services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
                     services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
+                    services.AddSingleton<MentionParser>();
                     services.AddSingleton<IAgentRouter, AgentRouter>();
                     services.AddSingleton(_ =>
                     {

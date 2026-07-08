@@ -23,6 +23,9 @@ namespace Zaide.Views;
 ///
 /// M2: Exposes <see cref="PanelSendRequested"/> event that bubbles from
 /// individual <see cref="AgentPanelView.SendRequested"/> events.
+///
+/// M5: Adds an explicit <see cref="DetachHost"/> cleanup path that detaches
+/// host-level and per-panel subscriptions and releases retained views/tabs.
 /// </summary>
 public sealed class AgentPanelHostView : UserControl
 {
@@ -42,6 +45,18 @@ public sealed class AgentPanelHostView : UserControl
     /// Payload is (panelId, messageText).
     /// </summary>
     public event Action<string, string>? PanelSendRequested;
+
+    /// <summary>
+    /// Read-only view of the retained panel-view cache. One entry per bound
+    /// <see cref="AgentPanelState"/>. Exposed for lifetime/cleanup verification.
+    /// </summary>
+    public IReadOnlyDictionary<AgentPanelState, AgentPanelView> Panels => _panels;
+
+    /// <summary>
+    /// Read-only view of the retained tab-border cache. One entry per bound
+    /// <see cref="AgentPanelState"/>. Exposed for lifetime/cleanup verification.
+    /// </summary>
+    public IReadOnlyDictionary<AgentPanelState, Border> TabItems => _tabItems;
 
     public AgentPanelHostView()
     {
@@ -106,29 +121,13 @@ public sealed class AgentPanelHostView : UserControl
 
     /// <summary>
     /// Binds the view to an <see cref="IAgentPanelHost"/>. Replaces any prior
-    /// binding.
+    /// binding by first detaching it through <see cref="DetachHost"/>.
     /// </summary>
     public void SetHost(IAgentPanelHost host)
     {
-        if (_host is not null)
-        {
-            _host.Panels.CollectionChanged -= OnPanelsChanged;
-        }
-        if (_host is INotifyPropertyChanged oldNotify)
-        {
-            oldNotify.PropertyChanged -= OnHostPropertyChanged;
-        }
-
-        // Detach existing panels
-        foreach (var panel in _panels.Values)
-        {
-            panel.ViewModel = null;
-        }
-        _panels.Clear();
-        _tabItems.Clear();
-        _tabsPanel.Children.Clear();
-        _content.Content = null;
-        _activePanel = null;
+        // Detach any prior binding (host subscriptions, per-panel send
+        // subscriptions, and retained references) before rebinding.
+        DetachHost();
 
         _host = host;
 
@@ -148,6 +147,41 @@ public sealed class AgentPanelHostView : UserControl
         {
             hostNotify.PropertyChanged += OnHostPropertyChanged;
         }
+    }
+
+    /// <summary>
+    /// Detaches all host-level and per-panel subscriptions and releases the
+    /// retained view/tab references. Safe to call multiple times and safe
+    /// whether the host currently has zero, one, or many panels.
+    ///
+    /// Called by <see cref="SetHost"/> before rebinding to a new host, and by
+    /// the window's activation disposables on view teardown.
+    /// </summary>
+    public void DetachHost()
+    {
+        if (_host is not null)
+        {
+            _host.Panels.CollectionChanged -= OnPanelsChanged;
+        }
+        if (_host is INotifyPropertyChanged hostNotify)
+        {
+            hostNotify.PropertyChanged -= OnHostPropertyChanged;
+        }
+        _host = null;
+
+        _newPanelButton.Click -= OnNewPanelClick;
+
+        // Detach per-panel send subscriptions and release retained views.
+        foreach (var view in _panels.Values)
+        {
+            view.SendRequested -= OnPanelViewSendRequested;
+            view.ViewModel = null;
+        }
+        _panels.Clear();
+        _tabItems.Clear();
+        _tabsPanel.Children.Clear();
+        _content.Content = null;
+        _activePanel = null;
     }
 
     private void OnNewPanelClick(object? sender, RoutedEventArgs e)

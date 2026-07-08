@@ -187,7 +187,7 @@ public class TownhallInputArea : Panel
     private static Control CreateIconOrFallback(string resourceKey, string fallbackText, IBrush foreground, double size)
     {
         if (Application.Current is { } app &&
-            app.TryFindResource(resourceKey, app.ActualThemeVariant, out _))
+            app.TryFindResource(resourceKey, ThemeVariant.Default, out _))
         {
             return IconFactory.Create(resourceKey, foreground, size);
         }

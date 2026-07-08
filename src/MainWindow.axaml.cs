@@ -99,6 +99,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire the agent-panel host view to IAgentPanelHost
             _agentPanelHostView.SetHost(ViewModel!.AgentPanelHost);
 
+            // M5: explicit cleanup path — detach host/panel subscriptions and
+            // release retained views when the window deactivates.
+            disposables.Add(Disposable.Create(() => _agentPanelHostView.DetachHost()));
+
             // M2: Wire panel send event through the thin composition seam
             void OnPanelSendRequested(string panelId, string message)
             {
