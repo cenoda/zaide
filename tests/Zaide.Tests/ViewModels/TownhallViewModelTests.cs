@@ -606,4 +606,36 @@ public class TownhallViewModelTests
         using var sub2 = vm.FilteredMessages.Subscribe(list => { after = list.Count; });
         Assert.Equal(beforeSend + 1, after);
     }
+
+    /// <summary>
+    /// Reproduces the Phase 6 smoke-test bug: a mirrored activity added to the
+    /// active channel (e.g. an agent-panel send) must refresh FilteredMessages
+    /// without any channel switch or filter change. Previously the initial
+    /// active channel's CollectionChanged was never subscribed, so the chat
+    /// panel only updated after the user switched a tab/filter.
+    /// </summary>
+    [Fact]
+    public void MirroredActivity_UpdatesFilteredMessages_WithoutTabOrFilterChange()
+    {
+        var vm = CreateViewModel();
+
+        IReadOnlyList<TownhallMessage>? latest = null;
+        using var sub = vm.FilteredMessages.Subscribe(list => latest = list);
+
+        Assert.NotNull(latest);
+        var beforeCount = latest!.Count;
+
+        // Mirror an activity exactly as MainWindowViewModel.SendAgentMessageAsync does
+        // for an agent-panel send — no channel switch, no filter change.
+        vm.AddMirroredActivity(
+            kind: TownhallMessageKind.Chat,
+            content: "Hello from agent panel",
+            senderId: "user-1",
+            senderName: "User");
+
+        Assert.NotNull(latest);
+        Assert.Equal(beforeCount + 1, latest!.Count);
+        Assert.Contains(latest, m => m.Content == "Hello from agent panel");
+    }
+
 }

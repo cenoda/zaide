@@ -181,9 +181,21 @@ public class TownhallViewModel : ReactiveObject
         var filterModeChanged = propertyChanged
             .Where(name => name == nameof(FilterMode))
             .Select(_ => Unit.Default);
-        var messagesContentChanged = propertyChanged
+        // Seed with the current Messages collection (evaluated lazily at
+        // subscription time via Defer) so its CollectionChanged is subscribed
+        // immediately. InitializeSessionState() sets Messages to the active
+        // channel's collection before this observable exists, so without this
+        // seed the initial collection never gets a live CollectionChanged
+        // subscription — mirrored activity (e.g. agent-panel sends) would not
+        // refresh the chat panel until a channel switch or filter change.
+        // Defer (not a plain eager seed) is required so the seed reflects the
+        // *current* Messages at subscribe time, not the value captured when the
+        // observable chain was constructed.
+        var messagesSeed = Observable.Defer(() => Observable.Return(Messages ?? new ObservableCollection<TownhallMessage>()));
+        var messagesRefChanged = propertyChanged
             .Where(name => name == nameof(Messages))
-            .Select(_ => Messages ?? new ObservableCollection<TownhallMessage>())
+            .Select(_ => Messages ?? new ObservableCollection<TownhallMessage>());
+        var messagesContentChanged = Observable.Merge(messagesSeed, messagesRefChanged)
             .DistinctUntilChanged()
             .Select(m => Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
                     h => m.CollectionChanged += h,
