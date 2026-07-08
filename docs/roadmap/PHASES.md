@@ -163,10 +163,19 @@ M7 regression sweep + doc sync complete:
 - No new behavior; polish only.
 
 ## Phase 6: Agent-to-Agent Router
-- [ ] @mention syntax parsing
-- [ ] Route messages between agent panels
-- [ ] Agent A can request review from Agent B
-- [ ] Debate model: disagreements surfaced in Townhall
+- [x] @mention syntax parsing (narrow: zero or one `@AgentName`, case-insensitive exact match; `MentionParser`)
+- [x] Route messages between agent panels (mechanical: routed content executes on the resolved target panel via `AgentRouter`)
+- [x] Agent A can request review from Agent B (via `@mention` routed send to another visible panel)
+- [ ] Debate model: disagreements surfaced in Townhall — **not implemented as a specialized feature**; Townhall mirrors generic chat/error entries only (see plan Known Gaps)
+
+**Implemented with documented limitations (M6 closeout, 2026-07-08).** The
+routing seam, stable agent identity, mention parser, and `AgentPanelHostView`
+cleanup are in place and covered by automated tests. Two honest gaps remain:
+unknown/ambiguous mention failures are detected but not surfaced as a *visible*
+Townhall/panel error, and routed responses land in the target panel but are not
+mirrored into Townhall. These are recorded in
+`docs/phases/phase-6/IMPLEMENTATION_PLAN.md` (Known Gaps) and are not silently
+smoothed over. Manual smoke was not run during M6; only build + automated tests.
 
 ## Phase 7: Git Integration
 - [ ] Git status in left sidebar
@@ -187,8 +196,8 @@ M7 regression sweep + doc sync complete:
 | 4 | Phase 3 terminal UI normalization complete |
 | 5 | Phase 4 Townhall activity model works as a real shared workspace |
 | 6 | Phase 5 agent panels render and accept input, support one minimal real direct-execution path, and keep Townhall truthful for direct-agent interactions |
-| 7 | Phase 6 agent routing works |
+| 7 | Phase 6 agent routing works (mechanical routing + identity + parser shipped; routing-visibility gaps tracked in the Phase 6 plan) |
 
 ---
 
-*Last updated: 2026-07-08 (Phase 5 closed via 5.5 audit)*
+*Last updated: 2026-07-08 (Phase 6 closed via M6 audit; routing-visibility gaps documented)*

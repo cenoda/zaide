@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 5 complete — dedicated agent panels render in the right column, support direct input/execution, and mirror activity into Townhall while keeping it primary.
+**Status:** Phase 6 implemented (with documented limitations) — dedicated agent panels render in the right column, support direct input/execution, and mirror activity into Townhall; a narrow `@mention` agent-to-agent router routes requests to other visible panels. Two honest gaps remain (unknown-mention visible failure and routed-flow Townhall surfacing); see `docs/phases/phase-6/IMPLEMENTATION_PLAN.md`.
 
 ## Philosophy
 
@@ -87,7 +87,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Phase 3.9.1: Terminal tabs | 3.9.1 | ✅ Done |
 | Phase 4: Agent workspace foundations | 4 | ✅ Done |
 | Agent panels | 5 | ✅ Done |
-| Agent-to-agent routing | 6 | ⏳ Planned |
+| Agent-to-agent routing | 6 | 🟡 Implemented (with documented limitations) |
 | Git integration | 7 | ⏳ Planned |
 
 ## Completed Refactors
@@ -127,7 +127,7 @@ Cleaned up layer boundaries within the single-project structure:
 The next stages build on the Phase 4 Townhall activity surface:
 
 - **Agent panels** — individual UIs for each agent (Phase 5 complete: render + direct input + one minimal execution path + Townhall mirroring)
-- **@mention routing** — agents can request review from each other
+- **@mention routing** — agents can request review from each other (Phase 6 implemented with documented limitations; routed-flow Townhall surfacing and visible unknown-mention failure are tracked gaps)
 - **Git integration** — status, diff, and commits from the sidebar
 - **Editor** — still visible and powerful, but framed as the implementation surface
 

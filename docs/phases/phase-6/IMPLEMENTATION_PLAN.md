@@ -11,50 +11,60 @@
 - [x] Confirm new panel creation still uses generic identity values in `AgentPanelHostView`
 - [x] Confirm Townhall remains the shared activity ledger and Phase 6 should route visibility through Townhall rather than new shell chrome
 
-## Planning Status
+## Implementation Status
 
-**Planned (2026-07-08).**
+**Implemented with documented limitations (closed 2026-07-08 via M6).**
 
-This document defines the first implementation plan for Phase 6 based on the
-live Phase 5 checkout and the routing direction captured in
-`docs/refactor/refactor-5/TEMPORAL_REPORT.md`.
+This plan was written against the live Phase 5 checkout on 2026-07-08 and was
+implemented across M0–M5. M6 is the doc-sync and regression-sweep milestone.
 
-The current Phase 5 implementation is a viable base for routing, but it still
-has four important constraints that this plan must respect:
+The Phase 5 base proved viable for routing. The four constraints the plan had
+to respect were handled as follows (verified against live code at M6 closeout):
 
-- `AgentPanelHostView` still creates new panels with generic identity values
-  (`agent`, `Agent`, `Icon.Avatar`)
-- `MainWindowViewModel.SendAgentMessageAsync(...)` is currently the direct
-  app-layer composition seam for panel sends and Townhall mirroring
-- `AgentExecutionCoordinator` intentionally knows nothing about Townhall or routing
-- `AgentExecutionService` is still a tiny single-provider execution path and
-  must not be widened into a provider platform during the first routing slice
+- `AgentPanelHostView` no longer creates generic identity panels — `AgentPanelHost.CreatePanel()`
+  now seeds stable, distinguishable identities (`alpha/Alpha`, `beta/Beta`, …) and
+  falls back to `agent-N` naming once the seed list is exhausted.
+- `MainWindowViewModel.SendAgentMessageAsync(...)` remains a thin delegating seam: it
+  mirrors the user request into Townhall, delegates to `IAgentRouter`, then mirrors the
+  source panel's post-execution state. It does **not** own routing policy.
+- `AgentExecutionCoordinator` still knows nothing about Townhall or routing.
+- `AgentExecutionService` is still the single-provider, non-streaming path; no
+  provider/platform abstraction was added.
 
-## Live Baseline
+See **Exit Conditions** and **Limitations (by design)** for what is and is not
+truthfully shipped in M6.
 
-Verified against the current checkout on 2026-07-08:
+## Live Baseline (as implemented at M6 closeout)
+
+Verified against the live checkout at `42063fb` on 2026-07-08:
 
 - `docs/roadmap/PHASES.md` defines Phase 6 as agent-to-agent routing and keeps
-  Git integration in Phase 7.
-- `docs/architecture/OVERVIEW.md` still treats Agent Panels as Phase 5 and
-  Agent Router as the next planned layer.
-- `src/ViewModels/MainWindowViewModel.cs` already owns the app-level
-  send-orchestration seam for direct panel interaction and Townhall mirroring.
+  Git integration in Phase 7. At M6 it is marked implemented with limitations.
+- `docs/architecture/OVERVIEW.md` previously listed Agent Router as a planned
+  Phase 6 layer; at M6 it is updated to reflect the implemented seam.
+- `src/ViewModels/MainWindowViewModel.cs` owns the thin app-level send seam:
+  mirrors the user request into Townhall, delegates to `IAgentRouter`
+  (`AgentRouter.RouteAndExecuteAsync`), then mirrors the source panel's outcome.
+  It does **not** own mention parsing, target resolution, or route policy.
 - `src/ViewModels/AgentPanelHost.cs` owns panel collection and active selection
-  only; it has no routing, Townhall, or execution behavior.
-- `src/Views/AgentPanelHostView.cs` retains panel views correctly, but still
-  creates panels with placeholder identity values. M5 added an explicit
+  only; `CreatePanel()` seeds stable identities and falls back to `agent-N`.
+- `src/Views/AgentPanelHostView.cs` retains panel views and has an explicit
   `DetachHost()` cleanup path that detaches host-level and per-panel
-  subscriptions and releases retained views/tabs; `SetHost(...)` now rebinds
-  safely through it.
-- `src/ViewModels/TownhallViewModel.cs` remains the correct shared activity
-  ledger seam for user-visible routing/debate history.
-- `src/ViewModels/AgentExecutionCoordinator.cs` is the right place for
-  per-panel execution state, but not for route parsing, Townhall policy, or
-  router ownership.
-- `src/Models/AgentPanelState.cs` contains stable panel identity fields
-  (`PanelId`, `AgentId`, `AgentName`, `AvatarResourceKey`) but no route request,
-  route result, or debate-thread state.
+  subscriptions and releases retained views/tabs; `SetHost(...)` rebinds safely
+  through it. It does not reference routing, execution, or Townhall types.
+- `src/Services/MentionParser.cs` is the narrow deterministic mention parser
+  (zero or one `@AgentName`, case-insensitive exact match against visible
+  `AgentName`, mention stripped on success, explicit failure otherwise).
+- `src/Models/RouteRequest.cs` / `src/Models/RouteResult.cs` are the narrow
+  route request/result records used by the parser and router.
+- `src/ViewModels/AgentRouter.cs` is the dedicated routing orchestration seam
+  outside `MainWindowViewModel`. It parses, decides direct vs routed, resolves
+  the target panel by `AgentName`, and invokes `IAgentExecutionCoordinator`.
+- `src/ViewModels/TownhallViewModel.cs` remains the shared activity ledger.
+- `src/ViewModels/AgentExecutionCoordinator.cs` still owns only per-panel
+  execution state and output history; no Townhall or parsing logic.
+- `src/Models/AgentPanelState.cs` still has stable identity fields and no route
+  or debate-thread state.
 
 ## Scope
 
@@ -415,7 +425,7 @@ types, host cleanup, or identity creation changes yet.
 | M3 | Introduce the dedicated routing orchestration seam outside `MainWindowViewModel` and keep direct-send behavior working through delegation | Router/orchestration tests | ✅ Complete (M3) |
 | M4 | Add the first routed agent-to-agent flow and Townhall-visible routing/debate summary behavior | ViewModel/router/Townhall tests | ✅ Complete (M4) |
 | M5 | Add explicit cleanup for `AgentPanelHostView` subscriptions and verify routing-related view-host lifetime safety | View tests + focused lifetime assertions | ✅ Complete (M5) |
-| M6 | Docs sync, regression sweep, and manual smoke for direct send vs routed send behavior | `dotnet build`, `dotnet test`, manual smoke |
+| M6 | Docs sync, regression sweep, and honest status closeout for direct send vs routed send behavior | `dotnet build`, `dotnet test`, doc truth-sync | ✅ Complete (M6) |
 
 ## Test Budget
 
@@ -464,35 +474,89 @@ Likely files to extend or add:
 - Routed execution still uses the existing single OpenAI-compatible,
   non-streaming request path
 
+## Known Gaps At M6 Closeout (honest caveats — not smoothed away)
+
+These are real limitations in the shipped M0–M5 behavior. They are recorded
+here rather than hidden; none of them were fixed in M6 because M6 is doc-sync
+and regression verification only.
+
+- **Unknown/ambiguous/multi-mention failures are detected but not surfaced as a
+  visible error.** `MentionParser` returns an explicit `RouteResult` failure and
+  `AgentRouter` does not fall back to direct send, so no wrong-target execution
+  happens. However, `MainWindowViewModel.SendAgentMessageAsync` discards the
+  returned `RouteResult` (`_ = ...` in `MainWindow.axaml.cs`), and the thin seam
+  only mirrors the source panel's post-execution `OutputHistory`. A failed route
+  therefore leaves the source panel untouched and emits **no** dedicated
+  Townhall error/agent-failure entry. The user's raw text is still mirrored into
+  Townhall as a normal user chat line, but there is no visible "routing failed"
+  signal. This means exit condition "unknown mention targets produce explicit
+  *visible* failure behavior" is **not** satisfied by the live code.
+- **Routed responses are not surfaced in Townhall.** For a routed send,
+  `AgentRouter` executes the (stripped) content on the *target* panel, but
+  `MainWindowViewModel.SendAgentMessageAsync` mirrors only the *source* panel's
+  `OutputHistory` afterward. The source panel is unchanged by a routed send, so
+  no assistant/agent response is mirrored into Townhall for the routed flow.
+  Routing is therefore visible to the target panel locally, but not as a distinct
+  Townhall routing/review event. "Townhall remains the primary shared visibility
+  surface for routing/debate activity" is **only** satisfied for direct send
+  today.
+- **No dedicated `AgentRouter` orchestration test file exists.** The plan's
+  Test Budget listed `tests/Zaide.Tests/ViewModels/` router/orchestration tests
+  and `tests/Zaide.Tests/Models/` route request/result tests. Neither file was
+  added. The router's `RouteAndExecuteAsync` path is only covered indirectly via
+  `MentionParserTests` (parse logic) and `MainWindowViewModelTests` (direct-send
+  mirroring). Routed-send execution and its Townhall behavior are **not** covered
+  by a focused unit test.
+- **No specialized debate/disagreement surfacing in Townhall.** Phase 6 routes
+  content to a target panel and mirrors generic chat/error entries, but does not
+  emit a distinct "agent A requested review from agent B" or "disagreement"
+  Townhall entry. The `docs/roadmap/PHASES.md` "Debate model: disagreements
+  surfaced in Townhall" item is **not** implemented as a specialized feature.
+
 ## Exit Conditions
+
+Met conditions (verified against live code at `42063fb`):
 
 - [x] `M0` locked decisions are recorded with live-code evidence before `M1`
       implementation begins
 - [x] New agent panels receive stable, distinguishable identities suitable for routing
-- [x] A narrow route parsing/result model exists and is covered by tests
+- [x] A narrow route parsing/result model exists (covered indirectly: parsing is
+      unit-tested in `MentionParserTests`; the records are exercised via
+      `MainWindowViewModelTests` — see Known Gaps for test-coverage caveat)
 - [x] A dedicated routing orchestration seam exists outside `MainWindowViewModel` (M3)
 - [x] Direct-send behavior still works when no mention target is present (M3 verified)
 - [x] A routed send can target another visible agent panel via the locked
-      mention syntax
-- [x] Unknown mention targets produce explicit visible failure behavior
-- [x] Townhall remains the primary shared visibility surface for routing/debate activity
+      mention syntax (mechanically: `AgentRouter` resolves and executes on the target panel)
 - [x] `AgentExecutionCoordinator` remains free of Townhall and parsing policy
 - [x] No provider registry/platform abstraction was added
 - [x] `AgentPanelHostView` has an explicit cleanup path for routing-related subscriptions
-- [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
-      match the implemented Phase 6 state
-- [x] Build succeeds: `dotnet build Zaide.slnx`
-- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Manual smoke covers direct send, routed send, unknown mention, Townhall
-      visibility, and panel-switch behavior
+- [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
+      now match the implemented Phase 6 state (M6)
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore` (0 warnings, 0 errors)
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build` (721 passed, 0 failed)
+
+Not met by live code at M6 (see Known Gaps):
+
+- [ ] Unknown mention targets produce *explicit visible* failure behavior — the
+      failure is detected (no silent fallback) but not surfaced as a visible
+      Townhall/panel error in the current thin seam
+- [ ] Townhall visibility of the *routed* flow — only direct send is mirrored
+      today; routed responses land in the target panel but not in Townhall
+- [ ] Manual smoke (direct send, routed send, unknown mention, Townhall
+      visibility, panel-switch) was **not run** during M6; only build + automated
+      tests were executed
 
 ## Exact Next Step
 
-Start with `M0` only: lock the identity policy, mention syntax, unknown-target
-behavior, mention-stripping rule, router ownership seam, and `M0-only`
-implementation boundary against the live code before implementing any routing
-behavior.
+Phase 6 is closed for M6 doc-sync/regression purposes, but two real routing
+visibility gaps remain (unknown-mention visible failure, and routed-flow Townhall
+surfacing). The next phase after Phase 6 is **Phase 7: Git Integration**
+(`git` status in the left sidebar, basic diff view, commit from the IDE, branch
+display). If the team wants the routing visibility gaps closed first, that work
+belongs in a Phase 6 follow-up (a Phase 6.1 seam that consumes `RouteResult` and
+mirrors routed/debate events into Townhall), not in Phase 7.
 
 ## Rollback Plan
 
-- Commit hash to revert to: TBD when implementation begins
+- Commit hash to revert to: `42063fb` (last Phase 6 implementation commit:
+  `feat: add DetachHost cleanup path and register MentionParser`)

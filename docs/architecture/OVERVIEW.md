@@ -87,7 +87,7 @@ The current app contains the visual shell for the future agent workspace:
 | Layer | Phase | Description |
 |-------|-------|-------------|
 | Agent Panels | 5 | Dedicated agent surfaces when specialized views are needed |
-| Agent Router | 6 | @mention routing between agents |
+| Agent Router | 6 | @mention routing between agents — **implemented** (M6 closeout, 2026-07-08); routed content resolves and executes on the target panel; routing-visibility gaps documented in the Phase 6 plan |
 | Git Integration | 7 | Real git operations (branching, staging, committing with actual repo) |
 
 Zaide should still work without full agent infrastructure. The current layout
