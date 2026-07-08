@@ -1,25 +1,28 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.ViewModels;
 
 namespace Zaide.ViewModels;
-
 /// <summary>
-/// M3 implementation of the narrow routing orchestration seam.
+/// M4 implementation of the narrow routing orchestration seam.
 /// Composes MentionParser + IAgentPanelHost (for resolution) + IAgentExecutionCoordinator.
-/// Keeps direct-send behavior via delegation for no-mention case.
-/// Does not own Townhall policy or execution transport.
+/// Implements first real routed flow to target panel when mention present.
+/// Keeps direct-send behavior intact. No provider widening.
 /// </summary>
 public sealed class AgentRouter : IAgentRouter
 {
     private readonly MentionParser _parser;
+    private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _coordinator;
 
-    public AgentRouter(MentionParser parser, IAgentExecutionCoordinator coordinator)
+    public AgentRouter(MentionParser parser, IAgentPanelHost panelHost, IAgentExecutionCoordinator coordinator)
     {
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
     }
 
@@ -42,9 +45,10 @@ public sealed class AgentRouter : IAgentRouter
         }
         else
         {
-            // M3: routed intent resolved but execution delegation for direct only per scope lock.
-            // Routed execution path not expanded in M3.
-            await _coordinator.SendAsync(request.SourcePanelId, request.ContentAfterStrip, ct).ConfigureAwait(false);
+            // M4: first real routed agent-to-agent flow. Resolve target panel by AgentName.
+            var targetPanel = _panelHost.Panels.FirstOrDefault(p => p.AgentName == request.TargetAgentName);
+            var targetPanelId = targetPanel?.PanelId ?? request.SourcePanelId;
+            await _coordinator.SendAsync(targetPanelId, request.ContentAfterStrip, ct).ConfigureAwait(false);
         }
 
         return result;

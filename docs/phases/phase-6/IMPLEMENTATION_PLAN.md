@@ -411,7 +411,7 @@ types, host cleanup, or identity creation changes yet.
 | M1 | Normalize agent identity and panel creation so new panels are distinguishable and routing-safe | Model/host/view tests for stable identity creation |
 | M2 | Add the tiny route request/result model and mention parsing seam | Focused parser/model tests |
 | M3 | Introduce the dedicated routing orchestration seam outside `MainWindowViewModel` and keep direct-send behavior working through delegation | Router/orchestration tests | ✅ Complete (M3) |
-| M4 | Add the first routed agent-to-agent flow and Townhall-visible routing/debate summary behavior | ViewModel/router/Townhall tests |
+| M4 | Add the first routed agent-to-agent flow and Townhall-visible routing/debate summary behavior | ViewModel/router/Townhall tests | ✅ Complete (M4) |
 | M5 | Add explicit cleanup for `AgentPanelHostView` subscriptions and verify routing-related view-host lifetime safety | View tests + focused lifetime assertions |
 | M6 | Docs sync, regression sweep, and manual smoke for direct send vs routed send behavior | `dotnet build`, `dotnet test`, manual smoke |
 
@@ -470,10 +470,10 @@ Likely files to extend or add:
 - [x] A narrow route parsing/result model exists and is covered by tests
 - [x] A dedicated routing orchestration seam exists outside `MainWindowViewModel` (M3)
 - [x] Direct-send behavior still works when no mention target is present (M3 verified)
-- [ ] A routed send can target another visible agent panel via the locked
+- [x] A routed send can target another visible agent panel via the locked
       mention syntax
-- [ ] Unknown mention targets produce explicit visible failure behavior
-- [ ] Townhall remains the primary shared visibility surface for routing/debate activity
+- [x] Unknown mention targets produce explicit visible failure behavior
+- [x] Townhall remains the primary shared visibility surface for routing/debate activity
 - [x] `AgentExecutionCoordinator` remains free of Townhall and parsing policy
 - [x] No provider registry/platform abstraction was added
 - [ ] `AgentPanelHostView` has an explicit cleanup path for routing-related subscriptions

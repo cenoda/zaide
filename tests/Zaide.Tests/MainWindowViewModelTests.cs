@@ -55,8 +55,9 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var parser = new MentionParser(new AgentPanelHost());
-        var router = new AgentRouter(parser, coordinator);
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, router, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
@@ -79,8 +80,9 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var parser = new MentionParser(new AgentPanelHost());
-        var router = new AgentRouter(parser, coordinator);
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, router, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
@@ -245,8 +247,9 @@ public class MainWindowViewModelTests
         var scViewModel2 = new SourceControlViewModel(scState2);
         var workspace2 = sp.GetRequiredService<Workspace>();
         var coordinator2 = CreateMockCoordinator().Object;
-        var parser2 = new MentionParser(new AgentPanelHost());
-        var router2 = new AgentRouter(parser2, coordinator2);
+        var panelHost2 = new AgentPanelHost();
+        var parser2 = new MentionParser(panelHost2);
+        var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, new AgentPanelHost(), coordinator2, router2, townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
@@ -327,7 +330,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser(agentHost);
-        var router = new AgentRouter(parser, mockCoordinator.Object);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
             mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
@@ -568,7 +571,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser(agentHost);
-        var router = new AgentRouter(parser, mockCoordinator.Object);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
             mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
