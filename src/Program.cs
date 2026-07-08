@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
+using System.Net.Http;
 using System.Reactive.Concurrency;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -36,6 +37,27 @@ class Program
                     services.AddSingleton<EditorTabViewModel>();
                     services.AddSingleton<SourceControlState>();
                     services.AddSingleton<SourceControlViewModel>();
+                    // M1: Register agent execution service seam
+                    services.AddSingleton<AgentExecutionOptions>(_ =>
+                    {
+                        var options = new AgentExecutionOptions();
+                        if (Environment.GetEnvironmentVariable("AGENT_API_URL") is { Length: > 0 } url)
+                            options.BaseUrl = url;
+                        if (Environment.GetEnvironmentVariable("AGENT_API_KEY") is { Length: > 0 } key)
+                            options.ApiKey = key;
+                        if (Environment.GetEnvironmentVariable("AGENT_MODEL") is { Length: > 0 } model)
+                            options.Model = model;
+                        return options;
+                    });
+                    services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
+                    services.AddSingleton(_ =>
+                    {
+                        var client = new HttpClient();
+                        // Default timeout for non-streaming requests
+                        client.Timeout = TimeSpan.FromSeconds(120);
+                        return client;
+                    });
+
                     services.AddTransient<EditorViewModel>(sp =>
                         new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
                 },
