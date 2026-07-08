@@ -278,4 +278,45 @@ public class AgentPanelHostTests
             Assert.Fail($"Unexpected type reference in host API: {name}");
         }
     }
+
+    [Fact]
+    public void CreatePanel_Parameterless_AssignsSeededDistinctIdentities()
+    {
+        var host = CreateHost();
+        var p1 = host.CreatePanel();
+        var p2 = host.CreatePanel();
+        var p3 = host.CreatePanel();
+        var p4 = host.CreatePanel();
+
+        Assert.Equal("alpha", p1.AgentId);
+        Assert.Equal("Alpha", p1.AgentName);
+        Assert.Equal("Icon.Avatar", p1.AvatarResourceKey);
+
+        Assert.Equal("beta", p2.AgentId);
+        Assert.Equal("Beta", p2.AgentName);
+
+        Assert.Equal("gamma", p3.AgentId);
+        Assert.Equal("Gamma", p3.AgentName);
+
+        Assert.Equal("delta", p4.AgentId);
+        Assert.Equal("Delta", p4.AgentName);
+
+        Assert.All(new[] { p1, p2, p3, p4 }, p =>
+        {
+            Assert.False(string.IsNullOrEmpty(p.AgentId));
+            Assert.False(string.IsNullOrEmpty(p.AgentName));
+            Assert.False(string.IsNullOrEmpty(p.AvatarResourceKey));
+        });
+    }
+
+    [Fact]
+    public void CreatePanel_Parameterless_UsesFallbackAfterSeedExhaustion()
+    {
+        var host = CreateHost();
+        for (int i = 0; i < 4; i++) host.CreatePanel();
+        var p5 = host.CreatePanel();
+        Assert.Equal("agent-1", p5.AgentId);
+        Assert.Equal("Agent 1", p5.AgentName);
+        Assert.Equal("Icon.Avatar", p5.AvatarResourceKey);
+    }
 }

@@ -30,6 +30,43 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
         _panels = new ObservableCollection<AgentPanelState>();
     }
 
+    private static readonly (string AgentId, string AgentName, string AvatarResourceKey)[] _seedIdentities =
+    {
+        ("alpha", "Alpha", "Icon.Avatar"),
+        ("beta", "Beta", "Icon.Avatar"),
+        ("gamma", "Gamma", "Icon.Avatar"),
+        ("delta", "Delta", "Icon.Avatar"),
+    };
+    private int _nextSeedIndex;
+
+    /// <summary>
+    /// Creates a new agent panel using the next seeded identity from the
+    /// built-in list. Falls back to sequential naming if the seeded list
+    /// is exhausted.
+    /// </summary>
+    public AgentPanelState CreatePanel()
+    {
+        string agentId, agentName, avatar;
+        if (_nextSeedIndex < _seedIdentities.Length)
+        {
+            var seed = _seedIdentities[_nextSeedIndex];
+            agentId = seed.AgentId;
+            agentName = seed.AgentName;
+            avatar = seed.AvatarResourceKey;
+            _nextSeedIndex++;
+        }
+        else
+        {
+            int n = _nextSeedIndex - _seedIdentities.Length + 1;
+            agentId = $"agent-{n}";
+            agentName = $"Agent {n}";
+            avatar = "Icon.Avatar";
+            _nextSeedIndex++;
+        }
+
+        return CreatePanel(agentId, agentName, avatar);
+    }
+
     /// <summary>
     /// Creates a new agent panel with a generated unique PanelId and the
     /// specified agent identity, adds it to the collection, and sets it

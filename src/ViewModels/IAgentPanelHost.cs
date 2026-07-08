@@ -26,6 +26,12 @@ public interface IAgentPanelHost
     AgentPanelState? ActivePanel { get; }
 
     /// <summary>
+    /// Create a new agent panel using the next seeded identity.
+    /// The new panel becomes the active panel.
+    /// </summary>
+    AgentPanelState CreatePanel();
+
+    /// <summary>
     /// Create a new agent panel with the given agent identity and add it
     /// to the collection. The new panel becomes the active panel.
     /// </summary>

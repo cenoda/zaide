@@ -153,7 +153,7 @@ public sealed class AgentPanelHostView : UserControl
     private void OnNewPanelClick(object? sender, RoutedEventArgs e)
     {
         if (_host is null) return;
-        _host.CreatePanel("agent", "Agent", "Icon.Avatar");
+        _host.CreatePanel();
     }
 
     private void OnPanelsChanged(object? sender, NotifyCollectionChangedEventArgs e)
