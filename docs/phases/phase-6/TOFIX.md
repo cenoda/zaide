@@ -142,3 +142,49 @@ Updated tests in `tests/Zaide.Tests/ViewModels/AgentExecutionCoordinatorTests.cs
 - [x] Fix implemented and verified by build/test
 - [x] Covered by `SendAsync_Failure_ClearsDraftInput` and `SendAsync_RepeatedEnter_ClearsDraftEachTime_NoDuplicateSend`
 - [ ] Manual smoke test pending (visual confirmation input box empties on send, including failed send)
+
+---
+
+## Issue: Townhall Chat Enter Inserts Newline Instead of Sending
+
+During Phase 6 smoke testing, typing in the Townhall chat input and pressing Enter behaved like
+Shift+Enter — it only inserted a newline and never sent the message.
+
+### Root Cause
+
+`TownhallInputArea` constructed its `TextBox` with `AcceptsReturn = true`. In Avalonia, a control's
+class handler for `KeyDown` runs **before** instance handlers registered via `+=`. With
+`AcceptsReturn` true, the `TextBox` class handler consumes Enter (inserts a newline and marks the
+`KeyDown` routed event `Handled = true`) before our instance handler — which calls `TriggerSend()` —
+ever runs. So Enter produced a newline and the message was never sent, exactly mirroring Shift+Enter
+behavior. (The headless unit tests passed because synthetic `RaiseEvent(KeyEventArgs)` bypasses the
+`TextBox` class handler and reaches our instance handler directly.)
+
+### Fix Applied
+
+In `src/Views/TownhallInputArea.cs`:
+
+1. Set `AcceptsReturn = false` so the `TextBox` never consumes Enter and our `KeyDown` handler always
+   runs first.
+2. Reworked the `KeyDown` handler to handle both cases explicitly:
+   - Enter (no Shift) → `TriggerSend()` (send the message).
+   - Shift+Enter → `InsertNewlineAtCaret()` (insert a newline at the caret position, since
+     `AcceptsReturn` is now disabled).
+   - Both branches set `e.Handled = true`.
+3. Added the `InsertNewlineAtCaret()` helper, which inserts `Environment.NewLine` at
+   `_inputField.CaretIndex` and repositions the caret after the inserted text.
+
+Updated tests in `tests/Zaide.Tests/Views/TownhallInputAreaTests.cs`:
+- `InputField_AcceptsReturn_IsTrue` → `InputField_AcceptsReturn_IsFalse` (asserts `AcceptsReturn` is now `false`).
+- Added `ShiftEnterKey_InsertsNewlineAtCaret` asserting Shift+Enter inserts a newline at the caret
+  and does not trigger a send.
+
+### Verification
+
+- `dotnet test Zaide.slnx --no-build` → 724 passed, 0 failed (was 723 before the added regression test)
+
+### Status
+
+- [x] Fix implemented and verified by build/test
+- [x] Covered by `InputField_AcceptsReturn_IsFalse` and `ShiftEnterKey_InsertsNewlineAtCaret`
+- [ ] Manual smoke test pending (visual confirmation Enter sends, Shift+Enter inserts newline)

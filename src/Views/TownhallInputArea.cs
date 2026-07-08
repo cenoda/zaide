@@ -60,7 +60,11 @@ public class TownhallInputArea : Panel
             BorderThickness = new Thickness(0),
             MinHeight = 32,
             MaxLines = 5,
-            AcceptsReturn = true,
+            // AcceptsReturn is intentionally false: when true, the TextBox class
+            // handler consumes Enter (inserts a newline and marks the KeyDown
+            // event handled) before our instance handler runs, so Enter would
+            // never trigger a send. We handle Enter/Shift+Enter ourselves below.
+            AcceptsReturn = false,
             TextWrapping = TextWrapping.Wrap,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm)
         };
@@ -147,12 +151,22 @@ public class TownhallInputArea : Panel
             TriggerSend();
         };
 
-        // Enter to send, Shift+Enter for newline
+        // Enter sends; Shift+Enter inserts a newline at the caret.
+        // AcceptsReturn is false (see above), so the TextBox never consumes
+        // Enter and this handler always runs first.
         _inputField.KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Enter && !e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+            if (e.Key != Key.Enter)
+                return;
+
+            e.Handled = true;
+
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
             {
-                e.Handled = true;
+                InsertNewlineAtCaret();
+            }
+            else
+            {
                 TriggerSend();
             }
         };
@@ -168,6 +182,21 @@ public class TownhallInputArea : Panel
             return;
 
         SendRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Inserts a newline at the current caret position. Used for Shift+Enter,
+    /// since AcceptsReturn is disabled (Enter is reserved for sending).
+    /// </summary>
+    private void InsertNewlineAtCaret()
+    {
+        var text = _inputField.Text ?? string.Empty;
+        var caret = _inputField.CaretIndex;
+        if (caret < 0 || caret > text.Length)
+            caret = text.Length;
+
+        _inputField.Text = text.Insert(caret, Environment.NewLine);
+        _inputField.CaretIndex = caret + Environment.NewLine.Length;
     }
 
     private async Task AnimateSendButtonPressAsync()

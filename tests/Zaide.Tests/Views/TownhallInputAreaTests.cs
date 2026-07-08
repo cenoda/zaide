@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -17,11 +18,34 @@ public class TownhallInputAreaTests
     }
 
     [Fact]
-    public void InputField_AcceptsReturn_IsTrue()
+    public void InputField_AcceptsReturn_IsFalse()
     {
         var inputArea = new TownhallInputArea();
 
-        Assert.True(GetInputField(inputArea).AcceptsReturn);
+        Assert.False(GetInputField(inputArea).AcceptsReturn);
+    }
+
+    [Fact]
+    public void ShiftEnterKey_InsertsNewlineAtCaret()
+    {
+        var inputArea = new TownhallInputArea();
+        var inputField = GetInputField(inputArea);
+        inputArea.InputText = "hello world";
+        inputField.CaretIndex = 5; // between "hello" and " world"
+        var sendCount = 0;
+        inputArea.SendRequested += () => sendCount++;
+
+        inputField.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Source = inputField,
+            Key = Key.Enter,
+            KeyModifiers = KeyModifiers.Shift
+        });
+
+        Assert.Equal(0, sendCount);
+        Assert.Equal($"hello{Environment.NewLine} world", inputArea.InputText);
+        Assert.Equal(5 + Environment.NewLine.Length, inputField.CaretIndex);
     }
 
     [Fact]
