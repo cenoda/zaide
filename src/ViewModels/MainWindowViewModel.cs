@@ -80,6 +80,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ITerminalHost TerminalHost { get; }
     public IAgentPanelHost AgentPanelHost { get; }
     public IAgentExecutionCoordinator AgentExecutionCoordinator { get; }
+    public IAgentRouter AgentRouter { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
 
@@ -98,6 +99,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                ITerminalHost terminalHost,
                                IAgentPanelHost agentPanelHost,
                                IAgentExecutionCoordinator agentExecutionCoordinator,
+                               IAgentRouter agentRouter,
                                TownhallViewModel townhallViewModel,
                                SourceControlViewModel sourceControlViewModel,
                                Workspace workspace)
@@ -107,6 +109,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         TerminalHost = terminalHost;
         AgentPanelHost = agentPanelHost;
         AgentExecutionCoordinator = agentExecutionCoordinator;
+        AgentRouter = agentRouter;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
         WorkspaceProjectName = workspace.ProjectName;
@@ -179,31 +182,30 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     /// <summary>
     /// Thin delegating seam for the agent panel send flow.
-    /// Forwards to <see cref="AgentExecutionCoordinator"/>.
-    /// Before the await, mirrors the user request into Townhall via
-    /// <see cref="TownhallViewModel.AddMirroredActivity"/>.
-    /// After the await, inspects the panel's post-send state and mirrors
-    /// the visible result (response or error) into Townhall.
+    /// Delegates routing decisions and orchestration to <see cref="IAgentRouter"/>.
+    /// Router owns mention parsing, resolution, direct-vs-routed decision, and
+    /// coordination. MainWindowViewModel remains composition/delegation only.
     /// </summary>
     public async Task SendAgentMessageAsync(string panelId, string userMessage, CancellationToken ct = default)
     {
-        // Mirror the user request into Townhall before executing.
+        // Mirror the user request into Townhall before routing (preserves current truthful behavior).
         TownhallViewModel.AddMirroredActivity(
             kind: TownhallMessageKind.Chat,
             content: userMessage,
             senderId: "user-1",
             senderName: "User");
 
-        await AgentExecutionCoordinator.SendAsync(panelId, userMessage, ct).ConfigureAwait(false);
+        // Delegate entirely to the routing orchestration seam (M3).
+        var routeResult = await AgentRouter.RouteAndExecuteAsync(panelId, userMessage, ct).ConfigureAwait(false);
 
-        // Mirror the visible final result from the target panel state after execution.
+        // Post-execution mirroring remains in the thin seam for current direct behavior.
+        // Router returns enough outcome for truthful flow; M3 does not expand Townhall policy.
         var panel = AgentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
         if (panel is null)
             return;
 
         if (panel.Status == "Error")
         {
-            // Mirror only a real error output entry (not the preceding User: line) as AgentError.
             var lastOutput = panel.OutputHistory.Count > 0 ? panel.OutputHistory[^1] : null;
             if (lastOutput is not null && lastOutput.StartsWith("Error: "))
             {
@@ -216,9 +218,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         }
         else
         {
-            // Mirror the last assistant output entry as a Chat response.
-            // The coordinator always appends user first, then assistant — so the last
-            // entry is the agent response when successful.
             var lastOutput = panel.OutputHistory.Count > 0
                 ? panel.OutputHistory[^1]
                 : null;

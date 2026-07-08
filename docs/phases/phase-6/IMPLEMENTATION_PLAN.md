@@ -410,7 +410,7 @@ types, host cleanup, or identity creation changes yet.
 | M0 | Lock routing decisions against the live codebase: identity policy, mention syntax, unknown-target behavior, routed-content stripping, router ownership seam, and strict `M0-only` boundary | Plan truth-sync + focused seam audit |
 | M1 | Normalize agent identity and panel creation so new panels are distinguishable and routing-safe | Model/host/view tests for stable identity creation |
 | M2 | Add the tiny route request/result model and mention parsing seam | Focused parser/model tests |
-| M3 | Introduce the dedicated routing orchestration seam outside `MainWindowViewModel` and keep direct-send behavior working through delegation | Router/orchestration tests |
+| M3 | Introduce the dedicated routing orchestration seam outside `MainWindowViewModel` and keep direct-send behavior working through delegation | Router/orchestration tests | ✅ Complete (M3) |
 | M4 | Add the first routed agent-to-agent flow and Townhall-visible routing/debate summary behavior | ViewModel/router/Townhall tests |
 | M5 | Add explicit cleanup for `AgentPanelHostView` subscriptions and verify routing-related view-host lifetime safety | View tests + focused lifetime assertions |
 | M6 | Docs sync, regression sweep, and manual smoke for direct send vs routed send behavior | `dotnet build`, `dotnet test`, manual smoke |
@@ -468,19 +468,19 @@ Likely files to extend or add:
       implementation begins
 - [x] New agent panels receive stable, distinguishable identities suitable for routing
 - [x] A narrow route parsing/result model exists and is covered by tests
-- [ ] A dedicated routing orchestration seam exists outside `MainWindowViewModel`
-- [ ] Direct-send behavior still works when no mention target is present
+- [x] A dedicated routing orchestration seam exists outside `MainWindowViewModel` (M3)
+- [x] Direct-send behavior still works when no mention target is present (M3 verified)
 - [ ] A routed send can target another visible agent panel via the locked
       mention syntax
 - [ ] Unknown mention targets produce explicit visible failure behavior
 - [ ] Townhall remains the primary shared visibility surface for routing/debate activity
-- [ ] `AgentExecutionCoordinator` remains free of Townhall and parsing policy
-- [ ] No provider registry/platform abstraction was added
+- [x] `AgentExecutionCoordinator` remains free of Townhall and parsing policy
+- [x] No provider registry/platform abstraction was added
 - [ ] `AgentPanelHostView` has an explicit cleanup path for routing-related subscriptions
 - [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
       match the implemented Phase 6 state
-- [ ] Build succeeds: `dotnet build Zaide.slnx`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Build succeeds: `dotnet build Zaide.slnx`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
 - [ ] Manual smoke covers direct send, routed send, unknown mention, Townhall
       visibility, and panel-switch behavior
 
