@@ -36,17 +36,17 @@ The current app contains the visual shell for the future agent workspace:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Current layers (implemented as UI scaffold)
+### Current layers
 
-| Layer | Component | Status |
-|-------|-----------|--------|
-| **Far-left** | Nav bar (icon-only vertical strip) | ✅ Done |
-| **Left** | File tree sidebar (Explorer mode) | ✅ Done |
-| **Left** | Source Control panel (SC mode) | ✅ Done |
-| **Center** | Townhall UI scaffold (people/channels sidebar + chat area + input) | ✅ Done |
-| **Right** | Editor (tabbed, syntax highlighting) | ✅ Done |
-| **Bottom** | Terminal / Logs — full-screen TUI support via alternate screen buffer, saved-cursor state, alt-screen scrollback isolation, and categorized output | ✅ Done |
-| **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | ✅ Done |
+| Layer | Component | Phase | Status |
+|-------|-----------|-------|--------|
+| **Far-left** | Nav bar (icon-only vertical strip) | 0 | ✅ Done |
+| **Left** | File tree sidebar (Explorer mode) | 1 | ✅ Done |
+| **Left** | Source Control panel (SC mode) | 1 | ✅ Done |
+| **Center** | Townhall — activity surface with 8-kind entry taxonomy, auto-logged entries on send/switch, kind-based visual rendering, and All/Chat/Activity filter toggle | 4 | ✅ Done |
+| **Right** | Editor (tabbed, syntax highlighting) | 2 | ✅ Done |
+| **Bottom** | Terminal / Logs — full-screen TUI support via alternate screen buffer, saved-cursor state, alt-screen scrollback isolation, and categorized output | 3 | ✅ Done |
+| **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | 3 | ✅ Done |
 
 ### Refactor-delivered surfaces
 
@@ -86,14 +86,14 @@ The current app contains the visual shell for the future agent workspace:
 
 | Layer | Phase | Description |
 |-------|-------|-------------|
-| Agent Workspace Foundations | 4 | Turn the Townhall scaffold into a real activity surface with logging and event distinctions |
 | Agent Panels | 5 | Dedicated agent surfaces when specialized views are needed |
 | Agent Router | 6 | @mention routing between agents |
 | Git Integration | 7 | Real git operations (branching, staging, committing with actual repo) |
 
 Zaide should still work without full agent infrastructure. The current layout
-already points toward the agent-first direction, but the real Phase 4 behavior
-is still ahead.
+already points toward the agent-first direction, and Phase 4 (Agent Workspace
+Foundations) is now complete — Townhall is a real activity surface with
+auto-logging, kind-based rendering, and filtering.
 
 ---
 
@@ -137,4 +137,4 @@ They will be revisited when their respective phases begin.
 
 ---
 
-*Last updated: 2026-07-07*
+*Last updated: 2026-07-08*

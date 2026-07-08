@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Refactor-3/4 UI scaffold is in place. Formal Phase 4 is not complete yet.
+**Status:** Phase 4 complete — Townhall is a real activity surface with auto-logging, kind-based rendering, and filtering.
 
 ## Philosophy
 
@@ -20,10 +20,9 @@ One agent codes, another reviews. They argue. You get better code.
 Zaide is moving away from the classic "editor in the middle, AI on the side"
 shape.
 
-The current app already contains a Townhall-centered UI scaffold, but that
-layout work should not be confused with completed agent-workspace behavior.
-Phase 4 is where the Townhall surface becomes a real shared workflow area
-instead of a visual mapping only.
+Townhall is now a real activity surface with auto-logging, kind-based
+visual rendering, and filtering (Phase 4 complete — 2026-07-08). The
+layout work from refactor-3/4 is now backed by behavioral features.
 
 ## Current Layout (UI Scaffold From Refactor-3/4)
 
@@ -85,7 +84,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Phase 3.8: TUI compatibility | 3.8 | ✅ Done |
 | Phase 3.9: Terminal UX polish | 3.9 | ✅ Done |
 | Phase 3.9.1: Terminal tabs | 3.9.1 | ✅ Done |
-| Phase 4: Agent workspace foundations | 4 | ⏳ Planned (sub-phases 4.1–4.4 drafted, not implemented) |
+| Phase 4: Agent workspace foundations | 4 | ✅ Done |
 | Agent panels | 5 | ⏳ Planned |
 | Agent-to-agent routing | 6 | ⏳ Planned |
 | Git integration | 7 | ⏳ Planned |
@@ -124,14 +123,12 @@ Cleaned up layer boundaries within the single-project structure:
 
 ## Future Direction
 
-The next stages focus on turning the current UI scaffold into a real
-agent-workspace workflow:
+The next stages build on the Phase 4 Townhall activity surface:
 
-- **Phase 4** — make Townhall operational with action logging, real activity history, and clear user/agent distinctions
-- **Editor** — still visible and powerful, but framed as the implementation surface
 - **Agent panels** — individual UIs for each agent when dedicated surfaces are needed
 - **@mention routing** — agents can request review from each other
 - **Git integration** — status, diff, and commits from the sidebar
+- **Editor** — still visible and powerful, but framed as the implementation surface
 
 See [docs/roadmap/PHASES.md](docs/roadmap/PHASES.md) for the full plan.
 

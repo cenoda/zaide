@@ -2,7 +2,7 @@
 
 ## Planning Status
 
-**Draft — split into sub-phases.**
+**Complete (2026-07-08).**
 
 The original single-plan draft for Phase 4 tried to cover data model, auto-logging,
 UI, and docs sync in one pass, plus an undecided agent wire-format question. That
@@ -28,7 +28,7 @@ or persistence-heavy architecture work.
 | [4.1](../phase-4.1/IMPLEMENTATION_PLAN.md) | Activity/event data model + agent-format decision | ✅ Complete (2026-07-08) |
 | [4.2](../phase-4.2/IMPLEMENTATION_PLAN.md) | Auto-logging + real session-state initialization | ✅ Complete (2026-07-08) |
 | [4.3](../phase-4.3/IMPLEMENTATION_PLAN.md) | Townhall activity history UI: rendering, filtering, scroll | ✅ Complete (2026-07-08) |
-| [4.4](../phase-4.4/IMPLEMENTATION_PLAN.md) | Docs sync + exit audit for all of Phase 4 | ⬜ Draft (depends on 4.3) |
+| [4.4](../phase-4.4/IMPLEMENTATION_PLAN.md) | Docs sync + exit audit for all of Phase 4 | ✅ Complete (2026-07-08) |
 
 ## Out of Scope (all sub-phases)
 
@@ -42,11 +42,11 @@ or persistence-heavy architecture work.
 
 These are only satisfied once 4.1–4.4 are all complete:
 
-- [ ] Townhall is no longer sample-data-only in practice
-- [ ] User actions produce timestamped activity entries automatically
-- [ ] Chat vs action/log entries are visually and semantically distinct
-- [ ] The center workspace supports scrolling and filtering across activity history
-- [ ] An agent wire-format decision exists (even if minimal) so the activity
-      schema isn't guessing at agent-event shape
-- [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
-      match the implemented Phase 4 state
+- [x] Townhall is no longer sample-data-only in practice — `InitializeSessionState()` seeds real channels, `LogActivity` produces real entries on send/switch
+- [x] User actions produce timestamped activity entries automatically — `SendMessageCommand` logs `Chat`, channel switch logs `ChannelEvent`, both with `DateTimeOffset.UtcNow`
+- [x] Chat vs action/log entries are visually and semantically distinct — `TownhallChatPanel.CreateMessageRow` branches on `Kind`: `Chat` → full bubble, all others → compact row
+- [x] The center workspace supports scrolling and filtering across activity history — `FilterMode`/`FilteredMessages`/`ApplyFilter()` in ViewModel, `ToggleButton` group in `TownhallView`, `ScrollViewer.ScrollToEnd()` in `ChatPanel`
+- [x] An agent wire-format decision exists (even if minimal) so the activity
+      schema isn't guessing at agent-event shape — `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` fields on `TownhallMessage`, documented in phase-4.1 Agent Format Decision
+- [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
+      match the implemented Phase 4 state — all three updated in Phase 4.4 (2026-07-08)

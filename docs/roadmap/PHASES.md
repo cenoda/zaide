@@ -90,14 +90,21 @@ See `docs/architecture/OVERVIEW.md` for extended discussion.
 - [x] **3.9.1:** Terminal tabs (multi-session bottom-panel workflow) — ✅ Complete (2026-07-07); lightweight terminal tabs with per-tab sessions, session host/factory seam, view-layer panel caching, and tab strip UI
 
 ## Phase 4: Agent Workspace Foundations
-- [ ] Convert the current Townhall-centered UI scaffold into a real shared workspace
-- [ ] Auto-log timestamped entries for user and agent actions
-- [ ] Clear distinction between chat messages and action/log events
-- [ ] Scrollable, filterable activity history
-- [ ] Preserve fast file-tree, editor, and terminal workflows while real agent-workspace behavior lands
+- [x] Convert the current Townhall-centered UI scaffold into a real shared workspace
+- [x] Auto-log timestamped entries for user and agent actions
+- [x] Clear distinction between chat messages and action/log events
+- [x] Scrollable, filterable activity history
+- [x] Preserve fast file-tree, editor, and terminal workflows while real agent-workspace behavior lands
 
-Refactor-3 and refactor-4 provided layout remapping and polish only. They do
-not count as formal Phase 4 completion on their own.
+Completed 2026-07-08 via sub-phases 4.1–4.4 (activity data model, auto-logging
+and session-state initialization, activity history UI, docs sync and exit audit).
+Townhall now has an 8-kind entry taxonomy, `SourceProvider`/`SourceModel`/`ThreadId`
+fields reserved for Phase 5/6, auto-logged entries on send/switch, explicit
+session-state seeding, kind-based visual rendering, and a working filter toggle
+(All/Chat/Activity).
+
+Phase 5 entry condition reads: "Phase 4 Townhall activity model works as a real
+shared workspace" — this is now accurate and requires no adjustment.
 
 ## Phase 5: Agent Panels
 - [ ] Add dedicated agent surfaces without demoting Townhall from the primary workspace
@@ -179,4 +186,4 @@ M7 regression sweep + doc sync complete:
 
 ---
 
-*Last updated: 2026-07-07*
+*Last updated: 2026-07-08*
