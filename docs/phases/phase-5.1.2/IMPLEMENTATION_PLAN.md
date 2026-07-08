@@ -2,11 +2,11 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 5.1.1 is complete
-- [ ] Verify current build succeeds: `dotnet build Zaide.slnx`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Re-check the implemented single-panel types from Phase 5.1.1
-- [ ] Re-check `src/ViewModels/ITerminalHost.cs` and `src/ViewModels/TerminalHost.cs` as the live host-pattern precedent
+- [x] Confirm Phase 5.1.1 is complete
+- [x] Verify current build succeeds: `dotnet build Zaide.slnx`
+- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Re-check the implemented single-panel types from Phase 5.1.1
+- [x] Re-check `src/ViewModels/ITerminalHost.cs` and `src/ViewModels/TerminalHost.cs` as the live host-pattern precedent
 
 ## Scope
 
@@ -43,11 +43,11 @@ This decision is locked for Phase 5.1.2 and later slices unless live implementat
 
 ## Milestones
 
-| Milestone | Description | Test |
-|-----------|-------------|------|
-| M0 | Define the minimal host contract (`Tabs`/`Panels`, active item, activation command shape) | Design note + build |
-| M1 | Implement the host seam with seeded panel collection behavior | Host tests |
-| M2 | Add active-panel selection/lifecycle behavior | Host tests + `dotnet test Zaide.slnx --no-build` |
+| Milestone | Description | Test | Status |
+|-----------|-------------|------|--------|
+| M0 | Define the minimal host contract (`Panels`, `ActivePanel`, `CreatePanel`, `ActivatePanel`) | `IAgentPanelHost.cs` + build | Done |
+| M1 | Implement the host seam with panel collection ownership | `AgentPanelHost.cs` + host tests | Done |
+| M2 | Add active-panel selection/lifecycle behavior | Host tests + `dotnet test Zaide.slnx --no-build` | Done |
 
 ## Limitations (by design)
 
@@ -58,11 +58,16 @@ This decision is locked for Phase 5.1.2 and later slices unless live implementat
 
 ## Exit Conditions
 
-- [ ] A dedicated agent-panel host seam exists in code
-- [ ] The host can represent multiple panels and an active panel
-- [ ] Seeded panel collection and selection behavior are covered by tests
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] Focused host tests pass
+- [x] A dedicated agent-panel host seam exists in code (`IAgentPanelHost` + `AgentPanelHost`)
+- [x] The host can represent multiple panels and an active panel
+- [x] Seeded panel collection and selection behavior are covered by tests (`AgentPanelHostTests` — 17 tests)
+- [x] `dotnet build Zaide.slnx` passes
+- [x] Focused host tests pass
+- [x] Build passes: 0 warnings, 0 errors
+- [x] Tests pass: 632 total (615 existing + 17 new), 0 failures
+- [x] No UI, execution, Townhall, routing, or persistence concerns introduced
+- [x] No DI registration or MainWindowViewModel changes made yet (scope: M1 only)
+- [x] Plan doc updated to reflect implemented state
 
 ## Rollback Plan
 
