@@ -1,4 +1,5 @@
 using Moq;
+using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
@@ -8,6 +9,11 @@ namespace Zaide.Tests.Views;
 
 public class TerminalTabCloseBehaviorTests
 {
+    static TerminalTabCloseBehaviorTests()
+    {
+        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
+    }
+
     private static readonly System.Action<System.Action> RunInline = action => action();
 
     [Fact]

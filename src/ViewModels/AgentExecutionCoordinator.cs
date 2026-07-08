@@ -43,6 +43,10 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         if (!_inFlightPanels.Add(panelId))
             return; // Already in flight for this panel
 
+        // --- Mark busy / Thinking (also resets Error state on new send) ---
+        panel.Status = "Thinking";
+        panel.IsBusy = true;
+
         try
         {
             // Append user message to output history
@@ -56,14 +60,22 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 // Clear draft input only on successful send
                 panel.DraftInput = string.Empty;
                 panel.OutputHistory.Add($"Assistant: {result.ResponseText}");
+                panel.Status = "Idle";
             }
             else
             {
                 panel.OutputHistory.Add($"Error: {result.ErrorMessage}");
+                panel.Status = "Error";
             }
+        }
+        catch (Exception ex)
+        {
+            panel.OutputHistory.Add($"Error: {ex.Message}");
+            panel.Status = "Error";
         }
         finally
         {
+            panel.IsBusy = false;
             _inFlightPanels.Remove(panelId);
         }
     }

@@ -2,6 +2,8 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -13,6 +15,26 @@ using Zaide.Styles;
 namespace Zaide.Views;
 
 /// <summary>
+/// Converts <see cref="AgentPanelState.IsBusy"/> (true = busy) to
+/// <see cref="Control.IsEnabled"/> (false = disabled).
+/// M3: Added for input-surface disable during in-flight requests.
+/// </summary>
+internal sealed class BusyToEnabledConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+    {
+        if (value is bool busy)
+            return !busy;
+        return true;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}
+
+/// <summary>
 /// View for a single agent panel. Displays agent name/status, output history,
 /// and a draft input area.
 ///
@@ -20,6 +42,7 @@ namespace Zaide.Views;
 /// via its observable properties.
 ///
 /// M2: Exposes <see cref="SendRequested"/> event for Enter-to-send.
+/// M3: Input box is disabled while <see cref="AgentPanelState.IsBusy"/> is true.
 /// </summary>
 public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 {
@@ -89,6 +112,14 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
         // M2: Enter-to-send trigger
         _inputBox.KeyDown += OnInputBoxKeyDown;
+
+        // M3: Disable input while busy (IsBusy=true → IsEnabled=false)
+        _inputBox.Bind(
+            TextBox.IsEnabledProperty,
+            new Binding(nameof(AgentPanelState.IsBusy))
+            {
+                Converter = new BusyToEnabledConverter()
+            });
 
         var inputBorder = new Border
         {

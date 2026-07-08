@@ -47,6 +47,19 @@ public class AgentPanelState : ReactiveObject
     }
 
     /// <summary>
+    /// Whether this panel currently has an in-flight request.
+    /// M3: Added for input-surface disable during in-flight requests.
+    /// Set explicitly by the coordinator alongside Status transitions
+    /// so the view can bind IsEnabled = !IsBusy without a converter.
+    /// </summary>
+    private bool _isBusy;
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set => this.RaiseAndSetIfChanged(ref _isBusy, value);
+    }
+
+    /// <summary>
     /// Ordered output history for this panel.
     /// Each entry is a free-form text segment (user message, agent reply, status update).
     /// ObservableCollection already provides change notifications — no reactive conversion needed.

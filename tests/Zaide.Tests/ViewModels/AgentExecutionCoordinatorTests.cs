@@ -206,6 +206,133 @@ public sealed class AgentExecutionCoordinatorTests
 
         Assert.Empty(panel.OutputHistory);
     }
+
+    // ── M3: Status / busy / error transitions ───────────────────────────────
+
+    [Fact]
+    public async Task SendAsync_StatusBecomesThinkingWhileRunning()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var handler = new BlockingHandler(TimeSpan.FromMilliseconds(200));
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "test-key",
+            Model = "test-model"
+        });
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        // Start send (will block for 200ms)
+        var task = coordinator.SendAsync(panel.PanelId, "Hello");
+
+        // Status should be Thinking while in-flight
+        Assert.Equal("Thinking", panel.Status);
+        Assert.True(panel.IsBusy);
+
+        await task;
+    }
+
+    [Fact]
+    public async Task SendAsync_Success_EndsInIdle()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            choices = new[] { new { message = new { content = "Reply" }, finish_reason = "stop" } }
+        }));
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+    }
+
+    [Fact]
+    public async Task SendAsync_Failure_EndsInError()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+    }
+
+    [Fact]
+    public async Task SendAsync_Exception_EndsInError()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateFaultService(new HttpRequestException("connection refused"));
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("connection refused", panel.OutputHistory[1]);
+    }
+
+    [Fact]
+    public async Task SendAsync_OneInFlight_KeepsStateTruthfulOnDuplicate()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var handler = new BlockingHandler(TimeSpan.FromMilliseconds(300));
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "test-key",
+            Model = "test-model"
+        });
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        // Start first send (will block for 300ms)
+        var task1 = coordinator.SendAsync(panel.PanelId, "First");
+
+        // Status should be Thinking
+        Assert.Equal("Thinking", panel.Status);
+        Assert.True(panel.IsBusy);
+
+        // Second send should be dropped by one-in-flight
+        var task2 = coordinator.SendAsync(panel.PanelId, "Second");
+
+        await Task.WhenAll(task1, task2);
+
+        // After completion, status should be Idle and only first message in output
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Single(panel.OutputHistory, o => o == "User: First");
+        Assert.DoesNotContain("Second", panel.OutputHistory);
+    }
+
+    [Fact]
+    public async Task SendAsync_ErrorResetsOnNextSuccessfulSend()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var failService = CreateService(HttpStatusCode.InternalServerError, "Server error");
+        var coordinator = new AgentExecutionCoordinator(host, failService);
+
+        // First send fails
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+        Assert.Equal("Error", panel.Status);
+
+        // Second send succeeds
+        var successService = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            choices = new[] { new { message = new { content = "OK" }, finish_reason = "stop" } }
+        }));
+        var coordinator2 = new AgentExecutionCoordinator(host, successService);
+
+        await coordinator2.SendAsync(panel.PanelId, "Hello again");
+
+        // Error state should have been reset by the new send
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+    }
 }
 
 // ── Test helpers ───────────────────────────────────────────────────────────

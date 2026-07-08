@@ -22,6 +22,7 @@ public class AgentPanelStateTests
         Assert.Empty(state.AgentName);
         Assert.Empty(state.AvatarResourceKey);
         Assert.Equal("Idle", state.Status);
+        Assert.False(state.IsBusy);
         Assert.Empty(state.OutputHistory);
         Assert.Empty(state.DraftInput);
     }
@@ -138,6 +139,7 @@ public class AgentPanelStateTests
         // M2: AgentPanelState extends ReactiveObject. ReactiveObject exposes
         // inherited public properties (e.g. Changed, Changing). We filter to
         // only properties declared directly on AgentPanelState.
+        // M3: Added IsBusy for input-surface disable during in-flight requests.
         var type = typeof(AgentPanelState);
         var props = type.GetProperties()
             .Where(p => p.DeclaringType == typeof(AgentPanelState))
@@ -145,7 +147,7 @@ public class AgentPanelStateTests
             .OrderBy(n => n)
             .ToList();
 
-        var expected = new[] { "AgentId", "AgentName", "AvatarResourceKey", "DraftInput", "OutputHistory", "PanelId", "Status" };
+        var expected = new[] { "AgentId", "AgentName", "AvatarResourceKey", "DraftInput", "IsBusy", "OutputHistory", "PanelId", "Status" };
         Assert.Equal(expected, props);
     }
 
@@ -242,5 +244,68 @@ public class AgentPanelStateTests
 
         Assert.Equal(0, statusChanged);
         Assert.Equal(0, draftChanged);
+    }
+
+    // ── M3: IsBusy reactive property behavior ───────────────────────────────
+
+    [Fact]
+    public void IsBusy_Default_IsFalse()
+    {
+        var state = new AgentPanelState();
+        Assert.False(state.IsBusy);
+    }
+
+    [Fact]
+    public void IsBusy_Setter_RaisesPropertyChanged()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+                changedCount++;
+        };
+
+        state.IsBusy = true;
+        Assert.Equal(1, changedCount);
+        Assert.True(state.IsBusy);
+    }
+
+    [Fact]
+    public void IsBusy_SameValue_DoesNotRaiseChange()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+                changedCount++;
+        };
+
+        state.IsBusy = true;
+        Assert.Equal(1, changedCount);
+
+        state.IsBusy = true;
+        Assert.Equal(1, changedCount);
+    }
+
+    [Fact]
+    public void IsBusy_CanToggleBackToFalse()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+                changedCount++;
+        };
+
+        state.IsBusy = true;
+        Assert.True(state.IsBusy);
+        Assert.Equal(1, changedCount);
+
+        state.IsBusy = false;
+        Assert.False(state.IsBusy);
+        Assert.Equal(2, changedCount);
     }
 }
