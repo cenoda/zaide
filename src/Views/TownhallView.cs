@@ -2,11 +2,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -30,8 +30,10 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallChannelPanel _channelPanel;
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallInputArea _inputArea;
+    private readonly ToggleButton _filterAllButton;
+    private readonly ToggleButton _filterChatButton;
+    private readonly ToggleButton _filterActivityButton;
     private CompositeDisposable? _disposables;
-    private ObservableCollection<TownhallMessage>? _currentMessages;
 
     /// <summary>
     /// Gets or sets the ViewModel. When set, wires all reactive bindings.
@@ -106,6 +108,18 @@ public class TownhallView : Panel, IDisposable
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
         };
 
+        // Segmented filter toggle (All / Chat / Activity) - placed above chat panel per M3
+        _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
+        _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
+        _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
+        var filterGroup = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXs,
+            Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
+            Children = { _filterAllButton, _filterChatButton, _filterActivityButton }
+        };
+
         var inputSeparator = new Border
         {
             Height = 1,
@@ -113,24 +127,28 @@ public class TownhallView : Panel, IDisposable
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        // Chat area: chat messages (fills) | separator | input area (auto)
+        // Chat area: filter (auto) | chat messages (fills) | separator | input area (auto)
         var chatArea = new Grid
         {
             RowDefinitions =
             {
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
             {
+                filterGroup,
                 _chatPanel,
                 inputSeparator,
                 _inputArea
             }
         };
-        Grid.SetRow(inputSeparator, 1);
-        Grid.SetRow(_inputArea, 2);
+        Grid.SetRow(filterGroup, 0);
+        Grid.SetRow(_chatPanel, 1);
+        Grid.SetRow(inputSeparator, 2);
+        Grid.SetRow(_inputArea, 3);
 
         // GridSplitter between sidebar and chat area
         var sidebarChatSplitter = new GridSplitter
@@ -203,8 +221,11 @@ public class TownhallView : Panel, IDisposable
         });
         _channelPanel.SetChannels(_viewModel.Channels);
 
-        // Populate chat panel with initial messages
-        SetChatMessages(_viewModel.Messages);
+        // Populate chat panel with initial messages (will be updated by FilteredMessages subscription below)
+        if (_viewModel.Messages is not null)
+        {
+            _chatPanel.SetMessages(new ObservableCollection<TownhallMessage>(_viewModel.Messages));
+        }
 
         // Update placeholder text based on active channel
         UpdatePlaceholder();
@@ -215,16 +236,48 @@ public class TownhallView : Panel, IDisposable
                 .Subscribe(_ =>
                 {
                     _channelPanel.SetChannels(_viewModel.Channels);
-                    SetChatMessages(_viewModel.Messages);
                     UpdatePlaceholder();
                 }));
 
-        // React to Messages reference changes (channel switch replaces the collection).
+        // React to FilteredMessages changes (filter mode or underlying collection updates).
         _disposables.Add(
-            _viewModel.WhenAnyValue(x => x.Messages)
-                .Subscribe(messages =>
+            _viewModel.FilteredMessages
+                .Subscribe(filtered =>
                 {
-                    SetChatMessages(messages);
+                    var oc = new ObservableCollection<TownhallMessage>(filtered);
+                    _chatPanel.SetMessages(oc);
+                }));
+
+        // Wire filter toggle buttons to FilterMode (using Avalonia.Interactivity.RoutedEventArgs for IsCheckedChanged).
+        // ToggleButton has no built-in mutual-exclusivity (unlike RadioButton with GroupName), so each handler
+        // explicitly unchecks the other two buttons when checked, guarding against redundant sets to avoid
+        // re-entrant event storms.
+        _disposables.Add(
+            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterAllButton.IsCheckedChanged += h, h => _filterAllButton.IsCheckedChanged -= h)
+                .Subscribe(_ =>
+                {
+                    if (_filterAllButton.IsChecked != true) return;
+                    _viewModel.FilterMode = FilterMode.All;
+                    if (_filterChatButton.IsChecked != false) _filterChatButton.IsChecked = false;
+                    if (_filterActivityButton.IsChecked != false) _filterActivityButton.IsChecked = false;
+                }));
+        _disposables.Add(
+            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterChatButton.IsCheckedChanged += h, h => _filterChatButton.IsCheckedChanged -= h)
+                .Subscribe(_ =>
+                {
+                    if (_filterChatButton.IsChecked != true) return;
+                    _viewModel.FilterMode = FilterMode.ChatOnly;
+                    if (_filterAllButton.IsChecked != false) _filterAllButton.IsChecked = false;
+                    if (_filterActivityButton.IsChecked != false) _filterActivityButton.IsChecked = false;
+                }));
+        _disposables.Add(
+            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterActivityButton.IsCheckedChanged += h, h => _filterActivityButton.IsCheckedChanged -= h)
+                .Subscribe(_ =>
+                {
+                    if (_filterActivityButton.IsChecked != true) return;
+                    _viewModel.FilterMode = FilterMode.ActivityOnly;
+                    if (_filterAllButton.IsChecked != false) _filterAllButton.IsChecked = false;
+                    if (_filterChatButton.IsChecked != false) _filterChatButton.IsChecked = false;
                 }));
 
         // Sync draft changes: when ViewModel draft changes (e.g., cleared after send), update input
@@ -247,38 +300,6 @@ public class TownhallView : Panel, IDisposable
             }));
     }
 
-    /// <summary>
-    /// Sets the chat messages and subscribes to CollectionChanged for live appends.
-    /// </summary>
-    private void SetChatMessages(ObservableCollection<TownhallMessage>? messages)
-    {
-        // Unsubscribe from previous collection
-        if (_currentMessages is not null)
-        {
-            _currentMessages.CollectionChanged -= OnCurrentMessagesChanged;
-        }
-
-        _currentMessages = messages;
-        if (messages is not null)
-        {
-            _chatPanel.SetMessages(messages);
-        }
-
-        // Subscribe to CollectionChanged for live appends (e.g., SendMessageCommand)
-        if (messages is not null)
-        {
-            messages.CollectionChanged += OnCurrentMessagesChanged;
-        }
-    }
-
-    private void OnCurrentMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        if (_currentMessages is not null)
-        {
-            _chatPanel.SetMessages(_currentMessages);
-        }
-    }
-
     private void UpdatePlaceholder()
     {
         if (_viewModel?.ActiveChannelId is not null)
@@ -295,10 +316,6 @@ public class TownhallView : Panel, IDisposable
 
     public void Dispose()
     {
-        if (_currentMessages is not null)
-        {
-            _currentMessages.CollectionChanged -= OnCurrentMessagesChanged;
-        }
         _disposables?.Dispose();
         _disposables = null;
     }

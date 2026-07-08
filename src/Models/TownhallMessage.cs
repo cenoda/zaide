@@ -139,3 +139,25 @@ public enum TownhallMessageKind
     /// </summary>
     System
 }
+
+/// <summary>
+/// Filter mode for the Townhall chat panel (M3).
+/// Three states for the segmented toggle.
+/// </summary>
+public enum FilterMode
+{
+    /// <summary>
+    /// Show all entries (chat + activity).
+    /// </summary>
+    All,
+
+    /// <summary>
+    /// Show only Chat kind entries.
+    /// </summary>
+    ChatOnly,
+
+    /// <summary>
+    /// Show only non-Chat (activity/log) entries.
+    /// </summary>
+    ActivityOnly
+}

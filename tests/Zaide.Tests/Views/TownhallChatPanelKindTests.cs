@@ -115,4 +115,21 @@ public class TownhallChatPanelKindTests
         var createdApp = new App();
         createdApp.Initialize();
     }
+
+    /// <summary>
+    /// Verifies that TownhallChatPanel renders only the filtered messages passed to it (simulates filter from VM).
+    /// </summary>
+    [Fact]
+    public void FilteredMessages_RendersCorrectRowCount()
+    {
+        var panel = new TownhallChatPanel();
+        var filtered = new ObservableCollection<TownhallMessage>
+        {
+            CreateChatMessage("u1", "User", "chat1", 0),
+            CreateMessage(TownhallMessageKind.ChannelEvent, "sys", "System", "event", 1)
+        };
+        panel.SetMessages(filtered);
+        var rows = GetRenderedRows(panel);
+        Assert.Equal(2, rows.Count);
+    }
 }

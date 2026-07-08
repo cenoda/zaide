@@ -1,7 +1,10 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Linq;
 using ReactiveUI;
 using Zaide.Models;
 
@@ -18,6 +21,7 @@ public class TownhallViewModel : ReactiveObject
 {
     private readonly TownhallState _state;
     private string _draftText = string.Empty;
+    private FilterMode _filterMode = FilterMode.All;
 
     /// <summary>
     /// Gets the list of channels.
@@ -66,6 +70,29 @@ public class TownhallViewModel : ReactiveObject
             }
         }
     }
+
+    /// <summary>
+    /// Gets or sets the current filter mode for the chat panel (All / ChatOnly / ActivityOnly).
+    /// Default All. Raises PropertyChanged on change.
+    /// </summary>
+    public FilterMode FilterMode
+    {
+        get => _filterMode;
+        set
+        {
+            if (_filterMode != value)
+            {
+                _filterMode = value;
+                this.RaisePropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Computed filtered view of Messages based on current FilterMode.
+    /// Reacts to changes in FilterMode or Messages collection (via WhenAnyValue + Select).
+    /// </summary>
+    public IObservable<System.Collections.Generic.IReadOnlyList<TownhallMessage>> FilteredMessages { get; }
 
     /// <summary>
     /// Gets or sets the ID of the currently active channel.
@@ -137,6 +164,36 @@ public class TownhallViewModel : ReactiveObject
         // Setup reactive properties based on state
         Channels = _state.Channels;
         Agents = _state.Agents;
+
+        // Reactive filtered messages: recomputes on FilterMode or Messages (ref or collection content).
+        // Uses raw PropertyChanged event from INotifyPropertyChanged rather than WhenAnyValue,
+        // because all WhenAnyValue overloads in this ReactiveUI version trigger
+        // RxAppBuilder.EnsureInitialized() via ObservableForProperty, which fails in isolated
+        // unit-test hosts that don't have a full ReactiveUI app bootstrap.
+        //
+        // A single top-level Switch() ensures only one CollectionChanged subscription is ever live
+        // at a time — when Messages changes (e.g., channel switch), the previous collection's
+        // subscription is torn down before subscribing to the new one, avoiding an unbounded leak.
+        var propertyChanged = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                h => PropertyChanged += h,
+                h => PropertyChanged -= h)
+            .Select(e => e.EventArgs.PropertyName);
+        var filterModeChanged = propertyChanged
+            .Where(name => name == nameof(FilterMode))
+            .Select(_ => Unit.Default);
+        var messagesContentChanged = propertyChanged
+            .Where(name => name == nameof(Messages))
+            .Select(_ => Messages ?? new ObservableCollection<TownhallMessage>())
+            .DistinctUntilChanged()
+            .Select(m => Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => m.CollectionChanged += h,
+                    h => m.CollectionChanged -= h)
+                .Select(_ => Unit.Default)
+                .StartWith(Unit.Default))
+            .Switch();
+        FilteredMessages = Observable.Merge(filterModeChanged, messagesContentChanged)
+            .StartWith(Unit.Default)
+            .Select(_ => (System.Collections.Generic.IReadOnlyList<TownhallMessage>)ApplyFilter());
 
         // Selected channel command - updates channel active flags and active channel id
         SelectChannelCommand = ReactiveCommand.Create<string>(channelId =>
@@ -271,5 +328,18 @@ public class TownhallViewModel : ReactiveObject
 
         // Set initial draft text (syncs with state automatically via setter)
         DraftText = string.Empty;
+    }
+
+    private System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage> ApplyFilter()
+    {
+        var source = Messages ?? new ObservableCollection<TownhallMessage>();
+        return FilterMode switch
+        {
+            FilterMode.ChatOnly => new System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage>(
+                source.Where(m => m.Kind == TownhallMessageKind.Chat).ToList()),
+            FilterMode.ActivityOnly => new System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage>(
+                source.Where(m => m.Kind != TownhallMessageKind.Chat).ToList()),
+            _ => new System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage>(source.ToList())
+        };
     }
 }

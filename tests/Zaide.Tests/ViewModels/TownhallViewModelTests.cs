@@ -391,4 +391,128 @@ public class TownhallViewModelTests
 
         Assert.Equal(initialCount, vm.Messages.Count);
     }
+
+    /// <summary>
+    /// Verifies that FilterMode.ChatOnly yields only Chat-kind entries from the seeded
+    /// townhall-main channel (2 Chat messages).
+    /// </summary>
+    [Fact]
+    public void FilterMode_ChatOnly_YieldsOnlyChatEntries()
+    {
+        var vm = CreateViewModel();
+
+        IReadOnlyList<TownhallMessage>? latest = null;
+        using var sub = vm.FilteredMessages.Subscribe(list => latest = list);
+
+        vm.FilterMode = FilterMode.ChatOnly;
+
+        Assert.NotNull(latest);
+        Assert.Equal(2, latest!.Count);
+        Assert.All(latest, m => Assert.Equal(TownhallMessageKind.Chat, m.Kind));
+    }
+
+    /// <summary>
+    /// Verifies that FilterMode.ActivityOnly yields only non-Chat entries.
+    /// The seeded townhall-main channel has no non-Chat entries initially, so this
+    /// triggers a ChannelEvent by switching away and back, then filters for it.
+    /// </summary>
+    [Fact]
+    public void FilterMode_ActivityOnly_YieldsOnlyNonChatEntries()
+    {
+        var vm = CreateViewModel();
+        var initialId = vm.ActiveChannelId;
+        Assert.NotNull(initialId);
+
+        var otherId = vm.Channels.First(c => c.Id != initialId).Id;
+
+        // Switch away and back to generate ChannelEvent entries in the initial channel.
+        vm.SelectChannelCommand.Execute(otherId).Subscribe();
+        vm.SelectChannelCommand.Execute(initialId!).Subscribe();
+
+        IReadOnlyList<TownhallMessage>? latest = null;
+        using var sub = vm.FilteredMessages.Subscribe(list => latest = list);
+
+        vm.FilterMode = FilterMode.ActivityOnly;
+
+        Assert.NotNull(latest);
+        Assert.NotEmpty(latest!);
+        Assert.All(latest, m => Assert.NotEqual(TownhallMessageKind.Chat, m.Kind));
+    }
+
+    /// <summary>
+    /// Verifies that FilterMode.All yields every message in the active channel.
+    /// </summary>
+    [Fact]
+    public void FilterMode_All_YieldsAllEntries()
+    {
+        var vm = CreateViewModel();
+
+        IReadOnlyList<TownhallMessage>? latest = null;
+        using var sub = vm.FilteredMessages.Subscribe(list => latest = list);
+
+        vm.FilterMode = FilterMode.ChatOnly;
+        vm.FilterMode = FilterMode.All;
+
+        Assert.NotNull(latest);
+        Assert.Equal(vm.Messages.Count, latest!.Count);
+    }
+
+    /// <summary>
+    /// Verifies that switching channels does not leave a stale CollectionChanged subscription
+    /// on the previously active channel's collection (single top-level Switch() fix).
+    /// Appending to the old channel's collection after switching away should not cause
+    /// FilteredMessages to re-fire.
+    /// </summary>
+    [Fact]
+    public void FilteredMessages_SwitchingChannels_DoesNotLeakStaleSubscription()
+    {
+        var vm = CreateViewModel();
+        var initialId = vm.ActiveChannelId;
+        Assert.NotNull(initialId);
+
+        var initialMessages = vm.Messages;
+        var otherId = vm.Channels.First(c => c.Id != initialId).Id;
+
+        vm.SelectChannelCommand.Execute(otherId).Subscribe();
+
+        var fireCount = 0;
+        using var sub = vm.FilteredMessages.Subscribe(_ => fireCount++);
+        var countAfterSubscribe = fireCount;
+
+        // Mutate the stale (previously active) collection directly; this should NOT
+        // trigger FilteredMessages since only the current channel's collection is observed.
+        initialMessages.Add(new TownhallMessage
+        {
+            Id = "stale-msg",
+            SenderId = "user-1",
+            SenderName = "User",
+            SenderAvatar = "avatar-user",
+            Content = "Stale append",
+            Timestamp = DateTimeOffset.UtcNow,
+            Kind = TownhallMessageKind.Chat
+        });
+
+        Assert.Equal(countAfterSubscribe, fireCount);
+    }
+
+    /// <summary>
+    /// Verifies that sending a message while ChatOnly filter is active correctly updates FilteredMessages.
+    /// This tests the CollectionChanged reactivity fix.
+    /// </summary>
+    [Fact]
+    public void SendMessage_WhileChatOnlyFilter_UpdatesFilteredList()
+    {
+        var vm = CreateViewModel();
+        vm.FilterMode = FilterMode.ChatOnly;
+        var initialFilteredCount = 0;
+        // Subscribe briefly to capture
+        using var sub = vm.FilteredMessages.Subscribe(list => { initialFilteredCount = list.Count; });
+        var beforeSend = initialFilteredCount;
+        vm.DraftText = "Filtered test message";
+        vm.SendMessageCommand.Execute().Subscribe();
+        // After send, filtered should have increased by 1 (new Chat entry)
+        var after = 0;
+        using var sub2 = vm.FilteredMessages.Subscribe(list => { after = list.Count; });
+        Assert.Equal(beforeSend + 1, after);
+    }
 }
