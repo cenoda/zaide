@@ -100,8 +100,9 @@ Completed 2026-07-08 via sub-phases 4.1–4.4 (activity data model, auto-logging
 and session-state initialization, activity history UI, docs sync and exit audit).
 Townhall now has an 8-kind entry taxonomy, `SourceProvider`/`SourceModel`/`ThreadId`
 fields reserved for Phase 5/6, auto-logged entries on send/switch, explicit
-session-state seeding, kind-based visual rendering, and a working filter toggle
-(All/Chat/Activity).
+in-memory session seed data (channels, agents, empty per-channel message collections
+are created by `InitializeSessionState()`), kind-based visual rendering, and a
+working filter toggle (All/Chat/Activity).
 
 Phase 5 entry condition reads: "Phase 4 Townhall activity model works as a real
 shared workspace" — this is now accurate and requires no adjustment.

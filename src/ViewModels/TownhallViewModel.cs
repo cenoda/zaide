@@ -269,52 +269,10 @@ public class TownhallViewModel : ReactiveObject
         _state.Channels.Add(aiStatus);
         _state.Channels.Add(codebaseRefactoring);
 
-        // Create starter messages for each channel (per-channel storage)
-        var townhallMessages = new ObservableCollection<TownhallMessage>();
-        var aiStatusMessages = new ObservableCollection<TownhallMessage>();
-        var refactoringMessages = new ObservableCollection<TownhallMessage>();
-
-        // Townhall main messages
-        var message1 = new TownhallMessage
-        {
-            Id = "msg-1",
-            SenderId = "user-1",
-            SenderName = "User",
-            SenderAvatar = "avatar-user",
-            Content = "Welcome to the Townhall workspace!",
-            Timestamp = DateTimeOffset.UtcNow.AddMinutes(-5),
-            Kind = TownhallMessageKind.Chat
-        };
-        var message2 = new TownhallMessage
-        {
-            Id = "msg-2",
-            SenderId = "agent-1",
-            SenderName = "Zaide Agent",
-            SenderAvatar = "avatar-agent",
-            Content = "I can help you with code review and refactoring tasks.",
-            Timestamp = DateTimeOffset.UtcNow.AddMinutes(-4),
-            Kind = TownhallMessageKind.Chat
-        };
-        townhallMessages.Add(message1);
-        townhallMessages.Add(message2);
-
-        // AI status messages
-        var aiMessage1 = new TownhallMessage
-        {
-            Id = "msg-ai-1",
-            SenderId = "agent-1",
-            SenderName = "Zaide Agent",
-            SenderAvatar = "avatar-agent",
-            Content = "System check complete. All systems nominal.",
-            Timestamp = DateTimeOffset.UtcNow.AddMinutes(-3),
-            Kind = TownhallMessageKind.Chat
-        };
-        aiStatusMessages.Add(aiMessage1);
-
-        // Store per-channel message lists in state
-        _state.ChannelMessages[townhallMain.Id] = townhallMessages;
-        _state.ChannelMessages[aiStatus.Id] = aiStatusMessages;
-        _state.ChannelMessages[codebaseRefactoring.Id] = refactoringMessages;
+        // Create empty per-channel message collections in state
+        _state.ChannelMessages[townhallMain.Id] = new ObservableCollection<TownhallMessage>();
+        _state.ChannelMessages[aiStatus.Id] = new ObservableCollection<TownhallMessage>();
+        _state.ChannelMessages[codebaseRefactoring.Id] = new ObservableCollection<TownhallMessage>();
 
         // Set initial active channel (which also sets IsActive flags and Messages collection)
         ActiveChannelId = townhallMain.Id;

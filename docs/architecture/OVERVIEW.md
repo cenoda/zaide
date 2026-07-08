@@ -43,7 +43,7 @@ The current app contains the visual shell for the future agent workspace:
 | **Far-left** | Nav bar (icon-only vertical strip) | 0 | ✅ Done |
 | **Left** | File tree sidebar (Explorer mode) | 1 | ✅ Done |
 | **Left** | Source Control panel (SC mode) | 1 | ✅ Done |
-| **Center** | Townhall — activity surface with 8-kind entry taxonomy, auto-logged entries on send/switch, kind-based visual rendering, and All/Chat/Activity filter toggle | 4 | ✅ Done |
+| **Center** | Townhall — activity surface with 8-kind entry taxonomy, auto-logged entries on send/switch, kind-based visual rendering, and All/Chat/Activity filter toggle; explicit in-memory session seed data creates channels, agents, and empty per-channel message collections | 4 | ✅ Done |
 | **Right** | Editor (tabbed, syntax highlighting) | 2 | ✅ Done |
 | **Bottom** | Terminal / Logs — full-screen TUI support via alternate screen buffer, saved-cursor state, alt-screen scrollback isolation, and categorized output | 3 | ✅ Done |
 | **Bottom** | Status bar (app info, cursor position, language, project, branch, AI model) | 3 | ✅ Done |
@@ -93,7 +93,8 @@ The current app contains the visual shell for the future agent workspace:
 Zaide should still work without full agent infrastructure. The current layout
 already points toward the agent-first direction, and Phase 4 (Agent Workspace
 Foundations) is now complete — Townhall is a real activity surface with
-auto-logging, kind-based rendering, and filtering.
+auto-logging, kind-based rendering, filtering, and explicit in-memory session
+seed data.
 
 ---
 

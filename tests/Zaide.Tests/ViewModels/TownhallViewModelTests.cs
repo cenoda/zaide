@@ -128,9 +128,9 @@ public class TownhallViewModelTests
     {
         var vm = CreateViewModel();
 
-        // Get initial count (should be 2 for townhall-main channel)
+        // Get initial count (should be 0 for townhall-main channel)
         var initialCount = vm.Messages.Count;
-        Assert.Equal(2, initialCount);  // Two seeded starter messages in townhall-main
+        Assert.Equal(0, initialCount);  // No seeded starter messages; channels and agents are structural seed state
 
         // Set draft text and send
         vm.DraftText = "Test message";
@@ -294,14 +294,9 @@ public class TownhallViewModelTests
         Assert.NotNull(initialActiveId);
 
         var initialMessageCount = vm.Messages.Count;
-        Assert.True(initialMessageCount > 0, "Initial active channel should have messages");
+        Assert.Equal(0, initialMessageCount);
 
-        // Verify initial channel has specific messages (townhall-main has 2 messages)
-        Assert.Equal(2, initialMessageCount);
-        var firstMsgContent = vm.Messages[0].Content;
-        Assert.Contains("Townhall workspace", firstMsgContent);
-
-        // Switch to another channel that has different messages (ai-status has 1 message)
+        // Switch to another channel; the switch itself logs a ChannelEvent
         string? otherChannelId = null;
         foreach (var channel in vm.Channels)
         {
@@ -321,17 +316,16 @@ public class TownhallViewModelTests
         Assert.Equal(otherChannelId, vm.ActiveChannelId);
 
         // Verify Messages collection now references the other channel's messages
-        // ai-status channel has its original message + the auto-logged ChannelEvent from the switch
-        Assert.Equal(2, vm.Messages.Count);
-        Assert.Contains("System check complete", vm.Messages[0].Content);
-        Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[1].Kind);
+        // ai-status channel starts empty; the switch logs 1 ChannelEvent
+        Assert.Equal(1, vm.Messages.Count);
+        Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[0].Kind);
 
         // Switch back to initial channel and verify messages are restored
         vm.SelectChannelCommand.Execute(initialActiveId).Subscribe();
         Assert.Equal(initialActiveId, vm.ActiveChannelId);
-        // townhall-main now has original 2 seeded starter messages + the ChannelEvent logged on return switch
-        Assert.Equal(3, vm.Messages.Count);
-        Assert.Contains("Townhall workspace", vm.Messages[0].Content);
+        // townhall-main starts empty; the switch logs 1 ChannelEvent
+        Assert.Equal(1, vm.Messages.Count);
+        Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[0].Kind);
     }
 
     /// <summary>
@@ -394,7 +388,7 @@ public class TownhallViewModelTests
 
     /// <summary>
     /// Verifies that FilterMode.ChatOnly yields only Chat-kind entries from the seeded
-    /// townhall-main channel (2 Chat messages).
+    /// townhall-main channel (0 Chat messages initially).
     /// </summary>
     [Fact]
     public void FilterMode_ChatOnly_YieldsOnlyChatEntries()
@@ -407,7 +401,7 @@ public class TownhallViewModelTests
         vm.FilterMode = FilterMode.ChatOnly;
 
         Assert.NotNull(latest);
-        Assert.Equal(2, latest!.Count);
+        Assert.Equal(0, latest!.Count);
         Assert.All(latest, m => Assert.Equal(TownhallMessageKind.Chat, m.Kind));
     }
 

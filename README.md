@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 4 complete — Townhall is a real activity surface with auto-logging, kind-based rendering, and filtering.
+**Status:** Phase 4 complete — Townhall has explicit in-memory session seed data, auto-logging, kind-based visual rendering, and filtering.
 
 ## Philosophy
 
@@ -20,8 +20,9 @@ One agent codes, another reviews. They argue. You get better code.
 Zaide is moving away from the classic "editor in the middle, AI on the side"
 shape.
 
-Townhall is now a real activity surface with auto-logging, kind-based
-visual rendering, and filtering (Phase 4 complete — 2026-07-08). The
+Townhall now has explicit in-memory session seed data (channels, agents, empty
+per-channel message collections), auto-logging, kind-based visual rendering, and
+filtering (Phase 4 complete — 2026-07-08). The
 layout work from refactor-3/4 is now backed by behavioral features.
 
 ## Current Layout (UI Scaffold From Refactor-3/4)

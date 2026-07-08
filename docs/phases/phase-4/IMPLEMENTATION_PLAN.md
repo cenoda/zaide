@@ -42,11 +42,11 @@ or persistence-heavy architecture work.
 
 These are only satisfied once 4.1–4.4 are all complete:
 
-- [x] Townhall is no longer sample-data-only in practice — `InitializeSessionState()` seeds real channels, `LogActivity` produces real entries on send/switch
+- [x] Townhall initializes with explicit in-memory session seed data (`InitializeSessionState()` creates channels, agents, and empty per-channel message collections; `LogActivity` produces real entries on send/switch) — ✅ Complete (2026-07-08)
 - [x] User actions produce timestamped activity entries automatically — `SendMessageCommand` logs `Chat`, channel switch logs `ChannelEvent`, both with `DateTimeOffset.UtcNow`
 - [x] Chat vs action/log entries are visually and semantically distinct — `TownhallChatPanel.CreateMessageRow` branches on `Kind`: `Chat` → full bubble, all others → compact row
 - [x] The center workspace supports scrolling and filtering across activity history — `FilterMode`/`FilteredMessages`/`ApplyFilter()` in ViewModel, `ToggleButton` group in `TownhallView`, `ScrollViewer.ScrollToEnd()` in `ChatPanel`
 - [x] An agent wire-format decision exists (even if minimal) so the activity
       schema isn't guessing at agent-event shape — `SourceProvider`/`SourceModel`/`ThreadId`/`Metadata` fields on `TownhallMessage`, documented in phase-4.1 Agent Format Decision
 - [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md`
-      match the implemented Phase 4 state — all three updated in Phase 4.4 (2026-07-08)
+      match the implemented Phase 4 state — all three updated in Phase 4.4 (2026-07-08) with accurate session-state wording
