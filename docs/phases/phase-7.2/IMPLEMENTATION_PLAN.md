@@ -23,11 +23,19 @@ so the branch display and change lists reflect the real opened workspace.
 Phase 7.2 consumes the repo-read seam from 7.1 and drives the existing UI from
 that truth. It does **not** introduce diff rendering or commit mutations.
 
+## Live Constraints To Respect
+
+- `SourceControlViewModel` currently copies seeded `SourceControlState` demo data
+  in its constructor; 7.2 must not leave that seeded object as the lasting truth
+  source for the live Source Control UI.
+- `StatusBar` already listens to `SourceControlViewModel.CurrentBranchName`, so
+  7.2 should prefer truthful view-model rewiring over a status-bar redesign.
+
 ## Milestones
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Lock the 7.2 UI truth policy: define how non-repo, loading, empty-clean, and error states appear in the current Source Control surfaces. Keep the layout narrow. | Plan re-read against live `SourceControlPanel` and `StatusBar` surfaces |
+| M0 | Lock the 7.2 UI truth policy: define how non-repo, loading, empty-clean, and error states appear in the current Source Control surfaces, and decide whether `SourceControlState` survives only as a passive snapshot model or is removed from the view-model constructor path entirely. Keep the layout narrow. | Plan re-read against live `SourceControlPanel` and `StatusBar` surfaces |
 | M1 | Update `SourceControlViewModel` and any orchestration seams so branch text and change collections are populated from the real git snapshot instead of demo state. | ViewModel tests for branch name, clean repo, dirty repo, non-repo, and error state |
 | M2 | Wire the live branch state into `StatusBar` and verify the Source Control panel list headers/counts stay truthful under refresh. | Build + tests; focused view or binding verification as needed |
 | M3 | Connect refresh triggers to the smallest reliable app seams (for example workspace-open and explicit reload) without adding broad watcher complexity yet. | Main-window / integration-style tests for refresh after workspace change |
@@ -38,6 +46,7 @@ that truth. It does **not** introduce diff rendering or commit mutations.
 - Update `MainWindowViewModel` composition/refresh seams as needed
 - Keep `SourceControlPanel` mostly intact; prefer binding/presentation changes over redesign
 - Keep `StatusBar` as a passive consumer of live branch state
+- Update existing tests that currently assert exact demo branch/count values
 
 ## Out of Scope
 

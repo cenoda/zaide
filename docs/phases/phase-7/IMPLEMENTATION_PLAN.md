@@ -59,6 +59,12 @@ Verified against the current checkout on 2026-07-08:
 - `docs/LIBRARIES.md` already records `LibGit2Sharp` and `DiffPlex` as the
   intended Git/ diff libraries for Phase 7, but their actual integration is not
   present in live code yet.
+- `Directory.Packages.props` and `src/Zaide.csproj` do **not** currently
+  include `LibGit2Sharp` or `DiffPlex`; package selection, version pinning, and
+  target-framework compatibility remain pre-implementation work.
+- `src/Models/Workspace.cs` currently stores only `ProjectName`; it does not
+  retain/expose the opened workspace path yet, which is a real design input for
+  repository discovery in Phase 7.1.
 
 ## Scope
 
@@ -159,6 +165,8 @@ Treat the sub-phases as a dependency chain, not as parallel implementation work:
 
 ## Phase-Level Risks To Watch
 
+- Starting Phase 7 without first deciding how the real workspace/repository path
+  is exposed to the git seam
 - Letting Source Control view-models become the git service layer
 - Starting with commit mutations before read-state truth is stable
 - Expanding into remote workflows or hosted-platform features
@@ -182,6 +190,8 @@ At minimum, the whole phase should budget explicit tests for:
 
 Likely files to extend or add across the phase:
 
+- `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs` (current tests
+  assert seeded demo values and will need to move to seam-based truth)
 - `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs`
 - `tests/Zaide.Tests/MainWindowViewModelTests.cs`
 - `tests/Zaide.Tests/Services/` new git service test files

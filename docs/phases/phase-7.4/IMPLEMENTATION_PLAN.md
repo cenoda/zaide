@@ -24,11 +24,18 @@ Phase 7.4 covers local stage/unstage and local commit creation only. It does
 **not** cover push/pull, amend, interactive patch staging, stash, branch
 creation/switching, or hosted-platform flows.
 
+## Live Constraints To Respect
+
+- `StageFileCommand`, `UnstageFileCommand`, and `CommitCommand` in the current
+  `SourceControlViewModel` are visual/demo commands only; 7.4 should replace
+  that placeholder behavior with seam-backed operations instead of layering more
+  demo state mutation on top.
+
 ## Milestones
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Lock the mutation policy: define the first supported stage/unstage granularity, commit validation rules, post-commit refresh behavior, and user-visible failure states. | Plan re-read against the live Source Control panel and git seam |
+| M0 | Lock the mutation policy: define the first supported stage/unstage granularity, how the existing placeholder commands are replaced/refit to call the git seam, commit validation rules, post-commit refresh behavior, and user-visible failure states. | Plan re-read against the live Source Control panel and git seam |
 | M1 | Add narrow stage/unstage operations behind the git seam and expose them through the Source Control view-model without embedding repository logic there. | Service + ViewModel tests for stage, unstage, no-op, and failure cases |
 | M2 | Add local commit execution with message validation and truthful success/failure projection. | Service + ViewModel tests for empty message, nothing staged, commit success, and commit failure |
 | M3 | Ensure the Source Control panel and status surfaces refresh correctly after mutation actions and remain truthful. | Build + tests; focused manual verification for stage/unstage/commit loop |
