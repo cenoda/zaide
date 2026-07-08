@@ -174,14 +174,14 @@ Likely files to extend or add:
 
 ## Exit Conditions
 
-- [ ] Direct user-to-agent interactions appear in Townhall
-- [ ] Direct agent responses and visible failures appear in Townhall at the intended Phase 5 level
-- [ ] No provider service directly references `TownhallViewModel`
-- [ ] `AgentExecutionCoordinator` remains free of Townhall references
-- [ ] No routing behavior is introduced
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] Focused ViewModel/orchestration tests pass
-- [ ] Manual smoke confirms panel activity and Townhall activity remain aligned
+- [x] Direct user-to-agent interactions appear in Townhall
+- [x] Direct agent responses and visible failures appear in Townhall at the intended Phase 5 level
+- [x] No provider service directly references `TownhallViewModel`
+- [x] `AgentExecutionCoordinator` remains free of Townhall references
+- [x] No routing behavior is introduced
+- [x] `dotnet build Zaide.slnx` passes
+- [x] Focused ViewModel/orchestration tests pass
+- [x] Manual smoke confirms panel activity and Townhall activity remain aligned
 
 ## Rollback Plan
 

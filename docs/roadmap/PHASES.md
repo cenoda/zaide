@@ -108,11 +108,13 @@ Phase 5 entry condition reads: "Phase 4 Townhall activity model works as a real
 shared workspace" — this is now accurate and requires no adjustment.
 
 ## Phase 5: Agent Panels
-- [ ] Add dedicated agent surfaces without demoting Townhall from the primary workspace
-- [ ] Establish the panel state/host/composition seam first (`phase-5.1` umbrella, split into `5.1.1`–`5.1.3`)
-- [ ] Each agent panel: name, status indicator, output area, and direct input surface
-- [ ] Support one minimal real direct-execution path to one configured OpenAI-compatible endpoint
-- [ ] Mirror direct-agent interactions into Townhall at the intended Phase 5 level
+- [x] Add dedicated agent surfaces without demoting Townhall from the primary workspace
+- [x] Establish the panel state/host/composition seam first (`phase-5.1` umbrella, split into `5.1.1`–`5.1.3`)
+- [x] Each agent panel: name, status indicator, output area, and direct input surface
+- [x] Support one minimal real direct-execution path to one configured OpenAI-compatible endpoint
+- [x] Mirror direct-agent interactions into Townhall at the intended Phase 5 level
+
+**Completed via sub-phases 5.1–5.5 (2026-07-08).** All exit conditions verified against live code, build/tests pass, manual smoke confirmed.
 
 ---
 
@@ -189,4 +191,4 @@ M7 regression sweep + doc sync complete:
 
 ---
 
-*Last updated: 2026-07-08*
+*Last updated: 2026-07-08 (Phase 5 closed via 5.5 audit)*

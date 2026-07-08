@@ -53,13 +53,12 @@ At minimum, manual smoke should cover:
 - shell sanity after resize/open/close flows touched by Phase 5
 
 ## Exit Conditions
-
-- [ ] Phase 5 behavior is verified against live code, not just plan checkboxes
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] `dotnet test Zaide.slnx --no-build` passes
-- [ ] Manual smoke confirms panel rendering, direct execution, visible failure behavior, and Townhall visibility
-- [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 5 state
-- [ ] `docs/phases/phase-5/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-5.1/IMPLEMENTATION_PLAN.md` accurately reflect the final umbrella/sub-phase status
+- [x] Phase 5 behavior is verified against live code, not just plan checkboxes
+- [x] `dotnet build Zaide.slnx` passes
+- [x] `dotnet test Zaide.slnx --no-build` passes
+- [x] Manual smoke confirms panel rendering, direct execution, visible failure behavior, and Townhall visibility
+- [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 5 state
+- [x] `docs/phases/phase-5/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-5.1/IMPLEMENTATION_PLAN.md` accurately reflect the final umbrella/sub-phase status
 
 ## Rollback Plan
 
