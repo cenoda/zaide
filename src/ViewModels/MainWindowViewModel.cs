@@ -198,9 +198,33 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Delegate entirely to the routing orchestration seam (M3).
         var routeResult = await AgentRouter.RouteAndExecuteAsync(panelId, userMessage, ct).ConfigureAwait(false);
 
-        // Post-execution mirroring remains in the thin seam for current direct behavior.
-        // Router returns enough outcome for truthful flow; M3 does not expand Townhall policy.
-        var panel = AgentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
+        // M1: consume the routing outcome so routed flows and routing failures
+        // become visible in Townhall (previously the result was captured but unread).
+        var sourcePanel = AgentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
+
+        // Case A: parse/routing failure. Surface as an AgentError under the source
+        // panel identity. If the source panel is gone, there is nothing to attribute to.
+        if (!routeResult.Success)
+        {
+            if (sourcePanel is null)
+                return;
+
+            TownhallViewModel.AddMirroredActivity(
+                kind: TownhallMessageKind.AgentError,
+                content: $"Routing failed: {routeResult.FailureReason}",
+                senderId: sourcePanel.AgentId,
+                senderName: sourcePanel.AgentName);
+            return;
+        }
+
+        // Choose which panel's output to mirror:
+        //   Case B (routed): the resolved target panel.
+        //   Case C (direct send): the source panel (unchanged existing behavior).
+        var request = routeResult.Request;
+        var panel = request is not null && !request.IsDirectSend
+            ? AgentPanelHost.Panels.FirstOrDefault(p => p.AgentName == request.TargetAgentName)
+            : sourcePanel;
+
         if (panel is null)
             return;
 

@@ -644,6 +644,207 @@ public class MainWindowViewModelTests
         Assert.Equal("agent-1", vm.TownhallViewModel.Messages[beforeCount + 1].SenderId);
     }
 
+    // ── Phase 6.1 M1: Consume RouteResult in SendAgentMessageAsync ──────────────
+
+    /// <summary>
+    /// Creates a MainWindowViewModel with a real AgentPanelHost holding TWO panels
+    /// (source "Alpha" and target "Beta"), a real TownhallViewModel, and a mock
+    /// coordinator that appends output to whichever panel the router targets.
+    /// </summary>
+    private static (MainWindowViewModel Vm, AgentPanelState Source, AgentPanelState Target) CreateTwoPanelMirrorTestViewModel(
+        string targetStatusOnCompletion = "Idle",
+        bool appendTargetOutput = true,
+        Action<AgentPanelHost>? afterSend = null)
+    {
+        var agentHost = new AgentPanelHost();
+        var source = agentHost.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var target = agentHost.CreatePanel("agent-2", "Beta", "avatar_beta");
+
+        var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
+        mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            {
+                var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
+                if (p is null) return;
+                p.OutputHistory.Add($"User: {msg}");
+                if (appendTargetOutput && targetStatusOnCompletion != "Error")
+                {
+                    p.OutputHistory.Add("Assistant: Routed response");
+                }
+                else if (appendTargetOutput && targetStatusOnCompletion == "Error")
+                {
+                    p.OutputHistory.Add("Error: Something failed");
+                }
+                p.Status = targetStatusOnCompletion;
+                p.IsBusy = false;
+                afterSend?.Invoke(agentHost);
+            })
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Moq.Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Moq.Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scState = new SourceControlState();
+        var scViewModel = new SourceControlViewModel(scState);
+        var workspace = sp.GetRequiredService<Workspace>();
+        var parser = new MentionParser(agentHost);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+        return (vm, source, target);
+    }
+
+    /// <summary>
+    /// Case A: unknown mention target surfaces as an AgentError under the source
+    /// panel identity with a "Routing failed: Unknown target" message.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_UnknownTarget_MirrorsRoutingFailure()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "@NonExistentAgent hello");
+
+        // user message + routing-failure error entry
+        Assert.Equal(beforeCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        var userEntry = vm.TownhallViewModel.Messages[beforeCount];
+        Assert.Equal(TownhallMessageKind.Chat, userEntry.Kind);
+        Assert.Equal("@NonExistentAgent hello", userEntry.Content);
+
+        var errorEntry = vm.TownhallViewModel.Messages[beforeCount + 1];
+        Assert.Equal(TownhallMessageKind.AgentError, errorEntry.Kind);
+        Assert.Equal("Routing failed: Unknown target", errorEntry.Content);
+        Assert.Equal(panel.AgentId, errorEntry.SenderId);
+        Assert.Equal(panel.AgentName, errorEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Case A: multiple mentions surfaces as an AgentError under the source panel
+    /// identity with a "Routing failed: Multiple mentions" message.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_MultipleMentions_MirrorsRoutingFailure()
+    {
+        var (vm, source, _) = CreateTwoPanelMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(source.PanelId, "@Alpha @Beta hello");
+
+        Assert.Equal(beforeCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        var errorEntry = vm.TownhallViewModel.Messages[beforeCount + 1];
+        Assert.Equal(TownhallMessageKind.AgentError, errorEntry.Kind);
+        Assert.Equal("Routing failed: Multiple mentions", errorEntry.Content);
+        Assert.Equal(source.AgentId, errorEntry.SenderId);
+        Assert.Equal(source.AgentName, errorEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Case B: routed success mirrors the TARGET panel's assistant output into
+    /// Townhall under the target panel identity.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_RoutedSuccess_MirrorsTargetAssistantResponse()
+    {
+        var (vm, source, target) = CreateTwoPanelMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(source.PanelId, "@Beta hello");
+
+        Assert.Equal(beforeCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        var responseEntry = vm.TownhallViewModel.Messages[beforeCount + 1];
+        Assert.Equal(TownhallMessageKind.Chat, responseEntry.Kind);
+        Assert.Equal("Assistant: Routed response", responseEntry.Content);
+        Assert.Equal(target.AgentId, responseEntry.SenderId);
+        Assert.Equal(target.AgentName, responseEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Case B: routed success where the target panel ends in Error status mirrors
+    /// an AgentError under the target panel identity.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_RoutedSuccess_MirrorsTargetError()
+    {
+        var (vm, source, target) = CreateTwoPanelMirrorTestViewModel(targetStatusOnCompletion: "Error");
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(source.PanelId, "@Beta hello");
+
+        Assert.Equal(beforeCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        var errorEntry = vm.TownhallViewModel.Messages[beforeCount + 1];
+        Assert.Equal(TownhallMessageKind.AgentError, errorEntry.Kind);
+        Assert.Equal("Error: Something failed", errorEntry.Content);
+        Assert.Equal(target.AgentId, errorEntry.SenderId);
+        Assert.Equal(target.AgentName, errorEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Case B: routed success where the target panel has vanished before mirroring
+    /// must not crash and must not add any entry beyond the user message.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_RoutedSuccess_VanishedTargetPanel_NoExtraEntry()
+    {
+        AgentPanelState? target = null;
+        // Remove the target panel DURING execution: routing still resolves the
+        // mention (panel present at parse time), but the panel is gone by the time
+        // the view model tries to mirror the routed output.
+        var (vm, source, t) = CreateTwoPanelMirrorTestViewModel(
+            afterSend: host =>
+            {
+                if (target is not null)
+                    host.Panels.Remove(target);
+            });
+        target = t;
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(source.PanelId, "@Beta hello");
+
+        // Only the user message; no crash and no mirrored target output.
+        Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count);
+        Assert.Equal("@Beta hello", vm.TownhallViewModel.Messages[beforeCount].Content);
+        Assert.Equal(TownhallMessageKind.Chat, vm.TownhallViewModel.Messages[beforeCount].Kind);
+    }
+
     [Fact]
     public void HideBottomPanel_HidesPanelWithoutDestroyingLastSession()
     {

@@ -22,6 +22,23 @@ tests and `CreateMirrorTestViewModel` helper (lines 285-339) are defined.
 
 **Result: Plan is locked ✓ — proceed to M1.**
 
+**M1 complete (2026-07-08).**
+
+`SendAgentMessageAsync` now consumes `RouteResult`:
+- Case A (parse failure): mirrors `AgentError` `"Routing failed: {FailureReason}"`
+  under source panel identity; skips when the source panel is gone.
+- Case B (routed success): resolves the target panel via `Request.TargetAgentName`
+  and mirrors its last assistant/error output with target panel identity, using the
+  same guard as direct-send mirroring. Skips silently when the target panel vanished.
+- Case C (direct send): unchanged.
+
+Added `CreateTwoPanelMirrorTestViewModel` helper plus 5 new tests in
+`MainWindowViewModelTests.cs` (unknown target, multiple mentions, routed-success
+assistant, routed-success error, vanished target panel). Build: 0 errors / 0
+warnings. Tests: 729 passed / 0 failed. Changes confined to
+`src/ViewModels/MainWindowViewModel.cs` and
+`tests/Zaide.Tests/MainWindowViewModelTests.cs`.
+
 This is a small follow-up phase to close the routing-visibility gaps documented in
 the Phase 6 Known Gaps section. It does **not** introduce git integration, multi-hop
 routing, or any feature expansion.
@@ -134,7 +151,7 @@ only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
 | Milestone | Description | Test |
 |-----------|-------------|------|
 | M0 | Lock the 6.1 visibility decisions (Townhall-only, entry formats, RouteResult shape, edge cases, test ownership split) — **DONE** | Plan truth-sync |
-| M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync`: on parse failure mirror a Townhall error entry; on routed success read target panel output and mirror into Townhall | `MainWindowViewModelTests` for unknown target, routed success, ambiguous target, vanished target panel |
+| M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync`: on parse failure mirror a Townhall error entry; on routed success read target panel output and mirror into Townhall | `MainWindowViewModelTests` for unknown target, routed success, ambiguous target, vanished target panel — ✅ Complete (M1) |
 | M2 | Add dedicated `AgentRouterTests.cs` covering routing resolution and target execution only (no Townhall assertions) | Router tests for direct-send dispatch, routed-send dispatch, all failure cases (unknown/ambiguous/multi/empty) |
 | M3 | Verify build/tests green; no UI changes beyond Townhall | Build + test verification |
 
@@ -166,14 +183,14 @@ only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
 
 ## Exit Conditions
 
-- [ ] Unknown-target failures produce visible Townhall error entries (`AgentError` kind, source panel identity, `"Routing failed: Unknown target"`)
-- [ ] Routed-flow outcomes produce visible Townhall entries (target panel's last assistant output mirrored with target panel identity)
-- [ ] Vanished target panel between routing and mirroring is handled gracefully (no crash, no entry)
-- [ ] All 6 `MentionParser` failure reasons are mapped to Townhall entries
-- [ ] Dedicated `AgentRouter` test file exists with passing tests (routing resolution + target execution only, no Townhall)
-- [ ] `AgentRouter` remains free of Townhall dependency
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Unknown-target failures produce visible Townhall error entries (`AgentError` kind, source panel identity, `"Routing failed: Unknown target"`)
+- [x] Routed-flow outcomes produce visible Townhall entries (target panel's last assistant output mirrored with target panel identity)
+- [x] Vanished target panel between routing and mirroring is handled gracefully (no crash, no entry)
+- [x] All 6 `MentionParser` failure reasons are mapped to Townhall entries (via the shared `"Routing failed: {FailureReason}"` path)
+- [ ] Dedicated `AgentRouter` test file exists with passing tests (routing resolution + target execution only, no Townhall) — M2
+- [x] `AgentRouter` remains free of Townhall dependency
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
 
 ## Exact Next Step
 
@@ -181,4 +198,5 @@ After 6.1 is complete, Phase 7 can begin with clean routing visibility.
 
 ## Rollback Plan
 
-- Commit hash to revert to: TBD when implementation begins
+- Commit hash to revert to: `9fe780f` (last commit before M1 implementation:
+  `docs: fix phase-6.1 plan — correct test file path`)
