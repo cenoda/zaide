@@ -1,16 +1,19 @@
 using System.Collections.ObjectModel;
+using ReactiveUI;
 
 namespace Zaide.Models;
 
 /// <summary>
 /// Minimal state shape for a single agent panel.
-/// Phase 5.1.1 only — intentionally narrow.
+/// Phase 5.1.1 — intentionally narrow.
+/// M2: Made reactive for coordinator-mutated scalar properties (Status, DraftInput).
+/// OutputHistory stays as ObservableCollection<string>.
 ///
 /// Contains no routing metadata, no provider-platform abstractions,
 /// and no speculative persistence fields. Multi-panel collection/selection
 /// belongs in the future host seam, not here.
 /// </summary>
-public class AgentPanelState
+public class AgentPanelState : ReactiveObject
 {
     /// <summary>
     /// Unique identifier for this panel instance.
@@ -34,17 +37,30 @@ public class AgentPanelState
 
     /// <summary>
     /// Current status of this agent panel (e.g. Idle, Thinking, Error).
+    /// Reactive property — mutations through the coordinator are visible to bindings.
     /// </summary>
-    public string Status { get; set; } = "Idle";
+    private string _status = "Idle";
+    public string Status
+    {
+        get => _status;
+        set => this.RaiseAndSetIfChanged(ref _status, value);
+    }
 
     /// <summary>
     /// Ordered output history for this panel.
     /// Each entry is a free-form text segment (user message, agent reply, status update).
+    /// ObservableCollection already provides change notifications — no reactive conversion needed.
     /// </summary>
     public ObservableCollection<string> OutputHistory { get; } = new();
 
     /// <summary>
     /// Current draft text being composed by the user for this panel.
+    /// Reactive property — mutations through the coordinator are visible to bindings.
     /// </summary>
-    public string DraftInput { get; set; } = string.Empty;
+    private string _draftInput = string.Empty;
+    public string DraftInput
+    {
+        get => _draftInput;
+        set => this.RaiseAndSetIfChanged(ref _draftInput, value);
+    }
 }

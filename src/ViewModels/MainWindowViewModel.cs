@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Models;
@@ -78,6 +79,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public EditorTabViewModel EditorTabs { get; }
     public ITerminalHost TerminalHost { get; }
     public IAgentPanelHost AgentPanelHost { get; }
+    public IAgentExecutionCoordinator AgentExecutionCoordinator { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
 
@@ -95,6 +97,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                EditorTabViewModel editorTabViewModel,
                                ITerminalHost terminalHost,
                                IAgentPanelHost agentPanelHost,
+                               IAgentExecutionCoordinator agentExecutionCoordinator,
                                TownhallViewModel townhallViewModel,
                                SourceControlViewModel sourceControlViewModel,
                                Workspace workspace)
@@ -103,6 +106,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         EditorTabs = editorTabViewModel;
         TerminalHost = terminalHost;
         AgentPanelHost = agentPanelHost;
+        AgentExecutionCoordinator = agentExecutionCoordinator;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
         WorkspaceProjectName = workspace.ProjectName;
@@ -171,6 +175,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                     StatusText = unsupported;
                 }
             }));
+    }
+
+    /// <summary>
+    /// Thin delegating seam for the agent panel send flow.
+    /// Forwards to <see cref="AgentExecutionCoordinator"/>.
+    /// </summary>
+    public async Task SendAgentMessageAsync(string panelId, string userMessage, CancellationToken ct = default)
+    {
+        await AgentExecutionCoordinator.SendAsync(panelId, userMessage, ct).ConfigureAwait(false);
     }
 
     public void Dispose()

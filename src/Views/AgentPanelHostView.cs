@@ -20,6 +20,9 @@ namespace Zaide.Views;
 ///
 /// By design this control never lives inside a ViewModel — the retained
 /// <c>AgentPanelView</c> cache stays in the view layer only.
+///
+/// M2: Exposes <see cref="PanelSendRequested"/> event that bubbles from
+/// individual <see cref="AgentPanelView.SendRequested"/> events.
 /// </summary>
 public sealed class AgentPanelHostView : UserControl
 {
@@ -33,6 +36,12 @@ public sealed class AgentPanelHostView : UserControl
     private AgentPanelState? _activePanel;
     private readonly IBrush? _activeBrush;
     private readonly IBrush _inactiveBrush = Brushes.Transparent;
+
+    /// <summary>
+    /// Raised when the user requests to send a message from a panel.
+    /// Payload is (panelId, messageText).
+    /// </summary>
+    public event Action<string, string>? PanelSendRequested;
 
     public AgentPanelHostView()
     {
@@ -176,6 +185,7 @@ public sealed class AgentPanelHostView : UserControl
         if (_panels.ContainsKey(panel)) return;
 
         var view = new AgentPanelView { ViewModel = panel };
+        view.SendRequested += OnPanelViewSendRequested;
         _panels[panel] = view;
 
         var tabItem = BuildTabItem(panel);
@@ -190,6 +200,7 @@ public sealed class AgentPanelHostView : UserControl
     {
         if (_panels.TryGetValue(panel, out var view))
         {
+            view.SendRequested -= OnPanelViewSendRequested;
             view.ViewModel = null;
             _panels.Remove(panel);
         }
@@ -266,6 +277,11 @@ public sealed class AgentPanelHostView : UserControl
         };
 
         return border;
+    }
+
+    private void OnPanelViewSendRequested(string panelId, string message)
+    {
+        PanelSendRequested?.Invoke(panelId, message);
     }
 
     private static Button BuildNewPanelButton()

@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI;
@@ -17,6 +18,8 @@ namespace Zaide.Views;
 ///
 /// View-layer only — no ViewModel. Binds directly to <see cref="AgentPanelState"/>
 /// via its observable properties.
+///
+/// M2: Exposes <see cref="SendRequested"/> event for Enter-to-send.
 /// </summary>
 public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 {
@@ -24,6 +27,12 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
     private readonly TextBlock _statusText;
     private readonly ListBox _outputList;
     private readonly TextBox _inputBox;
+
+    /// <summary>
+    /// Raised when the user presses Enter in the input box with non-empty text.
+    /// Payload is (panelId, messageText).
+    /// </summary>
+    public event Action<string, string>? SendRequested;
 
     public AgentPanelView()
     {
@@ -78,6 +87,9 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd)
         };
 
+        // M2: Enter-to-send trigger
+        _inputBox.KeyDown += OnInputBoxKeyDown;
+
         var inputBorder = new Border
         {
             Background = (IBrush?)resources["SurfaceBaseBrush"],
@@ -111,5 +123,24 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             d.Add(this.OneWayBind(ViewModel, vm => vm.OutputHistory, v => v._outputList.ItemsSource));
             d.Add(this.Bind(ViewModel, vm => vm.DraftInput, v => v._inputBox.Text));
         });
+    }
+
+    private void OnInputBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+
+        var panelId = ViewModel?.PanelId;
+        var message = ViewModel?.DraftInput;
+
+        if (string.IsNullOrWhiteSpace(panelId))
+            return;
+
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        SendRequested?.Invoke(panelId, message);
     }
 }

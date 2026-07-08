@@ -50,6 +50,7 @@ class Program
                         return options;
                     });
                     services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
+                    services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
                     services.AddSingleton(_ =>
                     {
                         var client = new HttpClient();

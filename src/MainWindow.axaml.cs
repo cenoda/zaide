@@ -99,6 +99,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire the agent-panel host view to IAgentPanelHost
             _agentPanelHostView.SetHost(ViewModel!.AgentPanelHost);
 
+            // M2: Wire panel send event through the thin composition seam
+            void OnPanelSendRequested(string panelId, string message)
+            {
+                _ = ViewModel!.SendAgentMessageAsync(panelId, message);
+            }
+            _agentPanelHostView.PanelSendRequested += OnPanelSendRequested;
+            disposables.Add(Disposable.Create(() =>
+                _agentPanelHostView.PanelSendRequested -= OnPanelSendRequested));
+
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
 

@@ -22,6 +22,11 @@ public class MainWindowViewModelTests
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
 
+    private static Mock<IAgentExecutionCoordinator> CreateMockCoordinator()
+    {
+        return new Mock<IAgentExecutionCoordinator>();
+    }
+
     private static MainWindowViewModel CreateViewModel()
     {
         return CreateViewModel(new FileService());
@@ -48,7 +53,8 @@ public class MainWindowViewModelTests
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), townhallViewModel, scViewModel, workspace);
+        var coordinator = CreateMockCoordinator().Object;
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -69,7 +75,8 @@ public class MainWindowViewModelTests
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), townhallViewModel, scViewModel, workspace);
+        var coordinator = CreateMockCoordinator().Object;
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), coordinator, townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -232,7 +239,8 @@ public class MainWindowViewModelTests
         var scState2 = new SourceControlState();
         var scViewModel2 = new SourceControlViewModel(scState2);
         var workspace2 = sp.GetRequiredService<Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, new AgentPanelHost(), townhallViewModel2, scViewModel2, workspace2);
+        var coordinator2 = CreateMockCoordinator().Object;
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, new AgentPanelHost(), coordinator2, townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();

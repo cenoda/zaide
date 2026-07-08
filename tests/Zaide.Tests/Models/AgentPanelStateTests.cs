@@ -135,10 +135,112 @@ public class AgentPanelStateTests
     {
         // Phase 5.1.1 shape: PanelId, AgentId, AgentName, AvatarResourceKey,
         // Status, OutputHistory, DraftInput — no more, no less.
+        // M2: AgentPanelState extends ReactiveObject. ReactiveObject exposes
+        // inherited public properties (e.g. Changed, Changing). We filter to
+        // only properties declared directly on AgentPanelState.
         var type = typeof(AgentPanelState);
-        var props = type.GetProperties().Select(p => p.Name).OrderBy(n => n).ToList();
+        var props = type.GetProperties()
+            .Where(p => p.DeclaringType == typeof(AgentPanelState))
+            .Select(p => p.Name)
+            .OrderBy(n => n)
+            .ToList();
 
         var expected = new[] { "AgentId", "AgentName", "AvatarResourceKey", "DraftInput", "OutputHistory", "PanelId", "Status" };
         Assert.Equal(expected, props);
+    }
+
+    // ── M2: Reactive property behavior ──────────────────────────────────────
+
+    [Fact]
+    public void Status_Setter_RaisesPropertyChanged()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.Status))
+                changedCount++;
+        };
+
+        state.Status = "Thinking";
+        Assert.Equal(1, changedCount);
+        Assert.Equal("Thinking", state.Status);
+    }
+
+    [Fact]
+    public void Status_SameValue_DoesNotRaiseChange()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.Status))
+                changedCount++;
+        };
+
+        // Set to non-default value
+        state.Status = "Thinking";
+        Assert.Equal(1, changedCount);
+
+        // Set same value — should not raise
+        state.Status = "Thinking";
+        Assert.Equal(1, changedCount);
+    }
+
+    [Fact]
+    public void DraftInput_Setter_RaisesPropertyChanged()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.DraftInput))
+                changedCount++;
+        };
+
+        state.DraftInput = "Hello";
+        Assert.Equal(1, changedCount);
+        Assert.Equal("Hello", state.DraftInput);
+    }
+
+    [Fact]
+    public void DraftInput_SameValue_DoesNotRaiseChange()
+    {
+        var state = new AgentPanelState();
+        var changedCount = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.DraftInput))
+                changedCount++;
+        };
+
+        state.DraftInput = "Hello";
+        Assert.Equal(1, changedCount);
+
+        state.DraftInput = "Hello";
+        Assert.Equal(1, changedCount);
+    }
+
+    [Fact]
+    public void NonReactiveProperties_DoNotRaiseChangeForStatusOrDraftInput()
+    {
+        // Verify that setting non-reactive properties (e.g. AgentName) does
+        // not incorrectly fire change notifications for reactive properties.
+        var state = new AgentPanelState();
+        var statusChanged = 0;
+        var draftChanged = 0;
+        state.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.Status))
+                statusChanged++;
+            if (e.PropertyName == nameof(AgentPanelState.DraftInput))
+                draftChanged++;
+        };
+
+        state.AgentName = "New Agent";
+        state.PanelId = "new-panel";
+
+        Assert.Equal(0, statusChanged);
+        Assert.Equal(0, draftChanged);
     }
 }
