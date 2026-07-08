@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -29,6 +30,7 @@ namespace Zaide.Views;
 /// </summary>
 public sealed class AgentPanelHostView : UserControl
 {
+    private readonly ScrollViewer _scrollViewer;
     private readonly StackPanel _tabsPanel;
     private readonly Button _newPanelButton;
     private readonly ContentControl _content;
@@ -70,17 +72,37 @@ public sealed class AgentPanelHostView : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
+        // Mirror the EditorTabBar scroll mechanism: wrap the tab strip in a
+        // horizontal ScrollViewer so the agent tabs scroll when they overflow,
+        // with vertical wheel events translated to horizontal scrolling.
+        _scrollViewer = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = _tabsPanel,
+            MinHeight = 32, // content-driven; MinHeight avoids HiDPI clipping
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // Translate vertical mouse wheel → horizontal scrolling.
+        // By default ScrollViewer only scrolls vertically on wheel events.
+        _scrollViewer.PointerWheelChanged += (_, e) =>
+        {
+            // Multiply by 50 px/notch — Linux wheel deltas are tiny otherwise.
+            var delta = e.Delta.Y * 50;
+            _scrollViewer.Offset = new Vector(
+                _scrollViewer.Offset.X - delta, _scrollViewer.Offset.Y);
+            e.Handled = true;
+        };
+
         _newPanelButton = BuildNewPanelButton();
         _newPanelButton.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
-        var leftStrip = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = LayoutTokens.SpacingNone,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { _tabsPanel }
-        };
-
+        // Place the ScrollViewer directly in the Star column so it gets a
+        // constrained width to clip against. A wrapping horizontal StackPanel
+        // (the old leftStrip) would hand it unlimited width and defeat the
+        // scroll — the same flat Grid placement is what makes EditorTabBar
+        // scroll work.
         var stripGrid = new Grid
         {
             ColumnDefinitions =
@@ -88,9 +110,9 @@ public sealed class AgentPanelHostView : UserControl
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                 new ColumnDefinition { Width = GridLength.Auto }
             },
-            Children = { leftStrip, _newPanelButton }
+            Children = { _scrollViewer, _newPanelButton }
         };
-        Grid.SetColumn(leftStrip, 0);
+        Grid.SetColumn(_scrollViewer, 0);
         Grid.SetColumn(_newPanelButton, 1);
 
         var stripBorder = new Border
