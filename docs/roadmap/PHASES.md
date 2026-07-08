@@ -109,8 +109,10 @@ shared workspace" — this is now accurate and requires no adjustment.
 
 ## Phase 5: Agent Panels
 - [ ] Add dedicated agent surfaces without demoting Townhall from the primary workspace
-- [ ] Each agent panel: name, status indicator, output area
-- [ ] User input field per agent panel (talk to agent directly)
+- [ ] Establish the panel state/host/composition seam first (`phase-5.1` umbrella, split into `5.1.1`–`5.1.3`)
+- [ ] Each agent panel: name, status indicator, output area, and direct input surface
+- [ ] Support one minimal real direct-execution path to one configured OpenAI-compatible endpoint
+- [ ] Mirror direct-agent interactions into Townhall at the intended Phase 5 level
 
 ---
 
@@ -182,7 +184,7 @@ M7 regression sweep + doc sync complete:
 | 3 | Phase 2 editor works, can edit and save |
 | 4 | Phase 3 terminal UI normalization complete |
 | 5 | Phase 4 Townhall activity model works as a real shared workspace |
-| 6 | Phase 5 agent panels render and accept input |
+| 6 | Phase 5 agent panels render and accept input, support one minimal real direct-execution path, and keep Townhall truthful for direct-agent interactions |
 | 7 | Phase 6 agent routing works |
 
 ---

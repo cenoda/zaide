@@ -126,12 +126,12 @@ Cleaned up layer boundaries within the single-project structure:
 
 The next stages build on the Phase 4 Townhall activity surface:
 
-- **Agent panels** — individual UIs for each agent when dedicated surfaces are needed
+- **Agent panels** — individual UIs for each agent when dedicated surfaces are needed; Phase 5 now also includes one minimal real direct-execution path and Townhall visibility for direct-agent interactions
 - **@mention routing** — agents can request review from each other
 - **Git integration** — status, diff, and commits from the sidebar
 - **Editor** — still visible and powerful, but framed as the implementation surface
 
-See [docs/roadmap/PHASES.md](docs/roadmap/PHASES.md) for the full plan.
+See [docs/roadmap/PHASES.md](docs/roadmap/PHASES.md) for the full plan. Phase 5 starts with a nested `phase-5.1` umbrella (`5.1.1`–`5.1.3`) so the state/host/composition seam is decided before UI, execution, and Townhall mirroring land.
 
 ## Why "Zaide"
 
