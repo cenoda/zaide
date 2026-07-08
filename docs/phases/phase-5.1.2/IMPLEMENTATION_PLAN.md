@@ -28,6 +28,19 @@
 - Routing between panels or agents
 - Final shell placement details
 
+## Host Ownership Decision
+
+This decision is locked for Phase 5.1.2 and later slices unless live implementation proves a concrete blocker, mirroring the existing `ITerminalHost`/`TerminalHost` precedent:
+
+1. **The agent-panel host owns panel collection and active selection.**
+   Multi-panel collection/selection/lifecycle logic lives in the dedicated host seam, identical to how the terminal host owns terminal tabs and active session.
+
+2. **Agent-panel collection/selection state stays out of `MainWindowViewModel` as direct state.**
+   `MainWindowViewModel` may compose the injected host seam; it should not become the host.
+
+3. **Retained view-only state stays in the view layer if needed later.**
+   If Phase 5.2 later requires retained per-panel visual state (e.g. scroll position, expanded sections), that state belongs in the view layer rather than the ViewModel seam.
+
 ## Milestones
 
 | Milestone | Description | Test |

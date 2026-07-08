@@ -317,14 +317,14 @@ public class TownhallViewModelTests
 
         // Verify Messages collection now references the other channel's messages
         // ai-status channel starts empty; the switch logs 1 ChannelEvent
-        Assert.Equal(1, vm.Messages.Count);
+        Assert.Single(vm.Messages);
         Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[0].Kind);
 
         // Switch back to initial channel and verify messages are restored
         vm.SelectChannelCommand.Execute(initialActiveId).Subscribe();
         Assert.Equal(initialActiveId, vm.ActiveChannelId);
         // townhall-main starts empty; the switch logs 1 ChannelEvent
-        Assert.Equal(1, vm.Messages.Count);
+        Assert.Single(vm.Messages);
         Assert.Equal(TownhallMessageKind.ChannelEvent, vm.Messages[0].Kind);
     }
 
@@ -401,7 +401,7 @@ public class TownhallViewModelTests
         vm.FilterMode = FilterMode.ChatOnly;
 
         Assert.NotNull(latest);
-        Assert.Equal(0, latest!.Count);
+        Assert.Empty(latest!);
         Assert.All(latest, m => Assert.Equal(TownhallMessageKind.Chat, m.Kind));
     }
 
