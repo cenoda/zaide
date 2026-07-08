@@ -490,6 +490,103 @@ public class TownhallViewModelTests
     }
 
     /// <summary>
+    /// Verifies that AddMirroredActivity with kind=Chat appends a Chat entry to the active channel.
+    /// </summary>
+    [Fact]
+    public void AddMirroredActivity_ChatKind_AppendsChatEntry()
+    {
+        var vm = CreateViewModel();
+        var initialCount = vm.Messages.Count;
+
+        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Hello from agent panel",
+            senderId: "agent-1", senderName: "Zaide Agent");
+
+        Assert.Equal(initialCount + 1, vm.Messages.Count);
+        var last = vm.Messages[vm.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.Chat, last.Kind);
+        Assert.Equal("Hello from agent panel", last.Content);
+        Assert.Equal("agent-1", last.SenderId);
+        Assert.Equal("Zaide Agent", last.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that AddMirroredActivity with kind=AgentError appends an AgentError entry.
+    /// </summary>
+    [Fact]
+    public void AddMirroredActivity_AgentErrorKind_AppendsAgentErrorEntry()
+    {
+        var vm = CreateViewModel();
+        var initialCount = vm.Messages.Count;
+
+        vm.AddMirroredActivity(TownhallMessageKind.AgentError, "Request failed: timeout",
+            senderId: "agent-1", senderName: "Zaide Agent");
+
+        Assert.Equal(initialCount + 1, vm.Messages.Count);
+        var last = vm.Messages[vm.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.AgentError, last.Kind);
+        Assert.Equal("Request failed: timeout", last.Content);
+        Assert.Equal("agent-1", last.SenderId);
+        Assert.Equal("Zaide Agent", last.SenderName);
+        Assert.Equal("avatar-agent", last.SenderAvatar);
+    }
+
+    /// <summary>
+    /// Verifies that AddMirroredActivity targets the currently active channel.
+    /// After switching channels, the entry appears in the new active channel, not the old one.
+    /// </summary>
+    [Fact]
+    public void AddMirroredActivity_TargetsActiveChannel()
+    {
+        var vm = CreateViewModel();
+        var initialId = vm.ActiveChannelId;
+        Assert.NotNull(initialId);
+
+        // Send a mirrored activity on the initial channel
+        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on initial channel",
+            senderId: "user-1", senderName: "User");
+
+        // Switch to another channel
+        var otherId = vm.Channels.First(c => c.Id != initialId).Id;
+        vm.SelectChannelCommand.Execute(otherId).Subscribe();
+
+        // Send a mirrored activity on the other channel
+        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on other channel",
+            senderId: "user-1", senderName: "User");
+
+        // The other channel's messages should contain the second message
+        var otherMessages = vm.Messages;
+        var lastOnOther = otherMessages[otherMessages.Count - 1];
+        Assert.Equal("Message on other channel", lastOnOther.Content);
+
+        // Switch back to initial channel and verify the first message is still there
+        vm.SelectChannelCommand.Execute(initialId!).Subscribe();
+        var initialMessages = vm.Messages;
+        Assert.Contains(initialMessages, m => m.Content == "Message on initial channel");
+    }
+
+    /// <summary>
+    /// Verifies that AddMirroredActivity with kind=Chat uses "avatar-user" for user senderId
+    /// and "avatar-agent" for non-user senderId.
+    /// </summary>
+    [Fact]
+    public void AddMirroredActivity_SetsCorrectAvatarBySender()
+    {
+        var vm = CreateViewModel();
+
+        // User sender
+        vm.AddMirroredActivity(TownhallMessageKind.Chat, "User message",
+            senderId: "user-1", senderName: "User");
+        var userMsg = vm.Messages[vm.Messages.Count - 1];
+        Assert.Equal("avatar-user", userMsg.SenderAvatar);
+
+        // Agent sender
+        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Agent message",
+            senderId: "agent-5", senderName: "Some Agent");
+        var agentMsg = vm.Messages[vm.Messages.Count - 1];
+        Assert.Equal("avatar-agent", agentMsg.SenderAvatar);
+    }
+
+    /// <summary>
     /// Verifies that sending a message while ChatOnly filter is active correctly updates FilteredMessages.
     /// This tests the CollectionChanged reactivity fix.
     /// </summary>

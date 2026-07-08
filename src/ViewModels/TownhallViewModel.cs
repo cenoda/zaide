@@ -223,6 +223,21 @@ public class TownhallViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Appends a mirrored activity entry to the active channel's message collection.
+    /// This is the narrow public surface for app-layer mirroring (e.g., agent-panel
+    /// interactions mirrored into Townhall). Keeps channel/message-list invariants
+    /// internal to this ViewModel.
+    /// </summary>
+    /// <param name="kind">The kind of entry (Chat, AgentError, etc.).</param>
+    /// <param name="content">The text content of the entry.</param>
+    /// <param name="senderId">The ID of the sender (agent or user).</param>
+    /// <param name="senderName">The display name of the sender.</param>
+    public void AddMirroredActivity(TownhallMessageKind kind, string content, string senderId, string senderName)
+    {
+        LogActivity(kind, content, senderId, senderName);
+    }
+
+    /// <summary>
     /// Appends a classified activity entry to the active channel's message collection.
     /// Uses the M1 rule: Kind == Chat classifies as chat; all other kinds are action/log.
     /// Ensures the channel entry exists in ChannelMessages.
