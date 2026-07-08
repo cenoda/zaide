@@ -185,6 +185,14 @@ test record.
 - [ ] Commit from IDE
 - [ ] Branch display
 
+Implementation split:
+
+- `docs/phases/phase-7/IMPLEMENTATION_PLAN.md` (umbrella)
+- `docs/phases/phase-7.1/IMPLEMENTATION_PLAN.md` — repository discovery + status seam
+- `docs/phases/phase-7.2/IMPLEMENTATION_PLAN.md` — live Source Control wiring
+- `docs/phases/phase-7.3/IMPLEMENTATION_PLAN.md` — basic diff view
+- `docs/phases/phase-7.4/IMPLEMENTATION_PLAN.md` — stage/unstage + local commit
+
 ---
 
 ## Entry Conditions
