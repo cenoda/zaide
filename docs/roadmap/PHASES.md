@@ -172,12 +172,25 @@ M7 regression sweep + doc sync complete:
 tab strip scrolling, live Townhall refresh on agent send, input cleared after
 send, Enter vs Shift+Enter behavior, channel highlight switching, input width
 stability) were fixed, verified by automated tests (724 passed, 0 failed), and
-confirmed by manual visual smoke. Two known routing-visibility gaps remain
-(unknown-mention visible failure, routed-flow Townhall surfacing), documented
-in `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` (Known Gaps). Phase 7 entry
+confirmed by manual visual smoke. Two known routing-visibility gaps remained
+(unknown-mention visible failure, routed-flow Townhall surfacing) at Phase 6
+close — **both closed in Phase 6.1** (see below). Phase 7 entry
 condition ("Phase 6 agent routing works — mechanical routing + identity + parser
 shipped") is satisfied. See `docs/phases/phase-6/TOFIX.md` for the full smoke
 test record.
+
+### Phase 6.1: Routing Visibility Follow-up
+- [x] Surface `@mention` routing failures in Townhall (`AgentError` under source panel identity, `"Routing failed: {reason}"`)
+- [x] Mirror routed-flow outcomes into Townhall from the resolved target panel (last assistant/error output, target identity)
+- [x] Handle vanished target panel gracefully (no crash, no entry)
+- [x] Dedicated `AgentRouter` tests (`tests/Zaide.Tests/ViewModels/AgentRouterTests.cs`) — routing resolution + dispatch only, no Townhall dependency
+
+**Completed 2026-07-09.** `MainWindowViewModel.SendAgentMessageAsync` now consumes
+`RouteResult` to surface routing failures and routed-flow outcomes in Townhall
+(Townhall-only visibility; `AgentRouter` remains Townhall-free). Added 7 router
+tests plus 5 view-model mirroring tests. All audit TOFIX items resolved
+(`docs/phases/phase-6.1/TOFIX.md`). Build clean, 736 tests pass, no UI changes
+beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 
 ## Phase 7: Git Integration
 - [ ] Git status in left sidebar
@@ -206,8 +219,8 @@ Implementation split:
 | 4 | Phase 3 terminal UI normalization complete |
 | 5 | Phase 4 Townhall activity model works as a real shared workspace |
 | 6 | Phase 5 agent panels render and accept input, support one minimal real direct-execution path, and keep Townhall truthful for direct-agent interactions |
-| 7 | Phase 6 agent routing works (mechanical routing + identity + parser shipped; routing-visibility gaps tracked in the Phase 6 plan) |
+| 7 | Phase 6 agent routing works (mechanical routing + identity + parser shipped; routing-visibility gaps closed in Phase 6.1) |
 
 ---
 
-*Last updated: 2026-07-08 (Phase 6 closed via M6 audit; routing-visibility gaps documented)*
+*Last updated: 2026-07-09 (Phase 6.1 closed — routing-visibility gaps surfaced in Townhall, dedicated AgentRouter tests added, all audit TOFIX items resolved)*
