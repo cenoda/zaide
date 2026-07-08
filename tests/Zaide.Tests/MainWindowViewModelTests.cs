@@ -48,7 +48,7 @@ public class MainWindowViewModelTests
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -69,7 +69,7 @@ public class MainWindowViewModelTests
         var scState = new SourceControlState();
         var scViewModel = new SourceControlViewModel(scState);
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, new AgentPanelHost(), townhallViewModel, scViewModel, workspace);
         vm.Activate();
         return vm;
     }
@@ -232,7 +232,7 @@ public class MainWindowViewModelTests
         var scState2 = new SourceControlState();
         var scViewModel2 = new SourceControlViewModel(scState2);
         var workspace2 = sp.GetRequiredService<Workspace>();
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, townhallViewModel2, scViewModel2, workspace2);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, new AgentPanelHost(), townhallViewModel2, scViewModel2, workspace2);
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();

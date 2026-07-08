@@ -76,6 +76,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
     public ITerminalHost TerminalHost { get; }
+    public IAgentPanelHost AgentPanelHost { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
 
@@ -92,6 +93,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                EditorTabViewModel editorTabViewModel,
                                ITerminalHost terminalHost,
+                               IAgentPanelHost agentPanelHost,
                                TownhallViewModel townhallViewModel,
                                SourceControlViewModel sourceControlViewModel,
                                Workspace workspace)
@@ -99,6 +101,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalHost = terminalHost;
+        AgentPanelHost = agentPanelHost;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
         WorkspaceProjectName = workspace.ProjectName;

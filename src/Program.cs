@@ -26,6 +26,7 @@ class Program
                     services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
                     services.AddSingleton<ITerminalHost, TerminalHost>();
+                    services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
                     services.AddSingleton<IFileTreeService, FileTreeService>();
                     services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
                     services.AddSingleton<FileTreeViewModel>();

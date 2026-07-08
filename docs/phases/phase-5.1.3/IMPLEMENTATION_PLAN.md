@@ -73,11 +73,11 @@ Phase 5 sub-phases:
 
 ## Exit Conditions
 
-- [ ] `MainWindowViewModel` composes the agent-panel host seam (M1)
-- [ ] `Program.cs` registers the new seam correctly (M1)
+- [x] `MainWindowViewModel` composes the agent-panel host seam (M1)
+- [x] `Program.cs` registers the new seam correctly (M1)
 - [ ] Phase 5.1 umbrella docs accurately reflect the resulting shape (M2)
-- [ ] `dotnet build Zaide.slnx` passes
-- [ ] Focused composition tests pass (M1)
+- [x] `dotnet build Zaide.slnx` passes
+- [x] Focused composition tests pass (M1)
 - [x] M0 decision recorded and confirmed against live precedent
 
 ## Rollback Plan
