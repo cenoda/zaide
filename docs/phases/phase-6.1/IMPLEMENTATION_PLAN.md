@@ -39,6 +39,19 @@ warnings. Tests: 729 passed / 0 failed. Changes confined to
 `src/ViewModels/MainWindowViewModel.cs` and
 `tests/Zaide.Tests/MainWindowViewModelTests.cs`.
 
+**M2 complete (2026-07-09).**
+
+Added `tests/Zaide.Tests/ViewModels/AgentRouterTests.cs` with 7 tests covering
+routing resolution and dispatch only (no Townhall): direct-send dispatch to the
+source panel, routed-send dispatch to the resolved target panel with stripped
+content, and all failure cases (unknown / ambiguous / multiple mentions / empty
+input / empty content after stripping). Failure tests also assert the coordinator
+is never invoked. Build: 0 errors / 0 warnings. Tests: 736 passed / 0 failed
+(729 + 7 new). Change confined to the new test file.
+
+**M3 complete (2026-07-09).** Build clean, full suite green, no UI changes
+beyond Townhall. Phase 6.1 is complete.
+
 This is a small follow-up phase to close the routing-visibility gaps documented in
 the Phase 6 Known Gaps section. It does **not** introduce git integration, multi-hop
 routing, or any feature expansion.
@@ -152,8 +165,8 @@ only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
 |-----------|-------------|------|
 | M0 | Lock the 6.1 visibility decisions (Townhall-only, entry formats, RouteResult shape, edge cases, test ownership split) — **DONE** | Plan truth-sync |
 | M1 | Consume `RouteResult` in `MainWindowViewModel.SendAgentMessageAsync`: on parse failure mirror a Townhall error entry; on routed success read target panel output and mirror into Townhall | `MainWindowViewModelTests` for unknown target, routed success, ambiguous target, vanished target panel — ✅ Complete (M1) |
-| M2 | Add dedicated `AgentRouterTests.cs` covering routing resolution and target execution only (no Townhall assertions) | Router tests for direct-send dispatch, routed-send dispatch, all failure cases (unknown/ambiguous/multi/empty) |
-| M3 | Verify build/tests green; no UI changes beyond Townhall | Build + test verification |
+| M2 | Add dedicated `AgentRouterTests.cs` covering routing resolution and target execution only (no Townhall assertions) — ✅ Complete (M2) | Router tests for direct-send dispatch, routed-send dispatch, all failure cases (unknown/ambiguous/multi/empty) |
+| M3 | Verify build/tests green; no UI changes beyond Townhall — ✅ Complete (M3) | Build + test verification |
 
 ## Likely Implementation Shape
 
@@ -187,7 +200,7 @@ only. Townhall visibility assertions belong in `MainWindowViewModelTests`.
 - [x] Routed-flow outcomes produce visible Townhall entries (target panel's last assistant output mirrored with target panel identity)
 - [x] Vanished target panel between routing and mirroring is handled gracefully (no crash, no entry)
 - [x] All 6 `MentionParser` failure reasons are mapped to Townhall entries (via the shared `"Routing failed: {FailureReason}"` path)
-- [ ] Dedicated `AgentRouter` test file exists with passing tests (routing resolution + target execution only, no Townhall) — M2
+- [x] Dedicated `AgentRouter` test file exists with passing tests (routing resolution + target execution only, no Townhall) — M2
 - [x] `AgentRouter` remains free of Townhall dependency
 - [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
 - [x] Tests pass: `dotnet test Zaide.slnx --no-build`

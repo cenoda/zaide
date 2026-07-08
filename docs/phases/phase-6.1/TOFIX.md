@@ -81,4 +81,6 @@ This is guidance for the M2 implementation, not a pre-existing defect.
 
 ### Status
 
-- [ ] To be satisfied by M2 `AgentRouterTests.cs`
+- [x] Satisfied by M2 `AgentRouterTests.cs` — failure tests assert the coordinator
+  is never invoked; the routed-dispatch test asserts `SendAsync` is called with the
+  target panel's `PanelId` (and never the source).
