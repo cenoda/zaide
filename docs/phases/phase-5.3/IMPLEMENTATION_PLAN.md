@@ -377,6 +377,7 @@ Phase 5.3 should not widen itself just to pioneer a large new UI test harness.
 | M2 | Add one explicit panel send trigger and implement the narrow orchestration seam (`IAgentExecutionCoordinator` if retained) that receives it | View/ViewModel tests |
 | M3 | Expose visible busy/success/error behavior in the panel without widening provider or Townhall scope | ViewModel tests + manual smoke |
 | M4 | Verify failure handling for missing config, endpoint failure, invalid response, and the one-in-flight policy | Service/ViewModel tests |
+| [x] M4 | Failure handling verified and tightened: missing API key, invalid URL, missing model, HTTP non-success, malformed JSON, missing choices, null/empty content, empty user message, HTTP exception, TaskCanceledException, OperationCanceledException, one-in-flight per panel, duplicate-send no-op, error-recovery in single coordinator instance | All 684 tests pass |
 
 ## Test Budget
 

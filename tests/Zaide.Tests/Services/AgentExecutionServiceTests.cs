@@ -344,6 +344,19 @@ public sealed class AgentExecutionServiceTests
         Assert.Contains("cancelled", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_OperationCancelled_ReturnsFailure()
+    {
+        var handler = new FaultMessageHandler(new OperationCanceledException("Cancelled by token"));
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, DefaultOptions());
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── Missing choices property entirely ───────────────────────────────────
 
     [Fact]

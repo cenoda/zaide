@@ -48,6 +48,54 @@ public sealed class AgentExecutionCoordinatorTests
         });
     }
 
+    /// <summary>
+    /// Creates an execution service with missing API key (empty string).
+    /// </summary>
+    private static IAgentExecutionService CreateServiceWithMissingApiKey()
+    {
+        var options = new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "",
+            Model = "test-model"
+        };
+        var handler = new FakeHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(handler);
+        return new AgentExecutionService(httpClient, options);
+    }
+
+    /// <summary>
+    /// Creates a stateful handler that fails on the first call and succeeds on
+    /// subsequent calls. Used to test error recovery within a single coordinator.
+    /// </summary>
+    private sealed class ToggleHandler : HttpMessageHandler
+    {
+        private bool _hasFailed;
+
+        public ToggleHandler() { }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken ct)
+        {
+            if (!_hasFailed)
+            {
+                _hasFailed = true;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent("Server error", Encoding.UTF8, "application/json")
+                });
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    choices = new[] { new { message = new { content = "Recovered" }, finish_reason = "stop" } }
+                }), Encoding.UTF8, "application/json")
+            });
+        }
+    }
+
     // ── Successful send ─────────────────────────────────────────────────────
 
     [Fact]
@@ -65,6 +113,8 @@ public sealed class AgentExecutionCoordinatorTests
         Assert.Equal(2, panel.OutputHistory.Count);
         Assert.Equal("User: Hi", panel.OutputHistory[0]);
         Assert.Equal("Assistant: Hello back", panel.OutputHistory[1]);
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
     }
 
     [Fact]
@@ -81,6 +131,73 @@ public sealed class AgentExecutionCoordinatorTests
         await coordinator.SendAsync(panel.PanelId, "Hi there");
 
         Assert.Equal(string.Empty, panel.DraftInput);
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+    }
+
+    // ── Missing configuration failure ───────────────────────────────────────
+
+    [Fact]
+    public async Task SendAsync_MissingApiKey_AppendsErrorToOutput()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateServiceWithMissingApiKey();
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Equal(2, panel.OutputHistory.Count);
+        Assert.Equal("User: Hello", panel.OutputHistory[0]);
+        Assert.Contains("Error:", panel.OutputHistory[1]);
+        Assert.Contains("API key", panel.OutputHistory[1], StringComparison.OrdinalIgnoreCase);
+        // Draft should not be cleared on config failure
+        Assert.Empty(panel.DraftInput);
+    }
+
+    [Fact]
+    public async Task SendAsync_MissingBaseUrl_AppendsErrorToOutput()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var options = new AgentExecutionOptions
+        {
+            BaseUrl = "",
+            ApiKey = "test-key",
+            Model = "test-model"
+        };
+        var handler = new FakeHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, options);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("Base URL", panel.OutputHistory[1], StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task SendAsync_MissingModel_AppendsErrorToOutput()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var options = new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "test-key",
+            Model = ""
+        };
+        var handler = new FakeHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, options);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("Model", panel.OutputHistory[1], StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Failed send ─────────────────────────────────────────────────────────
@@ -97,6 +214,8 @@ public sealed class AgentExecutionCoordinatorTests
 
         // Draft should NOT be cleared on failure
         Assert.Equal("Hello", panel.DraftInput);
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
     }
 
     [Fact]
@@ -112,6 +231,8 @@ public sealed class AgentExecutionCoordinatorTests
         Assert.Equal("User: Hello", panel.OutputHistory[0]);
         Assert.Contains("Error:", panel.OutputHistory[1]);
         Assert.Contains("401", panel.OutputHistory[1]);
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
     }
 
     // ── One-in-flight enforcement ───────────────────────────────────────────
@@ -141,6 +262,9 @@ public sealed class AgentExecutionCoordinatorTests
         // Only the first message should have been added
         Assert.Single(panel.OutputHistory, o => o == "User: Hello");
         Assert.DoesNotContain("World", panel.OutputHistory);
+        // Final state should be Idle and not busy
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
     }
 
     [Fact]
@@ -231,6 +355,10 @@ public sealed class AgentExecutionCoordinatorTests
         Assert.True(panel.IsBusy);
 
         await task;
+
+        // After completion, status should be Idle and not busy
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
     }
 
     [Fact]
@@ -319,8 +447,11 @@ public sealed class AgentExecutionCoordinatorTests
         // First send fails
         await coordinator.SendAsync(panel.PanelId, "Hello");
         Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
 
-        // Second send succeeds
+        // Second send succeeds with a different service (same coordinator not
+        // possible since the coordinator delegates to the service — we test
+        // the panel state transition, not the service swap).
         var successService = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "OK" }, finish_reason = "stop" } }
@@ -332,6 +463,39 @@ public sealed class AgentExecutionCoordinatorTests
         // Error state should have been reset by the new send
         Assert.Equal("Idle", panel.Status);
         Assert.False(panel.IsBusy);
+        // Output should contain both rounds
+        Assert.Equal(4, panel.OutputHistory.Count);
+        Assert.Equal("User: Hello", panel.OutputHistory[0]);
+        Assert.Contains("Error:", panel.OutputHistory[1]);
+        Assert.Equal("User: Hello again", panel.OutputHistory[2]);
+        Assert.Equal("Assistant: OK", panel.OutputHistory[3]);
+    }
+
+    [Fact]
+    public async Task SendAsync_ErrorResetsWithSingleCoordinatorUsingToggleHandler()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var handler = new ToggleHandler();
+        var httpClient = new HttpClient(handler);
+        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "test-key",
+            Model = "test-model"
+        });
+        var coordinator = new AgentExecutionCoordinator(host, service);
+
+        // First send fails (ToggleHandler fails first call)
+        await coordinator.SendAsync(panel.PanelId, "Hello");
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("500", panel.OutputHistory[1]);
+
+        // Second send recovers (ToggleHandler succeeds on subsequent calls)
+        await coordinator.SendAsync(panel.PanelId, "Hello again");
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Equal("Assistant: Recovered", panel.OutputHistory[3]);
     }
 }
 
