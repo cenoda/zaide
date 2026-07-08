@@ -467,7 +467,7 @@ Likely files to extend or add:
 - [x] `M0` locked decisions are recorded with live-code evidence before `M1`
       implementation begins
 - [x] New agent panels receive stable, distinguishable identities suitable for routing
-- [ ] A narrow route parsing/result model exists and is covered by tests
+- [x] A narrow route parsing/result model exists and is covered by tests
 - [ ] A dedicated routing orchestration seam exists outside `MainWindowViewModel`
 - [ ] Direct-send behavior still works when no mention target is present
 - [ ] A routed send can target another visible agent panel via the locked
