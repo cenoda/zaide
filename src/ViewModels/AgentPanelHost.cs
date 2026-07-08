@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using Zaide.Models;
 
@@ -13,7 +14,7 @@ namespace Zaide.ViewModels;
 ///
 /// Phase 5.1.2 only — intentionally narrow.
 /// </summary>
-public sealed class AgentPanelHost : IAgentPanelHost
+public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 {
     private readonly ObservableCollection<AgentPanelState> _panels;
     private AgentPanelState? _activePanel;
@@ -21,6 +22,8 @@ public sealed class AgentPanelHost : IAgentPanelHost
     public ObservableCollection<AgentPanelState> Panels => _panels;
 
     public AgentPanelState? ActivePanel => _activePanel;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public AgentPanelHost()
     {
@@ -44,8 +47,9 @@ public sealed class AgentPanelHost : IAgentPanelHost
             DraftInput = string.Empty
         };
 
-        _panels.Add(panel);
         _activePanel = panel;
+        _panels.Add(panel);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
 
         return panel;
     }
@@ -69,5 +73,6 @@ public sealed class AgentPanelHost : IAgentPanelHost
             return;
 
         _activePanel = panel;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
     }
 }

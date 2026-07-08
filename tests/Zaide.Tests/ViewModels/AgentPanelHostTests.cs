@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Xunit;
 using Zaide.Models;
@@ -42,6 +44,19 @@ public class AgentPanelHostTests
         var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
 
         Assert.Same(panel, host.ActivePanel);
+    }
+
+    [Fact]
+    public void CreatePanel_RaisesActivePanelPropertyChanged()
+    {
+        var host = CreateHost();
+        var changed = new List<string?>();
+        ((INotifyPropertyChanged)host).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+
+        Assert.Same(panel, host.ActivePanel);
+        Assert.Contains(nameof(IAgentPanelHost.ActivePanel), changed);
     }
 
     [Fact]
@@ -104,6 +119,21 @@ public class AgentPanelHostTests
         host.ActivatePanel(panel1.PanelId);
 
         Assert.Same(panel1, host.ActivePanel);
+    }
+
+    [Fact]
+    public void ActivatePanel_RaisesActivePanelPropertyChanged()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var changed = new List<string?>();
+        ((INotifyPropertyChanged)host).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        host.ActivatePanel(panel1.PanelId);
+
+        Assert.Same(panel1, host.ActivePanel);
+        Assert.Contains(nameof(IAgentPanelHost.ActivePanel), changed);
     }
 
     [Fact]
