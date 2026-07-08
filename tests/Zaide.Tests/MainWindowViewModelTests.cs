@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -264,6 +265,159 @@ public class MainWindowViewModelTests
 
         service.Verify(s => s.Dispose(), Times.Never);
         Assert.Same(terminalVm, terminalHost.ActiveSession);
+    }
+
+    // ── Phase 5.4 M2: Townhall mirroring from SendAgentMessageAsync ───────────
+
+    /// <summary>
+    /// Creates a MainWindowViewModel with a real AgentPanelHost, real TownhallViewModel,
+    /// and a mock IAgentExecutionCoordinator that appends user/assistant output on success.
+    /// </summary>
+    private static (MainWindowViewModel Vm, AgentPanelState Panel) CreateMirrorTestViewModel(
+        string statusOnCompletion = "Idle",
+        bool appendAssistantOutput = true)
+    {
+        // Create panel
+        var agentHost = new AgentPanelHost();
+        var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
+
+        // Mock coordinator that simulates a successful or failed send
+        var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
+        mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            {
+                var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
+                if (p is null) return;
+                p.OutputHistory.Add($"User: {msg}");
+                if (appendAssistantOutput && statusOnCompletion != "Error")
+                {
+                    p.OutputHistory.Add("Assistant: Hello back");
+                }
+                p.Status = statusOnCompletion;
+                p.IsBusy = false;
+            })
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Moq.Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Moq.Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scState = new SourceControlState();
+        var scViewModel = new SourceControlViewModel(scState);
+        var workspace = sp.GetRequiredService<Workspace>();
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
+            mockCoordinator.Object, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+        return (vm, panel);
+    }
+
+    /// <summary>
+    /// Verifies that SendAgentMessageAsync mirrors the user request into Townhall
+    /// before executing the coordinator.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_MirrorsUserRequestIntoTownhall()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel();
+
+        // Switch to a known channel so we have an active channel
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeTownhallCount = vm.TownhallViewModel.Messages.Count;
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Hello from test");
+
+        // Townhall should have the user message (1 entry) plus the agent response (1 entry)
+        Assert.Equal(beforeTownhallCount + 2, vm.TownhallViewModel.Messages.Count);
+
+        // The first new entry should be the user message
+        var userEntry = vm.TownhallViewModel.Messages[beforeTownhallCount];
+        Assert.Equal(TownhallMessageKind.Chat, userEntry.Kind);
+        Assert.Equal("Hello from test", userEntry.Content);
+        Assert.Equal("user-1", userEntry.SenderId);
+        Assert.Equal("User", userEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that SendAgentMessageAsync mirrors the agent response into Townhall
+    /// after a successful send.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_MirrorsAgentResponseIntoTownhall()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Hello");
+
+        // Last entry should be the assistant response mirrored into Townhall
+        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.Chat, lastEntry.Kind);
+        Assert.Contains("Hello back", lastEntry.Content);
+        Assert.Equal("agent-1", lastEntry.SenderId);
+        Assert.Equal("Test Agent", lastEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that SendAgentMessageAsync mirrors an AgentError into Townhall
+    /// when the panel ends in Error status.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_MirrorsErrorIntoTownhall()
+    {
+        var (vm, panel) = CreateMirrorTestViewModel(statusOnCompletion: "Error");
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        await vm.SendAgentMessageAsync(panel.PanelId, "Hello");
+
+        // Last entry should be the error mirrored into Townhall
+        var lastEntry = vm.TownhallViewModel.Messages[vm.TownhallViewModel.Messages.Count - 1];
+        Assert.Equal(TownhallMessageKind.AgentError, lastEntry.Kind);
+        Assert.Equal("agent-1", lastEntry.SenderId);
+        Assert.Equal("Test Agent", lastEntry.SenderName);
+    }
+
+    /// <summary>
+    /// Verifies that SendAgentMessageAsync does not crash when the panel ID is unknown.
+    /// The user message should still be mirrored, but no response/error entry.
+    /// </summary>
+    [Fact]
+    public async Task SendAgentMessageAsync_UnknownPanel_UserMessageStillMirrored()
+    {
+        var (vm, _) = CreateMirrorTestViewModel();
+
+        var channelId = vm.TownhallViewModel.Channels[0].Id;
+        vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+        var beforeCount = vm.TownhallViewModel.Messages.Count;
+
+        // Use a panel ID that does not exist
+        await vm.SendAgentMessageAsync("non-existent-panel", "Hello");
+
+        // User message should have been mirrored (before the await),
+        // but no response/error entry since the panel was not found.
+        Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count);
+        var userEntry = vm.TownhallViewModel.Messages[beforeCount];
+        Assert.Equal(TownhallMessageKind.Chat, userEntry.Kind);
+        Assert.Equal("Hello", userEntry.Content);
+        Assert.Equal("user-1", userEntry.SenderId);
     }
 
     [Fact]

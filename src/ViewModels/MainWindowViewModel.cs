@@ -180,10 +180,56 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     /// <summary>
     /// Thin delegating seam for the agent panel send flow.
     /// Forwards to <see cref="AgentExecutionCoordinator"/>.
+    /// Before the await, mirrors the user request into Townhall via
+    /// <see cref="TownhallViewModel.AddMirroredActivity"/>.
+    /// After the await, inspects the panel's post-send state and mirrors
+    /// the visible result (response or error) into Townhall.
     /// </summary>
     public async Task SendAgentMessageAsync(string panelId, string userMessage, CancellationToken ct = default)
     {
+        // Mirror the user request into Townhall before executing.
+        TownhallViewModel.AddMirroredActivity(
+            kind: TownhallMessageKind.Chat,
+            content: userMessage,
+            senderId: "user-1",
+            senderName: "User");
+
         await AgentExecutionCoordinator.SendAsync(panelId, userMessage, ct).ConfigureAwait(false);
+
+        // Mirror the visible final result from the target panel state after execution.
+        var panel = AgentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
+        if (panel is null)
+            return;
+
+        if (panel.Status == "Error")
+        {
+            // Mirror the last error output entry as an AgentError.
+            var lastError = panel.OutputHistory.Count > 0
+                ? panel.OutputHistory[^1]
+                : "Request failed";
+            TownhallViewModel.AddMirroredActivity(
+                kind: TownhallMessageKind.AgentError,
+                content: lastError,
+                senderId: panel.AgentId,
+                senderName: panel.AgentName);
+        }
+        else
+        {
+            // Mirror the last assistant output entry as a Chat response.
+            // The coordinator always appends user first, then assistant — so the last
+            // entry is the agent response when successful.
+            var lastOutput = panel.OutputHistory.Count > 0
+                ? panel.OutputHistory[^1]
+                : null;
+            if (lastOutput is not null && lastOutput.StartsWith("Assistant: "))
+            {
+                TownhallViewModel.AddMirroredActivity(
+                    kind: TownhallMessageKind.Chat,
+                    content: lastOutput,
+                    senderId: panel.AgentId,
+                    senderName: panel.AgentName);
+            }
+        }
     }
 
     public void Dispose()
