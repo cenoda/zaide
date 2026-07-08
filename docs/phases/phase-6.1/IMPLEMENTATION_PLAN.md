@@ -6,7 +6,7 @@
 - [x] Re-check `src/ViewModels/MainWindowViewModel.cs` line 191-233 (SendAgentMessageAsync)
 - [x] Re-check `src/ViewModels/AgentRouter.cs` for RouteAndExecuteAsync behavior
 - [x] Re-check `src/Services/MentionParser.cs` for failure case returns
-- [x] Confirm no dedicated router test file exists under `tests/Zaide.Tests/ViewModels/`
+- [x] Confirm no dedicated router test file exists under `tests/Zaide.Tests/ViewModels/` (router tests go in `tests/Zaide.Tests/ViewModels/AgentRouterTests.cs`)
 
 ## Planning Status
 
