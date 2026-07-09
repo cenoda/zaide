@@ -17,14 +17,59 @@
 - [x] Confirm `IGitRepositoryService` is intentionally status-only / read-only with
       no diff method. `LibGit2Sharp` is already in the project; `DiffPlex` is documented
       in `LIBRARIES.md` but **not yet added** to `.csproj`.
-- [ ] Confirm LibGit2Sharp's `Repository.Diff.Compare<Patch>()` API is available and
+- [x] Confirm LibGit2Sharp's `Repository.Diff.Compare<Patch>()` API is available and
       can produce unified-diff text for a single file against HEAD vs index vs workdir.
-      *(Proof-of-concept: a short console test in the Zaide.Tests project that calls
-      the LibGit2Sharp diff API and renders a unified diff string. Record the result.)*
+      *(Proof-of-concept: committed at `tests/Zaide.Tests/Services/LibGit2SharpDiffProofOfConceptTests.cs`.
+      Full results recorded in the Proof-of-Concept Results section below.)*
+
+## Proof-of-Concept Results
+
+**File:** `tests/Zaide.Tests/Services/LibGit2SharpDiffProofOfConceptTests.cs` (9 tests)
+
+**Verdict:** LibGit2Sharp 0.30.0 is fully sufficient for Phase 7.3 diff production.
+No DiffPlex dependency is needed at this stage.
+
+### API Surface Findings
+
+| Scenario | API Call | Result |
+|----------|----------|--------|
+| Unstaged modified file | `repo.Diff.Compare<Patch>(HEAD, DiffTargets.WorkingDirectory, [path])` | Unified diff with `diff --git` header, `--- a/` / `+++ b/`, and `@@` hunks. `Patch.Content` is the complete unified diff string. |
+| Unstaged deleted file | Same as above | Correct deletion diff: `--- a/path` / `+++ /dev/null` with `-` lines. |
+| Unstaged untracked file | Same as above | Full-file addition diff: `--- /dev/null` / `+++ b/path` with `+` lines. Works when an explicit path filter is passed. |
+| Staged modified file | `repo.Diff.Compare<Patch>(HEAD, DiffTargets.Index, [path])` | Unified diff identical in structure to unstaged. |
+| Staged new file | Same as above | Full-file addition diff (as above). |
+| Staged deleted file | Same as above | Full deletion diff (as above). |
+| No diff (unmodified) | Same as above | `Patch.Content` is empty string. |
+| Multiple files | `repo.Diff.Compare<Patch>(HEAD, DiffTargets.WorkingDirectory)` (no path filter) | Combined unified diff with all modified files. |
+
+### Caveats Discovered
+
+1. **`PatchEntryChanges.Hunks` is NOT available in LibGit2Sharp 0.30.0.**
+   The `PatchEntryChanges` type does not expose a `Hunks` enumerable.
+   - `LinesAdded` / `LinesDeleted` work fine (int totals).
+   - Per-hunk iteration is not needed for M1–M3 (we only need `Patch.Content`).
+   - If per-hunk metadata is needed later, a `string.Split` on `@@` markers in the
+     unified diff string is a straightforward workaround.
+
+2. **Untracked files DO produce a diff when a path filter is provided.**
+   This is actually convenient: the same API call works for both tracked and
+   untracked files without special-casing.
+
+3. **Binary detection is NOT directly on `Patch`.**
+   The `Patch` type does not expose `IsBinaryComparison` at the top level.
+   - `TreeChanges` (from `repo.Diff.Compare<TreeChanges>(...)`) can determine
+     binary vs text per file.
+   - For M1, the implementation should first check `TreeChanges` for the file's
+     status, then request `Patch` only for text files. This avoids attempting
+     to produce a binary diff.
 
 ## Planning Status
 
 **Revised 2026-07-09 — audit tightened before implementation begins.**
+
+All locked decisions (see below) are confirmed viable by the proof-of-concept.
+
+The `IFileDiffService` seam design is verified against LibGit2Sharp's actual API.
 
 This sub-phase adds the first diff surface after repository truth and live Source Control
 status are already stable. The following decisions are **locked in this plan** and must
@@ -56,7 +101,7 @@ hunk actions, history compare, side-by-side editor integration, or broad review 
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| **M0** | Lock all decisions above. Complete the LibGit2Sharp diff proof-of-concept (single test: init a repo, stage a file, modify it, call `Diff.Compare<Patch>()`, render unified diff string). Record the result. | Proof-of-concept test passes and is committed to `tests/`. |
+| **M0** ✅ | Lock all decisions above. Complete the LibGit2Sharp diff proof-of-concept (9 tests: init a repo, stage a file, modify/delete/create, call `Diff.Compare<Patch>()` for HEAD:index and HEAD:workdir, verify unified diff string). Record the result. | Proof-of-concept tests all pass (9/9) at `tests/Zaide.Tests/Services/LibGit2SharpDiffProofOfConceptTests.cs`. |
 | **M1** | Add `IFileDiffService` seam + implementation. `GetDiff(repoRoot, FileChange)` returns `FileDiffResult` with unified diff text (or binary/unsupported marker). Staged files diff against HEAD:index; unstaged against HEAD:workdir. | Unit tests: modified file returns diff text, new file returns full content as diff, deleted file returns deletion diff, binary file returns `IsBinary=true`, unknown file path returns null. |
 | **M2** | Add `SelectedFileChange` / `SelectedFilePath` / `SelectedDiff` to `SourceControlViewModel`. Wire file-click → diff load. Persist selection by path across `ApplyResult`. Clear diff when file no longer exists. | ViewModel tests: clicking a file loads a diff, refresh with same path reselects it, refresh with removed path clears it, binary file populates `IsBinary` state. |
 | **M3** | Convert change lists from `ItemsControl` to `ListBox` in `SourceControlPanel`. Style selected row. Add diff rendering surface (a `TextBlock` / `ScrollViewer` showing the unified diff in monospace, or a "Binary file" fallback). Bind everything. | Build + tests; focused manual verification for selection, diff display, binary fallback, and refresh coherence. |
