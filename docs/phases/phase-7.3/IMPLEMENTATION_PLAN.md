@@ -104,7 +104,7 @@ hunk actions, history compare, side-by-side editor integration, or broad review 
 | **M0** ✅ | Lock all decisions above. Complete the LibGit2Sharp diff proof-of-concept (9 tests: init a repo, stage a file, modify/delete/create, call `Diff.Compare<Patch>()` for HEAD:index and HEAD:workdir, verify unified diff string). Record the result. | Proof-of-concept tests all pass (9/9) at `tests/Zaide.Tests/Services/LibGit2SharpDiffProofOfConceptTests.cs`. |
 | **M1** | Add `IFileDiffService` seam + implementation. `GetDiff(repoRoot, FileChange)` returns `FileDiffResult` with unified diff text (or binary/unsupported marker). Staged files diff against HEAD:index; unstaged against HEAD:workdir. | Unit tests: modified file returns diff text, new file returns full content as diff, deleted file returns deletion diff, binary file returns `IsBinary=true`, unknown file path returns null. |
 | **M2** | Add `SelectedFileChange` / `SelectedFilePath` / `SelectedDiff` to `SourceControlViewModel`. Wire file-click → diff load. Persist selection by path across `ApplyResult`. Clear diff when file no longer exists. | ViewModel tests: clicking a file loads a diff, refresh with same path reselects it, refresh with removed path clears it, binary file populates `IsBinary` state. |
-| **M3** | Convert change lists from `ItemsControl` to `ListBox` in `SourceControlPanel`. Style selected row. Add diff rendering surface (a `TextBlock` / `ScrollViewer` showing the unified diff in monospace, or a "Binary file" fallback). Bind everything. | Build + tests; focused manual verification for selection, diff display, binary fallback, and refresh coherence. |
+| **M3** ✅ | Convert change lists from `ItemsControl` to `ListBox` in `SourceControlPanel`. Style selected row. Add diff rendering surface (a `TextBlock` / `ScrollViewer` showing the unified diff in monospace, or a "Binary file" fallback). Bind everything. | Build + tests; focused manual verification for selection, diff display, binary fallback, and refresh coherence. |
 
 ## Seam Design (Pre-Approved)
 
@@ -176,14 +176,14 @@ to the single file path. Renders `Patch` content into unified diff string format
 
 ## Exit Conditions
 
-- [ ] A selected changed file surfaces a basic unified diff below the change lists
-- [ ] Binary / unsupported files show an inline "not available" message
-- [ ] Selection survives refresh (same path → diff stays; removed path → diff clears)
-- [ ] Empty / unknown file paths degrade gracefully (null → diff area hidden)
-- [ ] Diff generation is behind `IFileDiffService`, not in the view or ViewModel
-- [ ] `IGitRepositoryService` and `ISourceControlSnapshotOrchestrator` are unchanged
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] A selected changed file surfaces a basic unified diff below the change lists
+- [x] Binary / unsupported files show an inline "not available" message
+- [x] Selection survives refresh (same path → diff stays; removed path → diff clears)
+- [x] Empty / unknown file paths degrade gracefully (null → diff area hidden)
+- [x] Diff generation is behind `IFileDiffService`, not in the view or ViewModel
+- [x] `IGitRepositoryService` and `ISourceControlSnapshotOrchestrator` are unchanged
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
 
 ## Exact Next Step
 

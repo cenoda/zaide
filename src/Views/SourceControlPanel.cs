@@ -25,13 +25,15 @@ namespace Zaide.Views;
 public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 {
     private readonly ComboBox _branchSelector;
-    private readonly ItemsControl _unstagedList;
-    private readonly ItemsControl _stagedList;
+    private readonly ListBox _unstagedList;
+    private readonly ListBox _stagedList;
     private readonly TextBox _commitInput;
     private readonly Button _commitButton;
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
     private readonly TextBlock _statusMessage;
+    private readonly Border _diffContainer;
+    private readonly TextBlock _diffTextBlock;
 
     public SourceControlPanel()
     {
@@ -106,8 +108,11 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _statusMessage.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
 
         // --- Unstaged Changes List ---
-        _unstagedList = new ItemsControl
+        _unstagedList = new ListBox
         {
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            SelectionMode = SelectionMode.Single,
             Margin = LayoutTokens.NoneThickness
         };
         _unstagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: false);
@@ -117,11 +122,42 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _stagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
 
         // --- Staged Changes List ---
-        _stagedList = new ItemsControl
+        _stagedList = new ListBox
         {
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            SelectionMode = SelectionMode.Single,
             Margin = LayoutTokens.NoneThickness
         };
         _stagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: true);
+
+        // --- Diff Surface (inline unified diff, shown on file selection) ---
+        _diffTextBlock = new TextBlock
+        {
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            TextWrapping = TextWrapping.NoWrap
+        };
+
+        var diffScrollViewer = new ScrollViewer
+        {
+            Content = _diffTextBlock,
+            MaxHeight = 300,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Margin = LayoutTokens.Uniform(LayoutTokens.SpacingSm)
+        };
+
+        _diffContainer = new Border
+        {
+            Child = diffScrollViewer,
+            Background = new SolidColorBrush(Color.FromArgb(0x08, 0xFF, 0xFF, 0xFF)),
+            BorderThickness = LayoutTokens.NoneThickness,
+            CornerRadius = LayoutTokens.RadiusSm,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
+            IsVisible = false
+        };
 
         // --- Commit Input ---
         _commitInput = new TextBox
@@ -164,6 +200,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _unstagedList,
                     _stagedHeader,
                     _stagedList,
+                    _diffContainer,
                     _commitInput,
                     _commitButton
                 }
@@ -207,6 +244,47 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel)
                 .Where(vm => vm is not null)
                 .Subscribe(vm => _stagedList.ItemsSource = vm!.StagedChanges));
+
+            // --- ListBox selection bindings ---
+
+            // Two-way bind ListBox SelectedItem ↔ ViewModel SelectedFileChange for
+            // visual selection sync in both directions.
+            d.Add(this.Bind(ViewModel, vm => vm.SelectedFileChange, v => v._unstagedList.SelectedItem));
+            d.Add(this.Bind(ViewModel, vm => vm.SelectedFileChange, v => v._stagedList.SelectedItem));
+
+            // User-initiated selection triggers diff loading via SelectFileCommand.
+            d.Add(Observable.FromEventPattern<SelectionChangedEventArgs>(
+                    h => _unstagedList.SelectionChanged += h,
+                    h => _unstagedList.SelectionChanged -= h)
+                .Select(_ => _unstagedList.SelectedItem as FileChange)
+                .Where(f => f is not null)
+                .Subscribe(f => ViewModel?.SelectFileCommand.Execute(f!).Subscribe()));
+
+            d.Add(Observable.FromEventPattern<SelectionChangedEventArgs>(
+                    h => _stagedList.SelectionChanged += h,
+                    h => _stagedList.SelectionChanged -= h)
+                .Select(_ => _stagedList.SelectedItem as FileChange)
+                .Where(f => f is not null)
+                .Subscribe(f => ViewModel?.SelectFileCommand.Execute(f!).Subscribe()));
+
+            // --- Diff surface visibility and content ---
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.CurrentDiff)
+                .Subscribe(diff =>
+                {
+                    _diffContainer.IsVisible = diff != null;
+                    if (diff == null)
+                    {
+                        _diffTextBlock.Text = string.Empty;
+                    }
+                    else if (diff.IsBinary)
+                    {
+                        _diffTextBlock.Text = "Binary file \u2014 diff not available";
+                    }
+                    else
+                    {
+                        _diffTextBlock.Text = diff.DiffText ?? string.Empty;
+                    }
+                }));
 
             // Surface non-repo / error notice; hidden on success
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)
