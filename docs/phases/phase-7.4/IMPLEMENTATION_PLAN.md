@@ -147,10 +147,21 @@ which is insufficient to represent both states simultaneously.
 **Decision for Phase 7.4:** Accept the current suppression behavior where a file
 with identical ChangeType in both index and workdir appears only in the staged
 list. This matches VS Code's behavior (only the staged state is shown; the
-unstaged overlay is hidden). The user can observe the full combined diff by
-selecting the staged entry. A future phase can introduce a richer
-`FileChange` model (e.g. split into `StagedChange` / `UnstagedChange` with the
-same `FilePath`) when there is real demand.
+unstaged overlay is hidden).
+
+**Known limitation:** When the user selects the single staged entry in this
+state, `FileDiffService` renders **only the staged delta (HEAD→index)** via
+`DiffTargets.Index` — not a combined HEAD→workdir diff. The unstaged worktree
+delta is invisible because the parallel unstaged entry is suppressed and no
+merge logic exists. In practice this is acceptable for Phase 7.4 because the
+user can still `Stage` the file (which silently also stages the worktree
+delta) or `Unstage` to see the full worktree delta, but the plan must not
+claim the staged entry shows a combined diff.
+
+A future phase can introduce a richer `FileChange` model (e.g. split into
+`StagedChange` / `UnstagedChange` with the same `FilePath`) or extend
+`FileDiffService` with a `DiffTargets.Index | DiffTargets.WorkingDirectory`
+mode to produce the true combined diff when there is real demand.
 
 - If the staged and unstaged ChangeTypes **differ** (e.g. `Modified` staged +
   `Deleted` workdir), both entries already appear, and mutation actions operate
@@ -210,35 +221,53 @@ same `FilePath`) when there is real demand.
   `IFileDiffService`, `IGitMutationService`, `IGitRepositoryService`
   (existing test helpers that mock `ISourceControlSnapshotOrchestrator` and `IFileDiffService`
   must also provide mocks for the two new services)
-- The constructor performs initial discovery via `_gitRepositoryService.Discover(...)`
-  and caches the result in `_repositoryRoot`. This is done after the initial
-  `ApplyResult` call so the repository state is already loaded.
+- **No constructor-level repository-root caching.** The ViewModel does not cache
+  `_repositoryRoot` in the constructor because `SourceControlViewModel` is registered
+  as a singleton and `_workspace.WorkspacePath` changes when the user opens a different
+  folder. Instead, each mutation command resolves the repository root inline from the
+  current workspace path via `_gitRepositoryService.Discover()`. This keeps the root
+  truthful regardless of workspace switches and avoids stale-path bugs. See the
+  per-operation discovery note below.
 - Replace `StageFileCommand` body:
   ```csharp
   StageFileCommand = ReactiveCommand.CreateFromTask(async (FileChange file) =>
   {
-      var result = await Task.Run(() => _mutationService.Stage(_repositoryRoot, file.FilePath));
-      if (result.IsSuccess)
-          RefreshCommand.Execute().Subscribe();
-      else
+      var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath);
+      if (!discovery.IsFound)
+      {
+          StatusMessage = "No repository — open a folder inside a git repository";
+          return;
+      }
+      var result = await Task.Run(() => _mutationService.Stage(discovery.RepositoryRoot!, file.FilePath));
+      RefreshCommand.Execute().Subscribe();
+      if (!result.IsSuccess)
           StatusMessage = result.ErrorMessage;
-      // On failure, refresh is intentionally NOT called — the snapshot is still
-      // truthful (the operation simply did nothing). StatusMessage shows why.
+      // Refresh is called unconditionally — on success to load the mutated state,
+      // on failure because the failure may indicate the cached snapshot is stale
+      // (e.g. file removed externally). If the snapshot was still truthful, the
+      // refresh is a harmless no-op cycle.
       // Mutation errors use StatusMessage because it already has a visible
       // binding in the panel. CommitError is reserved for commit failures only.
   });
   ```
-- Replace `UnstageFileCommand` body analogously (failure → `StatusMessage`)
+- Replace `UnstageFileCommand` body analogously (per-operation discovery + unconditional refresh)
 - Replace `CommitCommand` body:
   ```csharp
   CommitCommand = ReactiveCommand.CreateFromTask(async () =>
   {
-      var result = await Task.Run(() => _mutationService.Commit(_repositoryRoot, CommitMessage));
+      var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath);
+      if (!discovery.IsFound)
+      {
+          StatusMessage = "No repository — open a folder inside a git repository";
+          return;
+      }
+      var result = await Task.Run(() => _mutationService.Commit(discovery.RepositoryRoot!, CommitMessage));
+      // Refresh unconditionally so the post-commit state is truthful.
+      RefreshCommand.Execute().Subscribe();
       if (result.IsSuccess)
       {
           CommitMessage = string.Empty;
           CommitError = null;
-          RefreshCommand.Execute().Subscribe();
       }
       else
       {
@@ -255,19 +284,25 @@ same `FilePath`) when there is real demand.
   ```
 - The `repositoryRoot` is obtained by calling `IGitRepositoryService.Discover(_workspace.WorkspacePath)`
   and reading `RepositoryDiscoveryResult.RepositoryRoot` from the result. This reuses the existing
-  read-only seam without modifying it. The root is cached in a `_repositoryRoot` field.
-  **Note:** Neither `SnapshotRefreshResult` nor `RepositoryStatusSnapshot` exposes `RepositoryRoot`
-  — it lives only on `RepositoryDiscoveryResult`, which is why the ViewModel calls `Discover()`
-  directly rather than reading it from the snapshot.
+  read-only seam without modifying it. There is no cached `_repositoryRoot` field — each mutation
+  command resolves the root at invocation time (see per-operation discovery above).
 
-- **How `_repositoryRoot` is kept up to date:** The ViewModel injects `IGitRepositoryService`
-  alongside the existing dependencies. Initial discovery happens once in the constructor
-  (after the initial `ApplyResult` call). On each subsequent `ApplyResult` call — which is
-  only reached on `SnapshotRefreshStatus.Success` — the cached `_repositoryRoot` is already
-  valid and does not need rediscovery (the repository root path does not change while the
-  workspace is open). If a fresh discover is ever needed (e.g. the user opens a different
-  workspace), `ApplyResult` can rediscover: `var d = _gitRepositoryService.Discover(...)`.
-  The caching strategy avoids redundant `Discover()` calls on every mutation.
+- **How `_repositoryRoot` is resolved per operation:** The ViewModel injects `IGitRepositoryService`
+  alongside the existing dependencies. Each mutation command resolves the repository root
+  inline from the current workspace path at invocation time:
+  ```csharp
+  var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath);
+  if (!discovery.IsFound)
+  {
+      StatusMessage = "No repository — open a folder inside a git repository";
+      return;
+  }
+  var repoRoot = discovery.RepositoryRoot;
+  ```
+  This avoids caching a stale root across workspace switches. The cost of `Discover()` per
+  mutation is negligible (reads `.git` marker file; no network or heavy FS scan).
+  If profiling ever shows this as a hotspot, a lightweight `string?` cache can be added
+  later with a `Workspace.WorkspacePath` change listener, but YAGNI applies for now.
 - The `RefreshCommand.Execute().Subscribe()` call after mutation is intentionally fire-and-forget.
   The subscription is not disposed because the command completes synchronously (it is not a long-lived
   observable). This is a pragmatic exception to the CONVENTIONS.md disposal rule.
@@ -362,7 +397,7 @@ services.AddSingleton<IGitMutationService, GitMutationService>();
 | `Stage()`/`Unstage()` on an already-clean file throws | Wrap in try/catch; treat as no-op success (LibGit2Sharp generally no-ops gracefully). Verify via proof-of-concept. |
 | `BuildSignature()` returns null for unconfigured git identity | Specific error message shown to user; no attempt to commit. |
 | Post-mutation refresh clears selection/diff | Already handled by `ApplyResult` selection-recovery (re-selects by path). Verify in M3 manual smoke test. |
-| Stage/Unstage on a file that was removed externally between UI read and mutation | `StageResult` returns failure; ViewModel calls refresh to restore truth. Acceptable for M1. |
+| Stage/Unstage on a file that was removed externally between UI read and mutation | `StageResult` returns failure; ViewModel calls refresh to restore truth. This is consistent with the unconditional-refresh-after-mutation policy. Acceptable for M1. |
 
 ## Exit Conditions
 
