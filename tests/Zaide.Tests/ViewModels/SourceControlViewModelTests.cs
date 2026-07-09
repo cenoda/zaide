@@ -19,13 +19,20 @@ public class SourceControlViewModelTests
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
 
-    private static IGitRepositoryService CreateGit(RepositoryStatusSnapshot snapshot)
+    private static ISourceControlSnapshotOrchestrator CreateOrchestrator(RepositoryStatusSnapshot snapshot)
     {
         var mock = new Mock<IGitRepositoryService>();
         mock.Setup(g => g.Discover(It.IsAny<string>()))
             .Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
         mock.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(snapshot);
-        return mock.Object;
+        return new SourceControlSnapshotOrchestrator(mock.Object);
+    }
+
+    private static ISourceControlSnapshotOrchestrator CreateOrchestrator(RepositoryDiscoveryResult discovery)
+    {
+        var mock = new Mock<IGitRepositoryService>();
+        mock.Setup(g => g.Discover(It.IsAny<string>())).Returns(discovery);
+        return new SourceControlSnapshotOrchestrator(mock.Object);
     }
 
     private static Workspace WorkspaceWithPath(string path = "/ws")
@@ -51,7 +58,7 @@ public class SourceControlViewModelTests
     {
         var state = new SourceControlState();
         var snapshot = Snapshot(branches: new[] { new GitBranch("main", true), new GitBranch("dev") });
-        var vm = new SourceControlViewModel(state, CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(state, CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         Assert.Equal(2, vm.Branches.Count);
         Assert.Equal("main", vm.CurrentBranchName);
@@ -66,7 +73,7 @@ public class SourceControlViewModelTests
             new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
             new FileChange("b.cs", GitChangeType.Added, isStaged: true),
         });
-        var vm = new SourceControlViewModel(new SourceControlState(), CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(new SourceControlState(), CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         Assert.Equal(1, vm.UnstagedCount);
         Assert.Equal(1, vm.StagedCount);
@@ -75,11 +82,10 @@ public class SourceControlViewModelTests
     [Fact]
     public void InitialState_NoRepository_LeavesCollectionsEmpty()
     {
-        var mock = new Mock<IGitRepositoryService>();
-        mock.Setup(g => g.Discover(It.IsAny<string>()))
-            .Returns(RepositoryDiscoveryResult.NotFound("/ws"));
-
-        var vm = new SourceControlViewModel(new SourceControlState(), mock.Object, WorkspaceWithPath());
+        var vm = new SourceControlViewModel(
+            new SourceControlState(),
+            CreateOrchestrator(RepositoryDiscoveryResult.NotFound("/ws")),
+            WorkspaceWithPath());
 
         Assert.Empty(vm.Branches);
         Assert.Empty(vm.UnstagedChanges);
@@ -91,7 +97,7 @@ public class SourceControlViewModelTests
     {
         var vm = new SourceControlViewModel(
             new SourceControlState(),
-            new Mock<IGitRepositoryService>().Object,
+            new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
             new Workspace());
 
         Assert.Empty(vm.Branches);
@@ -106,7 +112,7 @@ public class SourceControlViewModelTests
         {
             new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
         });
-        var vm = new SourceControlViewModel(new SourceControlState(), CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(new SourceControlState(), CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         var file = vm.UnstagedChanges.First();
         vm.StageFileCommand.Execute(file).Wait();
@@ -123,7 +129,7 @@ public class SourceControlViewModelTests
         {
             new FileChange("b.cs", GitChangeType.Added, isStaged: true),
         });
-        var vm = new SourceControlViewModel(new SourceControlState(), CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(new SourceControlState(), CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         var file = vm.StagedChanges.First();
         vm.UnstageFileCommand.Execute(file).Wait();
@@ -140,7 +146,7 @@ public class SourceControlViewModelTests
         {
             new FileChange("b.cs", GitChangeType.Added, isStaged: true),
         });
-        var vm = new SourceControlViewModel(new SourceControlState(), CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(new SourceControlState(), CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         vm.CommitMessage = "test commit";
         vm.CommitCommand.Execute().Wait();
@@ -158,12 +164,70 @@ public class SourceControlViewModelTests
             new GitBranch("main", true),
             new GitBranch("feature/agent-ui"),
         });
-        var vm = new SourceControlViewModel(new SourceControlState(), CreateGit(snapshot), WorkspaceWithPath());
+        var vm = new SourceControlViewModel(new SourceControlState(), CreateOrchestrator(snapshot), WorkspaceWithPath());
 
         var featureBranch = vm.Branches[1];
         vm.SelectBranchCommand.Execute(featureBranch).Wait();
 
         Assert.Equal(featureBranch, vm.SelectedBranch);
         Assert.Equal("feature/agent-ui", vm.CurrentBranchName);
+    }
+
+    [Fact]
+    public void Refresh_Success_RepopulatesFromSnapshot()
+    {
+        var workspace = WorkspaceWithPath();
+        var orchestrator = CreateOrchestrator(
+            Snapshot(branches: new[] { new GitBranch("main", true) }));
+        var vm = new SourceControlViewModel(new SourceControlState(), orchestrator, workspace);
+
+        Assert.Equal(SnapshotRefreshStatus.Success, vm.LastRefreshStatus);
+        Assert.Null(vm.LastRefreshError);
+        Assert.Single(vm.Branches);
+        Assert.Equal("main", vm.CurrentBranchName);
+
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal(SnapshotRefreshStatus.Success, vm.LastRefreshStatus);
+        Assert.Single(vm.Branches);
+    }
+
+    [Fact]
+    public void Refresh_NonRepository_ProjectsEmptyStateTruthfully()
+    {
+        var workspace = WorkspaceWithPath();
+        var orchestrator = CreateOrchestrator(RepositoryDiscoveryResult.NotFound("/ws"));
+        var vm = new SourceControlViewModel(new SourceControlState(), orchestrator, workspace);
+
+        Assert.Equal(SnapshotRefreshStatus.NotARepository, vm.LastRefreshStatus);
+        Assert.Empty(vm.Branches);
+        Assert.Empty(vm.UnstagedChanges);
+        Assert.Empty(vm.StagedChanges);
+        Assert.Null(vm.LastRefreshError);
+
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal(SnapshotRefreshStatus.NotARepository, vm.LastRefreshStatus);
+        Assert.Empty(vm.Branches);
+    }
+
+    [Fact]
+    public void Refresh_Failure_ProjectsErrorWithoutFakeData()
+    {
+        var mock = new Mock<IGitRepositoryService>();
+        mock.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        mock.Setup(g => g.ReadStatus(It.IsAny<string>()))
+            .Throws(new InvalidOperationException("boom"));
+        var orchestrator = new SourceControlSnapshotOrchestrator(mock.Object);
+
+        var vm = new SourceControlViewModel(
+            new SourceControlState(), orchestrator, WorkspaceWithPath());
+
+        Assert.Equal(SnapshotRefreshStatus.Failed, vm.LastRefreshStatus);
+        Assert.Equal("boom", vm.LastRefreshError);
+        Assert.Empty(vm.Branches);
+        Assert.Empty(vm.UnstagedChanges);
+        Assert.Empty(vm.StagedChanges);
     }
 }

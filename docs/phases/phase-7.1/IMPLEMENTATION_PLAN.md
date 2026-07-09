@@ -46,7 +46,7 @@ Phase 7 can safely consume.
 | M0 | Lock the Phase 7.1 seam: decide the git-service interface, the repository-root discovery rule, how the app exposes the real workspace path, the "not a repo" result shape, and the minimal branch/status models needed by later phases. Also verify package/version compatibility before implementation starts. Do not start UI rewiring yet. | **Done (2026-07-09)** — see `M0_SEAM_DECISION.md` |
 | M1 | Add the repository discovery + branch/status read service seam and register it in DI. Keep it read-only. | Service-level tests for repo found / repo missing / current branch / detached-like state / file-status mapping |
 | M2 | Replace or narrow the demo `SourceControlState` dependency so live Source Control consumers can request a truthful snapshot instead of seeded fake data. If `SourceControlState` remains temporarily, it must become a passive snapshot container rather than the source of truth. | Build + tests; no seeded branch/change data required for the read path |
-| M3 | Add a focused refresh/app orchestration seam that can request a fresh git snapshot for the current workspace without yet finalizing all Source Control UI behavior. | ViewModel-level tests covering refresh success, non-repo state, and failure projection |
+| M3 | Add a focused refresh/app orchestration seam that can request a fresh git snapshot for the current workspace without yet finalizing all Source Control UI behavior. | **Done (2026-07-09)** — `ISourceControlSnapshotOrchestrator` + `SourceControlSnapshotOrchestrator` in `src/Services/`; `SnapshotRefreshResult`/`SnapshotRefreshStatus` project success/non-repo/failure truthfully. `SourceControlViewModel` now depends on the seam for both initial load and `RefreshCommand`, exposing `LastRefreshStatus`/`LastRefreshError`. Tests: `SourceControlSnapshotOrchestratorTests` + refresh cases in `SourceControlViewModelTests`. |
 
 ## Likely Implementation Shape
 
@@ -73,12 +73,33 @@ Phase 7 can safely consume.
 
 ## Exit Conditions
 
-- [ ] A real repository discovery + branch/status read seam exists
-- [ ] The seam is registered in DI and covered by focused tests
-- [ ] The read path no longer depends on seeded fake branches or fake file changes
-- [ ] Non-repo workspaces are handled truthfully
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] A real repository discovery + branch/status read seam exists
+- [x] The seam is registered in DI and covered by focused tests
+- [x] The read path no longer depends on seeded fake branches or fake file changes
+- [x] Non-repo workspaces are handled truthfully
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
+
+## M3 Implementation Notes
+
+- `src/Services/ISourceControlSnapshotOrchestrator.cs` — narrow refresh seam:
+  `SnapshotRefreshResult Refresh(string? workspacePath)`. Never throws on non-repo
+  or transient failure; those are projected as `NotARepository` / `Failed`.
+- `src/Services/SourceControlSnapshotOrchestrator.cs` — wraps `IGitRepositoryService`
+  (discover → read status) and catches exceptions into `Failed`.
+- `src/Services/SnapshotRefreshResult.cs` — `SnapshotRefreshStatus` enum
+  (Success / NotARepository / Failed) + passive result container with optional
+  `Snapshot` / `ErrorMessage`. No demo data is ever produced.
+- `src/ViewModels/SourceControlViewModel.cs` — depends on the orchestrator (not the
+  raw git seam) for both initial load and `RefreshCommand`; exposes
+  `LastRefreshStatus` / `LastRefreshError`. Non-success clears projections (truthful
+  empty state), no fake data.
+- `src/Program.cs` — DI registers `ISourceControlSnapshotOrchestrator`.
+- Tests: `tests/Zaide.Tests/Services/SourceControlSnapshotOrchestratorTests.cs`
+  (success / non-repo / failure paths) and refresh cases in
+  `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs`.
+- Scope respected: no diff rendering, stage/unstage, commit, or branch switching;
+  later-milestone behavior was not started.
 
 ## Exact Next Step
 

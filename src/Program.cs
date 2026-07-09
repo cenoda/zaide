@@ -57,6 +57,9 @@ class Program
                     // M1: read-only git repository discovery + status read seam
                     services.AddSingleton<IGitRepositoryService, GitRepositoryService>();
 
+                    // M3: focused snapshot refresh orchestration seam for Source Control
+                    services.AddSingleton<ISourceControlSnapshotOrchestrator, SourceControlSnapshotOrchestrator>();
+
                     services.AddSingleton(_ =>
                     {
                         var client = new HttpClient();

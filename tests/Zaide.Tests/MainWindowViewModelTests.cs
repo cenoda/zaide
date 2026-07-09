@@ -93,7 +93,8 @@ public class MainWindowViewModelTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
-        return new SourceControlViewModel(state, git.Object, new Workspace());
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+        return new SourceControlViewModel(state, orchestrator, new Workspace());
     }
 
     [Fact]
