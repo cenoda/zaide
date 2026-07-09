@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
@@ -233,10 +234,14 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _branchSelector.SelectedItem = vm.SelectedBranch;
                 }));
 
-            // Explicit user refresh (reuses the orchestrator seam)
+            // Explicit user refresh (reuses the orchestrator seam). Project the
+            // event to Unit so it matches RefreshCommand's parameter type;
+            // InvokeCommand otherwise forwards the EventPattern as the command
+            // parameter and throws at execution time.
             d.Add(Observable.FromEventPattern<RoutedEventArgs>(
                     h => refreshButton.Click += h,
                     h => refreshButton.Click -= h)
+                .Select(_ => Unit.Default)
                 .InvokeCommand(ViewModel, vm => vm.RefreshCommand));
 
             // Branch selection → ViewModel
@@ -318,10 +323,12 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             // Commit message binding
             d.Add(this.Bind(ViewModel, vm => vm.CommitMessage, v => v._commitInput.Text));
 
-            // Commit button
+            // Commit button. Project the event to Unit so it matches
+            // CommitCommand's parameter type (see refresh button note above).
             d.Add(Observable.FromEventPattern<RoutedEventArgs>(
                     h => _commitButton.Click += h,
                     h => _commitButton.Click -= h)
+                .Select(_ => Unit.Default)
                 .InvokeCommand(ViewModel, vm => vm.CommitCommand));
 
             // Commit error surface (visible only when CommitError is non-null)

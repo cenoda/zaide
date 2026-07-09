@@ -2,7 +2,7 @@ namespace Zaide.Models;
 
 /// <summary>
 /// Represents a git branch with a display name and current-branch flag.
-/// Used for static/demo data in the Source Control panel — no real git.
+/// Projected from live repository state by the read-only git seam.
 /// </summary>
 public class GitBranch
 {

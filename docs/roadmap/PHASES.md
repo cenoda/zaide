@@ -195,7 +195,7 @@ beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 ## Phase 7: Git Integration
 - [x] Git status in left sidebar (7.1+7.2 M1/M2 live)
 - [x] Basic diff view (7.3 ✅ done)
-- [ ] Commit from IDE (7.4 — planned)
+- [x] Commit from IDE (7.4 ✅ done)
 - [x] Branch display (7.2 M1/M2 live)
 
 Implementation split:
@@ -204,7 +204,7 @@ Implementation split:
 - `docs/phases/phase-7.1/IMPLEMENTATION_PLAN.md` — repository discovery + status seam
 - `docs/phases/phase-7.2/IMPLEMENTATION_PLAN.md` — live Source Control wiring
 - `docs/phases/phase-7.3/IMPLEMENTATION_PLAN.md` — basic diff view
-- `docs/phases/phase-7.4/IMPLEMENTATION_PLAN.md` — stage/unstage + local commit
+- `docs/phases/phase-7.4/IMPLEMENTATION_PLAN.md` — stage/unstage + local commit (complete)
 
 ---
 
@@ -223,4 +223,4 @@ Implementation split:
 
 ---
 
-*Last updated: 2026-07-09 (Phase 6.1 closed — routing-visibility gaps surfaced in Townhall, dedicated AgentRouter tests added, all audit TOFIX items resolved; Phase 7.3 basic diff view completed)*
+*Last updated: 2026-07-10 (Phase 7.4 closed — stage/unstage/local-commit flow shipped via M1/M2 and verified/stabilized in M3; automated end-to-end mutation-flow coverage added, Source Control panel confirmed truthful across repeated mutation-refresh cycles)*
