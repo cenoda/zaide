@@ -191,6 +191,79 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task OpeningFolderViaFileTreeDirectly_SyncsWorkspaceAndRefreshesSourceControl()
+    {
+        // Regression guard: the file-tree "Open Folder..." header invokes
+        // FileTreeViewModel.OpenFolderCommand directly (not MainWindowViewModel's
+        // OpenFolderCommand). This path must still sync the shared workspace and
+        // refresh Source Control; otherwise the panel reports "No repository"
+        // even though a repository is open.
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Zaide.Models.Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeService = new FileTreeService();
+        var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
+        var terminalService = new Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+
+        var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
+        var coordinator = CreateMockCoordinator().Object;
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.Found("/repo", "/repo/.git/"));
+        git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot
+        {
+            CurrentBranchName = "main",
+            Branches = new[] { new GitBranch("main", true) },
+            Changes = Array.Empty<FileChange>(),
+        });
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
+        var mutation = new Mock<IGitMutationService>();
+        var scViewModel = new SourceControlViewModel(
+            new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+
+        Assert.Empty(scViewModel.Branches);
+
+        var repoPath = Path.Combine(Path.GetTempPath(), "zaide-sctest-" + Guid.NewGuid());
+        Directory.CreateDirectory(repoPath);
+        try
+        {
+            // Simulate the file-tree header: open directly via the file tree,
+            // bypassing MainWindowViewModel.OpenFolderCommand entirely.
+            fileTreeViewModel.OpenFolderCommand.Execute(repoPath).Subscribe();
+            await Task.Delay(150);
+
+            Assert.Equal(repoPath, workspace.WorkspacePath);
+            Assert.Equal(repoPath, vm.FileTreeViewModel.RootPath);
+            Assert.Equal(SnapshotRefreshStatus.Success, vm.SourceControlViewModel.LastRefreshStatus);
+            Assert.Single(vm.SourceControlViewModel.Branches);
+            Assert.Equal("main", vm.SourceControlViewModel.CurrentBranchName);
+        }
+        finally
+        {
+            if (Directory.Exists(repoPath))
+                Directory.Delete(repoPath, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SelectingSupportedFile_OpensActiveTabWithContent()
     {
         var vm = CreateViewModel();

@@ -30,6 +30,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
     private bool _isExplorerMode = true;
     private bool _isSourceControlMode;
+    private readonly Workspace _workspace;
 
 
     public bool IsBottomPanelVisible
@@ -112,6 +113,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         AgentRouter = agentRouter;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
+        _workspace = workspace;
         WorkspaceProjectName = workspace.ProjectName;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);
@@ -122,12 +124,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             var path = await PickFolder.Handle(Unit.Default);
             if (path is not null)
             {
-                workspace.SetProjectFromPath(path);
-                WorkspaceProjectName = workspace.ProjectName;
+                // Delegate to the file tree. Syncing the shared workspace and
+                // Source Control is driven by the FileTreeViewModel.RootPath
+                // subscription in Activate() so every open-folder entry point
+                // (Ctrl+O here and the file-tree "Open Folder..." header) stays
+                // consistent and truthful.
                 await FileTreeViewModel.OpenFolderCommand.Execute(path);
-                // Refresh Source Control against the newly opened workspace so the
-                // panel/status bar reflect the new repository truthfully.
-                SourceControlViewModel.RefreshCommand.Execute(Unit.Default).Subscribe();
             }
         });
         SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
@@ -143,6 +145,23 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         if (_disposables is not null) return;
 
         _disposables = new CompositeDisposable();
+
+        // Keep the shared workspace + Source Control in sync with whichever
+        // folder is loaded in the file tree, regardless of the open-folder entry
+        // point (Ctrl+O via OpenFolderCommand or the file-tree "Open Folder..."
+        // header, which invokes FileTreeViewModel.OpenFolderCommand directly).
+        // RootPath is the single post-validation truth for the loaded folder, so
+        // reacting to it prevents "No repository" when a repo is opened from the
+        // file-tree header.
+        _disposables.Add(
+            this.WhenAnyValue(x => x.FileTreeViewModel.RootPath)
+                .Where(path => !string.IsNullOrEmpty(path))
+                .Subscribe(path =>
+                {
+                    _workspace.SetProjectFromPath(path);
+                    WorkspaceProjectName = _workspace.ProjectName;
+                    SourceControlViewModel.RefreshCommand.Execute(Unit.Default).Subscribe();
+                }));
 
         // Surface save errors from the tab manager
         _disposables.Add(
