@@ -4,8 +4,8 @@
 
 - [ ] Confirm Phase 7.3's diff flow exists and passes its tests
 - [ ] Re-read `src/ViewModels/SourceControlViewModel.cs`, `src/Views/SourceControlPanel.cs`,
-      `IGitRepositoryService`, `IGitMutationService`, and the unified-diff seam
-      (`IFileDiffService`) to verify the narrowest mutation path before M1 coding
+      `IGitRepositoryService`, and the unified-diff seam (`IFileDiffService`)
+      to verify the narrowest mutation path before M1 coding
 - [ ] Confirm LibGit2Sharp `Repository.Index.Stage()` / `.Unstage()` / `repo.Commit()`
       and `repo.Config.BuildSignature()` work against a local repo with a minimal
       proof-of-concept (file create → stage → modify → unstage → restage → commit)
@@ -203,8 +203,16 @@ same `FilePath`) when there is real demand.
 
 ### Changes to `SourceControlViewModel`
 
-- Inject `IGitMutationService` in constructor
-- Add a new property: `string? CommitError` — set on commit failure, cleared on successful commit or refresh.
+- Inject `IGitMutationService` **and `IGitRepositoryService`** in constructor (the latter for
+  repository-root discovery; it is the existing read-only seam, not a new dependency)
+- Add a new property: `string? CommitError` — set on commit failure, cleared on successful commit or refresh. This is distinct from `StatusMessage` (which covers refresh-state and stage/unstage notices); `CommitError` is commit-specific so the view can style it differently (e.g. red error text).
+- Constructor now has 5 parameters: `ISourceControlSnapshotOrchestrator`, `Workspace`,
+  `IFileDiffService`, `IGitMutationService`, `IGitRepositoryService`
+  (existing test helpers that mock `ISourceControlSnapshotOrchestrator` and `IFileDiffService`
+  must also provide mocks for the two new services)
+- The constructor performs initial discovery via `_gitRepositoryService.Discover(...)`
+  and caches the result in `_repositoryRoot`. This is done after the initial
+  `ApplyResult` call so the repository state is already loaded.
 - Replace `StageFileCommand` body:
   ```csharp
   StageFileCommand = ReactiveCommand.CreateFromTask(async (FileChange file) =>
@@ -212,12 +220,15 @@ same `FilePath`) when there is real demand.
       var result = await Task.Run(() => _mutationService.Stage(_repositoryRoot, file.FilePath));
       if (result.IsSuccess)
           RefreshCommand.Execute().Subscribe();
-      // On failure, the next refresh will restore truth.
-      // Errors are surfaced via CommitError (not LastRefreshError/LastRefreshStatus,
-      // which are reserved for refresh failures).
+      else
+          StatusMessage = result.ErrorMessage;
+      // On failure, refresh is intentionally NOT called — the snapshot is still
+      // truthful (the operation simply did nothing). StatusMessage shows why.
+      // Mutation errors use StatusMessage because it already has a visible
+      // binding in the panel. CommitError is reserved for commit failures only.
   });
   ```
-- Replace `UnstageFileCommand` body analogously
+- Replace `UnstageFileCommand` body analogously (failure → `StatusMessage`)
 - Replace `CommitCommand` body:
   ```csharp
   CommitCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -232,38 +243,89 @@ same `FilePath`) when there is real demand.
       else
       {
           CommitError = result.ErrorMessage;
-          StatusMessage = result.ErrorMessage;
+          // Do NOT set StatusMessage here — StatusMessage is reserved for
+          // refresh-state notices (non-repo, failure). CommitError has its own
+          // dedicated TextBlock bound in SourceControlPanel, styled as a
+          // red error text. Setting StatusMessage would collide with
+          // refresh-produced messages and confuse the user.
           // Do NOT set LastRefreshError/LastRefreshStatus — those are for
-          // refresh failures only. CommitError is the dedicated error surface
-          // for mutation failures.
+          // refresh failures only.
       }
   });
   ```
 - The `repositoryRoot` is obtained by calling `IGitRepositoryService.Discover(_workspace.WorkspacePath)`
   and reading `RepositoryDiscoveryResult.RepositoryRoot` from the result. This reuses the existing
-  read-only seam without modifying it. The root is cached in a `_repositoryRoot` field set during
-  the constructor's initial `ApplyResult` call and updated on each subsequent successful refresh.
+  read-only seam without modifying it. The root is cached in a `_repositoryRoot` field.
   **Note:** Neither `SnapshotRefreshResult` nor `RepositoryStatusSnapshot` exposes `RepositoryRoot`
   — it lives only on `RepositoryDiscoveryResult`, which is why the ViewModel calls `Discover()`
-  directly rather than reading it from the snapshot. The caching approach avoids redundant
-  `Discover()` calls on every mutation.
+  directly rather than reading it from the snapshot.
+
+- **How `_repositoryRoot` is kept up to date:** The ViewModel injects `IGitRepositoryService`
+  alongside the existing dependencies. Initial discovery happens once in the constructor
+  (after the initial `ApplyResult` call). On each subsequent `ApplyResult` call — which is
+  only reached on `SnapshotRefreshStatus.Success` — the cached `_repositoryRoot` is already
+  valid and does not need rediscovery (the repository root path does not change while the
+  workspace is open). If a fresh discover is ever needed (e.g. the user opens a different
+  workspace), `ApplyResult` can rediscover: `var d = _gitRepositoryService.Discover(...)`.
+  The caching strategy avoids redundant `Discover()` calls on every mutation.
 - The `RefreshCommand.Execute().Subscribe()` call after mutation is intentionally fire-and-forget.
   The subscription is not disposed because the command completes synchronously (it is not a long-lived
   observable). This is a pragmatic exception to the CONVENTIONS.md disposal rule.
+- **`CommitError` lifecycle:** Cleared on any successful commit (before refresh). Also cleared
+  by `ApplyResult` when a fresh snapshot loads, so stale commit errors disappear when the user
+  refreshes or makes other changes. `ApplyResult` sets `CommitError = null` at the top of its
+  success path.
+- **`StatusMessage` lifecycle for mutation errors:** Stage/unstage failures set `StatusMessage`.
+  It is cleared on the next successful refresh (existing `ApplyResult` success path sets
+  `StatusMessage = null`). This means a stage failure message persists only until the next
+  refresh — sufficient for the user to see why the button did nothing.
 
 ### Changes to `SourceControlPanel`
 
 - The existing `CreateChangeItemTemplate` already renders stage/unstage buttons
   on each row. Verify they bind correctly to the new commands. No layout redesign is needed.
+- **Add a `TextBlock` bound to `CommitError`** below the commit button so that
+  commit failures are visible to the user. Style it as an error notice (red text,
+  small font, visible only when `CommitError` is non-null). The binding:
+  ```csharp
+  // In SourceControlPanel constructor, after _commitButton:
+  var commitErrorText = new TextBlock
+  {
+      FontSize = 12,
+      Foreground = new SolidColorBrush(Color.Parse("#E05555")),
+      TextWrapping = TextWrapping.Wrap,
+      Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
+      IsVisible = false
+  };
+
+  // In WhenActivated:
+  d.Add(this.WhenAnyValue(x => x.ViewModel!.CommitError)
+      .Subscribe(err =>
+      {
+          commitErrorText.Text = err ?? string.Empty;
+          commitErrorText.IsVisible = !string.IsNullOrEmpty(err);
+      }));
+  ```
+  Add `commitErrorText` to the layout StackPanel after `_commitButton`.
 
 ### Changes to Tests
 
 - `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs`:
+  - **Update test helper methods** that construct `SourceControlViewModel` to provide
+    mocks for the two new constructor parameters (`IGitMutationService` and
+    `IGitRepositoryService`). The existing `CreateOrchestrator()` helpers return
+    `ISourceControlSnapshotOrchestrator`; add a companion helper or update the
+    `SourceControlViewModel` construction call sites to supply:
+    - `Mock.Of<IGitMutationService>()` (default no-op mock for tests that don't
+      exercise mutation)
+    - `Mock.Of<IGitRepositoryService>()` or a mock that returns a valid
+      `RepositoryDiscoveryResult` for tests that need `_repositoryRoot` to be set
   - Remove: `StageFile_MovesFromUnstagedToStaged`, `UnstageFile_MovesFromStagedToUnstaged`,
     `CommitCommand_ClearsStagedAndMessage`
   - Add: stage calls mutation seam then refresh; unstage calls mutation seam then refresh;
     commit with valid message clears input and refreshes; commit with nothing staged does
-    not call git mutation seam; commit failure surfaces error
+    not call git mutation seam; commit failure surfaces error in `CommitError`;
+    stage/unstage failure surfaces error in `StatusMessage`
 - New file: `tests/Zaide.Tests/Services/GitMutationServiceTests.cs`
 
 ### DI Registration (`src/Program.cs`)
@@ -312,6 +374,9 @@ services.AddSingleton<IGitMutationService, GitMutationService>();
       are unchanged (grep-verified)
 - [ ] The three old placeholder tests are gone; new seam-backed tests exist for
       stage, unstage, and commit at both the service and ViewModel levels
+- [ ] Stale XML doc comments updated: `FileChange.cs` no longer says "Used for static/demo
+      data — no real git operations"; `SourceControlViewModel.cs` no longer says "Commands
+      update UI state but do not execute real git operations"
 - [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
 - [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
 
