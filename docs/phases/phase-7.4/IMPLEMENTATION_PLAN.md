@@ -353,8 +353,9 @@ mode to produce the true combined diff when there is real demand.
     `SourceControlViewModel` construction call sites to supply:
     - `Mock.Of<IGitMutationService>()` (default no-op mock for tests that don't
       exercise mutation)
-    - `Mock.Of<IGitRepositoryService>()` or a mock that returns a valid
-      `RepositoryDiscoveryResult` for tests that need `_repositoryRoot` to be set
+    - `Mock.Of<IGitRepositoryService>()` or a mock whose `Discover()` returns a valid
+      `RepositoryDiscoveryResult` for tests that exercise mutation commands (stage,
+      unstage, commit) so that per-operation discovery succeeds
   - Remove: `StageFile_MovesFromUnstagedToStaged`, `UnstageFile_MovesFromStagedToUnstaged`,
     `CommitCommand_ClearsStagedAndMessage`
   - Add: stage calls mutation seam then refresh; unstage calls mutation seam then refresh;
