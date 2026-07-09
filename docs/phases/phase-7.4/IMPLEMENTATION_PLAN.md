@@ -2,14 +2,14 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 7.3's diff flow exists and passes its tests
-- [ ] Re-read `src/ViewModels/SourceControlViewModel.cs`, `src/Views/SourceControlPanel.cs`,
+- [x] Confirm Phase 7.3's diff flow exists and passes its tests
+- [x] Re-read `src/ViewModels/SourceControlViewModel.cs`, `src/Views/SourceControlPanel.cs`,
       `IGitRepositoryService`, and the unified-diff seam (`IFileDiffService`)
       to verify the narrowest mutation path before M1 coding
-- [ ] Confirm LibGit2Sharp `Repository.Index.Stage()` / `.Unstage()` / `repo.Commit()`
+- [x] Confirm LibGit2Sharp `Repository.Index.Stage()` / `.Unstage()` / `repo.Commit()`
       and `repo.Config.BuildSignature()` work against a local repo with a minimal
       proof-of-concept (file create → stage → modify → unstage → restage → commit)
-- [ ] Verify the planned mutation seam name is not already defined anywhere (grep
+- [x] Verify the planned mutation seam name is not already defined anywhere (grep
       for `IGitMutationService` and `GitMutationService` across the whole tree)
 
 ## Planning Status
@@ -200,7 +200,7 @@ mode to produce the true combined diff when there is real demand.
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| **M0** | Lock all decisions in this plan. Complete a LibGit2Sharp proof-of-concept covering 7 scenarios: init a repo, write a file, stage it, unstage it, modify + stage + modify again to confirm dual-state behavior, commit with signature, commit without signature → failure path. Verify the same-file dual-state suppression decision against real LibGit2Sharp output. | Proof-of-concept tests pass; this plan is reviewed and approved before any implementation code is written. The `IGitMutationService` / `GitMutationService` names are grep-verified as unused. |
+| **M0** ✅ | Lock all decisions in this plan. Complete a LibGit2Sharp proof-of-concept covering 7 scenarios: init a repo, write a file, stage it, unstage it, modify + stage + modify again to confirm dual-state behavior, commit with signature, commit without signature → failure path. Verify the same-file dual-state suppression decision against real LibGit2Sharp output. | Proof-of-concept tests pass (11/11, `tests/Zaide.Tests/Services/LibGit2SharpMutationProofOfConceptTests.cs`). The `IGitMutationService` / `GitMutationService` names are grep-verified as unused. |
 | **M1** | Implement `IGitMutationService` with `Stage`, `Unstage`, and `Commit` (the latter with `CommitResult`). Register in DI. Replace the body of `SourceControlViewModel.StageFileCommand` / `UnstageFileCommand` to call the mutation seam. After the seam call succeeds, call `RefreshCommand` to reload truth from the orchestrator. The existing placeholder tests are rewritten as seam-backed tests at both service and ViewModel level. **Update stale XML doc comments:** `FileChange.cs` class doc (currently says "Used for static/demo data — no real git operations") and `SourceControlViewModel.cs` class doc (currently says "Commands update UI state but do not execute real git operations"). | Service tests: stage an untracked file, stage a modified file, unstage a file, no-op stage of already-staged, no-op unstage of already-unstaged. ViewModel tests: stage → unstaged count decreases / staged count increases; unstage → reverse; post-mutation refresh is called (verify via mock). The old placeholder tests are removed. |
 | **M2** | Wire `CommitCommand` to call `IGitMutationService.Commit` with `CommitMessage`. Implement validation gates (empty message, nothing staged) returning truthful `CommitResult`. On success, call `RefreshCommand` and clear `CommitMessage`. On failure, surface the error via the new `CommitError` property (not `LastRefreshError`/`LastRefreshStatus` — those are reserved for refresh failures). Handle missing-signature failure specially. | Service tests: commit with empty message fails (no git call), commit with nothing staged fails (no git call), commit with staged files and valid message succeeds, commit with missing signature returns failure, commit with IO/repo error returns failure. ViewModel tests: commit clears message on success, commit with nothing staged keeps message, commit failure surfaces error in `CommitError`. |
 | **M3** | Ensure the Source Control panel and status surfaces refresh correctly after mutation actions. This covers: selection persistence across post-mutation refresh, diff surface staying visible or updating correctly, the status bar branch name staying truthful, and the stage/unstage/commit loop not degrading over repeated operations. Manual smoke test required: create a new file, stage it, modify it, view its diff, commit it, verify the file disappears from both lists. | Build + tests; focused manual verification for: file creation → stage → diff → commit → refresh loop; staged file unstage → unstaged file restage → commit; empty commit message rejection in UI (button does nothing / shows notice). Exit conditions below must all be checked off. |
