@@ -2,18 +2,18 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 6 is complete in live code/docs, not just roadmap wording
-- [ ] Verify current build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Re-check `src/ViewModels/SourceControlViewModel.cs`, `src/Models/SourceControlState.cs`, `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `src/Program.cs`
-- [ ] Confirm the current Source Control panel remains demo-only and must be replaced by a real repo-backed seam
-- [ ] Confirm the current status bar branch text is still driven by demo Source Control state
-- [ ] Verify the chosen git library/API against the actual target framework before implementation begins
-- [ ] Confirm Phase 7 root docs remain aligned with the Phase 7 umbrella split
+- [x] Confirm Phase 6 is complete in live code/docs, not just roadmap wording
+- [x] Verify current build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Verify current tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Re-check `src/ViewModels/SourceControlViewModel.cs`, `src/Models/SourceControlState.cs`, `src/Views/SourceControlPanel.cs`, `src/Views/StatusBar.cs`, `src/ViewModels/MainWindowViewModel.cs`, and `src/Program.cs`
+- [x] Confirm the current Source Control panel remains demo-only and must be replaced by a real repo-backed seam
+- [x] Confirm the current status bar branch text is still driven by demo Source Control state
+- [x] Verify the chosen git library/API against the actual target framework before implementation begins
+- [x] Confirm Phase 7 root docs remain aligned with the Phase 7 umbrella split
 
 ## Planning Status
 
-**Planned (2026-07-08).**
+**Revised 2026-07-09 — 7.1+7.2 M1/M2 and 7.3 basic diff view are complete. Phase 7.4 (stage/unstage + local commit) remains pending.**
 
 Phase 7 should stay one product phase, but it should not be implemented as one
 large uninterrupted bucket. The live roadmap already defines a coherent narrow
@@ -47,8 +47,8 @@ Verified against the current checkout on 2026-07-09:
   outcomes only: git status in the left sidebar, basic diff view, commit from
   the IDE, and branch display.
 - `docs/architecture/OVERVIEW.md` describes Git Integration as Phase 7 with
-  the 7.1+7.2 live read-seam and wiring already in place; diff and commit
-  remain pending 7.3/7.4.
+  the 7.1+7.2 live read-seam and wiring already in place; 7.3 basic diff view is
+  now complete, with stage/commit pending 7.4.
 - `src/ViewModels/SourceControlViewModel.cs` loads `Branches`, `UnstagedChanges`, and `StagedChanges`
   from `ISourceControlSnapshotOrchestrator` on construction and on `RefreshCommand`.
   It never seeds demo data; `ApplyResult` projects truthful non-repo/error labels
@@ -67,12 +67,17 @@ Verified against the current checkout on 2026-07-09:
   Git/diff libraries for Phase 7; `LibGit2Sharp` is already referenced in
   `src/Zaide.csproj`, but `DiffPlex` is not yet added.
 - `src/Zaide.csproj` includes `LibGit2Sharp`; `DiffPlex` remains pre-implementation.
+- **Phase 7.3 (basic diff view) is now complete.** `IFileDiffService` / `FileDiffService`
+  produce unified diffs via LibGit2Sharp `Diff.Compare<Patch>()`; `SourceControlViewModel`
+  exposes `SelectedFileChange` / `SelectedFilePath` / `CurrentDiff` with refresh-safe
+  selection; change lists use `ListBox` with diff surface rendering below; binary files
+  show an inline notice. 777 tests pass.
 
 ## Scope
 
 **Goal:** The repo-backed git read seam and live Source Control panel wiring
-(7.1+7.2) already power branch display and working-tree status. Remaining Phase 7
-work is minimal diff viewing (7.3) and local staging/commit actions (7.4)
+(7.1+7.2) already power branch display and working-tree status. Basic diff view
+(7.3) is now complete. Remaining Phase 7 work is local staging/commit actions (7.4)
 inside the existing shell.
 
 **Boundaries:** Phase 7 covers local repository discovery, branch/status read
@@ -150,9 +155,9 @@ Phase 7 is intentionally split into narrow slices:
 
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
-| 7.1 | Repository discovery + branch/status read seam | Planned |
+| 7.1 | Repository discovery + branch/status read seam | Complete |
 | 7.2 | Live Source Control panel/status-bar wiring | Mostly Complete (M1/M2 done; M3 manual walkthrough deferred) |
-| 7.3 | Basic diff view | Planned |
+| 7.3 | Basic diff view | Complete |
 | 7.4 | Stage/unstage + local commit flow | Planned |
 
 ## Phase Map

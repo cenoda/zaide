@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 6 complete (routing + visibility gaps closed in 6.1) — dedicated agent panels render in the right column, support direct input/execution, mirror activity into Townhall, and `@mention` routing surfaces failures and routed-flow outcomes in Townhall. Phase 7.2 live Source Control wiring (M1/M2) is complete; 7.3 diff view remains planned. See `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-7/IMPLEMENTATION_PLAN.md`.
+**Status:** Phase 6 complete (routing + visibility gaps closed in 6.1) — dedicated agent panels render in the right column, support direct input/execution, mirror activity into Townhall, and `@mention` routing surfaces failures and routed-flow outcomes in Townhall. Phase 7.3 basic diff view is complete; 7.4 stage/commit work remains pending. See `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-7/IMPLEMENTATION_PLAN.md`.
 
 ## Philosophy
 
@@ -88,7 +88,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Phase 4: Agent workspace foundations | 4 | ✅ Done |
 | Agent panels | 5 | ✅ Done |
 | Agent-to-agent routing | 6 | 🟡 Implemented (with documented limitations) |
-| Git integration | 7 | 🟢 Partially complete (7.1+7.2 M1/M2 done; diff + commit pending 7.3/7.4) |
+| Git integration | 7 | 🟢 Partially complete (7.1-7.3 done; stage/commit pending 7.4) |
 
 ## Completed Refactors
 

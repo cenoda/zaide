@@ -194,7 +194,7 @@ beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 
 ## Phase 7: Git Integration
 - [x] Git status in left sidebar (7.1+7.2 M1/M2 live)
-- [ ] Basic diff view (7.3 — planned)
+- [x] Basic diff view (7.3 ✅ done)
 - [ ] Commit from IDE (7.4 — planned)
 - [x] Branch display (7.2 M1/M2 live)
 
@@ -223,4 +223,4 @@ Implementation split:
 
 ---
 
-*Last updated: 2026-07-09 (Phase 6.1 closed — routing-visibility gaps surfaced in Townhall, dedicated AgentRouter tests added, all audit TOFIX items resolved)*
+*Last updated: 2026-07-09 (Phase 6.1 closed — routing-visibility gaps surfaced in Townhall, dedicated AgentRouter tests added, all audit TOFIX items resolved; Phase 7.3 basic diff view completed)*

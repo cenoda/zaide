@@ -102,8 +102,8 @@ hunk actions, history compare, side-by-side editor integration, or broad review 
 | Milestone | Description | Test |
 |-----------|-------------|------|
 | **M0** ✅ | Lock all decisions above. Complete the LibGit2Sharp diff proof-of-concept (9 tests: init a repo, stage a file, modify/delete/create, call `Diff.Compare<Patch>()` for HEAD:index and HEAD:workdir, verify unified diff string). Record the result. | Proof-of-concept tests all pass (9/9) at `tests/Zaide.Tests/Services/LibGit2SharpDiffProofOfConceptTests.cs`. |
-| **M1** | Add `IFileDiffService` seam + implementation. `GetDiff(repoRoot, FileChange)` returns `FileDiffResult` with unified diff text (or binary/unsupported marker). Staged files diff against HEAD:index; unstaged against HEAD:workdir. | Unit tests: modified file returns diff text, new file returns full content as diff, deleted file returns deletion diff, binary file returns `IsBinary=true`, unknown file path returns null. |
-| **M2** | Add `SelectedFileChange` / `SelectedFilePath` / `SelectedDiff` to `SourceControlViewModel`. Wire file-click → diff load. Persist selection by path across `ApplyResult`. Clear diff when file no longer exists. | ViewModel tests: clicking a file loads a diff, refresh with same path reselects it, refresh with removed path clears it, binary file populates `IsBinary` state. |
+| **M1** ✅ | Add `IFileDiffService` seam + implementation. `GetDiff(repoRoot, FileChange)` returns `FileDiffResult` with unified diff text (or binary/unsupported marker). Staged files diff against HEAD:index; unstaged against HEAD:workdir. | Unit tests at `tests/Zaide.Tests/Services/FileDiffServiceTests.cs`: modified file returns diff text, new file returns full content as diff, deleted file returns deletion diff, binary file returns `IsBinary=true`, unknown file path returns null. |
+| **M2** ✅ | Add `SelectedFileChange` / `SelectedFilePath` / `SelectedDiff` to `SourceControlViewModel`. Wire file-click → diff load. Persist selection by path across `ApplyResult`. Clear diff when file no longer exists. | ViewModel tests at `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs`: clicking a file loads a diff, refresh with same path reselects it, refresh with removed path clears it, binary file populates `IsBinary` state. |
 | **M3** ✅ | Convert change lists from `ItemsControl` to `ListBox` in `SourceControlPanel`. Style selected row. Add diff rendering surface (a `TextBlock` / `ScrollViewer` showing the unified diff in monospace, or a "Binary file" fallback). Bind everything. | Build + tests; focused manual verification for selection, diff display, binary fallback, and refresh coherence. |
 
 ## Seam Design (Pre-Approved)
@@ -184,6 +184,22 @@ to the single file path. Renders `Patch` content into unified diff string format
 - [x] `IGitRepositoryService` and `ISourceControlSnapshotOrchestrator` are unchanged
 - [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
 - [x] Tests pass: `dotnet test Zaide.slnx --no-build`
+
+## Automated Verification (Phase 7.3 Closeout — 2026-07-09)
+
+The following automated verification was performed as part of this closeout pass:
+
+- `dotnet build Zaide.slnx --no-restore` — **passed with 0 warnings and 0 errors**
+- `dotnet test Zaide.slnx --no-build` — **passed 777/777 (0 failed, 0 skipped)**
+
+### Manual UI Verification
+
+**Not performed in this closeout pass.** The diff surface (inline unified diff
+rendering, selection highlighting, binary-file fallback, refresh coherence) was
+exercised during M3 implementation via focused manual verification per the M3
+milestone. No additional manual UI smoke test was repeated for this docs-only
+closeout pass. A manual smoke pass for the full Phase 7.3 diff surface should be
+performed before the Phase 7 overall exit condition is declared complete.
 
 ## Exact Next Step
 
