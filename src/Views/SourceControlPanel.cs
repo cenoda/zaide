@@ -18,7 +18,9 @@ namespace Zaide.Views;
 
 /// <summary>
 /// Source Control panel view. Shows branch selector, change list,
-/// staged section, and commit input. Uses static/demo data only.
+/// staged section, and commit input. Data is loaded from the live
+/// repository via <see cref="SourceControlViewModel"/> and refreshes
+/// on explicit user action or workspace-open.
 /// </summary>
 public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 {

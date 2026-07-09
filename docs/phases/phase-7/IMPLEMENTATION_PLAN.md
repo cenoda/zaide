@@ -41,36 +41,39 @@ decisions, and the sub-phase order. The implementation details belong in:
 
 ## Live Baseline
 
-Verified against the current checkout on 2026-07-08:
+Verified against the current checkout on 2026-07-09:
 
 - `docs/roadmap/PHASES.md` defines Phase 7 as Git Integration and lists four
   outcomes only: git status in the left sidebar, basic diff view, commit from
   the IDE, and branch display.
-- `docs/architecture/OVERVIEW.md` still describes Git Integration as a planned
-  Phase 7 layer, not yet implemented.
-- `src/ViewModels/SourceControlViewModel.cs` explicitly says the Source Control
-  panel uses static/demo data only; commands update UI state but do not execute
-  real git operations.
-- `src/Models/SourceControlState.cs` seeds fake branches and file changes.
-- `src/Views/SourceControlPanel.cs` already provides the shell surface for a
-  branch selector, unstaged/staged sections, and commit input.
-- `src/Views/StatusBar.cs` already exposes a branch slot, but that slot is fed
-  by `SourceControlViewModel.CurrentBranchName`, which is currently demo-backed.
-- `docs/LIBRARIES.md` already records `LibGit2Sharp` and `DiffPlex` as the
-  intended Git/ diff libraries for Phase 7, but their actual integration is not
-  present in live code yet.
-- `Directory.Packages.props` and `src/Zaide.csproj` do **not** currently
-  include `LibGit2Sharp` or `DiffPlex`; package selection, version pinning, and
-  target-framework compatibility remain pre-implementation work.
-- `src/Models/Workspace.cs` currently stores only `ProjectName`; it does not
-  retain/expose the opened workspace path yet, which is a real design input for
-  repository discovery in Phase 7.1.
+- `docs/architecture/OVERVIEW.md` describes Git Integration as Phase 7 with
+  the 7.1+7.2 live read-seam and wiring already in place; diff and commit
+  remain pending 7.3/7.4.
+- `src/ViewModels/SourceControlViewModel.cs` loads `Branches`, `UnstagedChanges`, and `StagedChanges`
+  from `ISourceControlSnapshotOrchestrator` on construction and on `RefreshCommand`.
+  It never seeds demo data; `ApplyResult` projects truthful non-repo/error labels
+  (`"no repo"`, `"—"`, and a `StatusMessage`).
+- `src/ViewModels/SourceControlViewModel.cs` exposes `RefreshCommand` which the panel
+  and `MainWindowViewModel.OpenFolderCommand` already invoke.
+- `src/Models/SourceControlState.cs` no longer seeds fake branches and file changes
+  in the live constructor path.
+- `src/Views/SourceControlPanel.cs` binds live `UnstagedChanges` / `StagedChanges`,
+  surfaces `StatusMessage`, and exposes a refresh button bound to `RefreshCommand`.
+- `src/ViewModels/MainWindowViewModel.cs` invokes `SourceControlViewModel.RefreshCommand`
+  after workspace-open so the panel reflects the new repository truthfully.
+- `src/Views/StatusBar.cs` binds `SourceControlViewModel.CurrentBranchName`, which
+  is now truthful (not demo-backed).
+- `docs/LIBRARIES.md` records `LibGit2Sharp` and `DiffPlex` as the intended
+  Git/diff libraries for Phase 7; `LibGit2Sharp` is already referenced in
+  `src/Zaide.csproj`, but `DiffPlex` is not yet added.
+- `src/Zaide.csproj` includes `LibGit2Sharp`; `DiffPlex` remains pre-implementation.
 
 ## Scope
 
-**Goal:** Replace the demo-only Source Control state with a real repository-backed
-git integration seam that truthfully powers branch display, working-tree status,
-a basic diff surface, and local staging/commit actions inside the existing shell.
+**Goal:** The repo-backed git read seam and live Source Control panel wiring
+(7.1+7.2) already power branch display and working-tree status. Remaining Phase 7
+work is minimal diff viewing (7.3) and local staging/commit actions (7.4)
+inside the existing shell.
 
 **Boundaries:** Phase 7 covers local repository discovery, branch/status read
 behavior, minimal diff viewing, staging/unstaging, and local commit execution.
@@ -148,7 +151,7 @@ Phase 7 is intentionally split into narrow slices:
 | Sub-phase | Scope | Status |
 |-----------|-------|--------|
 | 7.1 | Repository discovery + branch/status read seam | Planned |
-| 7.2 | Live Source Control panel/status-bar wiring | Planned |
+| 7.2 | Live Source Control panel/status-bar wiring | Mostly Complete (M1/M2 done; M3 manual walkthrough deferred) |
 | 7.3 | Basic diff view | Planned |
 | 7.4 | Stage/unstage + local commit flow | Planned |
 

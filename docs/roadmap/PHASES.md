@@ -193,10 +193,10 @@ tests plus 5 view-model mirroring tests. All audit TOFIX items resolved
 beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 
 ## Phase 7: Git Integration
-- [ ] Git status in left sidebar
-- [ ] Basic diff view
-- [ ] Commit from IDE
-- [ ] Branch display
+- [x] Git status in left sidebar (7.1+7.2 M1/M2 live)
+- [ ] Basic diff view (7.3 — planned)
+- [ ] Commit from IDE (7.4 — planned)
+- [x] Branch display (7.2 M1/M2 live)
 
 Implementation split:
 

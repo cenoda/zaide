@@ -2,7 +2,7 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 6 implemented (with documented limitations) — dedicated agent panels render in the right column, support direct input/execution, and mirror activity into Townhall; a narrow `@mention` agent-to-agent router routes requests to other visible panels. Two honest gaps remain (unknown-mention visible failure and routed-flow Townhall surfacing); see `docs/phases/phase-6/IMPLEMENTATION_PLAN.md`.
+**Status:** Phase 6 complete (routing + visibility gaps closed in 6.1) — dedicated agent panels render in the right column, support direct input/execution, mirror activity into Townhall, and `@mention` routing surfaces failures and routed-flow outcomes in Townhall. Phase 7.2 live Source Control wiring (M1/M2) is complete; 7.3 diff view remains planned. See `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-7/IMPLEMENTATION_PLAN.md`.
 
 ## Philosophy
 
@@ -88,7 +88,7 @@ workspace first, not as a conventional editor with an AI sidebar.
 | Phase 4: Agent workspace foundations | 4 | ✅ Done |
 | Agent panels | 5 | ✅ Done |
 | Agent-to-agent routing | 6 | 🟡 Implemented (with documented limitations) |
-| Git integration | 7 | ⏳ Planned |
+| Git integration | 7 | 🟢 Partially complete (7.1+7.2 M1/M2 done; diff + commit pending 7.3/7.4) |
 
 ## Completed Refactors
 
@@ -127,7 +127,7 @@ Cleaned up layer boundaries within the single-project structure:
 The next stages build on the Phase 4 Townhall activity surface:
 
 - **Agent panels** — individual UIs for each agent (Phase 5 complete: render + direct input + one minimal execution path + Townhall mirroring)
-- **@mention routing** — agents can request review from each other (Phase 6 implemented with documented limitations; routed-flow Townhall surfacing and visible unknown-mention failure are tracked gaps)
+- **@mention routing** — agents can request review from each other (Phase 6 complete: mechanical routing + Townhall visibility for failures and routed-flow outcomes)
 - **Git integration** — status, diff, and commits from the sidebar
 - **Editor** — still visible and powerful, but framed as the implementation surface
 

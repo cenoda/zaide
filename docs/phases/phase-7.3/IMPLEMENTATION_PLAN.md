@@ -2,16 +2,30 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Confirm Phase 7.2's live Source Control wiring exists and passes its tests
+- [x] Phase 7.2 live Source Control wiring is in place: `SourceControlViewModel` loads
+      live snapshots from `ISourceControlSnapshotOrchestrator`, `MainWindowViewModel.OpenFolderCommand`
+      invokes `RefreshCommand` on workspace-open, and `SourceControlPanel` exposes a
+      header refresh button bound to `RefreshCommand`. M1/M2 are complete; M3 manual
+      walkthrough is deferred.
 - [ ] Re-check the current Source Control panel/view-model surfaces to determine the smallest place a diff view can live without reopening shell layout
 - [ ] Verify the chosen diff library/API against the current target framework with a minimal proof-of-concept
 
 ## Planning Status
 
-**Planned (2026-07-08).**
+**Planned (2026-07-09, post-7.2 baseline).**
 
 This sub-phase adds the first intentionally small diff surface after repository
-truth and live Source Control status are already stable.
+truth and live Source Control status are already stable. The 7.2 baseline is:
+
+- `LibGit2Sharp` is already referenced in `src/Zaide.csproj` and powers the
+  read seam (`IGitRepositoryService` → `SourceControlSnapshotOrchestrator`).
+- `DiffPlex` is documented in `docs/LIBRARIES.md` as the intended diff library
+  but is **not yet added** as a package reference; diff-library proof is a real
+  pre-implementation task.
+- The Source Control change rows (`UnstagedChanges` / `StagedChanges`) are rendered
+  by `SourceControlPanel.CreateChangeItemTemplate` but are **not yet selectable**
+  and carry no diff-trigger model. M0 must explicitly lock the selection/trigger
+  design before diff retrieval work begins.
 
 ## Goal
 
