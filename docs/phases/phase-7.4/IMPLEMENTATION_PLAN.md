@@ -14,7 +14,7 @@
 
 ## Planning Status
 
-**Revised 2026-07-09 — audit tightened before implementation starts.**
+**Revised 2026-07-09 — audit findings applied.**
 
 This revision was written against the live codebase on 2026-07-09.
 The previous plan was aspirational in several areas; this one is concretely
@@ -29,9 +29,11 @@ grounded in the facts of the repo.
 | `src/Services/ISourceControlSnapshotOrchestrator.cs` | Refresh-only. Must remain unchanged — it is the app's single refresh seam, not a mutation seam. |
 | `src/Services/SourceControlSnapshotOrchestrator.cs` | Same as above. |
 | `src/Services/IFileDiffService.cs` + impl | Diff-only. Unchanged. |
-| `src/ViewModels/SourceControlViewModel.cs` | `StageFileCommand`, `UnstageFileCommand`, and `CommitCommand` are **pure UI-placeholder mutations** — they shuffle `FileChange` objects between `ObservableCollection`s and flip the `IsStaged` boolean. They never touch a git repository. `DiffCommand` (selection) and `RefreshCommand` are real. Three existing tests assert this placeholder behavior (see below). |
+| `src/ViewModels/SourceControlViewModel.cs` | `StageFileCommand`, `UnstageFileCommand`, and `CommitCommand` are **pure UI-placeholder mutations** — they shuffle `FileChange` objects between `ObservableCollection`s and flip the `IsStaged` boolean. They never touch a git repository. `DiffCommand` (selection) and `RefreshCommand` are real. Three existing tests assert this placeholder behavior (see below). **Stale doc comment:** class XML doc says "Commands update UI state but do not execute real git operations (those are later milestones)" — must be updated when commands become real. |
 | `src/Views/SourceControlPanel.cs` | Each `ListBox` row has stage/unstage `Button` instances (via `CreateChangeItemTemplate`). The commit input (`TextBox`) and commit button (`Button`) are wired. No mutation eventing exists yet. |
 | `tests/Zaide.Tests/ViewModels/SourceControlViewModelTests.cs` | `StageFile_MovesFromUnstagedToStaged` [L118], `UnstageFile_MovesFromStagedToUnstaged` [L135], and `CommitCommand_ClearsStagedAndMessage` [L152] assert visual-only behavior. **These three tests must be removed/rewritten** when the real commands replace the placeholders. The tests that assert selection, diff, and refresh behavior (e.g. `SelectFileCommand_*`, `Refresh_*`) must remain. |
+| `src/Models/FileChange.cs` | `IsStaged` has a public `set` accessor (placeholder commands toggle it). **Stale doc comment:** class XML doc says "Used for static/demo data — no real git operations" — must be updated when real mutation is introduced. |
+| `src/Models/SourceControlState.cs` | Passive container with `Snapshot` and `CommitMessageDraft`. Not used by the ViewModel today. Phase 7.4 can either wire it in or leave it as dead code to be cleaned up later. |
 | `src/Program.cs` (DI) | `IGitRepositoryService`, `ISourceControlSnapshotOrchestrator`, `IFileDiffService` are registered as singletons. Any new mutation seam must be registered here. |
 
 ### Truthfulness Gaps Discovered
@@ -77,13 +79,19 @@ Instead, Phase 7.4 introduces a **new dedicated mutation seam**:
 
 The mutation service:
 - Receives the repository root path (already discovered by the read seam)
-- Exposes `Stage(repoRoot, filePath)` / `Unstage(repoRoot, filePath)` with
-  no return value (true no-op for already-staged / already-unstaged files)
+- Exposes `Stage(repoRoot, filePath)` / `Unstage(repoRoot, filePath)` returning
+  a `StageResult` that projects success or failure (file removed externally,
+  repo error, IO error). True no-op for already-staged / already-unstaged files.
 - Exposes `Commit(repoRoot, message)` returning a `CommitResult` that projects
   success, validation failure (empty message, nothing staged), or service
   failure (signature missing, repo error, IO error)
 - Does **not** call `Refresh()` or update ViewModel state — it is a pure
   operation seam, not an orchestration seam
+- **Async convention note:** LibGit2Sharp's API is synchronous. The service
+  methods are intentionally synchronous to match the library. The ViewModel
+  wraps them in `Task.Run` via `ReactiveCommand.CreateFromTask` for
+  off-thread execution. This is a documented exception to the CONVENTIONS.md
+  rule that I/O-bound methods should be async.
 
 ### Decision Record
 
@@ -147,7 +155,7 @@ same `FilePath`) when there is real demand.
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| **M0** | Lock all decisions in this plan. Complete a LibGit2Sharp proof-of-concept (4+ tests: init a repo, write a file, stage it, unstage it, modify + stage + modify again to confirm dual-state behavior, commit with signature, commit without signature → failure path). Verify the same-file dual-state suppression decision against real LibGit2Sharp output. | Proof-of-concept tests pass; this plan is reviewed and approved before any implementation code is written. The `IGitMutationService` / `GitMutationService` names are grep-verified as unused. |
+| **M0** | Lock all decisions in this plan. Complete a LibGit2Sharp proof-of-concept covering 7 scenarios: init a repo, write a file, stage it, unstage it, modify + stage + modify again to confirm dual-state behavior, commit with signature, commit without signature → failure path. Verify the same-file dual-state suppression decision against real LibGit2Sharp output. | Proof-of-concept tests pass; this plan is reviewed and approved before any implementation code is written. The `IGitMutationService` / `GitMutationService` names are grep-verified as unused. |
 | **M1** | Implement `IGitMutationService` with `Stage`, `Unstage`, and `Commit` (the latter with `CommitResult`). Register in DI. Replace the body of `SourceControlViewModel.StageFileCommand` / `UnstageFileCommand` to call the mutation seam. After the seam call succeeds, call `RefreshCommand` to reload truth from the orchestrator. The existing placeholder tests are rewritten as seam-backed tests at both service and ViewModel level. | Service tests: stage an untracked file, stage a modified file, unstage a file, no-op stage of already-staged, no-op unstage of already-unstaged. ViewModel tests: stage → unstaged count decreases / staged count increases; unstage → reverse; post-mutation refresh is called (verify via mock). The old placeholder tests are removed. |
 | **M2** | Wire `CommitCommand` to call `IGitMutationService.Commit` with `CommitMessage`. Implement validation gates (empty message, nothing staged) returning truthful `CommitResult`. On success, call `RefreshCommand` and clear `CommitMessage`. On failure, surface the error via `LastRefreshError` / `LastRefreshStatus` (or a new dedicated error surface). Handle missing-signature failure specially. | Service tests: commit with empty message fails (no git call), commit with nothing staged fails (no git call), commit with staged files and valid message succeeds, commit with missing signature returns failure, commit with IO/repo error returns failure. ViewModel tests: commit clears message on success, commit with nothing staged keeps message, commit failure surfaces error. |
 | **M3** | Ensure the Source Control panel and status surfaces refresh correctly after mutation actions. This covers: selection persistence across post-mutation refresh, diff surface staying visible or updating correctly, the status bar branch name staying truthful, and the stage/unstage/commit loop not degrading over repeated operations. Manual smoke test required: create a new file, stage it, modify it, view its diff, commit it, verify the file disappears from both lists. | Build + tests; focused manual verification for: file creation → stage → diff → commit → refresh loop; staged file unstage → unstaged file restage → commit; empty commit message rejection in UI (button does nothing / shows notice). Exit conditions below must all be checked off. |
@@ -166,8 +174,11 @@ same `FilePath`) when there is real demand.
   ```csharp
   StageFileCommand = ReactiveCommand.Create<FileChange>(async file =>
   {
-      _mutationService.Stage(_repositoryRoot, file.FilePath);
-      RefreshCommand.Execute().Subscribe();
+      var result = _mutationService.Stage(_repositoryRoot, file.FilePath);
+      if (result.IsSuccess)
+          RefreshCommand.Execute().Subscribe();
+      // On failure, the next refresh will restore truth.
+      // Errors are surfaced via LastRefreshError/LastRefreshStatus.
   });
   ```
 - Replace `UnstageFileCommand` body analogously
@@ -183,15 +194,21 @@ same `FilePath`) when there is real demand.
       }
       else
       {
-          StatusMessage = ...; // project failure
-          LastRefreshError = ...;
-          LastRefreshStatus = ...;
+          StatusMessage = result.ErrorMessage;
+          LastRefreshError = result.ErrorMessage;
+          LastRefreshStatus = SnapshotRefreshStatus.Failed;
       }
   });
   ```
-- The `repositoryRoot` can be stored from the last successful snapshot refresh
-  (it is already known from `_orchestrator.Refresh()` → `RepositoryDiscoveryResult.RepositoryRoot`).
-  Alternatively, store it in a field set during `ApplyResult` from `result.Snapshot.RepositoryRoot`.
+- The `repositoryRoot` is obtained by calling `IGitRepositoryService.Discover(_workspace.WorkspacePath)`
+  and reading `RepositoryDiscoveryResult.RepositoryRoot` from the result. This reuses the existing
+  read-only seam without modifying it. The root is stored in a field set during `ApplyResult` from
+  the last successful refresh. **Note:** Neither `SnapshotRefreshResult` nor `RepositoryStatusSnapshot`
+  exposes `RepositoryRoot` — it lives only on `RepositoryDiscoveryResult`, which is why the ViewModel
+  calls `Discover()` directly rather than reading it from the snapshot.
+- The `RefreshCommand.Execute().Subscribe()` call after mutation is intentionally fire-and-forget.
+  The subscription is not disposed because the command completes synchronously (it is not a long-lived
+  observable). This is a pragmatic exception to the CONVENTIONS.md disposal rule.
 
 ### Changes to `SourceControlPanel`
 
@@ -242,7 +259,7 @@ services.AddSingleton<IGitMutationService, GitMutationService>();
 | `Stage()`/`Unstage()` on an already-clean file throws | Wrap in try/catch; treat as no-op success (LibGit2Sharp generally no-ops gracefully). Verify via proof-of-concept. |
 | `BuildSignature()` returns null for unconfigured git identity | Specific error message shown to user; no attempt to commit. |
 | Post-mutation refresh clears selection/diff | Already handled by `ApplyResult` selection-recovery (re-selects by path). Verify in M3 manual smoke test. |
-| Stage/Unstage on a file that was removed externally between UI read and mutation | Seam call fails; refresh restores truth. Acceptable for M1. |
+| Stage/Unstage on a file that was removed externally between UI read and mutation | `StageResult` returns failure; ViewModel calls refresh to restore truth. Acceptable for M1. |
 
 ## Exit Conditions
 
@@ -259,9 +276,10 @@ services.AddSingleton<IGitMutationService, GitMutationService>();
 
 ## Exact Next Step
 
-After 7.4 is complete, Phase 7 can close and the repo can reassess whether the
-next need is a small git follow-up, a Phase 6.1 routing-visibility follow-up, or
-a later structural refactor based on real pressure rather than anticipation.
+Begin M0: complete the LibGit2Sharp proof-of-concept (7 scenarios against a
+local repo), verify the same-file dual-state suppression decision, and confirm
+the `IGitMutationService` / `GitMutationService` names are unused. Only then
+proceed to M1 implementation.
 
 ## Rollback Plan
 
