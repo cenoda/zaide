@@ -12,8 +12,10 @@ public enum GitChangeType
 }
 
 /// <summary>
-/// Represents a file change in the Source Control panel.
-/// Used for static/demo data — no real git operations.
+/// Represents a file change in the Source Control panel, projected from the
+/// read-only git status seam (<see cref="IGitRepositoryService"/>). Mutated
+/// in place by stage/unstage seam calls; the repo truth is reloaded via
+/// refresh after each mutation.
 /// </summary>
 public class FileChange
 {

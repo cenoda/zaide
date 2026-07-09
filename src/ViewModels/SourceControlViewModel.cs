@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Models;
 using Zaide.Services;
@@ -11,15 +12,19 @@ namespace Zaide.ViewModels;
 
 /// <summary>
 /// ViewModel for the Source Control panel. Requests truthful repository snapshots
-/// from the read-only refresh seam (<see cref="ISourceControlSnapshotOrchestrator"/>);
-/// it never seeds demo data. Commands update UI state but do not execute real git
-/// operations (those are later milestones). The panel can request a fresh snapshot
-/// for the current workspace via <see cref="RefreshCommand"/>.
+/// from the read-only refresh seam (<see cref="ISourceControlSnapshotOrchestrator"/>).
+/// It never seeds demo data. Stage/unstage commands call the real mutation seam
+/// (<see cref="IGitMutationService"/>) and unconditionally refresh afterward so the
+/// UI returns to repo truth. Commit is still a visual-only placeholder (later
+/// milestone). The panel can request a fresh snapshot for the current workspace
+/// via <see cref="RefreshCommand"/>.
 /// </summary>
 public class SourceControlViewModel : ReactiveObject
 {
     private readonly ISourceControlSnapshotOrchestrator _orchestrator;
     private readonly IFileDiffService _fileDiffService;
+    private readonly IGitMutationService _mutationService;
+    private readonly IGitRepositoryService _gitRepositoryService;
     private readonly Workspace _workspace;
     private string _commitMessage = string.Empty;
     private GitBranch? _selectedBranch;
@@ -110,11 +115,15 @@ public class SourceControlViewModel : ReactiveObject
     public SourceControlViewModel(
         ISourceControlSnapshotOrchestrator orchestrator,
         Workspace workspace,
-        IFileDiffService fileDiffService)
+        IFileDiffService fileDiffService,
+        IGitMutationService mutationService,
+        IGitRepositoryService gitRepositoryService)
     {
         _orchestrator = orchestrator;
         _workspace = workspace;
         _fileDiffService = fileDiffService;
+        _mutationService = mutationService;
+        _gitRepositoryService = gitRepositoryService;
 
         // Load a truthful snapshot from the refresh seam (the source of truth).
         // When no workspace is open or it is not inside a repository, the
@@ -123,25 +132,47 @@ public class SourceControlViewModel : ReactiveObject
 
         RefreshCommand = ReactiveCommand.Create(() => ApplyResult(_orchestrator.Refresh(_workspace.WorkspacePath)));
 
-        StageFileCommand = ReactiveCommand.Create<FileChange>(file =>
+        StageFileCommand = ReactiveCommand.CreateFromTask<FileChange>(async file =>
         {
-            if (UnstagedChanges.Remove(file))
+            var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+            if (!discovery.IsRepository || discovery.RepositoryRoot is null)
             {
-                file.IsStaged = true;
-                StagedChanges.Add(file);
-                this.RaisePropertyChanged(nameof(UnstagedCount));
-                this.RaisePropertyChanged(nameof(StagedCount));
+                StatusMessage = "No repository - open a folder inside a git repository";
+                return;
+            }
+
+            var repoRoot = discovery.RepositoryRoot;
+            var result = await Task.Run(() => _mutationService.Stage(repoRoot, file.FilePath));
+
+            // Refresh unconditionally so the UI returns to repo truth even when
+            // the mutation failed (e.g. file removed externally).
+            RefreshCommand.Execute().Subscribe();
+
+            if (!result.IsSuccess)
+            {
+                StatusMessage = result.ErrorMessage;
             }
         });
 
-        UnstageFileCommand = ReactiveCommand.Create<FileChange>(file =>
+        UnstageFileCommand = ReactiveCommand.CreateFromTask<FileChange>(async file =>
         {
-            if (StagedChanges.Remove(file))
+            var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+            if (!discovery.IsRepository || discovery.RepositoryRoot is null)
             {
-                file.IsStaged = false;
-                UnstagedChanges.Add(file);
-                this.RaisePropertyChanged(nameof(UnstagedCount));
-                this.RaisePropertyChanged(nameof(StagedCount));
+                StatusMessage = "No repository - open a folder inside a git repository";
+                return;
+            }
+
+            var repoRoot = discovery.RepositoryRoot;
+            var result = await Task.Run(() => _mutationService.Unstage(repoRoot, file.FilePath));
+
+            // Refresh unconditionally so the UI returns to repo truth even when
+            // the mutation failed (e.g. file removed externally).
+            RefreshCommand.Execute().Subscribe();
+
+            if (!result.IsSuccess)
+            {
+                StatusMessage = result.ErrorMessage;
             }
         });
 
