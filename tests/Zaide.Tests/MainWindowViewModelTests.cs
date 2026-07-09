@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -114,6 +115,72 @@ public class MainWindowViewModelTests
 
         vm.ToggleBottomPanelCommand.Execute().Subscribe();
         Assert.False(vm.IsBottomPanelVisible);
+    }
+
+    [Fact]
+    public async Task OpenFolderCommand_RefreshesSourceControlForNewWorkspace()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Zaide.Models.Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeService = new FileTreeService();
+        var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
+        var terminalService = new Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+
+        var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
+        var coordinator = CreateMockCoordinator().Object;
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.Found("/repo", "/repo/.git/"));
+        git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot
+        {
+            CurrentBranchName = "main",
+            Branches = new[] { new GitBranch("main", true) },
+            Changes = Array.Empty<FileChange>(),
+        });
+        // Share the same Workspace instance the MainWindowViewModel mutates on open.
+        var scViewModel = new SourceControlViewModel(
+            new SourceControlSnapshotOrchestrator(git.Object), workspace);
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+
+        // Before opening a folder the (empty) workspace yields no branch.
+        Assert.Empty(scViewModel.Branches);
+
+        var repoPath = Path.Combine(Path.GetTempPath(), "zaide-sctest-" + Guid.NewGuid());
+        Directory.CreateDirectory(repoPath);
+        try
+        {
+            vm.PickFolder.RegisterHandler(ctx => ctx.SetOutput(repoPath));
+            vm.OpenFolderCommand.Execute(Unit.Default).Subscribe();
+            await Task.Delay(150);
+
+            // Opening the folder must refresh Source Control from the new workspace.
+            Assert.Equal(repoPath, workspace.WorkspacePath);
+            Assert.Equal(SnapshotRefreshStatus.Success, vm.SourceControlViewModel.LastRefreshStatus);
+            Assert.Single(vm.SourceControlViewModel.Branches);
+            Assert.Equal("main", vm.SourceControlViewModel.CurrentBranchName);
+        }
+        finally
+        {
+            if (Directory.Exists(repoPath))
+                Directory.Delete(repoPath, recursive: true);
+        }
     }
 
     [Fact]

@@ -36,20 +36,50 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
 
         // --- Header ---
-        var header = new StackPanel
+        var branchIcon = IconFactory.Create(
+            "Icon.GitBranch",
+            (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            14);
+        var title = TextStyles.Header("Source Control");
+
+        var titleGroup = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
-            Children =
-            {
-                IconFactory.Create(
-                    "Icon.GitBranch",
-                    (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-                    14),
-                TextStyles.Header("Source Control")
-            }
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { branchIcon, title }
         };
+
+        var refreshButton = new Button
+        {
+            Content = IconFactory.Create(
+                "Icon.ArrowClockwise",
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                14),
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Padding = LayoutTokens.NoneThickness,
+            CornerRadius = LayoutTokens.RadiusSm,
+            Width = 24,
+            Height = 24,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+        };
+
+        var header = new Grid
+        {
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Children = { titleGroup, refreshButton }
+        };
+        Grid.SetColumn(titleGroup, 0);
+        Grid.SetColumn(refreshButton, 2);
 
         // --- Branch Selector ---
         _branchSelector = new ComboBox
@@ -151,6 +181,12 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _branchSelector.ItemsSource = vm!.Branches;
                     _branchSelector.SelectedItem = vm.SelectedBranch;
                 }));
+
+            // Explicit user refresh (reuses the orchestrator seam)
+            d.Add(Observable.FromEventPattern<RoutedEventArgs>(
+                    h => refreshButton.Click += h,
+                    h => refreshButton.Click -= h)
+                .InvokeCommand(ViewModel, vm => vm.RefreshCommand));
 
             // Branch selection → ViewModel
             d.Add(Observable.FromEventPattern<SelectionChangedEventArgs>(

@@ -125,6 +125,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 workspace.SetProjectFromPath(path);
                 WorkspaceProjectName = workspace.ProjectName;
                 await FileTreeViewModel.OpenFolderCommand.Execute(path);
+                // Refresh Source Control against the newly opened workspace so the
+                // panel/status bar reflect the new repository truthfully.
+                SourceControlViewModel.RefreshCommand.Execute(Unit.Default).Subscribe();
             }
         });
         SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
