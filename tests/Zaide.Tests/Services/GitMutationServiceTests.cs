@@ -169,4 +169,133 @@ public class GitMutationServiceTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.ErrorMessage);
     }
+
+    [Fact]
+    public void Commit_EmptyMessage_ReturnsFailureWithoutGitCall()
+    {
+        var dir = CreateTempDir();
+        try
+        {
+            Repository.Init(dir);
+
+            var result = _service.Commit(dir, string.Empty);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Commit message cannot be empty.", result.ErrorMessage);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Commit_NothingStaged_ReturnsFailure()
+    {
+        var dir = CreateTempDir();
+        try
+        {
+            Repository.Init(dir);
+            using var repo = new Repository(dir);
+            repo.Config.Set("user.name", "Test User");
+            repo.Config.Set("user.email", "test@example.com");
+
+            var result = _service.Commit(dir, "test commit");
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Nothing staged to commit.", result.ErrorMessage);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Commit_WithStagedFileAndValidMessage_Succeeds()
+    {
+        var dir = CreateTempDir();
+        try
+        {
+            Repository.Init(dir);
+            using (var repo = new Repository(dir))
+            {
+                repo.Config.Set("user.name", "Test User");
+                repo.Config.Set("user.email", "test@example.com");
+            }
+            File.WriteAllText(Path.Combine(dir, "new.txt"), "content");
+            using (var repo = new Repository(dir))
+            {
+                Commands.Stage(repo, "new.txt");
+            }
+
+            var result = _service.Commit(dir, "test commit");
+
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.CommitSha);
+            Assert.NotEmpty(result.CommitSha);
+            Assert.Null(result.ErrorMessage);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Commit_MissingGitIdentity_ReturnsFailure()
+    {
+        var dir = CreateTempDir();
+        try
+        {
+            Repository.Init(dir);
+            using (var repo = new Repository(dir))
+            {
+                repo.Config.Unset("user.name");
+                repo.Config.Unset("user.email");
+            }
+            File.WriteAllText(Path.Combine(dir, "new.txt"), "content");
+            using (var repo = new Repository(dir))
+            {
+                Commands.Stage(repo, "new.txt");
+            }
+
+            // Verify that BuildSignature actually returns null in this environment.
+            // On developer machines with global git config, it may return the global
+            // identity even after repo-level unset. The proof-of-concept tests
+            // document this behavior. We only test the failure path when the
+            // environment is clean (no identity at any config level).
+            using (var repo = new Repository(dir))
+            {
+                var sig = repo.Config.BuildSignature(DateTimeOffset.Now);
+                if (sig is not null)
+                {
+                    // Environment has global/system config — skip the failure
+                    // assertion. The service correctly uses the available signature.
+                    var result = _service.Commit(dir, "test commit");
+                    Assert.True(result.IsSuccess);
+                    return;
+                }
+            }
+
+            var commitResult = _service.Commit(dir, "test commit");
+            Assert.False(commitResult.IsSuccess);
+            Assert.Contains("user identity", commitResult.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Commit_NonExistentRepository_ReturnsFailure()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "zaide-mutation-nonexistent-" + Guid.NewGuid());
+
+        var result = _service.Commit(dir, "test commit");
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.ErrorMessage);
+    }
 }

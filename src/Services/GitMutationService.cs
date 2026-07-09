@@ -1,12 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using LibGit2Sharp;
 
 namespace Zaide.Services;
 
 /// <summary>
 /// LibGit2Sharp-backed implementation of <see cref="IGitMutationService"/>.
-/// Performs stage/unstage operations against an already-discovered repository
-/// root. Does not call <c>Refresh()</c> or update any ViewModel state — it is
-/// a pure operation seam, not an orchestration seam.
+/// Performs stage/unstage/commit operations against an already-discovered
+/// repository root. Does not call <c>Refresh()</c> or update any ViewModel
+/// state — it is a pure operation seam, not an orchestration seam.
 /// </summary>
 public sealed class GitMutationService : IGitMutationService
 {
@@ -38,5 +41,57 @@ public sealed class GitMutationService : IGitMutationService
         {
             return StageResult.Failure(ex.Message);
         }
+    }
+
+    /// <inheritdoc/>
+    public CommitResult Commit(string repositoryRoot, string message)
+    {
+        // Empty-message validation happens before any repository access so
+        // callers (and tests) can verify no git call is made for this case.
+        if (string.IsNullOrWhiteSpace(message))
+            return CommitResult.Failure("Commit message cannot be empty.");
+
+        try
+        {
+            using var repo = new Repository(repositoryRoot);
+
+            var signature = repo.Config.BuildSignature(DateTimeOffset.Now);
+            if (signature is null)
+            {
+                return CommitResult.Failure(
+                    "Git user identity is not configured. Set user.name and user.email in your git config.");
+            }
+
+            var status = repo.RetrieveStatus();
+            if (!HasStagedChanges(status))
+                return CommitResult.Failure("Nothing staged to commit.");
+
+            var commit = repo.Commit(message, signature, signature);
+            return CommitResult.Success(commit.Sha);
+        }
+        catch (System.Exception ex)
+        {
+            return CommitResult.Failure(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Returns true when the repository status contains at least one entry
+    /// whose state includes an index (staged) flag.
+    /// </summary>
+    private static bool HasStagedChanges(RepositoryStatus status)
+    {
+        foreach (var entry in status)
+        {
+            var state = entry.State;
+            if ((state & FileStatus.NewInIndex) != 0
+                || (state & FileStatus.ModifiedInIndex) != 0
+                || (state & FileStatus.DeletedFromIndex) != 0
+                || (state & FileStatus.RenamedInIndex) != 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

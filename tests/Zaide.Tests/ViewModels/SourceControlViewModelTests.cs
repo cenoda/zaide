@@ -242,6 +242,93 @@ public class SourceControlViewModelTests
     }
 
     [Fact]
+    public void CommitCommand_Success_ClearsMessageAndErrorAndRefreshes()
+    {
+        var stagedSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var emptySnapshot = Snapshot();
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(stagedSnapshot)
+            .Returns(emptySnapshot);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.Commit("/ws/.git/", "test commit")).Returns(CommitResult.Success("abc123"));
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        vm.CommitMessage = "test commit";
+
+        vm.CommitCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Commit("/ws/.git/", "test commit"), Times.Once);
+        Assert.Equal(string.Empty, vm.CommitMessage);
+        Assert.Null(vm.CommitError);
+        Assert.Empty(vm.StagedChanges);
+    }
+
+    [Fact]
+    public void CommitCommand_NothingStaged_SetsCommitErrorAndDoesNotCallMutation()
+    {
+        var snapshot = Snapshot(changes: Array.Empty<FileChange>());
+        var orchestrator = CreateOrchestrator(snapshot);
+        var mutation = new Mock<IGitMutationService>();
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        vm.CommitMessage = "test commit";
+
+        vm.CommitCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Commit(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        Assert.Equal("Nothing staged to commit.", vm.CommitError);
+        Assert.Equal("test commit", vm.CommitMessage);
+    }
+
+    [Fact]
+    public void CommitCommand_EmptyMessage_SetsCommitErrorAndDoesNotCallMutation()
+    {
+        var stagedSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var orchestrator = CreateOrchestrator(stagedSnapshot);
+        var mutation = new Mock<IGitMutationService>();
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        vm.CommitMessage = string.Empty;
+
+        vm.CommitCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Commit(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        Assert.Equal("Commit message cannot be empty.", vm.CommitError);
+    }
+
+    [Fact]
+    public void CommitCommand_Failure_SetsCommitErrorAndRefreshes()
+    {
+        var stagedSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var orchestrator = CreateOrchestrator(stagedSnapshot);
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.Commit("/ws/.git/", "test commit")).Returns(CommitResult.Failure("commit failed"));
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        vm.CommitMessage = "test commit";
+
+        vm.CommitCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Commit("/ws/.git/", "test commit"), Times.Once);
+        Assert.Equal("commit failed", vm.CommitError);
+        Assert.Equal("test commit", vm.CommitMessage);
+    }
+
+    [Fact]
     public void SelectBranchCommand_UpdatesCurrentBranch()
     {
         var snapshot = Snapshot(branches: new[]

@@ -29,6 +29,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private readonly ListBox _stagedList;
     private readonly TextBox _commitInput;
     private readonly Button _commitButton;
+    private readonly TextBlock _commitErrorText;
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
     private readonly TextBlock _statusMessage;
@@ -185,6 +186,16 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
         };
 
+        // --- Commit Error Text (visible only when CommitError is non-null) ---
+        _commitErrorText = new TextBlock
+        {
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.Parse("#E05555")),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
+            IsVisible = false
+        };
+
         // --- Layout ---
         var scrollViewer = new ScrollViewer
         {
@@ -202,7 +213,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _stagedList,
                     _diffContainer,
                     _commitInput,
-                    _commitButton
+                    _commitButton,
+                    _commitErrorText
                 }
             }
         };
@@ -311,6 +323,14 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     h => _commitButton.Click += h,
                     h => _commitButton.Click -= h)
                 .InvokeCommand(ViewModel, vm => vm.CommitCommand));
+
+            // Commit error surface (visible only when CommitError is non-null)
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.CommitError)
+                .Subscribe(err =>
+                {
+                    _commitErrorText.Text = err ?? string.Empty;
+                    _commitErrorText.IsVisible = !string.IsNullOrEmpty(err);
+                }));
         });
     }
 

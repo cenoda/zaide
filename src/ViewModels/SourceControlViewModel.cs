@@ -13,11 +13,10 @@ namespace Zaide.ViewModels;
 /// <summary>
 /// ViewModel for the Source Control panel. Requests truthful repository snapshots
 /// from the read-only refresh seam (<see cref="ISourceControlSnapshotOrchestrator"/>).
-/// It never seeds demo data. Stage/unstage commands call the real mutation seam
-/// (<see cref="IGitMutationService"/>) and unconditionally refresh afterward so the
-/// UI returns to repo truth. Commit is still a visual-only placeholder (later
-/// milestone). The panel can request a fresh snapshot for the current workspace
-/// via <see cref="RefreshCommand"/>.
+/// It never seeds demo data. Stage/unstage/commit commands call the real mutation
+/// seam (<see cref="IGitMutationService"/>) and unconditionally refresh afterward so
+/// the UI returns to repo truth. The panel can request a fresh snapshot for the
+/// current workspace via <see cref="RefreshCommand"/>.
 /// </summary>
 public class SourceControlViewModel : ReactiveObject
 {
@@ -27,6 +26,7 @@ public class SourceControlViewModel : ReactiveObject
     private readonly IGitRepositoryService _gitRepositoryService;
     private readonly Workspace _workspace;
     private string _commitMessage = string.Empty;
+    private string? _commitError;
     private GitBranch? _selectedBranch;
     private FileChange? _selectedFileChange;
     private string? _selectedFilePath;
@@ -44,6 +44,20 @@ public class SourceControlViewModel : ReactiveObject
     {
         get => _commitMessage;
         set => this.RaiseAndSetIfChanged(ref _commitMessage, value);
+    }
+
+    /// <summary>
+    /// Commit-specific error message. Set when a commit attempt fails (empty
+    /// message, nothing staged, missing git identity, repo/IO error). Cleared
+    /// on a successful commit and on a successful refresh. Distinct from
+    /// <see cref="StatusMessage"/> (which covers refresh-state and
+    /// stage/unstage notices) and from <see cref="LastRefreshError"/> (which
+    /// is reserved for refresh failures only).
+    /// </summary>
+    public string? CommitError
+    {
+        get => _commitError;
+        private set => this.RaiseAndSetIfChanged(ref _commitError, value);
     }
 
     public GitBranch? SelectedBranch
@@ -176,12 +190,52 @@ public class SourceControlViewModel : ReactiveObject
             }
         });
 
-        CommitCommand = ReactiveCommand.Create(() =>
+        CommitCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            // Visual-only: clear staged changes and commit message
-            StagedChanges.Clear();
-            CommitMessage = string.Empty;
-            this.RaisePropertyChanged(nameof(StagedCount));
+            // Empty-message guard: no service call, no repository access.
+            if (string.IsNullOrWhiteSpace(CommitMessage))
+            {
+                CommitError = "Commit message cannot be empty.";
+                return;
+            }
+
+            var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+            if (!discovery.IsRepository || discovery.RepositoryRoot is null)
+            {
+                CommitError = "No repository — open a folder inside a git repository";
+                return;
+            }
+
+            // Nothing-staged guard: no service call. The service also checks
+            // this (using repo truth), but the VM guard avoids the cost of
+            // opening the repository when the staged list is visibly empty.
+            if (StagedChanges.Count == 0)
+            {
+                CommitError = "Nothing staged to commit.";
+                return;
+            }
+
+            var repoRoot = discovery.RepositoryRoot;
+            var message = CommitMessage;
+            var result = await Task.Run(() => _mutationService.Commit(repoRoot, message));
+
+            // Refresh unconditionally so the post-commit state is truthful.
+            RefreshCommand.Execute().Subscribe();
+
+            if (result.IsSuccess)
+            {
+                CommitMessage = string.Empty;
+                CommitError = null;
+            }
+            else
+            {
+                CommitError = result.ErrorMessage;
+                // Do NOT set StatusMessage here — StatusMessage is reserved for
+                // refresh-state notices (non-repo, failure). CommitError has its
+                // own dedicated surface in SourceControlPanel.
+                // Do NOT set LastRefreshError/LastRefreshStatus — those are for
+                // refresh failures only.
+            }
         });
 
         SelectBranchCommand = ReactiveCommand.Create<GitBranch>(branch =>
@@ -239,6 +293,7 @@ public class SourceControlViewModel : ReactiveObject
         }
 
         StatusMessage = null;
+        CommitError = null;
 
         Branches.Clear();
         UnstagedChanges.Clear();
