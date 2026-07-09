@@ -92,8 +92,10 @@ public class MainWindowViewModelTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
-        return new SourceControlViewModel(orchestrator, new Workspace());
+        return new SourceControlViewModel(orchestrator, new Workspace(), diffService.Object);
     }
 
     [Fact]
@@ -152,9 +154,12 @@ public class MainWindowViewModelTests
             Branches = new[] { new GitBranch("main", true) },
             Changes = Array.Empty<FileChange>(),
         });
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
+
         // Share the same Workspace instance the MainWindowViewModel mutates on open.
         var scViewModel = new SourceControlViewModel(
-            new SourceControlSnapshotOrchestrator(git.Object), workspace);
+            new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
         vm.Activate();

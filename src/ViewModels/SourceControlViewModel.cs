@@ -19,9 +19,13 @@ namespace Zaide.ViewModels;
 public class SourceControlViewModel : ReactiveObject
 {
     private readonly ISourceControlSnapshotOrchestrator _orchestrator;
+    private readonly IFileDiffService _fileDiffService;
     private readonly Workspace _workspace;
     private string _commitMessage = string.Empty;
     private GitBranch? _selectedBranch;
+    private FileChange? _selectedFileChange;
+    private string? _selectedFilePath;
+    private FileDiffResult? _currentDiff;
     private string _currentBranchName = "no repo";
     private string? _statusMessage;
     private SnapshotRefreshStatus _lastRefreshStatus = SnapshotRefreshStatus.NotARepository;
@@ -78,16 +82,39 @@ public class SourceControlViewModel : ReactiveObject
     public int UnstagedCount => UnstagedChanges.Count;
     public int StagedCount => StagedChanges.Count;
 
+    public FileChange? SelectedFileChange
+    {
+        get => _selectedFileChange;
+        set => this.RaiseAndSetIfChanged(ref _selectedFileChange, value);
+    }
+
+    public string? SelectedFilePath
+    {
+        get => _selectedFilePath;
+        set => this.RaiseAndSetIfChanged(ref _selectedFilePath, value);
+    }
+
+    public FileDiffResult? CurrentDiff
+    {
+        get => _currentDiff;
+        private set => this.RaiseAndSetIfChanged(ref _currentDiff, value);
+    }
+
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<FileChange, Unit> StageFileCommand { get; }
     public ReactiveCommand<FileChange, Unit> UnstageFileCommand { get; }
     public ReactiveCommand<Unit, Unit> CommitCommand { get; }
     public ReactiveCommand<GitBranch, Unit> SelectBranchCommand { get; }
+    public ReactiveCommand<FileChange, Unit> SelectFileCommand { get; }
 
-    public SourceControlViewModel(ISourceControlSnapshotOrchestrator orchestrator, Workspace workspace)
+    public SourceControlViewModel(
+        ISourceControlSnapshotOrchestrator orchestrator,
+        Workspace workspace,
+        IFileDiffService fileDiffService)
     {
         _orchestrator = orchestrator;
         _workspace = workspace;
+        _fileDiffService = fileDiffService;
 
         // Load a truthful snapshot from the refresh seam (the source of truth).
         // When no workspace is open or it is not inside a repository, the
@@ -131,12 +158,28 @@ public class SourceControlViewModel : ReactiveObject
             SelectedBranch = branch;
             CurrentBranchName = branch.Name;
         });
+
+        SelectFileCommand = ReactiveCommand.Create<FileChange>(file =>
+        {
+            SelectedFileChange = file;
+            SelectedFilePath = file?.FilePath;
+            if (file == null || string.IsNullOrEmpty(_workspace.WorkspacePath))
+            {
+                CurrentDiff = null;
+                return;
+            }
+
+            CurrentDiff = _fileDiffService.GetDiff(_workspace.WorkspacePath, file);
+        });
     }
 
     private void ApplyResult(SnapshotRefreshResult result)
     {
         LastRefreshStatus = result.Status;
         LastRefreshError = result.ErrorMessage;
+
+        // Preserve the previously selected file path before clearing collections.
+        string? previouslySelectedPath = _selectedFilePath;
 
         // Truthful empty/disabled state for any non-success: no fake data is
         // projected. The git read seam owns the truth; on non-repo or failure we
@@ -147,6 +190,9 @@ public class SourceControlViewModel : ReactiveObject
             UnstagedChanges.Clear();
             StagedChanges.Clear();
             _selectedBranch = null;
+            SelectedFileChange = null;
+            SelectedFilePath = null;
+            CurrentDiff = null;
             StatusMessage = result.Status == SnapshotRefreshStatus.Failed
                 ? $"Source Control unavailable: {result.ErrorMessage ?? "unknown error"}"
                 : "No repository — open a folder inside a git repository";
@@ -184,5 +230,27 @@ public class SourceControlViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(StagedCount));
         this.RaisePropertyChanged(nameof(SelectedBranch));
         this.RaisePropertyChanged(nameof(CurrentBranchName));
+
+        // Re-select file by path across refresh.
+        if (previouslySelectedPath != null)
+        {
+            var match = UnstagedChanges.Concat(StagedChanges)
+                .FirstOrDefault(c => c.FilePath == previouslySelectedPath);
+            if (match != null)
+            {
+                SelectedFileChange = match;
+                SelectedFilePath = match.FilePath;
+                if (!string.IsNullOrEmpty(_workspace.WorkspacePath))
+                {
+                    CurrentDiff = _fileDiffService.GetDiff(_workspace.WorkspacePath, match);
+                }
+            }
+            else
+            {
+                SelectedFileChange = null;
+                SelectedFilePath = null;
+                CurrentDiff = null;
+            }
+        }
     }
 }
