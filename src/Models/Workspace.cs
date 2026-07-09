@@ -19,10 +19,19 @@ namespace Zaide.Models
         public string ProjectName { get; private set; } = "Zaide";
 
         /// <summary>
-        /// Sets the project name from a folder path.
+        /// The full path of the opened workspace folder, or null when no folder
+        /// has been opened. Used by repository discovery to locate the git root.
+        /// </summary>
+        public string? WorkspacePath { get; private set; }
+
+        /// <summary>
+        /// Sets the workspace name and full path from a folder path.
         /// </summary>
         public void SetProjectFromPath(string? folderPath)
         {
+            WorkspacePath = !string.IsNullOrEmpty(folderPath)
+                ? folderPath
+                : null;
             ProjectName = !string.IsNullOrEmpty(folderPath)
                 ? Path.GetFileName(folderPath)
                 : "Zaide";

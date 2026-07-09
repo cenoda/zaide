@@ -53,6 +53,10 @@ class Program
                     services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
                     services.AddSingleton<MentionParser>();
                     services.AddSingleton<IAgentRouter, AgentRouter>();
+
+                    // M1: read-only git repository discovery + status read seam
+                    services.AddSingleton<IGitRepositoryService, GitRepositoryService>();
+
                     services.AddSingleton(_ =>
                     {
                         var client = new HttpClient();

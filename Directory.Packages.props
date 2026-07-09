@@ -31,5 +31,7 @@
     <!-- Editor (Phase 2) -->
     <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
+    <!-- Git read seam (Phase 7.1) -->
+    <PackageVersion Include="LibGit2Sharp" Version="0.30.0" />
   </ItemGroup>
 </Project>
