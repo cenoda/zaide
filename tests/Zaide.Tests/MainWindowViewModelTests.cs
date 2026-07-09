@@ -51,8 +51,7 @@ public class MainWindowViewModelTests
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var scState = new SourceControlState();
-        var scViewModel = CreateScViewModel(scState);
+        var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
@@ -76,8 +75,7 @@ public class MainWindowViewModelTests
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var scState = new SourceControlState();
-        var scViewModel = CreateScViewModel(scState);
+        var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
@@ -88,13 +86,13 @@ public class MainWindowViewModelTests
         return vm;
     }
 
-    private static SourceControlViewModel CreateScViewModel(SourceControlState state)
+    private static SourceControlViewModel CreateScViewModel()
     {
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
-        return new SourceControlViewModel(state, orchestrator, new Workspace());
+        return new SourceControlViewModel(orchestrator, new Workspace());
     }
 
     [Fact]
@@ -251,9 +249,7 @@ public class MainWindowViewModelTests
         var terminalHost2 = new TerminalHost(factory2.Object);
         var townhallState2 = new TownhallState();
         var townhallViewModel2 = new TownhallViewModel(townhallState2);
-
-        var scState2 = new SourceControlState();
-        var scViewModel2 = CreateScViewModel(scState2);
+        var scViewModel2 = CreateScViewModel();
         var workspace2 = sp.GetRequiredService<Workspace>();
         var coordinator2 = CreateMockCoordinator().Object;
         var panelHost2 = new AgentPanelHost();
@@ -335,8 +331,7 @@ public class MainWindowViewModelTests
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var scState = new SourceControlState();
-        var scViewModel = CreateScViewModel(scState);
+        var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser(agentHost);
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
@@ -576,8 +571,7 @@ public class MainWindowViewModelTests
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var scState = new SourceControlState();
-        var scViewModel = CreateScViewModel(scState);
+        var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser(agentHost);
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
@@ -705,8 +699,7 @@ public class MainWindowViewModelTests
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
-        var scState = new SourceControlState();
-        var scViewModel = CreateScViewModel(scState);
+        var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser(agentHost);
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);

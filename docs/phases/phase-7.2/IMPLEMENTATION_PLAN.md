@@ -60,7 +60,7 @@ baseline. It does **not** introduce diff rendering or commit mutations.
 | Milestone | Description | Test |
 |-----------|-------------|------|
 | M0 | ~~Lock the 7.2 UI truth policy: define the label shown for non-repo, loading, empty-clean, and error states, and decide `SourceControlState`'s fate.~~ **LOCKED** — see `M0_UI_TRUTH_POLICY.md`. Decisions: non-repo label `"no repo"` (status bar) + panel notice; no loading state (seam is synchronous); no clean banner; error label `"—"` (status bar) + panel `LastRefreshError`; `SourceControlState` **removed** from the constructor path. | Plan re-read against live `SourceControlPanel` and `StatusBar` surfaces |
-| M1 | Fix truthful state projection: replace the `"master"` hardcoded fallback in `ApplyResult` with a truthful non-repo label, wire `LastRefreshStatus` into the panel's header/surface so the user can see when Source Control is unavailable, and remove `SourceControlState` from the ViewModel constructor if M0 decides so. | ViewModel tests for non-repo branch label; panel binding verification for status visibility |
+| M1 | ~~Fix truthful state projection: replace the `"master"` fallback with a truthful non-repo label, surface refresh/error state in the panel, and remove `SourceControlState` from the constructor path.~~ **DONE.** `ApplyResult` now projects `"no repo"` / `"—"` and a `StatusMessage` (panel) instead of `"master"`; `SourceControlState` removed from the VM constructor and DI; 751 tests pass. | ViewModel tests for non-repo/error branch + `StatusMessage`; panel binds `StatusMessage` |
 | M2 | Connect refresh triggers: refresh Source Control after workspace-open in `MainWindowViewModel.OpenFolderCommand`, add a UI-accessible refresh action in `SourceControlPanel` (button or toolbar icon), and ensure both paths reuse `RefreshCommand`. | Main-window / integration-style tests for refresh after workspace change; manual verification of explicit refresh button |
 | M3 | End-to-end verification: open a real repository, switch to a non-repo folder, and trigger refresh — confirm the status bar branch text and panel change lists stay truthful across all transitions. | Build + tests; manual walkthrough of repo → non-repo → repo cycle |
 
@@ -96,14 +96,13 @@ baseline. It does **not** introduce diff rendering or commit mutations.
 
 ## Exit Conditions
 
-- [ ] The Source Control panel branch/change data is live, not seeded demo data
-- [ ] The status bar shows a truthful non-repo label (not `"master"`) when no
-      repository is open
-- [ ] Source Control refreshes automatically after opening a workspace folder
-- [ ] A user-accessible refresh action exists in the Source Control panel
-- [ ] Non-repo, clean, dirty, and error states are surfaced truthfully
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] The Source Control panel branch/change data is live, not seeded demo data
+- [x] The status bar shows a truthful non-repo label (`"no repo"`) and error label (`"—"`) instead of `"master"`
+- [ ] Source Control refreshes automatically after opening a workspace folder (M2)
+- [ ] A user-accessible refresh action exists in the Source Control panel (M2)
+- [x] Non-repo and error states are surfaced truthfully (panel `StatusMessage`); clean/dirty already truthful
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
 
 ## Exact Next Step
 

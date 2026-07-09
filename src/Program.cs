@@ -35,7 +35,6 @@ class Program
                     services.AddSingleton<TownhallState>();
                     services.AddSingleton<TownhallViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
-                    services.AddSingleton<SourceControlState>();
                     services.AddSingleton<SourceControlViewModel>();
                     // M1: Register agent execution service seam
                     services.AddSingleton<AgentExecutionOptions>(_ =>

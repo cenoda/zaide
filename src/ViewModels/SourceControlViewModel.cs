@@ -18,12 +18,12 @@ namespace Zaide.ViewModels;
 /// </summary>
 public class SourceControlViewModel : ReactiveObject
 {
-    private readonly SourceControlState _state;
     private readonly ISourceControlSnapshotOrchestrator _orchestrator;
     private readonly Workspace _workspace;
     private string _commitMessage = string.Empty;
     private GitBranch? _selectedBranch;
-    private string _currentBranchName = "master";
+    private string _currentBranchName = "no repo";
+    private string? _statusMessage;
     private SnapshotRefreshStatus _lastRefreshStatus = SnapshotRefreshStatus.NotARepository;
     private string? _lastRefreshError;
 
@@ -63,6 +63,18 @@ public class SourceControlViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _lastRefreshError, value);
     }
 
+    /// <summary>
+    /// Surface-level message for the Source Control panel. Null on a successful
+    /// refresh (the change lists and branch selector are the truth). Set to a
+    /// human-readable notice on non-repo or failure so the user sees why the
+    /// lists are empty.
+    /// </summary>
+    public string? StatusMessage
+    {
+        get => _statusMessage;
+        private set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+    }
+
     public int UnstagedCount => UnstagedChanges.Count;
     public int StagedCount => StagedChanges.Count;
 
@@ -72,9 +84,8 @@ public class SourceControlViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> CommitCommand { get; }
     public ReactiveCommand<GitBranch, Unit> SelectBranchCommand { get; }
 
-    public SourceControlViewModel(SourceControlState state, ISourceControlSnapshotOrchestrator orchestrator, Workspace workspace)
+    public SourceControlViewModel(ISourceControlSnapshotOrchestrator orchestrator, Workspace workspace)
     {
-        _state = state;
         _orchestrator = orchestrator;
         _workspace = workspace;
 
@@ -82,8 +93,6 @@ public class SourceControlViewModel : ReactiveObject
         // When no workspace is open or it is not inside a repository, the
         // collections stay empty — never seeded with demo data.
         ApplyResult(_orchestrator.Refresh(workspace.WorkspacePath));
-
-        _commitMessage = state.CommitMessageDraft;
 
         RefreshCommand = ReactiveCommand.Create(() => ApplyResult(_orchestrator.Refresh(_workspace.WorkspacePath)));
 
@@ -137,17 +146,22 @@ public class SourceControlViewModel : ReactiveObject
             Branches.Clear();
             UnstagedChanges.Clear();
             StagedChanges.Clear();
-            _state.Snapshot = null;
             _selectedBranch = null;
-            _currentBranchName = "master";
+            StatusMessage = result.Status == SnapshotRefreshStatus.Failed
+                ? $"Source Control unavailable: {result.ErrorMessage ?? "unknown error"}"
+                : "No repository — open a folder inside a git repository";
+            _currentBranchName = result.Status == SnapshotRefreshStatus.Failed
+                ? "—"
+                : "no repo";
             this.RaisePropertyChanged(nameof(UnstagedCount));
             this.RaisePropertyChanged(nameof(StagedCount));
             this.RaisePropertyChanged(nameof(SelectedBranch));
             this.RaisePropertyChanged(nameof(CurrentBranchName));
+            this.RaisePropertyChanged(nameof(StatusMessage));
             return;
         }
 
-        _state.Snapshot = result.Snapshot;
+        StatusMessage = null;
 
         Branches.Clear();
         UnstagedChanges.Clear();

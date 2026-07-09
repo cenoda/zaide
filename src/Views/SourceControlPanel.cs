@@ -29,6 +29,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private readonly Button _commitButton;
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
+    private readonly TextBlock _statusMessage;
 
     public SourceControlPanel()
     {
@@ -64,6 +65,13 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         // --- Unstaged Changes Header ---
         _unstagedHeader = TextStyles.Caption("Unstaged Changes");
         _unstagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
+
+        // --- Status Message (non-repo / error notice; hidden on success) ---
+        _statusMessage = TextStyles.Body("");
+        _statusMessage.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm);
+        _statusMessage.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        _statusMessage.IsVisible = false;
+        _statusMessage.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
 
         // --- Unstaged Changes List ---
         _unstagedList = new ItemsControl
@@ -119,6 +127,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 {
                     header,
                     _branchSelector,
+                    _statusMessage,
                     _unstagedHeader,
                     _unstagedList,
                     _stagedHeader,
@@ -160,6 +169,14 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel)
                 .Where(vm => vm is not null)
                 .Subscribe(vm => _stagedList.ItemsSource = vm!.StagedChanges));
+
+            // Surface non-repo / error notice; hidden on success
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)
+                .Subscribe(msg =>
+                {
+                    _statusMessage.Text = msg ?? string.Empty;
+                    _statusMessage.IsVisible = !string.IsNullOrEmpty(msg);
+                }));
 
             // Update headers when counts change
             d.Add(this.WhenAnyValue(x => x.ViewModel!.UnstagedCount)
