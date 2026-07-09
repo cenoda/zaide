@@ -2,10 +2,14 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Re-check `src/ViewModels/SourceControlViewModel.cs`, `src/Models/SourceControlState.cs`, `src/Models/FileChange.cs`, `src/Models/GitBranch.cs`, and `src/Program.cs`
-- [ ] Verify the chosen git library/API against the current target framework with a minimal proof-of-concept
-- [ ] Re-check `src/Models/Workspace.cs` and confirm how repository discovery will obtain the real workspace/root path
-- [ ] Confirm no real git service seam exists in live code yet
+- [x] Re-check `src/ViewModels/SourceControlViewModel.cs`, `src/Models/SourceControlState.cs`, `src/Models/FileChange.cs`, `src/Models/GitBranch.cs`, and `src/Program.cs`
+- [x] Verify the chosen git library/API against the current target framework with a minimal proof-of-concept
+- [x] Re-check `src/Models/Workspace.cs` and confirm how repository discovery will obtain the real workspace/root path
+- [x] Confirm no real git service seam exists in live code yet
+
+> M0 result is locked in `docs/phases/phase-7.1/M0_SEAM_DECISION.md`.
+> Compatibility proof: LibGit2Sharp 0.30.0 builds and runs on `net10.0`
+> (SDK 10.0.108). No later-milestone work started.
 
 ## Planning Status
 
@@ -39,7 +43,7 @@ Phase 7 can safely consume.
 
 | Milestone | Description | Test |
 |-----------|-------------|------|
-| M0 | Lock the Phase 7.1 seam: decide the git-service interface, the repository-root discovery rule, how the app exposes the real workspace path, the "not a repo" result shape, and the minimal branch/status models needed by later phases. Also verify package/version compatibility before implementation starts. Do not start UI rewiring yet. | Plan re-read + API proof-of-concept result recorded |
+| M0 | Lock the Phase 7.1 seam: decide the git-service interface, the repository-root discovery rule, how the app exposes the real workspace path, the "not a repo" result shape, and the minimal branch/status models needed by later phases. Also verify package/version compatibility before implementation starts. Do not start UI rewiring yet. | **Done (2026-07-09)** — see `M0_SEAM_DECISION.md` |
 | M1 | Add the repository discovery + branch/status read service seam and register it in DI. Keep it read-only. | Service-level tests for repo found / repo missing / current branch / detached-like state / file-status mapping |
 | M2 | Replace or narrow the demo `SourceControlState` dependency so live Source Control consumers can request a truthful snapshot instead of seeded fake data. If `SourceControlState` remains temporarily, it must become a passive snapshot container rather than the source of truth. | Build + tests; no seeded branch/change data required for the read path |
 | M3 | Add a focused refresh/app orchestration seam that can request a fresh git snapshot for the current workspace without yet finalizing all Source Control UI behavior. | ViewModel-level tests covering refresh success, non-repo state, and failure projection |
