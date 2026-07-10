@@ -3,9 +3,11 @@
 Zaide is an **AI-native IDE** built around a real agent workspace foundation.
 One agent codes, another reviews. They argue. You get better code.
 
-**Roadmap status:** V1 is complete (Phase 0 through Phase 7.4). This document
-describes the architecture delivered by that roadmap; it does not define a
-successor roadmap.
+**Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
+[Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is planned (Phase 8 through
+Phase 13), but implementation has not started. This document describes the
+currently delivered V1 architecture; V2 entries below are future direction,
+not claims about live code.
 
 ---
 
@@ -127,14 +129,36 @@ seed data.
 
 ---
 
+## Planned Roadmap V2 Direction
+
+Roadmap V2 strengthens the standalone IDE core before V3 expands the existing
+agent foundation into richer AI-native orchestration.
+
+| Planned layer | Phase | Direction |
+|---------------|-------|-----------|
+| Core platform and settings | 8 | Versioned settings, safe credential boundary, command/keybinding infrastructure, and minimal project discovery |
+| Editor UX | 9 | Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
+| C# language intelligence | 10 | LSP lifecycle, diagnostics, completion, hover, definition, symbols, and document formatting |
+| Project workflow | 11 | Structured Build/Run/Test loop with Output, Problems, test results, cancellation, and error navigation |
+| C# debugging | 12 | Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
+| Release hardening | 13 | Measured performance, recovery, settings migration, E2E coverage, platform-status documentation, and closeout |
+
+V2 continues to require the IDE to work without full agent infrastructure.
+Specific LSP server, DAP adapter, protocol libraries, secret storage, and
+performance budgets remain implementation-plan decisions and are not yet
+architecture commitments.
+
+---
+
 ## Future Technical Considerations
 
 The following decisions were discussed but were **not implemented in Roadmap
-V1**. They are unscheduled considerations, not commitments in an active roadmap.
+V1**. Roadmap V2 schedules only the narrow settings persistence and provider
+configuration described above; the broader items below remain unscheduled.
 
 | Consideration | Planned Approach | Rationale |
 |---------------|------------------|-----------|
-| **Persistence** | SQLite (structured data) + JSON (settings) | Time-series activity history needs queries. JSON for simple key-value settings. |
+| **Structured activity persistence** | SQLite remains a possible approach | V2 schedules a versioned application-settings store, not Townhall or time-series persistence. |
 | **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons compile in. Agent avatars stored as file refs for live replacement. |
 | **Plugin Architecture** | Interface + DI manual registration | Core interfaces (`IAgent`, `IPlugin`) defined when agent layer begins. .NET 10 Keyed Services for plugin DI later. |
 | **Multi-provider agent architecture** | `IAgentProvider` abstraction + `AgentRegistry` service managing N agents, each with its own provider/model configuration | Still deferred beyond the first Phase 5 execution slice. Phase 5 now plans only one minimal direct-execution path to one configured OpenAI-compatible endpoint; broad provider abstraction remains unnecessary until later multi-provider or richer agent-execution work appears. Phase 4.1 already reserved `SourceProvider`/`SourceModel`/`ThreadId` on the Townhall activity entry model so that later work does not force a breaking schema change. See `docs/phases/v1/phase-4.1/IMPLEMENTATION_PLAN.md` and `docs/phases/v1/phase-5.3/IMPLEMENTATION_PLAN.md`. |
@@ -142,4 +166,4 @@ V1**. They are unscheduled considerations, not commitments in an active roadmap.
 
 ---
 
-*Last updated: 2026-07-10 (Phase 7 complete — Git Integration with read seam, live wiring, diff view, stage/unstage, and local commit flow)*
+*Last updated: 2026-07-10 (V1 complete; V2 IDE Core Upgrade planned, implementation not started)*

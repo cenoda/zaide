@@ -17,7 +17,8 @@ docs/
 ├── architecture/        # How Zaide is designed (high-level diagrams, subsystems)
 │   └── OVERVIEW.md      # Two-layer architecture, agent-to-agent model
 ├── roadmap/
-│   └── PHASES.md        # Ordered phase checklist (current progress)
+│   ├── PHASES.md        # Frozen original V1 roadmap record
+│   └── VN.md            # Active or later version roadmap, e.g. V2.md
 ├── phases/              # Versioned phase plans
 │   ├── README.md          # Version index and archive policy
 │   └── vN/
@@ -49,7 +50,8 @@ Create these folders/files when first needed — not all at once.
 
 | Trigger | Update |
 |---------|--------|
-| Completing a phase checklist item | Mark `[x]` in `docs/roadmap/PHASES.md` |
+| Defining a successor roadmap | Create `docs/roadmap/VN.md`; preserve completed roadmap records |
+| Completing a phase checklist item | Mark `[x]` in the current version's roadmap file |
 | Adding a NuGet package | Add entry to `docs/LIBRARIES.md` |
 | Changing architecture (DI, interfaces, new subsystem) | Update `docs/architecture/` |
 | Starting a new phase | Create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version |
@@ -72,6 +74,10 @@ This section applies to feature phases (`phases/vN/phase-N/`) only. For structur
 Phase plans are grouped by roadmap version. Completed roadmap versions remain
 available as historical records. Continue the global phase numbering across
 roadmap versions so references such as "Phase 7" remain unambiguous.
+
+`docs/roadmap/PHASES.md` is the frozen legacy V1 roadmap. Successor roadmaps use
+explicit version names such as `docs/roadmap/V2.md`. Do not overwrite or
+repurpose a completed roadmap file when defining a successor.
 
 Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 

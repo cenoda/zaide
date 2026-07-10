@@ -2,10 +2,12 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4). Zaide now has
-the IDE foundation, Townhall workspace, direct agent panels, `@mention` routing,
-and local Git status/diff/stage/commit workflows defined by that roadmap. The
-completed plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
+**Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4), and
+[Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is planned (Phase 8 through
+Phase 13; implementation has not started). Zaide currently has the IDE
+foundation, Townhall workspace, direct agent panels, `@mention` routing, and
+local Git status/diff/stage/commit workflows delivered by V1. The completed V1
+plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
 
 ## Philosophy
 
@@ -136,7 +138,23 @@ Roadmap V1 established the following agent-workspace foundation:
 
 See the completed [Roadmap V1](docs/roadmap/PHASES.md) and its
 [versioned phase-plan archive](docs/phases/README.md) for the implementation
-record. No successor roadmap is defined in these documents yet.
+record.
+
+## Roadmap V2 Direction
+
+[Roadmap V2](docs/roadmap/V2.md) upgrades the standalone IDE core before deeper
+AI-native orchestration work:
+
+- **Phase 8:** Core platform and settings
+- **Phase 9:** Editor UX
+- **Phase 10:** C# language intelligence and document formatting
+- **Phase 11:** Build, run, and test workflow
+- **Phase 12:** C# debugging through DAP
+- **Phase 13:** Release hardening
+
+V2 is planned, not active implementation. Its next required artifact is a
+live-code-verified Phase 8 implementation plan under `docs/phases/v2/phase-8/`.
+Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"
 
