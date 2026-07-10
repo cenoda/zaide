@@ -2,7 +2,7 @@
 
 ## Pre-Implementation Verification
 
-- [x] Confirm V1 is complete: `dotnet build` 0 warnings / 0 errors, `dotnet test` 817 passed
+- [x] Confirm V1 is complete: `dotnet build` 0 warnings / 0 errors, `dotnet test` 817 passed (2026-07-10)
 - [x] Re-read `src/Program.cs` (DI composition root), `src/Models/Workspace.cs`,
       `src/Services/AgentExecutionOptions.cs`, `src/Services/AgentExecutionService.cs`,
       `src/Views/EditorView.cs`, `src/MainWindow.axaml.cs` to verify current seams
@@ -16,17 +16,18 @@
 
 ## Planning Status
 
-**Initial — 2026-07-10.**
+**Revised 2026-07-10 — review findings applied.**
 
-This plan is written against the live codebase on 2026-07-10. All findings are
-verified against source files, not documentation assumptions.
+This revision addresses six high-priority and five medium-priority findings from
+external review. All changes are marked with **[R]** annotations in the
+affected decision sections.
 
 ### Live Baseline (verified 2026-07-10)
 
 | File | Phase 8-relevant facts |
 |------|------------------------|
 | `src/Program.cs` | DI composition root. All registrations inline in one lambda (lines 24-78). `AgentExecutionOptions` created via factory lambda reading `AGENT_API_URL`, `AGENT_API_KEY`, `AGENT_MODEL` env vars. No settings service, no command registry, no project context service registered. |
-| `src/Models/Workspace.cs` | Combines two responsibilities: (A) document/tab ownership (`_documents` dict, `OpenDocument`, `CloseDocument`, `SetActiveDocument`, `ActiveDocument`) and (B) folder identity (`WorkspacePath`, `ProjectName`, `SetProjectFromPath`). No project/solution awareness. `ProjectName` is just `Path.GetFileName(folderPath)`. |
+| `src/Models/Workspace.cs` | Combines two responsibilities: (A) document/tab ownership (`_documents` dict, `OpenDocument`, `CloseDocument`, `SetActiveDocument`, `ActiveDocument`, `Documents`) and (B) folder identity (`WorkspacePath`, `ProjectName`, `SetProjectFromPath`). **`WorkspacePath` and `ProjectName` are plain auto-properties — no change notification.** No project/solution awareness. `ProjectName` is just `Path.GetFileName(folderPath)`. |
 | `src/Services/AgentExecutionOptions.cs` | Simple DTO: `BaseUrl` (default `https://api.openai.com/v1`), `ApiKey` (default empty), `Model` (default `gpt-4o-mini`). Populated from env vars in `Program.cs`. Plaintext in memory for process lifetime. |
 | `src/Services/AgentExecutionService.cs` | Validates `ApiKey`, `BaseUrl`, `Model` non-empty before HTTP call. Returns structured `AgentExecutionResult`. |
 | `src/Models/AgentPanelState.cs` | Per-panel UI state. Deliberately excludes provider/credential configuration. Phase 8 must NOT move endpoint/model/secret settings here. |
@@ -35,10 +36,10 @@ verified against source files, not documentation assumptions.
 | `src/Styles/TextStyles.cs` | Global text style factory. Sizes 11/12/13/15 px. Not editor-specific. |
 | `src/Views/IndentGuideRenderer.cs` | Reads `textView.Options.IndentationSize` at render time — auto-adapts. |
 | `src/Views/IndentGuideMetrics.cs` | Reads `textView.Options.IndentationSize` — auto-adapts. |
-| `src/MainWindow.axaml.cs` | 4 window-level keybindings hardcoded in `WhenActivated`: `` Ctrl+` ``, `Ctrl+J` (toggle bottom panel), `Ctrl+S` (save), `Ctrl+O` (open folder). |
+| `src/MainWindow.axaml.cs` | 4 window-level keybindings hardcoded in `WhenActivated`: `` Ctrl+` ``, `Ctrl+J` (toggle bottom panel), `Ctrl+S` (save), `Ctrl+O` (open folder). No settings/menu surface exists. |
 | `src/Views/TerminalPanel.cs` | Inline `KeyDown` handler for `Ctrl+C`, `Ctrl+Shift+C/V`, `PageUp/Down/Home/End`, search `Enter/Escape`. |
 | `src/Views/FileTreeView.cs` | Inline `Ctrl+Shift+H` toggles hidden files, `Enter` opens selected file. |
-| All ViewModels | Commands are `ReactiveCommand` properties created inline in constructors. No stable identifiers, no registry, no metadata. ~30 commands across 8 ViewModels. |
+| All ViewModels | Commands are `ReactiveCommand` properties created inline in constructors. No stable identifiers, no registry, no metadata. ~30 commands across 8 ViewModels. Several commands are parameterized (e.g. `ReactiveCommand<FileTreeNode, Unit>`, `ReactiveCommand<string, bool>`, `ReactiveCommand<EditorViewModel, Unit>`). |
 | `src/ViewModels/MainWindowViewModel.cs` | `Activate()` subscribes to `FileTreeViewModel.RootPath` changes → calls `Workspace.SetProjectFromPath()` → refreshes Source Control. This is the ONLY workspace-switch path. |
 | `src/ViewModels/EditorTabViewModel.cs` | Uses `Workspace` for document operations only. Does not use `WorkspacePath` or `ProjectName`. |
 | `src/ViewModels/SourceControlViewModel.cs` | Uses `Workspace.WorkspacePath` for git discovery. |
@@ -62,12 +63,20 @@ verified against source files, not documentation assumptions.
 
 4. **Commands have no identifiers or registry.** Each command is an anonymous
    `ReactiveCommand` property. No way to enumerate, look up, or rebind commands.
+   Several commands are parameterized and cannot be executed by ID alone.
 
 5. **Keybindings are scattered.** 4 in `MainWindow.axaml.cs`, 5+ inline `KeyDown`
    handlers in views. No central resolution, no conflict detection, no user override.
 
 6. **API key is plaintext in memory.** `AgentExecutionOptions.ApiKey` is a plain
    `string` property on a singleton. No secret boundary exists.
+
+7. **`Workspace.WorkspacePath` has no change notification.** It is a plain
+   auto-property. `SetProjectFromPath()` mutates it without raising any event.
+   Downstream consumers (currently `SourceControlViewModel`, future
+   `IProjectContextService`) rely on `MainWindowViewModel`'s subscription to
+   `FileTreeViewModel.RootPath` — not on `Workspace` itself — to learn about
+   workspace changes.
 
 ## Sub-Phase Decision (M0)
 
@@ -79,7 +88,7 @@ earlier ones.
 |-----------|-------|------------|
 | **Phase 8.1** | Settings foundation: `SettingsService`, persistence, migration, atomic writes, recovery, secret store, editor settings, LLM settings migration, settings UI | None |
 | **Phase 8.2** | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, conflict handling | Consumes `ISettingsService` for user keybinding overrides |
-| **Phase 8.3** | Authoritative project context: `IProjectContextService`, solution/project discovery, selection, load/unload/reload lifecycle, observable state | Consumes `ISettingsService` for project-related settings |
+| **Phase 8.3** | Authoritative project context: `IProjectContextService`, solution/project discovery, selection, load/unload/reload lifecycle, observable state | Consumes `ISettingsService` for project-related settings; requires workspace-change notification from 8.1 |
 
 Each sub-phase gets its own `IMPLEMENTATION_PLAN.md` under
 `docs/phases/v2/phase-8/` (e.g. `phase-8.1/IMPLEMENTATION_PLAN.md`) following
@@ -116,7 +125,10 @@ project context service is the single source of project truth.
 (`~/.config/zaide/settings.json` on Linux). Use `System.Text.Json` (already in
 the dependency graph via `AgentExecutionService`).
 
-**Schema versioning:** Top-level `"schemaVersion": N` integer field.
+**Schema versioning:** Top-level `"schemaVersion": N` integer field. The initial
+schema version is **1**. Since settings are greenfield (no prior schema exists),
+there is no legacy migration to write in Phase 8.1. The first migration
+(v1 → v2) will be written when a future phase introduces a schema change.
 
 | Alternative | Rejected Because |
 |-------------|------------------|
@@ -164,13 +176,21 @@ file is present.
 - Missing file → `SettingsLoadResult.Missing`. Use defaults. File is created on
   first save.
 
+**[R] Greenfield clarification:** The initial schema is version 1. There is no
+pre-existing schema to migrate from. Phase 8.1 does not include any migration
+functions — the migration infrastructure (registry, runner, version check) is
+built, but the migration list is empty. The first migration (v1 → v2) will be
+written when a later phase changes the schema. Tests verify the migration
+infrastructure by registering a synthetic test migration (v1 → v2) in the test
+project, not by migrating real legacy data.
+
 ### D4: Secret-Handling Boundary
 
 **Decision:** Separate file at `{XDG_CONFIG_HOME}/zaide/secrets.json` with
 `0600` permissions (owner read/write only on Linux).
 
-- `ISecretStore` interface: `Task<string?> GetAsync(string key)`,
-  `Task SetAsync(string key, string value)`, `Task DeleteAsync(string key)`.
+- `ISecretStore` interface: `string? Get(string key)`, `void Set(string key, string value)`,
+  `void Delete(string key)`.
 - `FileSecretStore` implementation: reads/writes `secrets.json`. On first write,
   creates the file with `0600` permissions via `File.SetUnixFileMode`.
 - Secrets are NEVER written to `settings.json`. The settings file may contain a
@@ -180,11 +200,62 @@ file is present.
 - Precedence order: environment variable → secret store → empty (user must
   configure).
 
-| Alternative | Rejected Because |
-|-------------|------------------|
-| OS keychain (libsecret / DPAPI / Keychain) | Adds platform-specific dependency. The file-based approach with `0600` satisfies the "not plaintext in settings" constraint. OS keychain can be adopted later by swapping the `ISecretStore` implementation. |
-| Encrypt secrets in settings.json | Key management problem — where does the encryption key live? Separate file with restricted permissions is simpler and equally secure for a local desktop app. |
-| *Chosen: separate file with restricted permissions* | Simple, no new dependencies, satisfies the constraint, swappable implementation. |
+**[R] Async/sync resolution:** The secret store is **synchronous**. File I/O for
+a small JSON file (typically < 1 KB) is fast enough that async provides no
+benefit for a desktop app's startup path. The existing `AgentExecutionOptions`
+factory in `Program.cs` is synchronous — making `ISecretStore` async would
+require restructuring DI composition for no practical gain. If OS keychain
+integration is adopted later (swapping the `ISecretStore` implementation), the
+interface can be made async at that point with a documented breaking change.
+
+The `AgentExecutionOptions` factory in `Program.cs` becomes:
+
+```csharp
+services.AddSingleton<AgentExecutionOptions>(sp =>
+{
+    var settings = sp.GetRequiredService<ISettingsService>();
+    var secrets = sp.GetRequiredService<ISecretStore>();
+    var options = new AgentExecutionOptions();
+
+    // Settings file values (lowest precedence after defaults)
+    options.BaseUrl = settings.Current.Llm.BaseUrl;
+    options.Model = settings.Current.Llm.Model;
+
+    // Secret store (middle precedence)
+    var storedKey = secrets.Get("llm.apiKey");
+    if (!string.IsNullOrEmpty(storedKey))
+        options.ApiKey = storedKey;
+
+    // Environment variables (highest precedence — preserved from V1)
+    if (Environment.GetEnvironmentVariable("AGENT_API_URL") is { Length: > 0 } url)
+        options.BaseUrl = url;
+    if (Environment.GetEnvironmentVariable("AGENT_API_KEY") is { Length: > 0 } key)
+        options.ApiKey = key;
+    if (Environment.GetEnvironmentVariable("AGENT_MODEL") is { Length: > 0 } model)
+        options.Model = model;
+
+    return options;
+});
+```
+
+This preserves the existing synchronous DI composition. The `ISettingsService`
+must complete its initial load synchronously before the factory runs — see D4a.
+
+### D4a: Settings Service Initialization **[R]**
+
+**Decision:** `ISettingsService` loads synchronously during construction. The
+constructor reads the settings file (or falls back to defaults) before returning.
+This ensures the service is fully initialized when resolved from DI, and the
+`AgentExecutionOptions` factory can read `settings.Current` without awaiting.
+
+- `ISettingsService.Current` returns the loaded `SettingsModel` (never null).
+- `ISettingsService.SaveAsync()` is async because it writes to disk.
+- `ISettingsService.LoadResult` exposes the `SettingsLoadResult` enum so the UI
+  can surface errors (unsupported version, corruption) after startup.
+- The constructor performs the load. If the file is missing, defaults are used.
+  If the file is corrupt, last-known-good or defaults are used. If the file has
+  an unknown future version, defaults are used and `LoadResult` records the
+  error. The constructor never throws.
 
 ### D5: Command Registry Architecture
 
@@ -202,13 +273,49 @@ public sealed class CommandDescriptor
 }
 ```
 
-- `ICommandRegistry` exposes: `Register(CommandDescriptor)`, `IReadOnlyList<CommandDescriptor> GetAll()`,
-  `CommandDescriptor? GetById(string id)`, `bool Execute(string id)`.
-- ViewModels receive `ICommandRegistry` via constructor injection and call
-  `Register()` for each command they create.
-- The registry does NOT own command lifetime — ViewModels create and own the
-  `ReactiveCommand` instances. The registry holds a reference for lookup and
-  execution.
+- `ICommandRegistry` exposes: `Register(CommandDescriptor)`,
+  `IReadOnlyList<CommandDescriptor> GetAll()`,
+  `CommandDescriptor? GetById(string id)`.
+
+**[R] Parameterized command execution:** The registry does NOT provide a
+generic `Execute(string id)` method. Many existing commands are parameterized
+(e.g. `ReactiveCommand<FileTreeNode, Unit>`, `ReactiveCommand<string, bool>`,
+`ReactiveCommand<EditorViewModel, Unit>`) and cannot be executed without a
+parameter. The registry provides two execution methods:
+
+```csharp
+// For parameterless commands (e.g. "file.save", "explorer.toggleHiddenFiles")
+bool Execute(string id);
+
+// For parameterized commands — caller must know the parameter type
+bool Execute<T>(string id, T parameter);
+```
+
+`Execute(string id)` (no parameter) calls `ICommand.Execute(null)` internally.
+If the underlying command requires a parameter (i.e. `ICommand.CanExecute(null)`
+returns false because it needs a typed argument), `Execute(string id)` returns
+`false`. The registry does not attempt type coercion or parameter inference.
+
+**Which commands are parameterless vs. parameterized:**
+
+| Command | Parameter | Registry execution |
+|---------|-----------|--------------------|
+| `MainWindowViewModel.SaveActiveTabCommand` | `Unit` | `Execute("file.save")` |
+| `MainWindowViewModel.OpenFolderCommand` | `Unit` | `Execute("workspace.openFolder")` |
+| `MainWindowViewModel.ToggleBottomPanelCommand` | `Unit` | `Execute("view.toggleBottomPanel")` |
+| `FileTreeViewModel.OpenFolderCommand` | `string` | Not in registry — internal to file tree |
+| `FileTreeViewModel.ToggleHiddenFilesCommand` | `Unit` | `Execute("explorer.toggleHiddenFiles")` |
+| `FileTreeViewModel.CopyPathCommand` | `FileTreeNode` | Not in registry — context-menu only |
+| `EditorViewModel.SaveCommand` | `Unit` | Not in registry — invoked via `SaveActiveTabCommand` |
+| `SourceControlViewModel.StageFileCommand` | `FileChange` | Not in registry — per-item action |
+| `SourceControlViewModel.CommitCommand` | `Unit` | `Execute("sourcecontrol.commit")` |
+| `SourceControlViewModel.RefreshCommand` | `Unit` | `Execute("sourcecontrol.refresh")` |
+
+**Parameterized commands that operate on specific items** (stage file, copy path,
+open file from tree) are NOT registered for global execution. They remain
+ViewModel-local. Only commands that make sense as global actions (save, open
+folder, toggle panel, refresh, commit) are registered with stable IDs and
+keybindings.
 
 ### D6: Keybinding Resolution and Conflict Policy
 
@@ -220,13 +327,28 @@ public sealed class CommandDescriptor
 3. If no default gesture, the command is unbound (invokable via Command Palette
    in Phase 9, but not via keyboard).
 
-**Conflict policy:**
-- User override always wins. If a user binds two commands to the same gesture,
-  the last-registered command wins and a warning is logged.
-- Among default gestures, later registration wins (with warning logged).
-- No conflict-resolution UI in Phase 8. Conflicts are logged and the first
-  registration wins at the window keybinding level (Avalonia's behavior).
-- Phase 9 (Command Palette) will surface conflicts for user resolution.
+**[R] Conflict policy (deterministic):**
+
+- **Build time:** The registry materializes a gesture → command map once, after
+  all ViewModels have registered. Materialization happens when
+  `ICommandRegistry.ResolveKeyBindings()` is called by `MainWindow` during
+  activation.
+- **User overrides take absolute precedence.** The override map is applied first.
+  If two user overrides map to the same gesture, the one with the
+  lexicographically earlier command ID wins. A warning is logged for the loser.
+- **Default gestures fill remaining slots.** Only commands without a user
+  override contribute their default gesture. If two default gestures collide,
+  the one with the lexicographically earlier command ID wins. A warning is
+  logged.
+- **No gesture is ever assigned to two commands.** The winning command gets the
+  `KeyBinding`; the losing command is unbound for that gesture.
+- **No conflict-resolution UI in Phase 8.** Conflicts are logged. Phase 9
+  (Command Palette) may surface them for user resolution.
+
+**Rationale for deterministic policy:** The previous version said "later
+registration wins" in one place and "first registration wins" in another. This
+revision uses a single deterministic rule (lexicographic command ID) that does
+not depend on registration order.
 
 ### D7: Workspace Migration Strategy
 
@@ -237,15 +359,32 @@ public sealed class CommandDescriptor
   `SetActiveDocument`, `ActiveDocument`, `Documents`.
 - `Workspace` keeps: `WorkspacePath`, `ProjectName`, `SetProjectFromPath` —
   these represent the opened folder, not the project.
-- `Workspace` does NOT gain project/solution awareness.
-- `IProjectContextService` observes `Workspace.WorkspacePath` changes and
-  triggers discovery independently.
-- Downstream consumers migrate gradually:
-  - `SourceControlViewModel` currently uses `Workspace.WorkspacePath` for git
-    discovery. This remains valid — git discovery starts from the folder path,
-    not from a project file. No migration needed in Phase 8.
-  - Phase 10 (LSP) and Phase 11 (Build/Run/Test) will consume
-    `IProjectContextService` for project-aware operations.
+
+**[R] Workspace change notification:** `Workspace.WorkspacePath` is currently a
+plain auto-property with no change notification. `IProjectContextService` needs
+to know when the workspace folder changes. Rather than converting `Workspace` to
+a reactive model (which would affect all consumers), Phase 8 adds a single
+event:
+
+```csharp
+// Added to Workspace.cs
+public event EventHandler? WorkspaceFolderChanged;
+```
+
+- `SetProjectFromPath()` raises `WorkspaceFolderChanged` after updating
+  `WorkspacePath` and `ProjectName`.
+- `IProjectContextService` subscribes to this event in its constructor.
+- `MainWindowViewModel`'s existing subscription to `FileTreeViewModel.RootPath`
+  remains unchanged — it continues to call `Workspace.SetProjectFromPath()`,
+  which now notifies all subscribers.
+- This is a minimal, additive change. No existing `Workspace` consumer breaks.
+
+Downstream consumers migrate gradually:
+- `SourceControlViewModel` currently uses `Workspace.WorkspacePath` for git
+  discovery. This remains valid — git discovery starts from the folder path,
+  not from a project file. No migration needed in Phase 8.
+- Phase 10 (LSP) and Phase 11 (Build/Run/Test) will consume
+  `IProjectContextService` for project-aware operations.
 
 ### D8: Project Context Service Architecture
 
@@ -254,11 +393,14 @@ public sealed class CommandDescriptor
 ```csharp
 public enum ProjectContextState
 {
-    NoWorkspace,    // No folder open
+    Unloaded,       // Service initialized but no workspace opened yet
+    Loading,        // Discovery in progress (async scan)
     NoProject,      // Folder open, no .sln/.slnx/.csproj found
-    SingleProject,  // Exactly one found — auto-selected
+    Unsupported,    // Folder open, files found but none are a supported type
+    SingleProject,  // Exactly one supported file found — auto-selected
     Ambiguous,      // Multiple found — user must select
-    Selected        // User has selected a specific project
+    Selected,       // User has selected a specific project
+    Failed          // Discovery failed (IO error, permission denied, etc.)
 }
 
 public sealed class ProjectContext
@@ -267,6 +409,7 @@ public sealed class ProjectContext
     public string? WorkspaceRoot { get; }
     public IReadOnlyList<ProjectCandidate> Candidates { get; }
     public ProjectCandidate? SelectedProject { get; }
+    public string? ErrorMessage { get; }  // Set when State == Failed
 }
 
 public sealed class ProjectCandidate
@@ -279,19 +422,44 @@ public sealed class ProjectCandidate
 public enum ProjectKind { Solution, SolutionX, CSharpProject }
 ```
 
-- `IProjectContextService` exposes `IObservable<ProjectContext>` (via
-  `WhenAnyValue` on a reactive property).
-- Discovery: when `Workspace.WorkspacePath` changes, scan the root folder
-  (non-recursive for Phase 8 — only the root level) for `.sln`, `.slnx`,
-  `.csproj` files.
+**[R] Lifecycle operations:**
+
+```csharp
+public interface IProjectContextService
+{
+    // Observable state
+    ProjectContext Current { get; }
+    IObservable<ProjectContext> WhenChanged { get; }
+
+    // Lifecycle
+    Task LoadAsync(string workspaceRoot);    // Trigger discovery for a folder
+    Task UnloadAsync();                       // Clear project context
+    Task ReloadAsync();                       // Re-scan current workspace root
+
+    // Selection
+    void SelectProject(ProjectCandidate? candidate);  // null = clear selection
+}
+```
+
+- `LoadAsync(workspaceRoot)` transitions: `Unloaded`/`NoProject` → `Loading` →
+  `NoProject`/`Unsupported`/`SingleProject`/`Ambiguous`/`Failed`.
+- `UnloadAsync()` transitions to `Unloaded`, clears candidates and selection.
+- `ReloadAsync()` re-scans the current workspace root. Transitions to `Loading`
+  first, then to the appropriate result state.
+- `Workspace.WorkspaceFolderChanged` triggers `LoadAsync` automatically.
+- `Unsupported` state: the folder contains files with project-like extensions
+  but none that Zaide can handle (e.g. `.vbproj`, `.fsproj`). This satisfies the
+  V2 roadmap's "structured unsupported result" requirement.
+- `Failed` state: IO error during scan. `ErrorMessage` contains the reason.
+
+- Discovery: scan the root folder (non-recursive for Phase 8 — only the root
+  level) for `.sln`, `.slnx`, `.csproj` files.
 - No-project and ambiguous results are structured, not thrown.
-- Selection: `SelectProject(ProjectCandidate)` or `SelectProject(null)` to clear.
-- Reload: `ReloadAsync()` re-scans the workspace root.
 - Phase 8 does NOT parse solution/project contents. It discovers files and
   exposes them as candidates. Parsing belongs to Phase 10 (LSP) and Phase 11
   (Build/Run/Test).
 
-### D9: Settings UI Scope
+### D9: Settings UI Scope and Integration **[R]**
 
 **Decision:** Settings UI is part of Phase 8.1. It covers:
 - Editor defaults (font family, font size, tab size, show whitespace, indent style)
@@ -299,8 +467,41 @@ public enum ProjectKind { Solution, SolutionX, CSharpProject }
 - Keybinding overrides (read-only list in 8.1; editing in 8.2 when command
   registry exists)
 
-The settings UI is a new panel or dialog accessible from the main menu. It
-follows the existing panel patterns (C# view construction per DESIGN.md Rule 1).
+**Integration point:** The current `MainWindow` has no menu bar or settings
+entry point. Phase 8.1 adds a settings entry via:
+- A gear icon button in the `StatusBar` (the status bar already exists and is
+  always visible). Clicking it opens the settings panel.
+- The settings panel is a slide-over panel (similar to the existing bottom panel
+  toggle pattern) that overlays the main content.
+- `MainWindow.axaml.cs` is the integration file — it hosts the settings button
+  wiring and panel visibility toggle.
+- No menu bar is added. A menu bar is unnecessary for a single entry point and
+  would be over-engineering.
+
+The settings UI follows existing panel patterns (C# view construction per
+DESIGN.md Rule 1).
+
+### D10: Keybinding Exception List **[R]**
+
+Not all keyboard handling in views is a "global command keybinding." The
+following are explicitly classified as **non-command keybindings** that remain
+in view code and are NOT registered in the command registry:
+
+| View | Key handling | Reason for exception |
+|------|-------------|---------------------|
+| `TerminalPanel` | `Ctrl+C` (copy), `Ctrl+Shift+C/V` (copy/paste) | Terminal transport keys — intercepted before command system. The terminal PTY owns these. |
+| `TerminalPanel` | `PageUp/Down/Home/End` | Terminal viewport scrolling — terminal-internal navigation. |
+| `TerminalPanel` | Search box `Enter`/`Escape` | Text-input context — scoped to search box focus. |
+| `FileTreeView` | `Enter` on selected node | Context-dependent: opens file or confirms rename. Requires node-specific parameter. |
+| `FileTreeView` | `Enter`/`Escape` during inline rename | Text-input context — scoped to rename editor focus. |
+| `AgentPanelView` | `Enter` to send message | Text-input context — scoped to input field focus. |
+| `TownhallInputArea` | `Enter` in input | Text-input context — scoped to input field focus. |
+
+The following view-level keybindings ARE migrated to the command registry:
+
+| View | Key handling | Registry command ID |
+|------|-------------|---------------------|
+| `FileTreeView` | `Ctrl+Shift+H` (toggle hidden files) | `explorer.toggleHiddenFiles` |
 
 ## Live Constraints To Respect
 
@@ -310,24 +511,28 @@ follows the existing panel patterns (C# view construction per DESIGN.md Rule 1).
    This boundary is deliberate and must be preserved.
 3. **`EditorTabViewModel`'s document operations must not break.** `Workspace`
    document ownership stays. The project context service is additive.
-4. **All 817 existing tests must continue to pass** after each sub-phase.
-   New services are injected via constructor — existing test helpers must be
-   updated to provide mocks for new constructor parameters.
+4. **All existing tests must continue to pass** after each sub-phase (817 as of
+   2026-07-10; the exact count at closeout is recorded from `dotnet test`
+   output). New services are injected via constructor — existing test helpers
+   must be updated to provide mocks for new constructor parameters.
 5. **DI composition is inline in `Program.cs`.** New services are registered
    inline following the existing pattern. No refactoring of the DI setup is
    in scope for Phase 8.
 6. **`IndentGuideRenderer` and `IndentGuideMetrics` already read
    `textView.Options.IndentationSize`.** Editor settings must push values into
    AvaloniaEdit's options — these renderers will auto-adapt.
+7. **`Workspace.WorkspacePath` is not reactive.** Phase 8 adds a
+   `WorkspaceFolderChanged` event (D7). No existing consumer is broken by an
+   additional event. The event is raised by `SetProjectFromPath()`.
 
 ## Milestones (Umbrella)
 
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
-| **M0** | Umbrella | Lock all decisions in this plan. Verify `System.Text.Json` serialization round-trip with versioned schema. Verify `File.SetUnixFileMode` works for secret file permissions. Verify atomic write pattern (write tmp → rename) on Linux. | Proof-of-concept tests pass. Directory `docs/phases/v2/phase-8/` exists with this plan. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration, atomic writes, recovery, `ISecretStore`, editor settings, LLM settings migration, settings UI. | `dotnet build` + `dotnet test` green. Settings round-trip test. Migration test (v1→v2). Atomic write test. Secret store test. Editor settings consumed by `EditorView`. LLM settings consumed by `AgentExecutionOptions`. |
-| **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, window keybinding integration. | All existing commands registered with stable IDs. Keybindings resolved from registry. User override test. Build + tests green. |
-| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. | Discovery finds `.sln`/`.csproj` in test fixtures. No-project / single / ambiguous results tested. Observable state consumed by status bar. Build + tests green. |
+| **M0** | Umbrella | Lock all decisions in this plan. Verify `System.Text.Json` serialization round-trip with versioned schema. Verify `File.SetUnixFileMode` works for secret file permissions. Verify atomic write pattern (write tmp → rename) on Linux. | Proof-of-concept tests in `tests/Zaide.Tests/Services/Phase8ProofOfConceptTests.cs` (5 tests: JSON round-trip with schema version, Unix file mode 0600, atomic write-rename, last-known-good fallback, future version rejection). Tests remain after M0 as regression coverage. Build + tests green. |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore`, editor settings, LLM settings migration, settings UI. | `dotnet build` + `dotnet test` green. Settings round-trip test. Migration infrastructure test (synthetic v1→v2 in test project). Atomic write test. Secret store test. Editor settings consumed by `EditorView`. LLM settings consumed by `AgentExecutionOptions`. |
+| **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, window keybinding integration. | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. Build + tests green. |
+| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. | Discovery finds `.sln`/`.csproj` in test fixtures. Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed states tested. Observable state consumed by status bar. Build + tests green. |
 
 ## Likely Implementation Shape
 
@@ -335,12 +540,12 @@ follows the existing panel patterns (C# view construction per DESIGN.md Rule 1).
 
 **Settings (8.1):**
 - `src/Services/ISettingsService.cs` — load, save, observe settings
-- `src/Services/SettingsService.cs` — JSON-backed implementation
-- `src/Services/SettingsSchema.cs` — versioned settings model
-- `src/Services/SettingsMigration.cs` — ordered migration functions
-- `src/Services/ISecretStore.cs` — secret boundary interface
+- `src/Services/SettingsService.cs` — JSON-backed implementation (synchronous load, async save)
+- `src/Services/SettingsSchema.cs` — versioned settings model (`SettingsModel`, `EditorSettingsModel`, `LlmSettingsModel`)
+- `src/Services/SettingsMigration.cs` — migration infrastructure (registry, runner; empty migration list initially)
+- `src/Services/ISecretStore.cs` — secret boundary interface (synchronous)
 - `src/Services/FileSecretStore.cs` — file-based implementation with `0600`
-- `src/Services/EditorSettings.cs` — font, size, whitespace, indentation model
+- `src/Services/EditorSettings.cs` — font, size, whitespace, indentation model (applied to AvaloniaEdit options)
 - `src/ViewModels/SettingsViewModel.cs` — settings UI ViewModel
 - `src/Views/SettingsView.cs` — settings UI (C# per DESIGN.md)
 
@@ -361,15 +566,15 @@ follows the existing panel patterns (C# view construction per DESIGN.md Rule 1).
 | File | Sub-phase | Change |
 |------|-----------|--------|
 | `src/Program.cs` | All | Register new services. `AgentExecutionOptions` factory reads from settings + secret store + env vars. |
+| `src/Models/Workspace.cs` | 8.3 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation. |
 | `src/Views/EditorView.cs` | 8.1 | Replace hardcoded font/size/whitespace literals with `ISettingsService`-driven values. |
 | `src/Views/TerminalRenderControl.cs` | 8.1 | Replace hardcoded font family/size with settings-driven values. |
 | `src/Services/AgentExecutionOptions.cs` | 8.1 | Factory reads from settings + secret store, env-var fallback preserved. |
-| `src/MainWindow.axaml.cs` | 8.2 | Replace imperative keybinding wiring with registry-driven binding. |
-| `src/Views/TerminalPanel.cs` | 8.2 | Inline `KeyDown` handlers replaced with registry command calls where applicable. |
+| `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: add settings gear button wiring + panel toggle. 8.2: replace imperative keybinding wiring with registry-driven binding. |
 | `src/Views/FileTreeView.cs` | 8.2 | `Ctrl+Shift+H` handler replaced with registry command call. |
-| All ViewModels with commands | 8.2 | Accept `ICommandRegistry` in constructor, register commands with stable IDs. |
+| Selectable ViewModels | 8.2 | Accept `ICommandRegistry` in constructor, register parameterless global commands with stable IDs. |
 | `src/ViewModels/MainWindowViewModel.cs` | 8.3 | Inject `IProjectContextService`. `Activate()` subscribes to project context changes. |
-| `src/Views/StatusBar.cs` | 8.3 | Consume project context name instead of folder name. |
+| `src/Views/StatusBar.cs` | 8.1 + 8.3 | 8.1: add settings gear icon button. 8.3: consume project context name instead of folder name. |
 
 ### DI Registration Changes (`src/Program.cs`)
 
@@ -385,7 +590,7 @@ services.AddSingleton<ICommandRegistry, CommandRegistry>();
 services.AddSingleton<IProjectContextService, ProjectContextService>();
 ```
 
-### Settings JSON Shape (v1)
+### Settings JSON Shape (schema version 1)
 
 ```json
 {
@@ -426,21 +631,24 @@ File permissions: `0600` (owner read/write only) on Linux.
 | Unknown future settings version silently overwrites user config | Explicit version check: future version → refuse to load, surface error. |
 | Secret file permissions not applied on non-Linux | `File.SetUnixFileMode` is Linux-only. Guard with `OperatingSystem.IsLinux()`. On Windows/macOS, create the file without restricted permissions (acceptable for V2's Linux-primary validation). Document the limitation. |
 | `Workspace` split breaks existing consumers | `Workspace` does NOT split in Phase 8. Document/tab ownership and folder identity remain together. `IProjectContextService` is additive. No existing consumer is forced to change. |
-| Command registry injection breaks all ViewModel constructors | Each ViewModel gains one new constructor parameter (`ICommandRegistry`). All test helpers must be updated. Mitigate by doing all ViewModels in one milestone (8.2 M8) so tests are updated atomically. |
+| `Workspace.WorkspacePath` has no change notification | Phase 8 adds `WorkspaceFolderChanged` event (D7). Minimal additive change. No existing consumer broken. |
+| Command registry injection breaks all ViewModel constructors | Only ViewModels with parameterless global commands gain `ICommandRegistry`. Parameterized commands stay ViewModel-local. Test helpers updated per sub-phase. |
 | Project discovery is slow on large folders | Phase 8 discovery is non-recursive (root level only). Scanning a folder for `*.sln`/`*.csproj` is fast. Recursive discovery is not in scope. |
-| `AgentExecutionOptions` env-var fallback breaks during migration | Precedence order is explicit: env var → secret store → settings default → empty. Tests cover all four cases. |
+| `AgentExecutionOptions` env-var fallback breaks during migration | Precedence order is explicit: env var → secret store → settings default → empty. Tests cover all four cases. Synchronous DI composition preserved (D4a). |
+| Settings UI has no integration point | Status bar gear icon (D9). No menu bar needed. |
 
 ## Exit Conditions
 
-- [ ] **Settings:** Versioned settings file loads, saves, migrates, and recovers from corruption. Atomic writes verified. Unknown future version is refused, not overwritten.
+- [ ] **Settings:** Versioned settings file (schema v1) loads, saves, and recovers from corruption. Atomic writes verified. Unknown future version is refused, not overwritten. Migration infrastructure exists (empty migration list; synthetic test migration in test project).
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Env-var fallback works.
 - [ ] **Editor:** No font family, font size, tab size, or whitespace flag is a hardcoded literal in View code. All driven by `ISettingsService`.
-- [ ] **LLM:** `AgentExecutionOptions` populated from settings + secret store + env-var fallback. No plaintext API key in settings file.
-- [ ] **Commands:** All existing commands registered with stable string IDs. `ICommandRegistry` provides lookup and execution.
-- [ ] **Keybindings:** Window keybindings driven by registry + settings overrides. No hardcoded keybindings in view code (except text-input handlers like `Enter` in search boxes).
-- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Observable state consumed by status bar. No-project / single / ambiguous results handled.
-- [ ] **Workspace:** `Workspace` document ownership unchanged. `IProjectContextService` is additive. No parallel sources of project truth.
-- [ ] **Tests:** All existing 817 tests pass. New tests cover settings, secrets, commands, keybindings, and project context.
+- [ ] **LLM:** `AgentExecutionOptions` populated from settings + secret store + env-var fallback. No plaintext API key in settings file. Synchronous DI composition preserved.
+- [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup and parameterless execution. Parameterized commands remain ViewModel-local.
+- [ ] **Keybindings:** Window keybindings driven by registry + settings overrides. Deterministic conflict resolution (lexicographic command ID). Exception list documented (D10).
+- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Observable state with full lifecycle (Unloaded → Loading → result states). `Workspace.WorkspaceFolderChanged` event drives auto-discovery. Status bar consumes project context name.
+- [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. `IProjectContextService` is additive. No parallel sources of project truth.
+- [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable.
+- [ ] **Tests:** All pre-existing tests pass. New tests cover settings, secrets, commands, keybindings, and project context. Test count at closeout recorded from `dotnet test` output (baseline: 817 as of 2026-07-10).
 - [ ] **Build:** `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
 - [ ] **`AgentPanelState`** does not contain provider/credential configuration (grep-verified).
 
@@ -448,10 +656,11 @@ File permissions: `0600` (owner read/write only) on Linux.
 
 Write `docs/phases/v2/phase-8/phase-8.1/IMPLEMENTATION_PLAN.md` — the detailed
 plan for Settings Foundation (M1–M6). That plan locks the `ISettingsService`
-interface shape, settings file path resolution, migration function signatures,
-secret store implementation, editor settings integration with `EditorView`, and
-the `AgentExecutionOptions` migration before any production code changes.
+interface shape, settings file path resolution, migration infrastructure,
+secret store implementation, editor settings integration with `EditorView`,
+the `AgentExecutionOptions` migration, and the settings UI before any
+production code changes.
 
 ## Rollback Plan
 
-- Commit hash to revert to: `8ee4513` (current HEAD — V1 complete, V2 not started)
+- Commit hash to revert to: `fdc49fd` (Phase 8 umbrella plan committed, no code changes)
