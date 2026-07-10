@@ -86,9 +86,9 @@ earlier ones.
 
 | Sub-phase | Scope | Dependency |
 |-----------|-------|------------|
-| **Phase 8.1** | Settings foundation: `SettingsService`, persistence, migration, atomic writes, recovery, secret store, editor settings, LLM settings migration, settings UI | None |
+| **Phase 8.1** | Settings foundation: `SettingsService`, persistence, migration, atomic writes, recovery, secret store, editor settings (code + prose + terminal fonts), terminal font settings, LLM settings migration, settings UI, `WorkspaceFolderChanged` event, `IProjectContextService` registration stubs | None |
 | **Phase 8.2** | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, conflict handling | Consumes `ISettingsService` for user keybinding overrides |
-| **Phase 8.3** | Authoritative project context: `IProjectContextService`, solution/project discovery, selection, load/unload/reload lifecycle, observable state | Consumes `ISettingsService` for project-related settings; requires workspace-change notification from 8.1 |
+| **Phase 8.3** | Authoritative project context: `IProjectContextService`, solution/project discovery, selection, load/unload/reload lifecycle, observable state | Consumes `ISettingsService`; consumes `Workspace.WorkspaceFolderChanged` event (added in 8.1) |
 
 Each sub-phase gets its own `IMPLEMENTATION_PLAN.md` under
 `docs/phases/v2/phase-8/` (e.g. `phase-8.1/IMPLEMENTATION_PLAN.md`) following
@@ -249,7 +249,8 @@ This ensures the service is fully initialized when resolved from DI, and the
 `AgentExecutionOptions` factory can read `settings.Current` without awaiting.
 
 - `ISettingsService.Current` returns the loaded `SettingsModel` (never null).
-- `ISettingsService.SaveAsync()` is async because it writes to disk.
+- `ISettingsService.SaveAsync(CancellationToken ct = default)` is async because it
+  writes to disk. Accepts optional cancellation token.
 - `ISettingsService.LoadResult` exposes the `SettingsLoadResult` enum so the UI
   can surface errors (unsupported version, corruption) after startup.
 - The constructor performs the load. If the file is missing, defaults are used.
@@ -273,28 +274,50 @@ public sealed class CommandDescriptor
 }
 ```
 
-- `ICommandRegistry` exposes: `Register(CommandDescriptor)`,
-  `IReadOnlyList<CommandDescriptor> GetAll()`,
-  `CommandDescriptor? GetById(string id)`.
-
-**[R] Parameterized command execution:** The registry does NOT provide a
-generic `Execute(string id)` method. Many existing commands are parameterized
-(e.g. `ReactiveCommand<FileTreeNode, Unit>`, `ReactiveCommand<string, bool>`,
-`ReactiveCommand<EditorViewModel, Unit>`) and cannot be executed without a
-parameter. The registry provides two execution methods:
+**[R] Full interface contract:**
 
 ```csharp
-// For parameterless commands (e.g. "file.save", "explorer.toggleHiddenFiles")
-bool Execute(string id);
+public interface ICommandRegistry
+{
+    /// <summary>Register a command with a stable identifier.</summary>
+    void Register(CommandDescriptor descriptor);
 
-// For parameterized commands — caller must know the parameter type
-bool Execute<T>(string id, T parameter);
+    /// <summary>All registered commands.</summary>
+    IReadOnlyList<CommandDescriptor> GetAll();
+
+    /// <summary>Look up a command by ID, or null if not registered.</summary>
+    CommandDescriptor? GetById(string id);
+
+    /// <summary>
+    /// Execute a parameterless command by ID.
+    /// Internally calls ICommand.Execute(null).
+    /// Returns false if command ID is not found, or if the underlying
+    /// command requires a typed parameter (CanExecute(null) returns false).
+    /// Does not attempt type coercion or parameter inference.
+    /// </summary>
+    bool Execute(string id);
+
+    /// <summary>
+    /// Execute a parameterized command by ID with the given parameter.
+    /// Returns false if command ID is not found.
+    /// </summary>
+    bool Execute<T>(string id, T parameter);
+
+    /// <summary>
+    /// Materialize the gesture -> command map from registered defaults
+    /// and user overrides (stored in settings). Returns the resolved
+    /// list of KeyBinding instances. Called once by MainWindow during
+    /// activation (WhenActivated). Overrides take absolute precedence;
+    /// conflicts resolved by lexicographic command ID (deterministic).
+    /// </summary>
+    IReadOnlyList<KeyBinding> ResolveKeyBindings(ISettingsService settings);
+}
 ```
 
-`Execute(string id)` (no parameter) calls `ICommand.Execute(null)` internally.
-If the underlying command requires a parameter (i.e. `ICommand.CanExecute(null)`
-returns false because it needs a typed argument), `Execute(string id)` returns
-`false`. The registry does not attempt type coercion or parameter inference.
+- Only parameterless or `Unit`-parameterized commands that make sense as global
+  actions are registered (save, open folder, toggle panel, refresh, commit).
+- Parameterized commands operating on specific items (stage file, copy path,
+  open file per node) remain ViewModel-local and are NOT registered.
 
 **Which commands are parameterless vs. parameterized:**
 
@@ -363,21 +386,48 @@ not depend on registration order.
 **[R] Workspace change notification:** `Workspace.WorkspacePath` is currently a
 plain auto-property with no change notification. `IProjectContextService` needs
 to know when the workspace folder changes. Rather than converting `Workspace` to
-a reactive model (which would affect all consumers), Phase 8 adds a single
-event:
+a reactive model (which would affect all consumers), Phase 8.1 adds a single
+event to `Workspace`, built and owned in Phase 8.1:
 
 ```csharp
-// Added to Workspace.cs
+// Added to Workspace.cs (Phase 8.1)
 public event EventHandler? WorkspaceFolderChanged;
 ```
 
 - `SetProjectFromPath()` raises `WorkspaceFolderChanged` after updating
   `WorkspacePath` and `ProjectName`.
-- `IProjectContextService` subscribes to this event in its constructor.
+- `IProjectContextService` (Phase 8.3) subscribes to this event in its
+  constructor and calls `LoadAsync` in the handler.
+- **Subscription disposal:** The service implements `IDisposable`. It stores the
+  subscription token and unsubscribes on `Dispose()`. Since the service is a
+  singleton, disposal happens when the service provider is disposed (app exit),
+  matching the process-lifetime scope.
 - `MainWindowViewModel`'s existing subscription to `FileTreeViewModel.RootPath`
   remains unchanged — it continues to call `Workspace.SetProjectFromPath()`,
   which now notifies all subscribers.
 - This is a minimal, additive change. No existing `Workspace` consumer breaks.
+- In 8.3's `IProjectContextService.ctor`, the subscription pattern is:
+
+```csharp
+public sealed class ProjectContextService : IProjectContextService, IDisposable
+{
+    private readonly Workspace _workspace;
+    private EventHandler? _handler;
+
+    public ProjectContextService(Workspace workspace /*, ... */)
+    {
+        _workspace = workspace;
+        _handler = (_, _) => _ = LoadAsync(workspace.WorkspacePath!);
+        _workspace.WorkspaceFolderChanged += _handler;
+    }
+
+    public void Dispose()
+    {
+        if (_handler != null)
+            _workspace.WorkspaceFolderChanged -= _handler;
+    }
+}
+```
 
 Downstream consumers migrate gradually:
 - `SourceControlViewModel` currently uses `Workspace.WorkspacePath` for git
@@ -422,7 +472,7 @@ public sealed class ProjectCandidate
 public enum ProjectKind { Solution, SolutionX, CSharpProject }
 ```
 
-**[R] Lifecycle operations:**
+**[R] Lifecycle operations with cancellation:**
 
 ```csharp
 public interface IProjectContextService
@@ -432,29 +482,83 @@ public interface IProjectContextService
     IObservable<ProjectContext> WhenChanged { get; }
 
     // Lifecycle
-    Task LoadAsync(string workspaceRoot);    // Trigger discovery for a folder
-    Task UnloadAsync();                       // Clear project context
-    Task ReloadAsync();                       // Re-scan current workspace root
+    Task LoadAsync(string workspaceRoot, CancellationToken ct = default);
+    Task UnloadAsync(CancellationToken ct = default);
+    Task ReloadAsync(CancellationToken ct = default);
 
     // Selection
     void SelectProject(ProjectCandidate? candidate);  // null = clear selection
 }
 ```
 
-- `LoadAsync(workspaceRoot)` transitions: `Unloaded`/`NoProject` → `Loading` →
+- `LoadAsync(workspaceRoot, ct)` transitions: `Unloaded`/`NoProject` → `Loading` →
   `NoProject`/`Unsupported`/`SingleProject`/`Ambiguous`/`Failed`.
-- `UnloadAsync()` transitions to `Unloaded`, clears candidates and selection.
-- `ReloadAsync()` re-scans the current workspace root. Transitions to `Loading`
+- `UnloadAsync(ct)` transitions to `Unloaded`, clears candidates and selection.
+- `ReloadAsync(ct)` re-scans the current workspace root. Transitions to `Loading`
   first, then to the appropriate result state.
+
+**[R] Stale-load handling (rapid workspace switches):** When the user opens a
+folder, closes it, and opens another in quick succession, multiple
+`LoadAsync` calls may overlap. The service tracks a monotonically increasing
+sequence number per `LoadAsync` call. When a discovery completes, the service
+compares its sequence number against the current sequence. If a newer
+`LoadAsync` has been issued since this discovery started, the result is
+discarded — the `ProjectContext` is not updated, no `WhenChanged` event fires.
+Only the most recently started discovery updates state. This prevents stale
+results from overwriting fresh ones.
+
+**Sequence-number pattern:**
+
+```csharp
+private int _discoverySeq;  // Incremented on each LoadAsync/ReloadAsync call
+
+async Task LoadAsync(string workspaceRoot, CancellationToken ct)
+{
+    State = Loading;
+    NotifyChanged();
+    int capturedSeq = ++_discoverySeq;
+    try
+    {
+        var result = await DiscoverAsync(workspaceRoot, ct).ConfigureAwait(true);
+        if (_discoverySeq != capturedSeq) return;  // Stale — discard
+        ApplyDiscoveryResult(result);
+    }
+    catch (OperationCanceledException)
+    {
+        if (_discoverySeq == capturedSeq)
+            State = Failed;  // Only set Failed if this is still the active request
+    }
+}
+```
+
 - `Workspace.WorkspaceFolderChanged` triggers `LoadAsync` automatically.
 - `Unsupported` state: the folder contains files with project-like extensions
   but none that Zaide can handle (e.g. `.vbproj`, `.fsproj`). This satisfies the
   V2 roadmap's "structured unsupported result" requirement.
-- `Failed` state: IO error during scan. `ErrorMessage` contains the reason.
+- `Failed` state: IO error or cancellation during scan. `ErrorMessage` contains
+  the reason.
 
 - Discovery: scan the root folder (non-recursive for Phase 8 — only the root
-  level) for `.sln`, `.slnx`, `.csproj` files.
+  level) for files matching the classification table below.
 - No-project and ambiguous results are structured, not thrown.
+
+**[R] Extension classification for discovery:**
+
+| Category | Extensions | State |
+|----------|------------|-------|
+| **Supported** | `.sln`, `.slnx`, `.csproj` | Included in `Candidates`. `State` = `SingleProject`, `Ambiguous`, or `Selected`. |
+| **Unsupported** | `.vbproj`, `.fsproj`, `.vcxproj`, `.pyproj`, `.dbproj`, `.wixproj`, `.shproj` | NOT included in `Candidates`. `State` = `Unsupported`. The `ErrorMessage` says "Found {ext} projects which are not yet supported." This satisfies the V2 roadmap's "structured unsupported result" requirement. |
+| **Unrelated** | All other files | Ignored. |
+
+- If the folder contains only supported files → normal single/ambiguous result.
+- If the folder contains only unsupported files → `Unsupported` state.
+- If the folder contains both supported and unsupported files → supported files
+  appear in `Candidates`; unsupported are reported in `ErrorMessage` but do not
+  block selection. The service returns `SingleProject`/`Ambiguous` for the
+  supported subset.
+- If the folder contains no project-like files at all → `NoProject` state.
+- `Unsupported` is distinct from `Failed` (IO error) and `NoProject` (nothing
+  found). The V2 roadmap requires all three to be structured.
 - Phase 8 does NOT parse solution/project contents. It discovers files and
   exposes them as candidates. Parsing belongs to Phase 10 (LSP) and Phase 11
   (Build/Run/Test).
@@ -462,10 +566,44 @@ public interface IProjectContextService
 ### D9: Settings UI Scope and Integration **[R]**
 
 **Decision:** Settings UI is part of Phase 8.1. It covers:
-- Editor defaults (font family, font size, tab size, show whitespace, indent style)
+- Editor defaults (code font family, prose font family, code font size, tab size,
+  show whitespace, indent style)
+- Terminal font family and font size
 - LLM configuration (endpoint URL, model, API key via secret store)
 - Keybinding overrides (read-only list in 8.1; editing in 8.2 when command
   registry exists)
+
+**[R] Font settings model:**
+
+| Setting | Model field | Consumed by | Current hardcoded default |
+|---------|-------------|-------------|--------------------------|
+| `editor.codeFontFamily` | `EditorSettings.CodeFontFamily` | `EditorView` code text | `"Cascadia Code, Consolas, monospace"` |
+| `editor.codeFontSize` | `EditorSettings.CodeFontSize` | `EditorView` code text | `14` |
+| `editor.proseFontFamily` | `EditorSettings.ProseFontFamily` | `EditorView` prose/markdown text | `"Georgia, serif"` |
+| `editor.terminalFontFamily` | `EditorSettings.TerminalFontFamily` | `TerminalRenderControl` | `"Cascadia Code, JetBrains Mono, DejaVu Sans Mono, monospace"` |
+| `editor.terminalFontSize` | `EditorSettings.TerminalFontSize` | `TerminalRenderControl` | `14` |
+
+The editor and terminal share the settings file but have separate font values.
+They do NOT share a single `fontFamily` setting — each surface has different
+typographic requirements (code needs monospace, prose needs serif, terminal
+needs a monospace with character-cell metrics).
+
+The `EditorSettingsModel` in the JSON schema:
+
+```json
+"editor": {
+  "codeFontFamily": "Cascadia Code, Consolas, monospace",
+  "codeFontSize": 14,
+  "proseFontFamily": "Georgia, serif",
+  "terminalFontFamily": "Cascadia Code, JetBrains Mono, DejaVu Sans Mono, monospace",
+  "terminalFontSize": 14,
+  "tabSize": 4,
+  "insertSpaces": true,
+  "showWhitespace": false,
+  "showTabs": false,
+  "showSpaces": false
+}
+```
 
 **Integration point:** The current `MainWindow` has no menu bar or settings
 entry point. Phase 8.1 adds a settings entry via:
@@ -530,9 +668,9 @@ The following view-level keybindings ARE migrated to the command registry:
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all decisions in this plan. Verify `System.Text.Json` serialization round-trip with versioned schema. Verify `File.SetUnixFileMode` works for secret file permissions. Verify atomic write pattern (write tmp → rename) on Linux. | Proof-of-concept tests in `tests/Zaide.Tests/Services/Phase8ProofOfConceptTests.cs` (5 tests: JSON round-trip with schema version, Unix file mode 0600, atomic write-rename, last-known-good fallback, future version rejection). Tests remain after M0 as regression coverage. Build + tests green. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore`, editor settings, LLM settings migration, settings UI. | `dotnet build` + `dotnet test` green. Settings round-trip test. Migration infrastructure test (synthetic v1→v2 in test project). Atomic write test. Secret store test. Editor settings consumed by `EditorView`. LLM settings consumed by `AgentExecutionOptions`. |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, LLM settings migration, settings UI. `CancellationToken` on `SaveAsync`. | `dotnet build` + `dotnet test` green. Settings round-trip test. Migration infrastructure test (synthetic v1→v2 in test project). Atomic write test. Secret store test. Editor settings consumed by `EditorView`. Terminal font settings consumed by `TerminalRenderControl`. LLM settings consumed by `AgentExecutionOptions`. |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, window keybinding integration. | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. Build + tests green. |
-| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. | Discovery finds `.sln`/`.csproj` in test fixtures. Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed states tested. Observable state consumed by status bar. Build + tests green. |
+| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test. Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
 ## Likely Implementation Shape
 
@@ -566,7 +704,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | File | Sub-phase | Change |
 |------|-----------|--------|
 | `src/Program.cs` | All | Register new services. `AgentExecutionOptions` factory reads from settings + secret store + env vars. |
-| `src/Models/Workspace.cs` | 8.3 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation. |
+| `src/Models/Workspace.cs` | 8.1 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation. Consumed by `IProjectContextService` (8.3). |
 | `src/Views/EditorView.cs` | 8.1 | Replace hardcoded font/size/whitespace literals with `ISettingsService`-driven values. |
 | `src/Views/TerminalRenderControl.cs` | 8.1 | Replace hardcoded font family/size with settings-driven values. |
 | `src/Services/AgentExecutionOptions.cs` | 8.1 | Factory reads from settings + secret store, env-var fallback preserved. |
@@ -596,8 +734,11 @@ services.AddSingleton<IProjectContextService, ProjectContextService>();
 {
   "schemaVersion": 1,
   "editor": {
-    "fontFamily": "Cascadia Code, Consolas, monospace",
-    "fontSize": 14,
+    "codeFontFamily": "Cascadia Code, Consolas, monospace",
+    "codeFontSize": 14,
+    "proseFontFamily": "Georgia, serif",
+    "terminalFontFamily": "Cascadia Code, JetBrains Mono, DejaVu Sans Mono, monospace",
+    "terminalFontSize": 14,
     "tabSize": 4,
     "insertSpaces": true,
     "showWhitespace": false,
@@ -639,14 +780,15 @@ File permissions: `0600` (owner read/write only) on Linux.
 
 ## Exit Conditions
 
-- [ ] **Settings:** Versioned settings file (schema v1) loads, saves, and recovers from corruption. Atomic writes verified. Unknown future version is refused, not overwritten. Migration infrastructure exists (empty migration list; synthetic test migration in test project).
+- [ ] **Settings:** Versioned settings file (schema v1) loads, saves, and recovers from corruption. Atomic writes verified. Unknown future version is refused, not overwritten. Migration infrastructure exists (empty migration list; synthetic test migration in test project). `SaveAsync` accepts `CancellationToken`.
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Env-var fallback works.
-- [ ] **Editor:** No font family, font size, tab size, or whitespace flag is a hardcoded literal in View code. All driven by `ISettingsService`.
+- [ ] **Editor fonts:** No font family (code or prose) or font size is a hardcoded literal in `EditorView`. Code font (`codeFontFamily`/`codeFontSize`) and prose font (`proseFontFamily`) are separate settings driven by `ISettingsService`.
+- [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
 - [ ] **LLM:** `AgentExecutionOptions` populated from settings + secret store + env-var fallback. No plaintext API key in settings file. Synchronous DI composition preserved.
-- [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup and parameterless execution. Parameterized commands remain ViewModel-local.
-- [ ] **Keybindings:** Window keybindings driven by registry + settings overrides. Deterministic conflict resolution (lexicographic command ID). Exception list documented (D10).
-- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Observable state with full lifecycle (Unloaded → Loading → result states). `Workspace.WorkspaceFolderChanged` event drives auto-discovery. Status bar consumes project context name.
-- [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. `IProjectContextService` is additive. No parallel sources of project truth.
+- [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup, `Execute(string id)`, and `Execute<T>(string id, T parameter)`. Parameterized commands remain ViewModel-local.
+- [ ] **Keybindings:** Window keybindings driven by `ICommandRegistry.ResolveKeyBindings()`. Deterministic conflict resolution (lexicographic command ID). Exception list documented (D10).
+- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Full 8-state lifecycle (Unloaded → Loading → NoProject/Unsupported/SingleProject/Ambiguous/Selected/Failed). Extension classification table determines supported vs. unsupported. `LoadAsync`/`ReloadAsync`/`UnloadAsync` accept `CancellationToken`. Stale-load sequence-number pattern prevents out-of-order results. `Workspace.WorkspaceFolderChanged` event drives auto-discovery with `IDisposable` subscription. Status bar consumes project context name.
+- [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. Event raised by `SetProjectFromPath()`. `IProjectContextService` is additive. No parallel sources of project truth.
 - [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable.
 - [ ] **Tests:** All pre-existing tests pass. New tests cover settings, secrets, commands, keybindings, and project context. Test count at closeout recorded from `dotnet test` output (baseline: 817 as of 2026-07-10).
 - [ ] **Build:** `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
