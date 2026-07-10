@@ -14,4 +14,6 @@ public class GitBranch
         Name = name;
         IsCurrent = isCurrent;
     }
+
+    public override string ToString() => Name;
 }
