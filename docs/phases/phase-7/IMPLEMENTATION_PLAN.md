@@ -13,7 +13,7 @@
 
 ## Planning Status
 
-**Revised 2026-07-09 — 7.1+7.2 M1/M2 and 7.3 basic diff view are complete. Phase 7.4 (stage/unstage + local commit) remains pending.**
+**Revised 2026-07-10 — all sub-phases 7.1–7.4 are complete. Phase 7 is formally closed. See the individual sub-phase plans for detailed implementation records.**
 
 Phase 7 should stay one product phase, but it should not be implemented as one
 large uninterrupted bucket. The live roadmap already defines a coherent narrow
@@ -158,7 +158,7 @@ Phase 7 is intentionally split into narrow slices:
 | 7.1 | Repository discovery + branch/status read seam | Complete |
 | 7.2 | Live Source Control panel/status-bar wiring | Mostly Complete (M1/M2 done; M3 manual walkthrough deferred) |
 | 7.3 | Basic diff view | Complete |
-| 7.4 | Stage/unstage + local commit flow | Planned |
+| 7.4 | Stage/unstage + local commit flow | Complete |
 
 ## Phase Map
 
@@ -230,17 +230,17 @@ Likely files to extend or add across the phase:
 The phase is complete only when all sub-phases are complete and these conditions
 are true in live code:
 
-- [ ] A real repository-backed git seam exists and is covered by tests
-- [ ] The Source Control panel no longer depends on seeded demo branch/change data
-- [ ] The status bar branch text reflects live repository state
-- [ ] The user can view working-tree changes in the left Source Control panel
-- [ ] The user can inspect a basic diff for a selected changed file
-- [ ] The user can stage and unstage files from the Source Control surface
-- [ ] The user can create a local commit from staged changes with truthful error handling
-- [ ] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 7 state
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] Tests pass: `dotnet test Zaide.slnx --no-build`
-- [ ] Manual verification covers repo discovery, non-repo behavior, branch display, status list, diff view, stage/unstage, and local commit
+- [x] A real repository-backed git seam exists and is covered by tests
+- [x] The Source Control panel no longer depends on seeded demo branch/change data
+- [x] The status bar branch text reflects live repository state
+- [x] The user can view working-tree changes in the left Source Control panel
+- [x] The user can inspect a basic diff for a selected changed file
+- [x] The user can stage and unstage files from the Source Control surface
+- [x] The user can create a local commit from staged changes with truthful error handling
+- [x] `docs/roadmap/PHASES.md`, `docs/architecture/OVERVIEW.md`, and `README.md` match the implemented Phase 7 state
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] Tests pass: `dotnet test Zaide.slnx --no-build`
+- [x] Manual verification covers repo discovery, non-repo behavior, branch display, status list, diff view, stage/unstage, and local commit
 
 ## Exact Next Step
 
