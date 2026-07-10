@@ -18,10 +18,12 @@ docs/
 │   └── OVERVIEW.md      # Two-layer architecture, agent-to-agent model
 ├── roadmap/
 │   └── PHASES.md        # Ordered phase checklist (current progress)
-├── phases/              # One folder per phase
-│   └── phase-N/
-│       ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
-│       └── TOFIX.md                 # Code quality issues found in review
+├── phases/              # Versioned phase plans
+│   ├── README.md          # Version index and archive policy
+│   └── vN/
+│       └── phase-N/
+│           ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
+│           └── TOFIX.md                 # Code quality issues found in review
 ├── refactor/            # Foundation-level refactoring (structural, not feature)
 │   └── refactor-N/
 │       ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
@@ -50,22 +52,26 @@ Create these folders/files when first needed — not all at once.
 | Completing a phase checklist item | Mark `[x]` in `docs/roadmap/PHASES.md` |
 | Adding a NuGet package | Add entry to `docs/LIBRARIES.md` |
 | Changing architecture (DI, interfaces, new subsystem) | Update `docs/architecture/` |
-| Starting a new phase | Create `docs/phases/phase-N/IMPLEMENTATION_PLAN.md` |
-| Finding a code quality issue during review | Add to `docs/phases/phase-N/TOFIX.md` |
+| Starting a new phase | Create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version |
+| Finding a code quality issue during review | Add to `docs/phases/vN/phase-N/TOFIX.md` |
 | Starting a new refactor | Create `docs/refactor/refactor-N/IMPLEMENTATION_PLAN.md` |
 | Completing a refactor milestone | Mark `[x]` in refactor plan |
 | Finding a code quality issue during refactor | Add to `docs/refactor/refactor-N/TOFIX.md` |
 | Fixing a convention or adopting a new one | Update `docs/CONVENTIONS.md` |
 | Changing UI design rules or patterns | Update `docs/DESIGN.md` |
 | Bug not fixed in 2 attempts | Create issue in `docs/issues/open/` |
-| Reverting a phase implementation | Create `docs/phases/phase-N/REVERT_LOG.md` |
+| Reverting a phase implementation | Create `docs/phases/vN/phase-N/REVERT_LOG.md` |
 | Reverting a refactor implementation | Create `docs/refactor/refactor-N/REVERT_LOG.md` |
 
 ---
 
 ## 3. Feature Phase Planning Convention
 
-This section applies to feature phases (`phases/phase-N/`) only. For structural refactoring, see §4.
+This section applies to feature phases (`phases/vN/phase-N/`) only. For structural refactoring, see §4.
+
+Phase plans are grouped by roadmap version. Completed roadmap versions remain
+available as historical records. Continue the global phase numbering across
+roadmap versions so references such as "Phase 7" remain unambiguous.
 
 Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 
@@ -114,7 +120,7 @@ Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 ### Revert Log Template
 
 When a phase implementation is reverted (structural reset, not a bug fix),
-create `docs/phases/phase-N/REVERT_LOG.md`:
+create `docs/phases/vN/phase-N/REVERT_LOG.md`:
 
 ```markdown
 # Phase N: Revert Log

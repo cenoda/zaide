@@ -58,4 +58,4 @@ The right column now contains both the editor and agent panel area. Keep this la
 
 ## Next Step
 
-Create `docs/phases/phase-6/IMPLEMENTATION_PLAN.md` from the live codebase before implementing Phase 6.
+Create `docs/phases/v1/phase-6/IMPLEMENTATION_PLAN.md` from the live codebase before implementing Phase 6.

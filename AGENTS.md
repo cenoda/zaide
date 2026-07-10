@@ -26,6 +26,6 @@ Short rules for AI assistants working on Zaide.
 
 ## Planning
 
-- Before coding a phase, create `docs/phases/phase-N/IMPLEMENTATION_PLAN.md`.
+- Before coding a phase, create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version.
 - Verify against live code before claiming something exists.
 - YAGNI: build for this phase only.

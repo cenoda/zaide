@@ -2,7 +2,10 @@
 
 AI-native IDE. Agents talk to each other, not just to you.
 
-**Status:** Phase 6 complete (routing + visibility gaps closed in 6.1) — dedicated agent panels render in the right column, support direct input/execution, mirror activity into Townhall, and `@mention` routing surfaces failures and routed-flow outcomes in Townhall. Phase 7 Git Integration is complete — repo-backed read seam, live Source Control wiring, basic diff view, stage/unstage, and local commit flow all shipped. See `docs/phases/phase-7/IMPLEMENTATION_PLAN.md`.
+**Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4). Zaide now has
+the IDE foundation, Townhall workspace, direct agent panels, `@mention` routing,
+and local Git status/diff/stage/commit workflows defined by that roadmap. The
+completed plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
 
 ## Philosophy
 
@@ -122,16 +125,18 @@ Cleaned up layer boundaries within the single-project structure:
 | Runtime | .NET 10.0 |
 | Platform | Cross-platform (Linux, macOS, Windows) |
 
-## Future Direction
+## Roadmap V1 Outcome
 
-The next stages build on the Phase 4 Townhall activity surface:
+Roadmap V1 established the following agent-workspace foundation:
 
 - **Agent panels** — individual UIs for each agent (Phase 5 complete: render + direct input + one minimal execution path + Townhall mirroring)
 - **@mention routing** — agents can request review from each other (Phase 6 complete: mechanical routing + Townhall visibility for failures and routed-flow outcomes)
-- **Git integration** — status, diff, and commits from the sidebar
+- **Git integration** — repository status, diff, staging, and local commits from the sidebar (Phase 7 complete)
 - **Editor** — still visible and powerful, but framed as the implementation surface
 
-See [docs/roadmap/PHASES.md](docs/roadmap/PHASES.md) for the full plan. Phase 5 starts with a nested `phase-5.1` umbrella (`5.1.1`–`5.1.3`) so the state/host/composition seam is decided before UI, execution, and Townhall mirroring land.
+See the completed [Roadmap V1](docs/roadmap/PHASES.md) and its
+[versioned phase-plan archive](docs/phases/README.md) for the implementation
+record. No successor roadmap is defined in these documents yet.
 
 ## Why "Zaide"
 

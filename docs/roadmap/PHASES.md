@@ -1,11 +1,12 @@
-# Zaide — Development Roadmap
+# Zaide — Development Roadmap V1 (Complete)
 
-Build a strong IDE foundation first, then turn the UI scaffold into a real
-agent workspace. Each phase must be complete before moving to the next.
+Roadmap V1 built the IDE foundation and turned the UI scaffold into a real agent
+workspace foundation. All scoped phases, Phase 0 through Phase 7.4, are complete.
+This file is the frozen V1 roadmap record; it does not define a successor roadmap.
 
 ---
 
-## Technical Decisions (Resolved So Far)
+## Technical Decisions Resolved in V1
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
@@ -16,7 +17,7 @@ agent workspace. Each phase must be complete before moving to the next.
 | **Editor** | AvaloniaEdit + TextMate grammars | Syntax highlighting, proven widget |
 | **Terminal** | Linux native PTY via P/Invoke | Real TTY for shell interactivity |
 
-### Future Considerations (not yet implemented)
+### Unscheduled Considerations Left After V1
 
 | Decision | Planned Approach | Rationale |
 |----------|-----------------|-----------|
@@ -176,7 +177,7 @@ confirmed by manual visual smoke. Two known routing-visibility gaps remained
 (unknown-mention visible failure, routed-flow Townhall surfacing) at Phase 6
 close — **both closed in Phase 6.1** (see below). Phase 7 entry
 condition ("Phase 6 agent routing works — mechanical routing + identity + parser
-shipped") is satisfied. See `docs/phases/phase-6/TOFIX.md` for the full smoke
+shipped") is satisfied. See `docs/phases/v1/phase-6/TOFIX.md` for the full smoke
 test record.
 
 ### Phase 6.1: Routing Visibility Follow-up
@@ -189,7 +190,7 @@ test record.
 `RouteResult` to surface routing failures and routed-flow outcomes in Townhall
 (Townhall-only visibility; `AgentRouter` remains Townhall-free). Added 7 router
 tests plus 5 view-model mirroring tests. All audit TOFIX items resolved
-(`docs/phases/phase-6.1/TOFIX.md`). Build clean, 736 tests pass, no UI changes
+(`docs/phases/v1/phase-6.1/TOFIX.md`). Build clean, 736 tests pass, no UI changes
 beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 
 ## Phase 7: Git Integration
@@ -200,11 +201,11 @@ beyond Townhall. The Phase 6 routing-visibility gaps are now closed.
 
 Implementation split:
 
-- `docs/phases/phase-7/IMPLEMENTATION_PLAN.md` (umbrella)
-- `docs/phases/phase-7.1/IMPLEMENTATION_PLAN.md` — repository discovery + status seam
-- `docs/phases/phase-7.2/IMPLEMENTATION_PLAN.md` — live Source Control wiring
-- `docs/phases/phase-7.3/IMPLEMENTATION_PLAN.md` — basic diff view
-- `docs/phases/phase-7.4/IMPLEMENTATION_PLAN.md` — stage/unstage + local commit (complete)
+- `docs/phases/v1/phase-7/IMPLEMENTATION_PLAN.md` (umbrella)
+- `docs/phases/v1/phase-7.1/IMPLEMENTATION_PLAN.md` — repository discovery + status seam
+- `docs/phases/v1/phase-7.2/IMPLEMENTATION_PLAN.md` — live Source Control wiring
+- `docs/phases/v1/phase-7.3/IMPLEMENTATION_PLAN.md` — basic diff view
+- `docs/phases/v1/phase-7.4/IMPLEMENTATION_PLAN.md` — stage/unstage + local commit (complete)
 
 ---
 
@@ -223,4 +224,15 @@ Implementation split:
 
 ---
 
-*Last updated: 2026-07-10 (Phase 7.4 closed — stage/unstage/local-commit flow shipped via M1/M2 and verified/stabilized in M3; automated end-to-end mutation-flow coverage added, Source Control panel confirmed truthful across repeated mutation-refresh cycles)*
+## V1 Closeout
+
+- **Status:** Complete
+- **Scope:** Phase 0 through Phase 7.4
+- **Phase-plan archive:** [`docs/phases/v1/`](../phases/v1/)
+- **Closeout verification:** `dotnet build Zaide.slnx` (0 warnings, 0 errors) and
+  `dotnet test Zaide.slnx --no-build` (817 passed, 0 failed, 0 skipped)
+- **Successor roadmap:** Not defined in this document
+
+---
+
+*Last updated: 2026-07-10 (Roadmap V1 closed after Phase 7.4 — stage/unstage/local-commit flow shipped via M1/M2 and verified/stabilized in M3; automated end-to-end mutation-flow coverage added, Source Control panel confirmed truthful across repeated mutation-refresh cycles)*

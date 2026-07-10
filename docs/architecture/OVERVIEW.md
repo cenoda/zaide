@@ -1,7 +1,11 @@
 # Zaide — Architecture Overview
 
-Zaide is an **AI-native IDE** that is moving toward a real agent workspace.
+Zaide is an **AI-native IDE** built around a real agent workspace foundation.
 One agent codes, another reviews. They argue. You get better code.
+
+**Roadmap status:** V1 is complete (Phase 0 through Phase 7.4). This document
+describes the architecture delivered by that roadmap; it does not define a
+successor roadmap.
 
 ---
 
@@ -18,9 +22,9 @@ The target architecture is **agent-first**:
 
 This is a product-direction choice, not a cosmetic layout tweak.
 
-## Current Layout Scaffold (Post-Refactor-4)
+## Current Layout (Post-Roadmap V1)
 
-The current app contains the visual shell for the future agent workspace:
+The current app contains the agent-workspace shell delivered through V1:
 
 ```
 ┌──────┬──────────┬──────────────────────────────────┬────────────────────┐
@@ -82,11 +86,11 @@ The current app contains the visual shell for the future agent workspace:
 - `MainWindow` wires `TerminalTabHost` in the bottom panel; focus/startup routed through the view host seam without direct single-session calls
 - 565 tests pass, 0 fail
 
-### Planned layers
+### Roadmap V1 agent and Git layers
 
 | Layer | Phase | Description |
 |-------|-------|-------------|
-| Agent Panels | 5 | Dedicated agent surfaces when specialized views are needed |
+| Agent Panels | 5 | Dedicated agent surfaces with direct input/execution and Townhall mirroring |
 | Agent Router | 6 | @mention routing between agents — **implemented** (M6 closeout, 2026-07-08); routed content resolves and executes on the target panel; routing-visibility gaps closed in Phase 6.1 (2026-07-09) — routing failures and routed-flow outcomes now surface in Townhall via `MainWindowViewModel`, with `AgentRouter` kept Townhall-free |
 | Git Integration | 7 | Live repo-backed read seam, Source Control panel wiring, basic diff view, and stage/unstage/local-commit flow (7.1–7.4 complete) |
 
@@ -118,22 +122,22 @@ seed data.
 | Pattern | MVVM (ReactiveUI) |
 | DI | Microsoft.Extensions.DependencyInjection |
 | Platform | Cross-platform (Linux, macOS, Windows) |
-| Persistence | *(none yet — likely starts when Phase 4 needs durable activity history)* |
-| Plugin | *(none yet — deferred to Phase 6+)* |
+| Persistence | *(not implemented in Roadmap V1)* |
+| Plugin | *(not implemented in Roadmap V1)* |
 
 ---
 
 ## Future Technical Considerations
 
-The following decisions have been discussed but are **not yet implemented**.
-They will be revisited when their respective phases begin.
+The following decisions were discussed but were **not implemented in Roadmap
+V1**. They are unscheduled considerations, not commitments in an active roadmap.
 
 | Consideration | Planned Approach | Rationale |
 |---------------|------------------|-----------|
 | **Persistence** | SQLite (structured data) + JSON (settings) | Time-series activity history needs queries. JSON for simple key-value settings. |
 | **Image / Asset Storage** | Hybrid: Embedded (UI icons) + File Reference (project assets) | App icons compile in. Agent avatars stored as file refs for live replacement. |
 | **Plugin Architecture** | Interface + DI manual registration | Core interfaces (`IAgent`, `IPlugin`) defined when agent layer begins. .NET 10 Keyed Services for plugin DI later. |
-| **Multi-provider agent architecture** | `IAgentProvider` abstraction + `AgentRegistry` service managing N agents, each with its own provider/model configuration | Still deferred beyond the first Phase 5 execution slice. Phase 5 now plans only one minimal direct-execution path to one configured OpenAI-compatible endpoint; broad provider abstraction remains unnecessary until later multi-provider or richer agent-execution work appears. Phase 4.1 already reserved `SourceProvider`/`SourceModel`/`ThreadId` on the Townhall activity entry model so that later work does not force a breaking schema change. See `docs/phases/phase-4.1/IMPLEMENTATION_PLAN.md` and `docs/phases/phase-5.3/IMPLEMENTATION_PLAN.md`. |
+| **Multi-provider agent architecture** | `IAgentProvider` abstraction + `AgentRegistry` service managing N agents, each with its own provider/model configuration | Still deferred beyond the first Phase 5 execution slice. Phase 5 now plans only one minimal direct-execution path to one configured OpenAI-compatible endpoint; broad provider abstraction remains unnecessary until later multi-provider or richer agent-execution work appears. Phase 4.1 already reserved `SourceProvider`/`SourceModel`/`ThreadId` on the Townhall activity entry model so that later work does not force a breaking schema change. See `docs/phases/v1/phase-4.1/IMPLEMENTATION_PLAN.md` and `docs/phases/v1/phase-5.3/IMPLEMENTATION_PLAN.md`. |
 | **Agent wire format** | Phase 5 baseline: one OpenAI-compatible, non-streaming request/response shape over built-in `HttpClient`; anything broader remains undecided | This is now intentionally decided at the Phase 5 planning level so the first direct-execution path is concrete and narrow. It is not yet a commitment to a broader provider platform, streaming protocol, or long-term multi-provider contract. |
 
 ---
