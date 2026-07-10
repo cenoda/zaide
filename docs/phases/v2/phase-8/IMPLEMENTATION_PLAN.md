@@ -86,7 +86,7 @@ earlier ones.
 
 | Sub-phase | Scope | Dependency |
 |-----------|-------|------------|
-| **Phase 8.1** | Settings foundation: `SettingsService`, persistence, migration, atomic writes, recovery, secret store, editor settings (code + prose + terminal fonts), terminal font settings, LLM settings migration, settings UI, `WorkspaceFolderChanged` event, `IProjectContextService` registration stubs | None |
+| **Phase 8.1** | Settings foundation: `SettingsService`, persistence, migration, atomic writes, recovery, secret store, editor settings (code + prose + terminal fonts), terminal font settings, LLM settings migration, settings UI, and `WorkspaceFolderChanged` event | None |
 | **Phase 8.2** | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, conflict handling | Consumes `ISettingsService` for user keybinding overrides |
 | **Phase 8.3** | Authoritative project context: `IProjectContextService`, solution/project discovery, selection, load/unload/reload lifecycle, observable state | Consumes `ISettingsService`; consumes `Workspace.WorkspaceFolderChanged` event (added in 8.1) |
 
@@ -181,6 +181,13 @@ file is present.
 
 - Migration runs on load, before deserialization into the current model.
 - Each migration is a pure function: `JsonElement → JsonElement`.
+- A missing, non-integer, zero, or negative `schemaVersion` is invalid and is
+  handled as `Corrupt`; it falls back to last-known-good or defaults without
+  overwriting the source file.
+- A positive older version with no complete migration chain to the current
+  version is `UnsupportedVersion`; it falls back to last-known-good or defaults
+  and is never rewritten. This is the explicit unsupported-old behavior
+  required by the V2 roadmap.
 - Unknown future version → `SettingsLoadResult.UnsupportedVersion(int foundVersion)`.
   The service does NOT write to the file. The user is shown an error.
 - Corrupt JSON → `SettingsLoadResult.Corrupt`. Fall back to last-known-good or
@@ -385,6 +392,14 @@ keybindings.
 - **No conflict-resolution UI in Phase 8.** Conflicts are logged. Phase 9
   (Command Palette) may surface them for user resolution.
 
+**[R] Gesture validation and refresh:** Gestures use a documented neutral
+grammar of modifier names (`Ctrl`, `Alt`, `Shift`, `Meta`) plus one key,
+case-insensitively. Unknown keys, malformed strings, and overrides targeting
+unregistered command IDs are ignored and logged; they never prevent startup.
+`ResolveKeyBindings` is rerun when keybinding settings change and replaces the
+previous UI bindings as one operation. The initial activation also performs a
+full resolution after all registrations are complete.
+
 **Rationale for deterministic policy:** The previous version said "later
 registration wins" in one place and "first registration wins" in another. This
 revision uses a single deterministic rule (lexicographic command ID) that does
@@ -413,6 +428,11 @@ public event EventHandler? WorkspaceFolderChanged;
 
 - `SetProjectFromPath()` raises `WorkspaceFolderChanged` after updating
   `WorkspacePath` and `ProjectName`.
+- A transition from a non-null path to `null` is the supported close-workspace
+  operation. The `MainWindowViewModel` subscription must observe both non-null
+  and null `RootPath` values, update `Workspace`, and refresh Source Control for
+  either transition; it must not filter out null paths. This gives the project
+  context service a real unload trigger rather than an unused null branch.
 - `IProjectContextService` (Phase 8.3) subscribes to this event in its
   constructor. A non-null path starts a cancellable `LoadAsync`; a null path
   calls `UnloadAsync`. The handler observes and logs failures rather than
@@ -570,6 +590,12 @@ async Task LoadAsync(string workspaceRoot, CancellationToken ct)
 - `Failed` state: IO error or cancellation during scan. `ErrorMessage` contains
   the reason.
 
+State invariants are explicit: exactly one supported candidate enters
+`SingleProject` and exposes that candidate as `SelectedProject` for immediate
+consumption; `Selected` is reserved for an explicit user selection from an
+ambiguous result. Clearing a selection from an ambiguous context returns to
+`Ambiguous`.
+
 - Discovery: scan the root folder (non-recursive for Phase 8 — only the root
   level) for files matching the classification table below.
 - No-project and ambiguous results are structured, not thrown.
@@ -651,6 +677,17 @@ entry point. Phase 8.1 adds a settings entry via:
 The settings UI follows existing panel patterns (C# view construction per
 DESIGN.md Rule 1).
 
+**[R] Runtime application contract:** `ISettingsService` exposes
+`IObservable<SettingsModel> WhenChanged` in addition to `Current`. The view
+composition passes the singleton service into each `EditorView` and
+`TerminalPanel`, which passes it to its `TerminalRenderControl` at
+construction. Each surface applies `Current` once
+and subscribes for subsequent changes through its activation/disposal scope:
+`EditorView` updates font family, font size, tab size, insertion mode, and
+whitespace options; `TerminalRenderControl` updates terminal font family and
+size and invalidates its measurement/render cache. Settings changes are
+applied immediately on the UI thread; reopening a view is not required.
+
 ### D10: Keybinding Exception List **[R]**
 
 Not all keyboard handling in views is a "global command keybinding." The
@@ -693,14 +730,15 @@ The following view-level keybindings ARE migrated to the command registry:
    AvaloniaEdit's options — these renderers will auto-adapt.
 7. **`Workspace.WorkspacePath` is not reactive.** Phase 8 adds a
    `WorkspaceFolderChanged` event (D7). No existing consumer is broken by an
-   additional event. The event is raised by `SetProjectFromPath()`.
+   additional event. The event is raised by `SetProjectFromPath()`, including
+   the null close-workspace transition.
 
 ## Milestones (Umbrella)
 
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
-| **M0** | Umbrella | Lock all decisions in this plan. Verify `System.Text.Json` serialization round-trip with versioned schema. Verify `File.SetUnixFileMode` works for secret file permissions. Verify atomic write pattern (write tmp → rename) on Linux. | Proof-of-concept tests in `tests/Zaide.Tests/Services/Phase8ProofOfConceptTests.cs` (5 tests: JSON round-trip with schema version, Unix file mode 0600, atomic write-rename, last-known-good fallback, future version rejection). Tests remain after M0 as regression coverage. Build + tests green. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, LLM settings migration, settings UI. `CancellationToken` on `SaveAsync`. | `dotnet build` + `dotnet test` green. Settings round-trip test. Migration infrastructure test (synthetic v1→v2 in test project). Atomic write test. Secret store test. Editor settings consumed by `EditorView`. Terminal font settings consumed by `TerminalRenderControl`. LLM settings consumed by `AgentExecutionOptions`. |
+| **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService`, JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, LLM settings migration, settings UI. `CancellationToken` on `SaveAsync`. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600, atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, default keybindings, user overrides, window keybinding integration. | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. Build + tests green. |
 | **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test. Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
@@ -743,7 +781,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: add settings gear button wiring + panel toggle. 8.2: replace imperative keybinding wiring with registry-driven binding. |
 | `src/Views/FileTreeView.cs` | 8.2 | `Ctrl+Shift+H` handler replaced with registry command call. |
 | Selectable ViewModels | 8.2 | Accept `ICommandRegistry` in constructor, register parameterless global commands with stable IDs. |
-| `src/ViewModels/MainWindowViewModel.cs` | 8.3 | Inject `IProjectContextService`. `Activate()` subscribes to project context changes. |
+| `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.3 | 8.1: observe null and non-null folder transitions so close-workspace unloads and refreshes Source Control. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
 | `src/Views/StatusBar.cs` | 8.1 + 8.3 | 8.1: add settings gear icon button. 8.3: consume project context name instead of folder name. |
 
 ### DI Registration Changes (`src/Program.cs`)
@@ -812,7 +850,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 
 ## Exit Conditions
 
-- [ ] **Settings:** Versioned settings file (schema v1) loads, saves, and recovers from corruption. Atomic writes verified. Unknown future version is refused, not overwritten. Migration infrastructure exists (empty migration list; synthetic test migration in test project). `SaveAsync` accepts `CancellationToken`.
+- [ ] **Settings:** Versioned settings file (schema v1) loads, saves, and recovers from corruption. Atomic writes verified. Missing/invalid schema, unsupported old versions, and unknown future versions are refused without overwriting the source file. Migration infrastructure exists (empty production migration list; synthetic test migration in test project). `SaveAsync` accepts `CancellationToken`.
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Env-var fallback works.
 - [ ] **Editor fonts:** No font family (code or prose) or font size is a hardcoded literal in `EditorView`. Code font (`codeFontFamily`/`codeFontSize`) and prose font (`proseFontFamily`) are separate settings driven by `ISettingsService`.
 - [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
