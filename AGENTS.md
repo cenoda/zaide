@@ -7,7 +7,8 @@ Short rules for AI assistants working on Zaide.
 ## Language
 
 - **All docs, code comments, commit messages, and PR descriptions: English only.**
-- Prompts may be in any language — respond in English.
+- Prompts may be in any language — respond in English. 
+- but if the user explicitly asks for a different language, respond in that language.
 - This is open source; English keeps it accessible.
 
 ## Docs
