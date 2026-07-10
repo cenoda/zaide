@@ -3,8 +3,8 @@
 AI-native IDE. Agents talk to each other, not just to you.
 
 **Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4), and
-[Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is planned (Phase 8 through
-Phase 13; implementation has not started). Zaide currently has the IDE
+[Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is in planning (Phase 8
+through Phase 13; production implementation has not started). Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).

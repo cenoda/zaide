@@ -18,9 +18,9 @@
 
 **Revised 2026-07-10 — review findings applied.**
 
-This revision addresses six high-priority and five medium-priority findings from
-external review. All changes are marked with **[R]** annotations in the
-affected decision sections.
+This revision addresses the latest audit findings. The affected decision
+sections are marked with **[R]** annotations where the revised contract is
+material.
 
 ### Live Baseline (verified 2026-07-10)
 
@@ -97,11 +97,16 @@ sub-phases share.
 
 ## Goal
 
-Remove all user-facing hardcoding and establish the shared platform infrastructure
-(settings, commands, project context) that Phases 9–13 consume. After Phase 8,
-no font/size/whitespace value is a literal in View code, no keybinding is
-hardcoded in a view, no API key is plaintext in settings, and one authoritative
-project context service is the single source of project truth.
+Remove the targeted user-facing hardcoding and establish the shared platform
+infrastructure (settings, commands, project context) that Phases 9–13 consume.
+After Phase 8, editor and terminal typography/whitespace settings are no longer
+hardcoded in their implementation views, global keybindings are resolved through
+the command infrastructure, no API key is plaintext in settings, and one
+authoritative project context service is the single source of project truth.
+
+Other view-local typography used by chrome, panels, captions, and controls is
+not part of Phase 8. It remains governed by the existing style and design
+system until a later, explicitly scoped visual-settings phase.
 
 ## Boundaries
 
@@ -129,6 +134,13 @@ the dependency graph via `AgentExecutionService`).
 schema version is **1**. Since settings are greenfield (no prior schema exists),
 there is no legacy migration to write in Phase 8.1. The first migration
 (v1 → v2) will be written when a future phase introduces a schema change.
+
+**[R] Path resolution:** `XDG_CONFIG_HOME` is used only when it is an absolute
+path. When it is unset or invalid, Linux falls back to `$HOME/.config/zaide`;
+if `HOME` is unavailable, the service uses the platform application-data
+directory. Windows and macOS use their platform application-data directory
+under `zaide` rather than interpreting `XDG_CONFIG_HOME`. The service creates
+the directory before the first save.
 
 | Alternative | Rejected Because |
 |-------------|------------------|
@@ -261,7 +273,9 @@ This ensures the service is fully initialized when resolved from DI, and the
 ### D5: Command Registry Architecture
 
 **Decision:** `ICommandRegistry` singleton service. ViewModels register commands
-in their constructors with stable string identifiers.
+in their constructors with stable string identifiers. The service contract is
+UI-framework-neutral; Avalonia objects are created only by the UI integration
+layer.
 
 ```csharp
 public sealed class CommandDescriptor
@@ -269,8 +283,8 @@ public sealed class CommandDescriptor
     public string Id { get; }           // e.g. "file.save", "explorer.toggleHiddenFiles"
     public string DisplayName { get; }  // e.g. "Save", "Toggle Hidden Files"
     public string Category { get; }     // e.g. "File", "Explorer"
-    public KeyGesture? DefaultKeyGesture { get; }  // nullable — not all commands have defaults
-    public ICommand Command { get; }    // the live ReactiveCommand instance
+    public string? DefaultGesture { get; }          // serialized neutral gesture, or null
+    public ICommand Command { get; }                // command execution abstraction
 }
 ```
 
@@ -304,14 +318,16 @@ public interface ICommandRegistry
     bool Execute<T>(string id, T parameter);
 
     /// <summary>
-    /// Materialize the gesture -> command map from registered defaults
-    /// and user overrides (stored in settings). Returns the resolved
-    /// list of KeyBinding instances. Called once by MainWindow during
-    /// activation (WhenActivated). Overrides take absolute precedence;
-    /// conflicts resolved by lexicographic command ID (deterministic).
+    /// Resolve the gesture -> command map from registered defaults and user
+    /// overrides (stored in settings). Returns neutral keybinding descriptors;
+    /// the UI layer converts them to framework-specific bindings. Called once
+    /// by MainWindow during activation. Overrides take absolute precedence;
+    /// conflicts are resolved by lexicographic command ID.
     /// </summary>
-    IReadOnlyList<KeyBinding> ResolveKeyBindings(ISettingsService settings);
+    IReadOnlyList<ResolvedKeyBinding> ResolveKeyBindings(ISettingsService settings);
 }
+
+public sealed record ResolvedKeyBinding(string Gesture, string CommandId);
 ```
 
 - Only parameterless or `Unit`-parameterized commands that make sense as global
@@ -346,13 +362,13 @@ keybindings.
 
 1. `settings.json` may contain a `"keybindings"` section:
    `{ "file.save": "Ctrl+Shift+S" }` — user override.
-2. If no user override, the command's `DefaultKeyGesture` is used.
+2. If no user override, the command's neutral `DefaultGesture` is used.
 3. If no default gesture, the command is unbound (invokable via Command Palette
    in Phase 9, but not via keyboard).
 
 **[R] Conflict policy (deterministic):**
 
-- **Build time:** The registry materializes a gesture → command map once, after
+- **Build time:** The registry materializes a neutral gesture → command map once, after
   all ViewModels have registered. Materialization happens when
   `ICommandRegistry.ResolveKeyBindings()` is called by `MainWindow` during
   activation.
@@ -363,8 +379,9 @@ keybindings.
   override contribute their default gesture. If two default gestures collide,
   the one with the lexicographically earlier command ID wins. A warning is
   logged.
-- **No gesture is ever assigned to two commands.** The winning command gets the
-  `KeyBinding`; the losing command is unbound for that gesture.
+- **No gesture is ever assigned to two commands.** The winning command gets a
+  `ResolvedKeyBinding`; the UI layer materializes the framework-specific
+  binding and the losing command is unbound for that gesture.
 - **No conflict-resolution UI in Phase 8.** Conflicts are logged. Phase 9
   (Command Palette) may surface them for user resolution.
 
@@ -397,7 +414,9 @@ public event EventHandler? WorkspaceFolderChanged;
 - `SetProjectFromPath()` raises `WorkspaceFolderChanged` after updating
   `WorkspacePath` and `ProjectName`.
 - `IProjectContextService` (Phase 8.3) subscribes to this event in its
-  constructor and calls `LoadAsync` in the handler.
+  constructor. A non-null path starts a cancellable `LoadAsync`; a null path
+  calls `UnloadAsync`. The handler observes and logs failures rather than
+  silently dropping a fire-and-forget task.
 - **Subscription disposal:** The service implements `IDisposable`. It stores the
   subscription token and unsubscribes on `Dispose()`. Since the service is a
   singleton, disposal happens when the service provider is disposed (app exit),
@@ -417,8 +436,15 @@ public sealed class ProjectContextService : IProjectContextService, IDisposable
     public ProjectContextService(Workspace workspace /*, ... */)
     {
         _workspace = workspace;
-        _handler = (_, _) => _ = LoadAsync(workspace.WorkspacePath!);
+        _handler = (_, _) => OnWorkspaceFolderChanged();
         _workspace.WorkspaceFolderChanged += _handler;
+    }
+
+    private void OnWorkspaceFolderChanged()
+    {
+        // The implementation owns cancellation and observes/logs failures.
+        // A null workspace path unloads the context instead of being passed to
+        // LoadAsync through the null-forgiving operator.
     }
 
     public void Dispose()
@@ -496,6 +522,11 @@ public interface IProjectContextService
 - `UnloadAsync(ct)` transitions to `Unloaded`, clears candidates and selection.
 - `ReloadAsync(ct)` re-scans the current workspace root. Transitions to `Loading`
   first, then to the appropriate result state.
+- Cancellation is not represented as `Failed`. A caller-requested cancellation
+  leaves the last stable context unchanged when possible, invalidates the
+  cancelled request's sequence, and completes with cancellation. Explicit
+  unload transitions to `Unloaded`; I/O and permission errors alone produce
+  `Failed` with an error message.
 
 **[R] Stale-load handling (rapid workspace switches):** When the user opens a
 folder, closes it, and opens another in quick succession, multiple
@@ -514,9 +545,9 @@ private int _discoverySeq;  // Incremented on each LoadAsync/ReloadAsync call
 
 async Task LoadAsync(string workspaceRoot, CancellationToken ct)
 {
+    int capturedSeq = ++_discoverySeq;
     State = Loading;
     NotifyChanged();
-    int capturedSeq = ++_discoverySeq;
     try
     {
         var result = await DiscoverAsync(workspaceRoot, ct).ConfigureAwait(true);
@@ -526,7 +557,8 @@ async Task LoadAsync(string workspaceRoot, CancellationToken ct)
     catch (OperationCanceledException)
     {
         if (_discoverySeq == capturedSeq)
-            State = Failed;  // Only set Failed if this is still the active request
+            RestoreLastStableContext();
+        throw;
     }
 }
 ```
@@ -786,7 +818,10 @@ File permissions: `0600` (owner read/write only) on Linux.
 - [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
 - [ ] **LLM:** `AgentExecutionOptions` populated from settings + secret store + env-var fallback. No plaintext API key in settings file. Synchronous DI composition preserved.
 - [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup, `Execute(string id)`, and `Execute<T>(string id, T parameter)`. Parameterized commands remain ViewModel-local.
-- [ ] **Keybindings:** Window keybindings driven by `ICommandRegistry.ResolveKeyBindings()`. Deterministic conflict resolution (lexicographic command ID). Exception list documented (D10).
+- [ ] **Keybindings:** Window keybindings are materialized by the UI from
+  neutral results returned by `ICommandRegistry.ResolveKeyBindings()`.
+  Deterministic conflict resolution (lexicographic command ID). Exception list
+  documented (D10).
 - [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Full 8-state lifecycle (Unloaded → Loading → NoProject/Unsupported/SingleProject/Ambiguous/Selected/Failed). Extension classification table determines supported vs. unsupported. `LoadAsync`/`ReloadAsync`/`UnloadAsync` accept `CancellationToken`. Stale-load sequence-number pattern prevents out-of-order results. `Workspace.WorkspaceFolderChanged` event drives auto-discovery with `IDisposable` subscription. Status bar consumes project context name.
 - [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. Event raised by `SetProjectFromPath()`. `IProjectContextService` is additive. No parallel sources of project truth.
 - [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable.
