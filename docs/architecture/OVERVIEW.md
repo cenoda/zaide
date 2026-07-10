@@ -136,17 +136,23 @@ agent foundation into richer AI-native orchestration.
 
 | Planned layer | Phase | Direction |
 |---------------|-------|-----------|
-| Core platform and settings | 8 | Versioned settings, safe credential boundary, command/keybinding infrastructure, and minimal project discovery |
+| Core platform and settings | 8 | Versioned settings with migration/recovery ownership, safe credential boundary, command/keybinding infrastructure, and authoritative C# project context |
 | Editor UX | 9 | Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
 | C# language intelligence | 10 | LSP lifecycle, diagnostics, completion, hover, definition, symbols, and document formatting |
-| Project workflow | 11 | Structured Build/Run/Test loop with Output, Problems, test results, cancellation, and error navigation |
+| Project workflow | 11 | Execution profiles and structured Build/Run/Test orchestration over the Phase 8 project context, with Output, Problems, test results, cancellation, and error navigation |
 | C# debugging | 12 | Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
-| Release hardening | 13 | Measured performance, recovery, settings migration, E2E coverage, platform-status documentation, and closeout |
+| Release hardening | 13 | Measured performance, recovery, full settings compatibility matrix, E2E coverage, platform-status documentation, and closeout |
 
 V2 continues to require the IDE to work without full agent infrastructure.
 Specific LSP server, DAP adapter, protocol libraries, secret storage, and
 performance budgets remain implementation-plan decisions and are not yet
 architecture commitments.
+
+V2 core capabilities must be exposed through UI-independent, cancellable
+services with structured results and observable state. The V2 UI consumes those
+services, and later agent orchestration may consume the same seams. V2 does not
+implement the agent automation, tool schemas, or permission model that would
+invoke them autonomously.
 
 ---
 

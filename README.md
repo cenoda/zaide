@@ -145,7 +145,8 @@ record.
 [Roadmap V2](docs/roadmap/V2.md) upgrades the standalone IDE core before deeper
 AI-native orchestration work:
 
-- **Phase 8:** Core platform and settings
+- **Phase 8:** Core platform, settings, commands, and authoritative C# project
+  context
 - **Phase 9:** Editor UX
 - **Phase 10:** C# language intelligence and document formatting
 - **Phase 11:** Build, run, and test workflow
