@@ -72,6 +72,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
     public Interaction<Unit, string?> PickFolder { get; }
+    public Interaction<Unit, bool> ShowSettings { get; }
     public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToExplorerCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToSourceControlCommand { get; }
@@ -125,6 +126,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();
+        ShowSettings = new Interaction<Unit, bool>();
         OpenFolderCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var path = await PickFolder.Handle(Unit.Default);

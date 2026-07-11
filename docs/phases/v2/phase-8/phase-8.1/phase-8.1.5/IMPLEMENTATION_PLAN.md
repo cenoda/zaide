@@ -42,8 +42,20 @@ command palette, M6 closeout, and Phase 8.2/8.3 work.
 
 ## Exit Conditions
 
-- [ ] M5 tests, build, and full test suite are green.
-- [ ] No command registry, keybinding editing, project context, or M6 closeout
+- [x] M5 implementation is complete: the singleton status-bar bridge, transient
+      settings panel/ViewModel, conflict-aware apply/rebase/discard flow,
+      secret-store boundary, UI-scheduler subscriptions, and exact-once
+      transient disposal are wired.
+- [x] Focused M5 tests cover candidate validation, apply/discard, stale conflict
+      and rebase, secret persistence/deletion, subscription disposal, and
+      configured-model display projection, the real MainWindow settings bridge,
+      transient panel removal, and injected UI-scheduler delivery.
+- [x] `dotnet build Zaide.slnx --no-restore` passed with 0 warnings and 0 errors.
+- [x] `dotnet test Zaide.slnx --no-build` passed: 895 passed, 0 failed, 0 skipped.
+- [x] `git diff --check` passed.
+- [ ] Manual desktop verification of the slide-over animation, focus behavior,
+      and final-close interaction remains deferred.
+- [x] No command registry, keybinding editing, project context, or M6 closeout
       work was added.
 
 ## Rollback Plan

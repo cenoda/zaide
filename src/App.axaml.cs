@@ -23,7 +23,9 @@ public partial class App : Application
         {
             var vm = Services.GetRequiredService<MainWindowViewModel>();
             var settings = Services.GetRequiredService<ISettingsService>();
-            desktop.MainWindow = new MainWindow(settings) { ViewModel = vm };
+            var secrets = Services.GetRequiredService<ISecretStore>();
+            var statusBar = Services.GetRequiredService<StatusBarViewModel>();
+            desktop.MainWindow = new MainWindow(settings, secrets, statusBar) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

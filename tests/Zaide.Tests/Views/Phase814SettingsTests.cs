@@ -28,6 +28,14 @@ public sealed class Phase814SettingsTests
     }
 
     [Fact]
+    public void ConfiguredModelStatus_IsShownOnlyForNonEmptySavedModel()
+    {
+        Assert.Equal("configured: saved-model", StatusBar.FormatConfiguredModel("saved-model"));
+        Assert.Null(StatusBar.FormatConfiguredModel(""));
+        Assert.Null(StatusBar.FormatConfiguredModel("  "));
+    }
+
+    [Fact]
     public void TerminalRenderControl_ApplyFontSettings_UpdatesMetricsAndInvalidates()
     {
         EnsureApplication();

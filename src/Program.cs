@@ -27,6 +27,7 @@ class Program
 
                     // Phase 8.1.1 M1: immutable settings core
                     services.AddSingleton<ISettingsService, SettingsService>();
+                    services.AddSingleton<StatusBarViewModel>();
                     services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
                     services.AddSingleton<ITerminalHost, TerminalHost>();

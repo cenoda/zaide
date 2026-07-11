@@ -1,7 +1,7 @@
 using System;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Windows.Input;
+using System.Reactive;
+using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -18,13 +18,17 @@ namespace Zaide.Views;
 /// Shows app name, cursor position, language, project, branch, and AI model.
 /// Thin bar (~24px height), full width.
 /// </summary>
-public class StatusBar : ReactiveUserControl<MainWindowViewModel>
+public class StatusBar : ReactiveUserControl<StatusBarViewModel>
 {
+    internal static string? FormatConfiguredModel(string? model) =>
+        string.IsNullOrWhiteSpace(model) ? null : $"configured: {model}";
     private static readonly ICommand StatusSegmentCommand = ReactiveCommand.Create(() => { });
-    private readonly TextBlock _caretText;
-    private readonly TextBlock _languageText;
-    private readonly TextBlock _projectText;
-    private readonly TextBlock _branchText;
+    private readonly TextBlock _caretText = TextStyles.Caption("");
+    private readonly TextBlock _languageText = TextStyles.Caption("—");
+    private readonly TextBlock _projectText = TextStyles.Caption("Zaide");
+    private readonly TextBlock _branchText = TextStyles.Caption("");
+    private readonly TextBlock _modelText;
+    private readonly Button _settingsButton;
 
     public StatusBar()
     {
@@ -42,25 +46,13 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         appNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
         // Caret position (dynamic text)
-        _caretText = TextStyles.Caption("");
-
-        // Language (dynamic text)
-        _languageText = TextStyles.Caption("C#");
-
-        // Project (dynamic text)
-        _projectText = TextStyles.Caption("Zaide");
-
-        // Branch (dynamic text)
-        _branchText = TextStyles.Caption("master");
-
-        // AI model (right-aligned, static text)
-        var modelText = TextStyles.Caption("powered by Avisnis 12");
-        modelText.HorizontalAlignment = HorizontalAlignment.Right;
-        modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
-        modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        _modelText = TextStyles.Caption("");
+        _modelText.HorizontalAlignment = HorizontalAlignment.Right;
+        _modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
+        _modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
         // Left-aligned stack: app name caret language project branch
-        var appNameButton = BuildStatusSegmentButton(new StackPanel
+        _settingsButton = BuildStatusSegmentButton(new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
@@ -75,7 +67,7 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, 0, 0),
             Children =
             {
-                appNameButton,
+                _settingsButton,
                 BuildStatusSegmentButton("Icon.Selection", _caretText),
                 BuildStatusSegmentButton("Icon.Code", _languageText),
                 BuildStatusSegmentButton("Icon.Project", _projectText),
@@ -94,11 +86,11 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
             Children =
             {
                 leftStack,
-                modelText
+                _modelText
             }
         };
         Grid.SetColumn(leftStack, 0);
-        Grid.SetColumn(modelText, 1);
+        Grid.SetColumn(_modelText, 1);
 
         Content = layout;
 
@@ -106,30 +98,18 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         this.WhenActivated(d =>
         {
             if (ViewModel is null) return;
+            _settingsButton.Command = ViewModel.OpenSettingsCommand;
 
-            // Caret position from EditorViewModel active tab
-            d.Add(ViewModel.WhenAnyValue(x => x.EditorTabs.ActiveTab)
-                .Select(tab => tab is not null
-                    ? tab.WhenAnyValue(t => t.CaretLine, t => t.CaretColumn,
-                        (line, col) => $"Ln {line}, Col {col}")
-                    : Observable.Return("Ln 1, Col 1"))
-                .Switch()
-                .Subscribe(text => _caretText.Text = text));
-
-            // Language from active tab file extension
-            d.Add(ViewModel.WhenAnyValue(x => x.EditorTabs.ActiveTab)
-                .Select(tab => tab is not null
-                    ? GetLanguageFromFilePath(tab.FilePath)
-                    : "—")
-                .Subscribe(lang => _languageText.Text = lang));
-
-            // Project name from Workspace
-            d.Add(ViewModel.WhenAnyValue(x => x.WorkspaceProjectName)
-                .Subscribe(name => _projectText.Text = name ?? "Zaide"));
-
-            // Branch from SourceControlViewModel
-            d.Add(ViewModel.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
-                .Subscribe(branch => _branchText.Text = branch));
+            d.Add(ViewModel.WhenAnyValue(x => x.CaretText).Subscribe(Observer.Create<string>(text => _caretText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.LanguageText).Subscribe(Observer.Create<string>(text => _languageText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.ProjectText).Subscribe(Observer.Create<string>(text => _projectText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.BranchText).Subscribe(Observer.Create<string>(text => _branchText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.ConfiguredModel)
+                .Subscribe(Observer.Create<string?>(model =>
+                {
+                    _modelText.Text = FormatConfiguredModel(model) ?? "";
+                    _modelText.IsVisible = model is not null;
+                })));
         });
     }
 
@@ -151,12 +131,15 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         });
     }
 
-    private static Button BuildStatusSegmentButton(Control content)
+    private static Button BuildStatusSegmentButton(Control content) =>
+        BuildStatusSegmentButton(content, StatusSegmentCommand);
+
+    private static Button BuildStatusSegmentButton(Control content, ICommand? command)
     {
         var button = new Button
         {
             Content = content,
-            Command = StatusSegmentCommand,
+            Command = command,
             VerticalAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
@@ -183,24 +166,4 @@ public class StatusBar : ReactiveUserControl<MainWindowViewModel>
         return button;
     }
 
-    private static string GetLanguageFromFilePath(string? filePath)
-    {
-        if (string.IsNullOrEmpty(filePath))
-            return "—";
-
-        var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
-        return ext switch
-        {
-            ".cs" => "C#",
-            ".ts" => "TypeScript",
-            ".js" => "JavaScript",
-            ".json" => "JSON",
-            ".md" => "Markdown",
-            ".xml" => "XML",
-            ".html" => "HTML",
-            ".css" => "CSS",
-            ".py" => "Python",
-            _ => ext.TrimStart('.').ToUpperInvariant()
-        };
-    }
 }

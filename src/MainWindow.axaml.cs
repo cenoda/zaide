@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Controls.Primitives;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
@@ -33,6 +34,8 @@ namespace Zaide;
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly ISettingsService _settings;
+    private readonly ISecretStore _secrets;
+    private readonly StatusBarViewModel _statusBarViewModel;
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
     private readonly SourceControlPanel _sourceControlPanel;
@@ -49,6 +52,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomSplitterRow;
     private readonly RowDefinition _bottomPanelRow;
     private readonly RowDefinition _statusBarRow;
+    private Grid _layoutRoot = null!;
+    private SettingsPanelView? _settingsPanel;
+    private TaskCompletionSource<bool>? _settingsCompletion;
 
     [Obsolete("Use the ISettingsService composition constructor.")]
     public MainWindow()
@@ -57,9 +63,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             "MainWindow must be created through the application composition root.");
     }
 
-    public MainWindow(ISettingsService settings)
+    public MainWindow(ISettingsService settings, ISecretStore secrets, StatusBarViewModel statusBarViewModel)
     {
         _settings = settings;
+        _secrets = secrets;
+        _statusBarViewModel = statusBarViewModel;
         InitializeComponent();
 
         // === Window Chrome ===
@@ -131,8 +139,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
 
-            // Wire StatusBar to ViewModel
-            _statusBar.ViewModel = ViewModel;
+            // Wire StatusBar to its singleton child ViewModel.
+            _statusBar.ViewModel = _statusBarViewModel;
 
             // Activate VM subscriptions (save errors, file-open) and clean up
             ViewModel!.Activate();
@@ -243,6 +251,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     new FolderPickerOpenOptions { AllowMultiple = false });
                 ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
             }));
+
+            disposables.Add(ViewModel.ShowSettings.RegisterHandler(async context =>
+                await HandleShowSettingsAsync(context)));
+            disposables.Add(Disposable.Create(CloseSettingsPanel));
 
             // Ctrl+O key binding
             var openFolderGesture = new KeyGesture(Key.O, KeyModifiers.Control);
@@ -474,8 +486,55 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(statusBar);
 
         Content = grid;
+        _layoutRoot = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
             terminalTabHost, agentPanelHostView, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+    }
+
+    private async Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
+    {
+        if (_settingsPanel is not null)
+        {
+            context.SetOutput(false);
+            return;
+        }
+
+        var viewModel = new SettingsViewModel(_settings, _secrets);
+        var panel = new SettingsPanelView(viewModel);
+        _settingsPanel = panel;
+        Grid.SetColumn(panel, 0);
+        Grid.SetColumnSpan(panel, 6);
+        Grid.SetRow(panel, 0);
+        Grid.SetRowSpan(panel, 3);
+        _layoutRoot.Children.Add(panel);
+
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _settingsCompletion = completion;
+        void OnClose(object? sender, EventArgs args) => completion.TrySetResult(true);
+        viewModel.CloseRequested += OnClose;
+        try
+        {
+            await completion.Task;
+            _layoutRoot.Children.Remove(panel);
+            panel.Dispose();
+            _settingsPanel = null;
+            context.SetOutput(true);
+        }
+        finally
+        {
+            viewModel.CloseRequested -= OnClose;
+            if (ReferenceEquals(_settingsCompletion, completion)) _settingsCompletion = null;
+        }
+    }
+
+    private void CloseSettingsPanel()
+    {
+        if (_settingsPanel is null) return;
+        var panel = _settingsPanel;
+        _settingsPanel = null;
+        _settingsCompletion?.TrySetResult(true);
+        _layoutRoot.Children.Remove(panel);
+        panel.Dispose();
     }
 
     private void OnFinalWindowClosed(object? sender, EventArgs e)
