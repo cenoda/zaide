@@ -81,7 +81,18 @@ public sealed class SettingsViewModel : ReactiveObject, IDisposable
 
     public void SetModel(string model) => SetCandidate(Candidate with { Llm = Candidate.Llm with { Model = model } });
     public void SetBaseUrl(string baseUrl) => SetCandidate(Candidate with { Llm = Candidate.Llm with { BaseUrl = baseUrl } });
+
+    // Editor setters
+    public void SetCodeFontFamily(string family) => SetCandidate(Candidate with { Editor = Candidate.Editor with { CodeFontFamily = family } });
     public void SetCodeFontSize(int size) => SetCandidate(Candidate with { Editor = Candidate.Editor with { CodeFontSize = size } });
+    public void SetProseFontFamily(string family) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ProseFontFamily = family } });
+    public void SetTerminalFontFamily(string family) => SetCandidate(Candidate with { Editor = Candidate.Editor with { TerminalFontFamily = family } });
+    public void SetTerminalFontSize(int size) => SetCandidate(Candidate with { Editor = Candidate.Editor with { TerminalFontSize = size } });
+    public void SetTabSize(int size) => SetCandidate(Candidate with { Editor = Candidate.Editor with { TabSize = size } });
+    public void SetInsertSpaces(bool spaces) => SetCandidate(Candidate with { Editor = Candidate.Editor with { InsertSpaces = spaces } });
+    public void SetShowWhitespace(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowWhitespace = show } });
+    public void SetShowTabs(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowTabs = show } });
+    public void SetShowSpaces(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowSpaces = show } });
 
     public void RefreshFromCurrent(bool preserveCandidate = true)
     {
