@@ -727,7 +727,7 @@ behavior the first audit flagged.
 |------------|--------------|----------|---------------------------|--------------------------|-------|
 | `file.save` | Save | File | `Ctrl+S` | `Key.S`, `Ctrl` | Alias of active tab save |
 | `workspace.openFolder` | Open Folder | Workspace | `Ctrl+O` | `Key.O`, `Ctrl` | Folder picker |
-| `workspace.closeFolder` | Close Folder | Workspace | (unbound) | — | Added by D7; no default key yet |
+| `workspace.closeFolder` | Close Folder | Workspace | (unbound) | — | Added by D7; no default key yet. Command created in 8.1 (local `ReactiveCommand`); registered with `ICommandRegistry` in 8.2 |
 | `view.toggleBottomPanel` | Toggle Bottom Panel | View | `Ctrl+Oem3`, `Ctrl+J` | `Key.Oem3`, `Ctrl` **and** `Key.J`, `Ctrl` | Two aliases, same command — both in `DefaultGestures` |
 | `explorer.toggleHiddenFiles` | Toggle Hidden Files | Explorer | `Ctrl+Shift+H` | `Key.H`, `Ctrl`+`Shift` | Migrated from inline handler |
 | `sourcecontrol.commit` | Commit | Source Control | (unbound) | — | Invoked from panel |
@@ -794,8 +794,12 @@ event to `Workspace`, built and owned in Phase 8.1:
 public event EventHandler? WorkspaceFolderChanged;
 ```
 
-- `SetProjectFromPath()` raises `WorkspaceFolderChanged` after updating
-  `WorkspacePath` and `ProjectName`.
+- `SetProjectFromPath()` updates `WorkspacePath` and `ProjectName` **first**,
+  then raises `WorkspaceFolderChanged`. The event is parameterless
+  (`EventHandler`); consumers read the already-updated `Workspace.WorkspacePath`
+  when the handler fires. A null `WorkspacePath` indicates the close-workspace
+  transition. This avoids introducing a custom event-args type for a single
+  consumer.
 - A transition from a non-null path to `null` is the supported close-workspace
   operation. The `MainWindowViewModel` subscription must observe both non-null
   and null `RootPath` values, update `Workspace`, and refresh Source Control for
@@ -810,8 +814,11 @@ public event EventHandler? WorkspaceFolderChanged;
   singleton, disposal happens when the service provider is disposed (app exit),
   matching the process-lifetime scope.
 - `MainWindowViewModel`'s existing subscription to `FileTreeViewModel.RootPath`
-  remains unchanged — it continues to call `Workspace.SetProjectFromPath()`,
-  which now notifies all subscribers.
+  remains the ownership seam — it continues to call
+  `Workspace.SetProjectFromPath()` — but **changes to accept null transitions**:
+  the `.Where(path => !string.IsNullOrEmpty(path))` filter is removed so that
+  both open and close transitions reach `SetProjectFromPath()`, which now
+  notifies all subscribers (including the null close-workspace case).
 - This is a minimal, additive change. No existing `Workspace` consumer breaks.
 - In 8.3's `IProjectContextService.ctor`, the subscription pattern is:
 
@@ -875,10 +882,14 @@ The null `RootPath` transition that drives unload is currently unreachable —
 assigns a non-null path. Phase 8 must provide a concrete, reachable path:
 
 1. **Command:** `MainWindowViewModel` gains a parameterless
-   `CloseFolderCommand` (`ReactiveCommand<Unit,Unit>`), registered with the
-   command registry as `workspace.closeFolder` (D6a). It is enabled only when
-   `FileTreeViewModel.RootPath` is non-null; `WhenAnyValue(x => x.FileTreeViewModel.RootPath)`
-   drives `CloseFolderCommand` can-execute.
+   `CloseFolderCommand` (`ReactiveCommand<Unit,Unit>`). In Phase 8.1, the
+   command is created as a local `ReactiveCommand` on `MainWindowViewModel` —
+   it does **not** require the command registry (which is built in 8.2). It
+   calls `FileTreeViewModel.SetRootPath(null)` directly. In Phase 8.2, the
+   command is registered with `ICommandRegistry` as `workspace.closeFolder`
+   (D6a). It is enabled only when `FileTreeViewModel.RootPath` is non-null;
+   `WhenAnyValue(x => x.FileTreeViewModel.RootPath)` drives
+   `CloseFolderCommand` can-execute.
 
 2. **FileTreeViewModel → MainWindowViewModel bridge:** `FileTreeView` is typed
    to `FileTreeViewModel` (`ReactiveUserControl<FileTreeViewModel>`) and cannot
@@ -944,6 +955,27 @@ assigns a non-null path. Phase 8 must provide a concrete, reachable path:
    After this sequence, the file tree renders as an empty (or "Open Folder")
    state. The single writer (`SetRootPath(null)`) guarantees all side effects
    happen atomically from the consumer's perspective.
+
+   **Non-null open sequence in `SetRootPath(string path)`:**
+   `SetRootPath` is the sole writer for **all** `RootPath` transitions,
+   including opens. The live `OpenFolderCommand` (line 92 of
+   `FileTreeViewModel.cs`) validates/enumerates **before** tearing down the
+   old watcher — if `EnumerateDirectory` fails, the existing watcher stays
+   active so the user doesn't lose live updates. `SetRootPath` must preserve
+   this ordering:
+   - **Validate first:** Call `_fileTreeService.EnumerateDirectory(path)`.
+     If this throws (`DirectoryNotFoundException`,
+     `UnauthorizedAccessException`), set `StatusText` to the error message
+     and return without modifying `RootPath`, the watcher, or `RootNodes`.
+     The existing workspace remains intact.
+   - **Tear down old state:** Only after validation succeeds:
+     `_watcherSubscription?.Dispose()`, `_fileTreeService.StopWatching()`,
+     `RootNodes.Clear()`.
+   - **Apply new state:** Set `RootPath = path`, populate `RootNodes` from
+     the enumerated result, start the new watcher via
+     `_fileTreeService.StartWatching(path)`.
+   This validate-before-teardown ordering ensures that a failed open never
+   destroys the current working state.
 
 5. **Source Control behavior:** On a null transition, `SourceControlViewModel`
    is refreshed; with no `WorkspacePath` it returns to its "No repository" /
@@ -1214,16 +1246,19 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
 
 1. `StatusBarViewModel` is registered in DI as a singleton (it is a child of
    the window scope, not a transient). Its constructor receives
-   `MainWindowViewModel` (already a singleton):
+   `MainWindowViewModel` (already a singleton) and `ISettingsService` (for
+   live model-name projection):
    ```csharp
    public class StatusBarViewModel : ReactiveObject, IDisposable
    {
        private readonly MainWindowViewModel _mainWindow;
+       private readonly ISettingsService _settings;
        private readonly CompositeDisposable _disposables = new();
 
-       public StatusBarViewModel(MainWindowViewModel mainWindow)
+       public StatusBarViewModel(MainWindowViewModel mainWindow, ISettingsService settings)
        {
            _mainWindow = mainWindow;
+           _settings = settings;
 
            OpenSettingsCommand = ReactiveCommand.CreateFromTask(async () =>
                await mainWindow.ShowSettings.Handle(Unit.Default));
@@ -1234,6 +1269,7 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
            //   - Language: GetLanguageFromFilePath(activeTab.FilePath)
            //   - Project: WorkspaceProjectName
            //   - Branch: SourceControlViewModel.CurrentBranchName
+           //   - Model: Llm.Model (from settings)
            // These are projected reactively through StatusBarViewModel so the
            // StatusBar view (now ReactiveUserControl<StatusBarViewModel>) binds
            // to this VM instead of directly to MainWindowViewModel.
@@ -1262,6 +1298,23 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
            mainWindow.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
                .Subscribe(branch => { _branchText = branch ?? "master"; this.RaisePropertyChanged(nameof(BranchText)); })
                .DisposeWith(_disposables);
+
+           // Model name: replaces the static "powered by Avisnis 12" label.
+           // Displays the SAVED model preference from settings — NOT the
+           // effective runtime model. AgentExecutionService resolves the
+           // effective model per-call with precedence: env var → secret store
+           // → settings (D4b). The effective config is not exposed as a
+           // readable property; exposing it for display would couple the
+           // status bar to the execution service (layering violation). The
+           // label is therefore explicitly a "configured model" indicator,
+           // not an "active model" indicator. Hides when no model is saved.
+           // WhenChanged emits on the mutating thread (D4a); ObserveOn for
+           // Avalonia UI-thread delivery since we raise PropertyChanged here.
+           ApplyModelText(settings.Current.Llm.Model);
+           settings.WhenChanged
+               .ObserveOn(RxApp.MainThreadScheduler)
+               .Subscribe(s => ApplyModelText(s.Llm.Model))
+               .DisposeWith(_disposables);
        }
 
        public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
@@ -1270,11 +1323,37 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
        private string _languageText = "\u2014";
        private string _projectText = "Zaide";
        private string _branchText = "master";
+       private string _modelText = "";
+       private bool _showModelText;
 
        public string CaretText => _caretText;
        public string LanguageText => _languageText;
        public string ProjectText => _projectText;
        public string BranchText => _branchText;
+       public string ModelText => _modelText;
+       public bool ShowModelText => _showModelText;
+
+       // Replaces the static "powered by Avisnis 12" with the configured model.
+       // Displays the SAVED preference from settings — NOT the effective
+       // runtime model (which may differ due to env var overrides per D4b).
+       // Sets ShowModelText = false when no model is configured.
+       private void ApplyModelText(string? model)
+       {
+           if (string.IsNullOrEmpty(model))
+           {
+               _modelText = "";
+               _showModelText = false;
+           }
+           else
+           {
+               // Prefix with "configured:" to clarify this is the saved
+               // preference, not necessarily the active runtime model.
+               _modelText = $"configured: {model}";
+               _showModelText = true;
+           }
+           this.RaisePropertyChanged(nameof(ModelText));
+           this.RaisePropertyChanged(nameof(ShowModelText));
+       }
 
        // GetLanguage duplicates the switch from StatusBar.GetLanguageFromFilePath
        // (private static on the View — duplicated here for ViewModel access).
@@ -1570,7 +1649,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, thread-neutral `WhenChanged`/`WriteErrors` — callers marshal via `ObserveOn`), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (private setter) → watcher disposed → tree cleared → `WorkspaceFolderChanged` with null → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` fires and retry via `SaveAsync` succeeds, with caller-side `ObserveOn` verification (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, thread-neutral `WhenChanged`/`WriteErrors` — callers marshal via `ObserveOn`), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (public method; `RootPath` setter is private) → watcher disposed → tree cleared → `WorkspaceFolderChanged` fires → consumer reads `Workspace.WorkspacePath` (now null) → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` fires and retry via `SaveAsync` succeeds, with caller-side `ObserveOn` verification (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, **canonical command-and-gesture table (D6a)**, default keybindings, user overrides, window keybinding integration (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. **Duplicate-registration throws; unavailable-command handling test (D6a); canonical gesture-table coverage test (every locked default gesture resolves to the right command, including `Ctrl+Oem3` → `view.toggleBottomPanel`).** Build + tests green. |
 | **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **Service is UI-agnostic — `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` marshal test — caller-side `ObserveOn` delivers on UI thread.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
@@ -1608,7 +1687,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | File | Sub-phase | Change |
 |------|-----------|--------|
 | `src/Program.cs` | All | Register new services. `AgentExecutionService` registered with `ISettingsService` + `ISecretStore` (D4b). `AgentExecutionOptions` is **no longer a DI singleton**. |
-| `src/Models/Workspace.cs` | 8.1 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation (including null close-workspace transition). Consumed by `IProjectContextService` (8.3). |
+| `src/Models/Workspace.cs` | 8.1 | Add `WorkspaceFolderChanged` event (parameterless `EventHandler`). `SetProjectFromPath()` updates `WorkspacePath`/`ProjectName` first, then raises the event; consumers read the already-updated `Workspace.WorkspacePath` (null = close). Consumed by `IProjectContextService` (8.3). |
 | `src/Views/EditorView.cs` | 8.1 | Ctor gains `ISettingsService`. Replace hardcoded font/size/whitespace literals with settings-driven values applied at construction + on `WhenChanged`. Implements `IDisposable` — `Dispose()` disposes the `WhenChanged` subscription. `MainWindow` disposal chain calls `(_editorView as IDisposable)?.Dispose()` on window close. |
 | `src/Views/TerminalRenderControl.cs` | 8.1 | Ctor gains `ISettingsService`. Replace `readonly` `_typeface`/`_fontSize` with mutable fields + `ApplyFontSettings(...)` (D9). Settings-driven font applied at construction + on `WhenChanged`. |
 | `src/Views/TerminalPanel.cs` | 8.1 | Ctor gains `ISettingsService`; implements `IDisposable` to dispose its `WhenChanged` subscription for the tab lifetime. |
@@ -1616,11 +1695,11 @@ The following view-level keybindings ARE migrated to the command registry:
 | `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: register `ShowSettings` Interaction handler (constructs `SettingsPanelView` + `SettingsViewModel(settings, secrets)`, manages `_settingsPanelHost` `Border` field); resolve `StatusBarViewModel` from DI and assign to `_statusBar.ViewModel` (replacing `ViewModel`); pass `ISettingsService` into `new EditorView(settings)` and `new TerminalTabHost(settings)`; disposal chain calls `(_editorView as IDisposable)?.Dispose()` and `_terminalTabHost.Dispose()` on window close. 8.2: replace imperative keybinding wiring with registry-driven binding (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). |
 | `src/Services/AgentExecutionOptions.cs` | 8.1 | Demoted to a plain immutable per-call value object. No DI registration, no factory. |
 | `src/Services/AgentExecutionService.cs` | 8.1 | Ctor gains `ISettingsService` + `ISecretStore` (replacing the static `AgentExecutionOptions`). Resolves effective LLM config live per `ExecuteAsync` (D4b). |
-| `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.3 | 8.1: add `CloseFolderCommand` (`workspace.closeFolder`, enabled only when a folder is open); add `ShowSettings` Interaction; subscribe to `FileTreeViewModel.CloseFolderRequested` Interaction in `Activate()` to forward close requests; observe both null and non-null `FileTreeViewModel.RootPath` transitions (remove the `!string.IsNullOrEmpty` filter) so close-workspace unloads and refreshes Source Control. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
-| `src/ViewModels/FileTreeViewModel.cs` | 8.1 | **Make `RootPath` setter `private set`** (`SetRootPath` becomes sole writer). Add public `SetRootPath(string? path)` with the full close sequence (`_watcherSubscription?.Dispose()`, `_fileTreeService.StopWatching()`, `RootNodes.Clear()`, `SelectedFile = null`, `StatusText = null`). Add `Interaction<Unit, Unit> CloseFolderRequested` for FileTreeView to trigger close. See D7 for the complete sequence. |
+| `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.2 + 8.3 | 8.1: add `CloseFolderCommand` as a local `ReactiveCommand<Unit,Unit>` (not registered — registry does not exist yet); add `ShowSettings` Interaction; subscribe to `FileTreeViewModel.CloseFolderRequested` Interaction in `Activate()` to forward close requests; observe both null and non-null `FileTreeViewModel.RootPath` transitions (remove the `!string.IsNullOrEmpty` filter; the subscription remains the ownership seam but now accepts null transitions) so close-workspace unloads and refreshes Source Control. 8.2: register `CloseFolderCommand` with `ICommandRegistry` as `workspace.closeFolder`. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
+| `src/ViewModels/FileTreeViewModel.cs` | 8.1 | **Make `RootPath` setter `private set`** (`SetRootPath` becomes sole writer). Add public `SetRootPath(string? path)` with: (a) non-null open sequence — validate via `EnumerateDirectory` first, tear down old watcher only on success, then apply new state (preserves live validate-before-teardown ordering); (b) null close sequence — `_watcherSubscription?.Dispose()`, `_fileTreeService.StopWatching()`, `RootNodes.Clear()`, `SelectedFile = null`, `StatusText = null`. Add `Interaction<Unit, Unit> CloseFolderRequested` for FileTreeView to trigger close. See D7 for the complete sequence. |
 | `src/Views/FileTreeView.cs` | 8.1 + 8.2 | 8.1: add a close-workspace affordance in the header that invokes `ViewModel.CloseFolderRequested.Handle(Unit.Default)` (not `MainWindowViewModel.CloseFolderCommand` directly — view is typed to `FileTreeViewModel`). 8.2: `Ctrl+Shift+H` handler replaced with registry command call. |
-| `src/Views/StatusBar.cs` | 8.1 + 8.3 | **8.1:** convert from `ReactiveUserControl<MainWindowViewModel>` to `ReactiveUserControl<StatusBarViewModel>`; add settings gear icon button that binds to `StatusBarViewModel.OpenSettingsCommand`; forward existing one-way bindings (caret, language, project, branch) through `StatusBarViewModel` properties. 8.3: consume project context name instead of folder name. |
-| `src/ViewModels/StatusBarViewModel.cs` | 8.1 | DI singleton. Ctor receives `MainWindowViewModel`. Exposes `OpenSettingsCommand` (triggers `mainWindow.ShowSettings`) and delegated properties for caret/language/project/branch forwarded from `MainWindowViewModel`. |
+| `src/Views/StatusBar.cs` | 8.1 + 8.3 | **8.1:** convert from `ReactiveUserControl<MainWindowViewModel>` to `ReactiveUserControl<StatusBarViewModel>`; add settings gear icon button that binds to `StatusBarViewModel.OpenSettingsCommand`; forward existing one-way bindings (caret, language, project, branch) through `StatusBarViewModel` properties; replace static "powered by Avisnis 12" `TextBlock` with a binding to `StatusBarViewModel.ModelText` gated by `ShowModelText` (IsVisible). 8.3: consume project context name instead of folder name. |
+| `src/ViewModels/StatusBarViewModel.cs` | 8.1 | DI singleton. Ctor receives `MainWindowViewModel` + `ISettingsService`. Exposes `OpenSettingsCommand` (triggers `mainWindow.ShowSettings`) and delegated properties for caret/language/project/branch forwarded from `MainWindowViewModel`. Also projects `ModelText` from `ISettingsService.Current.Llm.Model` (reactive via `WhenChanged`); replaces the static "powered by Avisnis 12" label with "configured: {model}" to indicate this is the saved preference (not the effective runtime model, which may differ due to env var overrides per D4b), or hides the label when no model is configured. |
 | `src/ViewModels/SettingsViewModel.cs` | 8.1 | Constructed transiently (not in DI) inside `MainWindow`'s `RegisterHandler` lambda. Receives `ISettingsService` + `ISecretStore` (both arguments required). Owns working candidate via `with` expressions, `ApplyCommand`/`DiscardCommand`, and live validation. |
 | `src/Views/SettingsPanelView.cs` | 8.1 | Slide-over panel hosted in `MainWindow` (stored in `_settingsPanelHost` `Border` field), toggled by `ShowSettings` handler. C# view bound to transient `SettingsViewModel`. |
 
@@ -1630,7 +1709,7 @@ The following view-level keybindings ARE migrated to the command registry:
 // Phase 8.1
 services.AddSingleton<ISettingsService, SettingsService>();
 services.AddSingleton<ISecretStore, FileSecretStore>();
-services.AddSingleton<StatusBarViewModel>(); // child VM, receives MainWindowViewModel
+services.AddSingleton<StatusBarViewModel>(); // child VM; receives MainWindowViewModel + ISettingsService
 // AgentExecutionService now resolves live config per call (D4b):
 // Register via interface — existing coordinator resolves IAgentExecutionService.
 services.AddSingleton<IAgentExecutionService, AgentExecutionService>(); // ctor(HttpClient, ISettingsService, ISecretStore)
@@ -1698,6 +1777,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 | Project discovery is slow on large folders | Phase 8 discovery is non-recursive (root level only). Scanning a folder for `*.sln`/`*.csproj` is fast. Recursive discovery is not in scope. |
 | `AgentExecutionOptions` env-var fallback breaks during migration | Precedence order is explicit: env var → secret store → settings default → empty. `AgentExecutionService` reads it **live** per call (D4b); no static snapshot. Synchronous DI composition preserved. Tests cover all four cases. |
 | Settings UI has no integration point | Status bar gear icon (D9). No menu bar needed. |
+| Status bar displays hardcoded "powered by Avisnis 12" while model is now configurable | `StatusBarViewModel` projects `ModelText` from `ISettingsService.Current.Llm.Model` reactively via `WhenChanged`; displays as "configured: {model}" to indicate this is the saved preference (not the effective runtime model, which may differ due to env var overrides per D4b); label hides when no model is configured. |
 
 ## Exit Conditions
 
@@ -1714,10 +1794,10 @@ File permissions: `0600` (owner read/write only) on Linux.
    Deterministic conflict resolution (lexicographic command ID). Exception list
    documented (D10). `Ctrl+Oem3` and `Ctrl+J` are documented aliases for
    `view.toggleBottomPanel`.
-- [ ] **Close workspace (reachable):** `MainWindowViewModel.CloseFolderCommand` (`workspace.closeFolder`), enabled only when a folder is open, drives `FileTreeViewModel.SetRootPath(null)` → unfiltered `RootPath` subscription → `Workspace.SetProjectFromPath(null)` → `WorkspaceFolderChanged`(null) → `IProjectContextService.UnloadAsync` and Source Control returns to uninitialized; open documents are retained (D7).
+- [ ] **Close workspace (reachable):** `MainWindowViewModel.CloseFolderCommand` (local `ReactiveCommand` in 8.1; registered as `workspace.closeFolder` in 8.2), enabled only when a folder is open, drives `FileTreeViewModel.SetRootPath(null)` → unfiltered `RootPath` subscription → `Workspace.SetProjectFromPath(null)` → `WorkspaceFolderChanged` fires → consumers read `Workspace.WorkspacePath` (now null) → `IProjectContextService.UnloadAsync` and Source Control returns to uninitialized; open documents are retained (D7).
 - [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Full 8-state lifecycle (Unloaded → Loading → NoProject/Unsupported/SingleProject/Ambiguous/Selected/Failed). Extension classification table determines supported vs. unsupported. `LoadAsync`/`ReloadAsync`/`UnloadAsync` accept `CancellationToken`. **Cancellation is NOT `Failed`** — it preserves the last stable context; only IO/permission faults are `Failed` (D8). Stale-load sequence-number pattern prevents out-of-order results. `Workspace.WorkspaceFolderChanged` event drives auto-discovery with `IDisposable` subscription. **Service is UI-agnostic -- `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects candidates not in `Current.Candidates` (D8).** Status bar consumes project context name.
 - [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. Event raised by `SetProjectFromPath()`. `IProjectContextService` is additive. No parallel sources of project truth.
-- [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable.
+- [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable. Status bar model label displays the saved `Llm.Model` preference as "configured: {model}" (explicitly not the effective runtime model, which may differ due to env var overrides per D4b); label hides when no model is configured.
 - [ ] **Tests:** All pre-existing tests pass. New tests cover settings, secrets, commands, keybindings, and project context. Test count at closeout recorded from `dotnet test` output (baseline: 817 as of 2026-07-10).
 - [ ] **Build:** `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
 - [ ] **`AgentPanelState`** does not contain provider/credential configuration (grep-verified).
