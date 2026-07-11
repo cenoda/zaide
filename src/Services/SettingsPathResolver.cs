@@ -49,4 +49,12 @@ public static class SettingsPathResolver
     /// <summary>Full path to the temporary file used during atomic writes.</summary>
     public static string GetTempPath() =>
         Path.Combine(GetSettingsDirectory(), "settings.json.tmp");
+
+    /// <summary>Full path to <c>secrets.json</c> (Phase 8.1.2).</summary>
+    public static string GetSecretsPath() =>
+        Path.Combine(GetSettingsDirectory(), "secrets.json");
+
+    /// <summary>Full path to the temporary file used during secret atomic writes.</summary>
+    public static string GetSecretsTempPath() =>
+        Path.Combine(GetSettingsDirectory(), "secrets.json.tmp");
 }

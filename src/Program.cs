@@ -39,18 +39,9 @@ class Program
                     services.AddSingleton<TownhallViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
                     services.AddSingleton<SourceControlViewModel>();
-                    // Register agent execution service seam
-                    services.AddSingleton<AgentExecutionOptions>(_ =>
-                    {
-                        var options = new AgentExecutionOptions();
-                        if (Environment.GetEnvironmentVariable("AGENT_API_URL") is { Length: > 0 } url)
-                            options.BaseUrl = url;
-                        if (Environment.GetEnvironmentVariable("AGENT_API_KEY") is { Length: > 0 } key)
-                            options.ApiKey = key;
-                        if (Environment.GetEnvironmentVariable("AGENT_MODEL") is { Length: > 0 } model)
-                            options.Model = model;
-                        return options;
-                    });
+                    // Phase 8.1.2 M2: secret boundary (no AgentExecutionOptions singleton)
+                    services.AddSingleton<ISecretStore>(_ =>
+                        new FileSecretStore(SettingsPathResolver.GetSecretsPath()));
                     services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
                     services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
                     services.AddSingleton<MentionParser>();

@@ -12,16 +12,23 @@ namespace Zaide.Services;
 /// Built-in <c>HttpClient</c> implementation of <see cref="IAgentExecutionService"/>
 /// using manual JSON against a single OpenAI-compatible <c>/chat/completions</c> endpoint.
 /// Non-streaming only. No provider registry, no tool calling, no retries.
+///
+/// <para>Effective LLM configuration is resolved <b>live</b> on every
+/// <see cref="ExecuteAsync"/> call from <see cref="ISettingsService"/>,
+/// <see cref="ISecretStore"/>, and environment variables. Precedence:
+/// environment variable → secret store → saved settings → empty.</para>
 /// </summary>
 public sealed class AgentExecutionService : IAgentExecutionService
 {
     private readonly HttpClient _httpClient;
-    private readonly AgentExecutionOptions _options;
+    private readonly ISettingsService _settings;
+    private readonly ISecretStore _secretStore;
 
-    public AgentExecutionService(HttpClient httpClient, AgentExecutionOptions options)
+    public AgentExecutionService(HttpClient httpClient, ISettingsService settings, ISecretStore secretStore)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _secretStore = secretStore ?? throw new ArgumentNullException(nameof(secretStore));
     }
 
     public async Task<AgentExecutionResult> ExecuteAsync(string userMessage, CancellationToken ct = default)
@@ -29,20 +36,22 @@ public sealed class AgentExecutionService : IAgentExecutionService
         if (string.IsNullOrWhiteSpace(userMessage))
             return AgentExecutionResult.Failure("User message must not be empty.");
 
+        var options = BuildEffectiveOptions();
+
         // --- Validate configuration ---
-        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
             return AgentExecutionResult.Failure("API key is missing. Set AGENT_API_KEY.");
 
-        if (string.IsNullOrWhiteSpace(_options.BaseUrl))
+        if (string.IsNullOrWhiteSpace(options.BaseUrl))
             return AgentExecutionResult.Failure("Base URL is missing. Set AGENT_API_URL.");
 
-        if (string.IsNullOrWhiteSpace(_options.Model))
+        if (string.IsNullOrWhiteSpace(options.Model))
             return AgentExecutionResult.Failure("Model is missing. Set AGENT_MODEL.");
 
         // --- Build request body ---
         var requestBody = new
         {
-            model = _options.Model,
+            model = options.Model,
             messages = new[]
             {
                 new { role = "user", content = userMessage }
@@ -60,12 +69,12 @@ public sealed class AgentExecutionService : IAgentExecutionService
         }
 
         // --- Build HTTP request ---
-        var baseUrl = _options.BaseUrl.TrimEnd('/');
+        var baseUrl = options.BaseUrl.TrimEnd('/');
         var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions")
         {
             Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
         };
-        request.Headers.Add("Authorization", $"Bearer {_options.ApiKey}");
+        request.Headers.Add("Authorization", $"Bearer {options.ApiKey}");
 
         // --- Send request ---
         HttpResponseMessage response;
@@ -101,7 +110,6 @@ public sealed class AgentExecutionService : IAgentExecutionService
         if (!response.IsSuccessStatusCode)
         {
             var statusCode = (int)response.StatusCode;
-            // Truncate body to avoid leaking huge error pages
             var snippet = responseBody.Length > 200 ? responseBody[..200] + "..." : responseBody;
             return AgentExecutionResult.Failure($"HTTP {statusCode}: {snippet}");
         }
@@ -141,5 +149,40 @@ public sealed class AgentExecutionService : IAgentExecutionService
         {
             return AgentExecutionResult.Failure($"Unexpected response structure: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Builds the effective per-call options.
+    /// Precedence: env var → secret store → saved settings → empty/default.
+    /// </summary>
+    internal AgentExecutionOptions BuildEffectiveOptions()
+    {
+        var llm = _settings.Current.Llm;
+
+        // BaseUrl: env var overrides settings
+        var baseUrl = Environment.GetEnvironmentVariable("AGENT_API_URL");
+        if (string.IsNullOrEmpty(baseUrl))
+            baseUrl = llm.BaseUrl;
+
+        // Model: env var overrides settings
+        var model = Environment.GetEnvironmentVariable("AGENT_MODEL");
+        if (string.IsNullOrEmpty(model))
+            model = llm.Model;
+
+        // ApiKey: env var → secret store → empty
+        var apiKey = Environment.GetEnvironmentVariable("AGENT_API_KEY");
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            apiKey = _secretStore.Get("llm.apiKey");
+        }
+        if (apiKey is null)
+            apiKey = string.Empty;
+
+        return new AgentExecutionOptions
+        {
+            BaseUrl = baseUrl,
+            ApiKey = apiKey,
+            Model = model,
+        };
     }
 }

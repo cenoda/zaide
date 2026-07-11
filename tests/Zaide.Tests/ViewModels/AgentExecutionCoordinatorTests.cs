@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -13,8 +14,22 @@ using Zaide.ViewModels;
 
 namespace Zaide.Tests.ViewModels;
 
-public sealed class AgentExecutionCoordinatorTests
+public sealed class AgentExecutionCoordinatorTests : IDisposable
 {
+    private readonly string _tempDir;
+
+    public AgentExecutionCoordinatorTests()
+    {
+        _tempDir = Path.Combine(Path.GetTempPath(), "ZaideCoordTests_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempDir);
+    }
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_tempDir, recursive: true); }
+        catch { /* best-effort cleanup */ }
+    }
+
     private static AgentPanelHost CreateHostWithPanel(out AgentPanelState panel)
     {
         var host = new AgentPanelHost();
@@ -23,36 +38,67 @@ public sealed class AgentExecutionCoordinatorTests
     }
 
     /// <summary>
+    /// Creates a SettingsService + TestSecretStore pair configured to match the
+    /// given <see cref="AgentExecutionOptions"/>.
+    /// </summary>
+    private (SettingsService settings, TestSecretStore secrets) CreateSettingsAndSecrets(
+        AgentExecutionOptions options)
+    {
+        var settingsPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_settings.json");
+        var lkgPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_lkg.json");
+        var tmpPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_tmp.json");
+
+        var llm = new LlmSettings(
+            BaseUrl: options.BaseUrl,
+            Model: options.Model,
+            ApiKeySource: "secret-store");
+        var model = SettingsModel.Defaults with { Llm = llm };
+        var json = SettingsSerializer.Serialize(model);
+        File.WriteAllText(settingsPath, json);
+
+        var settingsService = new SettingsService(settingsPath, lkgPath, tmpPath,
+            new SettingsMigrator(Array.Empty<ISettingsMigration>()));
+
+        var secrets = new TestSecretStore();
+        if (!string.IsNullOrEmpty(options.ApiKey))
+            secrets.Set("llm.apiKey", options.ApiKey);
+
+        return (settingsService, secrets);
+    }
+
+    /// <summary>
     /// Creates an execution service that returns the given status/body.
     /// </summary>
-    private static IAgentExecutionService CreateService(HttpStatusCode statusCode, string body)
+    private IAgentExecutionService CreateService(HttpStatusCode statusCode, string body)
     {
         var handler = new FakeHandler(statusCode, body);
         var httpClient = new HttpClient(handler);
-        return new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        return new AgentExecutionService(httpClient, settings, secrets);
     }
 
-    private static IAgentExecutionService CreateFaultService(Exception ex)
+    private IAgentExecutionService CreateFaultService(Exception ex)
     {
         var handler = new FaultHandler(ex);
         var httpClient = new HttpClient(handler);
-        return new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        return new AgentExecutionService(httpClient, settings, secrets);
     }
 
     /// <summary>
     /// Creates an execution service with missing API key (empty string).
     /// </summary>
-    private static IAgentExecutionService CreateServiceWithMissingApiKey()
+    private IAgentExecutionService CreateServiceWithMissingApiKey()
     {
         var options = new AgentExecutionOptions
         {
@@ -62,7 +108,8 @@ public sealed class AgentExecutionCoordinatorTests
         };
         var handler = new FakeHandler(HttpStatusCode.OK, "{}");
         var httpClient = new HttpClient(handler);
-        return new AgentExecutionService(httpClient, options);
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        return new AgentExecutionService(httpClient, settings, secrets);
     }
 
     /// <summary>
@@ -169,7 +216,8 @@ public sealed class AgentExecutionCoordinatorTests
         };
         var handler = new FakeHandler(HttpStatusCode.OK, "{}");
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, options);
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
@@ -191,7 +239,8 @@ public sealed class AgentExecutionCoordinatorTests
         };
         var handler = new FakeHandler(HttpStatusCode.OK, "{}");
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, options);
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
@@ -275,12 +324,13 @@ public sealed class AgentExecutionCoordinatorTests
         // Use a slow handler that blocks to ensure concurrent call is dropped
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(500));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         // Start first send (will block for 500ms)
@@ -370,12 +420,13 @@ public sealed class AgentExecutionCoordinatorTests
         var host = CreateHostWithPanel(out var panel);
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(200));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         // Start send (will block for 200ms)
@@ -441,12 +492,13 @@ public sealed class AgentExecutionCoordinatorTests
         var host = CreateHostWithPanel(out var panel);
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(300));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         // Start first send (will block for 300ms)
@@ -508,12 +560,13 @@ public sealed class AgentExecutionCoordinatorTests
         var host = CreateHostWithPanel(out var panel);
         var handler = new ToggleHandler();
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, new AgentExecutionOptions
+        var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
             ApiKey = "test-key",
             Model = "test-model"
         });
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = new AgentExecutionCoordinator(host, service);
 
         // First send fails (ToggleHandler fails first call)

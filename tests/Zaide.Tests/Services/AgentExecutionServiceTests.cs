@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -6,12 +7,27 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 
 namespace Zaide.Tests.Services;
 
-public sealed class AgentExecutionServiceTests
+public sealed class AgentExecutionServiceTests : IDisposable
 {
+    private readonly string _tempDir;
+
+    public AgentExecutionServiceTests()
+    {
+        _tempDir = Path.Combine(Path.GetTempPath(), "ZaideAgentExecSvcTests_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempDir);
+    }
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_tempDir, recursive: true); }
+        catch { /* best-effort cleanup */ }
+    }
+
     private static AgentExecutionOptions DefaultOptions() => new()
     {
         BaseUrl = "https://api.test.com/v1",
@@ -23,14 +39,44 @@ public sealed class AgentExecutionServiceTests
     /// Creates an <see cref="AgentExecutionService"/> with a fake message handler
     /// that returns the given status code and body.
     /// </summary>
-    private static AgentExecutionService CreateService(
+    private AgentExecutionService CreateService(
         HttpStatusCode statusCode,
         string responseBody,
         AgentExecutionOptions? options = null)
     {
         var handler = new FakeMessageHandler(statusCode, responseBody);
         var httpClient = new HttpClient(handler);
-        return new AgentExecutionService(httpClient, options ?? DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(options ?? DefaultOptions());
+        return new AgentExecutionService(httpClient, settings, secrets);
+    }
+
+    /// <summary>
+    /// Creates a SettingsService + TestSecretStore pair configured to match the
+    /// given <see cref="AgentExecutionOptions"/>.
+    /// </summary>
+    private (SettingsService settings, TestSecretStore secrets) CreateSettingsAndSecrets(
+        AgentExecutionOptions options)
+    {
+        var settingsPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_settings.json");
+        var lkgPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_lkg.json");
+        var tmpPath = Path.Combine(_tempDir, Guid.NewGuid().ToString("N") + "_tmp.json");
+
+        var llm = new LlmSettings(
+            BaseUrl: options.BaseUrl,
+            Model: options.Model,
+            ApiKeySource: "secret-store");
+        var model = SettingsModel.Defaults with { Llm = llm };
+        var json = SettingsSerializer.Serialize(model);
+        File.WriteAllText(settingsPath, json);
+
+        var settingsService = new SettingsService(settingsPath, lkgPath, tmpPath,
+            new SettingsMigrator(Array.Empty<ISettingsMigration>()));
+
+        var secrets = new TestSecretStore();
+        if (!string.IsNullOrEmpty(options.ApiKey))
+            secrets.Set("llm.apiKey", options.ApiKey);
+
+        return (settingsService, secrets);
     }
 
     // ── Request construction ────────────────────────────────────────────────
@@ -65,7 +111,8 @@ public sealed class AgentExecutionServiceTests
         });
 
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         var result = await service.ExecuteAsync("Hi there");
 
         Assert.True(result.IsSuccess);
@@ -109,7 +156,8 @@ public sealed class AgentExecutionServiceTests
         });
 
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
         await service.ExecuteAsync("test");
 
         Assert.Equal("Bearer test-key-123", capturedAuth);
@@ -323,7 +371,8 @@ public sealed class AgentExecutionServiceTests
     {
         var handler = new FaultMessageHandler(new HttpRequestException("Connection refused"));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
 
         var result = await service.ExecuteAsync("Hello");
 
@@ -336,7 +385,8 @@ public sealed class AgentExecutionServiceTests
     {
         var handler = new FaultMessageHandler(new TaskCanceledException("Cancelled"));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
 
         var result = await service.ExecuteAsync("Hello");
 
@@ -349,7 +399,8 @@ public sealed class AgentExecutionServiceTests
     {
         var handler = new FaultMessageHandler(new OperationCanceledException("Cancelled by token"));
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, DefaultOptions());
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
 
         var result = await service.ExecuteAsync("Hello");
 
@@ -399,7 +450,8 @@ public sealed class AgentExecutionServiceTests
             Model = "m"
         };
         var httpClient = new HttpClient(handler);
-        var service = new AgentExecutionService(httpClient, options);
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        var service = new AgentExecutionService(httpClient, settings, secrets);
 
         await service.ExecuteAsync("test");
 

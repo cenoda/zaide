@@ -41,8 +41,54 @@ settings application, command registry, project context, M3–M6, and Phase
 
 ## Exit Conditions
 
-- [ ] M2 tests and all existing agent-execution tests are green.
-- [ ] Build and test gates pass with no M3+ or Phase 8.2/8.3 behavior added.
+- [x] M2 tests and all existing agent-execution tests are green.
+- [x] Build and test gates pass with no M3+ or Phase 8.2/8.3 behavior added.
+
+## Closeout (2026-07-11)
+
+**Build:** `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
+**Tests:** `dotnet test Zaide.slnx --no-build` — 865 passed, 0 failed, 0 skipped
+(843 baseline + 22 new M2 tests).
+
+### Security-contract fix
+
+`RepairPermissionsIfNeeded()` is called inside `Load()` (before `File.ReadAllText`,
+while `_gate` is held), not only in the constructor. This ensures that an external
+`chmod` after startup is repaired on the next `Get()`/`Set()`/`Delete()`, closing
+the singleton-lifetime gap.
+
+### New test files
+
+- `tests/Zaide.Tests/Services/SecretStoreTests.cs` — get/set/delete, persistence,
+  settings.json isolation (10 tests).
+- `tests/Zaide.Tests/Services/FileSecretStorePermissionTests.cs` — Linux 0600
+  creation, mode retention after rename, loose-mode repair, external-chmod
+  repair on subsequent Get (6 tests; no-op on non-Linux).
+- `tests/Zaide.Tests/Services/LiveLlmConfigTests.cs` — committed settings/secret
+  change picked up by next `ExecuteAsync` without service recreation; env-var
+  overrides for URL, model, and API key (6 tests).
+- `tests/Zaide.Tests/TestSecretStore.cs` — in-memory `ISecretStore` for tests.
+
+### Changed production files
+
+- `src/Services/ISecretStore.cs` — synchronous secret boundary interface.
+- `src/Services/FileSecretStore.cs` — file-backed implementation with Linux 0600
+  temp creation, atomic rename, and loose-mode repair.
+- `src/Services/SettingsPathResolver.cs` — added `GetSecretsPath()` and
+  `GetSecretsTempPath()`.
+- `src/Services/AgentExecutionOptions.cs` — demoted to immutable per-call value
+  carrier (`init`-only properties).
+- `src/Services/AgentExecutionService.cs` — constructor takes `HttpClient`,
+  `ISettingsService`, `ISecretStore`; builds fresh options per `ExecuteAsync`.
+- `src/Program.cs` — removed `AgentExecutionOptions` singleton; registered
+  `ISecretStore` as `FileSecretStore`.
+
+### Changed test files
+
+- `tests/Zaide.Tests/Services/AgentExecutionServiceTests.cs` — updated to new
+  constructor via `CreateSettingsAndSecrets` helper.
+- `tests/Zaide.Tests/ViewModels/AgentExecutionCoordinatorTests.cs` — same
+  constructor update.
 
 ## Rollback Plan
 
