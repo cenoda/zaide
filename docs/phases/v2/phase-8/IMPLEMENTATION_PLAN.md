@@ -1705,7 +1705,8 @@ The following view-level keybindings ARE migrated to the command registry:
 **Commands (8.2):**
 - `src/Services/ICommandRegistry.cs` — command registry interface
 - `src/Services/CommandRegistry.cs` — implementation
-- `src/Services/CommandDescriptor.cs` — command metadata record
+- `src/Services/CommandDescriptor.cs` — command metadata (sealed class, D5)
+- `src/Services/ResolvedKeyBinding.cs` — neutral gesture→command resolution record (D5)
 
 **Project Context (8.3):**
 - `src/Services/IProjectContextService.cs` — project context interface

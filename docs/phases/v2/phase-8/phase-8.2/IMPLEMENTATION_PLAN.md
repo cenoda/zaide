@@ -54,17 +54,31 @@ M0 exit gate:
 
 ### Command descriptors and registry
 
-Add `CommandDescriptor` and `ICommandRegistry` under `src/Services/`.
+Add the following new files under `src/Services/`:
 
-`CommandDescriptor` must expose the umbrella contract:
+- `ICommandRegistry.cs` — command registry interface (D5).
+- `CommandRegistry.cs` — singleton implementation.
+- `CommandDescriptor.cs` — command metadata (D5).
+- `ResolvedKeyBinding.cs` — neutral gesture→command resolution record (D5).
+
+`CommandDescriptor` must match the umbrella D5 contract exactly:
 
 ```csharp
-public sealed record CommandDescriptor(
-    string Id,
-    string DisplayName,
-    string Category,
-    IReadOnlyList<string> DefaultGestures,
-    ICommand Command);
+public sealed class CommandDescriptor
+{
+    public string Id { get; }
+    public string DisplayName { get; }
+    public string Category { get; }
+    public IReadOnlyList<string> DefaultGestures { get; }
+    public ICommand Command { get; }
+
+    public CommandDescriptor(
+        string id,
+        string displayName,
+        string category,
+        IReadOnlyList<string> defaultGestures,
+        ICommand command);
+}
 ```
 
 The constructor validates non-empty `Id` and `Category`. `DefaultGestures` may
@@ -153,13 +167,41 @@ open, are no-ops and do not throw. Their resolved gesture remains owned by the
 command layer if a future override assigns one, so the gesture does not fall
 through to text input.
 
+### Settings schema prerequisite (before M8)
+
+`KeybindingOverrides` is currently an empty placeholder record:
+
+```csharp
+public sealed record KeybindingOverrides
+{
+    public static readonly KeybindingOverrides Empty = new();
+}
+```
+
+Before M8 resolution can read user overrides from `ISettingsService`, this type
+must be extended to hold a `commandId → neutralGesture` map. Minimum contract:
+
+```csharp
+public sealed record KeybindingOverrides(
+    IReadOnlyDictionary<string, string> Overrides)
+{
+    public static readonly KeybindingOverrides Empty = new(
+        new Dictionary<string, string>().AsReadOnly());
+}
+```
+
+The JSON shape `"keybindings": { "file.save": "Ctrl+Shift+S" }` deserializes
+naturally into this dictionary. The `SettingsSerializer` already rejects a null
+`Keybindings` section; no serializer change is needed. The expanded type ships
+in M7 so M8 resolution has a complete settings contract to consume.
+
 ## Milestones
 
 | Milestone | Description | Verification |
 |---|---|---|
-| **M7** | Command registry core: descriptors, stable IDs, registration, lookup, execution, unavailable-command behavior, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, and singleton resolution. |
+| **M7** | Command registry core: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `KeybindingOverrides` expansion with `IReadOnlyDictionary<string,string>`, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, `KeybindingOverrides` round-trip serialization, and singleton resolution. |
 | **M8** | Canonical command registration and neutral gesture resolution: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
-| **M9** | Window and file-tree integration: replace imperative global bindings with registry materialization, wire all canonical command seams, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. Manual desktop smoke verification covers `Ctrl+Oem3`, `Ctrl+J`, `Ctrl+S`, `Ctrl+O`, and hidden-files behavior. |
+| **M9** | Window and file-tree integration: replace imperative global bindings with registry materialization, wire all canonical command seams, and refresh generated bindings after settings changes. `FileTreeView` invokes the registry for `Ctrl+Shift+H`; `MainWindow` replaces its imperative `KeyBindings.Add` blocks with registry-driven materialization. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
 
 ## Required Test Matrix
@@ -193,10 +235,19 @@ through to text input.
 - Project context, solution discovery, and unload/reload state remain Phase 8.3.
 - Meta-key behavior is defined by the neutral grammar but is not required for
   Linux-primary manual acceptance.
+- Gesture parsing is implemented as an internal helper inside `CommandRegistry`;
+  a separate `GestureParser` type is deferred until complexity warrants it.
+- `SourceControlViewModel.RefreshCommand` always reports `CanExecute == true`
+  even when no workspace is open. Since `sourcecontrol.refresh` is unbound (no
+  keybinding) in Phase 8.2, this is harmless. A `canExecute` guard
+  (`_workspace.WorkspacePath is not null`) is deferred to the phase that first
+  binds a gesture or surfaces this command in the Command Palette.
 
 ## Exit Conditions
 
 - [ ] M7–M9 are complete with isolated commits and focused tests.
+- [ ] `KeybindingOverrides` is expanded with `IReadOnlyDictionary<string, string>`
+      and round-trips through JSON serialization.
 - [ ] All canonical global commands are registered with stable IDs exactly once.
 - [ ] Resolution follows D6/D6a deterministically and uses the settings service
       for overrides.
