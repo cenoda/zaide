@@ -26,7 +26,7 @@ plan is explicitly authorized.
 
 | Child plan | Responsibility | Completion boundary |
 |-----------|----------------|---------------------|
-| [`8.1.7.1`](phase-8.1.7.1/IMPLEMENTATION_PLAN.md) | Provider compatibility diagnosis and the smallest confirmed compatibility or error-reporting fix. | The configured provider failure is classified with secret-safe evidence and covered by focused tests. |
+| [`8.1.7.1`](phase-8.1.7.1/IMPLEMENTATION_PLAN.md) | Cline Pass integration diagnosis, UI-thread-safe post-success handling, and the smallest confirmed correction. | DeepSeek control behavior, Cline Pass behavior, and any post-success UI/Townhall failure are classified with secret-safe evidence and covered by focused tests. |
 | [`8.1.7.2`](phase-8.1.7.2/IMPLEMENTATION_PLAN.md) | Settings panel UX expansion over the existing immutable settings contract. | Editor, Terminal, and LLM settings are usable, labelled, validated, and tested without changing settings ownership. |
 | [`8.1.7.3`](phase-8.1.7.3/IMPLEMENTATION_PLAN.md) | Sequential regression, desktop verification, screenshot evidence, and documentation truth-sync. | The accepted follow-up state is verified and all affected documentation agrees with the live result. |
 
@@ -40,6 +40,9 @@ plan is explicitly authorized.
 - Keep the provider implementation non-streaming and single-endpoint. Do not
   add a provider registry, retries, tool calling, LSP, or broad multi-provider
   abstraction.
+- Preserve UI thread affinity for all ViewModel-owned observable collections and
+  properties consumed by Avalonia views. Provider diagnostics must not hide or
+  reclassify a UI-thread failure as an HTTP/provider failure.
 - Do not add command registry or keybinding editing, menu bar, command palette,
   project discovery, project selection, or project unload behavior.
 - Do not reopen M1–M5 implementation work unrelated to the two findings.
