@@ -191,7 +191,7 @@ public sealed class Phase8ProofOfConceptTests : IDisposable
         using var service = CreateService();
 
         // Assert
-        Assert.Equal(SettingsLoadResult.Corrupt, service.LoadResult);
+        Assert.Equal(SettingsLoadResult.UnsupportedVersion, service.LoadResult);
         Assert.Equal(SettingsModel.Defaults, service.Current);
     }
 
@@ -222,7 +222,7 @@ public sealed class Phase8ProofOfConceptTests : IDisposable
         using var service = CreateService();
 
         // Assert
-        Assert.Equal(SettingsLoadResult.Corrupt, service.LoadResult);
+        Assert.Equal(SettingsLoadResult.UnsupportedVersion, service.LoadResult);
         Assert.Equal(SettingsModel.Defaults, service.Current);
 
         // Verify the source file was NOT overwritten.
@@ -260,7 +260,7 @@ public sealed class Phase8ProofOfConceptTests : IDisposable
         using var service = CreateService();
 
         // Assert
-        Assert.Equal(SettingsLoadResult.Corrupt, service.LoadResult);
+        Assert.Equal(SettingsLoadResult.UnsupportedVersion, service.LoadResult);
         var onDisk = File.ReadAllText(_settingsPath);
         Assert.Equal(content, onDisk);
     }

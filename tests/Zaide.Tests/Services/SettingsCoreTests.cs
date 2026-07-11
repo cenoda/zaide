@@ -246,35 +246,35 @@ public sealed class SettingsCoreTests : IDisposable
         await LoadDefaultWithRoundtrip();
         using var service = CreateService();
 
-        // Act: launch concurrent updates so writes pile up before the writer
-        // loop drains them. The gate is released before awaiting each TCS,
-        // so competing updates can all commit before any write is consumed.
-        var t1 = service.UpdateAsync(s => s with
-        {
-            Editor = s.Editor with { CodeFontSize = 10 }
-        });
-        var t2 = service.UpdateAsync(s => s with
-        {
-            Editor = s.Editor with { CodeFontSize = 12 }
-        });
-        var t3 = service.UpdateAsync(s => s with
-        {
-            Editor = s.Editor with { CodeFontSize = 14 }
-        });
+        // Install a writer gate: the writer loop blocks before processing
+        // each item. This guarantees that all three UpdateAsync calls commit
+        // and enqueue their writes before any write is consumed.
+        using var writerGate = new SemaphoreSlim(0);
+        service.OnBeforeWriteItem = () => writerGate.WaitAsync();
+
+        // Act: fire all three updates concurrently. Because the writer is
+        // blocked on the gate, they all commit and enqueue before the first
+        // write is consumed.
+        var t1 = service.UpdateAsync(s => s with { Editor = s.Editor with { CodeFontSize = 10 } });
+        var t2 = service.UpdateAsync(s => s with { Editor = s.Editor with { CodeFontSize = 12 } });
+        var t3 = service.UpdateAsync(s => s with { Editor = s.Editor with { CodeFontSize = 14 } });
+
+        // Release the writer gate so items are processed.
+        writerGate.Release(3);
 
         var results = await Task.WhenAll(t1, t2, t3);
 
-        // Assert: at least one earlier write should have been superseded
-        // because the gate was released before the write completed, allowing
-        // newer mutations to race ahead.
+        // Assert: with three writes queued and the final generation at 3,
+        // the first two writes (gen 1, gen 2) must be Superseded because
+        // 1 < 3 and 2 < 3. Only the last write (gen 3) is Saved.
         var supersededCount = results.Count(r =>
             r is SettingsMutationResult.Applied
             {
                 SaveResult: SettingsSaveResult.Superseded
             });
 
-        Assert.True(supersededCount >= 1,
-            $"Expected at least one Superseded write, got {supersededCount}");
+        Assert.True(supersededCount >= 2,
+            $"Expected at least 2 Superseded writes, got {supersededCount}");
 
         // All three must have been Applied (in-memory commit always succeeds).
         Assert.All(results, r => Assert.IsType<SettingsMutationResult.Applied>(r));
@@ -287,6 +287,9 @@ public sealed class SettingsCoreTests : IDisposable
 
         // Verify the in-memory value is also 14.
         Assert.Equal(14, service.Current.Editor.CodeFontSize);
+
+        // Clean up the test hook.
+        service.OnBeforeWriteItem = null;
     }
 
     private static void AssertSavedOrSuperseded(SettingsSaveResult saveResult)

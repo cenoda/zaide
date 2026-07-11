@@ -45,12 +45,11 @@ public sealed class SettingsService : ISettingsService, IDisposable
     // ── Mutation gate ────────────────────────────────────────────────────
     private readonly SemaphoreSlim _mutationGate = new(1, 1);
 
-    // ── Queued writer ────────────────────────────────────────────────────
+    // ── Queued writer (unbounded — never drops items, never strands callers) ─
     private readonly System.Threading.Channels.Channel<WriteItem> _writeQueue =
-        System.Threading.Channels.Channel.CreateBounded<WriteItem>(
-            new System.Threading.Channels.BoundedChannelOptions(32)
+        System.Threading.Channels.Channel.CreateUnbounded<WriteItem>(
+            new System.Threading.Channels.UnboundedChannelOptions
             {
-                FullMode = System.Threading.Channels.BoundedChannelFullMode.DropOldest,
                 SingleReader = true,
                 AllowSynchronousContinuations = false,
             });
@@ -70,6 +69,9 @@ public sealed class SettingsService : ISettingsService, IDisposable
 
     // ── Migrator ─────────────────────────────────────────────────────────
     private readonly SettingsMigrator _migrator;
+
+    // ── Test hook — called before each write-item is processed ───────────
+    internal Func<Task>? OnBeforeWriteItem { get; set; }
 
     // ── Shutdown ─────────────────────────────────────────────────────────
     private readonly CancellationTokenSource _shutdownCts = new();
@@ -285,6 +287,10 @@ public sealed class SettingsService : ISettingsService, IDisposable
         {
             await foreach (var item in _writeQueue.Reader.ReadAllAsync(ct).ConfigureAwait(false))
             {
+                // Test hook — allows deterministic write-ordering tests.
+                if (OnBeforeWriteItem is not null)
+                    await OnBeforeWriteItem().ConfigureAwait(false);
+
                 try
                 {
                     var currentGen = Interlocked.Read(ref _generation);
@@ -363,10 +369,17 @@ public sealed class SettingsService : ISettingsService, IDisposable
         try
         {
             var json = File.ReadAllText(path);
-            var parsed = SettingsSerializer.Deserialize(json);
+            var parsed = SettingsSerializer.Deserialize(json, out var schemaRejected);
             if (parsed is null)
             {
-                // Corrupt or schema-version mismatch.
+                if (schemaRejected)
+                {
+                    result = SettingsLoadResult.UnsupportedVersion;
+                    // Try LKG but do not let the fallback overwrite the result.
+                    return TryLoadLastKnownGood();
+                }
+
+                // Unparseable or structurally invalid.
                 result = SettingsLoadResult.Corrupt;
                 return TryFallbackToLastKnownGood(out result);
             }
@@ -394,6 +407,23 @@ public sealed class SettingsService : ISettingsService, IDisposable
         }
     }
 
+    /// <summary>Load from LKG without overwriting the caller's result.</summary>
+    private SettingsModel? TryLoadLastKnownGood()
+    {
+        if (!File.Exists(_lastKnownGoodPath))
+            return null;
+
+        try
+        {
+            var json = File.ReadAllText(_lastKnownGoodPath);
+            return SettingsSerializer.Deserialize(json, out _);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private SettingsModel? TryFallbackToLastKnownGood(out SettingsLoadResult result)
     {
         if (File.Exists(_lastKnownGoodPath))
@@ -401,7 +431,7 @@ public sealed class SettingsService : ISettingsService, IDisposable
             try
             {
                 var json = File.ReadAllText(_lastKnownGoodPath);
-                var parsed = SettingsSerializer.Deserialize(json);
+                var parsed = SettingsSerializer.Deserialize(json, out _);
                 if (parsed is not null)
                 {
                     result = SettingsLoadResult.Corrupt; // original load failed

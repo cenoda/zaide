@@ -10,10 +10,10 @@ editor/terminal runtime wiring, Settings UI, M2–M6, and all Phase 8.2/8.3 work
 
 ## Entry Gates
 
-- [ ] Re-read the Phase 8 umbrella decisions D1–D4a and the 8.1 parent plan.
-- [ ] Verify `FileStreamOptions.UnixCreateMode` availability; do not implement
+- [x] Re-read the Phase 8 umbrella decisions D1–D4a and the 8.1 parent plan.
+- [x] Verify `FileStreamOptions.UnixCreateMode` availability; do not implement
       secret storage in this slice.
-- [ ] Baseline sequentially: `dotnet build Zaide.slnx --no-restore`, then
+- [x] Baseline sequentially: `dotnet build Zaide.slnx --no-restore`, then
       `dotnet test Zaide.slnx --no-build`.
 
 ## Implementation Contract
@@ -54,10 +54,10 @@ editor/terminal runtime wiring, Settings UI, M2–M6, and all Phase 8.2/8.3 work
 
 ## Exit Conditions
 
-- [ ] M1 behavior and its tests are green.
-- [ ] `dotnet build Zaide.slnx --no-restore` has 0 warnings / 0 errors.
-- [ ] `dotnet test Zaide.slnx --no-build` is green.
-- [ ] No M2+ or Phase 8.2/8.3 production behavior was added.
+- [x] M1 behavior and its tests are green.
+- [x] `dotnet build Zaide.slnx --no-restore` has 0 warnings / 0 errors.
+- [x] `dotnet test Zaide.slnx --no-build` is green.
+- [x] No M2+ or Phase 8.2/8.3 production behavior was added.
 
 ## Rollback Plan
 
