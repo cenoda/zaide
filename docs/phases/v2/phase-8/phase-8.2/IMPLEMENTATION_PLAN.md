@@ -59,7 +59,11 @@ Add the following new files under `src/Services/`:
 - `ICommandRegistry.cs` — command registry interface (D5).
 - `CommandRegistry.cs` — singleton implementation.
 - `CommandDescriptor.cs` — command metadata (D5).
-- `ResolvedKeyBinding.cs` — neutral gesture→command resolution record (D5).
+- `ResolvedKeyBinding.cs` — neutral gesture→command resolution record (D5):
+
+```csharp
+public sealed record ResolvedKeyBinding(string Gesture, string CommandId);
+```
 
 `CommandDescriptor` must match the umbrella D5 contract exactly:
 
@@ -90,8 +94,10 @@ be empty for an intentionally unbound command. The registry must:
 - execute parameterless commands through `Execute(string)` by calling
   `CanExecute(null)` before `Execute(null)`;
 - return `false` and write a debug trace for unknown or unavailable commands;
-- expose `Execute<T>(string, T)` for explicitly parameterized callers without
-  performing type coercion or parameter inference;
+- expose `Execute<T>(string, T)` for explicitly parameterized callers. When the
+  underlying `ICommand` cannot accept `T` (`CanExecute(parameter)` returns false
+  because the parameter type doesn't match), `Execute<T>` returns `false` and
+  logs a debug trace — it never throws, coerces types, or infers parameters;
 - remain UI-framework neutral. Avalonia `KeyBinding` objects are created only
   by the window integration layer.
 
@@ -149,18 +155,30 @@ duplicates.
 ### Window integration and refresh
 
 Register `ICommandRegistry`/`CommandRegistry` as a singleton in `Program.cs`.
-`MainWindow` registers the canonical commands once, resolves the full set after
-registration, converts neutral gestures to Avalonia `KeyBinding` instances,
-and removes/replaces the previous generated bindings as one operation.
+`MainWindow` — which is `ReactiveWindow<MainWindowViewModel>` — accesses child
+ViewModels through its `ViewModel` property (`ViewModel.FileTreeViewModel`,
+`ViewModel.SourceControlViewModel`, etc.) and registers the canonical commands
+once in `WhenActivated` before the first resolution. It then resolves the full
+set, converts neutral gestures to Avalonia `KeyBinding` instances, and
+removes/replaces the previous generated bindings as one operation.
+
+Registry-owned `KeyBinding` instances are tracked in a dedicated
+`List<KeyBinding>` field on `MainWindow`. Before each materialization pass the
+list is cleared from `Window.KeyBindings` and then repopulated from scratch.
+This isolates them from any view-local or unrelated bindings and guarantees
+clean replacement without enumeration-during-modification hazards.
 
 The imperative command-specific binding blocks in `MainWindow.axaml.cs` must be
 replaced by registry-driven materialization. The `Ctrl+Shift+H` handling in
 `FileTreeView.cs` must invoke the registry command rather than becoming a
 second keybinding source. The view-local Enter/open-file behavior remains local.
 
-When `ISettingsService.WhenChanged` emits a new snapshot, the window reruns
-resolution and replaces only the registry-owned framework bindings. Existing
-unrelated or view-local input behavior must not be removed.
+When `ISettingsService.WhenChanged` emits a new snapshot, the window captures
+the snapshot value synchronously, then reruns resolution and replaces only the
+registry-owned framework bindings. If multiple snapshots arrive during a
+resolution pass, only the latest one's bindings are kept — the intermediate
+ones are skipped. Existing unrelated or view-local input behavior must not be
+removed.
 
 Unavailable commands, including `workspace.closeFolder` while no folder is
 open, are no-ops and do not throw. Their resolved gesture remains owned by the
@@ -179,27 +197,37 @@ public sealed record KeybindingOverrides
 ```
 
 Before M8 resolution can read user overrides from `ISettingsService`, this type
-must be extended to hold a `commandId → neutralGesture` map. Minimum contract:
+must be extended to hold a `commandId → neutralGesture` map. The target JSON
+shape is flat for user readability:
 
-```csharp
-public sealed record KeybindingOverrides(
-    IReadOnlyDictionary<string, string> Overrides)
-{
-    public static readonly KeybindingOverrides Empty = new(
-        new Dictionary<string, string>().AsReadOnly());
+```json
+"keybindings": {
+    "file.save": "Ctrl+Shift+S",
+    "explorer.toggleHiddenFiles": ""
 }
 ```
 
-The JSON shape `"keybindings": { "file.save": "Ctrl+Shift+S" }` deserializes
-naturally into this dictionary. The `SettingsSerializer` already rejects a null
-`Keybindings` section; no serializer change is needed. The expanded type ships
-in M7 so M8 resolution has a complete settings contract to consume.
+Each key is a registered command ID; an empty-string value unbinds the command.
+To make this flat shape work with `SettingsModel`, change the `Keybindings`
+property on `SettingsModel` from `KeybindingOverrides` to:
+
+```csharp
+IReadOnlyDictionary<string, string> Keybindings
+```
+
+And remove the `KeybindingOverrides` type entirely. The default is
+`new Dictionary<string, string>().AsReadOnly()`. The `SettingsSerializer`
+already rejects a null `Keybindings` section; the combined null-guard on L79
+(`result.Keybindings is null`) must be updated to check the new type. This
+expansion ships in M7 so M8 resolution has a complete settings contract to
+consume. A custom `JsonConverter` is **not** needed — `System.Text.Json`
+serializes `Dictionary<string, string>` to the flat shape natively.
 
 ## Milestones
 
 | Milestone | Description | Verification |
 |---|---|---|
-| **M7** | Command registry core: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `KeybindingOverrides` expansion with `IReadOnlyDictionary<string,string>`, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, `KeybindingOverrides` round-trip serialization, and singleton resolution. |
+| **M7** | Command registry core: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `SettingsModel.Keybindings` changed from `KeybindingOverrides` to `IReadOnlyDictionary<string,string>`, `KeybindingOverrides` type removed, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, keybindings dictionary round-trip serialization, and singleton resolution. |
 | **M8** | Canonical command registration and neutral gesture resolution: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
 | **M9** | Window and file-tree integration: replace imperative global bindings with registry materialization, wire all canonical command seams, and refresh generated bindings after settings changes. `FileTreeView` invokes the registry for `Ctrl+Shift+H`; `MainWindow` replaces its imperative `KeyBindings.Add` blocks with registry-driven materialization. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
@@ -246,8 +274,9 @@ in M7 so M8 resolution has a complete settings contract to consume.
 ## Exit Conditions
 
 - [ ] M7–M9 are complete with isolated commits and focused tests.
-- [ ] `KeybindingOverrides` is expanded with `IReadOnlyDictionary<string, string>`
-      and round-trips through JSON serialization.
+- [ ] `SettingsModel.Keybindings` is `IReadOnlyDictionary<string, string>` (flat
+      JSON) and round-trips through serialization; `KeybindingOverrides` type is
+      removed.
 - [ ] All canonical global commands are registered with stable IDs exactly once.
 - [ ] Resolution follows D6/D6a deterministically and uses the settings service
       for overrides.
