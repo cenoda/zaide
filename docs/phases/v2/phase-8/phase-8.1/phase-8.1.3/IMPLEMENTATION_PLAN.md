@@ -42,8 +42,8 @@ production work.
 
 ## Exit Conditions
 
-- [ ] M3 tests, build, and full test suite are green.
-- [ ] No project-context, command-registry, UI settings, or M4+ behavior was
+- [x] M3 tests, build, and full test suite are green.
+- [x] No project-context, command-registry, UI settings, or M4+ behavior was
       added.
 
 ## Rollback Plan

@@ -25,7 +25,17 @@ namespace Zaide.Models
         public string? WorkspacePath { get; private set; }
 
         /// <summary>
+        /// Raised after <see cref="WorkspacePath"/> and <see cref="ProjectName"/>
+        /// have been updated by <see cref="SetProjectFromPath"/>. A null
+        /// <see cref="WorkspacePath"/> at the time the event fires indicates
+        /// the workspace was closed. Document ownership is unchanged.
+        /// </summary>
+        public event EventHandler? WorkspaceFolderChanged;
+
+        /// <summary>
         /// Sets the workspace name and full path from a folder path.
+        /// Raises <see cref="WorkspaceFolderChanged"/> after updating properties.
+        /// A null or empty <paramref name="folderPath"/> closes the workspace.
         /// </summary>
         public void SetProjectFromPath(string? folderPath)
         {
@@ -35,6 +45,7 @@ namespace Zaide.Models
             ProjectName = !string.IsNullOrEmpty(folderPath)
                 ? Path.GetFileName(folderPath)
                 : "Zaide";
+            WorkspaceFolderChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public Document OpenDocument(string path, string content)

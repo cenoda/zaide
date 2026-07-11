@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -1013,5 +1015,161 @@ public class MainWindowViewModelTests
         service.Verify(s => s.Dispose(), Times.Never);
         Assert.Single(terminalHost.Tabs);
         Assert.Same(terminalVm, terminalHost.ActiveSession);
+    }
+
+    // ── Phase 8.1.3 M3: Workspace Close Lifecycle ────────────────────────────
+
+    private static (MainWindowViewModel Vm, Workspace Workspace, SourceControlViewModel ScVm, FileTreeViewModel FileTreeVm)
+        CreateCloseFlowViewModel()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeService = new FileTreeService();
+        var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+
+        var workspace = sp.GetRequiredService<Workspace>();
+        var coordinator = CreateMockCoordinator().Object;
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.Found("/repo", "/repo/.git/"));
+        git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot
+        {
+            CurrentBranchName = "main",
+            Branches = new[] { new GitBranch("main", true) },
+            Changes = Array.Empty<FileChange>(),
+        });
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
+        var mutation = new Mock<IGitMutationService>();
+        var scViewModel = new SourceControlViewModel(
+            new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+        return (vm, workspace, scViewModel, fileTreeViewModel);
+    }
+
+    [Fact]
+    public async Task CloseFolderCommand_ClearsWorkspaceAndSourceControl()
+    {
+        var (vm, workspace, scViewModel, fileTreeVm) = CreateCloseFlowViewModel();
+
+        var repoPath = Path.Combine(Path.GetTempPath(), "zaide-close-" + Guid.NewGuid());
+        Directory.CreateDirectory(repoPath);
+        try
+        {
+            fileTreeVm.OpenFolderCommand.Execute(repoPath).Subscribe();
+            await Task.Delay(150);
+
+            Assert.Equal(repoPath, workspace.WorkspacePath);
+            Assert.Equal(repoPath, fileTreeVm.RootPath);
+
+            vm.CloseFolderCommand.Execute().Subscribe();
+
+            Assert.Null(fileTreeVm.RootPath);
+            Assert.Null(workspace.WorkspacePath);
+            Assert.Equal("Zaide", workspace.ProjectName);
+            Assert.Empty(fileTreeVm.RootNodes);
+            Assert.Equal(SnapshotRefreshStatus.NotARepository, scViewModel.LastRefreshStatus);
+            Assert.Empty(scViewModel.Branches);
+        }
+        finally
+        {
+            if (Directory.Exists(repoPath))
+                Directory.Delete(repoPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CloseFolderRequested_InteractionBridge_CompletesAndCloses()
+    {
+        var (vm, workspace, scViewModel, fileTreeVm) = CreateCloseFlowViewModel();
+
+        var repoPath = Path.Combine(Path.GetTempPath(), "zaide-close-" + Guid.NewGuid());
+        Directory.CreateDirectory(repoPath);
+        try
+        {
+            fileTreeVm.OpenFolderCommand.Execute(repoPath).Subscribe();
+            Assert.Equal(repoPath, fileTreeVm.RootPath);
+
+            fileTreeVm.CloseFolderRequested.Handle(Unit.Default).Subscribe();
+
+            Assert.Null(fileTreeVm.RootPath);
+            Assert.Null(workspace.WorkspacePath);
+        }
+        finally
+        {
+            if (Directory.Exists(repoPath))
+                Directory.Delete(repoPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CloseFolder_RetainsOpenDocuments()
+    {
+        var (vm, workspace, _, fileTreeVm) = CreateCloseFlowViewModel();
+
+        var repoPath = Path.Combine(Path.GetTempPath(), "zaide-close-" + Guid.NewGuid());
+        var filePath = Path.Combine(repoPath, "test.cs");
+        Directory.CreateDirectory(repoPath);
+        try
+        {
+            File.WriteAllText(filePath, "class Test { }");
+            fileTreeVm.OpenFolderCommand.Execute(repoPath).Subscribe();
+            await Task.Delay(150);
+
+            vm.EditorTabs.OpenFileCommand.Execute(filePath).Subscribe();
+            await Task.Delay(100);
+            Assert.Single(vm.EditorTabs.OpenTabs);
+
+            vm.CloseFolderCommand.Execute().Subscribe();
+
+            Assert.Single(vm.EditorTabs.OpenTabs);
+        }
+        finally
+        {
+            if (Directory.Exists(repoPath))
+                Directory.Delete(repoPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CloseFolderCommand_IsDisabledWhenNoFolderOpen()
+    {
+        var (vm, _, _, fileTreeVm) = CreateCloseFlowViewModel();
+
+        Assert.Null(fileTreeVm.RootPath);
+        Assert.False(vm.CloseFolderCommand.CanExecute.FirstAsync().Wait());
+    }
+
+    [Fact]
+    public void CloseFolderRequested_CompletesWhenNoFolderOpen()
+    {
+        var (vm, workspace, _, fileTreeVm) = CreateCloseFlowViewModel();
+
+        // No folder is open — the interaction must still complete without hanging
+        Assert.Null(fileTreeVm.RootPath);
+
+        fileTreeVm.CloseFolderRequested.Handle(Unit.Default).Subscribe();
+
+        // Workspace remains in its initial closed state
+        Assert.Null(workspace.WorkspacePath);
+        Assert.Null(fileTreeVm.RootPath);
     }
 }

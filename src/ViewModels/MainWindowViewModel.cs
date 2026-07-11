@@ -76,6 +76,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> SwitchToExplorerCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToSourceControlCommand { get; }
 
+    /// <summary>
+    /// M3 (Phase 8.1.3): Closes the open folder. Enabled only while a folder is open.
+    /// Not registered in a command registry — local to this ViewModel.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> CloseFolderCommand { get; }
+
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
     public ITerminalHost TerminalHost { get; }
@@ -134,6 +140,16 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         });
         SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
         SwitchToSourceControlCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.SourceControl; });
+
+        // M3 (Phase 8.1.3): Close-folder command. Enabled only while a folder is open.
+        // Calls SetRootPath(null) directly. The CloseFolderRequested interaction
+        // (bridged in Activate()) is the view→ViewModel entry point that invokes this command.
+        var canCloseFolder = this.WhenAnyValue(x => x.FileTreeViewModel.RootPath)
+            .Select(path => path is not null);
+        CloseFolderCommand = ReactiveCommand.Create(() =>
+        {
+            FileTreeViewModel.SetRootPath(null);
+        }, canCloseFolder);
     }
 
     /// <summary>
@@ -152,16 +168,32 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // header, which invokes FileTreeViewModel.OpenFolderCommand directly).
         // RootPath is the single post-validation truth for the loaded folder, so
         // reacting to it prevents "No repository" when a repo is opened from the
-        // file-tree header.
+        // file-tree header. M3: the null filter is removed so close transitions
+        // also flow through SetProjectFromPath(null) and Source Control refresh.
         _disposables.Add(
             this.WhenAnyValue(x => x.FileTreeViewModel.RootPath)
-                .Where(path => !string.IsNullOrEmpty(path))
                 .Subscribe(path =>
                 {
                     _workspace.SetProjectFromPath(path);
                     WorkspaceProjectName = _workspace.ProjectName;
                     SourceControlViewModel.RefreshCommand.Execute(Unit.Default).Subscribe();
                 }));
+
+        // M3 (Phase 8.1.3): Bridge CloseFolderRequested interaction.
+        // Executes CloseFolderCommand only when it can execute (folder is open).
+        // Always completes the interaction output, including no-folder cases.
+        // The handler is synchronous (not async void) so the interaction output
+        // is set after the command body completes — callers that subscribe to
+        // Handle() observe the post-command state immediately.
+        _disposables.Add(
+            FileTreeViewModel.CloseFolderRequested.RegisterHandler(interaction =>
+            {
+                if (FileTreeViewModel.RootPath is not null)
+                {
+                    CloseFolderCommand.Execute().GetAwaiter().GetResult();
+                }
+                interaction.SetOutput(Unit.Default);
+            }));
 
         // Surface save errors from the tab manager
         _disposables.Add(

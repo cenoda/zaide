@@ -34,6 +34,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     private readonly TreeView _treeView;
     private readonly TextBlock _headerText;
     private readonly Control _headerIcon;
+    private readonly Button _closeFolderButton;
     private IDisposable? _openFolderSubscription;
 
 
@@ -64,6 +65,26 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 _openFolderSubscription = ViewModel!.OpenFolderCommand
                     .Execute(folders[0].Path.LocalPath)
                     .Subscribe(_ => { });
+        };
+
+        // M3 (Phase 8.1.3): Close-folder button in header. Visible only when a
+        // folder is open. Invokes CloseFolderRequested on the ViewModel; the
+        // handler is registered by MainWindowViewModel.Activate().
+        _closeFolderButton = new Button
+        {
+            Content = IconFactory.Create(
+                "Icon.X",
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                12),
+            Background = Avalonia.Media.Brushes.Transparent,
+            Padding = LayoutTokens.Uniform(LayoutTokens.SpacingXxs),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            IsVisible = false,
+        };
+        _closeFolderButton.Click += (_, _) =>
+        {
+            ViewModel?.CloseFolderRequested.Handle(Unit.Default).Subscribe();
         };
 
         // M3.1: per-category brush mapping for the file tree.
@@ -401,7 +422,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
-                Children = { _headerIcon, _headerText }
+                Children = { _headerIcon, _headerText, _closeFolderButton }
             },
             [DockPanel.DockProperty] = Dock.Top,
             Padding = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingXs),
@@ -422,12 +443,14 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             d.Add(this.OneWayBind(ViewModel, vm => vm.RootNodes, v => v._treeView.ItemsSource));
 
             // Header: show path when set, fall back to "Open Folder..."
+            // M3 (Phase 8.1.3): Show/hide close-folder button with folder state.
             d.Add(this.WhenAnyValue(x => x.ViewModel!.RootPath)
                 .Subscribe(path =>
                 {
                     _headerText.Text = string.IsNullOrEmpty(path)
                         ? "Open Folder..."
                         : path;
+                    _closeFolderButton.IsVisible = !string.IsNullOrEmpty(path);
                 }));
 
             // M2: Bind Show Hidden Files menu item check state

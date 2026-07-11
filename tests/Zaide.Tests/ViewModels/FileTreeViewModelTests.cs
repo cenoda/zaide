@@ -1,10 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using Moq;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 
@@ -213,5 +218,122 @@ public class FileTreeViewModelTests
         Assert.NotNull(vm.StatusText);
         Assert.Contains("Invalid Argument", vm.StatusText, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(vm.RootNodes);
+    }
+
+    [Fact]
+    public void SetRootPath_Null_ClearsTreeAndSelection()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "file.txt"), "content");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Single(vm.RootNodes);
+            Assert.Equal(root, vm.RootPath);
+
+            vm.SelectedFile = vm.RootNodes[0];
+
+            vm.SetRootPath(null);
+
+            Assert.Null(vm.RootPath);
+            Assert.Empty(vm.RootNodes);
+            Assert.Null(vm.SelectedFile);
+            Assert.Null(vm.StatusText);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SetRootPath_Null_CallsStopWatching()
+    {
+        var mockService = new Moq.Mock<IFileTreeService>();
+        mockService.Setup(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(new List<FileTreeNode>());
+        mockService.Setup(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(System.Reactive.Linq.Observable.Never<FileChangeEvent>());
+
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+
+        vm.SetRootPath("/fake/path");
+        vm.SetRootPath(null);
+
+        mockService.Verify(s => s.StopWatching(), Moq.Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void FailedOpen_PreservesPriorTreeAndWatcherState()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "app.js"), "code");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Single(vm.RootNodes);
+            Assert.Equal(root, vm.RootPath);
+
+            vm.OpenFolderCommand.Execute("/nonexistent/path").Subscribe(_ => { });
+
+            Assert.Equal(root, vm.RootPath);
+            Assert.Single(vm.RootNodes);
+            Assert.NotNull(vm.StatusText);
+            Assert.Contains("Directory not found", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SetRootPath_Null_DisposesWatcherSubscription()
+    {
+        var mockService = new Moq.Mock<IFileTreeService>();
+        mockService.Setup(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(new List<FileTreeNode>());
+        mockService.Setup(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(System.Reactive.Linq.Observable.Never<FileChangeEvent>());
+
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+
+        // Open a folder to create a watcher subscription
+        vm.SetRootPath("/fake/path");
+
+        // Close — should dispose the subscription and call StopWatching
+        vm.SetRootPath(null);
+
+        mockService.Verify(s => s.StopWatching(), Moq.Times.AtLeastOnce);
+        Assert.Null(vm.RootPath);
+        Assert.Empty(vm.RootNodes);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task CloseFolderRequested_CompletesWhenNoFolderOpen()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        Assert.Null(vm.RootPath);
+
+        // Register a handler that just completes
+        using var sub = vm.CloseFolderRequested.RegisterHandler(interaction =>
+        {
+            interaction.SetOutput(Unit.Default);
+            return System.Threading.Tasks.Task.CompletedTask;
+        });
+
+        // Should complete without hanging even though no folder is open
+        var result = await vm.CloseFolderRequested.Handle(Unit.Default).FirstAsync().ToTask();
+        Assert.Equal(Unit.Default, result);
     }
 }

@@ -81,59 +81,25 @@ public class FileTreeViewModel : ReactiveObject
     public string? RootPath
     {
         get => _rootPath;
-        set => this.RaiseAndSetIfChanged(ref _rootPath, value);
+        private set => this.RaiseAndSetIfChanged(ref _rootPath, value);
     }
+
+    /// <summary>
+    /// M3 (Phase 8.1.3): Requests that the owning folder be closed.
+    /// Bridged by <c>MainWindowViewModel.Activate()</c> to <c>CloseFolderCommand</c>.
+    /// </summary>
+    public Interaction<Unit, Unit> CloseFolderRequested { get; } = new();
 
     public FileTreeViewModel(IFileTreeService fileTreeService, IScheduler scheduler)
     {
         _fileTreeService = fileTreeService;
         _scheduler = scheduler;
 
-        // Wrap folder opening in try/catch and set StatusText on failure.
-        // Watcher is only torn down AFTER validation — if EnumerateDirectory fails,
-        // the existing watcher stays active so the user doesn't lose live updates.
+        // Wrap folder opening in SetRootPath. Validation and watcher lifecycle
+        // are handled there; a failed open preserves the existing tree and watcher.
         OpenFolderCommand = ReactiveCommand.Create<string>(path =>
         {
-            StatusText = null; // Clear status on new operation attempt
-
-            try
-            {
-                var nodes = _fileTreeService.EnumerateDirectory(path);
-
-                // Validation succeeded — safely tear down old watcher
-                _watcherSubscription?.Dispose();
-                _fileTreeService.StopWatching();
-
-                RootPath = path;
-                RootNodes.Clear();
-                foreach (var node in nodes)
-                    RootNodes.Add(node);
-
-                // Start watching for live changes
-                var fileChanges = _fileTreeService.StartWatching(path);
-                _watcherSubscription = fileChanges
-                    .ObserveOn(_scheduler)
-                    .Subscribe(HandleFileChange);
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                // B2 Fix: Set status text and leave RootNodes unchanged on failure
-                StatusText = $"Error: Directory not found at '{path}'. Details: {ex.Message}";
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                // B2 Fix: Set status text and leave RootNodes unchanged on failure
-                StatusText = $"Access Denied: Cannot access directory '{path}'. Details: {ex.Message}";
-            }
-            catch (NotSupportedException ex)
-            {
-                // B2 Fix: Catch other unexpected IO errors gracefully
-                StatusText = $"Operation Failed: The path provided is not supported or invalid. Details: {ex.Message}";
-            }
-            catch (ArgumentException ex)
-            {
-                StatusText = $"Invalid Argument: Invalid file path format provided. Details: {ex.Message}";
-            }
+            SetRootPath(path);
         });
 
         // M3: RequestOpenFileCommand — single open pathway for context menu and Enter key.
@@ -185,37 +151,22 @@ public class FileTreeViewModel : ReactiveObject
         });
 
         // M2: ToggleHiddenFilesCommand — toggles show/hide of . prefixed entries.
-        // Re-enumerates RootPath with the new flag and restarts the watcher.
-        // ShowHiddenFiles is only flipped AFTER successful re-enumeration, so
-        // a failure leaves UI state, tree, and watcher in sync.
+        // Re-enumerates RootPath with the new flag via SetRootPath.
+        // ShowHiddenFiles is flipped before SetRootPath; on failure it is reverted
+        // so UI state, tree, and watcher remain in sync.
         ToggleHiddenFilesCommand = ReactiveCommand.Create(() =>
         {
             if (RootPath is null) return;
 
-            var newValue = !ShowHiddenFiles;
+            var previousValue = ShowHiddenFiles;
+            ShowHiddenFiles = !previousValue;
 
-            try
+            StatusText = null;
+            if (!SetRootPath(RootPath))
             {
-                var nodes = _fileTreeService.EnumerateDirectory(RootPath, newValue);
-
-                // Validation succeeded — safely tear down old watcher
-                _watcherSubscription?.Dispose();
-                _fileTreeService.StopWatching();
-
-                RootNodes.Clear();
-                foreach (var node in nodes)
-                    RootNodes.Add(node);
-
-                var fileChanges = _fileTreeService.StartWatching(RootPath, newValue);
-                _watcherSubscription = fileChanges
-                    .ObserveOn(_scheduler)
-                    .Subscribe(HandleFileChange);
-
-                ShowHiddenFiles = newValue; // Flip only after everything succeeded
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Failed to toggle hidden files: {ex.Message}";
+                // Enumeration failed — SetRootPath preserved existing tree/watcher
+                // and set StatusText. Revert the toggle so state stays consistent.
+                ShowHiddenFiles = previousValue;
             }
         });
 
@@ -235,6 +186,68 @@ public class FileTreeViewModel : ReactiveObject
             var relative = Path.GetRelativePath(RootPath, node.FullPath);
             CopyToClipboard.Handle(relative).Subscribe();
         }, canCopyRelative);
+    }
+
+    /// <summary>
+    /// M3 (Phase 8.1.3): Sole public writer for <see cref="RootPath"/>.
+    /// A null <paramref name="path"/> closes the workspace: disposes the watcher,
+    /// clears tree/selection/status, then publishes null. A non-null path
+    /// validates and enumerates before tearing down the existing watcher; a
+    /// failed open preserves the current root, nodes, and watcher and returns false.
+    /// </summary>
+    public bool SetRootPath(string? path)
+    {
+        // Close transition
+        if (path is null)
+        {
+            _watcherSubscription?.Dispose();
+            _watcherSubscription = null;
+            _fileTreeService.StopWatching();
+            RootNodes.Clear();
+            SelectedFile = null;
+            StatusText = null;
+            RootPath = null;
+            return true;
+        }
+
+        // Open transition: validate/enumerate BEFORE tearing down old state
+        try
+        {
+            var nodes = _fileTreeService.EnumerateDirectory(path, ShowHiddenFiles);
+
+            // Validation succeeded — tear down old watcher and tree
+            _watcherSubscription?.Dispose();
+            _fileTreeService.StopWatching();
+
+            RootPath = path;
+            RootNodes.Clear();
+            foreach (var node in nodes)
+                RootNodes.Add(node);
+
+            var fileChanges = _fileTreeService.StartWatching(path, ShowHiddenFiles);
+            _watcherSubscription = fileChanges
+                .ObserveOn(_scheduler)
+                .Subscribe(HandleFileChange);
+            return true;
+        }
+        catch (DirectoryNotFoundException ex)
+        {
+            StatusText = $"Error: Directory not found at '{path}'. Details: {ex.Message}";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            StatusText = $"Access Denied: Cannot access directory '{path}'. Details: {ex.Message}";
+        }
+        catch (NotSupportedException ex)
+        {
+            StatusText = $"Operation Failed: The path provided is not supported or invalid. Details: {ex.Message}";
+        }
+        catch (ArgumentException ex)
+        {
+            StatusText = $"Invalid Argument: Invalid file path format provided. Details: {ex.Message}";
+        }
+
+        return false;
     }
 
     private static void SetExpandedRecursive(FileTreeNode node, bool isExpanded)
