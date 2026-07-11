@@ -2,18 +2,18 @@
 
 ## Pre-Implementation Verification
 
-- [ ] Re-read the Phase 8 umbrella plan, especially decisions D1–D4b, D7, and
+- [x] Re-read the Phase 8 umbrella plan, especially decisions D1–D4b, D7, and
       D9. This document implements only their Phase 8.1 contracts.
-- [ ] Confirm the current composition and ownership seams before changing them:
+- [x] Confirm the current composition and ownership seams before changing them:
       `Program.cs`, `Workspace`, `MainWindowViewModel`, `FileTreeViewModel`,
       `MainWindow`, `EditorView`, `TerminalTabHost`, `TerminalPanel`,
       `TerminalRenderControl`, and `StatusBar`.
-- [ ] Confirm the existing `AgentExecutionService` tests and all direct
+- [x] Confirm the existing `AgentExecutionService` tests and all direct
       construction call sites before changing its constructor from static options
       to live settings/secret resolution.
-- [ ] Confirm `FileStreamOptions.UnixCreateMode` is available on the target
+- [x] Confirm `FileStreamOptions.UnixCreateMode` is available on the target
       .NET version before implementing restrictive secret-file creation.
-- [ ] Run the baseline sequentially and record the actual output in the
+- [x] Run the baseline sequentially and record the actual output in the
       implementation closeout: `dotnet build Zaide.slnx --no-restore`, then
       `dotnet test Zaide.slnx --no-build`.
 
@@ -142,7 +142,20 @@ close-workspace path, and a Settings panel.
 | **M3** | [`phase-8.1.3`](phase-8.1.3/IMPLEMENTATION_PLAN.md) | Workspace Close Lifecycle: reachable close-folder flow, cleanup, and notification seam. | Child-plan gates pass. |
 | **M4** | [`phase-8.1.4`](phase-8.1.4/IMPLEMENTATION_PLAN.md) | Runtime Editor & Terminal Settings: concrete settings injection and subscription disposal. | Child-plan gates pass. |
 | **M5** | [`phase-8.1.5`](phase-8.1.5/IMPLEMENTATION_PLAN.md) | Settings UI: status-bar bridge, transient settings panel, editing and disposal. | Child-plan gates pass. |
-| **M6** | Phase 8.1 parent | Integrate M1–M5, truth-sync documentation, and run the full regression/acceptance sweep. Do not add Phase 8.2 or 8.3 behavior. | `dotnet build Zaide.slnx --no-restore` with 0 warnings/0 errors; `dotnet test Zaide.slnx --no-build` green; `git diff --check`; every blocking test remains present and passing. |
+| **M6** | Phase 8.1 parent | Integrate M1–M5, truth-sync documentation, and run the full regression/acceptance sweep. Do not add Phase 8.2 or 8.3 behavior. | **Complete (2026-07-11).** `dotnet build Zaide.slnx --no-restore` 0 warnings/0 errors; `dotnet test Zaide.slnx --no-build` 895/895 green; `git diff --check` clean; every blocking test present and passing. |
+
+### Accepted milestone commits
+
+| Milestone | Commit | Subject |
+|-----------|--------|---------|
+| **M1** | `3e4d0e3` (+ `60d9dcd` review fixup) | Phase 8.1.1 M1: Settings Core |
+| **M2** | `6a2e3fc` | Phase 8.1.2 M2: Secrets and Live LLM Configuration |
+| **M3** | `9ef6b0b` | Phase 8.1.3 M3: Workspace Close Lifecycle |
+| **M4** | `7619645` | Phase 8.1.4 M4: Runtime Editor & Terminal Settings |
+| **M5** | `4d438af` | Phase 8.1.5 M5: Settings UI |
+
+M6 is a documentation-only closeout on top of the accepted `4d438af` M5
+baseline; it introduced no production-code or test changes.
 
 ## Blocking Test Matrix
 
@@ -183,27 +196,98 @@ close-workspace path, and a Settings panel.
 
 ## Exit Conditions
 
-- [ ] M1–M6 are complete and no Phase 8.2 or 8.3 production work was added.
-- [ ] Settings load, validate, migrate, persist atomically, surface errors, and
+- [x] M1–M6 are complete and no Phase 8.2 or 8.3 production work was added.
+- [x] Settings load, validate, migrate, persist atomically, surface errors, and
       recover without overwriting rejected source files.
-- [ ] API keys are absent from `settings.json`, and effective LLM configuration
+- [x] API keys are absent from `settings.json`, and effective LLM configuration
       is resolved live for every request with environment precedence preserved.
-- [ ] A user can close an open folder through the file-tree affordance without
+- [x] A user can close an open folder through the file-tree affordance without
       losing open documents; all specified watcher and workspace notifications
       occur in order.
-- [ ] Editor and terminal settings apply at construction and immediately after
+- [x] Editor and terminal settings apply at construction and immediately after
       a committed change; all subscriptions have a defined disposal owner.
-- [ ] The Settings panel opens through the status bar bridge and disposes its
+- [x] The Settings panel opens through the status bar bridge and disposes its
       transient ViewModel when closed.
-- [ ] All blocking tests pass, `dotnet build Zaide.slnx --no-restore` reports
+- [x] All blocking tests pass, `dotnet build Zaide.slnx --no-restore` reports
       0 warnings / 0 errors, and `dotnet test Zaide.slnx --no-build` is green.
-- [ ] The actual closeout test count and any manual verification evidence are
+- [x] The actual closeout test count and any manual verification evidence are
       recorded before this plan is marked complete.
+
+## M6 Closeout (2026-07-11)
+
+Phase 8.1 (Settings Foundation) is **complete**. M6 performed a read-only
+integration audit of M1–M5 against the parent contracts, confirmed every
+Blocking Test Matrix item still has a present, passing test, and ran the
+verification sweep sequentially. No production code or test behavior was
+changed in M6; only documentation was truth-synced.
+
+### Verification results (run in order)
+
+- `dotnet build Zaide.slnx --no-restore` — **0 warnings, 0 errors.**
+- `dotnet test Zaide.slnx --no-build` — **895 passed, 0 failed, 0 skipped,
+  895 total.**
+- `git diff --check` — **clean** (no whitespace or conflict-marker errors).
+
+### Integration audit (accepted)
+
+- **Settings persistence/migration/recovery and mutation semantics:** immutable
+  snapshots, `with`-based whole-snapshot commits, validation rejection, disjoint
+  concurrent updates, stale-`Apply` conflict, generation-aware queued writes,
+  cancellation before/after commit, write-error publication, and retry are
+  covered by `SettingsCoreTests`; JSON/schema, atomic temp-then-rename,
+  last-known-good recovery, migration infrastructure, and non-overwrite of
+  rejected sources by `Phase8ProofOfConceptTests`.
+- **Secret isolation, Linux permission behavior, and live LLM precedence:**
+  `SecretStoreTests` (get/set/delete, `settings.json` isolation),
+  `FileSecretStorePermissionTests` (`0600` creation, mode retention across
+  rename, loose-mode repair, external-chmod repair on subsequent access), and
+  `LiveLlmConfigTests` (live settings/secret pickup without recreation; env-var
+  precedence for URL, model, and key).
+- **Close-folder lifecycle and retained documents:** `WorkspaceTests`
+  (`WorkspaceFolderChanged` on open/close, null-path ordering, retained
+  documents), `FileTreeViewModelTests` (null `SetRootPath` cleanup,
+  `StopWatching`, watcher-subscription disposal, failed-open preservation,
+  interaction completion), and `MainWindowViewModelTests` (command → interaction
+  bridge, Source Control reset to `NotARepository`, retained tabs, disabled
+  command when no folder is open).
+- **Editor/terminal runtime settings and subscription ownership:**
+  `Phase814SettingsTests` (initial + live editor option projection, prose/code
+  font selection, terminal `ApplyFontSettings` metric recompute and
+  invalidation without surface recreation, exactly-once disposal on removal /
+  host replacement / detach / window close) and
+  `TerminalPanelSubscriptionsTests`.
+- **Status-bar/settings-panel interaction, scheduler delivery, and transient
+  disposal:** `M5SettingsUiTests` (real `MainWindow` `ShowSettings` bridge,
+  panel open/close, injected-scheduler delivery, exactly-once transient
+  disposal) and `SettingsViewModelTests` (inline field validation, apply,
+  discard, stale conflict + rebase, empty-key deletion without leaking into
+  settings, owned-subscription disposal).
+
+### Blocking Test Matrix → present tests
+
+| Matrix item | Test location |
+|-------------|---------------|
+| `Phase8ProofOfConceptTests` | `tests/Zaide.Tests/Services/Phase8ProofOfConceptTests.cs` |
+| Immutable snapshot tests | `tests/Zaide.Tests/Services/SettingsCoreTests.cs` |
+| `LiveLlmConfigTests` | `tests/Zaide.Tests/Services/LiveLlmConfigTests.cs` |
+| Secret-mode tests | `tests/Zaide.Tests/Services/FileSecretStorePermissionTests.cs`, `tests/Zaide.Tests/Services/SecretStoreTests.cs` |
+| Close-workspace tests | `tests/Zaide.Tests/Models/WorkspaceTests.cs`, `tests/Zaide.Tests/ViewModels/FileTreeViewModelTests.cs`, `tests/Zaide.Tests/MainWindowViewModelTests.cs` |
+| Runtime typography tests | `tests/Zaide.Tests/Views/Phase814SettingsTests.cs` |
+| Settings UI/disposal tests | `tests/Zaide.Tests/Views/M5SettingsUiTests.cs`, `tests/Zaide.Tests/ViewModels/SettingsViewModelTests.cs`, `tests/Zaide.Tests/Views/TerminalPanelSubscriptionsTests.cs` |
+
+### Deferred manual desktop verification
+
+Carried forward from M4/M5 and still deferred (not blocking for automated
+closeout): visually confirm live editor font/whitespace changes, Markdown prose
+versus code font rendering, terminal font-resize behavior, the settings
+slide-over animation and focus behavior, and final-window-close cleanup in a
+real desktop session.
 
 ## Rollback Plan
 
-- Commit hash to revert to: record the pre-M1 implementation commit before
-  production work starts.
+- Commit hash to revert to: the pre-M1 implementation baseline is `2a0cdb2`
+  ("Harden Phase 8.1 settings contracts"), the last commit before M1
+  (`3e4d0e3`). The accepted Phase 8.1 closeout baseline is `4d438af` (M5).
 - If an individual milestone is unsafe, revert only that milestone's commit,
   restore the prior green baseline, and keep later milestones unstarted until
   its contract is revised.

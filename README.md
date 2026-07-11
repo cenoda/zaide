@@ -4,8 +4,8 @@ AI-native IDE. Agents talk to each other, not just to you.
 
 **Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is in progress — Phase 8
-umbrella plan is locked; production implementation has not started (Phase 8
-through Phase 13). Zaide currently has the IDE
+umbrella plan is locked and Phase 8.1 (Settings Foundation) is complete;
+Phase 8.2 through Phase 13 remain ahead. Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
@@ -156,8 +156,9 @@ AI-native orchestration work:
 
 V2 is in progress. Phase 8 umbrella plan is live-code-verified at
 `docs/phases/v2/phase-8/IMPLEMENTATION_PLAN.md`. Sub-phase 8.1 (Settings
-Foundation) is planned as five implementation slices; 8.1.1 (Settings Core)
-is the first slice before coding begins.
+Foundation) is complete across its five implementation slices (M1–M6 closeout
+2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) is
+the next sub-phase to plan.
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"

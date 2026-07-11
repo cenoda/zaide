@@ -6,8 +6,8 @@ One agent codes, another reviews. They argue. You get better code.
 **Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is in progress — Phase 8
 umbrella plan is live-code-verified (Phase 8 through Phase 13). Sub-phase 8.1
-(Settings Foundation) is decomposed into five implementation slices; 8.1.1
-(Settings Core) is the first slice before coding begins.
+(Settings Foundation) is complete across its five implementation slices (M1–M6
+closeout 2026-07-11); Phase 8.2 (command registry and keybindings) is next.
 This document describes the currently delivered V1 architecture; V2 entries
 below are planned direction, not claims about live code.
 
@@ -174,4 +174,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-11 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8 umbrella plan locked)*
+*Last updated: 2026-07-11 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8 umbrella locked, Phase 8.1 complete)*
