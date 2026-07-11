@@ -1207,7 +1207,7 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
 
            mainWindow.WhenAnyValue(x => x.EditorTabs.ActiveTab)
                .Select(tab => tab is not null
-                   ? GetLanguageFromFilePath(tab.FilePath)
+                   ? GetLanguage(tab.FilePath)
                    : "\u2014")
                .Subscribe(lang => { _languageText = lang; this.RaisePropertyChanged(nameof(LanguageText)); })
                .DisposeWith(_disposables);
@@ -1232,6 +1232,29 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
        public string LanguageText => _languageText;
        public string ProjectText => _projectText;
        public string BranchText => _branchText;
+
+       // GetLanguage duplicates the switch from StatusBar.GetLanguageFromFilePath
+       // (private static on the View — duplicated here for ViewModel access).
+       // The switch is kept identical to live behaviour; extension additions are a
+       // separate Phase 8 decision if desired.
+       private static string GetLanguage(string? filePath)
+       {
+           if (string.IsNullOrEmpty(filePath)) return "\u2014";
+           var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+           return ext switch
+           {
+               ".cs" => "C#",
+               ".ts" => "TypeScript",
+               ".js" => "JavaScript",
+               ".json" => "JSON",
+               ".md" => "Markdown",
+               ".xml" => "XML",
+               ".html" => "HTML",
+               ".css" => "CSS",
+               ".py" => "Python",
+               _ => ext.TrimStart('.').ToUpperInvariant()
+           };
+       }
 
        public void Dispose() => _disposables.Dispose();
    }
@@ -1657,7 +1680,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 
 Write `docs/phases/v2/phase-8/phase-8.1/IMPLEMENTATION_PLAN.md` — the detailed
 plan for Settings Foundation (M1–M6). That plan locks the `ISettingsService`
-interface shape (immutable `Current`, UI-thread `WhenChanged`, validated
+interface shape (immutable `Current`, thread-neutral `WhenChanged` — callers marshal via `ObserveOn`, validated
 async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer,
 `SaveAsync` with `CancellationToken` — D4a), settings file path resolution,
 migration infrastructure, secret store implementation (`FileStreamOptions.UnixCreateMode = 0600`
