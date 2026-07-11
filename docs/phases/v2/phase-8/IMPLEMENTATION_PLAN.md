@@ -327,10 +327,12 @@ need to hand `settings.Current` to an options factory.
   mutates a snapshot it has already handed out. The only way to produce a new
   snapshot is via `with` expressions: `current with { CodeFontSize = 16 }`.
 - `ISettingsService.WhenChanged` is an `IObservable<SettingsModel>` that emits a
-  **new immutable snapshot** on every committed change. It is delivered on the
-  UI thread: the service applies `ObserveOn(RxApp.MainThreadScheduler)` (or an
-  explicit `Dispatcher` post) before emitting, so Avalonia bindings and view
-  subscriptions receive updates without manual marshalling.
+  **new immutable snapshot** on every committed change. The service emits on
+  whatever thread commits the mutation — it does NOT apply `ObserveOn` or any
+  dispatcher marshalling (per V2's UI-independence constraint — V2.md §
+  Cross-Cutting Architecture Constraints). ViewModels and Views that bind to
+  Avalonia apply `.ObserveOn(RxApp.MainThreadScheduler)` at their own
+  subscription site.
 - `LoadResult` exposes the `SettingsLoadResult` enum so the UI can surface
   errors (unsupported version, corruption) after startup.
 
@@ -342,7 +344,9 @@ public interface ISettingsService
     /// <summary>Frozen, never-null snapshot of current settings.</summary>
     SettingsModel Current { get; }
 
-    /// <summary>Emits a NEW immutable snapshot on every committed change, on the UI thread.</summary>
+    /// <summary>Emits a NEW immutable snapshot on every committed change.
+    /// Thread: same as the mutating caller. Callers that need UI-thread delivery
+    /// apply ObserveOn(RxApp.MainThreadScheduler) at their subscription site.</summary>
     IObservable<SettingsModel> WhenChanged { get; }
 
     /// <summary>Result of the initial load (Missing/Corrupt/UnsupportedVersion/Loaded).</summary>
@@ -353,8 +357,10 @@ public interface ISettingsService
     /// immutable snapshot and returns a new transformed instance (via `with`
     /// expressions on the immutable record). The service validates the result,
     /// atomically swaps the in-memory snapshot, and enqueues a generation-aware
-    /// write. The returned task completes when the write has been consumed
-    /// from the queue (or fails if the queue faults).
+    /// write. The returned task never faults from a write failure — the
+    /// in-memory snapshot is already committed; the caller inspects
+    /// SettingsMutationResult.SaveResult for disk outcome. The task faults
+    /// only if the queue itself is fatally broken (e.g. channel closed).
     /// If invalid, nothing is committed and the error(s) are reported back
     /// to the caller for UI display.
     /// </summary>
@@ -372,10 +378,11 @@ public interface ISettingsService
     Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Fires on the UI thread when the async disk write triggered by
-    /// UpdateAsync/ApplyAsync fails. Does NOT fire for successful writes.
-    /// The consumer (e.g. status bar) subscribes to surface a non-blocking
-    /// error indicator.
+    /// Fires when the async disk write triggered by UpdateAsync/ApplyAsync
+    /// fails. Emitted on the writer-loop thread (not marshalled — per V2's
+    /// UI-independence constraint). Does NOT fire for successful writes.
+    /// Consumers that need UI-thread delivery apply
+    /// ObserveOn(RxApp.MainThreadScheduler) at their subscription site.
     /// </summary>
     IObservable<SettingsSaveError> WriteErrors { get; }
 }
@@ -385,9 +392,11 @@ public interface ISettingsService
   `SettingsModel` (on success) or the rejected `SettingsModel` (on failure), a
   `IReadOnlyList<SettingsValidationError>` listing field-level problems
   (e.g. non-positive font size, empty required LLM URL) for the UI to render
-  inline, and a `SettingsSaveResult? SaveResult` indicating the outcome of the
-  queued write. Validation is performed by a `SettingsValidator` over the
-  candidate snapshot before any swap or write.
+  inline, and `SettingsSaveResult SaveResult` indicating the outcome of the
+  queued write (Saved / Superseded / Failed). The caller awaits the returned
+  task then inspects `SaveResult`; the task never faults from a write error.
+  Validation is performed by a `SettingsValidator` over the candidate
+  snapshot before any swap or write.
 - The UI builds a candidate snapshot from `Current` using `with` expressions
   (no clone-and-mutate), shows validation errors live, and calls
   `UpdateAsync`/`ApplyAsync` only when valid. There is no public settable `Current`,
@@ -420,13 +429,19 @@ with a single queued writer and explicit generation/result semantics:
      `SettingsSaveResult.Superseded` — the caller's task completes
      successfully (the in-memory state is already correct) but the write was
      not performed because a newer write will persist the latest state.
-  2. Otherwise, `item.Write(ct)` executes. On success, `Completion` receives
-     `SettingsSaveResult.Saved`; on failure, the exception propagates via
-     `Completion.SetException`.
+  2. Otherwise, `item.Write(ct)` executes. The `Completion` **always** receives
+     `SetResult` with the appropriate `SettingsSaveResult` value:
+     `SettingsSaveResult.Saved` on success, or
+     `SettingsSaveResult.Failed(Exception)` on failure. The returned
+     `Task<SettingsMutationResult>` **never faults** from a write error — the
+     in-memory snapshot is already committed, so the mutation itself
+     succeeded even if persistence failed. The caller inspects
+     `SettingsMutationResult.SaveResult` to determine disk outcome.
 - `UpdateAsync` / `ApplyAsync` / `SaveAsync` are all `Task<...>` (async).
   Each mutation:
   1. **Validates and swaps in-memory** synchronously on the caller's thread
-     (the UI thread). If validation fails, returns the error immediately —
+     (typically the UI thread, but the service does not enforce this). If
+     validation fails, returns the error immediately —
      no write is queued.
   2. **Increments `_generation`** and **enqueues** a `WriteItem` with the
      captured generation, a write function (reads the latest in-memory
@@ -439,7 +454,7 @@ with a single queued writer and explicit generation/result semantics:
 - The background writer loop owns the `FileStream` lifetime. It runs as a
   `Task` started in the service constructor, with `TaskCreationOptions.LongRunning`.
 - Overlapping calls are impossible: the first mutation enqueues, and the second
-  caller's swap+increment happens immediately on the UI thread. Both writes are
+  caller's swap+increment happens immediately (on the caller's thread). Both writes are
   serialized by the queue drain.
 - **Generation-aware write:** The `WriteItem.Generation` comparison against
   the live `_generation` at execution time determines whether the write runs
@@ -474,7 +489,7 @@ to persist is surfaced as follows:
 2. **On write failure** (IOException, UnauthorizedAccessException, disk full):
    The awaited `Task<SettingsMutationResult>` completes with the result's
    `SaveResult` indicating failure. Separately, `ISettingsService.WriteErrors`
-   fires a `SettingsSaveError` on the UI thread for non-blocking surfacing
+   fires a `SettingsSaveError` (emitted on the writer-loop thread, not marshalled — callers apply `ObserveOn` if needed) for non-blocking surfacing
    (status bar / toast).
 3. **The awaiter decides what to do next** — show an error dialog, log, or
    call `SaveAsync()` to retry.
@@ -790,38 +805,21 @@ public sealed class ProjectContextService : IProjectContextService, IDisposable
     }
 
     /// <summary>
-    /// LoadAsync must ensure that the UI-thread state change (Current, state
-    /// transition) is committed before the returned task completes. The
-    /// implementation posts the state mutation to the UI thread via
-    /// Dispatcher.UIThread.InvokeAsync and awaits completion via a
-    /// TaskCompletionSource, so by the time the caller receives the completed
-    /// task, all WhenChanged subscribers and bindings have already been
-    /// notified.
-    ///
-    /// NOTE: RxApp.MainThreadScheduler.Schedule returns IDisposable, not an
-    /// awaitable — it cannot be used with await. Use Dispatcher.InvokeAsync
-    /// or wrap in TaskCompletionSource.
+    /// LoadAsync performs discovery, then applies state and notifies
+    /// subscribers on the calling thread. The service does NOT reference
+    /// Avalonia Dispatcher or Rx schedulers (per V2's UI-independence
+    /// constraint). Callers that need UI-thread delivery apply
+    /// ObserveOn(RxApp.MainThreadScheduler) at their subscription site.
+    /// The returned Task completes after the state mutation, so by the time
+    /// the caller receives it, Current is updated and WhenChanged has fired.
     /// </summary>
     public async Task LoadAsync(string workspaceRoot, CancellationToken ct)
     {
         // ... discovery logic (runs on any thread) ...
 
-        // Post state to UI thread and await the post. This guarantees that
-        // Current is updated and WhenChanged has fired before the Task returns.
-        var tcs = new TaskCompletionSource();
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            try
-            {
-                // Set Current, transition state, raise WhenChanged
-                tcs.SetResult();
-            }
-            catch (Exception ex)
-            {
-                tcs.SetException(ex);
-            }
-        });
-        await tcs.Task;
+        // Apply state and notify subscribers on the calling thread.
+        // No dispatcher marshalling here — the service is UI-agnostic.
+        // Set Current, transition state, raise WhenChanged
     }
 
    public void Dispose()
@@ -1034,19 +1032,23 @@ async Task LoadAsync(string workspaceRoot, CancellationToken ct)
 
 - **[R] Thread ownership of observable updates (resolves unowned dispatcher
 behavior):** Discovery runs off the UI thread (e.g. `await Task.Run` /
-`ConfigureAwait(false)` inside `DiscoverAsync`). All state application and
-notification, however, must occur on the UI thread so Avalonia consumers
-(`StatusBar`) bind without cross-thread violations:
+`ConfigureAwait(false)` inside `DiscoverAsync`). Per V2's UI-independence
+constraint (V2.md § Cross-Cutting Architecture Constraints), the service itself
+must NOT reference Avalonia dispatchers or Rx schedulers. Instead:
 
-- `ApplyDiscoveryResult`, `RestoreLastStableContext`, the `Loading` transition,
-  and the `WhenChanged` emission each run via `Dispatcher.UIThread.Post` /
-  `RxApp.MainThreadScheduler` (the service captures `Dispatcher.UIThread` in its
-  constructor). `Current` is only ever mutated from the UI thread.
-- `WhenChanged` is therefore safe to subscribe to directly from a view or
-  view-model bound to Avalonia. Subscribers must not re-marshal.
-- `LoadAsync`/`UnloadAsync`/`ReloadAsync` are awaitable from any thread; the
-  *caller* may await on any context, but the internal state writes are owned by
-  the UI thread as above.
+- State mutations (`ApplyDiscoveryResult`, `RestoreLastStableContext`, the
+  `Loading` transition, and `WhenChanged` emission) occur on whatever thread
+  calls the mutation method. The service protects `Current` with a simple
+  `lock` or `ReaderWriterLockSlim` so that concurrent reads never see partial
+  state (the snapshot is immutable, so the lock only guards pointer swap).
+- `WhenChanged` is a plain `Subject<ProjectContext>` or `IObservable<ProjectContext>`
+  — no scheduler attachment. The service emits on the calling thread.
+- **Caller responsibility:** ViewModels that bind to Avalonia (e.g. `StatusBar`,
+  project-context status display) apply
+  `.ObserveOn(RxApp.MainThreadScheduler)` at their own subscription site.
+  This keeps the service UI-agnostic and satisfies V2's cross-cutting constraint.
+- `LoadAsync`/`UnloadAsync`/`ReloadAsync` are awaitable from any thread. The
+  caller owns any thread-context marshalling needed for their consumer.
 
 **[R] `SelectProject` must reject out-of-snapshot candidates:** A user
 selection is only valid against the candidates discovered in the *current*
@@ -1171,9 +1173,10 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
    the window scope, not a transient). Its constructor receives
    `MainWindowViewModel` (already a singleton):
    ```csharp
-   public class StatusBarViewModel : ReactiveObject
+   public class StatusBarViewModel : ReactiveObject, IDisposable
    {
        private readonly MainWindowViewModel _mainWindow;
+       private readonly CompositeDisposable _disposables = new();
 
        public StatusBarViewModel(MainWindowViewModel mainWindow)
        {
@@ -1182,26 +1185,55 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
            OpenSettingsCommand = ReactiveCommand.CreateFromTask(async () =>
                await mainWindow.ShowSettings.Handle(Unit.Default));
 
-           // Reactive forwarding: WhenAnyValue observes the source property
-           // and raises PropertyChanged on this VM so Avalonia bindings update.
-           mainWindow.WhenAnyValue(x => x.CaretText)
-                     .Subscribe(_ => this.RaisePropertyChanged(nameof(CaretText)));
-           mainWindow.WhenAnyValue(x => x.LanguageText)
-                     .Subscribe(_ => this.RaisePropertyChanged(nameof(LanguageText)));
-           mainWindow.WhenAnyValue(x => x.ProjectText)
-                     .Subscribe(_ => this.RaisePropertyChanged(nameof(ProjectText)));
-           mainWindow.WhenAnyValue(x => x.BranchText)
-                     .Subscribe(_ => this.RaisePropertyChanged(nameof(BranchText)));
+           // Reactive forwarding: project the live status bar sources.
+           // The real StatusBar (line 110 of StatusBar.cs) reads:
+           //   - Caret: EditorTabs.ActiveTab.CaretLine / CaretColumn
+           //   - Language: GetLanguageFromFilePath(activeTab.FilePath)
+           //   - Project: WorkspaceProjectName
+           //   - Branch: SourceControlViewModel.CurrentBranchName
+           // These are projected reactively through StatusBarViewModel so the
+           // StatusBar view (now ReactiveUserControl<StatusBarViewModel>) binds
+           // to this VM instead of directly to MainWindowViewModel.
+           // Each subscription updates its backing field then directly calls
+           // RaisePropertyChanged — no separate self-observation needed.
+           mainWindow.WhenAnyValue(x => x.EditorTabs.ActiveTab)
+               .Select(tab => tab is not null
+                   ? tab.WhenAnyValue(t => t.CaretLine, t => t.CaretColumn,
+                       (line, col) => $"Ln {line}, Col {col}")
+                   : Observable.Return("Ln 1, Col 1"))
+               .Switch()
+               .Subscribe(text => { _caretText = text; this.RaisePropertyChanged(nameof(CaretText)); })
+               .DisposeWith(_disposables);
+
+           mainWindow.WhenAnyValue(x => x.EditorTabs.ActiveTab)
+               .Select(tab => tab is not null
+                   ? GetLanguageFromFilePath(tab.FilePath)
+                   : "\u2014")
+               .Subscribe(lang => { _languageText = lang; this.RaisePropertyChanged(nameof(LanguageText)); })
+               .DisposeWith(_disposables);
+
+           mainWindow.WhenAnyValue(x => x.WorkspaceProjectName)
+               .Subscribe(name => { _projectText = name ?? "Zaide"; this.RaisePropertyChanged(nameof(ProjectText)); })
+               .DisposeWith(_disposables);
+
+           mainWindow.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
+               .Subscribe(branch => { _branchText = branch ?? "master"; this.RaisePropertyChanged(nameof(BranchText)); })
+               .DisposeWith(_disposables);
        }
 
        public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
 
-       // Delegated properties — Avalonia binds here, not to MainWindowViewModel.
-       // PropertyChanged is raised reactively by the subscriptions above.
-       public string? CaretText => _mainWindow.CaretText;
-       public string? LanguageText => _mainWindow.LanguageText;
-       public string? ProjectText => _mainWindow.ProjectText;
-       public string? BranchText => _mainWindow.BranchText;
+       private string _caretText = "Ln 1, Col 1";
+       private string _languageText = "\u2014";
+       private string _projectText = "Zaide";
+       private string _branchText = "master";
+
+       public string CaretText => _caretText;
+       public string LanguageText => _languageText;
+       public string ProjectText => _projectText;
+       public string BranchText => _branchText;
+
+       public void Dispose() => _disposables.Dispose();
    }
    ```
 
@@ -1412,11 +1444,12 @@ the panel. EditorView applies its code/prose font, size, tab size, insertion
 mode, and whitespace options analogously through AvaloniaEdit's `TextArea.Options`.
 
 **[R] Runtime application contract (summary):** `ISettingsService` exposes
-`IObservable<SettingsModel> WhenChanged` (UI-thread-delivered, D4a) in addition
-to the immutable `Current`. Each surface applies `Current` once at construction
-and subscribes for subsequent changes for the lifetime of the view/panel per the
-ownership chain above. Settings changes are applied immediately on the UI thread;
-reopening a view is not required.
+`IObservable<SettingsModel> WhenChanged` (emitted on the mutating thread —
+callers apply `.ObserveOn(RxApp.MainThreadScheduler)` at their subscription
+site; see D4a) in addition to the immutable `Current`. Each surface applies
+`Current` once at construction and subscribes for subsequent changes for the
+lifetime of the view/panel per the ownership chain above. Settings changes are
+applied immediately; reopening a view is not required.
 
 ### D10: Keybinding Exception List **[R]**
 
@@ -1468,9 +1501,9 @@ The following view-level keybindings ARE migrated to the command registry:
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, UI-thread `WhenChanged`, `WriteErrors` observable), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (private setter) → watcher disposed → tree cleared → `WorkspaceFolderChanged` with null → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` observable fires on UI thread and retry via `SaveAsync` succeeds (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, thread-neutral `WhenChanged`/`WriteErrors` — callers marshal via `ObserveOn`), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (private setter) → watcher disposed → tree cleared → `WorkspaceFolderChanged` with null → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` fires and retry via `SaveAsync` succeeds, with caller-side `ObserveOn` verification (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, **canonical command-and-gesture table (D6a)**, default keybindings, user overrides, window keybinding integration (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. **Duplicate-registration throws; unavailable-command handling test (D6a); canonical gesture-table coverage test (every locked default gesture resolves to the right command, including `Ctrl+Oem3` → `view.toggleBottomPanel`).** Build + tests green. |
-| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **UI-thread ownership of `WhenChanged`/state writes (D8); `SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` delivered on UI thread test.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
+| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **Service is UI-agnostic — `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` marshal test — caller-side `ObserveOn` delivers on UI thread.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
 ## Likely Implementation Shape
 
@@ -1588,7 +1621,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 | Mutable `Current` causes partial/unobserved saves | `SettingsModel` is immutable; only validated async `UpdateAsync`/`ApplyAsync` whole-snapshot commits are allowed; writes serialized through a generation-aware queued writer (D4a). |
 | Close workspace unreachable | `CloseFolderCommand` (`workspace.closeFolder`) + header affordance + `SetRootPath(null)` + unfiltered subscription make the null transition real and tested (D7). |
 | Terminal font can't update at runtime | `readonly` typeface/size replaced with mutable fields + `ApplyFontSettings` that recomputes cell metrics; `WhenChanged` drives it (D9). |
-| Project-context `WhenChanged` fires on a non-UI thread | State writes and `WhenChanged` owned by `Dispatcher.UIThread.Post` with `TaskCompletionSource` acknowledgement (D8). |
+| Project-context `WhenChanged` fires on a non-UI thread | Service emits on the calling thread (no dispatcher dependency — V2 constraint). Callers apply `.ObserveOn(RxApp.MainThreadScheduler)` at their subscription site (D8). |
 | `SelectProject` accepts a stale candidate | Candidates not in `Current.Candidates` are rejected (D8). |
 | `Workspace` split breaks existing consumers | `Workspace` does NOT split in Phase 8. Document/tab ownership and folder identity remain together. `IProjectContextService` is additive. No existing consumer is forced to change. |
 | `Workspace.WorkspacePath` has no change notification | Phase 8 adds `WorkspaceFolderChanged` event (D7). Minimal additive change. No existing consumer broken. |
@@ -1604,7 +1637,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 - [ ] **Editor fonts:** No font family (code or prose) or font size is a hardcoded literal in `EditorView`. Code font (`codeFontFamily`/`codeFontSize`) and prose font (`proseFontFamily`) are separate settings driven by `ISettingsService`.
 - [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
 - [ ] **LLM (live):** `AgentExecutionService` resolves effective LLM config **live** per `ExecuteAsync` from `ISettingsService` + `ISecretStore` + env-var fallback (D4b). Saving endpoint/model/key in the Settings UI affects the next request without restart — verified by `LiveLlmConfigTests`. No plaintext API key in settings file. `AgentExecutionOptions` is a per-call value carrier, not a DI singleton. Synchronous DI composition preserved.
-- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a UI-thread `WhenChanged`. Mutation happens only via validated async `UpdateAsync`/`ApplyAsync` (whole-snapshot commit via `with` expressions, field-level validation errors reported, no mutable public `Current`). Writes serialized through a generation-aware `Channel`-based queue; each mutation enqueues a closure that writes the live snapshot at execution time. Stale writes (earlier generation) are no-ops. The caller can await the returned `Task<SettingsMutationResult>` (D4a).
+- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a thread-neutral `WhenChanged` (callers marshal via `ObserveOn` at subscription site). Mutation happens only via validated async `UpdateAsync`/`ApplyAsync` (whole-snapshot commit via `with` expressions, field-level validation errors reported, no mutable public `Current`). Writes serialized through a generation-aware `Channel`-based queue; each mutation enqueues a closure that writes the live snapshot at execution time. Stale writes (earlier generation) are no-ops. The caller can await the returned `Task<SettingsMutationResult>` (D4a).
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Temp file created `0600` before write; rename preserves mode; pre-existing loose-mode file repaired on load (Linux). Env-var fallback works. Non-Linux policy documented (D4).
 - [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup, `Execute(string id)`, and `Execute<T>(string id, T parameter)`. Duplicate `Id` registration throws. Unavailable commands (`GetById` null or `CanExecute` false) make `Execute` return `false` and render disabled in UI — never throw. Parameterized commands remain ViewModel-local. **Canonical command-and-gesture table (D6a) locks every default gesture, including `Ctrl+Oem3` → `view.toggleBottomPanel`.**
 - [ ] **Keybindings:** Window keybindings are materialized by the UI from
@@ -1613,7 +1646,7 @@ File permissions: `0600` (owner read/write only) on Linux.
    documented (D10). `Ctrl+Oem3` and `Ctrl+J` are documented aliases for
    `view.toggleBottomPanel`.
 - [ ] **Close workspace (reachable):** `MainWindowViewModel.CloseFolderCommand` (`workspace.closeFolder`), enabled only when a folder is open, drives `FileTreeViewModel.SetRootPath(null)` → unfiltered `RootPath` subscription → `Workspace.SetProjectFromPath(null)` → `WorkspaceFolderChanged`(null) → `IProjectContextService.UnloadAsync` and Source Control returns to uninitialized; open documents are retained (D7).
-- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Full 8-state lifecycle (Unloaded → Loading → NoProject/Unsupported/SingleProject/Ambiguous/Selected/Failed). Extension classification table determines supported vs. unsupported. `LoadAsync`/`ReloadAsync`/`UnloadAsync` accept `CancellationToken`. **Cancellation is NOT `Failed`** — it preserves the last stable context; only IO/permission faults are `Failed` (D8). Stale-load sequence-number pattern prevents out-of-order results. `Workspace.WorkspaceFolderChanged` event drives auto-discovery with `IDisposable` subscription. **State writes and `WhenChanged` owned by the UI thread (D8).** **`SelectProject` rejects candidates not in `Current.Candidates` (D8).** Status bar consumes project context name.
+- [ ] **Project context:** `IProjectContextService` discovers `.sln`/`.slnx`/`.csproj` in workspace root. Full 8-state lifecycle (Unloaded → Loading → NoProject/Unsupported/SingleProject/Ambiguous/Selected/Failed). Extension classification table determines supported vs. unsupported. `LoadAsync`/`ReloadAsync`/`UnloadAsync` accept `CancellationToken`. **Cancellation is NOT `Failed`** — it preserves the last stable context; only IO/permission faults are `Failed` (D8). Stale-load sequence-number pattern prevents out-of-order results. `Workspace.WorkspaceFolderChanged` event drives auto-discovery with `IDisposable` subscription. **Service is UI-agnostic -- `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects candidates not in `Current.Candidates` (D8).** Status bar consumes project context name.
 - [ ] **Workspace:** `Workspace` document ownership unchanged. `WorkspaceFolderChanged` event added. Event raised by `SetProjectFromPath()`. `IProjectContextService` is additive. No parallel sources of project truth.
 - [ ] **Settings UI:** Accessible via status bar gear icon. Editor and LLM settings editable.
 - [ ] **Tests:** All pre-existing tests pass. New tests cover settings, secrets, commands, keybindings, and project context. Test count at closeout recorded from `dotnet test` output (baseline: 817 as of 2026-07-10).
