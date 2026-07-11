@@ -11,8 +11,9 @@
 - [x] Verify no settings persistence, command registry, project discovery, or secret
       store exists (all greenfield)
 - [x] Confirm `System.Text.Json` is available (used by `AgentExecutionService` for HTTP)
-- [x] Verify `IndentGuideRenderer` and `IndentGuideMetrics` already read
-      `textView.Options.IndentationSize` — will auto-adapt to settings-driven values
+- [x] Verify `IndentGuideRenderer` reads `textView.Options.IndentationSize`
+      and `IndentGuideMetrics` receives it as a parameter — both auto-adapt
+      to settings-driven values
 
 ## Planning Status
 
@@ -30,16 +31,16 @@ are marked with **[R]** annotations where the revised contract is material.
 
 | File | Phase 8-relevant facts |
 |------|------------------------|
-| `src/Program.cs` | DI composition root. All registrations inline in one lambda (lines 24-78). `AgentExecutionOptions` created via factory lambda reading `AGENT_API_URL`, `AGENT_API_KEY`, `AGENT_MODEL` env vars. No settings service, no command registry, no project context service registered. |
+| `src/Program.cs` | DI composition root. All registrations inline in one lambda (lines 25-77). `AgentExecutionOptions` created via factory lambda reading `AGENT_API_URL`, `AGENT_API_KEY`, `AGENT_MODEL` env vars. No settings service, no command registry, no project context service registered. |
 | `src/Models/Workspace.cs` | Combines two responsibilities: (A) document/tab ownership (`_documents` dict, `OpenDocument`, `CloseDocument`, `SetActiveDocument`, `ActiveDocument`, `Documents`) and (B) folder identity (`WorkspacePath`, `ProjectName`, `SetProjectFromPath`). **`WorkspacePath` and `ProjectName` are plain auto-properties — no change notification.** No project/solution awareness. `ProjectName` is just `Path.GetFileName(folderPath)`. |
 | `src/Services/AgentExecutionOptions.cs` | Simple DTO: `BaseUrl` (default `https://api.openai.com/v1`), `ApiKey` (default empty), `Model` (default `gpt-4o-mini`). Populated from env vars in `Program.cs`. Plaintext in memory for process lifetime. |
 | `src/Services/AgentExecutionService.cs` | Validates `ApiKey`, `BaseUrl`, `Model` non-empty before HTTP call. Returns structured `AgentExecutionResult`. |
 | `src/Models/AgentPanelState.cs` | Per-panel UI state. Deliberately excludes provider/credential configuration. Phase 8 must NOT move endpoint/model/secret settings here. |
 | `src/Views/EditorView.cs` | All font/size/whitespace values hardcoded as `static readonly` literals: font `"Cascadia Code, Consolas, monospace"`, size `14`, `ShowTabs = false`, `ShowSpaces = false`. Indent size uses AvaloniaEdit default (4). |
 | `src/Views/TerminalRenderControl.cs` | Terminal font `"Cascadia Code, JetBrains Mono, DejaVu Sans Mono, monospace"`, size `14`. |
-| `src/Styles/TextStyles.cs` | Global text style factory. Sizes 11/12/13/15 px. Not editor-specific. |
+| `src/Styles/TextStyles.cs` | Global text style factory. Sizes 11/12/13 px (Header 13, Body 13, Caption 11, Brand 12). Not editor-specific. |
 | `src/Views/IndentGuideRenderer.cs` | Reads `textView.Options.IndentationSize` at render time — auto-adapts. |
-| `src/Views/IndentGuideMetrics.cs` | Reads `textView.Options.IndentationSize` — auto-adapts. |
+| `src/Views/IndentGuideMetrics.cs` | `static` helper class. Methods accept `int indentationSize` as a parameter (no `textView` reference). Caller (`IndentGuideRenderer`) extracts the value and passes it in — auto-adapts. |
 | `src/MainWindow.axaml.cs` | 4 window-level keybindings hardcoded in `WhenActivated`: `` Ctrl+` ``, `Ctrl+J` (toggle bottom panel), `Ctrl+S` (save), `Ctrl+O` (open folder). No settings/menu surface exists. |
 | `src/Views/TerminalPanel.cs` | Inline `KeyDown` handler for `Ctrl+C`, `Ctrl+Shift+C/V`, `PageUp/Down/Home/End`, search `Enter/Escape`. |
 | `src/Views/FileTreeView.cs` | Inline `Ctrl+Shift+H` toggles hidden files, `Enter` opens selected file. |
@@ -465,6 +466,26 @@ with a single queued writer and explicit generation/result semantics:
   each other. The atomic write-temp-then-rename (D2) makes the on-disk result
   always complete.
 
+**Thread safety for `Current` and `_generation`:**
+
+- `Current` is backed by a `volatile SettingsModel _current` field. The
+  immutable snapshot is a reference-typed value; `volatile` guarantees that
+  reads always see the most recently written reference. No lock is needed —
+  the snapshot is deeply immutable, so concurrent readers never see partial
+  state.
+- `_generation` is a `long` field accessed via `Interlocked.Increment(ref
+  _generation)` on the caller's thread (at mutation time) and
+  `Interlocked.Read(ref _generation)` on the background writer loop thread
+  (at execution time). This eliminates the data race that a plain `++` /
+  plain read would introduce under the .NET memory model.
+- **Ordering guarantee:** `Current` is updated **before** `WhenChanged` fires.
+  The swap of `_current` (via `Volatile.Write`) and the increment of
+  `_generation` (via `Interlocked.Increment`) happen on the caller's thread
+  before `WhenChanged` emits. A subscriber that reads `Current` inside its
+  `WhenChanged` handler is guaranteed to see the new snapshot. This
+  happens-before relationship applies to both `ISettingsService.WhenChanged`
+  and `IProjectContextService.WhenChanged`.
+
 **`SettingsSaveError` definition:**
 
 ```csharp
@@ -712,6 +733,23 @@ behavior the first audit flagged.
 | `sourcecontrol.commit` | Commit | Source Control | (unbound) | — | Invoked from panel |
 | `sourcecontrol.refresh` | Refresh | Source Control | (unbound) | — | Also fired on workspace change |
 
+**Explicitly excluded parameterless commands (not registered):**
+
+The following `ReactiveCommand<Unit,Unit>` commands exist in the codebase but
+are **not** registered in the command registry. They remain ViewModel-local:
+
+| Command | Owner | Reason for exclusion |
+|---------|-------|---------------------|
+| `TerminalViewModel.ClearCommand` | Terminal | Terminal-internal action; invoked from terminal panel context menu. |
+| `TerminalViewModel.RestartCommand` | Terminal | Terminal-internal action; invoked from terminal panel context menu. |
+| `TerminalHost.NewTabCommand` | Terminal host | Terminal-internal action; invoked from terminal tab bar. |
+| `FileTreeViewModel.ExpandAllCommand` | File tree | File-tree-internal action; invoked from file-tree context menu. |
+| `FileTreeViewModel.CollapseAllCommand` | File tree | File-tree-internal action; invoked from file-tree context menu. |
+| `MainWindowViewModel.HideBottomPanelCommand` | Main window | Subsumed by `view.toggleBottomPanel`; hide is a one-way variant that the toggle already covers. |
+| `MainWindowViewModel.SwitchToExplorerCommand` | Main window | Navigation command; may be registered in a future phase when sidebar navigation is formalized. Not a global action in Phase 8. |
+| `MainWindowViewModel.SwitchToSourceControlCommand` | Main window | Navigation command; same rationale as `SwitchToExplorerCommand`. |
+| `TownhallViewModel.SendMessageCommand` | Townhall | Text-input context — scoped to Townhall input field (analogous to `Enter` to send in `AgentPanelView`, which is in the D10 exception list). |
+
 **Duplicate registration policy:** Registering the same `Id` twice is a
 programming error. `ICommandRegistry` throws `InvalidOperationException` on a
 duplicate `Id` at registration time (fail fast in dev). This is distinct from
@@ -856,9 +894,13 @@ assigns a non-null path. Phase 8 must provide a concrete, reachable path:
    ```csharp
    d.Add(FileTreeViewModel.CloseFolderRequested.RegisterHandler(async ctx =>
    {
-       // Await the command before signalling completion so that Handle()
-       // is a reliable close-workspace boundary for the caller.
-       await CloseFolderCommand.Execute(Unit.Default).FirstAsync();
+       // Guard: if the command cannot execute (e.g. no folder is open, or
+       // already closing), complete immediately without hanging. The
+       // interaction caller's Handle() always resolves.
+       if (CloseFolderCommand.CanExecute(Unit.Default))
+       {
+           await CloseFolderCommand.Execute(Unit.Default).FirstAsync();
+       }
        ctx.SetOutput(Unit.Default);
    }));
    ```
@@ -1038,9 +1080,10 @@ must NOT reference Avalonia dispatchers or Rx schedulers. Instead:
 
 - State mutations (`ApplyDiscoveryResult`, `RestoreLastStableContext`, the
   `Loading` transition, and `WhenChanged` emission) occur on whatever thread
-  calls the mutation method. The service protects `Current` with a simple
-  `lock` or `ReaderWriterLockSlim` so that concurrent reads never see partial
-  state (the snapshot is immutable, so the lock only guards pointer swap).
+  calls the mutation method. The service protects `Current` with a `volatile
+  ProjectContext _current` field so that concurrent reads always see the most
+  recently written reference. The snapshot is immutable, so no lock is needed —
+  `volatile` guarantees visibility across threads.
 - `WhenChanged` is a plain `Subject<ProjectContext>` or `IObservable<ProjectContext>`
   — no scheduler attachment. The service emits on the calling thread.
 - **Caller responsibility:** ViewModels that bind to Avalonia (e.g. `StatusBar`,
@@ -1396,8 +1439,11 @@ explicitly, threading it down the existing ownership chain:
 **Disposal ownership (explicit):** `ISettingsService` is a process-lifetime
 singleton owned by the DI container, never by a view. Each view/panel holds
 only a `WhenChanged` subscription, disposed as follows:
-- `EditorView`'s subscription is disposed with the EditorView (window close,
-  via `MainWindow`'s disposal chain).
+- **Phase 8.1 makes `EditorView` implement `IDisposable`** (disposing its
+  `WhenChanged` subscription). `EditorView` is a plain `UserControl` with no
+  `WhenActivated` disposal pattern, so `IDisposable` is the explicit mechanism.
+  `MainWindow`'s disposal chain calls `(_editorView as IDisposable)?.Dispose()`
+  on window close, alongside the existing `_disposables.Dispose()` call.
 - `TerminalTabHost.RemovePanel` currently nulls `panel.ViewModel` and removes
   the panel from the dictionary but does NOT dispose it. **Phase 8.1 makes
   `TerminalPanel` implement `IDisposable`** (disposing its `WhenChanged`
@@ -1511,9 +1557,9 @@ The following view-level keybindings ARE migrated to the command registry:
 5. **DI composition is inline in `Program.cs`.** New services are registered
    inline following the existing pattern. No refactoring of the DI setup is
    in scope for Phase 8.
-6. **`IndentGuideRenderer` and `IndentGuideMetrics` already read
-   `textView.Options.IndentationSize`.** Editor settings must push values into
-   AvaloniaEdit's options — these renderers will auto-adapt.
+6. **`IndentGuideRenderer` reads `textView.Options.IndentationSize` and
+   `IndentGuideMetrics` receives it as a parameter.** Editor settings must
+   push values into AvaloniaEdit's options — these renderers will auto-adapt.
 7. **`Workspace.WorkspacePath` is not reactive.** Phase 8 adds a
    `WorkspaceFolderChanged` event (D7). No existing consumer is broken by an
    additional event. The event is raised by `SetProjectFromPath()`, including
@@ -1563,11 +1609,11 @@ The following view-level keybindings ARE migrated to the command registry:
 |------|-----------|--------|
 | `src/Program.cs` | All | Register new services. `AgentExecutionService` registered with `ISettingsService` + `ISecretStore` (D4b). `AgentExecutionOptions` is **no longer a DI singleton**. |
 | `src/Models/Workspace.cs` | 8.1 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation (including null close-workspace transition). Consumed by `IProjectContextService` (8.3). |
-| `src/Views/EditorView.cs` | 8.1 | Ctor gains `ISettingsService`. Replace hardcoded font/size/whitespace literals with settings-driven values applied at construction + on `WhenChanged`. |
+| `src/Views/EditorView.cs` | 8.1 | Ctor gains `ISettingsService`. Replace hardcoded font/size/whitespace literals with settings-driven values applied at construction + on `WhenChanged`. Implements `IDisposable` — `Dispose()` disposes the `WhenChanged` subscription. `MainWindow` disposal chain calls `(_editorView as IDisposable)?.Dispose()` on window close. |
 | `src/Views/TerminalRenderControl.cs` | 8.1 | Ctor gains `ISettingsService`. Replace `readonly` `_typeface`/`_fontSize` with mutable fields + `ApplyFontSettings(...)` (D9). Settings-driven font applied at construction + on `WhenChanged`. |
 | `src/Views/TerminalPanel.cs` | 8.1 | Ctor gains `ISettingsService`; implements `IDisposable` to dispose its `WhenChanged` subscription for the tab lifetime. |
 | `src/Views/TerminalTabHost.cs` | 8.1 | Ctor gains `ISettingsService`; forwards it to each `TerminalPanel` it creates. Implements `IDisposable` — `Dispose()` enumerates and disposes all retained `TerminalPanel` instances. `SetHost()` loop calls `(panel as IDisposable)?.Dispose()` before nulling ViewModel (matching `RemovePanel`). `RemovePanel()` calls `(panel as IDisposable)?.Dispose()` after nulling the ViewModel and before removing from the dictionary. |
-| `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: register `ShowSettings` Interaction handler (constructs `SettingsPanelView` + `SettingsViewModel(settings, secrets)`, manages `_settingsPanelHost` `Border` field); resolve `StatusBarViewModel` from DI and assign to `_statusBar.ViewModel` (replacing `ViewModel`); pass `ISettingsService` into `new EditorView(settings)` and `new TerminalTabHost(settings)`. 8.2: replace imperative keybinding wiring with registry-driven binding (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). |
+| `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: register `ShowSettings` Interaction handler (constructs `SettingsPanelView` + `SettingsViewModel(settings, secrets)`, manages `_settingsPanelHost` `Border` field); resolve `StatusBarViewModel` from DI and assign to `_statusBar.ViewModel` (replacing `ViewModel`); pass `ISettingsService` into `new EditorView(settings)` and `new TerminalTabHost(settings)`; disposal chain calls `(_editorView as IDisposable)?.Dispose()` and `_terminalTabHost.Dispose()` on window close. 8.2: replace imperative keybinding wiring with registry-driven binding (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). |
 | `src/Services/AgentExecutionOptions.cs` | 8.1 | Demoted to a plain immutable per-call value object. No DI registration, no factory. |
 | `src/Services/AgentExecutionService.cs` | 8.1 | Ctor gains `ISettingsService` + `ISecretStore` (replacing the static `AgentExecutionOptions`). Resolves effective LLM config live per `ExecuteAsync` (D4b). |
 | `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.3 | 8.1: add `CloseFolderCommand` (`workspace.closeFolder`, enabled only when a folder is open); add `ShowSettings` Interaction; subscribe to `FileTreeViewModel.CloseFolderRequested` Interaction in `Activate()` to forward close requests; observe both null and non-null `FileTreeViewModel.RootPath` transitions (remove the `!string.IsNullOrEmpty` filter) so close-workspace unloads and refreshes Source Control. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
