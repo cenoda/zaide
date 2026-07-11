@@ -1,5 +1,6 @@
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
@@ -26,6 +27,8 @@ class Program
                     services.AddSingleton<Models.Workspace>();
 
                     // Phase 8.1.1 M1: immutable settings core
+                    services.AddLogging(builder => builder.AddConsole());
+                    services.AddSingleton<ICommandRegistry, CommandRegistry>();
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<StatusBarViewModel>();
                     services.AddSingleton<IFileService, FileService>();
