@@ -34,6 +34,11 @@ docs/
 │   ├── closed/          # Resolved issues (moved here)
 │   ├── templates/       # Issue file template
 │   └── INDEX.md         # Issue index table
+├── deferred/
+│   ├── open/            # Findings intentionally deferred for later deep work
+│   ├── closed/          # Deferred findings resolved or deliberately dropped
+│   ├── templates/       # Deferred-finding template
+│   └── INDEX.md         # Deferred-finding index table
 ├── spec/
 │   ├── templates/       # Spec file template
 │   └── INDEX.md         # Spec index table
@@ -225,7 +230,23 @@ If a bug fix is not obvious after 2 attempts, create an issue file immediately.
 
 ---
 
-## 7. Library Catalog (`docs/LIBRARIES.md`)
+## 7. Deferred Findings
+
+Use `docs/deferred/` for observations discovered during testing or exploration
+that deserve a deeper future fix but are intentionally out of the current
+scope. This is a lightweight capture mechanism, not a claim that the item is
+currently blocking or ready for implementation.
+
+- Start from `docs/deferred/templates/FINDING-template.md`.
+- Give each finding a stable `DF-###` identifier and add it to `INDEX.md`.
+- Record evidence and the current workaround or limitation, but do not invent
+  a root cause before it has been investigated.
+- Move the file to `closed/` only when the finding is fixed, explicitly dropped,
+  or superseded by a phase/issue; update the index at the same time.
+- If investigation has already taken two unsuccessful fix attempts, promote it
+  to `docs/issues/open/` instead of keeping it only as a deferred finding.
+
+## 8. Library Catalog (`docs/LIBRARIES.md`)
 
 Before implementing non-trivial functionality, check if a library exists.
 
@@ -241,7 +262,7 @@ Every library entry must have:
 
 ---
 
-## 8. Architecture Docs
+## 9. Architecture Docs
 
 Keep `docs/architecture/OVERVIEW.md` as the canonical description of Zaide's
 two layers:
@@ -256,7 +277,7 @@ Update architecture docs when:
 
 ---
 
-## 9. Commit Messages
+## 10. Commit Messages
 
 ```
 area: short imperative summary
@@ -266,7 +287,7 @@ Examples: `editor: add tab switching`, `agents: implement townhall logger`, `doc
 
 ---
 
-## 10. Decision Checkpoints (Stop and Ask User)
+## 11. Decision Checkpoints (Stop and Ask User)
 
 Stop work and ask when:
 1. Architecture change — modifying interfaces or DI setup
@@ -277,7 +298,7 @@ Stop work and ask when:
 
 ---
 
-## 11. Lessons from Aero
+## 12. Lessons from Aero
 
 These patterns are borrowed from the `cenoda/aero` project and proven in practice:
 
@@ -289,7 +310,7 @@ These patterns are borrowed from the `cenoda/aero` project and proven in practic
 
 ---
 
-## 12. Hard Rules (from Phase 2 revert)
+## 13. Hard Rules (from Phase 2 revert)
 
 These are enforced by code review — no exceptions. They exist because Phase 2
 was implemented once, found fundamentally broken, and reverted at commit
