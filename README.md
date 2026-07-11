@@ -156,7 +156,8 @@ AI-native orchestration work:
 
 V2 is in progress. Phase 8 umbrella plan is live-code-verified at
 `docs/phases/v2/phase-8/IMPLEMENTATION_PLAN.md`. Sub-phase 8.1 (Settings
-Foundation) requires its own detailed plan before coding begins.
+Foundation) is planned as five implementation slices; 8.1.1 (Settings Core)
+is the first slice before coding begins.
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"

@@ -26,8 +26,9 @@ close-workspace path, and a Settings panel.
 
 **Boundaries:**
 
-- This plan covers **M1–M6 only**. It does not reopen umbrella M0 or start
-  Phase 8.2 or Phase 8.3 work.
+- This is the Phase 8.1 **delivery plan**. Production implementation is split
+  into the five child plans below; M6 remains the Phase 8.1 closeout gate. It
+  does not reopen umbrella M0 or start Phase 8.2 or Phase 8.3 work.
 - Do not add `ICommandRegistry`, command descriptors, default-gesture
   migration, user-editable keybindings, or a command palette. The local
   `CloseFolderCommand` exists only as the Phase 8.1 close-folder seam; its
@@ -128,14 +129,14 @@ close-workspace path, and a Settings panel.
 
 ## Milestones
 
-| Milestone | Description | Verification |
-|-----------|-------------|--------------|
-| **M1** | Add immutable settings records, validation/result types, `ISettingsService`, JSON path resolution, synchronous load, schema validation/migration infrastructure, recovery, atomic settings writes, and the generation-aware queued writer. Register the service in `Program.cs`. | Settings round-trip; missing/corrupt/invalid-schema/future/unsupported-old behavior; last-known-good fallback; atomic-write test; synthetic migration test; immutable snapshot and invalid-candidate rejection tests; queued-write supersession and `WriteErrors`/retry tests. |
-| **M2** | Add `ISecretStore` and `FileSecretStore`; migrate `AgentExecutionService` to live per-request resolution and remove singleton DI registration of `AgentExecutionOptions`. | Secrets never appear in settings JSON; get/set/delete tests; Linux restrictive-create, rename-mode, and repair tests; `LiveLlmConfigTests` proves a saved endpoint/model/key affects the next request; environment override test. |
-| **M3** | Add `WorkspaceFolderChanged` and the fully reachable close-folder sequence: sole `SetRootPath` writer, local command, interaction bridge, null-aware MainWindow subscription, tree/watcher cleanup, and Source Control refresh. | A close-workspace test traces command → interaction → `SetRootPath(null)` → watcher disposal/tree clear → `WorkspaceFolderChanged` after null workspace path → uninitialized Source Control while open documents remain. Failed open validation retains the existing workspace/watcher. |
-| **M4** | Thread settings through the actual editor/terminal construction chain and apply editor code/prose, whitespace, indentation, and terminal typography at startup and on change. Add explicit disposal ownership for editor and terminal subscriptions. | Editor option application and live-update tests; terminal `ApplyFontSettings` test proves cell metrics/layout update without panel reconstruction; `TerminalPanel.RemovePanel`, host replacement, and window-close disposal tests. |
-| **M5** | Add `StatusBarViewModel`, retarget `StatusBar`, and implement the status-bar gear → `ShowSettings` interaction → transient Settings panel lifecycle. Implement candidate editing, validation, apply, discard, secret handling, and configured-model projection. | Gear bridge test confirms the panel opens; apply/discard and inline-validation tests; closing panel disposes `SettingsViewModel`; model label reflects saved `Llm.Model` as `configured: {model}` and hides when absent; UI subscriptions marshal on the main scheduler. |
-| **M6** | Integrate the M1–M5 seams, update affected tests and documentation truth, and perform the Phase 8.1 regression/acceptance sweep. Do not add Phase 8.2 or 8.3 behavior. | `dotnet build Zaide.slnx --no-restore` with 0 warnings/0 errors; `dotnet test Zaide.slnx --no-build` fully green; `git diff --check`; confirm every blocking test below remains present and passing. |
+| Milestone | Child plan | Description | Verification |
+|-----------|------------|-------------|--------------|
+| **M1** | [`phase-8.1.1`](phase-8.1.1/IMPLEMENTATION_PLAN.md) | Settings Core: immutable settings, persistence, migration infrastructure, recovery, and queued writes. | Child-plan gates pass. |
+| **M2** | [`phase-8.1.2`](phase-8.1.2/IMPLEMENTATION_PLAN.md) | Secrets & Live LLM: separate secret store and per-request LLM configuration resolution. | Child-plan gates pass. |
+| **M3** | [`phase-8.1.3`](phase-8.1.3/IMPLEMENTATION_PLAN.md) | Workspace Close Lifecycle: reachable close-folder flow, cleanup, and notification seam. | Child-plan gates pass. |
+| **M4** | [`phase-8.1.4`](phase-8.1.4/IMPLEMENTATION_PLAN.md) | Runtime Editor & Terminal Settings: concrete settings injection and subscription disposal. | Child-plan gates pass. |
+| **M5** | [`phase-8.1.5`](phase-8.1.5/IMPLEMENTATION_PLAN.md) | Settings UI: status-bar bridge, transient settings panel, editing and disposal. | Child-plan gates pass. |
+| **M6** | Phase 8.1 parent | Integrate M1–M5, truth-sync documentation, and run the full regression/acceptance sweep. Do not add Phase 8.2 or 8.3 behavior. | `dotnet build Zaide.slnx --no-restore` with 0 warnings/0 errors; `dotnet test Zaide.slnx --no-build` green; `git diff --check`; every blocking test remains present and passing. |
 
 ## Blocking Test Matrix
 

@@ -6,7 +6,8 @@ One agent codes, another reviews. They argue. You get better code.
 **Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is in progress — Phase 8
 umbrella plan is live-code-verified (Phase 8 through Phase 13). Sub-phase 8.1
-(Settings Foundation) requires its own detailed plan before coding begins.
+(Settings Foundation) is decomposed into five implementation slices; 8.1.1
+(Settings Core) is the first slice before coding begins.
 This document describes the currently delivered V1 architecture; V2 entries
 below are planned direction, not claims about live code.
 

@@ -1649,7 +1649,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, thread-neutral `WhenChanged`/`WriteErrors` — callers marshal via `ObserveOn`), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (public method; `RootPath` setter is private) → watcher disposed → tree cleared → `WorkspaceFolderChanged` fires → consumer reads `Workspace.WorkspacePath` (now null) → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` fires and retry via `SaveAsync` succeeds, with caller-side `ObserveOn` verification (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
+| **M1–M6** | 8.1 | Settings Foundation is delivered through five child plans: 8.1.1 Settings Core (M1), 8.1.2 Secrets & Live LLM (M2), 8.1.3 Workspace Close Lifecycle (M3), 8.1.4 Runtime Editor & Terminal Settings (M4), and 8.1.5 Settings UI (M5). M6 remains the 8.1 parent integration and closeout gate. The parent plan and child-plan links are at `phase-8.1/IMPLEMENTATION_PLAN.md`. | Each child plan owns its narrow tests; M6 retains the full settings, secrets, LLM, close-workspace, terminal-runtime-font, UI-bridge, disposal, build, and regression acceptance gates specified below. |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, **canonical command-and-gesture table (D6a)**, default keybindings, user overrides, window keybinding integration (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. **Duplicate-registration throws; unavailable-command handling test (D6a); canonical gesture-table coverage test (every locked default gesture resolves to the right command, including `Ctrl+Oem3` → `view.toggleBottomPanel`).** Build + tests green. |
 | **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **Service is UI-agnostic — `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` marshal test — caller-side `ObserveOn` delivers on UI thread.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
@@ -1804,22 +1804,10 @@ File permissions: `0600` (owner read/write only) on Linux.
 
 ## Exact Next Step
 
-Write `docs/phases/v2/phase-8/phase-8.1/IMPLEMENTATION_PLAN.md` — the detailed
-plan for Settings Foundation (M1–M6). That plan locks the `ISettingsService`
-interface shape (immutable `Current`, thread-neutral `WhenChanged` — callers marshal via `ObserveOn`, validated
-async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer,
-`SaveAsync` with `CancellationToken` — D4a), settings file path resolution,
-migration infrastructure, secret store implementation (`FileStreamOptions.UnixCreateMode = 0600`
-for race-free restrictive creation — D4), editor/terminal settings integration
-with the concrete constructor-injection path and terminal runtime font update
-(D9), the **live** `AgentExecutionService` LLM resolution (D4b), the reachable
-close-workspace path with `CloseFolderRequested` interaction bridge and
-`SetRootPath` as sole `RootPath` writer (D7), and the settings UI with explicit
-`ShowSettings` Interaction bridge and `IDisposable` ViewModel disposal (D9)
-before any production code changes. The 8.1 plan must include the blocking
-tests from M1 (`LiveLlmConfigTests`, immutable-snapshot with queued-write
-verification, close-workspace with interaction bridge, terminal font,
-secret mode with `UnixCreateMode`, disposal ownership).
+Implement only `docs/phases/v2/phase-8/phase-8.1/phase-8.1.1/IMPLEMENTATION_PLAN.md`
+(M1, Settings Core) after its entry gates are verified. The 8.1 parent plan
+locks the shared contracts; the child plans keep production changes bounded to
+one concern at a time. Do not begin 8.1.2–8.1.5, M6, Phase 8.2, or Phase 8.3.
 
 ## Rollback Plan
 
