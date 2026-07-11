@@ -22,7 +22,8 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var vm = Services.GetRequiredService<MainWindowViewModel>();
-            desktop.MainWindow = new MainWindow { ViewModel = vm };
+            var settings = Services.GetRequiredService<ISettingsService>();
+            desktop.MainWindow = new MainWindow(settings) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

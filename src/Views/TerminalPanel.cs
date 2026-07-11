@@ -15,11 +15,15 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.ViewModels;
 using Zaide.Styles;
+using Zaide.Services;
+using Zaide.Models;
 
 namespace Zaide.Views;
 
 public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 {
+    private readonly SettingsBinding _settingsBinding;
+    private bool _settingsDisposed;
     private readonly TerminalRenderControl _renderControl;
     private readonly Button _latestButton;
     private readonly Button _clearButton;
@@ -39,7 +43,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     private string _searchQuery = "";
     private TerminalSearchResult? _searchResult;
 
-    public TerminalPanel()
+    public TerminalPanel(ISettingsService settings)
     {
         var resourceDictionary = Application.Current!.Resources;
         _renderControl = new TerminalRenderControl();
@@ -222,6 +226,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         root.Children.Add(_contentArea);
         Content = root;
 
+        _settingsBinding = new SettingsBinding(
+            settings,
+            model => ApplyTerminalSettings(model.Editor));
+
         // ── Bindings ───────────────────────────────────────────────
         this.WhenActivated(d =>
         {
@@ -377,6 +385,23 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
     }
 
     public void FocusTerminal() => _renderControl.Focus();
+
+    private void ApplyTerminalSettings(EditorSettings settings)
+    {
+        var projection = ProjectTerminalSettings(settings);
+        _renderControl.ApplyFontSettings(projection.Family, projection.Size);
+        ForwardResize();
+    }
+
+    internal static (string Family, int Size) ProjectTerminalSettings(EditorSettings settings) =>
+        (settings.TerminalFontFamily, settings.TerminalFontSize);
+
+    public void DisposeSettingsSubscription()
+    {
+        if (_settingsDisposed) return;
+        _settingsDisposed = true;
+        _settingsBinding.Dispose();
+    }
 
     // ── Search (M3) ────────────────────────────────────────────────
 

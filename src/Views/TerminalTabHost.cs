@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
+using System.Reactive.Disposables;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.ViewModels;
+using Zaide.Services;
 
 namespace Zaide.Views;
 
@@ -21,19 +24,38 @@ namespace Zaide.Views;
 /// <para>By design this control never lives inside a ViewModel — the retained
 /// <c>TerminalPanel</c> cache stays in the view layer only.</para>
 /// </summary>
-public class TerminalTabHost : UserControl
+public class TerminalTabHost : UserControl, IDisposable
 {
     private readonly TerminalTabStrip _strip;
     private readonly ContentControl _content;
     private readonly Dictionary<TerminalTabViewModel, TerminalPanel> _panels = new();
+    private readonly Dictionary<TerminalTabViewModel, IDisposable> _panelSettingsSubscriptions = new();
 
     private ITerminalHost? _host;
     private TerminalTabViewModel? _activeTab;
+    private readonly Func<TerminalTabViewModel, TerminalPanel?> _panelFactory;
+    private readonly Func<TerminalTabViewModel, TerminalPanel?, IDisposable?> _subscriptionFactory;
+    private bool _disposed;
 
     public event Action? LastTabCloseRequested;
 
-    public TerminalTabHost()
+    public TerminalTabHost(ISettingsService settings)
+        : this(
+            settings,
+            tab => new TerminalPanel(settings),
+            (_, panel) => panel is null
+                ? null
+                : Disposable.Create(panel.DisposeSettingsSubscription))
     {
+    }
+
+    internal TerminalTabHost(
+        ISettingsService settings,
+        Func<TerminalTabViewModel, TerminalPanel?> panelFactory,
+        Func<TerminalTabViewModel, TerminalPanel?, IDisposable?> subscriptionFactory)
+    {
+        _panelFactory = panelFactory;
+        _subscriptionFactory = subscriptionFactory;
         _strip = new TerminalTabStrip();
         _content = new ContentControl();
         _strip.LastTabCloseRequested += () => LastTabCloseRequested?.Invoke();
@@ -75,23 +97,7 @@ public class TerminalTabHost : UserControl
     /// </summary>
     public void SetHost(ITerminalHost host)
     {
-        if (_host is not null)
-        {
-            _host.Tabs.CollectionChanged -= OnTabsChanged;
-        }
-        if (_host is INotifyPropertyChanged hostNotify)
-        {
-            hostNotify.PropertyChanged -= OnHostPropertyChanged;
-        }
-
-        // Detach existing panels so they are not left bound to a previous VM
-        foreach (var panel in _panels.Values)
-        {
-            panel.ViewModel = null;
-        }
-        _panels.Clear();
-        _content.Content = null;
-        _activeTab = null;
+        DetachHost();
 
         _host = host;
         _strip.SetHost(host);
@@ -153,12 +159,21 @@ public class TerminalTabHost : UserControl
         if (_panels.ContainsKey(tab)) return;
         // One panel per tab — never rebind a single shared panel across sessions,
         // otherwise per-tab search/viewport/selection/log-view state would smear.
-        var panel = new TerminalPanel { ViewModel = tab.Session };
-        _panels[tab] = panel;
+        var panel = _panelFactory(tab);
+        if (panel is not null)
+        {
+            panel.ViewModel = tab.Session;
+            _panels[tab] = panel;
+        }
+
+        var subscription = _subscriptionFactory(tab, panel);
+        if (subscription is not null)
+            _panelSettingsSubscriptions[tab] = subscription;
     }
 
     private void RemovePanel(TerminalTabViewModel tab)
     {
+        DisposePanelSettingsSubscription(tab);
         if (!_panels.TryGetValue(tab, out var panel)) return;
         panel.ViewModel = null;
         _panels.Remove(tab);
@@ -181,5 +196,40 @@ public class TerminalTabHost : UserControl
         {
             _content.Content = panel;
         }
+    }
+
+    public void DetachHost()
+    {
+        if (_host is not null)
+            _host.Tabs.CollectionChanged -= OnTabsChanged;
+        if (_host is INotifyPropertyChanged hostNotify)
+            hostNotify.PropertyChanged -= OnHostPropertyChanged;
+
+        foreach (var tab in _panelSettingsSubscriptions.Keys.ToList())
+            DisposePanelSettingsSubscription(tab);
+
+        foreach (var panel in _panels.Values)
+        {
+            panel.ViewModel = null;
+        }
+        _panelSettingsSubscriptions.Clear();
+        _panels.Clear();
+        _content.Content = null;
+        _activeTab = null;
+        _host = null;
+    }
+
+    private void DisposePanelSettingsSubscription(TerminalTabViewModel tab)
+    {
+        if (!_panelSettingsSubscriptions.Remove(tab, out var subscription))
+            return;
+        subscription.Dispose();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        DetachHost();
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Concurrency;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -13,6 +14,8 @@ using ReactiveUI.Avalonia;
 using TextMateSharp.Grammars;
 using Zaide.ViewModels;
 using Zaide.Styles;
+using Zaide.Services;
+using Zaide.Models;
 
 namespace Zaide.Views;
 
@@ -21,7 +24,7 @@ namespace Zaide.Views;
 /// syntax highlighting. Uses event-based sync (not two-way Bind) to
 /// avoid feedback loops. Handles null ViewModel gracefully.
 /// </summary>
-public partial class EditorView : ReactiveUserControl<EditorViewModel>
+public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable
 {
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
@@ -34,18 +37,20 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     private bool _isUpdatingFromViewModel;
 
     // Fonts: monospace for code, serif for prose (Markdown).
-    private static readonly FontFamily CodeFont =
-        new("Cascadia Code, Consolas, monospace");
-    private static readonly FontFamily ProseFont =
-        new("Georgia, serif");
+    private readonly ISettingsService _settings;
+    private readonly SettingsBinding _settingsBinding;
+    private FontFamily _codeFont = new("Cascadia Code, Consolas, monospace");
+    private FontFamily _proseFont = new("Georgia, serif");
+    private bool _disposed;
 
-    public EditorView()
+    public EditorView(ISettingsService settings)
     {
+        _settings = settings;
         _textEditor = new TextEditor
         {
             ShowLineNumbers = true,
             FontSize = 14,
-            FontFamily = CodeFont,
+            FontFamily = _codeFont,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
             Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
@@ -110,6 +115,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         layout.Children.Add(fileInfoBar);
 
         Content = layout;
+
+        _settingsBinding = CreateSettingsBinding(
+            settings,
+            model => ApplyEditorSettings(model.Editor));
 
         this.WhenActivated(d =>
         {
@@ -215,7 +224,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
         _textMateInstallation.SetGrammar(scope ?? "");
 
         // Font — monospace for code, serif for prose
-        _textEditor.FontFamily = ext == ".md" ? ProseFont : CodeFont;
+        _textEditor.FontFamily = SelectFont(_codeFont, _proseFont, filePath);
 
         // Experiment path: only enable indent guides for C# files while the
         // visual behavior is being validated. If more file types need guides
@@ -242,5 +251,67 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>
     {
         if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
+    }
+
+    private void ApplyEditorSettings(EditorSettings settings)
+    {
+        var projection = ProjectSettings(settings);
+        _codeFont = projection.CodeFont;
+        _proseFont = projection.ProseFont;
+        _textEditor.FontSize = projection.CodeFontSize;
+        _textEditor.Options.IndentationSize = projection.TabSize;
+        _textEditor.Options.ConvertTabsToSpaces = projection.InsertSpaces;
+        _textEditor.Options.ShowTabs = projection.ShowTabs;
+        _textEditor.Options.ShowSpaces = projection.ShowSpaces;
+
+        if (ViewModel is not null)
+            ApplyFileMode(ViewModel.FilePath);
+        else
+            _textEditor.FontFamily = _codeFont;
+    }
+
+    internal static EditorSettingsProjection ProjectSettings(EditorSettings settings) =>
+        new(
+            new FontFamily(settings.CodeFontFamily),
+            new FontFamily(settings.ProseFontFamily),
+            settings.CodeFontSize,
+            settings.TabSize,
+            settings.InsertSpaces,
+            settings.ShowWhitespace && settings.ShowTabs,
+            settings.ShowWhitespace && settings.ShowSpaces);
+
+    internal static SettingsBinding CreateSettingsBinding(
+        ISettingsService settings,
+        Action<SettingsModel> apply) =>
+        new(settings, apply);
+
+    internal static SettingsBinding CreateSettingsBinding(
+        ISettingsService settings,
+        Action<SettingsModel> apply,
+        IScheduler scheduler) =>
+        new SettingsBinding(settings, apply, scheduler);
+
+    internal static FontFamily SelectFont(EditorSettingsProjection projection, string filePath) =>
+        SelectFont(projection.CodeFont, projection.ProseFont, filePath);
+
+    private static FontFamily SelectFont(FontFamily codeFont, FontFamily proseFont, string filePath) =>
+        Path.GetExtension(filePath).Equals(".md", StringComparison.OrdinalIgnoreCase)
+            ? proseFont
+            : codeFont;
+
+    internal sealed record EditorSettingsProjection(
+        FontFamily CodeFont,
+        FontFamily ProseFont,
+        int CodeFontSize,
+        int TabSize,
+        bool InsertSpaces,
+        bool ShowTabs,
+        bool ShowSpaces);
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _settingsBinding.Dispose();
     }
 }

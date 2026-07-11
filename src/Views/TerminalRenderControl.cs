@@ -99,8 +99,11 @@ public class TerminalRenderControl : Control
     private static readonly FontFamily DefaultFontFamily =
         FontFamily.Parse("Cascadia Code, JetBrains Mono, DejaVu Sans Mono, monospace");
 
-    private readonly Typeface _typeface;
-    private readonly double _fontSize = 14;
+    private Typeface _typeface;
+    private double _fontSize = 14;
+
+    internal string CurrentFontFamily => _typeface.FontFamily.Name;
+    internal double CurrentFontSize => _fontSize;
 
     /// <summary>Pixel width of a single monospace character cell.</summary>
     public double CellWidth { get; private set; }
@@ -281,6 +284,19 @@ public class TerminalRenderControl : Control
 
         // Key forwarding is wired by TerminalPanel.
     }
+
+    public void ApplyFontSettings(string family, int size)
+    {
+        _typeface = new Typeface(new FontFamily(family), FontStyle.Normal, FontWeight.Normal);
+        _fontSize = size;
+        MeasureCellMetrics();
+        InvalidateMeasureForFontChange();
+        InvalidateVisualForFontChange();
+    }
+
+    internal virtual void InvalidateMeasureForFontChange() => InvalidateMeasure();
+
+    internal virtual void InvalidateVisualForFontChange() => InvalidateVisual();
 
     // ── render ────────────────────────────────────────────────────
 

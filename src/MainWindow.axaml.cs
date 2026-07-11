@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Zaide.ViewModels;
 using Zaide.Styles;
 using Zaide.Views;
+using Zaide.Services;
 
 namespace Zaide;
 
@@ -31,6 +32,7 @@ namespace Zaide;
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
+    private readonly ISettingsService _settings;
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
     private readonly SourceControlPanel _sourceControlPanel;
@@ -40,6 +42,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
     private TerminalTabHost _terminalTabHost = null!;
+    private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
     private Border _bottomPanel = null!;
     private GridSplitter _bottomPanelSplitter = null!;
@@ -47,8 +50,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly RowDefinition _statusBarRow;
 
+    [Obsolete("Use the ISettingsService composition constructor.")]
     public MainWindow()
     {
+        throw new InvalidOperationException(
+            "MainWindow must be created through the application composition root.");
+    }
+
+    public MainWindow(ISettingsService settings)
+    {
+        _settings = settings;
         InitializeComponent();
 
         // === Window Chrome ===
@@ -79,6 +90,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
          _terminalTabHost, _agentPanelHostView, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+
+        _finalWindowCleanup = new FinalWindowCleanup(
+            _editorView.Dispose,
+            _terminalTabHost.Dispose);
+        Closed += OnFinalWindowClosed;
 
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
@@ -331,7 +347,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // --- Column 3: Center — Townhall (real M3 view) ---
         _editorTabBar = new EditorTabBar();
-        _editorView = new EditorView();
+        _editorView = new EditorView(_settings);
         _welcomeText = TextStyles.Body("Open a file to begin");
         _welcomeText.VerticalAlignment = VerticalAlignment.Center;
         _welcomeText.HorizontalAlignment = HorizontalAlignment.Center;
@@ -435,7 +451,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // --- Bottom Panel (spans columns 3-5: center + editor only) ---
         // M3: TerminalTabHost retains one TerminalPanel per tab and switches
         // the active tab's panel in the content area.
-        var terminalTabHost = new TerminalTabHost();
+        var terminalTabHost = new TerminalTabHost(_settings);
         var bottomPanel = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
@@ -460,6 +476,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Content = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
             terminalTabHost, agentPanelHostView, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+    }
+
+    private void OnFinalWindowClosed(object? sender, EventArgs e)
+    {
+        Closed -= OnFinalWindowClosed;
+        _finalWindowCleanup.Dispose();
     }
 
     private async Task AnimateLeftPanelModeSwitchAsync(LeftPanelMode mode)

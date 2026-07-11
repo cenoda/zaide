@@ -38,8 +38,15 @@ keybindings, project context, M5–M6, and Phase 8.2/8.3 work.
 
 ## Exit Conditions
 
-- [ ] M4 tests, build, and full test suite are green.
-- [ ] No Settings UI, keybinding, project-context, or M5+ behavior was added.
+- [x] M4 tests, build, and full test suite are green.
+- [x] No Settings UI, keybinding, project-context, or M5+ behavior was added.
+
+## M4 Closeout
+
+- Build: `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
+- Complete suite: `dotnet test Zaide.slnx --no-build` — 886 passed, 0 failed, 0 skipped, 886 total.
+- Diff hygiene: `git diff --check` — passed.
+- Deferred manual verification: visually confirm live editor font/whitespace changes, Markdown prose rendering versus code font rendering, terminal font resize behavior, and final-window-close cleanup in a real desktop session.
 
 ## Rollback Plan
 
