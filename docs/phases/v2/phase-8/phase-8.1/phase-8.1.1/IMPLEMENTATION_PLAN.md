@@ -26,9 +26,14 @@ editor/terminal runtime wiring, Settings UI, M2–M6, and all Phase 8.2/8.3 work
 - `Current` is backed by a volatile immutable snapshot. `WhenChanged` emits a
   new snapshot after the in-memory swap; `WriteErrors` emits only disk-write
   failures. Neither observable marshals to the UI thread.
-- `UpdateAsync` and `ApplyAsync` validate whole candidates before commit; they
-  return field-level errors without changing `Current` when invalid. `SaveAsync`
-  persists the current snapshot. All accept `CancellationToken`.
+- A private async mutation gate serializes `UpdateAsync`'s complete
+  read–modify–validate–publish transaction. `ApplyAsync(expected, next)` uses
+  the same gate and returns `Conflict` for a stale candidate instead of
+  overwriting a concurrent update. Invalid candidates leave `Current` unchanged.
+  `SaveAsync` persists the current snapshot. All accept `CancellationToken`.
+- Cancellation before gate acquisition/enqueue leaves state unchanged. Once a
+  snapshot is committed or a save is queued, caller cancellation is ignored and
+  the writer reports deterministic `Saved`, `Superseded`, or `Failed` results.
 - Resolve the settings path according to the 8.1 parent plan. Use JSON schema
   v1, ordered pure migration infrastructure (empty production list),
   same-directory temp-then-rename writes, and last-known-good recovery.
@@ -42,8 +47,10 @@ editor/terminal runtime wiring, Settings UI, M2–M6, and all Phase 8.2/8.3 work
   unknown-future behavior; rejected source files are not overwritten.
 - Last-known-good fallback, atomic write, and a synthetic test-only migration.
 - Immutable snapshot behavior, whole-candidate validation rejection, ordering
-  of `Current` before `WhenChanged`, queued-write supersession, write-error
-  publication, and explicit `SaveAsync` retry.
+  of `Current` before `WhenChanged`, concurrent disjoint-field updates,
+  stale-Apply conflict behavior, queued-write supersession, cancellation before
+  and after commit boundaries, write-error publication, and explicit
+  `SaveAsync` retry.
 
 ## Exit Conditions
 

@@ -56,14 +56,20 @@ close-workspace path, and a Settings panel.
   committing/writer thread and does not reference Avalonia dispatchers or Rx
   schedulers. UI subscribers apply
   `.ObserveOn(RxApp.MainThreadScheduler)` before raising UI-bound properties.
-- `UpdateAsync` validates a pure transformation, while `ApplyAsync` validates
-  an already-constructed candidate. Invalid candidates do not change `Current`
-  and return field-level validation errors.
+- A private async mutation gate serializes each `UpdateAsync` producer's full
+  read–modify–validate–publish transaction. `ApplyAsync(expected, next)` uses
+  the same gate and returns `Conflict` when its expected base snapshot is stale;
+  it never overwrites a concurrent change. Invalid candidates also leave
+  `Current` unchanged and return field-level validation errors.
 - A valid mutation updates `Current` before publishing `WhenChanged`, increments
   a generation using `Interlocked`, and queues persistence through one
   generation-aware writer. Older queued writes complete as `Superseded`; a disk
   failure completes as a failed save result and also emits `WriteErrors`.
   Mutation tasks do not fault solely because persistence failed.
+- Cancellation before the mutation gate is acquired (or before `SaveAsync`
+  enqueues) cancels without changing state. Cancellation after commit/enqueue
+  is ignored: the committed snapshot receives one deterministic `Saved`,
+  `Superseded`, or `Failed` result and is never rolled back.
 
 ### Persistence, migration, and recovery
 
@@ -144,8 +150,9 @@ close-workspace path, and a Settings panel.
   last-known-good recovery, migration infrastructure, and rejection without
   overwriting invalid or unsupported source files.
 - Immutable snapshot tests: `with`-based whole-snapshot commits, validation
-  rejection, generation-aware queued writes, write-error publication, and
-  explicit retry success.
+  rejection, concurrent disjoint-field updates, stale-Apply conflict behavior,
+  generation-aware queued writes, cancellation before/after commit boundaries,
+  write-error publication, and explicit retry success.
 - `LiveLlmConfigTests`: changing saved LLM settings and secret data affects the
   next `AgentExecutionService.ExecuteAsync` without reconstruction; environment
   variables still override persisted configuration.

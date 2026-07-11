@@ -356,9 +356,10 @@ public interface ISettingsService
     /// <summary>
     /// Apply a validated pure transformation. The producer receives the current
     /// immutable snapshot and returns a new transformed instance (via `with`
-    /// expressions on the immutable record). The service validates the result,
-    /// atomically swaps the in-memory snapshot, and enqueues a generation-aware
-    /// write. The returned task never faults from a write failure — the
+    /// expressions on the immutable record). Producer execution, validation,
+    /// and the in-memory compare-and-publish occur inside the mutation gate, so
+    /// concurrent producers cannot lose disjoint edits. The service then
+    /// enqueues a generation-aware write. The returned task never faults from a write failure — the
     /// in-memory snapshot is already committed; the caller inspects
     /// SettingsMutationResult.SaveResult for disk outcome. The task faults
     /// only if the queue itself is fatally broken (e.g. channel closed).
@@ -369,11 +370,16 @@ public interface ISettingsService
 
     /// <summary>
     /// Apply an already-constructed snapshot produced by the UI after its own
-    /// validation. Same atomic-swap + queue + generation semantics as Update.
-    /// The caller constructs the new `SettingsModel` via `with` expressions;
-    /// the service never receives a "pre-mutated clone."
+    /// validation. `expectedCurrent` is the snapshot from which `next` was
+    /// derived. Inside the mutation gate, Apply commits only when
+    /// `expectedCurrent` is reference-identical to Current; otherwise it returns Conflict
+    /// without overwriting a concurrent change. The caller refreshes/rebases
+    /// its candidate and retries explicitly.
     /// </summary>
-    Task<SettingsMutationResult> ApplyAsync(SettingsModel next, CancellationToken ct = default);
+    Task<SettingsMutationResult> ApplyAsync(
+        SettingsModel expectedCurrent,
+        SettingsModel next,
+        CancellationToken ct = default);
 
     /// <summary>Persist the current in-memory snapshot without mutation.</summary>
     Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default);
@@ -389,15 +395,17 @@ public interface ISettingsService
 }
 ```
 
-- `SettingsMutationResult` carries `bool Succeeded`, the committed
+- `SettingsMutationResult` carries a status (`Applied`, `Invalid`, or
+  `Conflict`), the committed
   `SettingsModel` (on success) or the rejected `SettingsModel` (on failure), a
   `IReadOnlyList<SettingsValidationError>` listing field-level problems
   (e.g. non-positive font size, empty required LLM URL) for the UI to render
   inline, and `SettingsSaveResult SaveResult` indicating the outcome of the
-  queued write (Saved / Superseded / Failed). The caller awaits the returned
+  queued write (`Saved` / `Superseded` / `Failed`). The caller awaits the returned
   task then inspects `SaveResult`; the task never faults from a write error.
   Validation is performed by a `SettingsValidator` over the candidate
-  snapshot before any swap or write.
+  snapshot before any swap or write. `Conflict` is not validation failure and
+  does not enqueue a write; it tells a stale UI candidate to refresh/rebase.
 - The UI builds a candidate snapshot from `Current` using `with` expressions
   (no clone-and-mutate), shows validation errors live, and calls
   `UpdateAsync`/`ApplyAsync` only when valid. There is no public settable `Current`,
@@ -439,10 +447,16 @@ with a single queued writer and explicit generation/result semantics:
      succeeded even if persistence failed. The caller inspects
      `SettingsMutationResult.SaveResult` to determine disk outcome.
 - `UpdateAsync` / `ApplyAsync` / `SaveAsync` are all `Task<...>` (async).
-  Each mutation:
-  1. **Validates and swaps in-memory** synchronously on the caller's thread
-     (typically the UI thread, but the service does not enforce this). If
-     validation fails, returns the error immediately —
+  Every mutation uses a private async `SemaphoreSlim` mutation gate. Each
+  `UpdateAsync` invocation acquires the gate before reading `Current`, executes
+  its producer against that latest snapshot while holding the gate, validates,
+  and publishes. `ApplyAsync` acquires the same gate and compares its
+  `expectedCurrent` to the live snapshot before validating/publishing `next`.
+  Therefore two concurrent disjoint-field `UpdateAsync` calls compose, while a
+  stale prebuilt `ApplyAsync` candidate receives `Conflict` rather than
+  overwriting newer state. Each successful mutation then:
+  1. **Validates and swaps in-memory** while holding the mutation gate. If
+     validation fails, or Apply detects a conflict, it returns immediately —
      no write is queued.
   2. **Increments `_generation`** and **enqueues** a `WriteItem` with the
      captured generation, a write function (reads the latest in-memory
@@ -454,14 +468,14 @@ with a single queued writer and explicit generation/result semantics:
      immediately regardless of the write speed.
 - The background writer loop owns the `FileStream` lifetime. It runs as a
   `Task` started in the service constructor, with `TaskCreationOptions.LongRunning`.
-- Overlapping calls are impossible: the first mutation enqueues, and the second
-  caller's swap+increment happens immediately (on the caller's thread). Both writes are
-  serialized by the queue drain.
+- The mutation gate serializes the complete in-memory read–modify–validate–
+  publish transaction. The writer queue separately serializes disk I/O; it is
+  not relied upon for in-memory correctness.
 - **Generation-aware write:** The `WriteItem.Generation` comparison against
   the live `_generation` at execution time determines whether the write runs
   or is skipped (`Superseded`). This prevents a stale write from overwriting
   a newer snapshot on disk.
-- Because writes are serialized through the queue and always write the live
+- Because mutations are serialized by the gate and writes are serialized through the queue and always write the live
   snapshot at execution time, overlapping edits cannot interleave or clobber
   each other. The atomic write-temp-then-rename (D2) makes the on-disk result
   always complete.
@@ -470,9 +484,8 @@ with a single queued writer and explicit generation/result semantics:
 
 - `Current` is backed by a `volatile SettingsModel _current` field. The
   immutable snapshot is a reference-typed value; `volatile` guarantees that
-  reads always see the most recently written reference. No lock is needed —
-  the snapshot is deeply immutable, so concurrent readers never see partial
-  state.
+  readers see the most recently published reference and never a partial object.
+  The mutation gate, not `volatile`, protects read–modify–write transactions.
 - `_generation` is a `long` field accessed via `Interlocked.Increment(ref
   _generation)` on the caller's thread (at mutation time) and
   `Interlocked.Read(ref _generation)` on the background writer loop thread
@@ -496,17 +509,33 @@ public sealed record SettingsSaveError(
 );
 ```
 
+**Cancellation contract:**
+
+- A caller token is observed only before the mutation gate is acquired. If it
+  is canceled while waiting, the operation throws `OperationCanceledException`,
+  leaves `Current` unchanged, and enqueues no write.
+- Once a mutation has acquired the gate and published `Current`, it is
+  committed. Later cancellation does not roll it back, cancel its queued write,
+  or change its result; the writer uses the service-lifetime shutdown token,
+  not a caller token. The awaiter receives `Saved`, `Superseded`, or `Failed`.
+- `SaveAsync` follows the same rule: cancellation before enqueue means no write;
+  cancellation after enqueue is ignored so a committed snapshot has one
+  deterministic persistence outcome. There is deliberately no ambiguous
+  post-commit `Cancelled` save result.
+
 **Disk-write failure surfacing:**
 
 `UpdateAsync`/`ApplyAsync` are fully async — the caller can await the returned
 task, which completes when the write has been consumed from the queue. A failure
 to persist is surfaced as follows:
 
-1. **`SettingsMutationResult` carries `bool Succeeded` and `IReadOnlyList<SettingsValidationError>`.**
-   The in-memory snapshot is swapped before the task returns, so the UI
-   reflects the change immediately. The write is consumed (or failed) by the
-   time the caller inspects the result — `IsWritePending` is removed because it
-   is always `false` on an awaited result.
+1. **`SettingsMutationResult` carries an `Applied`, `Invalid`, or `Conflict`
+   status and `IReadOnlyList<SettingsValidationError>`.** An `Applied` result
+   has already swapped the in-memory snapshot, so the UI reflects the change
+   immediately. An `Invalid` or `Conflict` result has not changed the snapshot.
+   For an applied mutation, the write is consumed (or failed) by the time the
+   caller inspects the result — `IsWritePending` is removed because it is
+   always `false` on an awaited result.
 2. **On write failure** (IOException, UnauthorizedAccessException, disk full):
    The awaited `Task<SettingsMutationResult>` completes with the result's
    `SaveResult` indicating failure. Separately, `ISettingsService.WriteErrors`
@@ -1480,7 +1509,8 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
   - A working `SettingsModel` candidate built from `Current` via `with`
     expressions.
   - `ApplyCommand` and `DiscardCommand` — the former calls
-    `settings.ApplyAsync(candidate)`, the latter resets the candidate.
+    `settings.ApplyAsync(baseSnapshot, candidate)`, handles `Conflict` by
+    refreshing/rebasing the candidate, and the latter resets the candidate.
   - Live validation via `SettingsValidator` (inline errors).
   - **`IDisposable`:** disposes its `WhenChanged` subscription and any command
     bindings when the panel closes.
@@ -1766,7 +1796,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 | Unknown future settings version silently overwrites user config | Explicit version check: future version → refuse to load, surface error. |
 | Secret file permissions transiently loose or lost on rename | Restrictive temp creation (`0600` before first byte) + mode rides through `File.Move` + validate/repair existing mode on load (Linux). Non-Linux path documented. See D4. |
 | Saved LLM settings don't take effect until restart | `AgentExecutionService` resolves effective config **live** per call from `ISettingsService` + `ISecretStore` + env vars (D4b). `LiveLlmConfigTests` proves the next request uses saved settings. |
-| Mutable `Current` causes partial/unobserved saves | `SettingsModel` is immutable; only validated async `UpdateAsync`/`ApplyAsync` whole-snapshot commits are allowed; writes serialized through a generation-aware queued writer (D4a). |
+| Concurrent settings mutations lose disjoint edits | A mutation gate serializes Update's full read–modify–validate–publish transaction; Apply uses expected-snapshot conflict detection. The queued writer only serializes disk I/O (D4a). |
 | Close workspace unreachable | `CloseFolderCommand` (`workspace.closeFolder`) + header affordance + `SetRootPath(null)` + unfiltered subscription make the null transition real and tested (D7). |
 | Terminal font can't update at runtime | `readonly` typeface/size replaced with mutable fields + `ApplyFontSettings` that recomputes cell metrics; `WhenChanged` drives it (D9). |
 | Project-context `WhenChanged` fires on a non-UI thread | Service emits on the calling thread (no dispatcher dependency — V2 constraint). Callers apply `.ObserveOn(RxApp.MainThreadScheduler)` at their subscription site (D8). |
@@ -1786,7 +1816,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 - [ ] **Editor fonts:** No font family (code or prose) or font size is a hardcoded literal in `EditorView`. Code font (`codeFontFamily`/`codeFontSize`) and prose font (`proseFontFamily`) are separate settings driven by `ISettingsService`.
 - [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
 - [ ] **LLM (live):** `AgentExecutionService` resolves effective LLM config **live** per `ExecuteAsync` from `ISettingsService` + `ISecretStore` + env-var fallback (D4b). Saving endpoint/model/key in the Settings UI affects the next request without restart — verified by `LiveLlmConfigTests`. No plaintext API key in settings file. `AgentExecutionOptions` is a per-call value carrier, not a DI singleton. Synchronous DI composition preserved.
-- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a thread-neutral `WhenChanged` (callers marshal via `ObserveOn` at subscription site). Mutation happens only via validated async `UpdateAsync`/`ApplyAsync` (whole-snapshot commit via `with` expressions, field-level validation errors reported, no mutable public `Current`). Writes serialized through a generation-aware `Channel`-based queue; each mutation enqueues a closure that writes the live snapshot at execution time. Stale writes (earlier generation) are no-ops. The caller can await the returned `Task<SettingsMutationResult>` (D4a).
+- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a thread-neutral `WhenChanged` (callers marshal via `ObserveOn` at subscription site). A mutation gate serializes `UpdateAsync`'s read–modify–validate–publish transaction; `ApplyAsync(expected, next)` returns `Conflict` for stale UI candidates rather than overwriting newer state. Writes are separately serialized through a generation-aware `Channel`-based queue; stale writes are no-ops. Cancellation before gate acquisition/enqueue leaves state untouched; cancellation after a commit does not cancel its deterministic write result. Concurrent disjoint-field update and cancellation-boundary tests pass (D4a).
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Temp file created `0600` before write; rename preserves mode; pre-existing loose-mode file repaired on load (Linux). Env-var fallback works. Non-Linux policy documented (D4).
 - [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup, `Execute(string id)`, and `Execute<T>(string id, T parameter)`. Duplicate `Id` registration throws. Unavailable commands (`GetById` null or `CanExecute` false) make `Execute` return `false` and render disabled in UI — never throw. Parameterized commands remain ViewModel-local. **Canonical command-and-gesture table (D6a) locks every default gesture, including `Ctrl+Oem3` → `view.toggleBottomPanel`.**
 - [ ] **Keybindings:** Window keybindings are materialized by the UI from
