@@ -48,7 +48,8 @@ M0 exit gate:
 - [x] The Phase 8 umbrella decisions D5, D6, D6a, and D10 are the governing
       contracts for this plan.
 - [x] Phase 8.3 and Phase 9 boundaries are explicit.
-- [x] Milestones M7–M10 and their verification gates are locked below.
+- [x] Milestone slices M7a–M7b and M8–M10, with their verification gates, are
+      locked below.
 
 ## Implementation Contract
 
@@ -100,6 +101,13 @@ be empty for an intentionally unbound command. The registry must:
   logs a debug trace — it never throws, coerces types, or infers parameters;
 - remain UI-framework neutral. Avalonia `KeyBinding` objects are created only
   by the window integration layer.
+
+`CommandRegistry` receives `ILogger<CommandRegistry>` through DI. `Program.cs`
+configures the Microsoft.Extensions.Logging provider already available to the
+application. Registry diagnostics use Debug for unknown/unavailable commands
+and Warning for invalid gestures or gesture conflicts. Tests must capture and
+assert these log levels/messages through a test logger provider; logging is not
+implemented with ad-hoc `Console.WriteLine` calls or Avalonia-only logging.
 
 ### Canonical command table
 
@@ -188,7 +196,7 @@ open, are no-ops and do not throw. Their resolved gesture remains owned by the
 command layer if a future override assigns one, so the gesture does not fall
 through to text input.
 
-### Settings schema prerequisite (M7, before M8)
+### Settings schema prerequisite (M7b, before M8)
 
 `KeybindingOverrides` is currently an empty placeholder record:
 
@@ -227,7 +235,7 @@ wrapper; exposing it as `IReadOnlyDictionary` alone is not sufficient. The
 `SettingsSerializer` already rejects a null `Keybindings` section; the combined
 null-guard on L79 (`result.Keybindings is null`) must be updated to check the
 new type and normalize it before returning the model. This expansion ships in
-M7 so M8 resolution has a complete immutable settings contract to consume. A
+M7b so M8 resolution has a complete immutable settings contract to consume. A
 custom `JsonConverter` is **not** needed — `System.Text.Json` serializes the
 flat dictionary shape natively; normalization is a snapshot-boundary concern.
 
@@ -235,8 +243,9 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 
 | Milestone | Description | Verification |
 |---|---|---|
-| **M7** | Command registry core: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `SettingsModel.Keybindings` changed from `KeybindingOverrides` to `IReadOnlyDictionary<string,string>`, `KeybindingOverrides` type removed, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, keybindings dictionary round-trip serialization, and singleton resolution. |
-| **M8** | Canonical command registration from the owning ViewModel constructors and neutral gesture resolution: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. `MainWindow` only resolves after all constructor registrations are complete. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
+| **M7a** | Command registry core and diagnostics: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `ILogger<CommandRegistry>` DI wiring, and logging tests. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown/unavailable commands, log levels/messages, and singleton resolution. No settings schema or canonical command registration is added. |
+| **M7b** | Settings keybindings schema: replace `KeybindingOverrides` with the flat `IReadOnlyDictionary<string,string>` contract, remove the placeholder type, preserve schema v1 JSON, normalize dictionaries at snapshot boundaries, and add round-trip/immutability tests. | Focused settings tests cover flat JSON round-trip, explicit empty-string unbinds, null/malformed sections, defensive-copy behavior, and preservation of deeply immutable snapshots. No gesture resolution or UI integration is added. |
+| **M8** | Canonical command registration from the owning ViewModel constructors and neutral gesture resolution, after M7a and M7b: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. `MainWindow` only resolves after all constructor registrations are complete. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
 | **M9** | Window integration: replace imperative global bindings with registry materialization, keep the View-local Enter/open-file behavior local, remove the duplicate `FileTreeView` global handler, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
 
@@ -281,7 +290,9 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 
 ## Exit Conditions
 
-- [ ] M7–M9 are complete with isolated commits and focused tests.
+- [ ] M7a, M7b, and M8–M9 are complete with isolated commits and focused tests.
+- [ ] M7a configures Microsoft.Extensions.Logging and verifies registry
+      diagnostics through a test logger provider.
 - [ ] `SettingsModel.Keybindings` is `IReadOnlyDictionary<string, string>` (flat
       JSON) and round-trips through serialization; `KeybindingOverrides` type is
       removed.
