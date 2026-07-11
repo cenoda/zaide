@@ -258,11 +258,23 @@ atomic temp-then-rename can replace a `0600` file with a temp whose mode was
 set too late. The implementation must instead:
 
 1. **Restrictive temp creation.** Create the temp file with a restrictive mode
-   from the start. On Linux, create the temp with
-   `File.Create(tmpPath, bufferSize, FileOptions.WriteThrough)` and immediately
-   call `File.SetUnixFileMode(tmpPath, UnixFileMode.UserRead | UnixFileMode.UserWrite)`
-   before any bytes are written. This guarantees there is no window where the
-   temp is world-readable.
+   from the start. On .NET 10, use `FileStreamOptions.UnixCreateMode` to set
+   the mode atomically at file creation — this eliminates the race window
+   between file creation and permission set that `File.Create` + subsequent
+   `SetUnixFileMode` would leave:
+   ```csharp
+   var options = new FileStreamOptions
+   {
+       Mode = FileMode.CreateNew,
+       Access = FileAccess.Write,
+       Options = FileOptions.WriteThrough,
+       UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite  // 0600
+   };
+   using var tmpStream = new FileStream(tmpPath, options);
+   // write content, then tmpStream.Close() before rename
+   ```
+   The `UnixCreateMode` property is applied by the kernel at inode creation,
+   so the file is never world-readable at any point.
 2. **Mode rides through the rename.** `File.Move(tmp, dest, overwrite: true)`
    preserves the temp file's inode and its `0600` mode on POSIX, so the
    destination ends up `0600` regardless of any previously-loose mode. The
@@ -322,7 +334,7 @@ need to hand `settings.Current` to an options factory.
 - `LoadResult` exposes the `SettingsLoadResult` enum so the UI can surface
   errors (unsupported version, corruption) after startup.
 
-**Validated, atomic mutation via `Update`/`Apply` (replaces direct mutable `Current`):**
+**Validated, atomic mutation via `UpdateAsync`/`ApplyAsync` (replaces direct mutable `Current`):**
 
 ```csharp
 public interface ISettingsService
@@ -340,26 +352,28 @@ public interface ISettingsService
     /// Apply a validated pure transformation. The producer receives the current
     /// immutable snapshot and returns a new transformed instance (via `with`
     /// expressions on the immutable record). The service validates the result,
-    /// then atomically swaps the in-memory snapshot and persists it.
-    /// Returns a validation result; if invalid, nothing is committed and the
-    /// error(s) are reported back to the caller for UI display.
+    /// atomically swaps the in-memory snapshot, and enqueues a generation-aware
+    /// write. The returned task completes when the write has been consumed
+    /// from the queue (or fails if the queue faults).
+    /// If invalid, nothing is committed and the error(s) are reported back
+    /// to the caller for UI display.
     /// </summary>
-    SettingsMutationResult Update(Func<SettingsModel, SettingsModel> producer, CancellationToken ct = default);
+    Task<SettingsMutationResult> UpdateAsync(Func<SettingsModel, SettingsModel> producer, CancellationToken ct = default);
 
     /// <summary>
     /// Apply an already-constructed snapshot produced by the UI after its own
-    /// validation. Same atomic-swap + persist + validation semantics as Update.
+    /// validation. Same atomic-swap + queue + generation semantics as Update.
     /// The caller constructs the new `SettingsModel` via `with` expressions;
     /// the service never receives a "pre-mutated clone."
     /// </summary>
-    SettingsMutationResult Apply(SettingsModel next, CancellationToken ct = default);
+    Task<SettingsMutationResult> ApplyAsync(SettingsModel next, CancellationToken ct = default);
 
     /// <summary>Persist the current in-memory snapshot without mutation.</summary>
     Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Fires on the UI thread when the async disk write triggered by
-    /// Update/Apply fails. Does NOT fire for successful writes.
+    /// UpdateAsync/ApplyAsync fails. Does NOT fire for successful writes.
     /// The consumer (e.g. status bar) subscribes to surface a non-blocking
     /// error indicator.
     /// </summary>
@@ -367,33 +381,74 @@ public interface ISettingsService
 }
 ```
 
-- `SettingsMutationResult` carries `bool Succeeded`, `bool IsWritePending`
-  (true until the async disk write completes), the committed `SettingsModel`
-  (on success) or the rejected `SettingsModel` (on failure), and a
+- `SettingsMutationResult` carries `bool Succeeded`, the committed
+  `SettingsModel` (on success) or the rejected `SettingsModel` (on failure), a
   `IReadOnlyList<SettingsValidationError>` listing field-level problems
   (e.g. non-positive font size, empty required LLM URL) for the UI to render
-  inline. Validation is performed by a `SettingsValidator` over the candidate
-  snapshot before any swap or write.
+  inline, and a `SettingsSaveResult? SaveResult` indicating the outcome of the
+  queued write. Validation is performed by a `SettingsValidator` over the
+  candidate snapshot before any swap or write.
 - The UI builds a candidate snapshot from `Current` using `with` expressions
   (no clone-and-mutate), shows validation errors live, and calls
-  `Update`/`Apply` only when valid. There is no public settable `Current`,
+  `UpdateAsync`/`ApplyAsync` only when valid. There is no public settable `Current`,
   so unobserved or partially-saved state is impossible:
   either the whole snapshot commits or nothing does.
 
-**Save concurrency (revised — resolves partial/overlapping-save risk):**
+**Save concurrency (revised — replaces synchronous-then-async with queued writer):**
+
+The earlier design had `Update`/`Apply` returning synchronously while launching
+an async persist in the background. This creates a non-blocking serialization
+problem — the caller cannot await the write, and the generation-based
+acknowledgement was unclear. The revised contract makes mutation methods async
+with a single queued writer and explicit generation/result semantics:
 
 - The service holds a monotonically increasing `long _generation` and a
-  `SemaphoreSlim _saveGate`. Each committed mutation increments `_generation`.
-- `SaveAsync` / `Update` / `Apply` acquire `_saveGate` so only one disk write
-  happens at a time (serialized). A write reads the current in-memory snapshot
-  at write time, not a stale captured copy, so the latest committed mutation is
-  always what lands on disk.
-- Because saves are serialized through the gate and always write the live
-  snapshot, overlapping edits cannot interleave or clobber each other. The
-  atomic write-temp-then-rename (D2) makes the on-disk result always complete.
-- `Update`/`Apply` perform the swap + validation synchronously under the gate,
-  then trigger the async persist; the returned `SettingsMutationResult` reflects
-  the committed in-memory state immediately, independent of write completion.
+  `Channel<WriteItem> _writeQueue`. A `WriteItem` is a record that connects
+  each queued closure to its caller's task, providing explicit acknowledgement
+  and stale-write semantics:
+  ```csharp
+  private sealed record WriteItem(
+      long Generation,                // generation at enqueue time
+      Func<CancellationToken, Task<SettingsSaveResult>> Write,
+      TaskCompletionSource<SettingsSaveResult> Completion  // per-item TCS
+  );
+  ```
+- A single background writer loop drains the queue sequentially. For each
+  `WriteItem`:
+  1. If `item.Generation < _generation` (a later mutation has already been
+     committed), the item is **skipped**. Its `Completion` receives
+     `SettingsSaveResult.Superseded` — the caller's task completes
+     successfully (the in-memory state is already correct) but the write was
+     not performed because a newer write will persist the latest state.
+  2. Otherwise, `item.Write(ct)` executes. On success, `Completion` receives
+     `SettingsSaveResult.Saved`; on failure, the exception propagates via
+     `Completion.SetException`.
+- `UpdateAsync` / `ApplyAsync` / `SaveAsync` are all `Task<...>` (async).
+  Each mutation:
+  1. **Validates and swaps in-memory** synchronously on the caller's thread
+     (the UI thread). If validation fails, returns the error immediately —
+     no write is queued.
+  2. **Increments `_generation`** and **enqueues** a `WriteItem` with the
+     captured generation, a write function (reads the latest in-memory
+     snapshot at execution time), and a new `TaskCompletionSource<SettingsSaveResult>`.
+  3. **Returns** `SettingsMutationResult` to the caller. The caller can await
+     `Completion.Task` (via the mutation's task) to learn whether the write
+     was persisted, superseded, or failed. The in-memory snapshot is already
+     committed before the task returns, so the UI reflects the change
+     immediately regardless of the write speed.
+- The background writer loop owns the `FileStream` lifetime. It runs as a
+  `Task` started in the service constructor, with `TaskCreationOptions.LongRunning`.
+- Overlapping calls are impossible: the first mutation enqueues, and the second
+  caller's swap+increment happens immediately on the UI thread. Both writes are
+  serialized by the queue drain.
+- **Generation-aware write:** The `WriteItem.Generation` comparison against
+  the live `_generation` at execution time determines whether the write runs
+  or is skipped (`Superseded`). This prevents a stale write from overwriting
+  a newer snapshot on disk.
+- Because writes are serialized through the queue and always write the live
+  snapshot at execution time, overlapping edits cannot interleave or clobber
+  each other. The atomic write-temp-then-rename (D2) makes the on-disk result
+  always complete.
 
 **`SettingsSaveError` definition:**
 
@@ -407,25 +462,24 @@ public sealed record SettingsSaveError(
 
 **Disk-write failure surfacing:**
 
-Because `Update`/`Apply` return synchronously, the caller sees a successful
-`SettingsMutationResult` before the async disk write completes. A failure to
-persist must not be silently swallowed; the contract defines how failures are
-surfaced:
+`UpdateAsync`/`ApplyAsync` are fully async — the caller can await the returned
+task, which completes when the write has been consumed from the queue. A failure
+to persist is surfaced as follows:
 
-1. **`SettingsMutationResult` carries a `bool IsWritePending` flag**, initially
-   `true`. The in-memory snapshot is already swapped, so the UI reflects the
-   new settings immediately.
+1. **`SettingsMutationResult` carries `bool Succeeded` and `IReadOnlyList<SettingsValidationError>`.**
+   The in-memory snapshot is swapped before the task returns, so the UI
+   reflects the change immediately. The write is consumed (or failed) by the
+   time the caller inspects the result — `IsWritePending` is removed because it
+   is always `false` on an awaited result.
 2. **On write failure** (IOException, UnauthorizedAccessException, disk full):
-   `ISettingsService.WriteErrors` fires a `SettingsSaveError` on the UI thread.
-   The status bar or a toast subscribes to this observable and surfaces a
-   non-blocking error indicator (e.g. "Settings not saved — retry?" with a
-   retry button).
-3. **Retry:** The consumer can call `SaveAsync()` manually after addressing
-   the underlying issue (e.g. disk space freed). `SaveAsync` uses the current
-   in-memory snapshot, so no state is lost.
+   The awaited `Task<SettingsMutationResult>` completes with the result's
+   `SaveResult` indicating failure. Separately, `ISettingsService.WriteErrors`
+   fires a `SettingsSaveError` on the UI thread for non-blocking surfacing
+   (status bar / toast).
+3. **The awaiter decides what to do next** — show an error dialog, log, or
+   call `SaveAsync()` to retry.
 4. **Periodic retry is not implemented in Phase 8** — the caller is responsible
-   for retry. This avoids silent background loops. The unresolved write is
-   always observable via `WriteErrors`.
+   for retry. This avoids silent background loops.
 
 **Construction contract:**
 
@@ -470,6 +524,7 @@ service.
 **Required test (must pass before 8.1 closes):** A `LiveLlmConfigTests` case
 that (1) constructs `AgentExecutionService` with a real or fake
 `ISettingsService` + `ISecretStore`, (2) `Update`/`Apply`s a changed
+(2) `UpdateAsync`/`ApplyAsync`s a changed
 `Llm.BaseUrl`/`Model` (or `secrets.Set("llm.apiKey", ...)`), (3) saves, and
 (4) asserts the **next** `ExecuteAsync` call (captured/mock `HttpClient`) is
 dispatched to the new URL with the new key — proving saved settings affect a
@@ -718,6 +773,13 @@ public sealed class ProjectContextService : IProjectContextService, IDisposable
         _workspace = workspace;
         _handler = (_, _) => OnWorkspaceFolderChanged();
         _workspace.WorkspaceFolderChanged += _handler;
+
+        // Startup reconciliation: if a folder is already open when this service
+        // is constructed (e.g. app restart with persisted workspace), call the
+        // handler immediately so Current reflects the initial state.
+        // The handler guards against null internally, so a null path is a no-op.
+        if (!string.IsNullOrEmpty(workspace.WorkspacePath))
+            OnWorkspaceFolderChanged();
     }
 
     private void OnWorkspaceFolderChanged()
@@ -725,6 +787,41 @@ public sealed class ProjectContextService : IProjectContextService, IDisposable
         // The implementation owns cancellation and observes/logs failures.
         // A null workspace path unloads the context instead of being passed to
         // LoadAsync through the null-forgiving operator.
+    }
+
+    /// <summary>
+    /// LoadAsync must ensure that the UI-thread state change (Current, state
+    /// transition) is committed before the returned task completes. The
+    /// implementation posts the state mutation to the UI thread via
+    /// Dispatcher.UIThread.InvokeAsync and awaits completion via a
+    /// TaskCompletionSource, so by the time the caller receives the completed
+    /// task, all WhenChanged subscribers and bindings have already been
+    /// notified.
+    ///
+    /// NOTE: RxApp.MainThreadScheduler.Schedule returns IDisposable, not an
+    /// awaitable — it cannot be used with await. Use Dispatcher.InvokeAsync
+    /// or wrap in TaskCompletionSource.
+    /// </summary>
+    public async Task LoadAsync(string workspaceRoot, CancellationToken ct)
+    {
+        // ... discovery logic (runs on any thread) ...
+
+        // Post state to UI thread and await the post. This guarantees that
+        // Current is updated and WhenChanged has fired before the Task returns.
+        var tcs = new TaskCompletionSource();
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                // Set Current, transition state, raise WhenChanged
+                tcs.SetResult();
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+        await tcs.Task;
     }
 
    public void Dispose()
@@ -746,10 +843,38 @@ assigns a non-null path. Phase 8 must provide a concrete, reachable path:
    command registry as `workspace.closeFolder` (D6a). It is enabled only when
    `FileTreeViewModel.RootPath` is non-null; `WhenAnyValue(x => x.FileTreeViewModel.RootPath)`
    drives `CloseFolderCommand` can-execute.
-2. **UI entry point:** The file-tree header ("Open Folder...") becomes a
+
+2. **FileTreeViewModel → MainWindowViewModel bridge:** `FileTreeView` is typed
+   to `FileTreeViewModel` (`ReactiveUserControl<FileTreeViewModel>`) and cannot
+   directly invoke `MainWindowViewModel.CloseFolderCommand`. An explicit
+   interaction bridges the gap:
+   ```csharp
+   // Added to FileTreeViewModel (Phase 8.1)
+   public Interaction<Unit, Unit> CloseFolderRequested { get; } = new();
+   ```
+   The close button in the file-tree header triggers
+   `ViewModel.CloseFolderRequested.Handle(Unit.Default).Subscribe()`.
+   `MainWindowViewModel` subscribes to this interaction in `Activate()`:
+   ```csharp
+   d.Add(FileTreeViewModel.CloseFolderRequested.RegisterHandler(async ctx =>
+   {
+       // Await the command before signalling completion so that Handle()
+       // is a reliable close-workspace boundary for the caller.
+       await CloseFolderCommand.Execute(Unit.Default).FirstAsync();
+       ctx.SetOutput(Unit.Default);
+   }));
+   ```
+
+3. **RootPath setter scope:** `RootPath`'s public setter is changed to
+   `private set` — `SetRootPath(string? path)` becomes the sole public writer.
+   This guarantees that every `RootPath` transition (including null) goes
+   through the close sequence in `SetRootPath`, preventing ad-hoc assignments
+   that skip watcher disposal or tree clearing.
+
+4. **UI entry point:** The file-tree header ("Open Folder...") becomes a
    split-style affordance: clicking the folder icon/path opens the folder
    picker (existing behavior), and a small close/recent button at the end of
-   the header invokes `CloseFolderCommand`. This is the only required entry
+   the header invokes `CloseFolderRequested`. This is the only required entry
    point; no menu bar is added (consistent with D9).
 3. **Mechanism:** `CloseFolderCommand` executes
    `FileTreeViewModel.SetRootPath(null)` (a new public method that handles the
@@ -1143,6 +1268,9 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
        else
        {
            // Toggle: remove on close
+           // Dispose the transient SettingsViewModel before discarding the panel.
+           if (_settingsPanelHost.Child is Control c && c.DataContext is IDisposable vm)
+               vm.Dispose();
            ((Grid)Content!).Children.Remove(_settingsPanelHost);
            _settingsPanelHost = null;
        }
@@ -1150,7 +1278,10 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
    }));
    ```
    `SettingsPanelHost` is created on first open and destroyed on close — its
-   lifetime matches the panel open duration. `HorizontalAlignment` and
+   lifetime matches the panel open duration. The transient `SettingsViewModel`
+   implements `IDisposable` and is disposed when the panel closes (the call
+   above). `SettingsViewModel.Dispose()` disposes its `WhenChanged` subscription
+   and any command bindings. `HorizontalAlignment` and
    `VerticalAlignment` default to `Stretch`, so the panel fills its grid area.
    Because `_settingsPanelHost` is added to `Children` after all content
    panels, it renders at the highest Z-order automatically.
@@ -1172,11 +1303,14 @@ ViewModel and converts `StatusBar` to `ReactiveUserControl<StatusBarViewModel>`:
   - A working `SettingsModel` candidate built from `Current` via `with`
     expressions.
   - `ApplyCommand` and `DiscardCommand` — the former calls
-    `settings.Apply(candidate)`, the latter resets the candidate.
+    `settings.ApplyAsync(candidate)`, the latter resets the candidate.
   - Live validation via `SettingsValidator` (inline errors).
+  - **`IDisposable`:** disposes its `WhenChanged` subscription and any command
+    bindings when the panel closes.
 - The settings panel is constructed in C# (per DESIGN.md Rule 1) and bound to
   `SettingsViewModel`. Its lifetime matches the panel open duration; closing the
-  panel disposes the ViewModel.
+  panel calls `((IDisposable)DataContext).Dispose()` before discarding the
+  `Border` (see the `RegisterHandler` close branch above).
 - The settings UI follows existing panel patterns.
 
 **[R] Concrete view-injection route (resolves the abstract "view composition
@@ -1209,9 +1343,45 @@ singleton owned by the DI container, never by a view. Each view/panel holds
 only a `WhenChanged` subscription, disposed as follows:
 - `EditorView`'s subscription is disposed with the EditorView (window close,
   via `MainWindow`'s disposal chain).
-- `TerminalTabHost` disposes each `TerminalPanel` (and thus its
-  `TerminalRenderControl` + subscription) when its tab is closed.
-- No view calls `Dispose` on `ISettingsService`.
+- `TerminalTabHost.RemovePanel` currently nulls `panel.ViewModel` and removes
+  the panel from the dictionary but does NOT dispose it. **Phase 8.1 makes
+  `TerminalPanel` implement `IDisposable`** (disposing its `WhenChanged`
+  subscription). `TerminalTabHost.RemovePanel` is updated to call
+  `(panel as IDisposable)?.Dispose()` after nulling the ViewModel and before
+  removing from the dictionary.
+- **`TerminalTabHost.SetHost()`** (line 76 of `TerminalTabHost.cs`) clears all
+  existing panels when binding to a new `ITerminalHost`, but also does not
+  dispose them. Phase 8.1 updates the `foreach (var panel in _panels.Values)`
+  loop in `SetHost()` to call `(panel as IDisposable)?.Dispose()` before
+  nulling the ViewModel, matching `RemovePanel`.
+- **Window deactivation disposal:** `TerminalTabHost` is a plain `UserControl`
+  (not `ReactiveUserControl`), so it does not have `WhenActivated`. To ensure
+  panels are disposed when the window closes, `MainWindow`'s existing disposal
+  chain (which runs on window close) must enumerate visible `TerminalPanel`
+  instances and dispose their `WhenChanged` subscriptions. The simplest path:
+  `MainWindow` stores a `CompositeDisposable` in its constructor and adds a
+  subscription from `TerminalTabHost`'s `Panels` collection changes (`WhenAny`)
+  that tracks panel lifetimes into the composite. Alternative: make
+  `TerminalTabHost` `IDisposable` and call `Dispose()` from `MainWindow`'s
+  disposal chain — this is the preferred approach for Phase 8.1:
+  ```csharp
+  public class TerminalTabHost : UserControl, IDisposable
+  {
+      public void Dispose()
+      {
+          foreach (var panel in _panels.Values)
+              (panel as IDisposable)?.Dispose();
+          _panels.Clear();
+          _content.Content = null;
+      }
+  }
+  ```
+  `MainWindow` calls `_terminalTabHost.Dispose()` in its disposal chain
+  (alongside the existing `_disposables.Dispose()` call). This covers both
+  `SetHost` replacement and window-close teardown with a single pattern.
+- The settings `Border` removal handler (above) disposes the transient
+  `SettingsViewModel` via its `IDisposable` implementation. No view calls
+  `Dispose` on `ISettingsService`.
 
 **[R] Terminal runtime font update (replaces `readonly` fields):** Live font
 changes require `TerminalRenderControl` to stop holding immutable font state.
@@ -1298,7 +1468,7 @@ The following view-level keybindings ARE migrated to the command registry:
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
-| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, `Update`/`Apply`, UI-thread `WhenChanged`, serialized saves, `WriteErrors` observable), JSON persistence, migration infrastructure, atomic writes, recovery, `ISecretStore` (restrictive create + mode repair), editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on `SaveAsync`. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600, atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `Update`/`Apply` commits a validated whole snapshot via `with` expressions and rejects invalid ones (D4a); (c) close-workspace test — `CloseFolderCommand` → null `RootPath` → watcher disposed → tree cleared → `WorkspaceFolderChanged` with null → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — temp created `0600`, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` observable fires on UI thread and retry via `SaveAsync` succeeds (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel` (D9). |
+| **M1–M6** | 8.1 | Settings foundation: `ISettingsService` (immutable snapshots, async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer, UI-thread `WhenChanged`, `WriteErrors` observable), JSON persistence, migration infrastructure, atomic writes with `UnixCreateMode = 0600`, recovery, `ISecretStore`, editor settings (code + prose + terminal fonts), `WorkspaceFolderChanged` event, live LLM config (D4b), reachable close-workspace path with full file-tree close sequence (D7), settings UI with explicit `ShowSettings` Interaction bridge (D9). `CancellationToken` on all async methods. | `dotnet build` + `dotnet test` green. Add and retain `Phase8ProofOfConceptTests` covering JSON/schema validation, Unix mode 0600 at creation (`UnixCreateMode`), atomic write, last-known-good fallback, and future/old-version rejection. Settings round-trip, migration, secret, runtime editor/terminal application, and LLM precedence tests. **New blocking tests:** (a) `LiveLlmConfigTests` — save settings, then assert the *next* `AgentExecutionService.ExecuteAsync` uses the new endpoint/key (D4b); (b) immutable-snapshot test — `UpdateAsync`/`ApplyAsync` commits a validated whole snapshot via `with` expressions and rejects invalid ones, with generation-aware queued write verification (D4a); (c) close-workspace test — `CloseFolderCommand` → `CloseFolderRequested` bridge → null `RootPath` via `SetRootPath` (private setter) → watcher disposed → tree cleared → `WorkspaceFolderChanged` with null → Source Control uninitialized and open documents retained (D7); (d) terminal runtime font test — `ApplyFontSettings` recomputes cell metrics without reconstructing the panel (D9); (e) secret mode test — `FileStreamOptions.UnixCreateMode = 0600` at creation, rename preserves mode, and a pre-existing loose-mode file is repaired on load (D4); (f) write-error surfacing test — simulate disk-write failure, assert `WriteErrors` observable fires on UI thread and retry via `SaveAsync` succeeds (D4a); (g) settings gear bridge test — gear icon click triggers `ShowSettings` Interaction and opens `SettingsPanelView` with a transient `SettingsViewModel`; closing the panel calls `Dispose()` on the ViewModel (D9); (h) disposal ownership test — `TerminalPanel` implements `IDisposable`, `RemovePanel` invokes it; settings panel ViewModel disposed on `Border` removal (D9 disposal section). |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, **canonical command-and-gesture table (D6a)**, default keybindings, user overrides, window keybinding integration (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. **Duplicate-registration throws; unavailable-command handling test (D6a); canonical gesture-table coverage test (every locked default gesture resolves to the right command, including `Ctrl+Oem3` → `view.toggleBottomPanel`).** Build + tests green. |
 | **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **UI-thread ownership of `WhenChanged`/state writes (D8); `SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` delivered on UI thread test.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
 
@@ -1339,14 +1509,14 @@ The following view-level keybindings ARE migrated to the command registry:
 | `src/Models/Workspace.cs` | 8.1 | Add `WorkspaceFolderChanged` event. `SetProjectFromPath()` raises it after mutation (including null close-workspace transition). Consumed by `IProjectContextService` (8.3). |
 | `src/Views/EditorView.cs` | 8.1 | Ctor gains `ISettingsService`. Replace hardcoded font/size/whitespace literals with settings-driven values applied at construction + on `WhenChanged`. |
 | `src/Views/TerminalRenderControl.cs` | 8.1 | Ctor gains `ISettingsService`. Replace `readonly` `_typeface`/`_fontSize` with mutable fields + `ApplyFontSettings(...)` (D9). Settings-driven font applied at construction + on `WhenChanged`. |
-| `src/Views/TerminalPanel.cs` | 8.1 | Ctor gains `ISettingsService`; forwards it to `TerminalRenderControl`. Owns the render control's `WhenChanged` subscription for the tab lifetime. |
-| `src/Views/TerminalTabHost.cs` | 8.1 | Ctor gains `ISettingsService`; forwards it to each `TerminalPanel` it creates. |
+| `src/Views/TerminalPanel.cs` | 8.1 | Ctor gains `ISettingsService`; implements `IDisposable` to dispose its `WhenChanged` subscription for the tab lifetime. |
+| `src/Views/TerminalTabHost.cs` | 8.1 | Ctor gains `ISettingsService`; forwards it to each `TerminalPanel` it creates. Implements `IDisposable` — `Dispose()` enumerates and disposes all retained `TerminalPanel` instances. `SetHost()` loop calls `(panel as IDisposable)?.Dispose()` before nulling ViewModel (matching `RemovePanel`). `RemovePanel()` calls `(panel as IDisposable)?.Dispose()` after nulling the ViewModel and before removing from the dictionary. |
 | `src/MainWindow.axaml.cs` | 8.1 + 8.2 | 8.1: register `ShowSettings` Interaction handler (constructs `SettingsPanelView` + `SettingsViewModel(settings, secrets)`, manages `_settingsPanelHost` `Border` field); resolve `StatusBarViewModel` from DI and assign to `_statusBar.ViewModel` (replacing `ViewModel`); pass `ISettingsService` into `new EditorView(settings)` and `new TerminalTabHost(settings)`. 8.2: replace imperative keybinding wiring with registry-driven binding (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). |
 | `src/Services/AgentExecutionOptions.cs` | 8.1 | Demoted to a plain immutable per-call value object. No DI registration, no factory. |
 | `src/Services/AgentExecutionService.cs` | 8.1 | Ctor gains `ISettingsService` + `ISecretStore` (replacing the static `AgentExecutionOptions`). Resolves effective LLM config live per `ExecuteAsync` (D4b). |
-| `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.3 | 8.1: add `CloseFolderCommand` (`workspace.closeFolder`, enabled only when a folder is open); add `ShowSettings` Interaction; observe both null and non-null `FileTreeViewModel.RootPath` transitions (remove the `!string.IsNullOrEmpty` filter) so close-workspace unloads and refreshes Source Control. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
-| `src/ViewModels/FileTreeViewModel.cs` | 8.1 | Add public `SetRootPath(string? path)` — the single writer of `RootPath`, including the full close sequence (`_watcherSubscription?.Dispose()`, `_fileTreeService.StopWatching()`, `RootNodes.Clear()`, `SelectedFile = null`, `StatusText = null`). See D7 for the complete sequence. |
-| `src/Views/FileTreeView.cs` | 8.1 + 8.2 | 8.1: add a close-workspace affordance in the header that invokes `MainWindowViewModel.CloseFolderCommand`. 8.2: `Ctrl+Shift+H` handler replaced with registry command call. |
+| `src/ViewModels/MainWindowViewModel.cs` | 8.1 + 8.3 | 8.1: add `CloseFolderCommand` (`workspace.closeFolder`, enabled only when a folder is open); add `ShowSettings` Interaction; subscribe to `FileTreeViewModel.CloseFolderRequested` Interaction in `Activate()` to forward close requests; observe both null and non-null `FileTreeViewModel.RootPath` transitions (remove the `!string.IsNullOrEmpty` filter) so close-workspace unloads and refreshes Source Control. 8.3: inject `IProjectContextService` and subscribe to project context changes. |
+| `src/ViewModels/FileTreeViewModel.cs` | 8.1 | **Make `RootPath` setter `private set`** (`SetRootPath` becomes sole writer). Add public `SetRootPath(string? path)` with the full close sequence (`_watcherSubscription?.Dispose()`, `_fileTreeService.StopWatching()`, `RootNodes.Clear()`, `SelectedFile = null`, `StatusText = null`). Add `Interaction<Unit, Unit> CloseFolderRequested` for FileTreeView to trigger close. See D7 for the complete sequence. |
+| `src/Views/FileTreeView.cs` | 8.1 + 8.2 | 8.1: add a close-workspace affordance in the header that invokes `ViewModel.CloseFolderRequested.Handle(Unit.Default)` (not `MainWindowViewModel.CloseFolderCommand` directly — view is typed to `FileTreeViewModel`). 8.2: `Ctrl+Shift+H` handler replaced with registry command call. |
 | `src/Views/StatusBar.cs` | 8.1 + 8.3 | **8.1:** convert from `ReactiveUserControl<MainWindowViewModel>` to `ReactiveUserControl<StatusBarViewModel>`; add settings gear icon button that binds to `StatusBarViewModel.OpenSettingsCommand`; forward existing one-way bindings (caret, language, project, branch) through `StatusBarViewModel` properties. 8.3: consume project context name instead of folder name. |
 | `src/ViewModels/StatusBarViewModel.cs` | 8.1 | DI singleton. Ctor receives `MainWindowViewModel`. Exposes `OpenSettingsCommand` (triggers `mainWindow.ShowSettings`) and delegated properties for caret/language/project/branch forwarded from `MainWindowViewModel`. |
 | `src/ViewModels/SettingsViewModel.cs` | 8.1 | Constructed transiently (not in DI) inside `MainWindow`'s `RegisterHandler` lambda. Receives `ISettingsService` + `ISecretStore` (both arguments required). Owns working candidate via `with` expressions, `ApplyCommand`/`DiscardCommand`, and live validation. |
@@ -1415,10 +1585,10 @@ File permissions: `0600` (owner read/write only) on Linux.
 | Unknown future settings version silently overwrites user config | Explicit version check: future version → refuse to load, surface error. |
 | Secret file permissions transiently loose or lost on rename | Restrictive temp creation (`0600` before first byte) + mode rides through `File.Move` + validate/repair existing mode on load (Linux). Non-Linux path documented. See D4. |
 | Saved LLM settings don't take effect until restart | `AgentExecutionService` resolves effective config **live** per call from `ISettingsService` + `ISecretStore` + env vars (D4b). `LiveLlmConfigTests` proves the next request uses saved settings. |
-| Mutable `Current` causes partial/unobserved saves | `SettingsModel` is immutable; only validated `Update`/`Apply` whole-snapshot commits are allowed; saves serialized through a gate (D4a). |
+| Mutable `Current` causes partial/unobserved saves | `SettingsModel` is immutable; only validated async `UpdateAsync`/`ApplyAsync` whole-snapshot commits are allowed; writes serialized through a generation-aware queued writer (D4a). |
 | Close workspace unreachable | `CloseFolderCommand` (`workspace.closeFolder`) + header affordance + `SetRootPath(null)` + unfiltered subscription make the null transition real and tested (D7). |
 | Terminal font can't update at runtime | `readonly` typeface/size replaced with mutable fields + `ApplyFontSettings` that recomputes cell metrics; `WhenChanged` drives it (D9). |
-| Project-context `WhenChanged` fires on a non-UI thread | State writes and `WhenChanged` owned by `Dispatcher.UIThread` (D8). |
+| Project-context `WhenChanged` fires on a non-UI thread | State writes and `WhenChanged` owned by `Dispatcher.UIThread.Post` with `TaskCompletionSource` acknowledgement (D8). |
 | `SelectProject` accepts a stale candidate | Candidates not in `Current.Candidates` are rejected (D8). |
 | `Workspace` split breaks existing consumers | `Workspace` does NOT split in Phase 8. Document/tab ownership and folder identity remain together. `IProjectContextService` is additive. No existing consumer is forced to change. |
 | `Workspace.WorkspacePath` has no change notification | Phase 8 adds `WorkspaceFolderChanged` event (D7). Minimal additive change. No existing consumer broken. |
@@ -1434,7 +1604,7 @@ File permissions: `0600` (owner read/write only) on Linux.
 - [ ] **Editor fonts:** No font family (code or prose) or font size is a hardcoded literal in `EditorView`. Code font (`codeFontFamily`/`codeFontSize`) and prose font (`proseFontFamily`) are separate settings driven by `ISettingsService`.
 - [ ] **Terminal fonts:** No font family or font size is a hardcoded literal in `TerminalRenderControl`. Terminal font (`terminalFontFamily`/`terminalFontSize`) driven by `ISettingsService`.
 - [ ] **LLM (live):** `AgentExecutionService` resolves effective LLM config **live** per `ExecuteAsync` from `ISettingsService` + `ISecretStore` + env-var fallback (D4b). Saving endpoint/model/key in the Settings UI affects the next request without restart — verified by `LiveLlmConfigTests`. No plaintext API key in settings file. `AgentExecutionOptions` is a per-call value carrier, not a DI singleton. Synchronous DI composition preserved.
-- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a UI-thread `WhenChanged`. Mutation happens only via validated `Update`/`Apply` (whole-snapshot commit, field-level validation errors reported, no mutable public `Current`). Saves serialized through a gate so overlapping edits cannot clobber each other (D4a).
+- [ ] **Settings mutation:** `ISettingsService` exposes an **immutable** `Current` snapshot and a UI-thread `WhenChanged`. Mutation happens only via validated async `UpdateAsync`/`ApplyAsync` (whole-snapshot commit via `with` expressions, field-level validation errors reported, no mutable public `Current`). Writes serialized through a generation-aware `Channel`-based queue; each mutation enqueues a closure that writes the live snapshot at execution time. Stale writes (earlier generation) are no-ops. The caller can await the returned `Task<SettingsMutationResult>` (D4a).
 - [ ] **Secrets:** API key is not in `settings.json`. `ISecretStore` provides get/set/delete. Temp file created `0600` before write; rename preserves mode; pre-existing loose-mode file repaired on load (Linux). Env-var fallback works. Non-Linux policy documented (D4).
 - [ ] **Commands:** All parameterless global commands registered with stable string IDs. `ICommandRegistry` provides lookup, `Execute(string id)`, and `Execute<T>(string id, T parameter)`. Duplicate `Id` registration throws. Unavailable commands (`GetById` null or `CanExecute` false) make `Execute` return `false` and render disabled in UI — never throw. Parameterized commands remain ViewModel-local. **Canonical command-and-gesture table (D6a) locks every default gesture, including `Ctrl+Oem3` → `view.toggleBottomPanel`.**
 - [ ] **Keybindings:** Window keybindings are materialized by the UI from
@@ -1455,15 +1625,19 @@ File permissions: `0600` (owner read/write only) on Linux.
 Write `docs/phases/v2/phase-8/phase-8.1/IMPLEMENTATION_PLAN.md` — the detailed
 plan for Settings Foundation (M1–M6). That plan locks the `ISettingsService`
 interface shape (immutable `Current`, UI-thread `WhenChanged`, validated
-`Update`/`Apply`, serialized `SaveAsync` — D4a), settings file path resolution,
-migration infrastructure, secret store implementation (restrictive create +
-mode repair — D4), editor/terminal settings integration with the concrete
-constructor-injection path and terminal runtime font update (D9), the
-**live** `AgentExecutionService` LLM resolution (D4b), the reachable
-close-workspace path (D7), and the settings UI before any production code
-changes. The 8.1 plan must include the blocking tests from M1
-(`LiveLlmConfigTests`, immutable-snapshot, close-workspace, terminal font,
-secret mode).
+async `UpdateAsync`/`ApplyAsync` with generation-aware queued writer,
+`SaveAsync` with `CancellationToken` — D4a), settings file path resolution,
+migration infrastructure, secret store implementation (`FileStreamOptions.UnixCreateMode = 0600`
+for race-free restrictive creation — D4), editor/terminal settings integration
+with the concrete constructor-injection path and terminal runtime font update
+(D9), the **live** `AgentExecutionService` LLM resolution (D4b), the reachable
+close-workspace path with `CloseFolderRequested` interaction bridge and
+`SetRootPath` as sole `RootPath` writer (D7), and the settings UI with explicit
+`ShowSettings` Interaction bridge and `IDisposable` ViewModel disposal (D9)
+before any production code changes. The 8.1 plan must include the blocking
+tests from M1 (`LiveLlmConfigTests`, immutable-snapshot with queued-write
+verification, close-workspace with interaction bridge, terminal font,
+secret mode with `UnixCreateMode`, disposal ownership).
 
 ## Rollback Plan
 

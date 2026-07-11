@@ -4,10 +4,11 @@ Zaide is an **AI-native IDE** built around a real agent workspace foundation.
 One agent codes, another reviews. They argue. You get better code.
 
 **Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
-[Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is planned (Phase 8 through
-Phase 13), but implementation has not started. This document describes the
-currently delivered V1 architecture; V2 entries below are future direction,
-not claims about live code.
+[Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is in progress — Phase 8
+umbrella plan is live-code-verified (Phase 8 through Phase 13). Sub-phase 8.1
+(Settings Foundation) requires its own detailed plan before coding begins.
+This document describes the currently delivered V1 architecture; V2 entries
+below are planned direction, not claims about live code.
 
 ---
 
@@ -172,4 +173,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-10 (V1 complete; V2 IDE Core Upgrade planned, implementation not started)*
+*Last updated: 2026-07-11 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8 umbrella plan locked)*
