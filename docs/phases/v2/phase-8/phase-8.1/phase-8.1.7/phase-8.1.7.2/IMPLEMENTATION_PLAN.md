@@ -1,5 +1,12 @@
 # Phase 8.1.7.2: Settings UX Expansion — Implementation Plan
 
+## Status
+
+**Complete in code and focused acceptance (2026-07-11).** The Editor,
+Terminal, and LLM settings surface is implemented, the immutable settings
+contracts remain intact, and the focused/full automated suite is green.
+Desktop evidence is recorded by `8.1.7.3`.
+
 ## Purpose
 
 Turn the existing Phase 8.1 settings slide-over into a usable settings surface
@@ -58,13 +65,13 @@ settings persistence, schema ownership, or the Phase 8.1 completion status.
 
 ## Exit Conditions
 
-- [ ] Editor, Terminal, and LLM settings are visibly labelled and editable.
-- [ ] The candidate remains immutable and all changes use the existing
+- [x] Editor, Terminal, and LLM settings are visibly labelled and editable.
+- [x] The candidate remains immutable and all changes use the existing
       validation and conflict-aware Apply flow.
-- [ ] API keys remain confined to `ISecretStore` and are absent from settings
+- [x] API keys remain confined to `ISecretStore` and are absent from settings
       persistence and diagnostics.
-- [ ] Focused tests cover the new controls and existing settings lifecycle.
-- [ ] No Phase 8.2 or Phase 8.3 behavior was added.
+- [x] Focused tests cover the new controls and existing settings lifecycle.
+- [x] No Phase 8.2 or Phase 8.3 behavior was added.
 
 ## Rollback Plan
 

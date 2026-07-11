@@ -57,15 +57,44 @@ plan is explicitly authorized.
 3. Run `8.1.7.3` only after the accepted changes from `.1` and `.2` are
    available in one checkout.
 
+## Status
+
+- `8.1.7.1` is complete. The provider diagnosis, UI-thread-affinity correction,
+  Cline Pass `stream: false` / `data.choices` envelope support, and focused
+  automated coverage are in place (commits `86c7a45` and earlier on
+  `master`). The child plan's own exit conditions are checked.
+- `8.1.7.2` is complete in code and focused acceptance. Its Editor, Terminal,
+  and LLM controls, immutable candidate flow, validation/conflict behavior,
+  secret isolation, and focused tests are present and green. Desktop evidence
+  is recorded by `.3`.
+- `8.1.7.3` is complete with secret-safe desktop evidence and the sequential
+  regression sweep. The evidence uses a larger desktop viewport; a 1280x800
+  virtual-display run exposed a responsive footer limitation, which remains
+  explicitly documented for a future UX slice.
+
 ## Umbrella Exit Conditions
 
-- [ ] `8.1.7.1` is complete with a documented provider diagnosis and focused
+- [x] `8.1.7.1` is complete with a documented provider diagnosis and focused
       automated coverage.
-- [ ] `8.1.7.2` is complete with focused UI/ViewModel coverage and no settings
+- [x] `8.1.7.2` is complete with focused UI/ViewModel coverage and no settings
       ownership or schema drift.
-- [ ] `8.1.7.3` is complete with sequential build/test verification, desktop
+- [x] `8.1.7.3` is complete with sequential build/test verification, desktop
       evidence, and truth-synced documentation.
-- [ ] Phase 8.2 and Phase 8.3 behavior remains out of scope.
+- [x] Phase 8.2 and Phase 8.3 behavior remains out of scope.
+
+## Verification Snapshot (2026-07-11)
+
+Ran by `8.1.7.3` from the repository root on `master` at
+`c56ba7e feat(settings): add editor font, tab, and whitespace configuration controls`:
+
+- `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
+- `dotnet test Zaide.slnx --no-build` — 935 passed, 0 failed, 0 skipped,
+  935 total.
+- `git diff --check` — clean; working tree has no staged or untracked
+  changes.
+
+The full record and the explicit desktop-verification gap are in
+[`phase-8.1.7.3/IMPLEMENTATION_PLAN.md`](phase-8.1.7.3/IMPLEMENTATION_PLAN.md).
 
 ## Rollback Plan
 
