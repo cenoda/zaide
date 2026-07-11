@@ -1,0 +1,216 @@
+# Phase 8.2: Command Registry and Keybindings — Implementation Plan
+
+## Scope
+
+**Goal:** Implement the Phase 8.2 command registry and keybinding foundation:
+stable command identifiers, command metadata, deterministic gesture resolution,
+user overrides from `ISettingsService`, and registry-driven window keybindings.
+
+**Dependencies:** Phase 8.1 and its post-closeout follow-up are complete. The
+accepted current baseline is the 2026-07-11 verification snapshot:
+
+- `dotnet build Zaide.slnx --no-restore` — 0 warnings, 0 errors.
+- `dotnet test Zaide.slnx --no-build` — 935 passed, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+
+**Out of scope:** Project/solution discovery and project context (Phase 8.3),
+Command Palette UI (Phase 9), menu-bar work, parameterized item commands,
+provider/tool/LSP work, and conflict-resolution UI.
+
+## M0 Entry Gate and Live-Code Findings
+
+M0 is documentation-only. No production code or test behavior changes are
+authorized by M0.
+
+The live-code audit for this plan confirmed:
+
+- `src/Services/ICommandRegistry.cs`, `CommandRegistry.cs`, and
+  `CommandDescriptor.cs` do not yet exist.
+- `src/MainWindow.axaml.cs` currently wires `Ctrl+Oem3`, `Ctrl+J`, `Ctrl+S`,
+  and `Ctrl+O` imperatively through Avalonia `KeyBindings`.
+- `src/Views/FileTreeView.cs` currently handles `Ctrl+Shift+H` directly in its
+  `KeyDown` handler.
+- `MainWindowViewModel` already owns the parameterless command seams needed by
+  this phase, including save, open-folder, toggle-bottom-panel, and close-folder
+  commands. `FileTreeViewModel.ToggleHiddenFilesCommand` is the existing hidden
+  files seam.
+- `SettingsModel.Keybindings` is currently an empty immutable placeholder, and
+  `ISettingsService.WhenChanged` is the existing settings-change notification
+  seam. Phase 8.2 must extend this contract without moving secrets or changing
+  settings ownership.
+- `Program.cs` is the DI registration seam. The registry is a singleton and must
+  be available before `MainWindow` performs initial command registration and
+  keybinding resolution.
+
+M0 exit gate:
+
+- [x] Phase 8.1 baseline and current live seams verified.
+- [x] The Phase 8 umbrella decisions D5, D6, D6a, and D10 are the governing
+      contracts for this plan.
+- [x] Phase 8.3 and Phase 9 boundaries are explicit.
+- [x] Milestones M7–M10 and their verification gates are locked below.
+
+## Implementation Contract
+
+### Command descriptors and registry
+
+Add `CommandDescriptor` and `ICommandRegistry` under `src/Services/`.
+
+`CommandDescriptor` must expose the umbrella contract:
+
+```csharp
+public sealed record CommandDescriptor(
+    string Id,
+    string DisplayName,
+    string Category,
+    IReadOnlyList<string> DefaultGestures,
+    ICommand Command);
+```
+
+The constructor validates non-empty `Id` and `Category`. `DefaultGestures` may
+be empty for an intentionally unbound command. The registry must:
+
+- reject duplicate command IDs with `InvalidOperationException`;
+- expose registration-order-independent `GetAll()` and `GetById(string)`
+  behavior without inventing a second command source;
+- execute parameterless commands through `Execute(string)` by calling
+  `CanExecute(null)` before `Execute(null)`;
+- return `false` and write a debug trace for unknown or unavailable commands;
+- expose `Execute<T>(string, T)` for explicitly parameterized callers without
+  performing type coercion or parameter inference;
+- remain UI-framework neutral. Avalonia `KeyBinding` objects are created only
+  by the window integration layer.
+
+### Canonical command table
+
+The following table is authoritative for Phase 8.2. Every registered global
+command must have an explicit row; no implicit default gesture is allowed.
+
+| Command ID | Display name | Category | Default gesture(s) | Existing command seam |
+|---|---|---|---|---|
+| `file.save` | Save | File | `Ctrl+S` | `MainWindowViewModel.SaveActiveTabCommand` |
+| `workspace.openFolder` | Open Folder | Workspace | `Ctrl+O` | `MainWindowViewModel.OpenFolderCommand` |
+| `workspace.closeFolder` | Close Folder | Workspace | unbound | `MainWindowViewModel.CloseFolderCommand` |
+| `view.toggleBottomPanel` | Toggle Bottom Panel | View | `Ctrl+Oem3`, `Ctrl+J` | `MainWindowViewModel.ToggleBottomPanelCommand` |
+| `explorer.toggleHiddenFiles` | Toggle Hidden Files | Explorer | `Ctrl+Shift+H` | `FileTreeViewModel.ToggleHiddenFilesCommand` |
+| `sourcecontrol.commit` | Commit | Source Control | unbound | `SourceControlViewModel.CommitCommand` |
+| `sourcecontrol.refresh` | Refresh | Source Control | unbound | `SourceControlViewModel.RefreshCommand` |
+
+`Ctrl+Oem3` is the canonical neutral token for the backtick/tilde key and must
+map to Avalonia `Key.Oem3` with `KeyModifiers.Control`. `Ctrl+J` is an alias for
+the same command, not a separate command.
+
+The following remain ViewModel-local and must not be registered: terminal
+internal commands, file-tree expand/collapse and item commands, stage/copy/open
+commands that require a specific item, one-way panel hiding, sidebar navigation,
+and Townhall text-input send.
+
+### Gesture resolution
+
+Implement the three-layer resolution policy:
+
+1. A valid user override wins over defaults for that command.
+2. If there is no override, each valid default gesture contributes a binding.
+3. Empty defaults produce an unbound command.
+
+Use the neutral grammar `Ctrl`, `Alt`, `Shift`, `Meta` plus one Avalonia `Key`
+enum name, case-insensitively. Unknown keys, malformed gestures, overrides for
+unregistered command IDs, and invalid override values are ignored and logged;
+they must not prevent startup.
+
+Gesture conflicts are deterministic and registration-order independent:
+
+- user-override conflicts are resolved by lexicographically earlier command ID;
+- default-gesture conflicts are resolved by lexicographically earlier command
+  ID after overridden commands have been applied;
+- no gesture may resolve to two command IDs;
+- the losing command remains registered but is unbound for that gesture;
+- Phase 8 has no conflict-resolution UI.
+
+`ResolveKeyBindings(ISettingsService settings)` returns neutral
+`ResolvedKeyBinding` records. It must be safe to call again after a settings
+change and must return a complete replacement set rather than incremental
+duplicates.
+
+### Window integration and refresh
+
+Register `ICommandRegistry`/`CommandRegistry` as a singleton in `Program.cs`.
+`MainWindow` registers the canonical commands once, resolves the full set after
+registration, converts neutral gestures to Avalonia `KeyBinding` instances,
+and removes/replaces the previous generated bindings as one operation.
+
+The imperative command-specific binding blocks in `MainWindow.axaml.cs` must be
+replaced by registry-driven materialization. The `Ctrl+Shift+H` handling in
+`FileTreeView.cs` must invoke the registry command rather than becoming a
+second keybinding source. The view-local Enter/open-file behavior remains local.
+
+When `ISettingsService.WhenChanged` emits a new snapshot, the window reruns
+resolution and replaces only the registry-owned framework bindings. Existing
+unrelated or view-local input behavior must not be removed.
+
+Unavailable commands, including `workspace.closeFolder` while no folder is
+open, are no-ops and do not throw. Their resolved gesture remains owned by the
+command layer if a future override assigns one, so the gesture does not fall
+through to text input.
+
+## Milestones
+
+| Milestone | Description | Verification |
+|---|---|---|
+| **M7** | Command registry core: descriptors, stable IDs, registration, lookup, execution, unavailable-command behavior, and DI registration. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown IDs, unavailable commands, and singleton resolution. |
+| **M8** | Canonical command registration and neutral gesture resolution: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
+| **M9** | Window and file-tree integration: replace imperative global bindings with registry materialization, wire all canonical command seams, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. Manual desktop smoke verification covers `Ctrl+Oem3`, `Ctrl+J`, `Ctrl+S`, `Ctrl+O`, and hidden-files behavior. |
+| **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
+
+## Required Test Matrix
+
+- Descriptor validation rejects empty IDs/categories and preserves immutable
+  metadata.
+- Duplicate registration throws and does not replace the original command.
+- `GetAll`, `GetById`, `Execute`, and `Execute<T>` cover registered, unknown,
+  unavailable, and wrong-parameter cases.
+- Every canonical table row is registered exactly once.
+- Every locked default gesture resolves to the expected command, including both
+  `Ctrl+Oem3` and `Ctrl+J` for `view.toggleBottomPanel`.
+- User overrides take precedence over defaults and support unbound commands.
+- User and default gesture conflicts select the lexicographically earlier ID and
+  emit a warning for the loser.
+- Invalid gesture strings and overrides for missing command IDs are ignored and
+  logged without startup failure.
+- Repeated resolution returns no duplicate gesture bindings.
+- Settings changes replace generated bindings rather than accumulating them.
+- An unavailable command is a no-op and does not throw.
+- Existing local parameterized commands remain outside the registry.
+
+## Limitations by Design
+
+- Keybinding override editing UI is not part of Phase 8.2; the registry consumes
+  the persisted settings contract and later UI may edit it.
+- Conflicts are logged only. User-facing conflict resolution is deferred to the
+  Command Palette work in Phase 9.
+- The registry does not discover commands dynamically and does not register
+  parameterized item actions.
+- Project context, solution discovery, and unload/reload state remain Phase 8.3.
+- Meta-key behavior is defined by the neutral grammar but is not required for
+  Linux-primary manual acceptance.
+
+## Exit Conditions
+
+- [ ] M7–M9 are complete with isolated commits and focused tests.
+- [ ] All canonical global commands are registered with stable IDs exactly once.
+- [ ] Resolution follows D6/D6a deterministically and uses the settings service
+      for overrides.
+- [ ] Main-window global keybindings are registry-driven; no duplicate imperative
+      keybinding source remains for the canonical gestures.
+- [ ] Phase 8.3, Phase 9, and unrelated parameterized commands remain untouched.
+- [ ] `dotnet build Zaide.slnx --no-restore` reports 0 warnings / 0 errors.
+- [ ] `dotnet test Zaide.slnx --no-build` is green.
+- [ ] `git diff --check` is clean and manual desktop evidence is recorded.
+
+## Rollback Plan
+
+Revert only the isolated Phase 8.2 milestone commit that introduced the unsafe
+behavior. Restore the Phase 8.1.7 green baseline (`c357172` and its accepted
+ancestors), then leave later milestones unstarted until the registry or binding
+seam is corrected. Do not revert Phase 8.1 settings or provider work as part of
+an 8.2 rollback.

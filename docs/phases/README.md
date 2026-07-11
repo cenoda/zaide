@@ -14,7 +14,7 @@ Roadmap V2 planning has started. Phase 8 umbrella plan is complete at
 [`v2/phase-8/IMPLEMENTATION_PLAN.md`](v2/phase-8/IMPLEMENTATION_PLAN.md).
 Sub-phase 8.1 (Settings Foundation) is **complete** across its five
 implementation slices (M1–M6 closeout 2026-07-11). Phase 8.2 (command registry
-and keybindings) is the next sub-phase to plan.
+and keybindings) has an implementation plan; its M0 entry review is next.
 
 ## Archive Policy
 

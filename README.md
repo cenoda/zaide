@@ -157,8 +157,8 @@ AI-native orchestration work:
 V2 is in progress. Phase 8 umbrella plan is live-code-verified at
 `docs/phases/v2/phase-8/IMPLEMENTATION_PLAN.md`. Sub-phase 8.1 (Settings
 Foundation) is complete across its five implementation slices (M1–M6 closeout
-2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) is
-the next sub-phase to plan.
+2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) has
+an implementation plan, with its M0 entry review next.
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"
