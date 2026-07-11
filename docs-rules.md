@@ -86,13 +86,38 @@ repurpose a completed roadmap file when defining a successor.
 
 Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 
+### Phase, sub-phase, and milestone boundaries
+
+These terms are not interchangeable:
+
+- **Phase** — a roadmap-level outcome. A phase normally contains at least
+  three milestones. A phase may be divided into sub-phases when it contains
+  multiple independently owned concerns.
+- **Sub-phase** — a planning and ownership subdivision inside a phase. It has
+  its own scope and plan when needed, but it is not a synonym for a milestone
+  and must not be used to describe one implementation session.
+- **Milestone** — the smallest independently verifiable implementation unit,
+  normally sized for one agent session. It has an explicit scope, test gate,
+  and completion condition.
+
+The first milestone is always **M0**. M0 is the most important planning gate:
+it must verify the live-code seams, lock scope and boundaries, identify the
+milestones and their dependencies, and define concrete verification commands
+before production implementation begins. M0 may be documentation-only unless
+the plan explicitly says otherwise.
+
+If a milestone is too large for one agent session, split it into separately
+named milestone slices (for example `M2a` and `M2b`) before continuing. Do not
+relabel those slices as sub-phases. Each slice must have its own bounded scope,
+verification gate, and handoff/commit point.
+
 ### Rules:
 1. **Verify against live code** — design docs go stale. Check `src/` before claiming a seam exists.
 2. **Verify libraries before depending on them** — confirm API actually works with your stack version.
 3. **Build for this phase only (YAGNI)** — no abstractions for a future phase's need.
 4. **Prefer documented limitations over edge-case code** — keep a "Phase N Limitations" section.
 5. **Make gates verifiable** — entry/exit conditions must be checkable commands, not vibes.
-6. **One concern per milestone** — each milestone should be independently testable.
+6. **One concern per milestone** — each milestone should be independently testable and session-sized.
 
 ### Implementation Plan Template:
 
@@ -393,11 +418,12 @@ and tells future agents that `dynamic` is acceptable.
 `MainWindow.axaml.cs` must not grow 40-line inline dialog factories. Every
 dialog gets its own file (View + ViewModel if needed), even if it's simple.
 
-### 12f. Every milestone gets its own commit
+### 12f. Commit at milestone boundaries
 
-Never batch milestones into one commit (e.g., `M1-M3` or `M4-M6`). Each
-milestone is one commit with its own tests. If M4 is sloppy, you revert only
-M4–M6, not everything.
+Strongly prefer one commit per milestone (or per milestone slice). Do not batch
+unrelated milestones into one commit (for example `M1-M3`). Each commit should
+leave the repository verifiably green and make the milestone boundary obvious;
+this keeps rollback and review local to the affected unit.
 
 ### 12g. Plan-required tests must exist
 
