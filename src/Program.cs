@@ -24,6 +24,9 @@ class Program
                 containerConfig: services =>
                 {
                     services.AddSingleton<Models.Workspace>();
+
+                    // Phase 8.1.1 M1: immutable settings core
+                    services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IFileService, FileService>();
                     services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
                     services.AddSingleton<ITerminalHost, TerminalHost>();
@@ -36,7 +39,7 @@ class Program
                     services.AddSingleton<TownhallViewModel>();
                     services.AddSingleton<EditorTabViewModel>();
                     services.AddSingleton<SourceControlViewModel>();
-                    // M1: Register agent execution service seam
+                    // Register agent execution service seam
                     services.AddSingleton<AgentExecutionOptions>(_ =>
                     {
                         var options = new AgentExecutionOptions();

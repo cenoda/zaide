@@ -361,8 +361,10 @@ public interface ISettingsService
     /// concurrent producers cannot lose disjoint edits. The service then
     /// enqueues a generation-aware write. The returned task never faults from a write failure — the
     /// in-memory snapshot is already committed; the caller inspects
-    /// SettingsMutationResult.SaveResult for disk outcome. The task faults
-    /// only if the queue itself is fatally broken (e.g. channel closed).
+    /// SettingsMutationResult.SaveResult for disk outcome. It may be canceled
+    /// with OperationCanceledException only before acquiring the mutation gate;
+    /// after commit, it faults only if the queue itself is fatally broken
+    /// (e.g. channel closed).
     /// If invalid, nothing is committed and the error(s) are reported back
     /// to the caller for UI display.
     /// </summary>
