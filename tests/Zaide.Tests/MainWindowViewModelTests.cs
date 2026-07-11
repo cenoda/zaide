@@ -1,10 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -1171,5 +1174,180 @@ public class MainWindowViewModelTests
         // Workspace remains in its initial closed state
         Assert.Null(workspace.WorkspacePath);
         Assert.Null(fileTreeVm.RootPath);
+    }
+
+    // ── Phase 8.1.7.1: Full-chain integration with real coordinator ─────────────
+
+    /// <summary>
+    /// Creates temp dir + SettingsService for full-chain tests.
+    /// Caller must delete the returned path after use.
+    /// </summary>
+    private static (SettingsService SettingsService, TestSecretStore Secrets, string TempDir)
+        CreateFullChainSettings()
+    {
+        var tmpDir = Path.Combine(Path.GetTempPath(), "ZaideFullChain_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tmpDir);
+        var settingsPath = Path.Combine(tmpDir, "settings.json");
+        var lkgPath = Path.Combine(tmpDir, "lkg.json");
+        var tmpPath = Path.Combine(tmpDir, "tmp.json");
+        var llm = new LlmSettings(BaseUrl: "https://api.test.com/v1", Model: "test-model", ApiKeySource: "secret-store");
+        var model = SettingsModel.Defaults with { Llm = llm };
+        var json = SettingsSerializer.Serialize(model);
+        File.WriteAllText(settingsPath, json);
+        var settingsService = new SettingsService(settingsPath, lkgPath, tmpPath,
+            new SettingsMigrator(Array.Empty<ISettingsMigration>()));
+        var secrets = new TestSecretStore();
+        secrets.Set("llm.apiKey", "test-key");
+        return (settingsService, secrets, tmpDir);
+    }
+
+    /// <summary>
+    /// Creates the common ViewModel plumbing for full-chain tests.
+    /// </summary>
+    private static (MainWindowViewModel Vm, AgentPanelState Panel, string TempDir) BuildFullChainVm(
+        IAgentExecutionService executionService)
+    {
+        var agentHost = new AgentPanelHost();
+        var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
+
+        var parser = new MentionParser(agentHost);
+        var coordinator = new AgentExecutionCoordinator(agentHost, executionService);
+        var router = new AgentRouter(parser, agentHost, coordinator);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(new FileService());
+        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<Workspace>();
+        var sp = services.BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scViewModel = CreateScViewModel();
+        var workspace = sp.GetRequiredService<Workspace>();
+
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
+            coordinator, router, townhallViewModel, scViewModel, workspace);
+        vm.Activate();
+
+        return (vm, panel, string.Empty);
+    }
+
+    [Fact]
+    public async Task SendAgentMessageAsync_FullChain_Success_UpdatesPanelAndTownhall()
+    {
+        var (settings, secrets, tmpDir) = CreateFullChainSettings();
+        try
+        {
+            var handler = new FakeMessageHandler(HttpStatusCode.OK,
+                JsonSerializer.Serialize(new
+                {
+                    choices = new[] { new { message = new { content = "Full chain reply" }, finish_reason = "stop" } }
+                }));
+            var httpClient = new HttpClient(handler);
+            var executionService = new AgentExecutionService(httpClient, settings, secrets);
+            var (vm, panel, _) = BuildFullChainVm(executionService);
+
+            var channelId = vm.TownhallViewModel.Channels[0].Id;
+            vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+            var beforeTownhallCount = vm.TownhallViewModel.Messages.Count;
+
+            await vm.SendAgentMessageAsync(panel.PanelId, "Full chain test");
+
+            // Panel state
+            Assert.Equal(2, panel.OutputHistory.Count);
+            Assert.Equal("User: Full chain test", panel.OutputHistory[0]);
+            Assert.Equal("Assistant: Full chain reply", panel.OutputHistory[1]);
+            Assert.Equal("Idle", panel.Status);
+            Assert.False(panel.IsBusy);
+
+            // Townhall state (user message + assistant response)
+            Assert.Equal(beforeTownhallCount + 2, vm.TownhallViewModel.Messages.Count);
+            var userEntry = vm.TownhallViewModel.Messages[beforeTownhallCount];
+            Assert.Equal("Full chain test", userEntry.Content);
+            Assert.Equal(TownhallMessageKind.Chat, userEntry.Kind);
+            var agentEntry = vm.TownhallViewModel.Messages[beforeTownhallCount + 1];
+            Assert.Equal("Assistant: Full chain reply", agentEntry.Content);
+            Assert.Equal(TownhallMessageKind.Chat, agentEntry.Kind);
+            Assert.Equal("agent-1", agentEntry.SenderId);
+        }
+        finally
+        {
+            settings.Dispose();
+            try { Directory.Delete(tmpDir, recursive: true); } catch { /* best-effort */ }
+        }
+    }
+
+    [Fact]
+    public async Task SendAgentMessageAsync_FullChain_Failure_UpdatesPanelErrorAndTownhall()
+    {
+        var (settings, secrets, tmpDir) = CreateFullChainSettings();
+        try
+        {
+            var handler = new FakeMessageHandler(HttpStatusCode.Unauthorized,
+                """
+                {"error": {"message": "bad key"}}
+                """);
+            var httpClient = new HttpClient(handler);
+            var executionService = new AgentExecutionService(httpClient, settings, secrets);
+            var (vm, panel, _) = BuildFullChainVm(executionService);
+
+            var channelId = vm.TownhallViewModel.Channels[0].Id;
+            vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+            var beforeTownhallCount = vm.TownhallViewModel.Messages.Count;
+
+            await vm.SendAgentMessageAsync(panel.PanelId, "Trigger 401");
+
+            // Panel state
+            Assert.Equal("Error", panel.Status);
+            Assert.False(panel.IsBusy);
+            Assert.Equal(2, panel.OutputHistory.Count);
+            Assert.Contains("401", panel.OutputHistory[1]);
+
+            // Townhall state (user message + error entry)
+            Assert.Equal(beforeTownhallCount + 2, vm.TownhallViewModel.Messages.Count);
+            var errorEntry = vm.TownhallViewModel.Messages[beforeTownhallCount + 1];
+            Assert.Equal(TownhallMessageKind.AgentError, errorEntry.Kind);
+            Assert.Contains("401", errorEntry.Content);
+            Assert.Equal("agent-1", errorEntry.SenderId);
+        }
+        finally
+        {
+            settings.Dispose();
+            try { Directory.Delete(tmpDir, recursive: true); } catch { /* best-effort */ }
+        }
+    }
+
+    [Fact]
+    public async Task SendAgentMessageAsync_FullChain_NetworkException_UpdatesPanelError()
+    {
+        var (settings, secrets, tmpDir) = CreateFullChainSettings();
+        try
+        {
+            var handler = new FaultMessageHandler(new HttpRequestException("connection refused"));
+            var httpClient = new HttpClient(handler);
+            var executionService = new AgentExecutionService(httpClient, settings, secrets);
+            var (vm, panel, _) = BuildFullChainVm(executionService);
+
+            var channelId = vm.TownhallViewModel.Channels[0].Id;
+            vm.TownhallViewModel.SelectChannelCommand.Execute(channelId).Subscribe();
+
+            await vm.SendAgentMessageAsync(panel.PanelId, "Net fail");
+
+            Assert.Equal("Error", panel.Status);
+            Assert.False(panel.IsBusy);
+            Assert.Contains("connection refused", panel.OutputHistory[1]);
+        }
+        finally
+        {
+            settings.Dispose();
+            try { Directory.Delete(tmpDir, recursive: true); } catch { /* best-effort */ }
+        }
     }
 }

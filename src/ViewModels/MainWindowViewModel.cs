@@ -252,7 +252,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             senderName: "User");
 
         // Delegate entirely to the routing orchestration seam (M3).
-        var routeResult = await AgentRouter.RouteAndExecuteAsync(panelId, userMessage, ct).ConfigureAwait(false);
+        // NOTE: Do NOT use ConfigureAwait(false) here. The continuation reads
+        // AgentPanelState (OutputHistory, Status) and calls
+        // TownhallViewModel.AddMirroredActivity() which modifies
+        // ObservableCollection<TownhallMessage> — both require the Avalonia UI
+        // thread. AgentRouter and AgentExecutionCoordinator also preserve the
+        // captured SynchronizationContext internally.
+        var routeResult = await AgentRouter.RouteAndExecuteAsync(panelId, userMessage, ct);
 
         // M1: consume the routing outcome so routed flows and routing failures
         // become visible in Townhall (previously the result was captured but unread).

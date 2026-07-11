@@ -581,6 +581,111 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         Assert.False(panel.IsBusy);
         Assert.Equal("Assistant: Recovered", panel.OutputHistory[3]);
     }
+
+    // ── Phase 8.1.7.1: AgentRouter + AgentExecutionCoordinator integration ──
+
+    [Fact]
+    public async Task SendAsync_ThroughRouter_Success_UpdatesPanelOutputAndStatus()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            choices = new[] { new { message = new { content = "Router reply" }, finish_reason = "stop" } }
+        }));
+        var parser = new MentionParser(host);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+        var router = new AgentRouter(parser, host, coordinator);
+
+        var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello from router");
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Request);
+        Assert.True(result.Request!.IsDirectSend);
+        Assert.Equal(2, panel.OutputHistory.Count);
+        Assert.Equal("User: Hello from router", panel.OutputHistory[0]);
+        Assert.Equal("Assistant: Router reply", panel.OutputHistory[1]);
+        Assert.Equal("Idle", panel.Status);
+        Assert.False(panel.IsBusy);
+    }
+
+    [Fact]
+    public async Task SendAsync_ThroughRouter_Failure_UpdatesPanelError()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
+        var parser = new MentionParser(host);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+        var router = new AgentRouter(parser, host, coordinator);
+
+        var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
+
+        // Router succeeds (routing parsed, execution delegated)
+        Assert.True(result.Success);
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("500", panel.OutputHistory[1]);
+    }
+
+    [Fact]
+    public async Task SendAsync_ThroughRouter_NetworkException_UpdatesPanelError()
+    {
+        var host = CreateHostWithPanel(out var panel);
+        var handler = new FaultHandler(new HttpRequestException("connection refused"));
+        var httpClient = new HttpClient(handler);
+        var options = new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = "test-key",
+            Model = "test-model"
+        };
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        var service = new AgentExecutionService(httpClient, settings, secrets);
+        var parser = new MentionParser(host);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+        var router = new AgentRouter(parser, host, coordinator);
+
+        await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
+
+        Assert.Equal("Error", panel.Status);
+        Assert.False(panel.IsBusy);
+        Assert.Contains("connection refused", panel.OutputHistory[1]);
+    }
+
+    /// <summary>
+    /// Verifies the full chain preserves Townhall-safe state — the
+    /// ConfigureAwait(false)-removal fix ensures all mutations happen on the
+    /// captured SynchronizationContext without wrapped cross-thread exceptions.
+    /// </summary>
+    [Fact]
+    public async Task SendAsync_ThroughRouter_RoutedSend_UpdatesTargetPanel()
+    {
+        var host = new AgentPanelHost();
+        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
+        var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
+        var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            choices = new[] { new { message = new { content = "Target reply" }, finish_reason = "stop" } }
+        }));
+        var parser = new MentionParser(host);
+        var coordinator = new AgentExecutionCoordinator(host, service);
+        var router = new AgentRouter(parser, host, coordinator);
+
+        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello from routed");
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Request);
+        Assert.False(result.Request!.IsDirectSend);
+
+        // Source panel should have no output (routed to target)
+        Assert.Empty(source.OutputHistory);
+
+        // Target panel should have the user + assistant output
+        Assert.Equal(2, target.OutputHistory.Count);
+        Assert.Equal("User: hello from routed", target.OutputHistory[0]);
+        Assert.Equal("Assistant: Target reply", target.OutputHistory[1]);
+        Assert.Equal("Idle", target.Status);
+        Assert.False(target.IsBusy);
+    }
 }
 
 // ── Test helpers ───────────────────────────────────────────────────────────

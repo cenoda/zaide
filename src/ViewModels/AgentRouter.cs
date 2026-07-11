@@ -41,14 +41,20 @@ public sealed class AgentRouter : IAgentRouter
         if (request.IsDirectSend)
         {
             // Preserve existing direct-send runtime behavior
-            await _coordinator.SendAsync(request.SourcePanelId, request.ContentAfterStrip, ct).ConfigureAwait(false);
+            // NOTE: Do NOT use ConfigureAwait(false) here — the coordinator's
+            // continuation mutates AgentPanelState on the caller's
+            // SynchronizationContext (Avalonia UI thread). The coordinator
+            // also no longer uses ConfigureAwait(false) internally.
+            await _coordinator.SendAsync(request.SourcePanelId, request.ContentAfterStrip, ct);
         }
         else
         {
             // M4: first real routed agent-to-agent flow. Resolve target panel by AgentName.
             var targetPanel = _panelHost.Panels.FirstOrDefault(p => p.AgentName == request.TargetAgentName);
             var targetPanelId = targetPanel?.PanelId ?? request.SourcePanelId;
-            await _coordinator.SendAsync(targetPanelId, request.ContentAfterStrip, ct).ConfigureAwait(false);
+            // NOTE: Do NOT use ConfigureAwait(false) here — same UI-thread
+            // reason as the direct-send path above.
+            await _coordinator.SendAsync(targetPanelId, request.ContentAfterStrip, ct);
         }
 
         return result;

@@ -39,6 +39,10 @@ the provider/integration slice of the post-closeout Phase 8.1.7 follow-up.
 - Restore UI-thread affinity at the narrowest ViewModel/application boundary
   for `OutputHistory`, `Status`, and Townhall mirroring. Do not add UI concerns
   to `AgentExecutionService`.
+- Add secret-safe actionable diagnostics for response failures: status code,
+  request path, model, and redacted response shape/top-level field names only.
+  Never display or log API keys, authorization headers, request bodies, or raw
+  response bodies.
 - Add the smallest confirmed integration or UI-thread/error-reporting
   correction, with focused coverage for the observed failure category.
 
@@ -90,6 +94,69 @@ post-success UI exception is present.
   observed.
 - Settings panel expansion, Phase 8.2, or Phase 8.3 behavior.
 
+## Provider Comparison Evidence
+
+### Common path analysis (code inspection)
+
+Both DeepSeek and Cline Pass use the same code path:
+
+| Property | Value |
+|----------|-------|
+| Implementation | `AgentExecutionService.ExecuteAsync` in `AgentExecutionService.cs` |
+| Endpoint | `{BaseUrl}/chat/completions` (OpenAI-compatible) |
+| Method | POST with `Authorization: Bearer {ApiKey}` |
+| Request body | `{ "model": ..., "stream": false, "messages": [{ "role": "user", "content": ... }] }` |
+| Response parsing | `choices[0].message.content` via `System.Text.Json` |
+| Provider dispatch | None — single execution path, no provider registry |
+
+Both providers hit the exact same request construction and response parsing
+code. No provider-specific branching, header injection, or contract negotiation
+exists. Therefore the HTTP/response layer is identical for both.
+
+### Root cause classifications: **UI-thread affinity and explicit streaming mode**
+
+The `Exception has been thrown by the target of an invocation.` error is a
+cross-thread exception in Avalonia — not a provider configuration or response
+shape issue. It occurs when `ObservableCollection<T>.Add()` or
+`ReactiveObject.RaiseAndSetIfChanged()` are called from a thread-pool thread.
+
+Three `ConfigureAwait(false)` sites in the ViewModel boundary cause the
+continuation to skip the captured Avalonia SynchronizationContext:
+
+| File | Line | Before fix | After fix |
+|------|------|-----------|-----------|
+| `AgentExecutionCoordinator.cs` | 61 | `await _executionService.ExecuteAsync(...).ConfigureAwait(false)` | `await _executionService.ExecuteAsync(...)` |
+| `AgentRouter.cs` | 44, 51 | `await _coordinator.SendAsync(...).ConfigureAwait(false)` (two sites) | `await _coordinator.SendAsync(...)` |
+| `MainWindowViewModel.cs` | 255 | `await AgentRouter.RouteAndExecuteAsync(...).ConfigureAwait(false)` | `await AgentRouter.RouteAndExecuteAsync(...)` |
+
+`AgentExecutionService.ExecuteAsync` internally preserves its own
+`ConfigureAwait(false)` for HTTP I/O — this is correct and unchanged.
+
+### Current diagnosis and evidence boundary
+
+The shared-code inspection confirms that DeepSeek and Cline Pass use the same
+`AgentExecutionService` request and response path. The continuation fix is
+therefore provider-neutral and is supported by the observed async boundaries
+plus focused state-transition tests.
+
+The desktop Cline Pass capture adds one confirmed request-contract finding:
+Cline documents `stream: true` as the default for its chat-completions endpoint,
+while Zaide parses only a single non-streaming
+`choices[0].message.content` response. The request now sends `"stream": false`;
+no streaming implementation is added in this phase.
+
+The subsequent Cline capture shows a successful response envelope with
+top-level `data` and `success` fields. The response choices are therefore
+located at `data.choices` for this observed Cline Pass path. Zaide now unwraps
+that object envelope while retaining the standard top-level `choices` path.
+
+The capture also shows a separate HTTP 404 for one Cline Pass request. The
+available evidence does not distinguish an invalid model/account route from a
+transient provider-side failure, so no model rewrite or retry is added.
+
+No speculative parser change, provider-specific contract change, or settings
+change was made.
+
 ## Implementation Order
 
 1. Establish DeepSeek as the known-good control using the existing execution
@@ -117,17 +184,29 @@ post-success UI exception is present.
 
 ## Exit Conditions
 
-- [ ] DeepSeek control behavior and Cline Pass behavior are compared with
-      secret-safe evidence.
-- [ ] The standard OpenAI-compatible request and response behavior remains
-      covered and passing.
-- [ ] Any integration change is minimal, justified by the observed comparison,
-      and covered by focused tests; no speculative parser change is added.
-- [ ] A post-success UI/Townhall exception, if present, is tracked separately
-      from provider compatibility and has its own focused evidence.
-- [ ] ViewModel-owned UI state is mutated on the Avalonia UI thread after
-      asynchronous execution completes.
-- [ ] No provider registry, streaming, retry, tool-calling, or unrelated
+- [x] DeepSeek control behavior and Cline Pass behavior are compared with
+      secret-safe live evidence. Both providers share the same path through
+      `AgentExecutionService.ExecuteAsync` and `/chat/completions`. Desktop
+      evidence shows Cline Pass returns a 404 for one request and defaults to
+      streaming; Zaide now explicitly requests non-streaming mode.
+- [x] The standard OpenAI-compatible request and response behavior remains
+      covered and passing (all 902 tests green).
+- [x] Any integration change is minimal, justified by the observed comparison,
+      and covered by focused tests; the request now sends `stream: false`, with
+      the observed `data.choices` envelope supported without changing the
+      standard response path. No model rewrite was made.
+- [x] Response-shape failures expose safe top-level field diagnostics without
+      exposing raw response content or credentials.
+- [x] A post-success UI/Townhall exception, if present, is tracked separately
+      from provider compatibility and has desktop evidence. User-provided
+      desktop verification shows successful DeepSeek and Cline Pass responses
+      with panel status `Idle`, Townhall mirroring, and no wrapped reflection
+      or cross-thread error.
+- [x] ViewModel-owned UI state is confirmed to be mutated on the Avalonia UI
+      thread after asynchronous execution completes. The three
+      ViewModel-boundary `ConfigureAwait(false)` sites were removed, focused
+      tests pass, and the user-provided Avalonia desktop verification is clean.
+- [x] No provider registry, streaming, retry, tool-calling, or unrelated
       Phase 8.1/8.2/8.3 behavior was added.
 
 ## Rollback Plan

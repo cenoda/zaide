@@ -127,6 +127,7 @@ public sealed class AgentExecutionServiceTests : IDisposable
 
         // Model
         Assert.Equal("test-model", root.GetProperty("model").GetString());
+        Assert.False(root.GetProperty("stream").GetBoolean());
 
         // Messages
         var messages = root.GetProperty("messages");
@@ -181,6 +182,27 @@ public sealed class AgentExecutionServiceTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.Equal("Assistant reply", result.ResponseText);
         Assert.Null(result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ClineDataEnvelope_ReturnsAssistantText()
+    {
+        var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            success = true,
+            data = new
+            {
+                choices = new[]
+                {
+                    new { message = new { content = "Cline envelope reply" }, finish_reason = "stop" }
+                }
+            }
+        }));
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Cline envelope reply", result.ResponseText);
     }
 
     // ── Missing API key ─────────────────────────────────────────────────────
@@ -423,6 +445,23 @@ public sealed class AgentExecutionServiceTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.Contains("response structure", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("top-level fields", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("id", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("model", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ErrorEnvelopeWithHttpSuccess_ReportsSafeResponseShape()
+    {
+        var service = CreateService(HttpStatusCode.OK, "{\"error\":\"Not Found\",\"success\":false}");
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("top-level fields", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("error", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("success", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Not Found", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Trimming of base URL trailing slash ─────────────────────────────────

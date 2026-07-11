@@ -58,7 +58,15 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             panel.DraftInput = string.Empty;
 
             // Execute
-            var result = await _executionService.ExecuteAsync(userMessage, ct).ConfigureAwait(false);
+            // NOTE: Do NOT use ConfigureAwait(false) here. The continuation
+            // mutates AgentPanelState (OutputHistory, Status, IsBusy) which are
+            // bound to Avalonia views and must be updated on the UI thread.
+            // AgentExecutionService internally uses ConfigureAwait(false) for
+            // its own I/O (that is correct), but after it returns we need the
+            // captured SynchronizationContext so the callers — including
+            // MainWindowViewModel.SendAgentMessageAsync — also remain on the
+            // Avalonia UI thread for Townhall mirroring.
+            var result = await _executionService.ExecuteAsync(userMessage, ct);
 
             if (result.IsSuccess)
             {

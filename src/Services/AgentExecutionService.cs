@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,6 +53,10 @@ public sealed class AgentExecutionService : IAgentExecutionService
         var requestBody = new
         {
             model = options.Model,
+            // Cline's OpenAI-compatible endpoint defaults to SSE streaming.
+            // This service intentionally supports the non-streaming response
+            // contract only, so make the mode explicit.
+            stream = false,
             messages = new[]
             {
                 new { role = "user", content = userMessage }
@@ -110,8 +115,10 @@ public sealed class AgentExecutionService : IAgentExecutionService
         if (!response.IsSuccessStatusCode)
         {
             var statusCode = (int)response.StatusCode;
-            var snippet = responseBody.Length > 200 ? responseBody[..200] + "..." : responseBody;
-            return AgentExecutionResult.Failure($"HTTP {statusCode}: {snippet}");
+            var shape = DescribeResponseShape(responseBody);
+            return AgentExecutionResult.Failure(
+                $"HTTP {statusCode} at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                $"for model '{options.Model}'. Response shape: {shape}");
         }
 
         // --- Parse response JSON ---
@@ -128,7 +135,19 @@ public sealed class AgentExecutionService : IAgentExecutionService
         // --- Extract assistant content ---
         try
         {
-            var choices = doc.RootElement.GetProperty("choices");
+            // Cline Pass may wrap the OpenAI-compatible response in a
+            // `{ "data": { ... }, "success": true }` envelope. Preserve the
+            // standard top-level response path and unwrap only this observed
+            // object envelope.
+            var responseRoot = doc.RootElement;
+            if (!responseRoot.TryGetProperty("choices", out _) &&
+                responseRoot.TryGetProperty("data", out var data) &&
+                data.ValueKind == JsonValueKind.Object)
+            {
+                responseRoot = data;
+            }
+
+            var choices = responseRoot.GetProperty("choices");
             if (choices.GetArrayLength() == 0)
                 return AgentExecutionResult.Failure("Response contains no choices.");
 
@@ -143,12 +162,55 @@ public sealed class AgentExecutionService : IAgentExecutionService
         }
         catch (InvalidOperationException ex)
         {
-            return AgentExecutionResult.Failure($"Unexpected response structure: {ex.Message}");
+            return AgentExecutionResult.Failure(
+                $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
         }
         catch (KeyNotFoundException ex)
         {
-            return AgentExecutionResult.Failure($"Unexpected response structure: {ex.Message}");
+            return AgentExecutionResult.Failure(
+                $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
         }
+    }
+
+    private static string DescribeResponseShape(string responseBody)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(responseBody);
+            return DescribeResponseShape(doc);
+        }
+        catch (JsonException)
+        {
+            return "invalid JSON";
+        }
+    }
+
+    private static string DescribeResponseShape(JsonDocument doc)
+    {
+        var root = doc.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+            return $"root={root.ValueKind}";
+
+        var properties = root.EnumerateObject()
+            .Select(property => property.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        var description = properties.Length == 0
+            ? "object with no fields"
+            : $"top-level fields: {string.Join(", ", properties)}";
+
+        if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object)
+        {
+            var dataFields = data.EnumerateObject()
+                .Select(property => property.Name)
+                .OrderBy(name => name, StringComparer.Ordinal);
+            description += $"; data fields: {string.Join(", ", dataFields)}";
+        }
+
+        return description;
     }
 
     /// <summary>
