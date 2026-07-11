@@ -1,9 +1,10 @@
-# Phase 8.1.7.1: Provider Compatibility Diagnosis — Implementation Plan
+# Phase 8.1.7.1: Cline Pass Integration Diagnosis — Implementation Plan
 
 ## Purpose
 
-Diagnose the configured Cline Pass send failure and make only the smallest
-confirmed compatibility or error-reporting correction. This plan is the
+Diagnose the configured Cline Pass send failure by comparing it with the
+already-working DeepSeek OpenAI-compatible path, then make only the smallest
+confirmed integration or error-reporting correction. This plan is the
 provider slice of the post-closeout Phase 8.1.7 follow-up.
 
 ## Dependencies
@@ -11,24 +12,24 @@ provider slice of the post-closeout Phase 8.1.7 follow-up.
 - The accepted Phase 8.1 M6 baseline is preserved.
 - `AgentExecutionService` remains the single non-streaming,
   OpenAI-compatible execution path.
+- DeepSeek is the known-good OpenAI-compatible control provider for the
+  comparison. Its successful response does not by itself prove that Cline
+  Pass is configured correctly.
 - A reproduction can be performed without committing or exposing credentials.
 
 ## Scope
 
-- Reproduce the failure through the configured endpoint using a secret-safe
-  diagnostic path.
-- Capture only the HTTP status and redacted response shape needed to classify
-  the failure as request/configuration, HTTP-error payload, or successful
-  response-shape incompatibility.
-- Verify the request URL, model, authorization behavior, and response contract
-  against the observed endpoint without recording API-key values.
-- If the endpoint is confirmed to return a supported OpenAI-compatible shape,
-  improve actionable error reporting only where needed.
-- If the endpoint is confirmed to use a documented successful shape that the
-  current parser rejects, add the smallest parser change that supports that
-  shape while retaining the existing standard response path.
-- Add focused tests for the standard success path, the observed response form,
-  and the relevant failure category.
+- Reproduce a short request through DeepSeek and Cline Pass using the same
+  application path and secret-safe diagnostics.
+- Compare only the effective base URL, final request path, model, HTTP status,
+  and redacted response shape. Never record API-key values.
+- Classify the Cline Pass result as configuration/request failure, HTTP error,
+  response-shape issue, or post-success UI/Townhall processing failure.
+- If both providers return valid assistant text but the UI adds a later error,
+  keep that as a separate post-success application failure rather than calling
+  it provider incompatibility.
+- Add the smallest confirmed integration or actionable-error correction, with
+  focused coverage for the observed failure category.
 
 ## Out of Scope
 
@@ -36,22 +37,26 @@ provider slice of the post-closeout Phase 8.1.7 follow-up.
 - Streaming, retries, tool calling, LSP, request history, or credential UI.
 - Logging request bodies, authorization headers, API keys, or raw sensitive
   response content.
-- Guessing a compatibility fix before the endpoint contract is observed.
+- Guessing a Cline Pass compatibility fix before the comparison evidence is
+  observed.
 - Settings panel expansion, Phase 8.2, or Phase 8.3 behavior.
 
 ## Implementation Order
 
-1. Add or use a secret-safe diagnostic seam and reproduce the failure.
-2. Record the observed status/shape classification in the implementation
-   closeout or child-plan evidence without sensitive values.
-3. Add the minimal compatibility or actionable-error change only if the
-   classification supports it.
-4. Add focused tests and run the relevant test subset.
+1. Establish DeepSeek as the known-good control using the existing execution
+   and UI path.
+2. Reproduce the same request against Cline Pass through a secret-safe
+   diagnostic path.
+3. Record the provider comparison and classify any later UI/Townhall error
+   separately from the HTTP request result.
+4. Add the minimal confirmed correction and focused tests only after the
+   classification is known.
 
 ## Verification
 
 - The existing OpenAI-compatible success response remains green.
-- The observed provider response or failure category has a focused test.
+- The observed Cline Pass result or post-success failure category has a
+  focused test.
 - `dotnet build Zaide.slnx --no-restore` reports 0 warnings and 0 errors.
 - `dotnet test Zaide.slnx --no-build` is green.
 - `git diff --check` is clean.
@@ -59,12 +64,14 @@ provider slice of the post-closeout Phase 8.1.7 follow-up.
 
 ## Exit Conditions
 
-- [ ] The provider failure is classified with secret-safe evidence.
+- [ ] DeepSeek control behavior and Cline Pass behavior are compared with
+      secret-safe evidence.
 - [ ] The standard OpenAI-compatible request and response behavior remains
       covered and passing.
-- [ ] Any compatibility change is minimal, justified by the observed contract,
-      and covered by focused tests; otherwise actionable error reporting is
-      provided without speculative parser changes.
+- [ ] Any integration change is minimal, justified by the observed comparison,
+      and covered by focused tests; no speculative parser change is added.
+- [ ] A post-success UI/Townhall exception, if present, is tracked separately
+      from provider compatibility and has its own focused evidence.
 - [ ] No provider registry, streaming, retry, tool-calling, or unrelated
       Phase 8.1/8.2/8.3 behavior was added.
 
