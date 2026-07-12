@@ -48,8 +48,8 @@ M0 exit gate:
 - [x] The Phase 8 umbrella decisions D5, D6, D6a, and D10 are the governing
       contracts for this plan.
 - [x] Phase 8.3 and Phase 9 boundaries are explicit.
-- [x] Milestone slices M7a–M7b and M8–M10, with their verification gates, are
-      locked below.
+- [x] Milestone slices M7a–M7b, M8a–M8c, and M9–M10, with their verification
+      gates, are locked below.
 
 ## Implementation Contract
 
@@ -245,7 +245,9 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 |---|---|---|
 | **M7a** | Command registry core and diagnostics: `CommandDescriptor`, `ResolvedKeyBinding`, `ICommandRegistry`/`CommandRegistry`, stable IDs, registration, lookup, execution, unavailable-command behavior, `ILogger<CommandRegistry>` DI wiring, and logging tests. | Focused registry tests cover duplicate IDs, lookup, parameterless execution, typed execution, unknown/unavailable commands, log levels/messages, and singleton resolution. No settings schema or canonical command registration is added. |
 | **M7b** | Settings keybindings schema: replace `KeybindingOverrides` with the flat `IReadOnlyDictionary<string,string>` contract, remove the placeholder type, preserve schema v1 JSON, normalize dictionaries at snapshot boundaries, and add round-trip/immutability tests. | Focused settings tests cover flat JSON round-trip, explicit empty-string unbinds, null/malformed sections, defensive-copy behavior, and preservation of deeply immutable snapshots. No gesture resolution or UI integration is added. |
-| **M8** | Canonical command registration from the owning ViewModel constructors and neutral gesture resolution, after M7a and M7b: locked table, parser/validation, aliases, user overrides, deterministic conflicts, and invalid-input logging. `MainWindow` only resolves after all constructor registrations are complete. | Focused resolution tests cover every locked default, especially `Ctrl+Oem3` → `view.toggleBottomPanel`, aliases, override precedence, lexicographic conflict winners, malformed gestures, and unknown command overrides. |
+| **M8a** | Canonical command registration from the owning ViewModel constructors, after M7a and M7b. Register the seven locked command IDs with their existing ReactiveCommand seams. No gesture parsing or resolution is added. | Focused registration tests cover constructor ownership, exactly one registration per canonical ID, descriptor metadata, and duplicate-registration behavior. |
+| **M8b** | Neutral gesture resolution engine over the registered canonical commands: grammar validation, aliases, user overrides, explicit empty-string unbinds, deterministic conflicts, and invalid-input logging. `MainWindow` only resolves after all constructor registrations are complete. | Resolver tests cover parser and resolution behavior in isolation. Do not add Avalonia KeyBinding materialization or MainWindow integration. |
+| **M8c** | M8 acceptance-test slice: complete canonical table coverage and adversarial resolution tests, including repeated resolution and stable output. Repair only M8 production defects exposed by these tests. | All locked defaults resolve correctly, `Ctrl+Oem3` maps to `view.toggleBottomPanel`, aliases remain intact, conflicts are deterministic, malformed inputs are safe, and warning logs are asserted. |
 | **M9** | Window integration: replace imperative global bindings with registry materialization, keep the View-local Enter/open-file behavior local, remove the duplicate `FileTreeView` global handler, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
 
@@ -255,7 +257,9 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 |---|---|---|---|
 | **M7a** | Complete | 2026-07-11 | `dotnet build` 0w/0e, `dotnet test` 935 passed (pre-M7b baseline) |
 | **M7b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 992 passed; `git diff --check` clean. `SettingsModel.Keybindings` is now `IReadOnlyDictionary<string,string>` (flat JSON), `KeybindingOverrides` removed, defensive copy verified at deserialization and candidate-publication boundaries (including externally-owned mutable `ReadOnlyDictionary` backing stores), empty-string unbind and null/malformed/missing rejection verified. |
-| **M8** | Pending | | |
+| **M8a** | Pending | | |
+| **M8b** | Pending | | |
+| **M8c** | Pending | | |
 | **M9** | Pending | | |
 | **M10** | Pending | | |
 
@@ -300,7 +304,8 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 
 ## Exit Conditions
 
-- [ ] M7a, M7b, and M8–M9 are complete with isolated commits and focused tests.
+- [ ] M7a, M7b, M8a–M8c, and M9 are complete with isolated commits and focused
+      tests.
 - [ ] M7a configures Microsoft.Extensions.Logging and verifies registry
       diagnostics through a test logger provider.
 - [ ] `SettingsModel.Keybindings` is `IReadOnlyDictionary<string, string>` (flat
@@ -309,6 +314,8 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 - [ ] All canonical global commands are registered with stable IDs exactly once.
 - [ ] Canonical commands are registered by their owning ViewModel constructors;
       `MainWindow` performs resolution/materialization only.
+- [ ] M8c acceptance tests cover every canonical gesture, override, conflict,
+      malformed-input, logging, and repeated-resolution requirement.
 - [ ] Resolution follows D6/D6a deterministically and uses the settings service
       for overrides.
 - [ ] Main-window global keybindings are registry-driven; no duplicate imperative
