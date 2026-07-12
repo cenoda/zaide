@@ -53,9 +53,9 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
             .Select(tab => tab is null ? "—" : GetLanguage(tab.FilePath))
             .ObserveOn(scheduler)
             .Subscribe(value => LanguageText = value));
-        _subscriptions.Add(mainWindow.WhenAnyValue(x => x.WorkspaceProjectName)
+        _subscriptions.Add(mainWindow.WhenAnyValue(x => x.CurrentProjectContext)
             .ObserveOn(scheduler)
-            .Subscribe(value => ProjectText = value ?? "Zaide"));
+            .Subscribe(ctx => ProjectText = MapProjectText(ctx)));
         _subscriptions.Add(mainWindow.WhenAnyValue(x => x.SourceControlViewModel.CurrentBranchName)
             .ObserveOn(scheduler)
             .Subscribe(value => BranchText = value ?? ""));
@@ -63,6 +63,33 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
             .StartWith(settings.Current)
             .ObserveOn(scheduler)
             .Subscribe(value => ConfiguredModel = string.IsNullOrWhiteSpace(value.Llm.Model) ? null : value.Llm.Model));
+    }
+
+    /// <summary>
+    /// Maps a <see cref="ProjectContext"/> snapshot to the status-bar project text.
+    /// </summary>
+    private static string MapProjectText(ProjectContext? ctx)
+    {
+        if (ctx is null)
+            return "Project error";
+        switch (ctx.State)
+        {
+            case ProjectContextState.SingleProject:
+            case ProjectContextState.Selected:
+                return ctx.SelectedProject?.DisplayName ?? "Project error";
+            case ProjectContextState.Loading:
+                return "Loading…";
+            case ProjectContextState.NoProject:
+                return "No project";
+            case ProjectContextState.Unsupported:
+                return "Unsupported project";
+            case ProjectContextState.Failed:
+                return "Project error";
+            case ProjectContextState.Unloaded:
+                return "Zaide";
+            default:
+                return "Project error";
+        }
     }
 
     private static string GetLanguage(string? path)
