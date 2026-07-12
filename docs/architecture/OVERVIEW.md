@@ -11,6 +11,9 @@ closeout 2026-07-11). Phase 8.2 (Command Registry and Keybindings) is complete
 (M7a–M10 closeout 2026-07-12); command registry contract, canonical command
 registration, gesture resolution, window binding materialization, and
 settings-driven lifecycle refresh are delivered.
+Phase 8.3 (Authoritative Project Context) is implemented through M4 with
+automated verification green; one failed-state GUI smoke check remains
+explicitly documented as a manual-validation limitation.
 This document describes the currently delivered V1 architecture; V2 entries
 below are planned direction, not claims about live code.
 
@@ -177,4 +180,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-11 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8 umbrella locked, Phase 8.1 complete)*
+*Last updated: 2026-07-12 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8.3 M4 implemented)*
