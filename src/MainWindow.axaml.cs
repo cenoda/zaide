@@ -14,7 +14,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.Views;
 using Zaide.Styles;
@@ -199,6 +201,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Replaces all imperative per-command binding blocks below.
             MaterializeRegistryBindings();
 
+            // M9b: settings-driven keybinding refresh.
+            // Each emitted snapshot is captured synchronously and passed
+            // directly to the snapshot-aware overload so resolution reads
+            // exactly that snapshot's keybindings — not a re-fetch of
+            // _settings.Current which may have moved past the emission.
+            disposables.Add(_settings.WhenChanged
+                .ObserveOn(AvaloniaScheduler.Instance)
+                .Subscribe(snapshot => MaterializeRegistryBindings(snapshot)));
+
             // Bind bottom panel visibility → row height.
             // M3: focus and start are routed through the view host seam so the
             // active tab's retained panel — not a single shared panel — gets focus.
@@ -238,11 +249,24 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     }
 
     /// <summary>
-    /// M9a: resolve neutral bindings, convert to Avalonia <see cref="KeyBinding"/>,
-    /// and atomically replace only the previously materialized bindings in the
-    /// window's <see cref="KeyBindings"/> collection.
+    /// M9a: resolve neutral bindings from <see cref="_settings"/>'s current snapshot,
+    /// convert to Avalonia <see cref="KeyBinding"/>, and atomically replace only
+    /// the previously materialized bindings in the window's <see cref="KeyBindings"/>.
+    /// Used during initial activation.
     /// </summary>
     private void MaterializeRegistryBindings()
+    {
+        MaterializeRegistryBindings(_settings.Current);
+    }
+
+    /// <summary>
+    /// M9b: resolve neutral bindings from the given <paramref name="snapshot"/>,
+    /// convert to Avalonia <see cref="KeyBinding"/>, and atomically replace only
+    /// the previously materialized bindings. Called from the WhenChanged subscription
+    /// so the emitted snapshot — not a re-fetch of <c>_settings.Current</c> — drives
+    /// resolution.
+    /// </summary>
+    private void MaterializeRegistryBindings(SettingsModel snapshot)
     {
         // Remove previously generated bindings
         foreach (var kb in _registryBindings)
@@ -250,8 +274,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         _registryBindings.Clear();
 
-        // Resolve neutral bindings and convert to Avalona KeyBinding via UI-layer helper
-        var resolved = _registry.ResolveKeyBindings(_settings);
+        // Wrap the emitted snapshot as an ISettingsService so the framework-agnostic
+        // registry resolver can consume it without contract changes.
+        var snapshotService = new SnapshotSettingsAccessor(snapshot);
+        var resolved = _registry.ResolveKeyBindings(snapshotService);
         foreach (var binding in resolved)
         {
             var descriptor = _registry.GetById(binding.CommandId);
@@ -266,6 +292,45 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             KeyBindings.Add(kb);
             _registryBindings.Add(kb);
         }
+    }
+
+    /// <summary>
+    /// Lightweight ISettingsService wrapper that exposes a single frozen snapshot.
+    /// Lets the snapshot-aware MaterializeRegistryBindings overload pass the
+    /// emitted snapshot through the existing framework-agnostic resolution API
+    /// without modifying ICommandRegistry or CommandRegistry contracts.
+    /// </summary>
+    private sealed class SnapshotSettingsAccessor : ISettingsService
+    {
+        private readonly SettingsModel _snapshot;
+
+        public SnapshotSettingsAccessor(SettingsModel snapshot)
+        {
+            _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+        }
+
+        public SettingsModel Current => _snapshot;
+        public IObservable<SettingsModel> WhenChanged => Observable.Empty<SettingsModel>();
+        public SettingsLoadResult LoadResult => SettingsLoadResult.Missing;
+
+        public Task<SettingsMutationResult> UpdateAsync(
+            Func<SettingsModel, SettingsModel> producer,
+            CancellationToken ct = default)
+            => Task.FromResult<SettingsMutationResult>(
+                new SettingsMutationResult.Conflict(_snapshot));
+
+        public Task<SettingsMutationResult> ApplyAsync(
+            SettingsModel expectedCurrent,
+            SettingsModel next,
+            CancellationToken ct = default)
+            => Task.FromResult<SettingsMutationResult>(
+                new SettingsMutationResult.Conflict(_snapshot));
+
+        public Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default)
+            => Task.FromResult<SettingsSaveResult>(new SettingsSaveResult.Saved());
+
+        public IObservable<SettingsSaveError> WriteErrors
+            => Observable.Empty<SettingsSaveError>();
     }
 
     /// <summary>

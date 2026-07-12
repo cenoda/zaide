@@ -262,8 +262,23 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 | **M8b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1035 passed (1007 baseline + 28 M8b); `git diff --check` clean. Neutral gesture resolution engine implemented in `CommandRegistry.ResolveKeyBindings(ISettingsService settings)`: grammar validation with case-insensitive parsing, modifier/key parsing via Avalonia `Key` enum (name-only, numeric tokens rejected), user-override precedence, explicit empty-string unbinds, null/whitespace override rejection with Warning log, deterministic lexicographic conflict resolution, invalid-input/unknown-command-ID warning logging, and complete replacement set on repeated calls. |
 | **M8c** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1056 passed (1035 baseline + 21 M8c); `git diff --check` clean. Acceptance/adversarial tests using real owning ViewModels cover all 12 M8c requirements: seven canonical commands registered exactly once, every D6a default gesture resolves correctly (including both `Ctrl+Oem3`/`Ctrl+J` for `view.toggleBottomPanel`), unbound commands remain unbound, user overrides replace defaults, empty-string unbinds, invalid/whitespace/null/unknown overrides are ignored with Warning logs, unregistered command-ID overrides are ignored and logged, deterministic lexicographic conflict resolution, no gesture resolves to two command IDs, losing commands remain executable, repeated resolution returns stable complete replacement with no duplicate bindings, and `Ctrl+Oem3` remains distinct from `Ctrl+J`. |
 | **M9a** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1071 passed (1056 baseline + 15 M9a); `git diff --check` clean. `ICommandRegistry`/`CommandRegistry` unchanged (framework-agnostic, `ResolvedKeyBinding` only). Added `Views/KeyBindingConverter.cs` (UI-layer `internal static` helper: `ParseToKeyGesture`, `TryCreateKeyBinding`). Injected `ICommandRegistry` into `MainWindow` with `_registryBindings` tracking list and `MaterializeRegistryBindings()` calling `_registry.ResolveKeyBindings(_settings)` + `KeyBindingConverter.TryCreateKeyBinding` for atomic replacement. Replaced imperative Ctrl+Oem3/J, Ctrl+S, Ctrl+O binding blocks. Removed duplicate `Ctrl+Shift+H` handler from `FileTreeView.cs`; kept Enter/open-file unchanged. 15 focused seam tests cover `KeyBindingConverter.ParseToKeyGesture` for all five canonical gestures, `TryCreateKeyBinding` including null-descriptor safety, full materialization count via registry+converter pipeline, Oem3 correctness, Ctrl+Shift+H gesture/command/registry-execution, distinct-instance-per-call, atomic replacement without duplicates, preservation of unrelated/view-local bindings, and empty-registry safety. |
-| **M9b** | Pending | | |
+| **M9b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1082 passed (1071 baseline + 11 M9b); `git diff --check` clean. Settings-driven refresh subscription wired in `MainWindow.WhenActivated`: `_settings.WhenChanged.ObserveOn(AvaloniaScheduler.Instance).Subscribe(snapshot => MaterializeRegistryBindings(snapshot))`. Emitted `SettingsModel` snapshot is passed directly to a snapshot-aware overload that wraps it in a `SnapshotSettingsAccessor` (minimal `ISettingsService`) and resolves through `_registry.ResolveKeyBindings` — never re-fetches `_settings.Current`. `BindingRefreshSeam` tests cover all 11 M9b requirements, crucially with `RefreshableSettingsService.PushSnapshot` deliberately **not** updating `Current`, so a regression that re-reads `Current` instead of using the emitted snapshot is caught. |
 | **M10** | Pending | | |
+
+## Manual Desktop Smoke Evidence (M9b)
+
+Recorded after building and running the application interactively:
+
+| Criterion | Result | Notes |
+|---|---|---|
+| Ctrl+Oem3 toggles the bottom panel | ⬜ Pending | |
+| Ctrl+J toggles the bottom panel | ⬜ Pending | |
+| Ctrl+S saves the active tab | ⬜ Pending | |
+| Ctrl+O opens the folder picker | ⬜ Pending | |
+| Ctrl+Shift+H toggles hidden files | ⬜ Pending | |
+| Rebinding a gesture removes old binding and activates only new one | ⬜ Pending | Requires settings file edit |
+| Repeated refreshes produce no duplicate bindings | ⬜ Pending | |
+| Unavailable command (workspace.closeFolder) is non-throwing | ⬜ Pending | No folder open → no-op |
 
 ## Required Test Matrix
 
