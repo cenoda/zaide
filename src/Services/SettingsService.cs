@@ -185,6 +185,16 @@ public sealed class SettingsService : ISettingsService, IDisposable
                 return new SettingsMutationResult.Invalid(next, errors);
             }
 
+            // Defensively copy the keybindings map so the published snapshot
+            // never exposes a mutable backing dictionary to the caller. This
+            // always produces a fresh read-only copy, including when the
+            // candidate already reports as read-only (it may wrap a mutable
+            // backing dictionary owned elsewhere).
+            next = next with
+            {
+                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings)
+            };
+
             // Commit in-memory (volatile field — assignment is a volatile write).
             var generation = Interlocked.Increment(ref _generation);
             _current = next;
@@ -240,6 +250,16 @@ public sealed class SettingsService : ISettingsService, IDisposable
             {
                 return new SettingsMutationResult.Invalid(next, errors);
             }
+
+            // Defensively copy the keybindings map so the published snapshot
+            // never exposes a mutable backing dictionary to the caller. This
+            // always produces a fresh read-only copy, including when the
+            // candidate already reports as read-only (it may wrap a mutable
+            // backing dictionary owned elsewhere).
+            next = next with
+            {
+                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings)
+            };
 
             // Commit in-memory (volatile field — assignment is a volatile write).
             var generation = Interlocked.Increment(ref _generation);

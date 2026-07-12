@@ -165,8 +165,13 @@ public sealed class SettingsCoreTests : IDisposable
         Assert.IsType<SettingsMutationResult.Applied>(result);
         Assert.NotNull(observedOnChange);
         Assert.NotNull(currentOnNotification);
-        Assert.Same(next, observedOnChange);
-        Assert.Same(next, currentOnNotification);
+
+        // The handler observes the live (committed) snapshot, which is the
+        // service's Current. Its Editor values are exactly the candidate's.
+        Assert.Same(service.Current, observedOnChange);
+        Assert.Same(service.Current, currentOnNotification);
+        Assert.Equal(next.Editor, observedOnChange.Editor);
+        Assert.Equal(18, observedOnChange.Editor.CodeFontSize);
         Assert.Equal(18, service.Current.Editor.CodeFontSize);
     }
 

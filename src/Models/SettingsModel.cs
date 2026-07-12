@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace Zaide.Models;
@@ -10,14 +12,22 @@ namespace Zaide.Models;
 /// <param name="SchemaVersion">Version of the settings schema (currently <c>1</c>).</param>
 /// <param name="Editor">Editor/terminal display preferences.</param>
 /// <param name="Llm">LLM endpoint configuration.</param>
-/// <param name="Keybindings">Keybinding overrides (reserved for Phase 8.2).</param>
+/// <param name="Keybindings">
+/// User keybinding overrides as a flat <c>commandId → neutralGesture</c> map.
+/// An empty-string value explicitly unbinds the command; it is not treated as a
+/// missing override. The dictionary is always exposed as a read-only wrapper.
+/// </param>
 public sealed record SettingsModel(
     int SchemaVersion,
     EditorSettings Editor,
     LlmSettings Llm,
-    KeybindingOverrides Keybindings
+    IReadOnlyDictionary<string, string> Keybindings
 )
 {
+    /// <summary>An immutable, empty keybindings dictionary.</summary>
+    public static readonly IReadOnlyDictionary<string, string> EmptyKeybindings =
+        new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+
     /// <summary>
     /// Default settings snapshot, corresponding to schema v1.
     /// Used when no settings file exists or when fallback is required.
@@ -26,8 +36,31 @@ public sealed record SettingsModel(
         SchemaVersion: 1,
         Editor: EditorSettings.Default,
         Llm: LlmSettings.Default,
-        Keybindings: KeybindingOverrides.Empty
+        Keybindings: EmptyKeybindings
     );
+
+    /// <summary>
+    /// Returns a defensive, immutable copy of the given keybindings map. The
+    /// returned <see cref="ReadOnlyDictionary{TKey,TValue}"/> owns a fresh copy
+    /// of the source entries, so mutating the caller's original dictionary
+    /// cannot affect the published snapshot, and the published dictionary cannot
+    /// be mutated through a cast or retained reference.
+    /// </summary>
+    /// <param name="source">The candidate keybindings map (may be null).</param>
+    /// <returns>A non-null, read-only copy of <paramref name="source"/>.</returns>
+    internal static IReadOnlyDictionary<string, string> NormalizeKeybindings(
+        IReadOnlyDictionary<string, string>? source)
+    {
+        if (source is null)
+            return EmptyKeybindings;
+
+        // Always take a defensive copy. A ReadOnlyDictionary may itself wrap an
+        // externally-owned mutable dictionary, so identity is never trusted even
+        // when the input already reports as read-only. The published snapshot
+        // therefore never shares a backing store with the caller's input.
+        return new ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string>(source));
+    }
 }
 
 /// <summary>
@@ -105,14 +138,4 @@ public sealed record LlmSettings(
         Model: "gpt-4o-mini",
         ApiKeySource: "secret-store"
     );
-}
-
-/// <summary>
-/// Keybinding overrides (reserved for Phase 8.2).
-/// Currently an empty placeholder.
-/// </summary>
-public sealed record KeybindingOverrides
-{
-    /// <summary>Singleton empty instance.</summary>
-    public static readonly KeybindingOverrides Empty = new();
 }

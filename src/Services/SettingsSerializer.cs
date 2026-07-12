@@ -75,11 +75,19 @@ internal static class SettingsSerializer
             if (result is null)
                 return null;
 
-            // Schema version 1 must have all required sections
-            if (result.Editor is null || result.Llm is null || result.Keybindings is null)
+            // Schema version 1 must have all required sections.
+            if (result.Editor is null || result.Llm is null)
                 return null;
 
-            return result;
+            // A missing or null keybindings section is rejected. An empty or
+            // populated section is normalized into a defensive read-only copy.
+            if (result.Keybindings is null)
+                return null;
+
+            return result with
+            {
+                Keybindings = SettingsModel.NormalizeKeybindings(result.Keybindings)
+            };
         }
         catch (JsonException)
         {

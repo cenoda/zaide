@@ -249,6 +249,16 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 | **M9** | Window integration: replace imperative global bindings with registry materialization, keep the View-local Enter/open-file behavior local, remove the duplicate `FileTreeView` global handler, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
 
+## Milestone Status
+
+| Milestone | Status | Completed | Verification |
+|---|---|---|---|
+| **M7a** | Complete | 2026-07-11 | `dotnet build` 0w/0e, `dotnet test` 935 passed (pre-M7b baseline) |
+| **M7b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 992 passed; `git diff --check` clean. `SettingsModel.Keybindings` is now `IReadOnlyDictionary<string,string>` (flat JSON), `KeybindingOverrides` removed, defensive copy verified at deserialization and candidate-publication boundaries (including externally-owned mutable `ReadOnlyDictionary` backing stores), empty-string unbind and null/malformed/missing rejection verified. |
+| **M8** | Pending | | |
+| **M9** | Pending | | |
+| **M10** | Pending | | |
+
 ## Required Test Matrix
 
 - Descriptor validation rejects empty IDs/categories and preserves immutable
