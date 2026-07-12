@@ -119,7 +119,7 @@ public sealed class M5SettingsUiTests
             new SourceControlSnapshotOrchestrator(git.Object),
             new Workspace(), diff.Object, mutation.Object, git.Object);
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
-            sourceControl, provider.GetRequiredService<Workspace>());
+            sourceControl, provider.GetRequiredService<Workspace>(), new Mock<IProjectContextService>(MockBehavior.Loose).Object);
         vm.Activate();
         return vm;
     }

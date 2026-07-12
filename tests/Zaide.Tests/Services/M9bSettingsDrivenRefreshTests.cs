@@ -76,7 +76,7 @@ public sealed class M9bSettingsDrivenRefreshTests
             new TownhallViewModel(new TownhallState()),
             CreateSourceControlViewModel(),
             sp.GetRequiredService<Workspace>(),
-            _registry);
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
 
         return vm;
     }

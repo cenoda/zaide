@@ -193,7 +193,8 @@ public sealed class CanonicalCommandRegistrationTests
 
         return new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
-            router, townhallViewModel, scViewModel, workspace, registry);
+            router, townhallViewModel, scViewModel, workspace,
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }
 
     private static SourceControlViewModel CreateSourceControlViewModel(ICommandRegistry registry)

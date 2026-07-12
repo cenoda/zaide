@@ -31,6 +31,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isExplorerMode = true;
     private bool _isSourceControlMode;
     private readonly Workspace _workspace;
+    private readonly IProjectContextService _projectContextService;
 
 
     public bool IsBottomPanelVisible
@@ -111,6 +112,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 TownhallViewModel townhallViewModel,
                                 SourceControlViewModel sourceControlViewModel,
                                 Workspace workspace,
+                                IProjectContextService projectContextService,
                                 ICommandRegistry? commandRegistry = null)
     {
         FileTreeViewModel = fileTreeViewModel;
@@ -122,6 +124,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
         _workspace = workspace;
+        _projectContextService = projectContextService;
         WorkspaceProjectName = workspace.ProjectName;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);

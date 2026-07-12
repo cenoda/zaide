@@ -32,6 +32,11 @@ public partial class App : Application
             // process is killed and doesn't outlive the app.
             desktop.Exit += (_, _) =>
             {
+                // Phase 8.3 M3: explicit shutdown of the project-context service
+                // so its WorkspaceFolderChanged subscription is released and any
+                // in-flight work is invalidated. App does not rely on implicit
+                // root-provider disposal.
+                Services.GetRequiredService<IProjectContextService>().Dispose();
                 Services.GetService<ITerminalHost>()?.Dispose();
             };
         }

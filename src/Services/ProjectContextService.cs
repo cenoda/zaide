@@ -4,6 +4,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Zaide.Models;
 
 namespace Zaide.Services;
 
@@ -27,6 +28,9 @@ public sealed class ProjectContextService : IProjectContextService
     private readonly ILogger<ProjectContextService> _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Subject<ProjectContext> _subject = new();
+    private readonly Workspace? _workspace;
+    private readonly EventHandler _workspaceChangedHandler;
+    private bool _disposed;
 
     // Sequence management for overlapping requests.
     // _nextSequence is incremented at the start of each LoadAsync/ReloadAsync/UnloadAsync.
@@ -45,13 +49,45 @@ public sealed class ProjectContextService : IProjectContextService
         UnsupportedFiles: Array.Empty<string>(),
         ErrorMessage: null);
 
+    /// <summary>
+    /// M2-compatible constructor: builds the service without wiring it to a
+    /// <see cref="Workspace"/>. Used by unit tests that exercise the lifecycle
+    /// API directly. The service never subscribes to workspace events here.
+    /// </summary>
     public ProjectContextService(
+        IProjectDiscovery discovery,
+        ILogger<ProjectContextService> logger)
+        : this(workspace: null, discovery, logger)
+    {
+    }
+
+    /// <summary>
+    /// Production constructor. Subscribes to <see cref="Workspace.WorkspaceFolderChanged"/>
+    /// with a stored delegate and immediately reconciles a non-null
+    /// <see cref="Workspace.WorkspacePath"/> by starting one load. A null startup
+    /// path remains <see cref="ProjectContextState.Unloaded"/> and emits nothing.
+    /// </summary>
+    public ProjectContextService(
+        Workspace? workspace,
         IProjectDiscovery discovery,
         ILogger<ProjectContextService> logger)
     {
         _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _current = UnloadedContext;
+        _workspace = workspace;
+        _workspaceChangedHandler = OnWorkspaceFolderChanged;
+
+        if (_workspace is not null)
+        {
+            _workspace.WorkspaceFolderChanged += _workspaceChangedHandler;
+            if (_workspace.WorkspacePath is not null)
+            {
+                // Startup reconciliation: a workspace was already open when the
+                // service was constructed (e.g. resolved from DI after startup).
+                ReconcileFromWorkspace();
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -63,6 +99,8 @@ public sealed class ProjectContextService : IProjectContextService
     /// <inheritdoc />
     public async Task LoadAsync(string workspaceRoot, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         // Phase 1: acquire gate, increment sequence, save stable snapshot, emit Loading.
@@ -124,6 +162,8 @@ public sealed class ProjectContextService : IProjectContextService
     /// <inheritdoc />
     public async Task ReloadAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         string? root;
@@ -165,6 +205,8 @@ public sealed class ProjectContextService : IProjectContextService
     /// <inheritdoc />
     public async Task UnloadAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -251,9 +293,57 @@ public sealed class ProjectContextService : IProjectContextService
     /// <inheritdoc />
     public void Dispose()
     {
+        if (_disposed)
+            return;
+        _disposed = true;
+
+        // Deterministic unsubscription: remove the exact stored handler so the
+        // workspace can no longer drive discovery or state emissions.
+        if (_workspace is not null)
+        {
+            _workspace.WorkspaceFolderChanged -= _workspaceChangedHandler;
+        }
+
         _subject.OnCompleted();
         _subject.Dispose();
         _gate.Dispose();
+    }
+
+    /// <summary>
+    /// Stored <see cref="Workspace.WorkspaceFolderChanged"/> handler. Routing
+    /// table: a non-null <see cref="Workspace.WorkspacePath"/> starts
+    /// <see cref="LoadAsync"/>; a null path starts <see cref="UnloadAsync"/>.
+    /// Every started task is observed — no unobserved fire-and-forget work.
+    /// </summary>
+    private void OnWorkspaceFolderChanged(object? sender, EventArgs e)
+    {
+        if (_disposed)
+            return;
+        ReconcileFromWorkspace();
+    }
+
+    private void ReconcileFromWorkspace()
+    {
+        if (_disposed || _workspace is null)
+            return;
+
+        var path = _workspace.WorkspacePath;
+        var task = path is not null
+            ? LoadAsync(path)
+            : UnloadAsync();
+        ObserveTask(task);
+    }
+
+    /// <summary>
+    /// Observes a fire-and-forget task started from a workspace event so an
+    /// unobserved exception does not crash the process. <see cref="LoadAsync"/>
+    /// and <see cref="UnloadAsync"/> already log expected failures (event ID
+    /// 8301) and cancellation (event ID 8302); the handler only marks the task
+    /// observed.
+    /// </summary>
+    private static void ObserveTask(Task task)
+    {
+        _ = task.ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
     }
 
     /// <summary>

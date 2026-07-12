@@ -462,7 +462,8 @@ public sealed class CommandResolutionAcceptanceTests
 
         _ = new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
-            router, townhallViewModel, scViewModel, workspace, _registry);
+            router, townhallViewModel, scViewModel, workspace,
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }
 
     private SourceControlViewModel CreateSourceControlViewModel()

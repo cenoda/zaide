@@ -34,6 +34,14 @@ public class MainWindowViewModelTests
         return new Mock<IAgentExecutionCoordinator>();
     }
 
+    // Phase 8.3 M3: MainWindowViewModel now requires IProjectContextService.
+    // These pre-M3 tests exercise unrelated behavior, so a loose mock satisfies
+    // the constructor without driving discovery or projecting state.
+    private static IProjectContextService ProjectContextServiceMock()
+    {
+        return new Mock<IProjectContextService>(MockBehavior.Loose).Object;
+    }
+
     private static MainWindowViewModel CreateViewModel()
     {
         return CreateViewModel(new FileService());
@@ -63,7 +71,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
         return vm;
     }
@@ -87,7 +95,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
         return vm;
     }
@@ -168,7 +176,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
 
         // Before opening a folder the (empty) workspace yields no branch.
@@ -241,7 +249,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
 
         Assert.Empty(scViewModel.Branches);
@@ -407,7 +415,7 @@ public class MainWindowViewModelTests
         var panelHost2 = new AgentPanelHost();
         var parser2 = new MentionParser(panelHost2);
         var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, workspace2);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, workspace2, ProjectContextServiceMock());
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();
@@ -489,7 +497,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, panel);
     }
@@ -729,7 +737,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
 
         var channelId = vm.TownhallViewModel.Channels[0].Id;
@@ -857,7 +865,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace);
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, source, target);
     }
@@ -1063,7 +1071,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace);
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, workspace, scViewModel, fileTreeViewModel);
     }
@@ -1233,7 +1241,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Workspace>();
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            coordinator, router, townhallViewModel, scViewModel, workspace);
+            coordinator, router, townhallViewModel, scViewModel, workspace, ProjectContextServiceMock());
         vm.Activate();
 
         return (vm, panel, string.Empty);
