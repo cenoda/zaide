@@ -16,7 +16,10 @@ Sub-phase 8.1 (Settings Foundation) is **complete** across its five
 implementation slices (M1–M6 closeout 2026-07-11). Phase 8.2 (Command Registry
 and Keybindings) is **complete** across its eight milestones (M7a–M10 closeout
 2026-07-12); all seven canonical commands, gesture resolution, window binding
-materialization, and settings-driven refresh are delivered.
+materialization, and settings-driven refresh are delivered. Phase 8.3 has a
+bounded implementation plan at
+[`v2/phase-8/phase-8.3/IMPLEMENTATION_PLAN.md`](v2/phase-8/phase-8.3/IMPLEMENTATION_PLAN.md);
+production implementation has not started.
 
 ## Archive Policy
 
