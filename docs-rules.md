@@ -100,11 +100,22 @@ These terms are not interchangeable:
   normally sized for one agent session. It has an explicit scope, test gate,
   and completion condition.
 
-The first milestone is always **M0**. M0 is the most important planning gate:
-it must verify the live-code seams, lock scope and boundaries, identify the
-milestones and their dependencies, and define concrete verification commands
-before production implementation begins. M0 may be documentation-only unless
-the plan explicitly says otherwise.
+The first milestone of every independently implemented phase or sub-phase is
+**M0**. M0 is the most important planning gate: it must verify the live-code
+seams, lock scope and boundaries, identify the milestones and their
+dependencies, and define concrete verification commands before production
+implementation begins. M0 may be documentation-only unless the plan
+explicitly says otherwise.
+
+When a phase has sub-phases, the sub-phase plan owns its own milestone sequence
+and its own M0. The umbrella phase plan may record cross-cutting decisions and
+dependencies, but must not make one sub-phase's implementation milestones look
+like umbrella-owned milestones. Existing plans may retain their historical
+numbering; do not rewrite completed history merely to apply this rule.
+
+For Zaide, this independent numbering rule applies from **Phase 8.3 onward**.
+Phase 8.1 and Phase 8.2 retain the already-published Phase 8 umbrella
+milestone numbering as historical records.
 
 If a milestone is too large for one agent session, split it into separately
 named milestone slices (for example `M2a` and `M2b`) before continuing. Do not

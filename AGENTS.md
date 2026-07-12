@@ -27,8 +27,11 @@ boundaries explicit:
 - A milestone is a bounded, independently verifiable unit normally owned by
   one agent session. If it is too large, split it into milestone slices such
   as `M2a`/`M2b`, not into an incorrectly named sub-phase.
-- M0 is mandatory and comes first. It is the planning gate for live-code
-  verification, scope, boundaries, dependencies, and concrete test commands.
+- M0 is mandatory and comes first in every independently implemented phase or
+  sub-phase. It is the planning gate for live-code verification, scope,
+  boundaries, dependencies, and concrete test commands. From Phase 8.3
+  onward, every sub-phase owns its own independent `M0`; do not use the
+  umbrella phase's M0 as a substitute.
 - Prefer one clear commit at each milestone or milestone-slice boundary.
 
 ## Code

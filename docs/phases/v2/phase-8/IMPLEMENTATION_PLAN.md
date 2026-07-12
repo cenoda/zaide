@@ -1678,12 +1678,19 @@ The following view-level keybindings ARE migrated to the command registry:
 
 ## Milestones (Umbrella)
 
+The M0 and M7–M10 rows below are the historical Phase 8 umbrella numbering
+used for the already-planned 8.1 and 8.2 work. The former M11–M14 row is
+retained only as a historical scope reference. Starting with Phase 8.3, the
+8.3 implementation plan owns its own milestone sequence beginning at M0. The
+umbrella plan records the 8.3 dependency and cross-cutting boundary; it does
+not own 8.3 implementation milestones.
+
 | Milestone | Sub-phase | Description | Verification |
 |-----------|-----------|-------------|--------------|
 | **M0** | Umbrella | Lock all cross-cutting decisions in this plan. No production code is changed by M0. | Plan review confirms the contracts below before 8.1 begins. |
 | **M1–M6** | 8.1 | Settings Foundation is delivered through five child plans: 8.1.1 Settings Core (M1), 8.1.2 Secrets & Live LLM (M2), 8.1.3 Workspace Close Lifecycle (M3), 8.1.4 Runtime Editor & Terminal Settings (M4), and 8.1.5 Settings UI (M5). M6 remains the 8.1 parent integration and closeout gate. The parent plan and child-plan links are at `phase-8.1/IMPLEMENTATION_PLAN.md`. | Each child plan owns its narrow tests; M6 retains the full settings, secrets, LLM, close-workspace, terminal-runtime-font, UI-bridge, disposal, build, and regression acceptance gates specified below. |
 | **M7–M10** | 8.2 | Command registry + keybindings: `ICommandRegistry`, command descriptors, **canonical command-and-gesture table (D6a)**, default keybindings, user overrides, window keybinding integration (`Ctrl+Oem3`/`Ctrl+J`/`Ctrl+S`/`Ctrl+O`). | All parameterless global commands registered with stable IDs. Keybindings resolved from registry. User override test. **Duplicate-registration throws; unavailable-command handling test (D6a); canonical gesture-table coverage test (every locked default gesture resolves to the right command, including `Ctrl+Oem3` → `view.toggleBottomPanel`).** Build + tests green. |
-| **M11–M14** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. `CancellationToken` on `LoadAsync`/`ReloadAsync`/`UnloadAsync`. Stale-load sequence-number pattern. `IDisposable` event subscription. **Service is UI-agnostic — `WhenChanged` emitted on calling thread; callers marshal via `ObserveOn` (D8).** **`SelectProject` rejects out-of-snapshot candidates (D8).** | Discovery finds `.sln`/`.csproj` in test fixtures. All 8 states tested (Unloaded / Loading / NoProject / Unsupported / SingleProject / Ambiguous / Selected / Failed). Stale-load sequence test (rapid LoadAsync → stale result discarded). Cancellation test (cancellation is NOT `Failed`; last stable context preserved). **`SelectProject` out-of-snapshot rejection test.** **`WhenChanged` marshal test — caller-side `ObserveOn` delivers on UI thread.** Subscription disposal test. Observable state consumed by status bar. Build + tests green. |
+| **Local M0+ in the 8.3 plan** | 8.3 | Authoritative project context: `IProjectContextService`, discovery, selection, lifecycle, observable state, status bar integration. The 8.3 plan must define its own M0 entry gate and implementation milestones; this umbrella row does not assign M11–M14 implementation ownership. | The separate 8.3 plan defines the exact live-code contracts, milestone gates, state coverage, cancellation tests, subscription disposal test, status-bar integration test, and sequential build/test verification. |
 
 ## Likely Implementation Shape
 
