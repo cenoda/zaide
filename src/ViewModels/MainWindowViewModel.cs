@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
+using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.Services;
 
@@ -30,8 +31,18 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
     private bool _isExplorerMode = true;
     private bool _isSourceControlMode;
+    private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
+
+    /// <summary>
+    /// Scheduler for the <see cref="IProjectContextService.WhenChanged"/>
+    /// subscription. Exposed as internal so tests can substitute a deterministic
+    /// scheduler without injecting a new constructor parameter.
+    /// Defaults to <see cref="AvaloniaScheduler.Instance"/>.
+    /// </summary>
+    internal System.Reactive.Concurrency.IScheduler ProjectContextScheduler { get; set; }
+        = AvaloniaScheduler.Instance;
 
 
     public bool IsBottomPanelVisible
@@ -94,7 +105,20 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public SourceControlViewModel SourceControlViewModel { get; }
 
     /// <summary>
+    /// M4: Authoritative UI-thread projection of the current project-context
+    /// snapshot. Updated by the <see cref="Activate"/> subscription to
+    /// <see cref="IProjectContextService.WhenChanged"/>.
+    /// </summary>
+    public ProjectContext CurrentProjectContext
+    {
+        get => _currentProjectContext;
+        private set => this.RaiseAndSetIfChanged(ref _currentProjectContext, value);
+    }
+
+    /// <summary>
     /// Project name for the status bar. Derived from Workspace.
+    /// Legacy consumers may continue using this; new consumers should prefer
+    /// <see cref="CurrentProjectContext"/>.
     /// </summary>
     private string? _workspaceProjectName;
     public string? WorkspaceProjectName
@@ -125,6 +149,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         SourceControlViewModel = sourceControlViewModel;
         _workspace = workspace;
         _projectContextService = projectContextService;
+        CurrentProjectContext = projectContextService.Current;
         WorkspaceProjectName = workspace.ProjectName;
         ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
         HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);
@@ -213,6 +238,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 }
                 interaction.SetOutput(Unit.Default);
             }));
+
+        // M4: Subscribe to authoritative project-context snapshots on the UI thread.
+        _disposables.Add(
+            _projectContextService.WhenChanged
+                .ObserveOn(ProjectContextScheduler)
+                .Subscribe(ctx => CurrentProjectContext = ctx));
 
         // Surface save errors from the tab manager
         _disposables.Add(

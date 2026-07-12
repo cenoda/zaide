@@ -118,8 +118,10 @@ public sealed class M5SettingsUiTests
         var sourceControl = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object),
             new Workspace(), diff.Object, mutation.Object, git.Object);
+        var ctxMock = new Mock<IProjectContextService>(MockBehavior.Loose);
+        ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
-            sourceControl, provider.GetRequiredService<Workspace>(), new Mock<IProjectContextService>(MockBehavior.Loose).Object);
+            sourceControl, provider.GetRequiredService<Workspace>(), ctxMock.Object);
         vm.Activate();
         return vm;
     }

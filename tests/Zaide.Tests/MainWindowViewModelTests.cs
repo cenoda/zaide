@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -37,9 +38,13 @@ public class MainWindowViewModelTests
     // Phase 8.3 M3: MainWindowViewModel now requires IProjectContextService.
     // These pre-M3 tests exercise unrelated behavior, so a loose mock satisfies
     // the constructor without driving discovery or projecting state.
+    // M4: WhenChanged must return a non-null observable; the subscription in
+    // Activate() calls ObserveOn which requires a non-null source.
     private static IProjectContextService ProjectContextServiceMock()
     {
-        return new Mock<IProjectContextService>(MockBehavior.Loose).Object;
+        var mock = new Mock<IProjectContextService>(MockBehavior.Loose);
+        mock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
+        return mock.Object;
     }
 
     private static MainWindowViewModel CreateViewModel()
