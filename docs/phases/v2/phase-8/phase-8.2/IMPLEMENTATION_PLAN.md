@@ -257,7 +257,7 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 |---|---|---|---|
 | **M7a** | Complete | 2026-07-11 | `dotnet build` 0w/0e, `dotnet test` 935 passed (pre-M7b baseline) |
 | **M7b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 992 passed; `git diff --check` clean. `SettingsModel.Keybindings` is now `IReadOnlyDictionary<string,string>` (flat JSON), `KeybindingOverrides` removed, defensive copy verified at deserialization and candidate-publication boundaries (including externally-owned mutable `ReadOnlyDictionary` backing stores), empty-string unbind and null/malformed/missing rejection verified. |
-| **M8a** | Pending | | |
+| **M8a** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1007 passed (992 baseline + 15 M8a); `git diff --check` clean. The seven canonical command IDs are registered by their owning ViewModel constructors with exact D6a metadata (display names, categories, default gestures); `workspace.closeFolder`/`sourcecontrol.commit`/`sourcecontrol.refresh` are unbound; `view.toggleBottomPanel` carries both `Ctrl+Oem3` and `Ctrl+J` aliases; duplicate-ID fail-fast preserved. |
 | **M8b** | Pending | | |
 | **M8c** | Pending | | |
 | **M9** | Pending | | |

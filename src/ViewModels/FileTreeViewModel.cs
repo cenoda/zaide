@@ -90,7 +90,7 @@ public class FileTreeViewModel : ReactiveObject
     /// </summary>
     public Interaction<Unit, Unit> CloseFolderRequested { get; } = new();
 
-    public FileTreeViewModel(IFileTreeService fileTreeService, IScheduler scheduler)
+    public FileTreeViewModel(IFileTreeService fileTreeService, IScheduler scheduler, ICommandRegistry? commandRegistry = null)
     {
         _fileTreeService = fileTreeService;
         _scheduler = scheduler;
@@ -166,7 +166,7 @@ public class FileTreeViewModel : ReactiveObject
             {
                 // Enumeration failed — SetRootPath preserved existing tree/watcher
                 // and set StatusText. Revert the toggle so state stays consistent.
-                ShowHiddenFiles = previousValue;
+                 ShowHiddenFiles = previousValue;
             }
         });
 
@@ -186,6 +186,12 @@ public class FileTreeViewModel : ReactiveObject
             var relative = Path.GetRelativePath(RootPath, node.FullPath);
             CopyToClipboard.Handle(relative).Subscribe();
         }, canCopyRelative);
+
+        // Phase 8.2 M8a: register the canonical explorer command with a stable
+        // ID (D6a) after the ReactiveCommand property above is initialized.
+        commandRegistry?.Register(new CommandDescriptor(
+            "explorer.toggleHiddenFiles", "Toggle Hidden Files", "Explorer",
+            new[] { "Ctrl+Shift+H" }, ToggleHiddenFilesCommand));
     }
 
     /// <summary>

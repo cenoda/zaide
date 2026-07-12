@@ -131,7 +131,8 @@ public class SourceControlViewModel : ReactiveObject
         Workspace workspace,
         IFileDiffService fileDiffService,
         IGitMutationService mutationService,
-        IGitRepositoryService gitRepositoryService)
+        IGitRepositoryService gitRepositoryService,
+        ICommandRegistry? commandRegistry = null)
     {
         _orchestrator = orchestrator;
         _workspace = workspace;
@@ -256,6 +257,13 @@ public class SourceControlViewModel : ReactiveObject
 
             CurrentDiff = _fileDiffService.GetDiff(_workspace.WorkspacePath, file);
         });
+
+        // Phase 8.2 M8a: register the canonical source-control commands with stable
+        // IDs (D6a) after the ReactiveCommand properties above are initialized.
+        commandRegistry?.Register(new CommandDescriptor(
+            "sourcecontrol.commit", "Commit", "Source Control", Array.Empty<string>(), CommitCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "sourcecontrol.refresh", "Refresh", "Source Control", Array.Empty<string>(), RefreshCommand));
     }
 
     private void ApplyResult(SnapshotRefreshResult result)

@@ -103,14 +103,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
-                               EditorTabViewModel editorTabViewModel,
-                               ITerminalHost terminalHost,
-                               IAgentPanelHost agentPanelHost,
-                               IAgentExecutionCoordinator agentExecutionCoordinator,
-                               IAgentRouter agentRouter,
-                               TownhallViewModel townhallViewModel,
-                               SourceControlViewModel sourceControlViewModel,
-                               Workspace workspace)
+                                EditorTabViewModel editorTabViewModel,
+                                ITerminalHost terminalHost,
+                                IAgentPanelHost agentPanelHost,
+                                IAgentExecutionCoordinator agentExecutionCoordinator,
+                                IAgentRouter agentRouter,
+                                TownhallViewModel townhallViewModel,
+                                SourceControlViewModel sourceControlViewModel,
+                                Workspace workspace,
+                                ICommandRegistry? commandRegistry = null)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
@@ -152,6 +153,19 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         {
             FileTreeViewModel.SetRootPath(null);
         }, canCloseFolder);
+
+        // Phase 8.2 M8a: register the canonical window commands with stable IDs
+        // (D6a). Registration happens after every ReactiveCommand property above
+        // is initialized. Production DI always supplies the singleton registry;
+        // the optional parameter lets tests opt in without a second path.
+        commandRegistry?.Register(new CommandDescriptor(
+            "file.save", "Save", "File", new[] { "Ctrl+S" }, SaveActiveTabCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "workspace.openFolder", "Open Folder", "Workspace", new[] { "Ctrl+O" }, OpenFolderCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "workspace.closeFolder", "Close Folder", "Workspace", Array.Empty<string>(), CloseFolderCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "view.toggleBottomPanel", "Toggle Bottom Panel", "View", new[] { "Ctrl+Oem3", "Ctrl+J" }, ToggleBottomPanelCommand));
     }
 
     /// <summary>
