@@ -271,14 +271,14 @@ Recorded after building and running the application interactively:
 
 | Criterion | Result | Notes |
 |---|---|---|
-| Ctrl+Oem3 toggles the bottom panel | ⬜ Pending | |
-| Ctrl+J toggles the bottom panel | ⬜ Pending | |
-| Ctrl+S saves the active tab | ⬜ Pending | |
-| Ctrl+O opens the folder picker | ⬜ Pending | |
-| Ctrl+Shift+H toggles hidden files | ⬜ Pending | |
-| Rebinding a gesture removes old binding and activates only new one | ⬜ Pending | Requires settings file edit |
-| Repeated refreshes produce no duplicate bindings | ⬜ Pending | |
-| Unavailable command (workspace.closeFolder) is non-throwing | ⬜ Pending | No folder open → no-op |
+| Ctrl+Oem3 toggles the bottom panel | ✅ Pass | Manual smoke verified |
+| Ctrl+J toggles the bottom panel | ✅ Pass | Manual smoke verified |
+| Ctrl+S saves the active tab | ✅ Pass | Manual smoke verified |
+| Ctrl+O opens the folder picker | ✅ Pass | Manual smoke verified |
+| Ctrl+Shift+H toggles hidden files | ✅ Pass | Manual smoke verified |
+| Rebinding a gesture removes old binding and activates only new one | ✅ Pass | Manual smoke verified |
+| Repeated refreshes produce no duplicate bindings | ✅ Pass | Manual smoke verified |
+| Unavailable command (workspace.closeFolder) is non-throwing | ✅ Pass | Manual smoke verified; no folder open → no-op |
 
 ## Required Test Matrix
 
