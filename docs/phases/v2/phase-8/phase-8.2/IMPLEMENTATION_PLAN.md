@@ -48,7 +48,7 @@ M0 exit gate:
 - [x] The Phase 8 umbrella decisions D5, D6, D6a, and D10 are the governing
       contracts for this plan.
 - [x] Phase 8.3 and Phase 9 boundaries are explicit.
-- [x] Milestone slices M7a–M7b, M8a–M8c, and M9–M10, with their verification
+- [x] Milestone slices M7a–M7b, M8a–M8c, M9a–M9b, and M10, with their verification
       gates, are locked below.
 
 ## Implementation Contract
@@ -248,7 +248,8 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 | **M8a** | Canonical command registration from the owning ViewModel constructors, after M7a and M7b. Register the seven locked command IDs with their existing ReactiveCommand seams. No gesture parsing or resolution is added. | Focused registration tests cover constructor ownership, exactly one registration per canonical ID, descriptor metadata, and duplicate-registration behavior. |
 | **M8b** | Neutral gesture resolution engine over the registered canonical commands: grammar validation, aliases, user overrides, explicit empty-string unbinds, deterministic conflicts, and invalid-input logging. `MainWindow` only resolves after all constructor registrations are complete. | Resolver tests cover parser and resolution behavior in isolation. Do not add Avalonia KeyBinding materialization or MainWindow integration. |
 | **M8c** | M8 acceptance-test slice: complete canonical table coverage and adversarial resolution tests, including repeated resolution and stable output. Repair only M8 production defects exposed by these tests. | All locked defaults resolve correctly, `Ctrl+Oem3` maps to `view.toggleBottomPanel`, aliases remain intact, conflicts are deterministic, malformed inputs are safe, and warning logs are asserted. |
-| **M9** | Window integration: replace imperative global bindings with registry materialization, keep the View-local Enter/open-file behavior local, remove the duplicate `FileTreeView` global handler, and refresh generated bindings after settings changes. | Integration tests or focused seam tests prove generated binding replacement, settings-driven refresh, no duplicate bindings after repeated resolution, and `Ctrl+Shift+H` registry execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
+| **M9a** | Window binding materialization: replace imperative global bindings with registry-owned Avalonia `KeyBinding` instances, keep the View-local Enter/open-file behavior local, remove the duplicate `FileTreeView` global handler, and replace generated bindings atomically. | Focused integration/seam tests prove neutral gesture conversion, registry-owned binding tracking, replacement without duplicates, and `Ctrl+Shift+H` registry execution. Do not add settings-change subscriptions yet. |
+| **M9b** | Settings-driven lifecycle refresh and M9 acceptance: subscribe to settings changes, resolve the latest snapshot, replace only registry-owned bindings, and record manual desktop smoke evidence. | Tests prove settings-driven refresh, old-binding removal, latest-snapshot behavior, no duplicate bindings after repeated refresh, and canonical command execution. **Manual desktop smoke pass/fail criteria:** (a) `Ctrl+Oem3` and `Ctrl+J` toggle the bottom panel, (b) `Ctrl+S` saves the active tab, (c) `Ctrl+O` opens the folder picker, (d) `Ctrl+Shift+H` toggles hidden files in the file tree, (e) after a settings change that rebinds a gesture, the old binding is removed and only the new binding fires, (f) no duplicate bindings appear in the running application after repeated resolution or settings changes. |
 | **M10** | Phase 8.2 closeout: audit scope, truth-sync affected docs, run the sequential full verification, and record manual evidence and any explicit limitations. | `dotnet build Zaide.slnx --no-restore`, then `dotnet test Zaide.slnx --no-build`, then `git diff --check`; all canonical gesture coverage and registry tests green. |
 
 ## Milestone Status
@@ -260,7 +261,8 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 | **M8a** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1007 passed (992 baseline + 15 M8a); `git diff --check` clean. The seven canonical command IDs are registered by their owning ViewModel constructors with exact D6a metadata (display names, categories, default gestures); `workspace.closeFolder`/`sourcecontrol.commit`/`sourcecontrol.refresh` are unbound; `view.toggleBottomPanel` carries both `Ctrl+Oem3` and `Ctrl+J` aliases; duplicate-ID fail-fast preserved. |
 | **M8b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1035 passed (1007 baseline + 28 M8b); `git diff --check` clean. Neutral gesture resolution engine implemented in `CommandRegistry.ResolveKeyBindings(ISettingsService settings)`: grammar validation with case-insensitive parsing, modifier/key parsing via Avalonia `Key` enum (name-only, numeric tokens rejected), user-override precedence, explicit empty-string unbinds, null/whitespace override rejection with Warning log, deterministic lexicographic conflict resolution, invalid-input/unknown-command-ID warning logging, and complete replacement set on repeated calls. |
 | **M8c** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1056 passed (1035 baseline + 21 M8c); `git diff --check` clean. Acceptance/adversarial tests using real owning ViewModels cover all 12 M8c requirements: seven canonical commands registered exactly once, every D6a default gesture resolves correctly (including both `Ctrl+Oem3`/`Ctrl+J` for `view.toggleBottomPanel`), unbound commands remain unbound, user overrides replace defaults, empty-string unbinds, invalid/whitespace/null/unknown overrides are ignored with Warning logs, unregistered command-ID overrides are ignored and logged, deterministic lexicographic conflict resolution, no gesture resolves to two command IDs, losing commands remain executable, repeated resolution returns stable complete replacement with no duplicate bindings, and `Ctrl+Oem3` remains distinct from `Ctrl+J`. |
-| **M9** | Pending | | |
+| **M9a** | Pending | | |
+| **M9b** | Pending | | |
 | **M10** | Pending | | |
 
 ## Required Test Matrix
@@ -304,7 +306,7 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 
 ## Exit Conditions
 
-- [ ] M7a, M7b, M8a–M8c, and M9 are complete with isolated commits and focused
+- [ ] M7a, M7b, M8a–M8c, M9a–M9b, and M10 are complete with isolated commits and focused
       tests.
 - [ ] M7a configures Microsoft.Extensions.Logging and verifies registry
       diagnostics through a test logger provider.
