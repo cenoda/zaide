@@ -487,13 +487,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>
         {
-            // M2: Ctrl+Shift+H — toggle hidden files
-            if (e.Key == Key.H && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
-            {
-                e.Handled = true;
-                ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
-                return;
-            }
+            // M9a: Ctrl+Shift+H removed — handled by registry-driven window binding.
 
             if (e.Key != Key.Enter) return;
             var selected = ViewModel!.SelectedFile;

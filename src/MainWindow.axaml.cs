@@ -10,13 +10,14 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Zaide.ViewModels;
-using Zaide.Styles;
 using Zaide.Views;
+using Zaide.Styles;
 using Zaide.Services;
 
 namespace Zaide;
@@ -35,7 +36,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly ISettingsService _settings;
     private readonly ISecretStore _secrets;
+    private readonly ICommandRegistry _registry;
     private readonly StatusBarViewModel _statusBarViewModel;
+    private readonly List<KeyBinding> _registryBindings = new();
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
     private readonly SourceControlPanel _sourceControlPanel;
@@ -63,10 +66,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             "MainWindow must be created through the application composition root.");
     }
 
-    public MainWindow(ISettingsService settings, ISecretStore secrets, StatusBarViewModel statusBarViewModel)
+    public MainWindow(ISettingsService settings, ISecretStore secrets,
+        ICommandRegistry registry, StatusBarViewModel statusBarViewModel)
     {
         _settings = settings;
         _secrets = secrets;
+        _registry = registry;
         _statusBarViewModel = statusBarViewModel;
         InitializeComponent();
 
@@ -190,35 +195,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.LeftPanelMode)
                 .Subscribe(mode => _ = AnimateLeftPanelModeSwitchAsync(mode)));
 
-            // Ctrl+` toggle bottom panel
-            var toggleCmd = ViewModel!.ToggleBottomPanelCommand;
-            foreach (var kb in KeyBindings.Where(k => k.Command == toggleCmd).ToList())
-                KeyBindings.Remove(kb);
-
-            KeyBindings.Add(new KeyBinding
-            {
-                Gesture = new KeyGesture(Key.Oem3, KeyModifiers.Control),
-                Command = toggleCmd
-            });
-            KeyBindings.Add(new KeyBinding
-            {
-                Gesture = new KeyGesture(Key.J, KeyModifiers.Control),
-                Command = toggleCmd
-            });
-
-            // Ctrl+S: save the active tab
-            var saveGesture = new KeyGesture(Key.S, KeyModifiers.Control);
-            foreach (var kb in KeyBindings.Where(k =>
-                k.Gesture?.Key == Key.S && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
-                KeyBindings.Remove(kb);
-
-            var saveBinding = new KeyBinding
-            {
-                Gesture = saveGesture,
-                Command = ViewModel!.SaveActiveTabCommand
-            };
-            KeyBindings.Add(saveBinding);
-            disposables.Add(Disposable.Create(() => KeyBindings.Remove(saveBinding)));
+            // M9a: materialize registry-driven keybindings atomically
+            // Replaces all imperative per-command binding blocks below.
+            MaterializeRegistryBindings();
 
             // Bind bottom panel visibility → row height.
             // M3: focus and start are routed through the view host seam so the
@@ -255,20 +234,38 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(ViewModel.ShowSettings.RegisterHandler(async context =>
                 await HandleShowSettingsAsync(context)));
             disposables.Add(Disposable.Create(CloseSettingsPanel));
-
-            // Ctrl+O key binding
-            var openFolderGesture = new KeyGesture(Key.O, KeyModifiers.Control);
-            foreach (var kb in KeyBindings.Where(k =>
-                k.Gesture?.Key == Key.O && k.Gesture?.KeyModifiers == KeyModifiers.Control).ToList())
-                KeyBindings.Remove(kb);
-            var openBinding = new KeyBinding
-            {
-                Gesture = openFolderGesture,
-                Command = ViewModel!.OpenFolderCommand
-            };
-            KeyBindings.Add(openBinding);
-            disposables.Add(Disposable.Create(() => KeyBindings.Remove(openBinding)));
         });
+    }
+
+    /// <summary>
+    /// M9a: resolve neutral bindings, convert to Avalonia <see cref="KeyBinding"/>,
+    /// and atomically replace only the previously materialized bindings in the
+    /// window's <see cref="KeyBindings"/> collection.
+    /// </summary>
+    private void MaterializeRegistryBindings()
+    {
+        // Remove previously generated bindings
+        foreach (var kb in _registryBindings)
+            KeyBindings.Remove(kb);
+
+        _registryBindings.Clear();
+
+        // Resolve neutral bindings and convert to Avalona KeyBinding via UI-layer helper
+        var resolved = _registry.ResolveKeyBindings(_settings);
+        foreach (var binding in resolved)
+        {
+            var descriptor = _registry.GetById(binding.CommandId);
+            var kb = KeyBindingConverter.TryCreateKeyBinding(binding, descriptor);
+            if (kb is null)
+            {
+                // Should not happen — ResolveKeyBindings only returns registered IDs.
+                // Defensive guard for future extension.
+                continue;
+            }
+
+            KeyBindings.Add(kb);
+            _registryBindings.Add(kb);
+        }
     }
 
     /// <summary>
