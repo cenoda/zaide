@@ -8,13 +8,15 @@ global across versions so historical references stay unambiguous.
 | Version | Scope | Status |
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
-| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | In progress — Phase 8 umbrella locked; Phase 8.1 complete |
+| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | In progress — Phase 8 umbrella locked; Phase 8.1 and Phase 8.2 complete |
 
 Roadmap V2 planning has started. Phase 8 umbrella plan is complete at
 [`v2/phase-8/IMPLEMENTATION_PLAN.md`](v2/phase-8/IMPLEMENTATION_PLAN.md).
 Sub-phase 8.1 (Settings Foundation) is **complete** across its five
-implementation slices (M1–M6 closeout 2026-07-11). Phase 8.2 (command registry
-and keybindings) has an implementation plan; its M0 entry review is next.
+implementation slices (M1–M6 closeout 2026-07-11). Phase 8.2 (Command Registry
+and Keybindings) is **complete** across its eight milestones (M7a–M10 closeout
+2026-07-12); all seven canonical commands, gesture resolution, window binding
+materialization, and settings-driven refresh are delivered.
 
 ## Archive Policy
 

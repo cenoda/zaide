@@ -263,7 +263,7 @@ flat dictionary shape natively; normalization is a snapshot-boundary concern.
 | **M8c** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1056 passed (1035 baseline + 21 M8c); `git diff --check` clean. Acceptance/adversarial tests using real owning ViewModels cover all 12 M8c requirements: seven canonical commands registered exactly once, every D6a default gesture resolves correctly (including both `Ctrl+Oem3`/`Ctrl+J` for `view.toggleBottomPanel`), unbound commands remain unbound, user overrides replace defaults, empty-string unbinds, invalid/whitespace/null/unknown overrides are ignored with Warning logs, unregistered command-ID overrides are ignored and logged, deterministic lexicographic conflict resolution, no gesture resolves to two command IDs, losing commands remain executable, repeated resolution returns stable complete replacement with no duplicate bindings, and `Ctrl+Oem3` remains distinct from `Ctrl+J`. |
 | **M9a** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1071 passed (1056 baseline + 15 M9a); `git diff --check` clean. `ICommandRegistry`/`CommandRegistry` unchanged (framework-agnostic, `ResolvedKeyBinding` only). Added `Views/KeyBindingConverter.cs` (UI-layer `internal static` helper: `ParseToKeyGesture`, `TryCreateKeyBinding`). Injected `ICommandRegistry` into `MainWindow` with `_registryBindings` tracking list and `MaterializeRegistryBindings()` calling `_registry.ResolveKeyBindings(_settings)` + `KeyBindingConverter.TryCreateKeyBinding` for atomic replacement. Replaced imperative Ctrl+Oem3/J, Ctrl+S, Ctrl+O binding blocks. Removed duplicate `Ctrl+Shift+H` handler from `FileTreeView.cs`; kept Enter/open-file unchanged. 15 focused seam tests cover `KeyBindingConverter.ParseToKeyGesture` for all five canonical gestures, `TryCreateKeyBinding` including null-descriptor safety, full materialization count via registry+converter pipeline, Oem3 correctness, Ctrl+Shift+H gesture/command/registry-execution, distinct-instance-per-call, atomic replacement without duplicates, preservation of unrelated/view-local bindings, and empty-registry safety. |
 | **M9b** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1082 passed (1071 baseline + 11 M9b); `git diff --check` clean. Settings-driven refresh subscription wired in `MainWindow.WhenActivated`: `_settings.WhenChanged.ObserveOn(AvaloniaScheduler.Instance).Subscribe(snapshot => MaterializeRegistryBindings(snapshot))`. Emitted `SettingsModel` snapshot is passed directly to a snapshot-aware overload that wraps it in a `SnapshotSettingsAccessor` (minimal `ISettingsService`) and resolves through `_registry.ResolveKeyBindings` — never re-fetches `_settings.Current`. `BindingRefreshSeam` tests cover all 11 M9b requirements, crucially with `RefreshableSettingsService.PushSnapshot` deliberately **not** updating `Current`, so a regression that re-reads `Current` instead of using the emitted snapshot is caught. |
-| **M10** | Pending | | |
+| **M10** | **Complete** | 2026-07-12 | `dotnet build Zaide.slnx --no-restore` 0w/0e; `dotnet test Zaide.slnx --no-build` 1082 passed; `git diff --check` clean; `git status --short` empty. All D5/D6/D6a/D10 contracts verified against live code: ICommandRegistry has no Avalonia KeyBinding dependency, CommandRegistry has no KeyBinding materialization, UI conversion only in `Views/KeyBindingConverter.cs`. All seven canonical commands registered with correct D6a metadata and gestures. FileTreeView Ctrl+Shift+H removed; Enter/open-file preserved. `_registryBindings` tracked and atomically replaced; snapshot-driven refresh avoids stale `_settings.Current` reads. No stale references to pre-split M9/old `CreateKeyBindings`/pending M9b evidence remain. Manual smoke evidence recorded in commit 4fa2dcc. |
 
 ## Manual Desktop Smoke Evidence (M9b)
 
@@ -321,26 +321,26 @@ Recorded after building and running the application interactively:
 
 ## Exit Conditions
 
-- [ ] M7a, M7b, M8a–M8c, M9a–M9b, and M10 are complete with isolated commits and focused
+- [x] M7a, M7b, M8a–M8c, M9a–M9b, and M10 are complete with isolated commits and focused
       tests.
-- [ ] M7a configures Microsoft.Extensions.Logging and verifies registry
+- [x] M7a configures Microsoft.Extensions.Logging and verifies registry
       diagnostics through a test logger provider.
-- [ ] `SettingsModel.Keybindings` is `IReadOnlyDictionary<string, string>` (flat
+- [x] `SettingsModel.Keybindings` is `IReadOnlyDictionary<string, string>` (flat
       JSON) and round-trips through serialization; `KeybindingOverrides` type is
       removed.
-- [ ] All canonical global commands are registered with stable IDs exactly once.
-- [ ] Canonical commands are registered by their owning ViewModel constructors;
+- [x] All canonical global commands are registered with stable IDs exactly once.
+- [x] Canonical commands are registered by their owning ViewModel constructors;
       `MainWindow` performs resolution/materialization only.
-- [ ] M8c acceptance tests cover every canonical gesture, override, conflict,
+- [x] M8c acceptance tests cover every canonical gesture, override, conflict,
       malformed-input, logging, and repeated-resolution requirement.
-- [ ] Resolution follows D6/D6a deterministically and uses the settings service
+- [x] Resolution follows D6/D6a deterministically and uses the settings service
       for overrides.
-- [ ] Main-window global keybindings are registry-driven; no duplicate imperative
+- [x] Main-window global keybindings are registry-driven; no duplicate imperative
       keybinding source remains for the canonical gestures.
-- [ ] Phase 8.3, Phase 9, and unrelated parameterized commands remain untouched.
-- [ ] `dotnet build Zaide.slnx --no-restore` reports 0 warnings / 0 errors.
-- [ ] `dotnet test Zaide.slnx --no-build` is green.
-- [ ] `git diff --check` is clean and manual desktop evidence is recorded.
+- [x] Phase 8.3, Phase 9, and unrelated parameterized commands remain untouched.
+- [x] `dotnet build Zaide.slnx --no-restore` reports 0 warnings / 0 errors.
+- [x] `dotnet test Zaide.slnx --no-build` is green.
+- [x] `git diff --check` is clean and manual desktop evidence is recorded.
 
 ## Rollback Plan
 
