@@ -12,16 +12,26 @@ in milestone order.
 - [ ] Re-check the live `EditorViewModel`, `EditorTabViewModel`, `EditorView`,
       `EditorTabBar`, `MainWindowViewModel`, `MainWindow`, `StatusBarViewModel`,
       `CommandRegistry`, and Phase 8.2 keybinding lifecycle before adding code.
-- [ ] Confirm the installed `Avalonia.AvaloniaEdit` APIs for search navigation,
-      replacement, folding, caret/selection, and document-change grouping with
-      a compile-backed proof. Do not assume APIs from another AvaloniaEdit
-      version.
+- [ ] Confirm the APIs exposed by the installed `AvaloniaEdit` assembly for
+      search navigation, replacement, folding, caret/selection, and
+      document-change grouping with a compile-backed proof. The only explicit
+      package is transitive editor support through `AvaloniaEdit.TextMate`
+      12.0.0; M0 must determine whether M3/M4 need an explicit compatible
+      package reference for search or folding namespaces. Do not assume APIs
+      from another AvaloniaEdit version.
 - [ ] Confirm the existing document/tab ownership model can carry ordering,
       active-tab movement, and dirty-close behavior without a structural change.
       If it cannot, record the precise blocking defect and a separately reviewed
       change before implementation.
 - [ ] Define the command IDs, categories, default gestures, availability rules,
       palette ordering/search rules, and exact focused test files before M1.
+- [ ] Record that `MainWindow` reuses one `EditorView` and one AvaloniaEdit
+      `TextEditor` while swapping its `ViewModel` for the active tab. Lock
+      explicit reset/restore rules for search state, folding state, caret,
+      selection, and focus on every active-tab switch and close.
+- [ ] Define the new selection-state projection end to end: `EditorView` input
+      event(s), `EditorViewModel` state, and `StatusBarViewModel` display. The
+      current code tracks caret line/column only; it has no selection state.
 - [ ] Run the sequential baseline gates:
       `dotnet build Zaide.slnx --no-restore` and
       `dotnet test Zaide.slnx --no-build`.
@@ -75,10 +85,10 @@ pointer-driven ordering are separately risky and each can fit one session.
 | Milestone | Scope and completion condition | Focused verification |
 |---|---|---|
 | **M0** | Live-code and library proof only. Publish `M0_EDITOR_UX_PROOF.md` with the exact AvaloniaEdit API findings, existing ownership graph, command inventory, command IDs/gestures, focus contract, milestones, test-file list, and exact full gates. No production behavior. | Add `Phase9M0EditorUxProofTests`; run `dotnet test Zaide.slnx --filter FullyQualifiedName~Phase9M0EditorUxProofTests`, then `git diff --check`. |
-| **M1** | Add the UI-independent palette query/presentation seam and the command IDs required by Phase 9. The palette must enumerate only registry descriptors, use deterministic category/display-name/ID ordering, perform case-insensitive literal filtering, and report unavailable commands without executing them. Register no command twice. | `CommandPaletteViewModelTests` and `Phase9CommandRegistrationTests` cover ordering, filtering, empty/no-match states, unavailable/unknown commands, and duplicate-registration protection. |
+| **M1** | Add the UI-independent palette query/presentation seam and the command IDs required by Phase 9. The palette must enumerate only registry descriptors, use deterministic category/display-name/ID ordering, perform case-insensitive literal filtering, and report unavailable commands without executing them. Availability is read from each descriptor's `Command.CanExecute(null)`; `ICommandRegistry` does not add a separate availability query. Register no command twice. | `CommandPaletteViewModelTests` and `Phase9CommandRegistrationTests` cover ordering, filtering, empty/no-match states, unavailable/unknown commands, and duplicate-registration protection. |
 | **M2** | Add the Command Palette overlay and wire it to M1. Opening, filtering, keyboard navigation, execution, dismissal, and focus restoration must be deterministic. Palette invocation itself is registry-backed and uses one documented default gesture; all editor commands added in Phase 9 use Phase 8 settings-driven keybinding materialization. | `CommandPaletteViewTests` plus view-model tests cover open/close, keyboard selection, execution once, unavailable selection, focus restoration, and live keybinding refresh. Manual smoke: open palette, run a command, dismiss it, and confirm focus returns to the editor. |
-| **M3** | Implement active-document Search and Replace with a focused search surface. Define exact literal matching, case-sensitivity, next/previous wrap behavior, zero-match feedback, selection replacement, replace-next, replace-all, cancellation/close behavior, undo grouping, and dirty-state result. All text changes flow through the existing document/editor path. | `EditorSearchViewModelTests` and `EditorSearchIntegrationTests` cover empty query, case modes, wrap, zero/one/many matches, selection replacement, replace-next/all, undo, dirty state, caret/selection, and switching/closing tabs while the surface is open. |
-| **M4** | Implement active-editor code folding using only APIs proven in M0. Define a deterministic, syntax-neutral initial folding heuristic, expand/collapse current/all commands, caret visibility after folding changes, and no-folding feedback for unsupported/invalid text. Do not introduce a C# parser or language service. | `EditorFoldingTests` cover discovery, nested regions, expand/collapse, caret preservation, invalid/plain-text behavior, active-tab switch, and settings/font changes without stale folding state. Manual smoke uses a representative C# file. |
+| **M3** | Implement active-document Search and Replace with a focused search surface. Define exact literal matching, case-sensitivity, next/previous wrap behavior, zero-match feedback, selection replacement, replace-next, replace-all, cancellation/close behavior, undo grouping, and dirty-state result. All text changes flow through the existing document/editor path. Because one `TextEditor` is shared by all tabs, clear/reset search presentation on a tab switch and never apply old-document selection or replacement to the new active tab. | `EditorSearchViewModelTests` and `EditorSearchIntegrationTests` cover empty query, case modes, wrap, zero/one/many matches, selection replacement, replace-next/all, undo, dirty state, caret/selection, and switching/closing tabs while the surface is open. |
+| **M4** | Implement active-editor code folding using only APIs proven in M0. Define a deterministic, syntax-neutral initial folding heuristic, expand/collapse current/all commands, caret visibility after folding changes, and no-folding feedback for unsupported/invalid text. Do not introduce a C# parser or language service. Because the `TextEditor` is shared between tabs, folding state must be explicitly discarded or restored by document identity on every tab change. | `EditorFoldingTests` cover discovery, nested regions, expand/collapse, caret preservation, invalid/plain-text behavior, active-tab switch, and settings/font changes without stale folding state. Manual smoke uses a representative C# file. |
 | **M5a** | Add registry-backed tab commands and complete tab lifecycle UX: next/previous tab, close active tab, close other tabs, close all tabs, and reopen only if a live-code-safe history seam is proven in M0 or this milestone. Preserve existing unsaved-change confirmation and choose/document deterministic neighbor selection. | Extend `EditorTabViewModelTests` with command, dirty-confirmation, save-failure, cancel, active-neighbor, no-tab, and workspace-active-document assertions; add command-registration/keybinding tests. |
 | **M5b** | Add pointer-driven tab reordering and polished dirty/active affordances without changing document ownership. Define drag threshold, valid drop positions, active-tab preservation, no-op behavior, scroll behavior, and subscription cleanup. Keyboard navigation from M5a remains the accessibility baseline. | `EditorTabBarLifecycleTests` and `EditorTabReorderTests` cover order mutations, no-op drops, active/dirty preservation, close after reorder, and cleanup. Manual smoke verifies drag ordering, close affordance, overflow scrolling, and dirty indicator. |
 | **M6** | Integrate status-bar/editor feedback and close out the phase. Status text must truthfully reflect caret, selection, active document, search outcome, folding outcome, and command/save failure without stale updates after tab switches or closes. Truth-sync roadmap, architecture, libraries if changed, and limitations; run full regression and record manual evidence. | New/extended status-bar projection tests, all Phase 9 focused tests, then sequential `dotnet build Zaide.slnx --no-restore`, `dotnet test Zaide.slnx --no-build`, and `git diff --check`. |
@@ -102,6 +112,10 @@ states:
 5. Switching or closing a tab clears UI state that belongs to the old document;
    it must never mutate a newly active tab accidentally.
 
+The current `EditorViewModel` has only `CaretLine` and `CaretColumn`; M0 must
+define the selection fields, zero/no-selection representation, and status-bar
+text before M3 or M6 adds selection-dependent behavior.
+
 ## Test and Verification Strategy
 
 - Keep service/view-model behavior testable without Avalonia controls wherever
@@ -111,6 +125,8 @@ states:
   test file missing at closeout means the milestone is incomplete.
 - Run focused tests while implementing. Before marking any milestone complete,
   run its focused suite and `git diff --check`.
+- Prefer one green, intentional commit at each milestone or milestone-slice
+  boundary; do not combine unrelated milestones in one commit.
 - Run build and test gates sequentially, never concurrently:
   `dotnet build Zaide.slnx --no-restore` followed by
   `dotnet test Zaide.slnx --no-build`.
@@ -153,3 +169,13 @@ Implement **M0 only**: verify the live Phase 9 seams, compile-proof the installe
 AvaloniaEdit APIs, publish `M0_EDITOR_UX_PROOF.md`, add the M0 proof test, and
 run the exact baseline gates. Do not add palette, search, folding, or tab
 behavior during M0.
+
+## Rollback Plan
+
+- Planning baseline: `596ad85cad7b0eecf2cabb09327f11a22fd47f93` (`docs: add
+  Phase 9 Editor UX implementation plan`).
+- Before each implementation milestone, record its last green predecessor in
+  that milestone's commit message or closeout evidence. Revert a failed
+  milestone to that predecessor; do not discard a prior green milestone.
+- If a structural reset is required rather than a normal bug fix, create
+  `REVERT_LOG.md` as required by `docs-rules.md` before recording the revert.
