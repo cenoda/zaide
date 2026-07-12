@@ -12,8 +12,8 @@ closeout 2026-07-11). Phase 8.2 (Command Registry and Keybindings) is complete
 registration, gesture resolution, window binding materialization, and
 settings-driven lifecycle refresh are delivered.
 Phase 8.3 (Authoritative Project Context) is implemented through M4 with
-automated verification green; one failed-state GUI smoke check remains
-explicitly documented as a manual-validation limitation.
+automated verification green, including the manual failed-state GUI smoke
+check.
 This document describes the currently delivered V1 architecture; V2 entries
 below are planned direction, not claims about live code.
 

@@ -313,13 +313,11 @@ legacy folder-name consumers but is no longer the status-bar project source.
 - [x] `dotnet build Zaide.slnx --no-restore` succeeds (0 warnings, 0 errors).
 - [x] `dotnet test Zaide.slnx --no-build` passes in full (1185 passed, 0 failed).
 - [x] `git diff --check` is clean.
-- [ ] Manual verification covers open, close, single-project, ambiguous,
+- [x] Manual verification covers open, close, single-project, ambiguous,
       unsupported, no-project, failed, and project-name status-bar states.
-      **Partially verified:** open, close, single-project, ambiguous,
-      unsupported, no-project, and project-name states were manually checked.
-      The `Failed` → `Project error` GUI state remains unverified because no
-      GUI environment was available; deterministic failure behavior is covered
-      by the M1–M3 tests.
+      **Verified:** open, close, single-project, ambiguous, unsupported,
+      no-project, failed, and project-name states were manually checked,
+      including live GUI confirmation of the `Failed` → `Project error` state.
 - [x] Phase 8.3 docs and the V2 roadmap agree; no Phase 9–13 scope is added.
 
 ## Rollback Plan
