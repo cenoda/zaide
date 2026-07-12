@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Input;
+using Avalonia.Input;
 using Microsoft.Extensions.Logging;
 
 namespace Zaide.Services;
 
-/// <summary>
-/// Singleton command registry implementation (D5).
-/// Receives ILogger&lt;CommandRegistry&gt; through DI for diagnostics.
-/// </summary>
 public sealed class CommandRegistry : ICommandRegistry
 {
     private readonly Dictionary<string, CommandDescriptor> _commands = new();
@@ -99,15 +97,95 @@ public sealed class CommandRegistry : ICommandRegistry
 
     public IReadOnlyList<ResolvedKeyBinding> ResolveKeyBindings(ISettingsService settings)
     {
-        // M7a: no canonical commands registered, no resolution logic.
-        // M8 owns gesture parsing, override resolution, and conflict behavior.
-        return Array.Empty<ResolvedKeyBinding>();
+        ArgumentNullException.ThrowIfNull(settings);
+
+        var overrides = settings.Current.Keybindings;
+        var resolved = new Dictionary<string, (string CommandId, string Gesture)>(StringComparer.Ordinal);
+        var commandsWithOverrides = new HashSet<string>();
+
+        foreach (var (commandId, gesture) in overrides.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            if (string.IsNullOrWhiteSpace(commandId))
+                continue;
+
+            if (!_commands.ContainsKey(commandId))
+            {
+                _logger.LogWarning("Override for unregistered command ID: '{CommandId}'", commandId);
+                continue;
+            }
+
+            if (gesture is null)
+            {
+                _logger.LogWarning("Invalid override gesture for '{CommandId}': null", commandId);
+                continue;
+            }
+
+            if (gesture.Length == 0)
+            {
+                commandsWithOverrides.Add(commandId);
+                continue;
+            }
+
+            if (!TryParseGesture(gesture, out var normalizedGesture))
+            {
+                _logger.LogWarning("Invalid override gesture for '{CommandId}': '{Gesture}'", commandId, gesture);
+                continue;
+            }
+
+            commandsWithOverrides.Add(commandId);
+
+            if (resolved.TryGetValue(normalizedGesture, out var existing))
+            {
+                if (string.Compare(commandId, existing.CommandId, StringComparison.Ordinal) < 0)
+                {
+                    LogGestureConflict(normalizedGesture, commandId, existing.CommandId);
+                    resolved[normalizedGesture] = (commandId, normalizedGesture);
+                }
+                else
+                {
+                    LogGestureConflict(normalizedGesture, existing.CommandId, commandId);
+                }
+            }
+            else
+            {
+                resolved[normalizedGesture] = (commandId, normalizedGesture);
+            }
+        }
+
+        foreach (var (commandId, descriptor) in _commands.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            if (commandsWithOverrides.Contains(commandId))
+                continue;
+
+            foreach (var defaultGesture in descriptor.DefaultGestures)
+            {
+                if (string.IsNullOrWhiteSpace(defaultGesture))
+                {
+                    _logger.LogWarning("Invalid default gesture for '{CommandId}': '{Gesture}'", commandId, defaultGesture);
+                    continue;
+                }
+
+                if (!TryParseGesture(defaultGesture, out var normalizedGesture))
+                {
+                    _logger.LogWarning("Invalid default gesture for '{CommandId}': '{Gesture}'", commandId, defaultGesture);
+                    continue;
+                }
+
+                if (resolved.TryGetValue(normalizedGesture, out var existing))
+                {
+                    LogGestureConflict(normalizedGesture, existing.CommandId, commandId);
+                    continue;
+                }
+
+                resolved[normalizedGesture] = (commandId, normalizedGesture);
+            }
+        }
+
+        return resolved.Values
+            .Select(v => new ResolvedKeyBinding(v.Gesture, v.CommandId))
+            .ToList();
     }
 
-    /// <summary>
-    /// Validate a neutral gesture string format (M8 internal helper, exposed for testing).
-    /// Returns true if well-formed; false if malformed (logged at Warning level).
-    /// </summary>
     internal bool ValidateGestureFormat(string gesture)
     {
         if (string.IsNullOrWhiteSpace(gesture))
@@ -116,18 +194,58 @@ public sealed class CommandRegistry : ICommandRegistry
             return false;
         }
 
-        // M8 owns full gesture parsing. M7a provides the validation contract surface
-        // so that warning-level diagnostics are testable through the registry.
+        if (!TryParseGesture(gesture, out _))
+        {
+            _logger.LogWarning("Invalid gesture format: '{Gesture}'", gesture);
+            return false;
+        }
+
         return true;
     }
 
-    /// <summary>
-    /// Log a gesture conflict at Warning level (M8 internal helper, exposed for testing).
-    /// </summary>
     internal void LogGestureConflict(string gesture, string winnerId, string loserId)
     {
         _logger.LogWarning(
             "Gesture conflict for '{Gesture}': '{WinnerId}' wins over '{LoserId}'",
             gesture, winnerId, loserId);
+    }
+
+    private static bool TryParseGesture(string gesture, out string normalizedGesture)
+    {
+        normalizedGesture = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(gesture))
+            return false;
+
+        var tokens = gesture.Split('+');
+        if (tokens.Length == 0)
+            return false;
+
+        var modifiers = new List<string>();
+        foreach (var token in tokens.Take(tokens.Length - 1))
+        {
+            var trimmed = token.Trim();
+            if (trimmed.Equals("Ctrl", StringComparison.OrdinalIgnoreCase))
+                modifiers.Add("Ctrl");
+            else if (trimmed.Equals("Alt", StringComparison.OrdinalIgnoreCase))
+                modifiers.Add("Alt");
+            else if (trimmed.Equals("Shift", StringComparison.OrdinalIgnoreCase))
+                modifiers.Add("Shift");
+            else if (trimmed.Equals("Meta", StringComparison.OrdinalIgnoreCase))
+                modifiers.Add("Meta");
+            else
+                return false;
+        }
+
+        var keyToken = tokens[^1].Trim();
+        if (!Enum.TryParse<Avalonia.Input.Key>(keyToken, true, out var keyValue))
+            return false;
+
+        if (!keyValue.ToString().Equals(keyToken, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var keyName = keyValue.ToString();
+        normalizedGesture = string.Join("+", modifiers.Concat(new[] { keyName }));
+        return true;
     }
 }

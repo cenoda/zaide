@@ -672,6 +672,531 @@ public sealed class CommandRegistryTests
     {
         Assert.True(typeof(ResolvedKeyBinding).IsSealed);
     }
+
+    // ── M8b Neutral gesture resolution ─────────────────────────────────
+
+    #region Helpers
+
+    private static ISettingsService CreateSettings(
+        IReadOnlyDictionary<string, string>? overrides = null)
+    {
+        var keybindings = overrides is not null
+            ? new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
+                new Dictionary<string, string>(overrides))
+            : SettingsModel.Defaults.Keybindings;
+
+        var model = new SettingsModel(
+            SettingsModel.Defaults.SchemaVersion,
+            SettingsModel.Defaults.Editor,
+            SettingsModel.Defaults.Llm,
+            keybindings);
+
+        return new SimpleSettingsService(model);
+    }
+
+    private sealed class SimpleSettingsService : ISettingsService
+    {
+        private readonly SettingsModel _model;
+
+        public SimpleSettingsService(SettingsModel model)
+        {
+            _model = model;
+        }
+
+        public SettingsModel Current => _model;
+        public IObservable<SettingsModel> WhenChanged
+            => System.Reactive.Linq.Observable.Empty<SettingsModel>();
+        public SettingsLoadResult LoadResult => SettingsLoadResult.Missing;
+
+        public System.Threading.Tasks.Task<SettingsMutationResult> UpdateAsync(
+            Func<SettingsModel, SettingsModel> producer,
+            System.Threading.CancellationToken ct = default)
+            => System.Threading.Tasks.Task.FromResult<SettingsMutationResult>(
+                new SettingsMutationResult.Conflict(_model));
+
+        public System.Threading.Tasks.Task<SettingsMutationResult> ApplyAsync(
+            SettingsModel expectedCurrent,
+            SettingsModel next,
+            System.Threading.CancellationToken ct = default)
+            => System.Threading.Tasks.Task.FromResult<SettingsMutationResult>(
+                new SettingsMutationResult.Conflict(_model));
+
+        public System.Threading.Tasks.Task<SettingsSaveResult> SaveAsync(
+            System.Threading.CancellationToken ct = default)
+            => System.Threading.Tasks.Task.FromResult<SettingsSaveResult>(new SettingsSaveResult.Saved());
+
+        public IObservable<SettingsSaveError> WriteErrors
+            => System.Reactive.Linq.Observable.Empty<SettingsSaveError>();
+    }
+
+    #endregion
+
+    // ── Valid grammar and case-insensitive parsing ──────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_CaseInsensitiveGesture_ParsesToCanonicalForm()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "ctrl+shift+h" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+Shift+H", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_MixedCaseGesture_ParsesToCanonicalForm()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "CTRL+Oem3" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+Oem3", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_AllModifiers_ParsesCorrectly()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "ctrl+alt+shift+meta+a" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+Alt+Shift+Meta+A", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+    }
+
+    // ── Modifier/key parsing ───────────────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_SingleModifier_Resolves()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_MultipleModifiers_Resolves()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+Shift+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+Shift+S", bindings[0].Gesture);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_InvalidModifier_IgnoredAndLogged()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Super+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+O" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+O", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid default gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_InvalidKey_IgnoredAndLogged()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+NotAKey" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Empty(bindings);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid default gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    // ── Default resolution ─────────────────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_DefaultsResolveToCorrectCommands()
+    {
+        _registry.Register(CreateDescriptor(id: "file.save", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "workspace.openFolder", defaultGestures: new[] { "Ctrl+O" }));
+        _registry.Register(CreateDescriptor(id: "view.toggleBottomPanel", defaultGestures: new[] { "Ctrl+Oem3", "Ctrl+J" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Equal(4, bindings.Count);
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+S" && b.CommandId == "file.save");
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+O" && b.CommandId == "workspace.openFolder");
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+Oem3" && b.CommandId == "view.toggleBottomPanel");
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+J" && b.CommandId == "view.toggleBottomPanel");
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_EmptyDefaultGestures_NoBinding()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: Array.Empty<string>()));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Empty(bindings);
+    }
+
+    // ── User override precedence ───────────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_UserOverride_OverridesDefault()
+    {
+        _registry.Register(CreateDescriptor(id: "file.save", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["file.save"] = "Ctrl+Shift+S"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+Shift+S", bindings[0].Gesture);
+        Assert.Equal("file.save", bindings[0].CommandId);
+    }
+
+    // ── Explicit empty-string unbind ───────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_EmptyStringOverride_UnbindsCommand()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+O" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = ""
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+O", bindings[0].Gesture);
+        Assert.Equal("cmd.b", bindings[0].CommandId);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_EmptyStringOverride_RemovesDefaultBinding()
+    {
+        _registry.Register(CreateDescriptor(id: "file.save", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["file.save"] = ""
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.DoesNotContain(bindings, b => b.CommandId == "file.save");
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_NullOverride_InvalidLoggedNotUnbound()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = null!
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid override gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_WhitespaceOverride_InvalidLoggedNotUnbound()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = "   "
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid override gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_NumericKeyToken_Rejected()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+1" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid default gesture") &&
+            e.Message.Contains("cmd.b"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_WhitespaceDefaultGesture_InvalidLogged()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "   " }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid default gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    // ── Unknown command IDs in settings ────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_UnknownCommandIdInSettings_IgnoredAndLogged()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["nonexistent.command"] = "Ctrl+Shift+S"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("unregistered command ID") &&
+            e.Message.Contains("nonexistent.command"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_InvalidOverrideGesture_IgnoredAndFallsBackToDefault()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = "Invalid+Gesture"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid override gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    // ── Deterministic conflict handling ────────────────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_UserOverrideConflict_LexicographicallyEarlierWins()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+O" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = "Ctrl+S",
+            ["cmd.b"] = "Ctrl+S"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("cmd.a") &&
+            e.Message.Contains("cmd.b"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_DefaultGestureConflict_LexicographicallyEarlierWins()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("cmd.a") &&
+            e.Message.Contains("cmd.b"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_UserOverrideBeatsDefault()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+O" }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["cmd.a"] = "Ctrl+S"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("cmd.a") &&
+            e.Message.Contains("cmd.b"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_UserOverrideConflict_IndependentOfRegistrationOrder()
+    {
+        _registry.Register(CreateDescriptor(id: "z.command", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "a.command", defaultGestures: new[] { "Ctrl+O" }));
+
+        var settings = CreateSettings(new Dictionary<string, string>
+        {
+            ["z.command"] = "Ctrl+O",
+            ["a.command"] = "Ctrl+O"
+        });
+
+        var bindings = _registry.ResolveKeyBindings(settings);
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+O", bindings[0].Gesture);
+        Assert.Equal("a.command", bindings[0].CommandId);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_DefaultConflict_IndependentOfRegistrationOrder()
+    {
+        _registry.Register(CreateDescriptor(id: "z.command", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "a.command", defaultGestures: new[] { "Ctrl+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("a.command", bindings[0].CommandId);
+    }
+
+    // ── Warning logs for ignored invalid input and conflicts ────────────
+
+    [Fact]
+    public void ResolveKeyBindings_InvalidDefaultGesture_LogsWarning()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Bad+Gesture" }));
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+
+        _registry.ResolveKeyBindings(CreateSettings());
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Invalid default gesture") &&
+            e.Message.Contains("cmd.a"));
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_Conflict_LogsWarning()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.b", defaultGestures: new[] { "Ctrl+S" }));
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        _registry.ResolveKeyBindings(CreateSettings());
+
+        var warnings = _loggerProvider.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.Contains(warnings, e =>
+            e.Message.Contains("Gesture conflict") &&
+            e.Message.Contains("cmd.a") &&
+            e.Message.Contains("cmd.b"));
+    }
+
+    // ── Repeated resolution without duplicate output ────────────────────
+
+    [Fact]
+    public void ResolveKeyBindings_RepeatedCalls_CompleteReplacementNoDuplicates()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S" }));
+
+        var settings = CreateSettings();
+        var first = _registry.ResolveKeyBindings(settings);
+        var second = _registry.ResolveKeyBindings(settings);
+
+        Assert.Equal(first.Count, second.Count);
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_DuplicateDefaultsSameCommand_NoDuplicateBindings()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S", "Ctrl+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Single(bindings);
+        Assert.Equal("Ctrl+S", bindings[0].Gesture);
+        Assert.Equal("cmd.a", bindings[0].CommandId);
+    }
+
+    [Fact]
+    public void ResolveKeyBindings_MultipleDistinctDefaults_AllResolve()
+    {
+        _registry.Register(CreateDescriptor(id: "cmd.a", defaultGestures: new[] { "Ctrl+S", "Ctrl+Shift+S", "Ctrl+Alt+S" }));
+
+        var bindings = _registry.ResolveKeyBindings(CreateSettings());
+
+        Assert.Equal(3, bindings.Count);
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+S");
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+Shift+S");
+        Assert.Contains(bindings, b => b.Gesture == "Ctrl+Alt+S");
+    }
 }
 
 /// <summary>
