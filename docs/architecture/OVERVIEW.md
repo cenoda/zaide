@@ -16,8 +16,8 @@ automated verification green, including the manual failed-state GUI smoke
 check. Phase 9 adds the registry-backed Command Palette, active-document
 Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
 status projections. Phase 10 (C# language intelligence via LSP) is **complete**
-(M7 closeout, 2026-07-13). Phase 11 and later entries below remain planned
-direction.
+(M7 closeout, 2026-07-14). Phase 11 (Project Workflow) is at M0 planning;
+later entries below remain planned direction.
 
 ---
 
@@ -98,7 +98,7 @@ The current app contains the agent-workspace shell delivered through V1:
 - `MainWindow` wires `TerminalTabHost` in the bottom panel; focus/startup routed through the view host seam without direct single-session calls
 - 565 tests pass, 0 fail
 
-### Phase 10 (C# language intelligence — complete, 2026-07-13)
+### Phase 10 (C# language intelligence — complete, 2026-07-14)
 
 - **Stack:** `csharp-ls` 0.25.0 (global `dotnet tool`) + `StreamJsonRpc` 2.22.23
   over stdio Content-Length JSON-RPC.
@@ -165,7 +165,7 @@ agent foundation into richer AI-native orchestration.
 |---------------|-------|-----------|
 | Core platform and settings | 8 | Versioned settings with migration/recovery ownership, safe credential boundary, command/keybinding infrastructure, and authoritative C# project context |
 | Editor UX | 9 | Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
-| C# language intelligence | 10 | ✅ LSP lifecycle, diagnostics, completion, hover, definition, symbols, document formatting, Format on Save (M7 closeout 2026-07-13) |
+| C# language intelligence | 10 | ✅ LSP lifecycle, diagnostics, completion, hover, definition, symbols, document formatting, Format on Save (M7 closeout 2026-07-14) |
 | Project workflow | 11 | Execution profiles and structured Build/Run/Test orchestration over the Phase 8 project context, with Output, Problems, test results, cancellation, and error navigation |
 | C# debugging | 12 | Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
 | Release hardening | 13 | Measured performance, recovery, full settings compatibility matrix, E2E coverage, platform-status documentation, and closeout |
@@ -199,4 +199,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-13 (V1 complete; V2 IDE Core Upgrade in progress — Phase 10 complete)*
+*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 10 complete; Phase 11 M0)*
