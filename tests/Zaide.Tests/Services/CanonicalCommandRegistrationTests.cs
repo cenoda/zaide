@@ -63,13 +63,23 @@ public sealed class CanonicalCommandRegistrationTests
         Assert.NotNull(registry.GetById("sourcecontrol.refresh"));
     }
 
-    // ── All seven canonical IDs are present exactly once ──────────────────
+    [Fact]
+    public void ProjectWorkflowViewModel_RegistersBuildAndCancel()
+    {
+        var registry = NewRegistry();
+        CreateMainWindowViewModel(registry);
+
+        Assert.NotNull(registry.GetById("project.build"));
+        Assert.NotNull(registry.GetById("project.cancel"));
+    }
+
+    // ── All canonical IDs from MainWindow composition are present exactly once ──
 
     [Fact]
     public void AllSevenCanonicalCommands_PresentExactlyOnce()
     {
         var registry = NewRegistry();
-        CreateMainWindowViewModel(registry); // constructs all three owning VMs, sharing the registry
+        CreateMainWindowViewModel(registry); // constructs all owning VMs, sharing the registry
 
         var expected = new[]
         {
@@ -79,10 +89,12 @@ public sealed class CanonicalCommandRegistrationTests
             "view.toggleBottomPanel",
             "explorer.toggleHiddenFiles",
             "sourcecontrol.commit",
-            "sourcecontrol.refresh"
+            "sourcecontrol.refresh",
+            "project.build",
+            "project.cancel",
         };
 
-        Assert.Equal(7, registry.GetAll().Count);
+        Assert.Equal(9, registry.GetAll().Count);
         foreach (var id in expected)
         {
             Assert.NotNull(registry.GetById(id));
@@ -194,7 +206,9 @@ public sealed class CanonicalCommandRegistrationTests
         return new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
             router, townhallViewModel, scViewModel,
-            TestProblemsFactory.Create(workspace, editorTabs), workspace,
+            TestProblemsFactory.Create(workspace, editorTabs),
+            TestProjectWorkflowFactory.Create(registry: registry),
+            workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }
 

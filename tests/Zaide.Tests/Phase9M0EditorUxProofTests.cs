@@ -367,7 +367,7 @@ public sealed class Phase9M0EditorUxProofTests
         return new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
             router, townhallViewModel, scViewModel,
-            TestProblemsFactory.Create(workspace, editorTabs), workspace,
+            TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }
 }

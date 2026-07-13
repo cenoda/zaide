@@ -76,6 +76,10 @@ class Program
         services.AddSingleton<IManagedProcessRunner, ManagedProcessRunner>();
         services.AddSingleton<IProjectWorkflowService, ProjectWorkflowService>();
 
+        // Phase 11 M2: structured output projection and workflow commands.
+        services.AddSingleton<IProjectOutputService, ProjectOutputService>();
+        services.AddSingleton<ProjectWorkflowViewModel>();
+
         // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
         services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
         services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();

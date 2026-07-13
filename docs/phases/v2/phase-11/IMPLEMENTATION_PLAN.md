@@ -3,12 +3,16 @@
 ## Status
 
 **M0 complete** (planning/proof gate, 2026-07-14; review-hardening doc pass
-same day). No production Build, Run, Test, Output, Problems-build, or
-test-results features yet.
-Evidence: [M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md).
-Verified against live code at `1569e6dad6e6f1615e3677460a44f2ad5cf8cd42`
-(content contracts amended post-commit in this doc pass; re-verify live
-dispose order and seams when starting M1).
+same day). Evidence: [M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md).
+
+**M1 complete** (2026-07-14, commit `6484fb1`). UI-independent
+`IProjectWorkflowService` / `IManagedProcessRunner`, target resolution,
+one-operation-at-a-time, cancel, generation, dispose-before-language.
+
+**M2 complete** (2026-07-14). `project.build` / `project.cancel` on
+`ICommandRegistry`; `IProjectOutputService` + Output panel (`BottomPanelMode.Output`);
+show-on-build affordance; fixture `tests/fixtures/workflow-console/`.
+Evidence: [M2_MANUAL_EVIDENCE.md](M2_MANUAL_EVIDENCE.md).
 
 **Prerequisite:** Phase 10 complete (M7 closeout, 2026-07-14). Phase 8.3
 project context and Phase 8.2 command registry are the authoritative seams.
@@ -63,7 +67,9 @@ existing editor/document seams.
 - [x] Stale Phase 10 closeout dates (roadmap/architecture/library catalog)
       truth-synced to 2026-07-14
 - [x] `git diff --check` clean for M0 docs
-- [ ] Production implementation (starts at M1 — not this session)
+- [x] M1 production core (workflow service + runner + DI)
+- [x] M2 build command + structured Output (not M3+)
+- [ ] M3–M6 production implementation
 
 ## Locked Contracts (1–8)
 
@@ -234,8 +240,8 @@ auto-build, multi-language builds, or OutputType probing.
 | Milestone | Scope and independent completion condition | Focused verification | Commit boundary |
 |---|---|---|---|
 | **M0** ✅ | Planning/proof only. Lock contracts **1–8**; write this plan + `M0_DISCOVERY_PROOF.md`; truth-sync Phase 10 closeout dates; no production workflow code. | Live-code inspection recorded; `git diff --check` | `docs(phase-11): M0 project workflow plan` |
-| **M1** | UI-independent core only: target resolution, process runner, `IProjectWorkflowService` (one-at-a-time, cancel, generation, context-change cancel, structured outcomes including `RejectedConcurrent` / `RejectedContext`), dispose-before-language wiring, DI for workflow (+ runner). Profile helper may be internal. **No** Output/build-diags/test-results services, **no** product UI, **no** required `project.*` registration. | `ProjectTargetResolutionTests`, `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests` (include concurrent reject + dispose kill), DI resolve tests | `workflow: add project process orchestration core` |
-| **M2** | Build command + structured Output service + Output panel projection; register `project.build` / `project.cancel`; wire CanExecute. **Session risk:** if too large, split **M2a** (workflow Build API + Output service, no panel chrome) and **M2b** (bottom-panel mode + Output UI). Prefer the split over a rushed combined session. | `ProjectBuildCommandTests`, `ProjectOutputServiceTests`, Output VM tests; Linux smoke against `tests/fixtures/workflow-console/` | `workflow: build command and structured output` (or M2a/M2b commits) |
+| **M1** ✅ | UI-independent core only: target resolution, process runner, `IProjectWorkflowService` (one-at-a-time, cancel, generation, context-change cancel, structured outcomes including `RejectedConcurrent` / `RejectedContext`), dispose-before-language wiring, DI for workflow (+ runner). Profile helper may be internal. **No** Output/build-diags/test-results services, **no** product UI, **no** required `project.*` registration. | `ProjectTargetResolutionTests`, `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests` (include concurrent reject + dispose kill), DI resolve tests | `workflow: add project process orchestration core` |
+| **M2** ✅ | Build command + structured Output service + Output panel projection; register `project.build` / `project.cancel`; wire CanExecute. **Session risk:** if too large, split **M2a** (workflow Build API + Output service, no panel chrome) and **M2b** (bottom-panel mode + Output UI). Prefer the split over a rushed combined session. | `ProjectBuildCommandTests`, `ProjectOutputServiceTests`, Output VM tests; Linux smoke against `tests/fixtures/workflow-console/` | `workflow: build command and structured output` (or M2a/M2b commits) |
 | **M3** | Parse build diagnostics; `IBuildDiagnosticsService`; Problems **merge** (LSP + build by source) + navigation; clear **only** build diags on new build. **Acceptance must prove** LSP diagnostics survive build start/finish. | `BuildDiagnosticParserTests`, `BuildDiagnosticsServiceTests`, `ProblemsBuildProjectionTests` (LSP retention + build replace), navigation tests; Linux smoke: intentional CS error → Problems → jump | `workflow: build diagnostics in problems` |
 | **M4** | Run command for `CSharpProject` only (U1a); output reuse; cancel while running; library projects may `Failed` (U7). | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
 | **M5** | Test command + `ITestResultsService` + Test Results surface. Parse: console-first (U4). **Explicit exit condition:** if console parse fails, still report structured operation outcome from process exit code + raw Output lines; do not invent fake passed tests. TRX only if console is insufficient in the same milestone budget. | `ProjectTestCommandTests`, `TestResultsServiceTests`, VM tests; Linux smoke: pass + fail test | `workflow: test command and results surface` |
@@ -339,7 +345,6 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
 
 ## Exact Next Step
 
-**M1 — Project process orchestration core** only: target resolution, managed
-process runner, workflow service (one-at-a-time, cancel, generation,
-`RejectedConcurrent` / `RejectedContext`), dispose-before-language, DI for
-workflow (+ runner), focused tests. No Output/Problems/Test UI or services.
+**M3 — Build diagnostics in Problems** only: `IBuildDiagnosticsService`, MSBuild
+parse, Problems merge (LSP retained), navigation. Do not start Run/Test product UX
+(M4/M5) until M3 is complete unless explicitly re-planned.

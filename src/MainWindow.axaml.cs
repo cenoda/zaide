@@ -56,6 +56,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private TextBlock _welcomeText = null!;
     private TerminalTabHost _terminalTabHost = null!;
     private ProblemsPanel _problemsPanel = null!;
+    private OutputPanel _outputPanel = null!;
     private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
     private Border _bottomPanel = null!;
@@ -172,6 +173,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Phase 10 M3: Problems projection surface
             _problemsPanel.ViewModel = ViewModel.ProblemsViewModel;
 
+            // Phase 11 M2: structured output surface
+            _outputPanel.ViewModel = ViewModel.ProjectWorkflowViewModel;
+
             // Phase 10 M5: route definition/symbol feedback to the status bar.
             disposables.Add(_languageInputViewModel
                 .WhenAnyValue(x => x.FeedbackMessage)
@@ -283,14 +287,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     }
                 }));
 
-            // Phase 10 M3: switch bottom content between Terminal and Problems.
+            // Phase 10 M3 / Phase 11 M2: switch bottom content between Terminal, Problems, and Output.
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.BottomPanelMode)
                 .Subscribe(mode =>
                 {
-                    var showTerminal = mode == BottomPanelMode.Terminal;
-                    _terminalTabHost.IsVisible = showTerminal;
-                    _problemsPanel.IsVisible = !showTerminal;
-                    if (showTerminal && ViewModel!.IsBottomPanelVisible)
+                    _terminalTabHost.IsVisible = mode == BottomPanelMode.Terminal;
+                    _problemsPanel.IsVisible = mode == BottomPanelMode.Problems;
+                    _outputPanel.IsVisible = mode == BottomPanelMode.Output;
+                    if (mode == BottomPanelMode.Terminal && ViewModel!.IsBottomPanelVisible)
                     {
                         _terminalTabHost.FocusActiveSession();
                         _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
@@ -645,10 +649,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanelSplitter);
 
         // --- Bottom Panel (spans columns 3-5: center + editor only) ---
-        // Hosts Terminal and Problems surfaces with a small mode strip.
+        // Hosts Terminal, Problems, and Output surfaces with a small mode strip.
         var terminalTabHost = new TerminalTabHost(_settings);
         var problemsPanel = new ProblemsPanel { IsVisible = false };
+        var outputPanel = new OutputPanel { IsVisible = false };
         _problemsPanel = problemsPanel;
+        _outputPanel = outputPanel;
 
         var terminalTabButton = new Button
         {
@@ -682,11 +688,27 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ViewModel.SwitchToProblemsBottomCommand.Execute().Subscribe();
         };
 
+        var outputTabButton = new Button
+        {
+            Content = "Output",
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Cursor = new Cursor(StandardCursorType.Hand),
+        };
+        outputTabButton.Click += (_, _) =>
+        {
+            if (ViewModel is not null)
+                ViewModel.SwitchToOutputBottomCommand.Execute().Subscribe();
+        };
+
         var bottomModeStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXxs,
-            Children = { terminalTabButton, problemsTabButton },
+            Children = { terminalTabButton, problemsTabButton, outputTabButton },
         };
 
         var bottomContent = new Grid
@@ -696,11 +718,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
             },
-            Children = { bottomModeStrip, terminalTabHost, problemsPanel },
+            Children = { bottomModeStrip, terminalTabHost, problemsPanel, outputPanel },
         };
         Grid.SetRow(bottomModeStrip, 0);
         Grid.SetRow(terminalTabHost, 1);
         Grid.SetRow(problemsPanel, 1);
+        Grid.SetRow(outputPanel, 1);
 
         var bottomPanel = new Border
         {

@@ -90,7 +90,7 @@ public sealed class Phase83M4MainWindowViewModelProjectionTests
         var workspace = sp.GetRequiredService<Workspace>();
         var vm = new MainWindowViewModel(
             fileTree, editorTabs, terminalHost, panelHost, coordinator, router,
-            townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), workspace,
+            townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), workspace,
             projectContextService);
         // Use ImmediateScheduler so scheduled work executes synchronously
         // in unit test environments where AvaloniaScheduler is unavailable.
