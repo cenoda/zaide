@@ -150,21 +150,17 @@ reordering, so the current design is safer.
 
 ---
 
-## Open — F7: Dead `immediate` parameter in LanguageCompletionService
+## Resolved — F7: Dead `immediate` parameter in LanguageCompletionService
 
 **Severity:** Trivial
-**Opened:** 2026-07-14
+**Resolved:** 2026-07-14
 **Area:** `src/Services/LanguageCompletionService.cs`
 
-**Issue:** `ExecuteRequestAsync` has a `bool immediate` parameter that is
-explicitly discarded (`_ = immediate;`) and never used. This is leftover from
-an earlier design iteration that may have intended to differentiate explicit vs.
-automatic trigger LSP context kinds.
-
-**Suggested fix:** Remove the unused parameter from the method signature and
-all call sites. Alternatively, implement the intended differentiation by passing
-`CompletionTriggerKind.Invoked` for explicit and `CompletionTriggerKind.TriggerCharacter`
-for automatic triggers to the LSP server.
+**Fix:** Removed the unused `bool immediate` parameter from the private methods
+`BeginRequestLocked` and `ExecuteRequestAsync`, along with the
+`_ = immediate;` discard. The two call sites (`RequestExplicit` and
+`DebouncedAutomaticAsync`) now pass only `filePath` and `caretOffset`.
+No behavioral change.
 
 ---
 

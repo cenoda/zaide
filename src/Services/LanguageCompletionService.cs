@@ -62,7 +62,7 @@ public sealed class LanguageCompletionService : ILanguageCompletionService
             return;
 
         CancelDebounceLocked();
-        BeginRequestLocked(filePath, caretOffset, immediate: true);
+        BeginRequestLocked(filePath, caretOffset);
     }
 
     /// <inheritdoc />
@@ -252,10 +252,10 @@ public sealed class LanguageCompletionService : ILanguageCompletionService
             return;
         }
 
-        BeginRequestLocked(filePath, caretOffset, immediate: false);
+        BeginRequestLocked(filePath, caretOffset);
     }
 
-    private void BeginRequestLocked(string filePath, int caretOffset, bool immediate)
+    private void BeginRequestLocked(string filePath, int caretOffset)
     {
         if (_disposed || string.IsNullOrWhiteSpace(filePath))
             return;
@@ -342,8 +342,7 @@ public sealed class LanguageCompletionService : ILanguageCompletionService
             document.Content,
             caretOffset,
             session,
-            requestToken,
-            immediate));
+            requestToken));
     }
 
     private async Task ExecuteRequestAsync(
@@ -354,11 +353,8 @@ public sealed class LanguageCompletionService : ILanguageCompletionService
         string documentText,
         int caretOffset,
         ILanguageServerSession session,
-        CancellationToken cancellationToken,
-        bool immediate)
+        CancellationToken cancellationToken)
     {
-        _ = immediate;
-
         try
         {
             var (line, character) = LspUtf16PositionMapper.GetPosition(documentText, caretOffset);
