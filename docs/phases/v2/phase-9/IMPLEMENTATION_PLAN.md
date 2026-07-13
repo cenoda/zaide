@@ -356,6 +356,65 @@ All five manual checks passed on Linux desktop:
 | `src/MainWindow.axaml.cs` | Modified | Wire FoldingEditor on activation, clear on deactivation |
 | `tests/Zaide.Tests/ViewModels/EditorFoldingTests.cs` | New | 33 tests covering algorithm, commands, and safety contracts |
 
+## M5a Completion Record
+
+### Registered Commands
+
+| ID | Display Name | Category | Default Gesture(s) | Availability |
+|---|---|---|---|---|
+| `tab.next` | Next Tab | Tab | Ctrl+Tab | At least 2 open tabs |
+| `tab.previous` | Previous Tab | Tab | Ctrl+Shift+Tab | At least 2 open tabs |
+| `tab.close` | Close Tab | Tab | Ctrl+W, Ctrl+F4 | At least 1 open tab |
+| `tab.closeOthers` | Close Other Tabs | Tab | (unbound) | At least 2 open tabs |
+| `tab.closeAll` | Close All Tabs | Tab | (unbound) | At least 1 open tab |
+
+### Navigation Policy
+
+- **TabNext** moves to `(currentIndex + 1) % Count`. Wraps from last to first.
+- **TabPrevious** moves to `(currentIndex - 1 + Count) % Count`. Wraps from first to last.
+- Only `ActiveTab` and `Workspace.ActiveDocument` change; tab order, content, and dirty state are preserved.
+- Available only when `OpenTabs.Count >= 2`.
+
+### Close Active Policy
+
+- Delegates to `CloseTabAsync(ActiveTab)` which uses the existing unsaved-change confirmation contract (`ConfirmClose` interaction).
+- **Save:** Calls `tab.SaveCommand.Execute()`; close proceeds only on success.
+- **Discard:** Closes without saving.
+- **Cancel or save failure:** Tab is left entirely unchanged (dirty state, content, active-tab status, workspace document).
+- **Neighbor on success:** next tab at the removed index; otherwise previous tab; `null` when no tabs remain.
+
+### Close Others Policy
+
+- **Order:** Non-active tabs processed in visual (left-to-right, ascending index) order. The list is captured once before iteration.
+- **Partial completion:** If a dirty tab's confirmation returns cancel or save-failure, iteration stops immediately. Already-closed tabs remain closed. Not-yet-processed tabs are untouched.
+- **Active tab:** Never closed. `Workspace.ActiveDocument` always equals the preserved active tab's `Document` throughout.
+- Available only when `OpenTabs.Count >= 2`.
+
+### Close All Policy
+
+- **Order:** Tabs processed in reverse index order (right-to-left, highest index first). This is deterministic and avoids index-shifting issues during iteration.
+- **Partial completion:** If a dirty tab's confirmation returns cancel or save-failure, iteration stops immediately. Already-closed tabs remain closed. The next still-open tab becomes active deterministically via `CloseTabAsync`'s neighbor selection.
+- **Full completion:** When all tabs close successfully, `ActiveTab` and `Workspace.ActiveDocument` are `null`.
+- Available only when `ActiveTab` is non-null.
+
+### M5a Verification Results
+
+| Gate | Result |
+|---|---|
+| M5a focused tests (`TabLifecycle` + `TabCommandRegistration`) | ✅ 54/54 passed |
+| `dotnet build Zaide.slnx --no-restore` | ✅ 0 errors, 0 warnings |
+| `dotnet test Zaide.slnx --no-build` (full regression) | ✅ 1442 passed, 0 failed, 0 skipped |
+| `git diff --check` | ✅ clean |
+| `git status --short` | 2 modified, 2 new files |
+
+### Files Changed
+
+| File | Status | Purpose |
+|---|---|---|
+| `src/ViewModels/EditorTabViewModel.cs` | Modified | Added 5 tab lifecycle commands, availability observables, registrations, and private execution methods |
+| `tests/Zaide.Tests/ViewModels/EditorTabViewModelTabLifecycleTests.cs` | New | 30 behavioral tests for navigation, close-active, close-others, close-all, workspace tracking, and content/dirty preservation |
+| `tests/Zaide.Tests/Services/TabCommandRegistrationTests.cs` | New | 16 registration tests for metadata, gestures, exactly-once, availability, duplicate protection, and coexistence |
+
 
 ## Rollback Plan
 

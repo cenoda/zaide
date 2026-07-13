@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -114,6 +115,45 @@ public class EditorTabViewModel : ReactiveObject
     /// </summary>
     public ICommand UnfoldAllCommand { get; }
 
+    // ── Phase 9 M5a: Tab Lifecycle Commands ─────────────────────────────
+
+    /// <summary>
+    /// Navigates to the next tab. Wraps from last to first.
+    /// Availability: at least 2 open tabs. Default gesture: Ctrl+Tab.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> TabNextCommand { get; }
+
+    /// <summary>
+    /// Navigates to the previous tab. Wraps from first to last.
+    /// Availability: at least 2 open tabs. Default gesture: Ctrl+Shift+Tab.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> TabPreviousCommand { get; }
+
+    /// <summary>
+    /// Closes the active tab. Uses existing unsaved-change confirmation.
+    /// Availability: at least 1 open tab. Default gestures: Ctrl+W, Ctrl+F4.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> TabCloseActiveCommand { get; }
+
+    /// <summary>
+    /// Closes all tabs except the active tab. Preserves the active tab.
+    /// Availability: at least 2 open tabs. Default gesture: unbound.
+    /// Processes non-active tabs in left-to-right (ascending index) order.
+    /// On cancel or save failure, stops immediately; already-closed tabs
+    /// remain closed and not-yet-processed tabs are untouched.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> TabCloseOthersCommand { get; }
+
+    /// <summary>
+    /// Closes all open tabs.
+    /// Availability: at least 1 open tab. Default gesture: unbound.
+    /// Processes tabs in reverse index order (right-to-left).
+    /// On cancel or save failure, stops immediately; already-closed tabs
+    /// remain closed; the next still-open tab becomes active deterministically.
+    /// If all close successfully, ActiveTab and Workspace.ActiveDocument are null.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> TabCloseAllCommand { get; }
+
     public EditorTabViewModel(IServiceProvider services, IFileService fileService, Workspace workspace,
         ICommandRegistry? commandRegistry = null)
     {
@@ -143,6 +183,31 @@ public class EditorTabViewModel : ReactiveObject
             () => _foldingEditor?.UnfoldAll(),
             canFold);
 
+        // Phase 9 M5a: tab lifecycle commands.
+        // Availability observables: tab count (from collection changes) and
+        // active-tab non-null.
+
+        var tabCountChanged = Observable.FromEventPattern<
+            NotifyCollectionChangedEventHandler,
+            NotifyCollectionChangedEventArgs>(
+            h => OpenTabs.CollectionChanged += h,
+            h => OpenTabs.CollectionChanged -= h)
+            .Select(_ => OpenTabs.Count)
+            .StartWith(OpenTabs.Count);
+
+        var hasMultipleTabs = tabCountChanged.Select(c => c >= 2);
+        var hasActiveTab = this.WhenAnyValue(x => x.ActiveTab)
+            .Select(tab => tab is not null);
+
+        TabNextCommand = ReactiveCommand.Create(TabNext, hasMultipleTabs);
+        TabPreviousCommand = ReactiveCommand.Create(TabPrevious, hasMultipleTabs);
+        TabCloseActiveCommand = ReactiveCommand.CreateFromTask(
+            TabCloseActiveAsync, hasActiveTab);
+        TabCloseOthersCommand = ReactiveCommand.CreateFromTask(
+            TabCloseOthersAsync, hasMultipleTabs);
+        TabCloseAllCommand = ReactiveCommand.CreateFromTask(
+            TabCloseAllAsync, hasActiveTab);
+
         // Register folding commands with the same Phase 8.2 lifecycle.
         // All three are unbound (no default gesture).
         commandRegistry?.Register(new CommandDescriptor(
@@ -154,6 +219,137 @@ public class EditorTabViewModel : ReactiveObject
         commandRegistry?.Register(new CommandDescriptor(
             "editor.unfoldAll", "Unfold All", "Editor",
             Array.Empty<string>(), UnfoldAllCommand));
+
+        // Phase 9 M5a: register tab lifecycle commands.
+        // M0-locked IDs, categories, gestures, and availability.
+        commandRegistry?.Register(new CommandDescriptor(
+            "tab.next", "Next Tab", "Tab",
+            new[] { "Ctrl+Tab" }, TabNextCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "tab.previous", "Previous Tab", "Tab",
+            new[] { "Ctrl+Shift+Tab" }, TabPreviousCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "tab.close", "Close Tab", "Tab",
+            new[] { "Ctrl+W", "Ctrl+F4" }, TabCloseActiveCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "tab.closeOthers", "Close Other Tabs", "Tab",
+            Array.Empty<string>(), TabCloseOthersCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "tab.closeAll", "Close All Tabs", "Tab",
+            Array.Empty<string>(), TabCloseAllCommand));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M5a: Tab Lifecycle Command Executions
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Navigates to the next tab. Wraps deterministically from last to first.
+    /// Changes only ActiveTab; preserves tab order, content, and dirty state.
+    /// Guarded by hasMultipleTabs — caller must verify count >= 2.
+    /// </summary>
+    private void TabNext()
+    {
+        if (ActiveTab is null) return;
+        var index = OpenTabs.IndexOf(ActiveTab);
+        if (index < 0) return;
+        ActiveTab = OpenTabs[(index + 1) % OpenTabs.Count];
+    }
+
+    /// <summary>
+    /// Navigates to the previous tab. Wraps deterministically from first to last.
+    /// Changes only ActiveTab; preserves tab order, content, and dirty state.
+    /// Guarded by hasMultipleTabs — caller must verify count >= 2.
+    /// </summary>
+    private void TabPrevious()
+    {
+        if (ActiveTab is null) return;
+        var index = OpenTabs.IndexOf(ActiveTab);
+        if (index < 0) return;
+        ActiveTab = OpenTabs[(index - 1 + OpenTabs.Count) % OpenTabs.Count];
+    }
+
+    /// <summary>
+    /// Closes the active tab. Delegates to CloseTabAsync, which handles
+    /// dirty confirmation, save-on-request, neighbor selection, and
+    /// workspace cleanup. Guarded by hasActiveTab.
+    /// </summary>
+    private async Task TabCloseActiveAsync()
+    {
+        if (ActiveTab is null) return;
+        await CloseTabAsync(ActiveTab);
+    }
+
+    /// <summary>
+    /// Closes all tabs except the active tab.
+    ///
+    /// <para><b>Order:</b> Processes non-active tabs in left-to-right
+    /// (ascending index / visual) order. The list is captured once before
+    /// iteration, so index shifts from removal do not affect which tabs
+    /// are visited.</para>
+    ///
+    /// <para><b>Partial completion:</b> If a dirty tab's confirmation
+    /// returns cancel or save-failure, iteration stops immediately. All
+    /// already-closed tabs remain closed. Not-yet-processed tabs are
+    /// untouched. The active tab is preserved throughout.</para>
+    ///
+    /// <para><b>Active tab:</b> Never closed. Workspace.ActiveDocument
+    /// always equals the preserved active tab's Document.</para>
+    ///
+    /// Guarded by hasMultipleTabs — caller must verify count >= 2.
+    /// </summary>
+    private async Task TabCloseOthersAsync()
+    {
+        var active = ActiveTab;
+        if (active is null) return;
+
+        // Capture non-active tabs in visual (left-to-right) order.
+        var others = OpenTabs.Where(t => !ReferenceEquals(t, active)).ToList();
+
+        foreach (var tab in others)
+        {
+            await CloseTabAsync(tab);
+
+            // If CloseTabAsync did NOT remove the tab (cancel or save
+            // failure), stop immediately. Already-closed tabs remain closed.
+            if (OpenTabs.Contains(tab))
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Closes all open tabs.
+    ///
+    /// <para><b>Order:</b> Processes tabs in reverse index order
+    /// (right-to-left, highest index first). This is deterministic and
+    /// avoids index-shifting complications during iteration.</para>
+    ///
+    /// <para><b>Partial completion:</b> If a dirty tab's confirmation
+    /// returns cancel or save-failure, iteration stops immediately. All
+    /// already-closed tabs remain closed. The next still-open tab becomes
+    /// active deterministically via CloseTabAsync's neighbor selection.</para>
+    ///
+    /// <para><b>Full completion:</b> When all tabs close successfully,
+    /// ActiveTab and Workspace.ActiveDocument are null.</para>
+    ///
+    /// Guarded by hasActiveTab — caller must verify at least one tab exists.
+    /// </summary>
+    private async Task TabCloseAllAsync()
+    {
+        if (OpenTabs.Count == 0) return;
+
+        // Process in reverse index order (right-to-left) so index shifts
+        // from earlier removals never affect remaining tabs' positions.
+        while (OpenTabs.Count > 0)
+        {
+            var tab = OpenTabs[^1];
+            await CloseTabAsync(tab);
+
+            // If CloseTabAsync did NOT remove the tab (cancel or save
+            // failure), stop immediately.
+            if (OpenTabs.Contains(tab))
+                return;
+        }
     }
 
     /// <summary>
