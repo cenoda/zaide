@@ -9,6 +9,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 
+using Zaide.Tests;
+
 namespace Zaide.Tests.ViewModels;
 
 /// <summary>
@@ -85,9 +87,10 @@ public sealed class Phase83M4MainWindowViewModelProjectionTests
             new SourceControlSnapshotOrchestrator(git.Object),
             new Workspace(), diff.Object, mutation.Object, git.Object);
 
+        var workspace = sp.GetRequiredService<Workspace>();
         var vm = new MainWindowViewModel(
             fileTree, editorTabs, terminalHost, panelHost, coordinator, router,
-            townhall, sourceControl, sp.GetRequiredService<Workspace>(),
+            townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), workspace,
             projectContextService);
         // Use ImmediateScheduler so scheduled work executes synchronously
         // in unit test environments where AvaloniaScheduler is unavailable.

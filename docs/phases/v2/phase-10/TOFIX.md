@@ -1,6 +1,25 @@
 # Phase 10: C# Language Intelligence — TOFIX
 
-**Status:** M2 remediation complete (2026-07-13). No open findings.
+**Status:** M3 complete (2026-07-13). No open findings.
+
+---
+
+## Resolved — M3 StreamJsonRpc LSP params shape (2026-07-13)
+
+**Symptom:** Real csharp-ls initialize failed with
+`RemoteInvocationException: Internal error: JsonSerializationException` when
+driven through production `CsharpLsSession` (unit tests used fakes and did not
+catch this). Root cause: StreamJsonRpc `InvokeWithCancellationAsync(...,
+object[])` / positional `NotifyAsync` sent JSON-RPC `params` as an array, while
+LSP requires a single parameter object.
+
+**Fix:** Use `InvokeWithParameterObjectAsync` for `initialize` and
+`NotifyWithParameterObjectAsync` for document notifications; register
+`textDocument/publishDiagnostics` with
+`UseSingleObjectParameterDeserialization = true`.
+
+**Evidence:** `docs/phases/v2/phase-10/M3_MANUAL_EVIDENCE.md` and
+`tools/Phase10M3DiagnosticsSmoke/`.
 
 ---
 
@@ -20,4 +39,4 @@ Regression test: `StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync` in
 
 ---
 
-*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-13 (M2 remediation).*
+*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-13 (M3 complete).*

@@ -20,6 +20,8 @@ using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
 
+using Zaide.Tests;
+
 namespace Zaide.Tests.Services;
 
 /// <summary>
@@ -75,6 +77,7 @@ public sealed class M9bSettingsDrivenRefreshTests
                 new Mock<IAgentExecutionCoordinator>().Object),
             new TownhallViewModel(new TownhallState()),
             CreateSourceControlViewModel(),
+            TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<Workspace>()),
             sp.GetRequiredService<Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
 

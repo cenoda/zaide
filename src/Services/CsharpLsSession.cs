@@ -39,6 +39,9 @@ internal sealed class CsharpLsSession : ILanguageServerSession
     /// <inheritdoc />
     public event Action<long>? ProcessExited;
 
+    /// <inheritdoc />
+    public event Action<LanguageServerPublishDiagnostics>? DiagnosticsPublished;
+
     /// <summary>
     /// Launches the process and completes LSP initialize/initialized.
     /// </summary>
@@ -100,18 +103,32 @@ internal sealed class CsharpLsSession : ILanguageServerSession
             formatter);
 
         _rpc = new JsonRpc(handler);
+        // Register server→client notifications before listening so publishDiagnostics
+        // is never dropped as an unknown method during startup races.
+        // UseSingleObjectParameterDeserialization is required because LSP sends
+        // params as one JSON object (not a positional array).
+        _rpc.AddLocalRpcMethod(
+            typeof(CsharpLsSession).GetMethod(
+                nameof(OnPublishDiagnostics),
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!,
+            this,
+            new JsonRpcMethodAttribute("textDocument/publishDiagnostics")
+            {
+                UseSingleObjectParameterDeserialization = true,
+            });
         _rpc.StartListening();
         _rpc.Disconnected += (_, e) => SignalProcessExited();
 
         var workspaceUri = LanguageDocumentUri.FromPath(_options.WorkspaceFolderPath);
         var initParams = BuildInitializeParams(workspaceUri, _options);
 
-        _ = await _rpc.InvokeWithCancellationAsync<JsonElement?>(
+        // LSP initialize params are a single object (not a positional array).
+        _ = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
             "initialize",
-            new object?[] { initParams },
+            initParams,
             cancellationToken).ConfigureAwait(false);
 
-        await _rpc.NotifyAsync("initialized", new { }).ConfigureAwait(false);
+        await _rpc.NotifyWithParameterObjectAsync("initialized", new { }).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -129,7 +146,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
                 "shutdown",
                 Array.Empty<object?>(),
                 timeoutCts.Token).ConfigureAwait(false);
-            await _rpc.NotifyAsync("exit", new { }).ConfigureAwait(false);
+            await _rpc.NotifyAsync("exit").ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -165,7 +182,8 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         if (_disposed || _rpc is null)
             return Task.CompletedTask;
 
-        return _rpc.NotifyAsync(
+        cancellationToken.ThrowIfCancellationRequested();
+        return _rpc.NotifyWithParameterObjectAsync(
             "textDocument/didOpen",
             new
             {
@@ -176,8 +194,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
                     version,
                     text,
                 },
-            },
-            cancellationToken);
+            });
     }
 
     /// <inheritdoc />
@@ -190,14 +207,14 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         if (_disposed || _rpc is null)
             return Task.CompletedTask;
 
-        return _rpc.NotifyAsync(
+        cancellationToken.ThrowIfCancellationRequested();
+        return _rpc.NotifyWithParameterObjectAsync(
             "textDocument/didChange",
             new
             {
                 textDocument = new { uri = documentUri, version },
                 contentChanges = new object[] { new { text } },
-            },
-            cancellationToken);
+            });
     }
 
     /// <inheritdoc />
@@ -208,10 +225,10 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         if (_disposed || _rpc is null)
             return Task.CompletedTask;
 
-        return _rpc.NotifyAsync(
+        cancellationToken.ThrowIfCancellationRequested();
+        return _rpc.NotifyWithParameterObjectAsync(
             "textDocument/didClose",
-            new { textDocument = new { uri = documentUri } },
-            cancellationToken);
+            new { textDocument = new { uri = documentUri } });
     }
 
     /// <inheritdoc />
@@ -293,6 +310,162 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         }
     }
 
+    /// <summary>
+    /// StreamJsonRpc local target for <c>textDocument/publishDiagnostics</c>.
+    /// </summary>
+    private void OnPublishDiagnostics(JsonElement @params) => HandlePublishDiagnostics(@params);
+
+    private void HandlePublishDiagnostics(JsonElement @params)
+    {
+        try
+        {
+            if (@params.ValueKind != JsonValueKind.Object)
+                return;
+
+            if (!@params.TryGetProperty("uri", out var uriElement) ||
+                uriElement.ValueKind != JsonValueKind.String)
+                return;
+
+            var uri = uriElement.GetString();
+            if (string.IsNullOrWhiteSpace(uri))
+                return;
+
+            int? version = null;
+            if (@params.TryGetProperty("version", out var versionElement) &&
+                versionElement.ValueKind == JsonValueKind.Number &&
+                versionElement.TryGetInt32(out var versionValue))
+            {
+                version = versionValue;
+            }
+
+            var payloads = new List<LanguageServerDiagnosticPayload>();
+            if (@params.TryGetProperty("diagnostics", out var diagnosticsElement) &&
+                diagnosticsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in diagnosticsElement.EnumerateArray())
+                {
+                    if (TryParseDiagnosticPayload(item, out var payload))
+                        payloads.Add(payload);
+                }
+            }
+
+            var notification = new LanguageServerPublishDiagnostics(
+                Generation,
+                uri,
+                version,
+                payloads);
+
+            try
+            {
+                DiagnosticsPublished?.Invoke(notification);
+            }
+            catch
+            {
+                // Observers must not tear down the session.
+            }
+        }
+        catch
+        {
+            // Malformed notifications are ignored; the session stays alive.
+        }
+    }
+
+    private static bool TryParseDiagnosticPayload(
+        JsonElement item,
+        out LanguageServerDiagnosticPayload payload)
+    {
+        payload = null!;
+
+        if (item.ValueKind != JsonValueKind.Object)
+            return false;
+
+        if (!item.TryGetProperty("message", out var messageElement) ||
+            messageElement.ValueKind != JsonValueKind.String)
+            return false;
+
+        var message = messageElement.GetString();
+        if (string.IsNullOrWhiteSpace(message))
+            return false;
+
+        if (!item.TryGetProperty("range", out var rangeElement) ||
+            !TryParseRange(rangeElement, out var range))
+            return false;
+
+        var severity = LanguageDiagnosticSeverity.Error;
+        if (item.TryGetProperty("severity", out var severityElement) &&
+            severityElement.ValueKind == JsonValueKind.Number &&
+            severityElement.TryGetInt32(out var severityValue) &&
+            severityValue is >= 1 and <= 4)
+        {
+            severity = (LanguageDiagnosticSeverity)severityValue;
+        }
+
+        string? code = null;
+        if (item.TryGetProperty("code", out var codeElement))
+        {
+            code = codeElement.ValueKind switch
+            {
+                JsonValueKind.String => codeElement.GetString(),
+                JsonValueKind.Number => codeElement.GetRawText(),
+                _ => null,
+            };
+        }
+
+        string? source = null;
+        if (item.TryGetProperty("source", out var sourceElement) &&
+            sourceElement.ValueKind == JsonValueKind.String)
+        {
+            source = sourceElement.GetString();
+        }
+
+        payload = new LanguageServerDiagnosticPayload(
+            severity,
+            message,
+            code,
+            source,
+            range);
+        return true;
+    }
+
+    private static bool TryParseRange(JsonElement rangeElement, out LanguageDiagnosticRange range)
+    {
+        range = default;
+        if (rangeElement.ValueKind != JsonValueKind.Object)
+            return false;
+
+        if (!rangeElement.TryGetProperty("start", out var startElement) ||
+            !rangeElement.TryGetProperty("end", out var endElement))
+            return false;
+
+        if (!TryParsePosition(startElement, out var startLine, out var startCharacter) ||
+            !TryParsePosition(endElement, out var endLine, out var endCharacter))
+            return false;
+
+        range = new LanguageDiagnosticRange(startLine, startCharacter, endLine, endCharacter);
+        return true;
+    }
+
+    private static bool TryParsePosition(JsonElement positionElement, out int line, out int character)
+    {
+        line = 0;
+        character = 0;
+
+        if (positionElement.ValueKind != JsonValueKind.Object)
+            return false;
+
+        if (!positionElement.TryGetProperty("line", out var lineElement) ||
+            lineElement.ValueKind != JsonValueKind.Number ||
+            !lineElement.TryGetInt32(out line))
+            return false;
+
+        if (!positionElement.TryGetProperty("character", out var characterElement) ||
+            characterElement.ValueKind != JsonValueKind.Number ||
+            !characterElement.TryGetInt32(out character))
+            return false;
+
+        return true;
+    }
+
     private static Dictionary<string, object?> BuildInitializeParams(
         string workspaceUri,
         LanguageServerStartOptions options)
@@ -312,6 +485,17 @@ internal sealed class CsharpLsSession : ILanguageServerSession
                 ["general"] = new
                 {
                     positionEncodings = new[] { "utf-16", "utf-8" },
+                },
+                ["textDocument"] = new Dictionary<string, object?>
+                {
+                    ["publishDiagnostics"] = new { relatedInformation = false },
+                    ["synchronization"] = new
+                    {
+                        dynamicRegistration = false,
+                        willSave = false,
+                        willSaveWaitUntil = false,
+                        didSave = false,
+                    },
                 },
                 ["workspace"] = new Dictionary<string, object?>
                 {

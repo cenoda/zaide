@@ -78,6 +78,10 @@ class Program
         services.AddSingleton<ILanguageSessionService, LanguageSessionService>();
         services.AddSingleton<ILanguageDocumentBridge, LanguageDocumentBridge>();
 
+        // Phase 10 M3: structured diagnostics + Problems projection.
+        services.AddSingleton<ILanguageDiagnosticsService, LanguageDiagnosticsService>();
+        services.AddSingleton<ProblemsViewModel>();
+
         services.AddSingleton(_ =>
         {
             var client = new HttpClient();

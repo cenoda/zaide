@@ -23,14 +23,26 @@ public enum LeftPanelMode
     SourceControl
 }
 
+/// <summary>
+/// Defines which surface is shown in the bottom panel content area.
+/// </summary>
+public enum BottomPanelMode
+{
+    Terminal,
+    Problems
+}
+
 public class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private bool _isBottomPanelVisible;
     private string? _statusText;
     private CompositeDisposable? _disposables;
     private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
+    private BottomPanelMode _bottomPanelMode = BottomPanelMode.Terminal;
     private bool _isExplorerMode = true;
     private bool _isSourceControlMode;
+    private bool _isTerminalBottomMode = true;
+    private bool _isProblemsBottomMode;
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
@@ -80,6 +92,29 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _isSourceControlMode, value);
     }
 
+    public BottomPanelMode BottomPanelMode
+    {
+        get => _bottomPanelMode;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _bottomPanelMode, value);
+            IsTerminalBottomMode = value == BottomPanelMode.Terminal;
+            IsProblemsBottomMode = value == BottomPanelMode.Problems;
+        }
+    }
+
+    public bool IsTerminalBottomMode
+    {
+        get => _isTerminalBottomMode;
+        private set => this.RaiseAndSetIfChanged(ref _isTerminalBottomMode, value);
+    }
+
+    public bool IsProblemsBottomMode
+    {
+        get => _isProblemsBottomMode;
+        private set => this.RaiseAndSetIfChanged(ref _isProblemsBottomMode, value);
+    }
+
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
@@ -88,6 +123,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToExplorerCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToSourceControlCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToTerminalBottomCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToProblemsBottomCommand { get; }
 
     /// <summary>
     /// M3 (Phase 8.1.3): Closes the open folder. Enabled only while a folder is open.
@@ -103,6 +140,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public IAgentRouter AgentRouter { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
+    public ProblemsViewModel ProblemsViewModel { get; }
 
     /// <summary>
     /// M4: Authoritative UI-thread projection of the current project-context
@@ -135,6 +173,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 IAgentRouter agentRouter,
                                 TownhallViewModel townhallViewModel,
                                 SourceControlViewModel sourceControlViewModel,
+                                ProblemsViewModel problemsViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
                                 ICommandRegistry? commandRegistry = null)
@@ -147,6 +186,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         AgentRouter = agentRouter;
         TownhallViewModel = townhallViewModel;
         SourceControlViewModel = sourceControlViewModel;
+        ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         _workspace = workspace;
         _projectContextService = projectContextService;
         CurrentProjectContext = projectContextService.Current;
@@ -171,6 +211,16 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         });
         SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
         SwitchToSourceControlCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.SourceControl; });
+        SwitchToTerminalBottomCommand = ReactiveCommand.Create(() =>
+        {
+            BottomPanelMode = BottomPanelMode.Terminal;
+            IsBottomPanelVisible = true;
+        });
+        SwitchToProblemsBottomCommand = ReactiveCommand.Create(() =>
+        {
+            BottomPanelMode = BottomPanelMode.Problems;
+            IsBottomPanelVisible = true;
+        });
 
         // M3 (Phase 8.1.3): Close-folder command. Enabled only while a folder is open.
         // Calls SetRootPath(null) directly. The CloseFolderRequested interaction
@@ -194,6 +244,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             "workspace.closeFolder", "Close Folder", "Workspace", Array.Empty<string>(), CloseFolderCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "view.toggleBottomPanel", "Toggle Bottom Panel", "View", new[] { "Ctrl+Oem3", "Ctrl+J" }, ToggleBottomPanelCommand));
+        // Phase 10 M3: Problems is reached from the bottom-panel mode strip.
+        // Command-registry registration is deferred until a deliberate palette/keybinding milestone.
     }
 
     /// <summary>
@@ -205,6 +257,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         if (_disposables is not null) return;
 
         _disposables = new CompositeDisposable();
+
+        // Phase 10 M3: start Problems projection once the window is active.
+        ProblemsViewModel.Activate();
+        _disposables.Add(ProblemsViewModel);
 
         // Keep the shared workspace + Source Control in sync with whichever
         // folder is loaded in the file tree, regardless of the open-folder entry

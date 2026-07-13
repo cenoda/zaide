@@ -23,6 +23,12 @@ public interface ILanguageServerSession : IAsyncDisposable
     /// </summary>
     event Action<long>? ProcessExited;
 
+    /// <summary>
+    /// Raised when the server sends <c>textDocument/publishDiagnostics</c>.
+    /// Handlers must not throw; generation is the session that received the notification.
+    /// </summary>
+    event Action<LanguageServerPublishDiagnostics>? DiagnosticsPublished;
+
     /// <summary>Graceful LSP <c>shutdown</c> followed by <c>exit</c>.</summary>
     Task ShutdownAsync(CancellationToken cancellationToken);
 

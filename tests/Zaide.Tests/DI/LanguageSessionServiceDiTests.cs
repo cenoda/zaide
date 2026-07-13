@@ -5,6 +5,7 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.Services;
+using Zaide.ViewModels;
 
 namespace Zaide.Tests.DI;
 
@@ -57,5 +58,26 @@ public sealed class LanguageSessionServiceDiTests
 
         Assert.NotNull(bridge);
         Assert.IsType<LanguageDocumentBridge>(bridge);
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesLanguageDiagnosticsService()
+    {
+        using var provider = BuildProvider();
+
+        var diagnostics = provider.GetRequiredService<ILanguageDiagnosticsService>();
+
+        Assert.NotNull(diagnostics);
+        Assert.IsType<LanguageDiagnosticsService>(diagnostics);
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesProblemsViewModel()
+    {
+        using var provider = BuildProvider();
+
+        var problems = provider.GetRequiredService<ProblemsViewModel>();
+
+        Assert.NotNull(problems);
     }
 }

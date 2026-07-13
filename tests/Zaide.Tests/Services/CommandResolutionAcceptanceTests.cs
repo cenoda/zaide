@@ -13,6 +13,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 
+using Zaide.Tests;
+
 namespace Zaide.Tests.Services;
 
 /// <summary>
@@ -462,7 +464,8 @@ public sealed class CommandResolutionAcceptanceTests
 
         _ = new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
-            router, townhallViewModel, scViewModel, workspace,
+            router, townhallViewModel, scViewModel,
+            TestProblemsFactory.Create(workspace, editorTabs), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }
 

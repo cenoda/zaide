@@ -27,6 +27,8 @@ using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
 
+using Zaide.Tests;
+
 namespace Zaide.Tests.Views;
 
 public sealed class M5SettingsUiTests
@@ -120,8 +122,9 @@ public sealed class M5SettingsUiTests
             new Workspace(), diff.Object, mutation.Object, git.Object);
         var ctxMock = new Mock<IProjectContextService>(MockBehavior.Loose);
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
+        var workspace = provider.GetRequiredService<Workspace>();
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
-            sourceControl, provider.GetRequiredService<Workspace>(), ctxMock.Object);
+            sourceControl, TestProblemsFactory.Create(workspace, editorTabs), workspace, ctxMock.Object);
         vm.Activate();
         return vm;
     }

@@ -36,6 +36,8 @@ public partial class App : Application
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
             _ = Services.GetRequiredService<ILanguageDocumentBridge>();
+            // Phase 10 M3: resolve diagnostics ownership after the document bridge.
+            _ = Services.GetRequiredService<ILanguageDiagnosticsService>();
 
             desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm) { ViewModel = vm };
 
@@ -47,7 +49,8 @@ public partial class App : Application
                 // so its WorkspaceFolderChanged subscription is released and any
                 // in-flight work is invalidated. App does not rely on implicit
                 // root-provider disposal.
-                // Tear down document sync before killing the language session transport.
+                // Tear down diagnostics/document sync before killing the language session.
+                Services.GetRequiredService<ILanguageDiagnosticsService>().Dispose();
                 Services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
                 Services.GetRequiredService<ILanguageSessionService>().Dispose();
                 Services.GetRequiredService<IProjectContextService>().Dispose();

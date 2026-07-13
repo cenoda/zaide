@@ -45,6 +45,50 @@ public sealed class LanguageDocumentBridge : ILanguageDocumentBridge
     }
 
     /// <inheritdoc />
+    public bool TryGetOpenDocument(string documentUri, out LanguageTrackedDocumentInfo info)
+    {
+        info = default;
+        if (_disposed || string.IsNullOrWhiteSpace(documentUri))
+            return false;
+
+        var normalized = LanguageDocumentUri.Normalize(documentUri);
+
+        // Snapshot under the gate so version/generation reads are coherent with
+        // in-flight didOpen / didChange / generation advances.
+        _gate.Wait();
+        try
+        {
+            if (_disposed)
+                return false;
+
+            foreach (var tracked in _tracked.Values)
+            {
+                if (!string.Equals(tracked.Uri, normalized, StringComparison.Ordinal))
+                    continue;
+
+                if (!tracked.OpenSentForGeneration || tracked.OpenSentGeneration != _syncGeneration)
+                    return false;
+
+                if (tracked.Version < 1)
+                    return false;
+
+                info = new LanguageTrackedDocumentInfo(
+                    tracked.Uri,
+                    tracked.Document.FilePath,
+                    tracked.Version,
+                    _syncGeneration);
+                return true;
+            }
+
+            return false;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_disposed)

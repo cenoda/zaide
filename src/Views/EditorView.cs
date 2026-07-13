@@ -209,6 +209,16 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             _textEditor.TextArea.Caret.PositionChanged += OnCaretChanged;
             d.Add(Disposable.Create(() => _textEditor.TextArea.Caret.PositionChanged -= OnCaretChanged));
 
+            // Phase 10 M3: apply Problems/navigation requests from the active ViewModel.
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Select(vm => vm is EditorViewModel evm
+                    ? evm.WhenAnyValue(x => x.NavigationRequestId)
+                        .Where(_ => evm.PendingNavigationOffset is not null)
+                        .Select(_ => evm)
+                    : Observable.Never<EditorViewModel>())
+                .Switch()
+                .Subscribe(ApplyPendingNavigation));
+
             // Phase 9 M6: selection tracking — push selection state to ViewModel.
             void OnSelectionChanged(object? s, EventArgs e)
             {
@@ -288,6 +298,31 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     {
         if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
+    }
+
+    /// <summary>
+    /// Applies a pending caret/selection navigation request from the active ViewModel.
+    /// No-ops when the offset is outside the live document.
+    /// </summary>
+    private void ApplyPendingNavigation(EditorViewModel vm)
+    {
+        if (!ReferenceEquals(ViewModel, vm))
+            return;
+
+        if (vm.PendingNavigationOffset is not int offset)
+            return;
+
+        var length = vm.PendingNavigationLength;
+        var docLength = _textEditor.Document.TextLength;
+        if (offset < 0 || offset > docLength)
+        {
+            vm.ClearNavigationRequest();
+            return;
+        }
+
+        var clampedLength = Math.Max(0, Math.Min(length, docLength - offset));
+        SetSelection(offset, clampedLength);
+        vm.ClearNavigationRequest();
     }
 
     private void ApplyEditorSettings(EditorSettings settings)

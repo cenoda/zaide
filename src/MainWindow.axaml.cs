@@ -54,6 +54,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
     private TerminalTabHost _terminalTabHost = null!;
+    private ProblemsPanel _problemsPanel = null!;
     private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
     private Border _bottomPanel = null!;
@@ -165,6 +166,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;
 
+            // Phase 10 M3: Problems projection surface
+            _problemsPanel.ViewModel = ViewModel.ProblemsViewModel;
+
             // Wire StatusBar to its singleton child ViewModel.
             _statusBar.ViewModel = _statusBarViewModel;
 
@@ -259,7 +263,21 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _bottomPanelSplitter.IsVisible = visible;
                     _bottomPanel.IsVisible = visible;
 
-                    if (visible)
+                    if (visible && ViewModel.BottomPanelMode == BottomPanelMode.Terminal)
+                    {
+                        _terminalTabHost.FocusActiveSession();
+                        _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
+                    }
+                }));
+
+            // Phase 10 M3: switch bottom content between Terminal and Problems.
+            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.BottomPanelMode)
+                .Subscribe(mode =>
+                {
+                    var showTerminal = mode == BottomPanelMode.Terminal;
+                    _terminalTabHost.IsVisible = showTerminal;
+                    _problemsPanel.IsVisible = !showTerminal;
+                    if (showTerminal && ViewModel!.IsBottomPanelVisible)
                     {
                         _terminalTabHost.FocusActiveSession();
                         _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
@@ -614,16 +632,70 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanelSplitter);
 
         // --- Bottom Panel (spans columns 3-5: center + editor only) ---
-        // M3: TerminalTabHost retains one TerminalPanel per tab and switches
-        // the active tab's panel in the content area.
+        // Hosts Terminal and Problems surfaces with a small mode strip.
         var terminalTabHost = new TerminalTabHost(_settings);
+        var problemsPanel = new ProblemsPanel { IsVisible = false };
+        _problemsPanel = problemsPanel;
+
+        var terminalTabButton = new Button
+        {
+            Content = "Terminal",
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Cursor = new Cursor(StandardCursorType.Hand),
+        };
+        terminalTabButton.Click += (_, _) =>
+        {
+            if (ViewModel is not null)
+                ViewModel.SwitchToTerminalBottomCommand.Execute().Subscribe();
+        };
+
+        var problemsTabButton = new Button
+        {
+            Content = "Problems",
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Cursor = new Cursor(StandardCursorType.Hand),
+        };
+        problemsTabButton.Click += (_, _) =>
+        {
+            if (ViewModel is not null)
+                ViewModel.SwitchToProblemsBottomCommand.Execute().Subscribe();
+        };
+
+        var bottomModeStrip = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXxs,
+            Children = { terminalTabButton, problemsTabButton },
+        };
+
+        var bottomContent = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+            },
+            Children = { bottomModeStrip, terminalTabHost, problemsPanel },
+        };
+        Grid.SetRow(bottomModeStrip, 0);
+        Grid.SetRow(terminalTabHost, 1);
+        Grid.SetRow(problemsPanel, 1);
+
         var bottomPanel = new Border
         {
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Padding = LayoutTokens.NoneThickness,
             // M5-allow: M1 introduced the 1px top seam above the bottom panel to preserve the raised-layer split.
             Margin = LayoutTokens.Inset(0, 1, 0, 0),
-            Child = terminalTabHost
+            Child = bottomContent
         };
         bottomPanel.IsVisible = false;
         Grid.SetColumn(bottomPanel, 3);

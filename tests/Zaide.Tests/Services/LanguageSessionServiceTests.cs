@@ -87,6 +87,9 @@ public sealed class LanguageSessionServiceTests
         public bool Disposed { get; private set; }
 
         public event Action<long>? ProcessExited;
+#pragma warning disable CS0067 // Required by ILanguageServerSession; unused in M1 lifecycle fakes.
+        public event Action<LanguageServerPublishDiagnostics>? DiagnosticsPublished;
+#pragma warning restore CS0067
 
         public Task ShutdownAsync(CancellationToken cancellationToken)
         {

@@ -2,17 +2,22 @@
 
 ## Status
 
+**M3 complete** (structured diagnostics + Problems projection, 2026-07-13).
 **M2 complete** (document synchronization bridge, 2026-07-13).
 **M1 complete** (language session service + DI wiring, 2026-07-13).
 **M0 complete** (live-code baseline + executable technology proof).
 Selected stack: **csharp-ls 0.25.0** + **StreamJsonRpc 2.22.23** (stdio
 Content-Length JSON-RPC). Evidence:
-[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md) §7–§15.
+[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md) §7–§15;
+[M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md).
 Standalone proof: `tools/Phase10M0LanguageIntelligenceProof/`.
-Production: `ILanguageSessionService` / `LanguageSessionService` and
-`ILanguageDocumentBridge` / `LanguageDocumentBridge` registered in
-`Program.ConfigureServices`; focused tests in `LanguageSessionServiceTests`,
-`LanguageSessionServiceDiTests`, and `LanguageDocumentSyncTests`.
+Production: `ILanguageSessionService` / `LanguageSessionService`,
+`ILanguageDocumentBridge` / `LanguageDocumentBridge`,
+`ILanguageDiagnosticsService` / `LanguageDiagnosticsService`, and
+`ProblemsViewModel` registered in `Program.ConfigureServices`; focused tests in
+`LanguageSessionServiceTests`, `LanguageSessionServiceDiTests`,
+`LanguageDocumentSyncTests`, `LanguageDiagnosticsServiceTests`,
+`ProblemsViewModelTests`, and `ProblemsNavigationProjectionTests`.
 
 ## Scope
 
@@ -84,7 +89,7 @@ whole-document formatting.
 | **M0** | Evidence and executable technology proof only. Select and prove one server/client pair; publish its actual lifecycle/capability findings, exact service contracts, document/version rules, command inventory, test list, and source-layout decision. No user-facing language behavior. | **Standalone proof project** (not part of `Zaide.Tests` — a separate console app or script outside the main solution) named `Phase10M0LanguageIntelligenceProof` that compiles, runs the isolated process proof, and records server/library versions. Plus `git diff --check`. |
 | **M1** | Add the UI-independent language-session service and DI wiring. It consumes only `IProjectContextService`, owns server process/transport initialization, shutdown, restart, cancellation, error state, and generation-safe teardown. Unsupported/ambiguous/no-project states never start a server. | `LanguageSessionServiceTests` and DI tests cover valid start, all non-ready context states, cancellation, context replacement, server exit, restart, disposal, structured errors, and no old-generation events. |
 | **M2** | Add the document synchronization bridge between existing document/tab lifecycle and M1: didOpen, ordered versioned didChange, didClose, reconnect resync, and stale-result rejection. Active-tab changes must not cause duplicate opens or cross-document state. | `LanguageDocumentSyncTests` cover open/edit/save-independent dirty state/tab switch/close/reopen, ordering, monotonic versions, reconnect, cancellation, inactive tabs, and stale context/document/version callbacks. |
-| **M3** | Add structured diagnostics state and Problems projection. Diagnostics are replaced per URI/version, cleared on close/context teardown, and map safely to editor spans. Problems is truthful for unavailable/loading/failure states and supports navigation only to a still-live document/location. | `LanguageDiagnosticsServiceTests`, `ProblemsViewModelTests`, and editor-projection tests cover publish/clear, multi-file updates, invalid ranges, stale diagnostics, close/reload, navigation, and no-project/server-failure states. Manual Linux smoke: open a deliberately invalid C# file, correct it, and confirm Problems clears. |
+| **M3** ✅ | Add structured diagnostics state and Problems projection. Diagnostics are replaced per URI/version, cleared on close/context teardown, and map safely to editor spans. Problems is truthful for unavailable/loading/failure states and supports navigation only to a still-live document/location. | `LanguageDiagnosticsServiceTests`, `ProblemsViewModelTests`, and editor-projection tests cover publish/clear, multi-file updates, invalid ranges, stale diagnostics, close/reload, navigation, and no-project/server-failure states. Manual Linux smoke: open a deliberately invalid C# file, correct it, and confirm Problems clears — evidence in [M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md). |
 | **M4** | Add active-document completion and hover. Define trigger policy, request cancellation/replacement, deterministic selection/commit behavior, capability-unavailable behavior, and strict document/version matching. No editor mutation occurs from stale or failed requests. | `LanguageCompletionTests`, `LanguageHoverTests`, and input-routing tests cover typing/cancel/retrigger, empty results, server failure, active-tab switches, stale versions, selection commit, and no-project behavior. Manual Linux smoke verifies popup and hover on a representative C# project. |
 | **M5** | Add Go to Definition and document/workspace symbols through registered commands/surfaces. Define multiple/zero result behavior, same-file/cross-file navigation, unavailable/failure feedback, and URI/range validation. Navigation opens files through the existing tab/workspace path. | `LanguageNavigationTests`, `LanguageSymbolTests`, and command-registration tests cover same/cross file, zero/multiple/invalid locations, stale responses, document/workspace symbol ordering, cancellation, and command availability. Manual Linux smoke covers definition and both symbol surfaces. |
 | **M6** | Add `textDocument/formatting` and `editor.formatDocument` (`Ctrl+Shift+I`). Validate and atomically apply only safe, current-version edits as one undoable operation; preserve a deterministic caret/selection mapping and normal dirty-state behavior. Add optional `"editor.formatOnSave"` setting (`boolean`, default `false`), enabled only after explicit-save formatting passes. Execution follows the locked M0 contract: format before write, failure/cancellation still saves, `EditorViewModel.SaveAsync` coordinates via a formatting service, no re-trigger loop. **Update `SettingsSerializer` schema-version ceiling from `> 1` to `> 2`; register the v1→v2 `ISettingsMigration` in the production `SettingsService` constructor.** | `LanguageFormattingTests`, `FormatOnSaveTests`, and command/keybinding tests cover no edits, valid edits, invalid/overlap/stale edits, cancellation/failure/unsupported no-op, one undo, dirty state, caret/selection mapping, disabled/enabled save behavior, and the execution contract (format-before-save, failure-still-saves, no re-trigger). Manual Linux smoke verifies format, undo, and save formatting. |

@@ -8,4 +8,9 @@ namespace Zaide.Services;
 /// </summary>
 public interface ILanguageDocumentBridge : IDisposable
 {
+    /// <summary>
+    /// Returns true when <paramref name="documentUri"/> is open for the current
+    /// sync generation and has successfully sent didOpen for that generation.
+    /// </summary>
+    bool TryGetOpenDocument(string documentUri, out LanguageTrackedDocumentInfo info);
 }

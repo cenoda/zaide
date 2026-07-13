@@ -101,6 +101,57 @@ public class EditorViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _caretColumn, value);
     }
 
+    /// <summary>
+    /// Monotonic token for pending editor navigation requests (Problems, etc.).
+    /// EditorView observes this and applies selection/caret when it changes.
+    /// </summary>
+    private long _navigationRequestId;
+    public long NavigationRequestId
+    {
+        get => _navigationRequestId;
+        private set => this.RaiseAndSetIfChanged(ref _navigationRequestId, value);
+    }
+
+    /// <summary>Pending navigation start offset, or null when none.</summary>
+    private int? _pendingNavigationOffset;
+    public int? PendingNavigationOffset
+    {
+        get => _pendingNavigationOffset;
+        private set => this.RaiseAndSetIfChanged(ref _pendingNavigationOffset, value);
+    }
+
+    /// <summary>Pending navigation selection length (0 = caret only).</summary>
+    private int _pendingNavigationLength;
+    public int PendingNavigationLength
+    {
+        get => _pendingNavigationLength;
+        private set => this.RaiseAndSetIfChanged(ref _pendingNavigationLength, value);
+    }
+
+    /// <summary>
+    /// Requests that the shared EditorView select <paramref name="offset"/> with
+    /// <paramref name="length"/> characters. Validated again by the view against
+    /// the live document length before applying.
+    /// </summary>
+    public void RequestNavigate(int offset, int length)
+    {
+        if (offset < 0)
+            return;
+
+        PendingNavigationOffset = offset;
+        PendingNavigationLength = Math.Max(0, length);
+        NavigationRequestId++;
+    }
+
+    /// <summary>
+    /// Clears a consumed navigation request so it is not re-applied on tab switch.
+    /// </summary>
+    public void ClearNavigationRequest()
+    {
+        PendingNavigationOffset = null;
+        PendingNavigationLength = 0;
+    }
+
     // ── Selection state — updated by EditorView ───────────────────────────
 
     /// <summary>
