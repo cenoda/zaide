@@ -237,7 +237,7 @@ public sealed class LanguageSymbolTests
             new LanguageLocation(
                 LanguageDocumentUri.FromPath(path),
                 path,
-                new LanguageDiagnosticRange(line, 0, line, name.Length),
+                new LspRange(line, 0, line, name.Length),
                 null,
                 name),
             children ?? Array.Empty<LanguageSymbol>(),
@@ -630,7 +630,7 @@ public sealed class LanguageSymbolTests
         var nullLoc = new LanguageSymbol("NullLoc", 5, null, null, null,
             Array.Empty<LanguageSymbol>(), 0);
         var noFilePath = new LanguageSymbol("NoPath", 5, null, null,
-            new LanguageLocation("file:///x", null, new LanguageDiagnosticRange(0, 0, 0, 3), null, "NoPath"),
+            new LanguageLocation("file:///x", null, new LspRange(0, 0, 0, 3), null, "NoPath"),
             Array.Empty<LanguageSymbol>(), 0);
         var valid = Sym("Valid", path, 1);
 

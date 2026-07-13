@@ -46,7 +46,7 @@ internal static class LanguageCompletionItemMapper
         int replaceStart;
         int replaceLength;
 
-        if (raw.TextEditRange is LanguageDiagnosticRange range &&
+        if (raw.TextEditRange is LspRange range &&
             LspUtf16PositionMapper.TryMapRange(documentText, range, out var start, out var end))
         {
             replaceStart = start;

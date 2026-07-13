@@ -51,7 +51,7 @@ internal static class LanguageServerDefinitionParser
             if (string.IsNullOrWhiteSpace(uri))
                 return false;
 
-            LanguageDiagnosticRange range;
+            LspRange range;
             if (element.TryGetProperty("targetSelectionRange", out var selectionRange) &&
                 TryParseRange(selectionRange, out range))
             {
@@ -94,7 +94,7 @@ internal static class LanguageServerDefinitionParser
 
     internal static LanguageLocation CreateLocation(
         string uri,
-        LanguageDiagnosticRange range,
+        LspRange range,
         string? containerName,
         string? name)
     {
@@ -108,7 +108,7 @@ internal static class LanguageServerDefinitionParser
             name);
     }
 
-    internal static bool TryParseRange(JsonElement rangeElement, out LanguageDiagnosticRange range)
+    internal static bool TryParseRange(JsonElement rangeElement, out LspRange range)
     {
         range = default;
         if (rangeElement.ValueKind != JsonValueKind.Object)
@@ -125,7 +125,7 @@ internal static class LanguageServerDefinitionParser
         if (startLine < 0 || startCharacter < 0 || endLine < 0 || endCharacter < 0)
             return false;
 
-        range = new LanguageDiagnosticRange(startLine, startCharacter, endLine, endCharacter);
+        range = new LspRange(startLine, startCharacter, endLine, endCharacter);
         return true;
     }
 

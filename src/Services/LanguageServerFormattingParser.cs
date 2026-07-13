@@ -51,7 +51,7 @@ internal static class LanguageServerFormattingParser
         return true;
     }
 
-    private static bool TryParseRange(JsonElement element, out LanguageDiagnosticRange range)
+    private static bool TryParseRange(JsonElement element, out LspRange range)
     {
         range = default;
         if (element.ValueKind != JsonValueKind.Object)
@@ -69,7 +69,7 @@ internal static class LanguageServerFormattingParser
             return false;
         }
 
-        range = new LanguageDiagnosticRange(startLine, startCharacter, endLine, endCharacter);
+        range = new LspRange(startLine, startCharacter, endLine, endCharacter);
         return true;
     }
 

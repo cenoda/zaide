@@ -87,7 +87,7 @@ internal static class LanguageServerCompletionParser
             sortText = sortElement.GetString();
         }
 
-        LanguageDiagnosticRange? textEditRange = null;
+        LspRange? textEditRange = null;
         string? textEditNewText = null;
         if (item.TryGetProperty("textEdit", out var textEditElement) &&
             textEditElement.ValueKind == JsonValueKind.Object)
@@ -115,7 +115,7 @@ internal static class LanguageServerCompletionParser
         return true;
     }
 
-    private static bool TryParseRange(JsonElement rangeElement, out LanguageDiagnosticRange range)
+    private static bool TryParseRange(JsonElement rangeElement, out LspRange range)
     {
         range = default;
         if (rangeElement.ValueKind != JsonValueKind.Object)
@@ -129,7 +129,7 @@ internal static class LanguageServerCompletionParser
             !TryParsePosition(endElement, out var endLine, out var endCharacter))
             return false;
 
-        range = new LanguageDiagnosticRange(startLine, startCharacter, endLine, endCharacter);
+        range = new LspRange(startLine, startCharacter, endLine, endCharacter);
         return true;
     }
 

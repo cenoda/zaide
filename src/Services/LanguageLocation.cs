@@ -12,6 +12,6 @@ namespace Zaide.Services;
 public sealed record LanguageLocation(
     string DocumentUri,
     string? FilePath,
-    LanguageDiagnosticRange Range,
+    LspRange Range,
     string? ContainerName,
     string? Name);

@@ -74,7 +74,7 @@ public sealed class ProblemsNavigationProjectionTests
         Assert.NotNull(tabs.ActiveTab);
 
         var diagnostics = new MutableDiagnosticsService();
-        var range = new LanguageDiagnosticRange(0, 10, 0, 11);
+        var range = new LspRange(0, 10, 0, 11);
         Assert.True(LspUtf16PositionMapper.TryMapRange(content, range, out var start, out var end));
         var diagnostic = new LanguageDiagnostic(
             LanguageDocumentUri.FromPath(path),
@@ -122,7 +122,7 @@ public sealed class ProblemsNavigationProjectionTests
 
         var diagnostics = new MutableDiagnosticsService();
         // Range at end of original text.
-        var range = new LanguageDiagnosticRange(0, 6, 0, 8);
+        var range = new LspRange(0, 6, 0, 8);
         Assert.True(LspUtf16PositionMapper.TryMapRange(original, range, out var start, out var end));
         var diagnostic = new LanguageDiagnostic(
             LanguageDocumentUri.FromPath(path),

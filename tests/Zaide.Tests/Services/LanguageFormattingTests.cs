@@ -189,7 +189,7 @@ public sealed class LanguageFormattingTests
     }
 
     private static LanguageTextEdit Edit(int sl, int sc, int el, int ec, string text) =>
-        new(new LanguageDiagnosticRange(sl, sc, el, ec), text);
+        new(new LspRange(sl, sc, el, ec), text);
 
     [Fact]
     public void EditApplier_NoEdits_ReturnsSourceUnchanged()

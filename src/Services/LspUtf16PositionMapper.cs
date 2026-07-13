@@ -104,7 +104,7 @@ public static class LspUtf16PositionMapper
     /// </summary>
     public static bool TryMapRange(
         string text,
-        LanguageDiagnosticRange range,
+        LspRange range,
         out int startOffset,
         out int endOffset)
     {

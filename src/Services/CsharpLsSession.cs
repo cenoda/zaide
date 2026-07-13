@@ -574,7 +574,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         return true;
     }
 
-    private static bool TryParseRange(JsonElement rangeElement, out LanguageDiagnosticRange range)
+    private static bool TryParseRange(JsonElement rangeElement, out LspRange range)
     {
         range = default;
         if (rangeElement.ValueKind != JsonValueKind.Object)
@@ -588,7 +588,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
             !TryParsePosition(endElement, out var endLine, out var endCharacter))
             return false;
 
-        range = new LanguageDiagnosticRange(startLine, startCharacter, endLine, endCharacter);
+        range = new LspRange(startLine, startCharacter, endLine, endCharacter);
         return true;
     }
 

@@ -428,8 +428,8 @@ public sealed class FormatOnSaveTests
         var source = "int a;int b;";
         var edits = new[]
         {
-            new LanguageTextEdit(new LanguageDiagnosticRange(0, 0, 0, 6), "int a; "),
-            new LanguageTextEdit(new LanguageDiagnosticRange(0, 6, 0, 12), "int b;"),
+            new LanguageTextEdit(new LspRange(0, 0, 0, 6), "int a; "),
+            new LanguageTextEdit(new LspRange(0, 6, 0, 12), "int b;"),
         };
         Assert.True(LanguageFormattingEditApplier.TryApply(source, edits, out var formatted));
         Assert.Equal("int a; int b;", formatted);

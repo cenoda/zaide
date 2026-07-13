@@ -164,20 +164,17 @@ No behavioral change.
 
 ---
 
-## Open — F8: LanguageDiagnosticRange reused for formatting edit ranges
+## Resolved — F8: LanguageDiagnosticRange reused for formatting edit ranges
 
 **Severity:** Trivial (naming clarity)
-**Opened:** 2026-07-14
-**Area:** `src/Services/LanguageDiagnosticRange.cs`, `src/Services/LanguageTextEdit.cs`
+**Resolved:** 2026-07-14
+**Area:** `src/Services/LanguageDiagnosticRange.cs` → `src/Services/LspRange.cs`
 
-**Issue:** `LanguageTextEdit` uses `LanguageDiagnosticRange` for its range
-field. While functionally correct (both are LSP ranges with line/character
-positions), the name "Diagnostic" is misleading in a formatting-edit context.
-
-**Suggested fix:** Rename `LanguageDiagnosticRange` to `LspRange` or
-`LanguageRange` to reflect its general-purpose nature. Update all references
-(used in diagnostics, completion text edits, formatting edits, navigation
-locations). This is a straightforward rename refactor with no behavioral change.
+**Fix:** Renamed `LanguageDiagnosticRange` to `LspRange` across all 18 source
+and test files. The file was renamed from `LanguageDiagnosticRange.cs` to
+`LspRange.cs` via `git mv`. No behavioral change — the type is a general-purpose
+LSP range (line/character positions) used by diagnostics, completion, formatting,
+and navigation.
 
 ---
 

@@ -259,7 +259,7 @@ public sealed class LanguageDiagnosticsServiceTests
             LanguageDiagnosticSeverity severity = LanguageDiagnosticSeverity.Error,
             string? code = "CS1002") =>
             new(severity, message, code, "csharp",
-                new LanguageDiagnosticRange(startLine, startChar, endLine, endChar));
+                new LspRange(startLine, startChar, endLine, endChar));
 
         public void Dispose() => Service.Dispose();
     }

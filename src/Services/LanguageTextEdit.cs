@@ -5,4 +5,4 @@ namespace Zaide.Services;
 /// </summary>
 /// <param name="Range">Zero-based utf-16 range in the source document.</param>
 /// <param name="NewText">Replacement text (may be empty for a pure delete).</param>
-public sealed record LanguageTextEdit(LanguageDiagnosticRange Range, string NewText);
+public sealed record LanguageTextEdit(LspRange Range, string NewText);

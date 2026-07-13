@@ -24,6 +24,6 @@ public sealed record LanguageDiagnostic(
     string Message,
     string? Code,
     string? Source,
-    LanguageDiagnosticRange Range,
+    LspRange Range,
     int StartOffset,
     int EndOffset);

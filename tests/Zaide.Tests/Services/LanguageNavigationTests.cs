@@ -219,7 +219,7 @@ public sealed class LanguageNavigationTests
     }
 
     private static LanguageLocation Loc(string path, int sl, int sc, int el, int ec, string? name = null) =>
-        new(LanguageDocumentUri.FromPath(path), path, new LanguageDiagnosticRange(sl, sc, el, ec), null, name);
+        new(LanguageDocumentUri.FromPath(path), path, new LspRange(sl, sc, el, ec), null, name);
 
     private static async Task WaitForAsync(Func<bool> predicate, TimeSpan? timeout = null)
     {
@@ -333,9 +333,9 @@ public sealed class LanguageNavigationTests
                 new LanguageServerDefinitionResult(new[]
                 {
                     new LanguageLocation("file:///not/a/valid/path%zz", null,
-                        new LanguageDiagnosticRange(0, 0, 0, 1), null, null),
+                        new LspRange(0, 0, 0, 1), null, null),
                     new LanguageLocation("https://example.com/x", null,
-                        new LanguageDiagnosticRange(0, 0, 0, 1), null, null),
+                        new LspRange(0, 0, 0, 1), null, null),
                 }));
 
         h.Service.RequestDefinition(path, 0);

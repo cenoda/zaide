@@ -84,7 +84,7 @@ public sealed class ProblemsViewModelTests
             int version = 1,
             long generation = 1)
         {
-            var range = new LanguageDiagnosticRange(0, startChar, 0, endChar);
+            var range = new LspRange(0, startChar, 0, endChar);
             Assert.True(LspUtf16PositionMapper.TryMapRange(content, range, out var start, out var end));
             return new LanguageDiagnostic(
                 LanguageDocumentUri.FromPath(path),

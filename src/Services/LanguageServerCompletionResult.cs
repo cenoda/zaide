@@ -12,5 +12,5 @@ public sealed record LanguageServerCompletionItem(
     string? InsertText,
     string? Detail,
     string? SortText,
-    LanguageDiagnosticRange? TextEditRange,
+    LspRange? TextEditRange,
     string? TextEditNewText);
