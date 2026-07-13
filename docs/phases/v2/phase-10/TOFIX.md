@@ -178,21 +178,23 @@ and navigation.
 
 ---
 
-## Open — F9: Unused LanguageSessionFailureKind enum values
+## Resolved — F9: Unused LanguageSessionFailureKind enum values
 
 **Severity:** Trivial
-**Opened:** 2026-07-14
-**Area:** `src/Services/LanguageSessionFailureKind.cs`
+**Resolved:** 2026-07-14
+**Area:** `src/Services/LanguageSessionFailureKind.cs`, `src/Services/LanguageSessionService.cs`,
+`src/Services/LanguageSessionStatusPolicy.cs`
 
-**Issue:** `ProcessStartFailed` and `ShutdownFailed` enum values are defined
-but no code path creates them. `LanguageSessionService` only produces
-`MissingServerBinary`, `InitializeFailed`, and `ServerExited`.
-
-**Suggested fix:** Either remove the unused values (if YAGNI applies) or add
-code paths that use them (e.g., catch `Win32Exception` in session start and
-publish `ProcessStartFailed`, catch exceptions in `ShutdownAsync` and publish
-`ShutdownFailed`). The values are reasonable forward-looking additions, so
-keeping them is acceptable.
+**Fix:** Added code paths that produce `ProcessStartFailed` and `ShutdownFailed`:
+- `ProcessStartFailed`: catch `System.ComponentModel.Win32Exception` in
+  `StartSessionAsync` and publish a Failed snapshot with this kind.
+- `ShutdownFailed`: catch a second `Exception` from `ForceKillAsync` inside
+  `TearDownSessionLockedAsync` (when graceful shutdown already failed) and
+  publish a Failed snapshot with this kind.
+- `LanguageSessionStatusPolicy.MapFailureMessage` now returns specific
+  text for both new kinds.
+- Tests: `ProcessStartFailure_PublishesProcessStartFailed` and
+  `ShutdownAndForceKillFailure_PublishesShutdownFailed` verify each path.
 
 ---
 

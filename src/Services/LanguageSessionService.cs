@@ -310,6 +310,24 @@ public sealed class LanguageSessionService : ILanguageSessionService
             if (outerCancellationToken.IsCancellationRequested)
                 throw;
         }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            _logger.Log(LogLevel.Error, new EventId(10001), ex,
+                "Language server process failed to start for generation {Generation}", generation);
+
+            await PublishIfCurrentGenerationAsync(
+                generation,
+                new LanguageSessionSnapshot(
+                    LanguageSessionState.Failed,
+                    generation,
+                    candidate.FilePath,
+                    workspaceFolder,
+                    ServerProcessId: null,
+                    new LanguageSessionFailure(
+                        LanguageSessionFailureKind.ProcessStartFailed,
+                        "Language server process failed to start.")))
+                .ConfigureAwait(false);
+        }
         catch (Exception ex)
         {
             _logger.Log(LogLevel.Error, new EventId(10001), ex,
@@ -391,11 +409,28 @@ public sealed class LanguageSessionService : ILanguageSessionService
         {
             await session.ShutdownAsync(CancellationToken.None).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        catch (Exception shutdownEx)
         {
-            _logger.Log(LogLevel.Debug, new EventId(10003), ex,
+            _logger.Log(LogLevel.Debug, new EventId(10003), shutdownEx,
                 "Graceful language-server shutdown failed; force-killing.");
-            await session.ForceKillAsync().ConfigureAwait(false);
+            try
+            {
+                await session.ForceKillAsync().ConfigureAwait(false);
+            }
+            catch (Exception killEx)
+            {
+                _logger.Log(LogLevel.Error, new EventId(10005), killEx,
+                    "Force-kill also failed for language session.");
+                PublishLocked(new LanguageSessionSnapshot(
+                    LanguageSessionState.Failed,
+                    _generation,
+                    ProjectFilePath: null,
+                    WorkspaceFolderPath: null,
+                    ServerProcessId: null,
+                    new LanguageSessionFailure(
+                        LanguageSessionFailureKind.ShutdownFailed,
+                        "Language server could not be shut down or killed.")));
+            }
         }
 
         await session.DisposeAsync().ConfigureAwait(false);

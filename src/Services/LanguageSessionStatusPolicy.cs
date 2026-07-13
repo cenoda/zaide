@@ -43,10 +43,14 @@ public static class LanguageSessionStatusPolicy
         {
             LanguageSessionFailureKind.MissingServerBinary =>
                 "C# language server not found. Install with: dotnet tool install -g csharp-ls",
+            LanguageSessionFailureKind.ProcessStartFailed =>
+                "C# language server process failed to start.",
             LanguageSessionFailureKind.InitializeFailed =>
                 "C# language server failed to start.",
             LanguageSessionFailureKind.ServerExited =>
                 "C# language server exited unexpectedly.",
+            LanguageSessionFailureKind.ShutdownFailed =>
+                "C# language server could not be shut down.",
             null => "Language server failed.",
             _ => "Language server failed.",
         };

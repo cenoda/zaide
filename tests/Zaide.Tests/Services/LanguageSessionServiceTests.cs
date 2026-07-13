@@ -85,6 +85,8 @@ public sealed class LanguageSessionServiceTests
         public bool ShutdownCalled { get; private set; }
         public bool ForceKillCalled { get; private set; }
         public bool Disposed { get; private set; }
+        public Exception? ShutdownException { get; set; }
+        public Exception? ForceKillException { get; set; }
 
         public event Action<long>? ProcessExited;
 #pragma warning disable CS0067 // Required by ILanguageServerSession; unused in M1 lifecycle fakes.
@@ -94,12 +96,19 @@ public sealed class LanguageSessionServiceTests
         public Task ShutdownAsync(CancellationToken cancellationToken)
         {
             ShutdownCalled = true;
+            if (ShutdownException is not null)
+                return Task.FromException(ShutdownException);
             return Task.CompletedTask;
         }
 
         public Task ForceKillAsync()
         {
             ForceKillCalled = true;
+            if (ForceKillException is not null)
+            {
+                HasExited = true;
+                return Task.FromException(ForceKillException);
+            }
             HasExited = true;
             return Task.CompletedTask;
         }
@@ -516,6 +525,59 @@ public sealed class LanguageSessionServiceTests
 
             Assert.Equal(LanguageSessionFailureKind.InitializeFailed, failed.Failure?.Kind);
             Assert.Equal("Language server failed to start.", failed.Failure?.Message);
+        }
+    }
+
+    [Fact]
+    public async Task ProcessStartFailure_PublishesProcessStartFailed()
+    {
+        var candidate = MakeCandidate("ProcFail.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        factory.StartException = new System.ComponentModel.Win32Exception(2, "No such file");
+
+        using (service)
+        {
+            context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+
+            var failed = await WaitForAsync(service, s => s.State == LanguageSessionState.Failed);
+
+            Assert.Equal(LanguageSessionFailureKind.ProcessStartFailed, failed.Failure?.Kind);
+            Assert.Equal("Language server process failed to start.", failed.Failure?.Message);
+        }
+    }
+
+    [Fact]
+    public async Task ShutdownAndForceKillFailure_PublishesShutdownFailed()
+    {
+        var candidate = MakeCandidate("ShutdownFail.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        factory.StartException = null;
+
+        using (service)
+        {
+            // Start a session with force-kill configured to fail.
+            context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+            await WaitForAsync(service, s => s.State == LanguageSessionState.Ready);
+
+            // Configure the active session to fail on both shutdown and force-kill.
+            var session = factory.CreatedSessions[^1];
+            session.ShutdownException = new InvalidOperationException("shutdown failed");
+            session.ForceKillException = new InvalidOperationException("force-kill failed");
+
+            // Collect all snapshots including transient ones.
+            var snapshots = new List<LanguageSessionSnapshot>();
+            using var sub = service.WhenChanged.Subscribe(snapshots.Add);
+
+            // Trigger reconciliation by changing context to ineligible.
+            context.Emit(MakeContext(ProjectContextState.Unloaded, null));
+
+            var shutdownFailed = snapshots.FirstOrDefault(
+                s => s.State == LanguageSessionState.Failed &&
+                     s.Failure?.Kind == LanguageSessionFailureKind.ShutdownFailed);
+
+            Assert.NotNull(shutdownFailed);
+            Assert.Equal("Language server could not be shut down or killed.",
+                shutdownFailed!.Failure?.Message);
         }
     }
 }
