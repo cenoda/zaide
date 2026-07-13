@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Phase10M0LanguageIntelligenceProof</RootNamespace>
+    <AssemblyName>Phase10M0LanguageIntelligenceProof</AssemblyName>
+    <!-- Standalone proof tool: do not participate in central package management -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Protocol library for M1 planning; proof frames Content-Length JSON-RPC manually. -->
+    <PackageReference Include="StreamJsonRpc" Version="2.22.23" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fixture is a separate on-disk C# project opened by the language server; do not compile it into the proof. -->
+    <Compile Remove="fixture/**" />
+    <None Include="fixture/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- StreamJsonRpc pulls MessagePack; advisories are accepted for this isolated proof tool only. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
+  </PropertyGroup>
+
+</Project>

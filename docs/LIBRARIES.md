@@ -63,6 +63,13 @@ Every library explained in plain English — what it does, why you'd want it, an
 |---------|-------------|-----------------|
 | **Phosphor Icons (embedded Path)** | Vector icons from the MIT-licensed Phosphor set. Embedded as `StreamGeometry` in `src/Styles/Icons.axaml` and rendered through non-hit-test `Viewbox` + `Path` controls. | No NuGet required. Vector crisp. Monochrome. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
 
+## LANGUAGE INTELLIGENCE (Phase 10)
+
+| Library | What It Does | Why You Want It |
+|---------|-------------|-----------------|
+| **csharp-ls** (global `dotnet tool`, not a NuGet app dependency) | Roslyn-based C# language server speaking LSP over stdio. Version proven at M0: **0.25.0**. License: MIT. | Process-backed C# diagnostics, completion, hover, definition, symbols, and document formatting without embedding Roslyn UI. Acquisition: `dotnet tool install -g csharp-ls` (no repository-wide SDK reorganization). Selected in Phase 10 M0 proof. |
+| **StreamJsonRpc** | Content-Length-framed JSON-RPC library used to speak LSP over stdio (and other transports). Version proven at M0: **2.22.23**. License: MIT. | Production-quality framing/request correlation for the language client. Referenced by the standalone M0 proof project; product package pin lands with M1 session service. |
+
 ---
 
 ## Technical Decisions (Resolved)
@@ -84,4 +91,4 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ---
 
-*Last updated: 2025-06-25*
+*Last updated: 2026-07-13 (Phase 10 M0 — csharp-ls + StreamJsonRpc)*

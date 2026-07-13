@@ -2,10 +2,13 @@
 
 ## Status
 
-**M0 live-code baseline complete; executable technology proof pending.**
-This plan is based on the live code evidence in
-[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md). No Phase 10 production code,
-dependency, or source-layout move has been made.
+**M0 complete** (live-code baseline + executable technology proof, 2026-07-13).
+Selected stack: **csharp-ls 0.25.0** + **StreamJsonRpc 2.22.23** (stdio
+Content-Length JSON-RPC). Evidence:
+[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md) §7–§15.
+Standalone proof: `tools/Phase10M0LanguageIntelligenceProof/`.
+No Phase 10 production code, app DI registration, or `src/` layout move has
+been made.
 
 ## Scope
 
@@ -46,29 +49,29 @@ whole-document formatting.
 
 ## Pre-Implementation Verification (M0)
 
-- [ ] Re-run and update the live ownership/lifecycle evidence in
+- [x] Re-run and update the live ownership/lifecycle evidence in
       `M0_DISCOVERY_PROOF.md` after selecting a server and client library.
-- [ ] Compile and run the exact technology proof described there; record real
+- [x] Compile and run the exact technology proof described there; record real
       versions, process behavior, capability support, licenses, and limitations.
-- [ ] Lock URI/version, context-generation, request-cancellation, and
-      document-close semantics before adding production behavior.
-- [ ] Lock position encoding (negotiate and record the selected LSP
-      `positionEncodings` value; confirm round-trip correctness for non-BMP
-      Unicode before M1.)
-- [ ] Verify server compatibility with `.slnx` solution files; if unsupported
-      document whether directory-level fallback or an eligibility-rule change
-      is required.
-- [ ] Verify AvaloniaEdit position-encoding semantics (`Document.GetLocation`/
-      `GetOffset` — confirm UTF-16 column handling) and document the conversion
-      function between the negotiated LSP encoding and AvaloniaEdit offsets.
-- [ ] Confirm all proposed DI registrations resolve and no selected package
-      conflicts with the application or test host.
-- [ ] **Formatting prerequisites:** record AvaloniaEdit undo-group behaviour
-      for whole-document replacement, caret/selection mapping rule, and lock
-      the Format-on-Save typed-settings schema (`EditorSettings.FormatOnSave`
-      with `[JsonPropertyName("formatOnSave")]`, default `false`,
-      `SchemaVersion` 1→2 migration, registration in `SettingsService`
-      production constructor, UI ownership deferred to M6) — see M0 proof.
+      Proof: 24/24 checks passed (`csharp-ls` 0.25.0 + `StreamJsonRpc` 2.22.23).
+- [x] Lock URI/version, context-generation, request-cancellation, and
+      document-close semantics before adding production behavior
+      (see M0 proof §13).
+- [x] Lock position encoding (client advertised `utf-16`/`utf-8`; server omitted
+      selection → **utf-16** default; non-BMP 🎉 round-trip confirmed).
+- [x] Verify server compatibility with `.slnx` solution files; parent-directory
+      workspace is acceptable; **no eligibility-rule amendment** required.
+- [x] Verify AvaloniaEdit position-encoding semantics (`Document.GetLocation`/
+      `GetOffset` — UTF-16 columns) and document the conversion function
+      (M0 proof §10).
+- [x] Confirm proof packages build in isolation; production DI registration is
+      deferred to M1 (no app-host change at M0). Catalog updated in
+      `docs/LIBRARIES.md` for planned StreamJsonRpc + csharp-ls.
+- [x] **Formatting prerequisites:** whole-document undo group PASS; caret/
+      selection mapping rule locked; Format-on-Save schema lock unchanged
+      (`EditorSettings.FormatOnSave` / `formatOnSave`, default `false`,
+      `SchemaVersion` 1→2 migration, `SettingsSerializer` ceiling at M6,
+      UI deferred to M6) — see M0 proof §4 / §12.
 
 ## Milestones
 
@@ -151,9 +154,10 @@ whole-document formatting.
 
 ## Phase 10 Limitations
 
-- The selected server/client pair is deliberately undecided until M0 proves it.
-- Unsaved documents have no Phase 10 language guarantee unless M0 proves an
-  interoperable supported URI lifecycle.
+- Selected pair (M0): **csharp-ls 0.25.0** + **StreamJsonRpc 2.22.23** over
+  stdio; see M0 proof for acquisition and limitations.
+- Unsaved documents have no Phase 10 language guarantee (M0 used on-disk URIs
+  only).
 - Range formatting, format on type, code actions, rename, semantic folding,
   and multi-language support are deferred.
 - Format on Save remains disabled by default and is unavailable when the server
