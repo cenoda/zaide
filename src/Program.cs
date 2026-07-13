@@ -72,6 +72,10 @@ class Program
         services.AddSingleton<IProjectDiscovery, ProjectDiscovery>();
         services.AddSingleton<IProjectContextService, ProjectContextService>();
 
+        // Phase 11 M1: UI-independent build/run/test process orchestration core.
+        services.AddSingleton<IManagedProcessRunner, ManagedProcessRunner>();
+        services.AddSingleton<IProjectWorkflowService, ProjectWorkflowService>();
+
         // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
         services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
         services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();

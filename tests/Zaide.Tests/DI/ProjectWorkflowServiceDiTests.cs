@@ -1,0 +1,72 @@
+using System.Reactive.Concurrency;
+using Microsoft.Extensions.DependencyInjection;
+using ReactiveUI;
+using ReactiveUI.Builder;
+using Xunit;
+using Zaide;
+using Zaide.Services;
+
+namespace Zaide.Tests.DI;
+
+/// <summary>
+/// Phase 11 M1 DI integration tests for workflow orchestration services.
+/// </summary>
+public sealed class ProjectWorkflowServiceDiTests
+{
+    static ProjectWorkflowServiceDiTests()
+    {
+        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
+    }
+
+    private static ServiceProvider BuildProvider()
+    {
+        var services = new ServiceCollection();
+        Program.ConfigureServices(services);
+        services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
+        return services.BuildServiceProvider();
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesProjectWorkflowService()
+    {
+        using var provider = BuildProvider();
+
+        var workflow = provider.GetRequiredService<IProjectWorkflowService>();
+
+        Assert.NotNull(workflow);
+        Assert.IsType<ProjectWorkflowService>(workflow);
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesOneSharedWorkflowSingleton()
+    {
+        using var provider = BuildProvider();
+
+        var first = provider.GetRequiredService<IProjectWorkflowService>();
+        var second = provider.GetRequiredService<IProjectWorkflowService>();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesManagedProcessRunner()
+    {
+        using var provider = BuildProvider();
+
+        var runner = provider.GetRequiredService<IManagedProcessRunner>();
+
+        Assert.NotNull(runner);
+        Assert.IsType<ManagedProcessRunner>(runner);
+    }
+
+    [Fact]
+    public void ConfigureServices_ResolvesOneSharedManagedProcessRunnerSingleton()
+    {
+        using var provider = BuildProvider();
+
+        var first = provider.GetRequiredService<IManagedProcessRunner>();
+        var second = provider.GetRequiredService<IManagedProcessRunner>();
+
+        Assert.Same(first, second);
+    }
+}
