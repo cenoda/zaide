@@ -394,8 +394,9 @@ public sealed class LanguageSymbolTests
         h.Session.DocumentGate.TrySetResult(true);
         await Task.Delay(150);
 
-        // Stale response must not install Ready symbols on the surface.
-        Assert.NotEqual(LanguageSymbolState.Ready, h.Service.Current.State);
+        // Stale response must not install Ready symbols; surface must collapse to Idle.
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+        Assert.False(h.Service.Current.IsSurfaceOpen);
         Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageSymbolState.Ready && s.Symbols.Count > 0);
     }
 
@@ -414,12 +415,11 @@ public sealed class LanguageSymbolTests
         h.Service.RequestDocumentSymbols(path);
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
 
-        var other = Path.Combine(TempRoot, "other-tab.cs");
-        await File.WriteAllTextAsync(other, "class O {}");
-        var doc = h.Workspace.OpenDocument(other, "class O {}");
-        h.Workspace.SetActiveDocument(doc);
+        // Production dismiss on tab switch comes from EditorLanguageInputViewModel.
+        h.Input.ActiveDocumentId = "/other/doc.cs";
 
-        // Selecting after tab change must fail (active document validation).
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+        Assert.False(h.Service.Current.IsSurfaceOpen);
         Assert.Null(h.Service.TryAcceptSelected());
     }
 
@@ -478,5 +478,193 @@ public sealed class LanguageSymbolTests
         Assert.Equal(new[] { "Alpha", "Alpha", "Beta" }, ordered.Select(s => s.Name).ToArray());
         Assert.Equal(1, ordered[0].Location!.Range.StartLine);
         Assert.Equal(5, ordered[1].Location!.Range.StartLine);
+    }
+
+    [Fact]
+    public async Task MoveSelection_WrapsAroundBoundaries()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("wrap.cs", "class A {} class B {} class C {}");
+        h.SessionService.SetReady(h.Session);
+        h.Session.DocumentHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
+            {
+                Sym("A", path, 0),
+                Sym("B", path, 1),
+                Sym("C", path, 2),
+            }));
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
+
+        Assert.Equal(0, h.Service.Current.SelectedIndex);
+
+        h.Service.MoveSelection(1);
+        Assert.Equal(1, h.Service.Current.SelectedIndex);
+
+        h.Service.MoveSelection(1);
+        Assert.Equal(2, h.Service.Current.SelectedIndex);
+
+        // Wrap forward.
+        h.Service.MoveSelection(1);
+        Assert.Equal(0, h.Service.Current.SelectedIndex);
+
+        // Wrap backward.
+        h.Service.MoveSelection(-1);
+        Assert.Equal(2, h.Service.Current.SelectedIndex);
+
+        h.Service.MoveSelection(-1);
+        Assert.Equal(1, h.Service.Current.SelectedIndex);
+
+        h.Service.MoveSelection(-1);
+        Assert.Equal(0, h.Service.Current.SelectedIndex);
+    }
+
+    [Fact]
+    public async Task DocumentSymbols_CapabilityUnsupported_UnavailableThenIdle()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("nosup.cs", "class C {}");
+        h.Session.Capabilities = new LanguageServerCapabilities(
+            true, new[] { '.' }, true, true, DocumentSymbolSupported: false, WorkspaceSymbolSupported: true);
+        h.SessionService.SetReady(h.Session);
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Snapshots.Any(s =>
+            s.State == LanguageSymbolState.Unavailable && s.Scope == LanguageSymbolScope.Document));
+
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+        Assert.Equal(0, h.Session.DocumentCallCount);
+    }
+
+    [Fact]
+    public async Task DocumentSymbols_RequestFailure_FailedThenIdle()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("fail-doc.cs", "class C {}");
+        h.SessionService.SetReady(h.Session);
+        h.Session.DocumentHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(null);
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Snapshots.Any(s => s.State == LanguageSymbolState.Failed));
+
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+    }
+
+    [Fact]
+    public async Task DocumentSymbols_StaleGenerationDoesNotInstallReady()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("gen.cs", "class C {}", version: 1);
+        h.SessionService.SetReady(h.Session, generation: 1);
+        h.Session.DocumentGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        h.Session.DocumentHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
+            {
+                Sym("C", path, 0),
+            }));
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Loading);
+
+        // Advance generation before response arrives.
+        h.SessionService.SetReady(h.Session, generation: 2);
+        h.Session.DocumentGate.TrySetResult(true);
+        await Task.Delay(150);
+
+        Assert.NotEqual(LanguageSymbolState.Ready, h.Service.Current.State);
+        Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageSymbolState.Ready && s.Symbols.Count > 0);
+    }
+
+    [Fact]
+    public async Task DocumentSymbols_DocumentClosed_DismissesSurface()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("close-me.cs", "class C {}");
+        h.SessionService.SetReady(h.Session);
+        h.Session.DocumentHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
+            {
+                Sym("C", path, 0),
+            }));
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
+
+        h.Workspace.CloseDocument(path);
+        await Task.Delay(50);
+
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+    }
+
+    [Fact]
+    public async Task SessionLeavesReady_DismissesSymbolSurface()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("session-die.cs", "class C {}");
+        h.SessionService.SetReady(h.Session);
+        h.Session.DocumentHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
+            {
+                Sym("C", path, 0),
+            }));
+
+        h.Service.RequestDocumentSymbols(path);
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
+
+        h.SessionService.SetState(LanguageSessionState.Cancelled);
+        await Task.Delay(50);
+
+        Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
+    }
+
+    [Fact]
+    public async Task WorkspaceSymbols_InvalidLocationsFilteredOut()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("loc-ws.cs", "class C {}");
+        h.SessionService.SetReady(h.Session);
+        var nullLoc = new LanguageSymbol("NullLoc", 5, null, null, null,
+            Array.Empty<LanguageSymbol>(), 0);
+        var noFilePath = new LanguageSymbol("NoPath", 5, null, null,
+            new LanguageLocation("file:///x", null, new LanguageDiagnosticRange(0, 0, 0, 3), null, "NoPath"),
+            Array.Empty<LanguageSymbol>(), 0);
+        var valid = Sym("Valid", path, 1);
+
+        h.Session.WorkspaceHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new LanguageSymbol[]
+            {
+                nullLoc,
+                noFilePath,
+                valid,
+            }));
+
+        h.Service.RequestWorkspaceSymbols("test");
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
+
+        Assert.Single(h.Service.Current.Symbols);
+        Assert.Equal("Valid", h.Service.Current.Symbols[0].Name);
+    }
+
+    [Fact]
+    public async Task WorkspaceSymbols_AllInvalidLocations_Empty()
+    {
+        using var h = new Harness();
+        var path = h.OpenActive("all-bad.cs", "class C {}");
+        h.SessionService.SetReady(h.Session);
+        var nullLoc = new LanguageSymbol("NullLoc", 5, null, null, null,
+            Array.Empty<LanguageSymbol>(), 0);
+
+        h.Session.WorkspaceHandler = (_, _) =>
+            Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
+            {
+                nullLoc,
+            }));
+
+        h.Service.RequestWorkspaceSymbols("test");
+        await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Empty);
+
+        Assert.Equal(LanguageSymbolPolicy.WorkspaceEmptyMessage, h.Service.Current.FeedbackMessage);
     }
 }

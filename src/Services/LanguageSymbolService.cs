@@ -445,7 +445,10 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
                 .ConfigureAwait(false);
 
             if (cancellationToken.IsCancellationRequested)
+            {
+                DismissStaleIfCurrentLocked(requestId);
                 return;
+            }
 
             if (!LanguageActiveDocumentValidator.TryValidate(
                     _workspace,
@@ -457,6 +460,7 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
                     out _))
             {
                 // Stale — must not alter the symbol surface.
+                DismissStaleIfCurrentLocked(requestId);
                 return;
             }
 
@@ -464,6 +468,7 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
             if (currentSession.State != LanguageSessionState.Ready ||
                 currentSession.Generation != generation)
             {
+                DismissStaleIfCurrentLocked(requestId);
                 return;
             }
 
@@ -529,7 +534,7 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
         }
         catch (OperationCanceledException)
         {
-            // Superseded.
+            DismissStaleIfCurrentLocked(requestId);
         }
         catch (Exception ex)
         {
@@ -548,6 +553,10 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
                     requestId,
                     tracked);
             }
+            else
+            {
+                DismissStaleIfCurrentLocked(requestId);
+            }
         }
     }
 
@@ -564,12 +573,16 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
                 .ConfigureAwait(false);
 
             if (cancellationToken.IsCancellationRequested)
+            {
+                DismissStaleIfCurrentLocked(requestId);
                 return;
+            }
 
             var currentSession = _sessionService.Current;
             if (currentSession.State != LanguageSessionState.Ready ||
                 currentSession.Generation != generation)
             {
+                DismissStaleIfCurrentLocked(requestId);
                 return;
             }
 
@@ -646,7 +659,7 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
         }
         catch (OperationCanceledException)
         {
-            // Superseded.
+            DismissStaleIfCurrentLocked(requestId);
         }
         catch (Exception ex)
         {
@@ -664,7 +677,39 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
                     LanguageSymbolPolicy.WorkspaceFailedMessage,
                     requestId);
             }
+            else
+            {
+                DismissStaleIfCurrentLocked(requestId);
+            }
         }
+    }
+
+    private void DismissStaleIfCurrentLocked(long requestId)
+    {
+        LanguageSymbolScope scope;
+        long generation;
+        string? filePath;
+        string query;
+
+        lock (_gate)
+        {
+            if (_disposed || _current.RequestId != requestId)
+                return;
+
+            scope = _current.Scope;
+            generation = _current.SessionGeneration;
+            filePath = _current.FilePath;
+            query = _current.Query;
+        }
+
+        PublishTerminal(
+            scope,
+            LanguageSymbolState.Cancelled,
+            generation,
+            filePath,
+            query,
+            "Request was cancelled or superseded.",
+            requestId);
     }
 
     private void PublishTerminal(
@@ -692,8 +737,8 @@ public sealed class LanguageSymbolService : ILanguageSymbolService
 
         PublishLocked(snapshot);
 
-        // Unavailable/failed collapse to idle so stale surfaces cannot linger.
-        if (state is LanguageSymbolState.Unavailable or LanguageSymbolState.Failed)
+        // Unavailable/failed/cancelled collapse to idle so stale surfaces cannot linger.
+        if (state is LanguageSymbolState.Unavailable or LanguageSymbolState.Failed or LanguageSymbolState.Cancelled)
             PublishLocked(LanguageSymbolSnapshot.Idle);
     }
 
