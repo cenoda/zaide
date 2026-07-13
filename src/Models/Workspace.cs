@@ -33,6 +33,17 @@ namespace Zaide.Models
         public event EventHandler? WorkspaceFolderChanged;
 
         /// <summary>
+        /// Raised when a new document is added to <see cref="Documents"/>.
+        /// Reactivating an already-open path does not raise this event.
+        /// </summary>
+        public event EventHandler<Document>? DocumentOpened;
+
+        /// <summary>
+        /// Raised after a document path is removed from <see cref="Documents"/>.
+        /// </summary>
+        public event EventHandler<string>? DocumentClosed;
+
+        /// <summary>
         /// Sets the workspace name and full path from a folder path.
         /// Raises <see cref="WorkspaceFolderChanged"/> after updating properties.
         /// A null or empty <paramref name="folderPath"/> closes the workspace.
@@ -59,6 +70,7 @@ namespace Zaide.Models
             var document = new Document(path, content);
             _documents[path] = document;
             ActiveDocument = document;
+            DocumentOpened?.Invoke(this, document);
             return document;
         }
 
@@ -70,6 +82,8 @@ namespace Zaide.Models
                 {
                     ActiveDocument = _documents.Values.FirstOrDefault();
                 }
+
+                DocumentClosed?.Invoke(this, path);
             }
         }
 

@@ -101,6 +101,25 @@ public sealed class LanguageSessionServiceTests
             return Task.CompletedTask;
         }
 
+        public Task NotifyDidOpenAsync(
+            string documentUri,
+            int version,
+            string text,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task NotifyDidChangeAsync(
+            string documentUri,
+            int version,
+            string text,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task NotifyDidCloseAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public ValueTask DisposeAsync()
         {
             Disposed = true;

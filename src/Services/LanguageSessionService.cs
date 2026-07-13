@@ -57,6 +57,20 @@ public sealed class LanguageSessionService : ILanguageSessionService
     public IObservable<LanguageSessionSnapshot> WhenChanged => _subject;
 
     /// <inheritdoc />
+    public ILanguageServerSession? TryGetReadySession(long generation)
+    {
+        if (_disposed)
+            return null;
+
+        var snapshot = _current;
+        if (snapshot.State != LanguageSessionState.Ready || snapshot.Generation != generation)
+            return null;
+
+        var session = _activeSession;
+        return session is not null && session.Generation == generation ? session : null;
+    }
+
+    /// <inheritdoc />
     public async Task RestartAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

@@ -76,6 +76,7 @@ class Program
         services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
         services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();
         services.AddSingleton<ILanguageSessionService, LanguageSessionService>();
+        services.AddSingleton<ILanguageDocumentBridge, LanguageDocumentBridge>();
 
         services.AddSingleton(_ =>
         {

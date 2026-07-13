@@ -23,4 +23,11 @@ public interface ILanguageSessionService : IDisposable
     /// context is eligible. Publishes unavailable/loading/failed state otherwise.
     /// </summary>
     Task RestartAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the live server session when <paramref name="generation"/> matches
+    /// <see cref="LanguageSessionSnapshot.Generation"/> and state is
+    /// <see cref="LanguageSessionState.Ready"/>; otherwise <c>null</c>.
+    /// </summary>
+    ILanguageServerSession? TryGetReadySession(long generation);
 }

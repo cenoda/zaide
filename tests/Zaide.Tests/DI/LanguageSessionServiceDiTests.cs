@@ -47,4 +47,15 @@ public sealed class LanguageSessionServiceDiTests
 
         Assert.Same(first, second);
     }
+
+    [Fact]
+    public void ConfigureServices_ResolvesLanguageDocumentBridge()
+    {
+        using var provider = BuildProvider();
+
+        var bridge = provider.GetRequiredService<ILanguageDocumentBridge>();
+
+        Assert.NotNull(bridge);
+        Assert.IsType<LanguageDocumentBridge>(bridge);
+    }
 }

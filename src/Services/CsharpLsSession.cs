@@ -103,7 +103,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         _rpc.StartListening();
         _rpc.Disconnected += (_, e) => SignalProcessExited();
 
-        var workspaceUri = PathToFileUri(_options.WorkspaceFolderPath);
+        var workspaceUri = LanguageDocumentUri.FromPath(_options.WorkspaceFolderPath);
         var initParams = BuildInitializeParams(workspaceUri, _options);
 
         _ = await _rpc.InvokeWithCancellationAsync<JsonElement?>(
@@ -153,6 +153,65 @@ internal sealed class CsharpLsSession : ILanguageServerSession
                 await ForceKillAsync().ConfigureAwait(false);
             }
         }
+    }
+
+    /// <inheritdoc />
+    public Task NotifyDidOpenAsync(
+        string documentUri,
+        int version,
+        string text,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return Task.CompletedTask;
+
+        return _rpc.NotifyAsync(
+            "textDocument/didOpen",
+            new
+            {
+                textDocument = new
+                {
+                    uri = documentUri,
+                    languageId = "csharp",
+                    version,
+                    text,
+                },
+            },
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task NotifyDidChangeAsync(
+        string documentUri,
+        int version,
+        string text,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return Task.CompletedTask;
+
+        return _rpc.NotifyAsync(
+            "textDocument/didChange",
+            new
+            {
+                textDocument = new { uri = documentUri, version },
+                contentChanges = new object[] { new { text } },
+            },
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task NotifyDidCloseAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return Task.CompletedTask;
+
+        return _rpc.NotifyAsync(
+            "textDocument/didClose",
+            new { textDocument = new { uri = documentUri } },
+            cancellationToken);
     }
 
     /// <inheritdoc />
@@ -276,12 +335,4 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         return initParams;
     }
 
-    private static string PathToFileUri(string path)
-    {
-        var fullPath = Path.GetFullPath(path);
-        if (!fullPath.StartsWith('/'))
-            return new Uri(fullPath).AbsoluteUri;
-
-        return "file://" + fullPath;
-    }
 }

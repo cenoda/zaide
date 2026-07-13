@@ -33,6 +33,10 @@ public partial class App : Application
             var paletteVm = Services.GetRequiredService<CommandPaletteViewModel>();
             var searchVm = Services.GetRequiredService<EditorSearchViewModel>();
 
+            // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
+            // subscriptions start before editors open files.
+            _ = Services.GetRequiredService<ILanguageDocumentBridge>();
+
             desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
@@ -43,6 +47,8 @@ public partial class App : Application
                 // so its WorkspaceFolderChanged subscription is released and any
                 // in-flight work is invalidated. App does not rely on implicit
                 // root-provider disposal.
+                // Tear down document sync before killing the language session transport.
+                Services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
                 Services.GetRequiredService<ILanguageSessionService>().Dispose();
                 Services.GetRequiredService<IProjectContextService>().Dispose();
                 Services.GetService<ITerminalHost>()?.Dispose();

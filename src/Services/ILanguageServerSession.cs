@@ -28,4 +28,23 @@ public interface ILanguageServerSession : IAsyncDisposable
 
     /// <summary>Force-kill the process tree without protocol shutdown.</summary>
     Task ForceKillAsync();
+
+    /// <summary>Sends <c>textDocument/didOpen</c> for one C# document.</summary>
+    Task NotifyDidOpenAsync(
+        string documentUri,
+        int version,
+        string text,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Sends a full-document <c>textDocument/didChange</c>.</summary>
+    Task NotifyDidChangeAsync(
+        string documentUri,
+        int version,
+        string text,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Sends <c>textDocument/didClose</c>.</summary>
+    Task NotifyDidCloseAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default);
 }
