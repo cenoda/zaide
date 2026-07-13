@@ -582,14 +582,19 @@ No new commands. M6 extends existing projection and event wiring only.
 
 | Gate | Result |
 |---|---|
-| M6 focused tests (status-bar + EditorViewModel selection) | ✅ 34+22=56 passed (all new tests) |
+| M6 focused tests (status-bar + EditorViewModel selection) | ✅ 56 passed (all new tests) |
 | `dotnet build Zaide.slnx --no-restore` | ✅ 0 errors, 0 warnings |
-| `dotnet test Zaide.slnx --no-build` (full regression) | ✅ 1511 passed, 0 failed, 0 skipped |
+| `dotnet test Zaide.slnx --no-build` (full regression) | ✅ 1512 passed, 0 failed, 0 skipped |
 | `git diff --check` | ✅ clean |
 
 ### Manual Linux Smoke Evidence
 
-Linux desktop smoke verification cannot be performed in this headless CI environment. All coverage is via automated tests. The following behavior is verified by specific tests:
+Linux desktop smoke verification was completed on 2026-07-13. The following
+desktop checks passed: palette focus/run/dismiss; continuous multi-character
+search input; search/replace and zero-match feedback; selection/caret and
+active-document status; folding/no-folding feedback; tab reorder, dirty close,
+and Escape drag cancellation; and status reset on tab switch/close. Automated
+coverage supplements those checks:
 
 | Behavior | Verified By |
 |---|---|
@@ -618,7 +623,8 @@ Linux desktop smoke verification cannot be performed in this headless CI environ
 - Phase 10 owns C# language intelligence, diagnostics, navigation, and formatting; Phase 9 must not pre-build an LSP abstraction.
 - User-facing keybinding editing UI is not part of Phase 9. The keybinding refresh mechanism (`MaterializeRegistryBindings` on `_settings.WhenChanged`) is tested at the ViewModel and service layer.
 - Status-bar feedback for terminal, agent panel, and townhall operations is not added in Phase 9 (outside scope).
-- Manual Linux desktop smoke is recorded as test-covered rather than human-verified (headless environment limitation).
+- Linux desktop smoke evidence was recorded on 2026-07-13; automated tests
+  supplement, rather than replace, the visible UI checks.
 
 ### Next Step
 

@@ -4,9 +4,10 @@ AI-native IDE. Agents talk to each other, not just to you.
 
 **Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is in progress — Phase 8
-umbrella plan is locked and Phase 8.1 (Settings Foundation) is complete;
-Phase 8.2 is complete, and Phase 8.3 implementation is complete through M4.
-Phase 8 closeout verification is complete; Phases 9 through 13 remain ahead. Zaide currently has the IDE
+umbrella implementation and Phase 9 (Editor UX) are complete. Phase 9 delivers
+the Command Palette, active-document Search/Replace, syntax-neutral folding,
+tab lifecycle/reordering, and truthful editor/status-bar feedback. Phase 10
+through Phase 13 remain ahead. Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
@@ -161,7 +162,8 @@ Foundation) is complete across its five implementation slices (M1–M6 closeout
 2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) has
 closed on 2026-07-12; Phase 8.3 is implemented through M4 with automated
 verification green, including the manual `Failed` → `Project error` GUI smoke
-check.
+check. Phase 9 (Editor UX) is complete with 1512 passing tests and recorded
+Linux desktop smoke evidence.
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"

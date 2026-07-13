@@ -5,7 +5,7 @@ One agent codes, another reviews. They argue. You get better code.
 
 **Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is in progress — Phase 8
-umbrella plan is live-code-verified (Phase 8 through Phase 13). Sub-phase 8.1
+umbrella implementation and Phase 9 Editor UX are complete. Sub-phase 8.1
 (Settings Foundation) is complete across its five implementation slices (M1–M6
 closeout 2026-07-11). Phase 8.2 (Command Registry and Keybindings) is complete
 (M7a–M10 closeout 2026-07-12); command registry contract, canonical command
@@ -13,9 +13,9 @@ registration, gesture resolution, window binding materialization, and
 settings-driven lifecycle refresh are delivered.
 Phase 8.3 (Authoritative Project Context) is implemented through M4 with
 automated verification green, including the manual failed-state GUI smoke
-check.
-This document describes the currently delivered V1 architecture; V2 entries
-below are planned direction, not claims about live code.
+check. Phase 9 adds the registry-backed Command Palette, active-document
+Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
+status projections. Phase 10 and later entries below remain planned direction.
 
 ---
 
