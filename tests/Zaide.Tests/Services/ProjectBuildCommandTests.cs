@@ -133,6 +133,67 @@ public sealed class ProjectBuildCommandTests
     }
 
     [Fact]
+    public async Task Build_ShowOutputRequested_WhenStartingBeforeCompletion()
+    {
+        var registry = CommandRegistryFactory.Create();
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var workflow = new FakeProjectWorkflowService
+        {
+            EmitStartingOnStartBuild = true,
+            BuildCompletionGate = gate,
+        };
+        var context = new FakeProjectContextService(EligibleContext(ProjectContextState.SingleProject));
+        using var vm = CreateViewModel(registry, context, workflow);
+
+        var showCount = 0;
+        var showBeforeComplete = false;
+        using var _ = vm.WhenShowOutputRequested.Subscribe(_ =>
+        {
+            showCount++;
+            showBeforeComplete = !gate.Task.IsCompleted;
+        });
+
+        var buildComplete = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var executeSub = vm.BuildCommand.Execute().Subscribe(
+            _ => buildComplete.TrySetResult(true),
+            ex => buildComplete.TrySetException(ex));
+
+        await Task.Yield();
+
+        Assert.Equal(1, showCount);
+        Assert.True(showBeforeComplete);
+
+        gate.SetResult(true);
+        await buildComplete.Task;
+        executeSub.Dispose();
+    }
+
+    [Fact]
+    public async Task Build_ShowOutputRequested_NotRaisedOnRejectedContext()
+    {
+        var registry = CommandRegistryFactory.Create();
+        var workflow = new FakeProjectWorkflowService
+        {
+            StartBuildResult = new ProjectWorkflowOperationResult(
+                ProjectWorkflowOutcomeKind.RejectedContext,
+                0,
+                ProjectWorkflowOperation.Build,
+                null,
+                null),
+        };
+        var context = new FakeProjectContextService(EligibleContext(ProjectContextState.SingleProject));
+        using var vm = CreateViewModel(registry, context, workflow);
+
+        var showCount = 0;
+        using var _ = vm.WhenShowOutputRequested.Subscribe(_ => showCount++);
+
+        await vm.BuildCommand.Execute();
+
+        Assert.Equal(0, showCount);
+    }
+
+    [Fact]
     public void WorkflowConsoleFixture_ExistsForSmoke()
     {
         Assert.True(File.Exists(FixtureProjectPath), FixtureProjectPath);
@@ -235,6 +296,10 @@ public sealed class ProjectBuildCommandTests
 
         public ProjectWorkflowOperationResult? StartBuildResult { get; set; }
 
+        public bool EmitStartingOnStartBuild { get; set; }
+
+        public TaskCompletionSource<bool>? BuildCompletionGate { get; set; }
+
         public ProjectWorkflowSnapshot Current => _current;
 
         public IObservable<ProjectWorkflowSnapshot> WhenChanged => _snapshotSubject;
@@ -247,16 +312,38 @@ public sealed class ProjectBuildCommandTests
             _snapshotSubject.OnNext(snapshot);
         }
 
-        public Task<ProjectWorkflowOperationResult> StartBuildAsync(
+        public async Task<ProjectWorkflowOperationResult> StartBuildAsync(
             CancellationToken cancellationToken = default)
         {
             StartBuildCount++;
-            return Task.FromResult(StartBuildResult ?? new ProjectWorkflowOperationResult(
+
+            if (StartBuildResult?.Outcome is ProjectWorkflowOutcomeKind.RejectedConcurrent
+                or ProjectWorkflowOutcomeKind.RejectedContext)
+            {
+                return StartBuildResult;
+            }
+
+            if (EmitStartingOnStartBuild)
+            {
+                Emit(new ProjectWorkflowSnapshot(
+                    ProjectWorkflowOperationState.Starting,
+                    1,
+                    ProjectWorkflowOperation.Build,
+                    null,
+                    FixtureProjectPath,
+                    null,
+                    Array.Empty<ManagedProcessOutputLine>()));
+            }
+
+            if (BuildCompletionGate is not null)
+                await BuildCompletionGate.Task.ConfigureAwait(false);
+
+            return StartBuildResult ?? new ProjectWorkflowOperationResult(
                 ProjectWorkflowOutcomeKind.Succeeded,
                 1,
                 ProjectWorkflowOperation.Build,
                 null,
-                0));
+                0);
         }
 
         public Task<ProjectWorkflowOperationResult> StartRunAsync(

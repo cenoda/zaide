@@ -40,7 +40,8 @@ dotnet build tests/fixtures/workflow-console/WorkflowConsole.csproj
 | Clear/replace on new generation | pass |
 | Cancelled outcome status | pass |
 | `BottomPanelMode.Output` distinct from Terminal | pass (compile + panel host wiring) |
-| Show Output on accepted build start | pass (`WhenShowOutputRequested` subscription) |
+| Show Output on build `Starting` (before completion) | pass (`Build_ShowOutputRequested_WhenStartingBeforeCompletion`) |
+| Show Output not raised on `RejectedContext` | pass (`Build_ShowOutputRequested_NotRaisedOnRejectedContext`) |
 | Terminal tab host cache unchanged | pass (visibility-only mode switch) |
 
 ## Interactive UI smoke (operator)

@@ -66,7 +66,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>
-    /// Raised when a build starts successfully so hosts can reveal the Output panel.
+    /// Raised when a build enters <see cref="ProjectWorkflowOperationState.Starting"/>
+    /// so hosts can reveal the Output panel before stdout streams.
     /// </summary>
     public IObservable<Unit> WhenShowOutputRequested => _showOutputRequested;
 
@@ -119,6 +120,14 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
             _outputService.WhenChanged
                 .ObserveOn(Scheduler)
                 .Subscribe(ApplySnapshot));
+
+        _subscriptions.Add(
+            _workflow.WhenChanged
+                .Where(snapshot =>
+                    snapshot.State == ProjectWorkflowOperationState.Starting &&
+                    snapshot.ActiveOperation == ProjectWorkflowOperation.Build)
+                .ObserveOn(Scheduler)
+                .Subscribe(_ => _showOutputRequested.OnNext(Unit.Default)));
     }
 
     /// <inheritdoc />
@@ -132,17 +141,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         _showOutputRequested.Dispose();
     }
 
-    private async Task ExecuteBuildAsync()
-    {
-        var result = await _workflow.StartBuildAsync().ConfigureAwait(true);
-        if (result.Outcome is ProjectWorkflowOutcomeKind.RejectedConcurrent
-            or ProjectWorkflowOutcomeKind.RejectedContext)
-        {
-            return;
-        }
-
-        _showOutputRequested.OnNext(Unit.Default);
-    }
+    private Task ExecuteBuildAsync() =>
+        _workflow.StartBuildAsync();
 
     private Task ExecuteCancelAsync() => _workflow.CancelAsync();
 
