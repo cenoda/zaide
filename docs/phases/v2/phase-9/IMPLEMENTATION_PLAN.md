@@ -2,40 +2,41 @@
 
 ## Status
 
-**Draft — not started.** Phase 8.1 (Settings Foundation), Phase 8.2 (Command
+**M0 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
+full proof document. Phase 8.1 (Settings Foundation), Phase 8.2 (Command
 Registry and Keybindings), and Phase 8.3 (Authoritative Project Context) are
 closed. This plan defines the next bounded product phase and must be completed
 in milestone order.
 
 ## Pre-Implementation Verification (M0)
 
-- [ ] Re-check the live `EditorViewModel`, `EditorTabViewModel`, `EditorView`,
+- [x] Re-checked the live `EditorViewModel`, `EditorTabViewModel`, `EditorView`,
       `EditorTabBar`, `MainWindowViewModel`, `MainWindow`, `StatusBarViewModel`,
       `CommandRegistry`, and Phase 8.2 keybinding lifecycle before adding code.
-- [ ] Confirm the APIs exposed by the installed `AvaloniaEdit` assembly for
-      search navigation, replacement, folding, caret/selection, and
-      document-change grouping with a compile-backed proof.
-      `AvaloniaEdit.TextMate` 12.0.0 is the explicit package reference;
-      `Avalonia.AvaloniaEdit` is its transitive dependency. M0 must determine
-      whether M3/M4 need a direct package reference for search or folding
-      namespaces (e.g. `AvaloniaEdit.Search`, `AvaloniaEdit.Folding`). Do not assume APIs
-      from another AvaloniaEdit version.
-- [ ] Confirm the existing document/tab ownership model can carry ordering,
-      active-tab movement, and dirty-close behavior without a structural change.
-      If it cannot, record the precise blocking defect and a separately reviewed
-      change before implementation.
-- [ ] Define the command IDs, categories, default gestures, availability rules,
-      palette ordering/search rules, and exact focused test files before M1.
-- [ ] Record that `MainWindow` reuses one `EditorView` and one AvaloniaEdit
-      `TextEditor` while swapping its `ViewModel` for the active tab. Lock
-      explicit reset/restore rules for search state, folding state, caret,
-      selection, and focus on every active-tab switch and close.
-- [ ] Define the new selection-state projection end to end: `EditorView` input
-      event(s), `EditorViewModel` state, and `StatusBarViewModel` display. The
-      current code tracks caret line/column only; it has no selection state.
-- [ ] Run the sequential baseline gates:
-      `dotnet build Zaide.slnx --no-restore` and
-      `dotnet test Zaide.slnx --no-build`.
+- [x] Confirmed AvaloniaEdit 12.0.0 API availability via compile-backed proof.
+      **No direct package reference needed for search or folding**
+      — `Avalonia.AvaloniaEdit` is transitive from `AvaloniaEdit.TextMate` 12.0.0.
+      Key finding: `AbstractFoldingStrategy` **does not exist** in 12.0.0;
+      M4 must implement folding directly with `NewFolding` +
+      `FoldingManager.UpdateFoldings()`. All other expected APIs are available.
+- [x] Confirmed the existing document/tab ownership model can carry ordering,
+      active-tab movement, and dirty-close behavior. **Structural change
+      recommended (not required):** switch `TextEditor.Document` instead of
+      syncing `.Text` to isolate per-tab undo stacks and folding state.
+- [x] Defined command IDs, categories, default gestures, availability rules,
+      palette ordering/search rules, and focused test files in the proof
+      document. See `M0_EDITOR_UX_PROOF.md` §3 and §7.
+- [x] Recorded that `MainWindow` reuses one `EditorView` and one `TextEditor`.
+      Locked reset/restore rules for search, folding, caret, selection, and
+      focus on every active-tab switch and close. See proof document §4.
+- [x] Defined selection-state projection end-to-end: `TextArea.SelectionChanged`
+      input on `EditorView`, three new fields on `EditorViewModel`
+      (`SelectionStart`, `SelectionLength`, `SelectionText`), and conditional
+      `| Sel {len}` suffix on `StatusBarViewModel.CaretText`. Zero selection
+      = `SelectionLength == 0`. See proof document §5.
+- [x] Ran the sequential baseline gates:
+      `dotnet build Zaide.slnx --no-restore` ✅ and
+      `dotnet test Zaide.slnx --no-build` ✅ (1207 passed, 0 failed).
 
 ## Scope
 
@@ -143,6 +144,9 @@ text before M3 or M6 adds selection-dependent behavior.
   semantic rename.
 - Folding is syntax-neutral and local to the editor; LSP-backed folding remains
   future work.
+- `AvaloniaEdit.Folding.AbstractFoldingStrategy` does **not exist** in
+  AvaloniaEdit 12.0.0. M4 will implement folding directly with `NewFolding` +
+  `FoldingManager.UpdateFoldings()` using a standalone heuristic strategy.
 - Multi-cursor editing remains deferred beyond V2.
 - Phase 10 owns C# language intelligence, diagnostics, navigation, and
   formatting; Phase 9 must not pre-build an LSP abstraction.
@@ -166,10 +170,12 @@ text before M3 or M6 adds selection-dependent behavior.
 
 ## Exact Next Step
 
-Implement **M0 only**: verify the live Phase 9 seams, compile-proof the installed
-AvaloniaEdit APIs, publish `M0_EDITOR_UX_PROOF.md`, add the M0 proof test, and
-run the exact baseline gates. Do not add palette, search, folding, or tab
-behavior during M0.
+Implement **M1 only**: add the UI-independent palette query/presentation seam
+and the Phase 9 command IDs. The palette must enumerate only registry
+descriptors, use deterministic category/display-name/ID ordering, perform
+case-insensitive literal filtering, and report unavailable commands without
+executing them. Register no command twice. Do not add palette UI overlay (that
+is M2), search, folding, or tab behavior during M1.
 
 ## Rollback Plan
 
