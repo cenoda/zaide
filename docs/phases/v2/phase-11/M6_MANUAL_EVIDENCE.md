@@ -7,7 +7,7 @@
 | Date | 2026-07-14 |
 | Host | Linux `cenoda` 7.1.3-arch1-1, x86_64 |
 | `dotnet` | 10.0.109 (`/usr/bin/dotnet`) |
-| Closeout commit | `60674963aadfa61bc94292ad679778e926018663` |
+| Closeout commit | `1582f38` (`docs(phase-11): M6 closeout`; use `git rev-parse HEAD` after checkout of this milestone) |
 | Scope | Verify, U6 status polish, docs truth-sync — no Phase 12 / DAP |
 
 ## Full regression gates (sequential)
