@@ -43,6 +43,7 @@ public partial class App : Application
                 // so its WorkspaceFolderChanged subscription is released and any
                 // in-flight work is invalidated. App does not rely on implicit
                 // root-provider disposal.
+                Services.GetRequiredService<ILanguageSessionService>().Dispose();
                 Services.GetRequiredService<IProjectContextService>().Dispose();
                 Services.GetService<ITerminalHost>()?.Dispose();
             };

@@ -33,5 +33,9 @@
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
     <!-- Git read seam (Phase 7.1) -->
     <PackageVersion Include="LibGit2Sharp" Version="0.30.0" />
+    <!-- Language intelligence (Phase 10 M1) -->
+    <PackageVersion Include="StreamJsonRpc" Version="2.22.23" />
+    <!-- Pin MessagePack above StreamJsonRpc's default to clear NU190x audit advisories -->
+    <PackageVersion Include="MessagePack" Version="3.1.8" />
   </ItemGroup>
 </Project>

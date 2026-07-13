@@ -2,13 +2,15 @@
 
 ## Status
 
-**M0 complete** (live-code baseline + executable technology proof, 2026-07-13).
+**M1 complete** (language session service + DI wiring, 2026-07-13).
+**M0 complete** (live-code baseline + executable technology proof).
 Selected stack: **csharp-ls 0.25.0** + **StreamJsonRpc 2.22.23** (stdio
 Content-Length JSON-RPC). Evidence:
 [M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md) §7–§15.
 Standalone proof: `tools/Phase10M0LanguageIntelligenceProof/`.
-No Phase 10 production code, app DI registration, or `src/` layout move has
-been made.
+Production: `ILanguageSessionService` / `LanguageSessionService` registered in
+`Program.ConfigureServices`; focused tests in `LanguageSessionServiceTests` and
+`LanguageSessionServiceDiTests`.
 
 ## Scope
 

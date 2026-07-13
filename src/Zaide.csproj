@@ -25,6 +25,9 @@
     <PackageReference Include="AvaloniaEdit.TextMate" />
     <PackageReference Include="TextMateSharp.Grammars" />
     <PackageReference Include="LibGit2Sharp" />
+    <PackageReference Include="StreamJsonRpc" />
+    <!-- Central pin overrides StreamJsonRpc's vulnerable MessagePack 2.5.x transitive -->
+    <PackageReference Include="MessagePack" />
   </ItemGroup>
 
   <ItemGroup>

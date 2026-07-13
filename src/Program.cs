@@ -72,6 +72,11 @@ class Program
         services.AddSingleton<IProjectDiscovery, ProjectDiscovery>();
         services.AddSingleton<IProjectContextService, ProjectContextService>();
 
+        // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
+        services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
+        services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();
+        services.AddSingleton<ILanguageSessionService, LanguageSessionService>();
+
         services.AddSingleton(_ =>
         {
             var client = new HttpClient();

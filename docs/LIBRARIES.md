@@ -68,7 +68,8 @@ Every library explained in plain English — what it does, why you'd want it, an
 | Library | What It Does | Why You Want It |
 |---------|-------------|-----------------|
 | **csharp-ls** (global `dotnet tool`, not a NuGet app dependency) | Roslyn-based C# language server speaking LSP over stdio. Version proven at M0: **0.25.0**. License: MIT. | Process-backed C# diagnostics, completion, hover, definition, symbols, and document formatting without embedding Roslyn UI. Acquisition: `dotnet tool install -g csharp-ls` (no repository-wide SDK reorganization). Selected in Phase 10 M0 proof. |
-| **StreamJsonRpc** | Content-Length-framed JSON-RPC library used to speak LSP over stdio (and other transports). Version proven at M0: **2.22.23**. License: MIT. | Production-quality framing/request correlation for the language client. Referenced by the standalone M0 proof project; product package pin lands with M1 session service. |
+| **StreamJsonRpc** | Content-Length-framed JSON-RPC library used to speak LSP over stdio (and other transports). Version pinned: **2.22.23**. License: MIT. | Production language-session transport in `LanguageSessionService` / `CsharpLsSession`. Central pin in `Directory.Packages.props`; referenced from `src/Zaide.csproj`. |
+| **MessagePack** | Binary serialization dependency of StreamJsonRpc. Version pinned: **3.1.8** (central override of StreamJsonRpc's older transitive). License: MIT. | Keeps StreamJsonRpc on a single audited MessagePack revision via explicit product reference. |
 
 ---
 
@@ -91,4 +92,4 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ---
 
-*Last updated: 2026-07-13 (Phase 10 M0 — csharp-ls + StreamJsonRpc)*
+*Last updated: 2026-07-13 (Phase 10 M1 — StreamJsonRpc product pin + MessagePack override)*
