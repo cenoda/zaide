@@ -9,7 +9,7 @@ namespace Zaide.Models;
 /// All nested types are also immutable records. Consumers create new instances
 /// via <c>with</c> expressions and cannot mutate a published snapshot.
 /// </summary>
-/// <param name="SchemaVersion">Version of the settings schema (currently <c>1</c>).</param>
+/// <param name="SchemaVersion">Version of the settings schema (currently <c>2</c>).</param>
 /// <param name="Editor">Editor/terminal display preferences.</param>
 /// <param name="Llm">LLM endpoint configuration.</param>
 /// <param name="Keybindings">
@@ -29,11 +29,11 @@ public sealed record SettingsModel(
         new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
 
     /// <summary>
-    /// Default settings snapshot, corresponding to schema v1.
+    /// Default settings snapshot, corresponding to schema v2.
     /// Used when no settings file exists or when fallback is required.
     /// </summary>
     public static readonly SettingsModel Defaults = new(
-        SchemaVersion: 1,
+        SchemaVersion: 2,
         Editor: EditorSettings.Default,
         Llm: LlmSettings.Default,
         Keybindings: EmptyKeybindings
@@ -95,11 +95,14 @@ public sealed record EditorSettings(
     bool ShowTabs,
 
     [property: JsonPropertyName("showSpaces")]
-    bool ShowSpaces
+    bool ShowSpaces,
+
+    [property: JsonPropertyName("formatOnSave")]
+    bool FormatOnSave = false
 )
 {
     /// <summary>
-    /// Default editor settings matching the Phase 8 umbrella schema v1.
+    /// Default editor settings matching schema v2 (Format on Save default off).
     /// </summary>
     public static readonly EditorSettings Default = new(
         CodeFontFamily: "Cascadia Code, Consolas, monospace",
@@ -111,7 +114,8 @@ public sealed record EditorSettings(
         InsertSpaces: true,
         ShowWhitespace: false,
         ShowTabs: false,
-        ShowSpaces: false
+        ShowSpaces: false,
+        FormatOnSave: false
     );
 }
 

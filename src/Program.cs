@@ -89,6 +89,9 @@ class Program
         // Phase 10 M5: Go to Definition + document/workspace symbols.
         services.AddSingleton<ILanguageNavigationService, LanguageNavigationService>();
         services.AddSingleton<ILanguageSymbolService, LanguageSymbolService>();
+
+        // Phase 10 M6: whole-document formatting + Format on Save coordination.
+        services.AddSingleton<ILanguageFormattingService, LanguageFormattingService>();
         services.AddSingleton<EditorLanguageInputViewModel>();
 
         services.AddSingleton(_ =>
@@ -100,7 +103,11 @@ class Program
         });
 
         services.AddTransient<EditorViewModel>(sp =>
-            new EditorViewModel(new Models.Document(""), sp.GetRequiredService<IFileService>()));
+            new EditorViewModel(
+                new Models.Document(""),
+                sp.GetRequiredService<IFileService>(),
+                sp.GetService<ISettingsService>(),
+                sp.GetService<ILanguageFormattingService>()));
     }
 
     public static AppBuilder BuildAvaloniaApp()

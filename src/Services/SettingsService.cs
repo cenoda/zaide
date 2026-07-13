@@ -99,13 +99,16 @@ public sealed class SettingsService : ISettingsService, IDisposable
 
     /// <summary>
     /// Production constructor. Resolves paths via <see cref="SettingsPathResolver"/>
-    /// and uses an empty migration list.
+    /// and registers the ordered production migration chain (currently v1→v2).
     /// </summary>
     public SettingsService()
         : this(SettingsPathResolver.GetSettingsPath(),
                SettingsPathResolver.GetLastKnownGoodPath(),
                SettingsPathResolver.GetTempPath(),
-               new SettingsMigrator(Array.Empty<ISettingsMigration>()))
+               new SettingsMigrator(new ISettingsMigration[]
+               {
+                   new SettingsMigrationV1ToV2(),
+               }))
     {
     }
 

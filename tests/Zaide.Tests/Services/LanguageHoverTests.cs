@@ -88,6 +88,12 @@ public sealed class LanguageHoverTests
             string query,
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
     }
 
     private sealed class FakeSessionService : ILanguageSessionService

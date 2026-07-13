@@ -47,6 +47,7 @@ internal static class LanguageServerCapabilitiesParser
         var definitionSupported = IsProviderSupported(capabilities, "definitionProvider");
         var documentSymbolSupported = IsProviderSupported(capabilities, "documentSymbolProvider");
         var workspaceSymbolSupported = IsProviderSupported(capabilities, "workspaceSymbolProvider");
+        var documentFormattingSupported = IsProviderSupported(capabilities, "documentFormattingProvider");
 
         return new LanguageServerCapabilities(
             completionSupported,
@@ -54,7 +55,8 @@ internal static class LanguageServerCapabilitiesParser
             hoverSupported,
             definitionSupported,
             documentSymbolSupported,
-            workspaceSymbolSupported);
+            workspaceSymbolSupported,
+            documentFormattingSupported);
     }
 
     private static bool IsProviderSupported(JsonElement capabilities, string propertyName)

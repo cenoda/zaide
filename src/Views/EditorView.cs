@@ -840,6 +840,96 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         }
     }
 
+    /// <inheritdoc />
+    public bool ApplyFormattedDocument(string formattedText)
+    {
+        if (formattedText is null)
+            return false;
+
+        var doc = _textEditor.Document;
+        if (string.Equals(doc.Text, formattedText, StringComparison.Ordinal))
+            return true;
+
+        // M0 locked caret/selection mapping after full-document replace.
+        var caretBefore = _textEditor.CaretOffset;
+        if (caretBefore < 0)
+            caretBefore = 0;
+        if (caretBefore > doc.TextLength)
+            caretBefore = doc.TextLength;
+
+        var preLocation = doc.GetLocation(caretBefore);
+        var undoStack = doc.UndoStack;
+        undoStack.StartUndoGroup();
+        try
+        {
+            _isUpdatingFromViewModel = true;
+            try
+            {
+                doc.Text = formattedText;
+            }
+            finally
+            {
+                _isUpdatingFromViewModel = false;
+            }
+        }
+        finally
+        {
+            undoStack.EndUndoGroup();
+        }
+
+        var mappedCaret = MapCaretAfterFullReplace(doc, preLocation, caretBefore);
+        _textEditor.CaretOffset = mappedCaret;
+        _textEditor.SelectionStart = mappedCaret;
+        _textEditor.SelectionLength = 0;
+
+        if (ViewModel is not null && ViewModel.TextContent != _textEditor.Text)
+            ViewModel.TextContent = _textEditor.Text;
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public bool TryUndo()
+    {
+        var undoStack = _textEditor.Document.UndoStack;
+        if (!undoStack.CanUndo)
+            return false;
+
+        _isUpdatingFromViewModel = true;
+        try
+        {
+            undoStack.Undo();
+        }
+        finally
+        {
+            _isUpdatingFromViewModel = false;
+        }
+
+        if (ViewModel is not null && ViewModel.TextContent != _textEditor.Text)
+            ViewModel.TextContent = _textEditor.Text;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Locked M6 caret mapping after whole-document formatting replacement
+    /// (M0 proof: prefer same line/column when the line still exists).
+    /// </summary>
+    internal static int MapCaretAfterFullReplace(
+        TextDocument document,
+        TextLocation preLocation,
+        int preOffset)
+    {
+        if (preLocation.Line >= 1 && preLocation.Line <= document.LineCount)
+        {
+            var line = document.GetLineByNumber(preLocation.Line);
+            var column = Math.Clamp(preLocation.Column, 1, line.Length + 1);
+            return document.GetOffset(preLocation.Line, column);
+        }
+
+        return Math.Clamp(preOffset, 0, document.TextLength);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

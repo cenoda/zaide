@@ -156,6 +156,12 @@ public sealed class LanguageSessionServiceTests
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
 
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
+
 
         public ValueTask DisposeAsync()
         {

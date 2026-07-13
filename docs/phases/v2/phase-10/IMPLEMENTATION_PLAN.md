@@ -2,6 +2,7 @@
 
 ## Status
 
+**M6 complete** (whole-document formatting + Format on Save, 2026-07-14).
 **M5 complete** (Go to Definition + document/workspace symbols, 2026-07-13).
 **M4 complete** (active-document completion + hover, 2026-07-13).
 **M3 complete** (structured diagnostics + Problems projection, 2026-07-13).
@@ -13,7 +14,8 @@ Content-Length JSON-RPC). Evidence:
 [M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md) §7–§15;
 [M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md);
 [M4_MANUAL_EVIDENCE.md](M4_MANUAL_EVIDENCE.md);
-[M5_MANUAL_EVIDENCE.md](M5_MANUAL_EVIDENCE.md).
+[M5_MANUAL_EVIDENCE.md](M5_MANUAL_EVIDENCE.md);
+[M6_MANUAL_EVIDENCE.md](M6_MANUAL_EVIDENCE.md).
 Standalone proof: `tools/Phase10M0LanguageIntelligenceProof/`.
 Production: `ILanguageSessionService` / `LanguageSessionService`,
 `ILanguageDocumentBridge` / `LanguageDocumentBridge`,
@@ -22,12 +24,15 @@ Production: `ILanguageSessionService` / `LanguageSessionService`,
 `ILanguageHoverService` / `LanguageHoverService`,
 `ILanguageNavigationService` / `LanguageNavigationService`,
 `ILanguageSymbolService` / `LanguageSymbolService`,
+`ILanguageFormattingService` / `LanguageFormattingService`,
 `EditorLanguageInputViewModel`, and `ProblemsViewModel` registered in
 `Program.ConfigureServices`; focused tests in
 `LanguageSessionServiceTests`, `LanguageSessionServiceDiTests`,
 `LanguageDocumentSyncTests`, `LanguageDiagnosticsServiceTests`,
 `LanguageCompletionTests`, `LanguageHoverTests`, `EditorLanguageInputRoutingTests`,
 `LanguageNavigationTests`, `LanguageSymbolTests`,
+`LanguageFormattingTests`, `FormatOnSaveTests`, `FormatDocumentCommandTests`,
+`EditorFormattingApplyTests`,
 `ProblemsViewModelTests`, and `ProblemsNavigationProjectionTests`.
 
 ## Scope
@@ -103,7 +108,7 @@ whole-document formatting.
 | **M3** ✅ | Add structured diagnostics state and Problems projection. Diagnostics are replaced per URI/version, cleared on close/context teardown, and map safely to editor spans. Problems is truthful for unavailable/loading/failure states and supports navigation only to a still-live document/location. | `LanguageDiagnosticsServiceTests`, `ProblemsViewModelTests`, and editor-projection tests cover publish/clear, multi-file updates, invalid ranges, stale diagnostics, close/reload, navigation, and no-project/server-failure states. Manual Linux smoke: open a deliberately invalid C# file, correct it, and confirm Problems clears — evidence in [M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md). |
 | **M4** ✅ | Add active-document completion and hover. Define trigger policy, request cancellation/replacement, deterministic selection/commit behavior, capability-unavailable behavior, and strict document/version matching. No editor mutation occurs from stale or failed requests. | `LanguageCompletionTests`, `LanguageHoverTests`, and `EditorLanguageInputRoutingTests` cover explicit/automatic triggers, debounce/cancel/retrigger, empty/unsupported/failed results, active-tab switches, stale versions/generation, selection commit, hover replacement/dismissal, and non-BMP positions. Manual Linux smoke: [M4_MANUAL_EVIDENCE.md](M4_MANUAL_EVIDENCE.md). |
 | **M5** ✅ | Add Go to Definition and document/workspace symbols through registered commands/surfaces. Define multiple/zero result behavior, same-file/cross-file navigation, unavailable/failure feedback, and URI/range validation. Navigation opens files through the existing tab/workspace path. | `LanguageNavigationTests`, `LanguageSymbolTests`, and command-registration tests cover same/cross file, zero/multiple/invalid locations, stale responses, document/workspace symbol ordering, cancellation, and command availability. Manual Linux smoke: [M5_MANUAL_EVIDENCE.md](M5_MANUAL_EVIDENCE.md). |
-| **M6** | Add `textDocument/formatting` and `editor.formatDocument` (`Ctrl+Shift+I`). Validate and atomically apply only safe, current-version edits as one undoable operation; preserve a deterministic caret/selection mapping and normal dirty-state behavior. Add optional `"editor.formatOnSave"` setting (`boolean`, default `false`), enabled only after explicit-save formatting passes. Execution follows the locked M0 contract: format before write, failure/cancellation still saves, `EditorViewModel.SaveAsync` coordinates via a formatting service, no re-trigger loop. **Update `SettingsSerializer` schema-version ceiling from `> 1` to `> 2`; register the v1→v2 `ISettingsMigration` in the production `SettingsService` constructor.** | `LanguageFormattingTests`, `FormatOnSaveTests`, and command/keybinding tests cover no edits, valid edits, invalid/overlap/stale edits, cancellation/failure/unsupported no-op, one undo, dirty state, caret/selection mapping, disabled/enabled save behavior, and the execution contract (format-before-save, failure-still-saves, no re-trigger). Manual Linux smoke verifies format, undo, and save formatting. |
+| **M6** ✅ | Add `textDocument/formatting` and `editor.formatDocument` (`Ctrl+Shift+I`). Validate and atomically apply only safe, current-version edits as one undoable operation; preserve a deterministic caret/selection mapping and normal dirty-state behavior. Add optional `"editor.formatOnSave"` setting (`boolean`, default `false`), enabled only after explicit-save formatting passes. Execution follows the locked M0 contract: format before write, failure/cancellation still saves, `EditorViewModel.SaveAsync` coordinates via a formatting service, no re-trigger loop. **Update `SettingsSerializer` schema-version ceiling from `> 1` to `> 2`; register the v1→v2 `ISettingsMigration` in the production `SettingsService` constructor.** | `LanguageFormattingTests`, `FormatOnSaveTests`, `FormatDocumentCommandTests`, and `EditorFormattingApplyTests` cover no edits, valid edits, invalid/overlap/stale edits, cancellation/failure/unsupported no-op, one undo, dirty state, caret/selection mapping, disabled/enabled save behavior, and the execution contract (format-before-save, failure-still-saves, no re-trigger). Manual Linux smoke: [M6_MANUAL_EVIDENCE.md](M6_MANUAL_EVIDENCE.md). |
 | **M7** | Integrate capability/status feedback, complete accessibility and keyboard smoke evidence, truth-sync docs/architecture/library catalog if changed, and close out only with full regression green. | All Phase 10 focused tests; sequential full build/test; `git diff --check`; recorded Linux smoke for lifecycle, diagnostics, completion/hover, definition/symbols, and formatting. |
 
 ## Locked Lifecycle and State Rules

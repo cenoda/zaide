@@ -162,8 +162,10 @@ Foundation) is complete across its five implementation slices (M1–M6 closeout
 2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) has
 closed on 2026-07-12; Phase 8.3 is implemented through M4 with automated
 verification green, including the manual `Failed` → `Project error` GUI smoke
-check. Phase 9 (Editor UX) is complete with 1512 passing tests and recorded
-Linux desktop smoke evidence.
+check. Phase 9 (Editor UX) is complete with recorded Linux desktop smoke
+evidence. Phase 10 is implemented through M6 (session, document sync,
+diagnostics, completion/hover, definition/symbols, whole-document formatting
+and Format on Save).
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"

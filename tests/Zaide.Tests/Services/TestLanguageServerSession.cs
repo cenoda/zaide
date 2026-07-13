@@ -16,7 +16,8 @@ internal static class TestLanguageServerSession
         HoverSupported: true,
         DefinitionSupported: true,
         DocumentSymbolSupported: true,
-        WorkspaceSymbolSupported: true);
+        WorkspaceSymbolSupported: true,
+        DocumentFormattingSupported: true);
 
     public static Task<LanguageServerCompletionResult?> EmptyCompletionAsync(
         string documentUri,
@@ -45,4 +46,9 @@ internal static class TestLanguageServerSession
         CancellationToken cancellationToken = default) =>
         Task.FromResult<LanguageServerSymbolResult?>(
             new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>()));
+
+    public static Task<LanguageServerFormattingResult?> EmptyFormattingAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<LanguageServerFormattingResult?>(
+            LanguageServerFormattingResult.Empty);
 }

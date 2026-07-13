@@ -92,6 +92,10 @@ public sealed class LanguageSymbolTests
                 return await WorkspaceHandler(query, cancellationToken).ConfigureAwait(false);
             return new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>());
         }
+
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri, CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -190,9 +194,11 @@ public sealed class LanguageSymbolTests
                 Workspace, SessionService, Bridge, NullLogger<LanguageHoverService>.Instance);
             var navigation = new LanguageNavigationService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageNavigationService>.Instance);
+            var formatting = new LanguageFormattingService(
+                Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
 
             Input = new EditorLanguageInputViewModel(
-                completion, hover, navigation, Service, Tabs, CommandRegistryFactory.Create());
+                completion, hover, navigation, Service, formatting, Tabs, CommandRegistryFactory.Create());
         }
 
         public string OpenActive(string name, string content, int version = 1, long generation = 1)

@@ -17,7 +17,7 @@ public static class SettingsValidator
         var errors = new List<SettingsValidationError>();
 
         // ── Schema version ────────────────────────────────────────────────
-        // At runtime, only v1 is defined. Validation accepts v1.
+        // Floor remains 1; current production model is schema v2 (FormatOnSave).
         if (settings.SchemaVersion < 1)
             errors.Add(new(nameof(SettingsModel.SchemaVersion),
                 "Schema version must be at least 1."));

@@ -17,7 +17,7 @@ namespace Zaide.ViewModels;
 /// <summary>
 /// Manages the collection of open editor tabs. Handles opening files,
 /// switching tabs, and closing tabs.
-/// 
+///
 /// Registered as Singleton — one tab manager for the app lifetime.
 /// Individual EditorViewModels are resolved as Transient via IServiceProvider.
 /// </summary>
@@ -438,7 +438,11 @@ public class EditorTabViewModel : ReactiveObject
 
         // Open document via Workspace
         var document = _workspace.OpenDocument(normalizedPath, content);
-        var tab = new EditorViewModel(document, _services.GetRequiredService<IFileService>());
+        var tab = new EditorViewModel(
+            document,
+            _services.GetRequiredService<IFileService>(),
+            _services.GetService<ISettingsService>(),
+            _services.GetService<ILanguageFormattingService>());
 
         OpenTabs.Add(tab);
         ActiveTab = tab;

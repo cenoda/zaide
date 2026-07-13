@@ -6,7 +6,7 @@ using Zaide.Models;
 namespace Zaide.Services;
 
 /// <summary>
-/// JSON serialization for the settings model (schema v1).
+/// JSON serialization for the settings model (schema v1–v2).
 /// </summary>
 internal static class SettingsSerializer
 {
@@ -63,8 +63,9 @@ internal static class SettingsSerializer
                 return null;
             }
 
-            // Reject unknown future versions and unsupported old versions
-            if (schemaVersion is < 1 or > 1)
+            // Reject unknown future versions and unsupported old versions.
+            // Ceiling is schema v2 (FormatOnSave); v1 loads and migrates at M6+.
+            if (schemaVersion is < 1 or > 2)
             {
                 schemaRejected = true;
                 return null;
@@ -75,7 +76,7 @@ internal static class SettingsSerializer
             if (result is null)
                 return null;
 
-            // Schema version 1 must have all required sections.
+            // Schema versions 1–2 must have all required sections.
             if (result.Editor is null || result.Llm is null)
                 return null;
 

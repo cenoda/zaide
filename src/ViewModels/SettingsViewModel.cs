@@ -93,6 +93,7 @@ public sealed class SettingsViewModel : ReactiveObject, IDisposable
     public void SetShowWhitespace(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowWhitespace = show } });
     public void SetShowTabs(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowTabs = show } });
     public void SetShowSpaces(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowSpaces = show } });
+    public void SetFormatOnSave(bool formatOnSave) => SetCandidate(Candidate with { Editor = Candidate.Editor with { FormatOnSave = formatOnSave } });
 
     public void RefreshFromCurrent(bool preserveCandidate = true)
     {
@@ -169,6 +170,7 @@ public sealed class SettingsViewModel : ReactiveObject, IDisposable
         if (candidate.Editor.ShowWhitespace != oldBase.Editor.ShowWhitespace) editor = editor with { ShowWhitespace = candidate.Editor.ShowWhitespace };
         if (candidate.Editor.ShowTabs != oldBase.Editor.ShowTabs) editor = editor with { ShowTabs = candidate.Editor.ShowTabs };
         if (candidate.Editor.ShowSpaces != oldBase.Editor.ShowSpaces) editor = editor with { ShowSpaces = candidate.Editor.ShowSpaces };
+        if (candidate.Editor.FormatOnSave != oldBase.Editor.FormatOnSave) editor = editor with { FormatOnSave = candidate.Editor.FormatOnSave };
         var llm = current.Llm;
         if (candidate.Llm.BaseUrl != oldBase.Llm.BaseUrl) llm = llm with { BaseUrl = candidate.Llm.BaseUrl };
         if (candidate.Llm.Model != oldBase.Llm.Model) llm = llm with { Model = candidate.Llm.Model };

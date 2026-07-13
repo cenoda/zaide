@@ -29,6 +29,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     private readonly CheckBox _showWhitespace;
     private readonly CheckBox _showTabs;
     private readonly CheckBox _showSpaces;
+    private readonly CheckBox _formatOnSave;
 
     // Terminal controls
     private readonly TextBox _terminalFontFamily;
@@ -91,6 +92,11 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             IsChecked = viewModel.Candidate.Editor.ShowSpaces,
             Content = "Show Spaces"
         };
+        _formatOnSave = new CheckBox
+        {
+            IsChecked = viewModel.Candidate.Editor.FormatOnSave,
+            Content = "Format on Save"
+        };
 
         // ── Terminal controls ──────────────────────────────────────────
         _terminalFontFamily = new TextBox
@@ -148,6 +154,11 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             if (e.Property == CheckBox.IsCheckedProperty && !_syncing)
                 viewModel.SetShowSpaces(_showSpaces.IsChecked ?? false);
         };
+        _formatOnSave.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == CheckBox.IsCheckedProperty && !_syncing)
+                viewModel.SetFormatOnSave(_formatOnSave.IsChecked ?? false);
+        };
         // Terminal text fields
         _terminalFontFamily.TextChanged += (_, _) => { if (!_syncing) viewModel.SetTerminalFontFamily(_terminalFontFamily.Text ?? ""); };
         _terminalFontSize.TextChanged += (_, _) => { if (!_syncing && int.TryParse(_terminalFontSize.Text, out var s)) viewModel.SetTerminalFontSize(s); };
@@ -164,7 +175,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             LabelledField("Code Font Size", _codeFontSize),
             LabelledField("Prose Font Family", _proseFontFamily),
             LabelledField("Tab Size", _tabSize),
-            _insertSpaces, _showWhitespace, _showTabs, _showSpaces);
+            _insertSpaces, _showWhitespace, _showTabs, _showSpaces, _formatOnSave);
 
         var terminalSection = BuildSection("Terminal",
             LabelledField("Terminal Font Family", _terminalFontFamily),
@@ -238,6 +249,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         _showWhitespace.IsChecked = ViewModel.Candidate.Editor.ShowWhitespace;
         _showTabs.IsChecked = ViewModel.Candidate.Editor.ShowTabs;
         _showSpaces.IsChecked = ViewModel.Candidate.Editor.ShowSpaces;
+        _formatOnSave.IsChecked = ViewModel.Candidate.Editor.FormatOnSave;
         _terminalFontFamily.Text = ViewModel.Candidate.Editor.TerminalFontFamily;
         _terminalFontSize.Text = ViewModel.Candidate.Editor.TerminalFontSize.ToString();
         _model.Text = ViewModel.Candidate.Llm.Model;

@@ -57,6 +57,16 @@ public sealed class EditorLanguageInputRoutingTests
             Text = Text[..start] + newText + Text[(start + length)..];
 
         public int ReplaceAllMatches(string query, string replacement, bool caseSensitive) => 0;
+
+        public bool ApplyFormattedDocument(string formattedText)
+        {
+            Text = formattedText;
+            SelectionStart = CaretOffset = Math.Min(CaretOffset, Text.Length);
+            SelectionLength = 0;
+            return true;
+        }
+
+        public bool TryUndo() => false;
     }
 
     private sealed class ConfigurableSession : ILanguageServerSession
@@ -113,6 +123,12 @@ public sealed class EditorLanguageInputRoutingTests
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
 
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
+
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -136,6 +152,12 @@ public sealed class EditorLanguageInputRoutingTests
             string query,
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
 
 
         public ILanguageServerSession? TryGetReadySession(long generation) =>
@@ -181,6 +203,7 @@ public sealed class EditorLanguageInputRoutingTests
         public LanguageHoverService Hover { get; }
         public LanguageNavigationService Navigation { get; }
         public LanguageSymbolService Symbols { get; }
+        public LanguageFormattingService Formatting { get; }
         public EditorTabViewModel Tabs { get; }
         public EditorLanguageInputViewModel Input { get; }
         public RecordingEditor Editor { get; } = new();
@@ -203,8 +226,10 @@ public sealed class EditorLanguageInputRoutingTests
                 Workspace, SessionService, Bridge, NullLogger<LanguageNavigationService>.Instance);
             Symbols = new LanguageSymbolService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageSymbolService>.Instance);
+            Formatting = new LanguageFormattingService(
+                Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
             Input = new EditorLanguageInputViewModel(
-                Completion, Hover, Navigation, Symbols, Tabs, CommandRegistryFactory.Create());
+                Completion, Hover, Navigation, Symbols, Formatting, Tabs, CommandRegistryFactory.Create());
         }
 
         public string OpenActive(string name, string content)
@@ -225,6 +250,7 @@ public sealed class EditorLanguageInputRoutingTests
             Hover.Dispose();
             Navigation.Dispose();
             Symbols.Dispose();
+            Formatting.Dispose();
             SessionService.Dispose();
             Bridge.Dispose();
             _sp.Dispose();
@@ -320,6 +346,7 @@ public sealed class EditorLanguageInputRoutingTests
             new LanguageHoverService(workspace, session, bridge, NullLogger<LanguageHoverService>.Instance),
             new LanguageNavigationService(workspace, session, bridge, NullLogger<LanguageNavigationService>.Instance),
             new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
+            new LanguageFormattingService(workspace, session, bridge, NullLogger<LanguageFormattingService>.Instance),
             tabs,
             registry);
 
@@ -347,6 +374,7 @@ public sealed class EditorLanguageInputRoutingTests
             new LanguageHoverService(workspace, session, bridge, NullLogger<LanguageHoverService>.Instance),
             new LanguageNavigationService(workspace, session, bridge, NullLogger<LanguageNavigationService>.Instance),
             new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
+            new LanguageFormattingService(workspace, session, bridge, NullLogger<LanguageFormattingService>.Instance),
             tabs,
             registry);
 

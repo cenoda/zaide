@@ -87,4 +87,9 @@ public interface ILanguageServerSession : IAsyncDisposable
     Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
         string query,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>textDocument/formatting</c> for an open document.</summary>
+    Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default);
 }

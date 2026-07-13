@@ -81,6 +81,12 @@ public sealed class LanguageNavigationTests
         public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
             string query, CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -181,9 +187,11 @@ public sealed class LanguageNavigationTests
                 Workspace, SessionService, Bridge, NullLogger<LanguageHoverService>.Instance);
             var symbols = new LanguageSymbolService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageSymbolService>.Instance);
+            var formatting = new LanguageFormattingService(
+                Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
 
             Input = new EditorLanguageInputViewModel(
-                completion, hover, Service, symbols, Tabs, CommandRegistryFactory.Create());
+                completion, hover, Service, symbols, formatting, Tabs, CommandRegistryFactory.Create());
 
             // Count open attempts without consuming command execution semantics.
             Tabs.OpenFileCommand.IsExecuting.Subscribe(_ => { });

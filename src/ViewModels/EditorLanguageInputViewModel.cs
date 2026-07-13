@@ -21,6 +21,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private readonly ILanguageHoverService _hoverService;
     private readonly ILanguageNavigationService _navigationService;
     private readonly ILanguageSymbolService _symbolService;
+    private readonly ILanguageFormattingService _formattingService;
     private readonly EditorTabViewModel _editorTabs;
     private readonly ICommandRegistry _registry;
 
@@ -28,12 +29,14 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private string? _activeDocumentId;
     private string? _feedbackMessage;
     private int _navigationInFlight;
+    private int _formatInFlight;
 
     public EditorLanguageInputViewModel(
         ILanguageCompletionService completionService,
         ILanguageHoverService hoverService,
         ILanguageNavigationService navigationService,
         ILanguageSymbolService symbolService,
+        ILanguageFormattingService formattingService,
         EditorTabViewModel editorTabs,
         ICommandRegistry registry)
     {
@@ -41,6 +44,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         _hoverService = hoverService ?? throw new ArgumentNullException(nameof(hoverService));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _symbolService = symbolService ?? throw new ArgumentNullException(nameof(symbolService));
+        _formattingService = formattingService ?? throw new ArgumentNullException(nameof(formattingService));
         _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
 
@@ -48,6 +52,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         HoverWhenChanged = _hoverService.WhenChanged;
         NavigationWhenChanged = _navigationService.WhenChanged;
         SymbolWhenChanged = _symbolService.WhenChanged;
+        FormattingWhenChanged = _formattingService.WhenChanged;
 
         TriggerSuggestCommand = ReactiveCommand.Create(
             TriggerExplicitCompletion,
@@ -67,6 +72,10 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
 
         WorkspaceSymbolCommand = ReactiveCommand.Create(OpenWorkspaceSymbols);
 
+        FormatDocumentCommand = ReactiveCommand.CreateFromTask(
+            FormatDocumentAsync,
+            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+
         DefinitionMoveUpCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(-1));
         DefinitionMoveDownCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(1));
         DefinitionAcceptCommand = ReactiveCommand.CreateFromTask(AcceptDefinitionSelectionAsync);
@@ -80,6 +89,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         // Auto-navigate single definition results; project feedback for terminal states.
         _ = _navigationService.WhenChanged.Subscribe(OnNavigationSnapshot);
         _ = _symbolService.WhenChanged.Subscribe(OnSymbolSnapshot);
+        _ = _formattingService.WhenChanged.Subscribe(OnFormattingSnapshot);
 
         RegisterCommands();
     }
@@ -96,6 +106,9 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     /// <summary>Symbol surface snapshots from the language service.</summary>
     public IObservable<LanguageSymbolSnapshot> SymbolWhenChanged { get; }
 
+    /// <summary>Formatting snapshots from the language service.</summary>
+    public IObservable<LanguageFormattingSnapshot> FormattingWhenChanged { get; }
+
     /// <summary>Current completion snapshot for one-shot view reads.</summary>
     public LanguageCompletionSnapshot Completion => _completionService.Current;
 
@@ -107,6 +120,9 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
 
     /// <summary>Current symbol snapshot for one-shot view reads.</summary>
     public LanguageSymbolSnapshot Symbols => _symbolService.Current;
+
+    /// <summary>Current formatting snapshot for one-shot view reads.</summary>
+    public LanguageFormattingSnapshot Formatting => _formattingService.Current;
 
     /// <summary>
     /// Transient truthful feedback for definition/symbol outcomes (status bar projection).
@@ -161,6 +177,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> GoToDefinitionCommand { get; }
     public ReactiveCommand<Unit, Unit> DocumentSymbolCommand { get; }
     public ReactiveCommand<Unit, Unit> WorkspaceSymbolCommand { get; }
+    public ReactiveCommand<Unit, Unit> FormatDocumentCommand { get; }
 
     public ReactiveCommand<Unit, Unit> DefinitionMoveUpCommand { get; }
     public ReactiveCommand<Unit, Unit> DefinitionMoveDownCommand { get; }
@@ -436,5 +453,93 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
             "Editor",
             LanguageSymbolPolicy.WorkspaceSymbolDefaultGestures,
             WorkspaceSymbolCommand));
+
+        _registry.Register(new CommandDescriptor(
+            LanguageFormattingPolicy.FormatDocumentCommandId,
+            "Format Document",
+            "Editor",
+            LanguageFormattingPolicy.FormatDocumentDefaultGestures,
+            FormatDocumentCommand));
+    }
+
+    private void OnFormattingSnapshot(LanguageFormattingSnapshot snapshot)
+    {
+        if (snapshot.State is LanguageFormattingState.Unavailable
+            or LanguageFormattingState.Unsupported
+            or LanguageFormattingState.Failed
+            or LanguageFormattingState.Invalid
+            or LanguageFormattingState.Cancelled
+            or LanguageFormattingState.Stale
+            or LanguageFormattingState.NoEdits
+            or LanguageFormattingState.Ready)
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.FeedbackMessage))
+                FeedbackMessage = snapshot.FeedbackMessage;
+        }
+    }
+
+    private async Task FormatDocumentAsync()
+    {
+        if (Interlocked.CompareExchange(ref _formatInFlight, 1, 0) != 0)
+            return;
+
+        try
+        {
+            if (!TryGetActiveContext(out var filePath, out _))
+            {
+                FeedbackMessage = LanguageFormattingPolicy.UnavailableMessage;
+                return;
+            }
+
+            var editor = _activeEditor;
+            var documentId = _activeDocumentId;
+            if (editor is null ||
+                string.IsNullOrWhiteSpace(documentId) ||
+                !string.Equals(documentId, filePath, StringComparison.Ordinal))
+            {
+                FeedbackMessage = LanguageFormattingPolicy.UnavailableMessage;
+                return;
+            }
+
+            var outcome = await _formattingService
+                .FormatDocumentAsync(filePath, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            // Re-validate active context so a tab switch cannot apply text to
+            // an outgoing/inactive document.
+            if (!ReferenceEquals(_activeEditor, editor) ||
+                !string.Equals(_activeDocumentId, filePath, StringComparison.Ordinal))
+            {
+                FeedbackMessage = LanguageFormattingPolicy.CancelledMessage;
+                return;
+            }
+
+            if (!outcome.IsAccepted)
+            {
+                if (!string.IsNullOrWhiteSpace(outcome.FeedbackMessage))
+                    FeedbackMessage = outcome.FeedbackMessage;
+                return;
+            }
+
+            if (outcome.HasTextChange && outcome.FormattedText is not null)
+            {
+                if (!editor.ApplyFormattedDocument(outcome.FormattedText))
+                {
+                    FeedbackMessage = LanguageFormattingPolicy.FailedMessage;
+                    return;
+                }
+
+                FeedbackMessage = LanguageFormattingPolicy.AppliedMessage;
+            }
+            else
+            {
+                // No edits — do not claim a format was applied.
+                FeedbackMessage = LanguageFormattingPolicy.NoEditsMessage;
+            }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _formatInFlight, 0);
+        }
     }
 }

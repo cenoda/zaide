@@ -13,4 +13,15 @@ public interface IEditorLanguageOperations : IEditorTextOperations
 
     /// <summary>Returns the character immediately before the caret, if any.</summary>
     char? GetCharBeforeCaret();
+
+    /// <summary>
+    /// Applies whole-document formatting as one undoable operation with the
+    /// M0-locked caret/selection mapping rule. Returns false when rejected.
+    /// </summary>
+    bool ApplyFormattedDocument(string formattedText);
+
+    /// <summary>
+    /// Undoes the last AvaloniaEdit undo step (for tests and host commands).
+    /// </summary>
+    bool TryUndo();
 }

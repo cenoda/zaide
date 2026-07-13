@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Models;
@@ -15,6 +16,9 @@ namespace Zaide.ViewModels;
 public class EditorViewModel : ReactiveObject
 {
     private readonly IFileService _fileService;
+    private readonly ISettingsService? _settingsService;
+    private readonly ILanguageFormattingService? _formattingService;
+    private int _formatOnSaveInFlight;
     private Document _document;
 
     public Document Document
@@ -189,10 +193,20 @@ public class EditorViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, bool> SaveCommand { get; }
 
-    public EditorViewModel(Document document, IFileService fileService)
+    /// <summary>
+    /// Creates a tab view model. Settings and formatting services are optional so
+    /// existing tests keep working; production wires both for Format on Save.
+    /// </summary>
+    public EditorViewModel(
+        Document document,
+        IFileService fileService,
+        ISettingsService? settingsService = null,
+        ILanguageFormattingService? formattingService = null)
     {
         _document = document;
         _fileService = fileService;
+        _settingsService = settingsService;
+        _formattingService = formattingService;
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
 
         // Subscribe to Document events to propagate changes to reactive properties.
@@ -223,16 +237,26 @@ public class EditorViewModel : ReactiveObject
 
     /// <summary>
     /// Writes TextContent to FilePath via the file service, then clears the
-    /// dirty flag. Returns true on success, false on failure or empty path.
+    /// dirty flag. When Format on Save is enabled, requests formatting before
+    /// the write (M0 locked contract): accepted formatting updates in-memory
+    /// content first; failure/cancellation/unsupported still saves current text.
+    /// Formatting never re-triggers save.
+    /// Returns true on success, false on failure or empty path.
     /// </summary>
     private async Task<bool> SaveAsync()
     {
         if (string.IsNullOrEmpty(FilePath))
             return false;
 
+        // Guard against recursive save if formatting somehow re-entered Save.
+        if (Interlocked.CompareExchange(ref _formatOnSaveInFlight, 1, 0) != 0)
+            return false;
+
         try
         {
-            await _fileService.WriteAllTextAsync(FilePath, TextContent);
+            await TryFormatOnSaveAsync().ConfigureAwait(false);
+
+            await _fileService.WriteAllTextAsync(FilePath, TextContent).ConfigureAwait(false);
             Document.MarkClean();
             return true;
         }
@@ -240,6 +264,48 @@ public class EditorViewModel : ReactiveObject
         {
             Document.RecordSaveError(ex.Message);
             return false;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _formatOnSaveInFlight, 0);
+        }
+    }
+
+    /// <summary>
+    /// Format-on-Save coordination: format before write when enabled. Never
+    /// blocks save on formatting failure; never re-enters <see cref="SaveAsync"/>.
+    /// </summary>
+    private async Task TryFormatOnSaveAsync()
+    {
+        if (_settingsService is null || _formattingService is null)
+            return;
+
+        if (!_settingsService.Current.Editor.FormatOnSave)
+            return;
+
+        if (string.IsNullOrEmpty(FilePath))
+            return;
+
+        try
+        {
+            var outcome = await _formattingService
+                .FormatDocumentAsync(FilePath, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            if (outcome.HasTextChange && outcome.FormattedText is not null)
+            {
+                // Update in-memory document only; dirty state stays authoritative.
+                // Save continues with the updated TextContent in a single write.
+                Document.Content = outcome.FormattedText;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Still save current content.
+        }
+        catch
+        {
+            // Formatting is a presentation enhancement; never block save.
         }
     }
 

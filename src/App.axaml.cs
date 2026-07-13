@@ -45,6 +45,8 @@ public partial class App : Application
             // Phase 10 M5: definition/symbol services before editors open.
             _ = Services.GetRequiredService<ILanguageNavigationService>();
             _ = Services.GetRequiredService<ILanguageSymbolService>();
+            // Phase 10 M6: formatting service before editors open.
+            _ = Services.GetRequiredService<ILanguageFormattingService>();
 
             desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm, languageInputVm) { ViewModel = vm };
 
@@ -57,6 +59,7 @@ public partial class App : Application
                 // in-flight work is invalidated. App does not rely on implicit
                 // root-provider disposal.
                 // Tear down language features before document sync/session teardown.
+                Services.GetRequiredService<ILanguageFormattingService>().Dispose();
                 Services.GetRequiredService<ILanguageNavigationService>().Dispose();
                 Services.GetRequiredService<ILanguageSymbolService>().Dispose();
                 Services.GetRequiredService<ILanguageCompletionService>().Dispose();

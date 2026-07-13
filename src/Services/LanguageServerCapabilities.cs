@@ -12,12 +12,14 @@ public sealed record LanguageServerCapabilities(
     bool HoverSupported,
     bool DefinitionSupported,
     bool DocumentSymbolSupported,
-    bool WorkspaceSymbolSupported)
+    bool WorkspaceSymbolSupported,
+    bool DocumentFormattingSupported = false)
 {
     /// <summary>No language features supported.</summary>
     public static LanguageServerCapabilities None { get; } = new(
         false,
         Array.Empty<char>(),
+        false,
         false,
         false,
         false,

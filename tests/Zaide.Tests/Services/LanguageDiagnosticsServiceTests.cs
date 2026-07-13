@@ -88,6 +88,12 @@ public sealed class LanguageDiagnosticsServiceTests
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
 
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
+
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
@@ -114,6 +120,12 @@ public sealed class LanguageDiagnosticsServiceTests
             string query,
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyFormattingAsync(cancellationToken);
+
 
 
         public ILanguageServerSession? TryGetReadySession(long generation) =>

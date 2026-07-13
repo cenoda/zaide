@@ -252,6 +252,33 @@ internal sealed class CsharpLsSession : ILanguageServerSession
     }
 
     /// <inheritdoc />
+    public async Task<LanguageServerFormattingResult?> RequestFormattingAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // LSP DocumentFormattingParams: textDocument + options (tabSize, insertSpaces).
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "textDocument/formatting",
+            new
+            {
+                textDocument = new { uri = documentUri },
+                options = new
+                {
+                    tabSize = 4,
+                    insertSpaces = true,
+                },
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerFormattingParser.Parse(result);
+    }
+
+    /// <inheritdoc />
     public async Task ShutdownAsync(CancellationToken cancellationToken)
     {
         if (_disposed || _rpc is null)
