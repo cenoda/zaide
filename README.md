@@ -163,9 +163,10 @@ Foundation) is complete across its five implementation slices (M1–M6 closeout
 closed on 2026-07-12; Phase 8.3 is implemented through M4 with automated
 verification green, including the manual `Failed` → `Project error` GUI smoke
 check. Phase 9 (Editor UX) is complete with recorded Linux desktop smoke
-evidence. Phase 10 is implemented through M6 (session, document sync,
-diagnostics, completion/hover, definition/symbols, whole-document formatting
-and Format on Save).
+evidence. Phase 10 is **complete** (session, document sync, diagnostics/Problems,
+completion/hover, definition/symbols, whole-document formatting, Format on
+Save, and M7 closeout — see
+[`docs/phases/v2/phase-10/M7_MANUAL_EVIDENCE.md`](docs/phases/v2/phase-10/M7_MANUAL_EVIDENCE.md)).
 Multi-cursor editing and broader AI-native orchestration are outside V2.
 
 ## Why "Zaide"

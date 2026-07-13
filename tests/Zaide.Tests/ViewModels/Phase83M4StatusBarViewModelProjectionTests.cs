@@ -33,6 +33,25 @@ public sealed class Phase83M4StatusBarViewModelProjectionTests
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
 
+    private sealed class ControlledLanguageSessionService : ILanguageSessionService
+    {
+        private readonly Subject<LanguageSessionSnapshot> _subject = new();
+        public LanguageSessionSnapshot Current { get; set; } = new(
+            LanguageSessionState.Unavailable, 0, null, null, null, null);
+
+        public IObservable<LanguageSessionSnapshot> WhenChanged => _subject;
+
+        public void Emit(LanguageSessionSnapshot snapshot)
+        {
+            Current = snapshot;
+            _subject.OnNext(snapshot);
+        }
+
+        public ILanguageServerSession? TryGetReadySession(long generation) => null;
+        public Task RestartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void Dispose() => _subject.Dispose();
+    }
+
     /// <summary>
     /// A controlled <see cref="IProjectContextService"/> mock backed by a real
     /// <see cref="Subject{ProjectContext}"/> for deterministic emissions.
@@ -111,7 +130,8 @@ public sealed class Phase83M4StatusBarViewModelProjectionTests
         settings.Setup(s => s.Current).Returns(SettingsModel.Defaults);
         settings.Setup(s => s.WhenChanged).Returns(new Subject<SettingsModel>());
 
-        var status = new StatusBarViewModel(vm, settings.Object, scheduler);
+        var languageSession = new ControlledLanguageSessionService();
+        var status = new StatusBarViewModel(vm, settings.Object, languageSession, scheduler);
         return (vm, status, svc);
     }
 
@@ -241,6 +261,23 @@ public sealed class Phase83M4StatusBarViewModelProjectionTests
     {
         var (vm, status, svc) = CreateImmediate();
         Assert.Equal("Ln 1, Col 1", status.CaretText);
+    }
+
+    [Fact]
+    public void LanguageIntelligenceText_ProjectsReadySession()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var languageSession = new ControlledLanguageSessionService();
+        var settings = new Mock<ISettingsService>(MockBehavior.Strict);
+        settings.Setup(s => s.Current).Returns(SettingsModel.Defaults);
+        settings.Setup(s => s.WhenChanged).Returns(new Subject<SettingsModel>());
+        using var statusWithSession = new StatusBarViewModel(
+            vm, settings.Object, languageSession, ImmediateScheduler.Instance);
+
+        languageSession.Emit(new LanguageSessionSnapshot(
+            LanguageSessionState.Ready, 1, "/root/App.csproj", "/root", 42, null));
+
+        Assert.Equal("C# · Ready", statusWithSession.LanguageIntelligenceText);
     }
 
     [Fact]

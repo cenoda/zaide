@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -41,6 +42,7 @@ public sealed class EditorLanguagePickerPopup : Popup
             MaxHeight = 260,
             SelectionMode = SelectionMode.Single,
         };
+        _listBox.KeyDown += OnListKeyDown;
 
         var panel = new StackPanel
         {
@@ -57,7 +59,12 @@ public sealed class EditorLanguagePickerPopup : Popup
                 MinWidth = 280,
                 Margin = new Thickness(LayoutTokens.SpacingXxs),
             };
+            AutomationProperties.SetName(_queryBox, "Workspace symbol filter");
+            AutomationProperties.SetHelpText(
+                _queryBox,
+                "Type to filter workspace symbols. Escape dismisses the picker.");
             _queryBox.TextChanged += (_, _) => QueryChanged?.Invoke(_queryBox.Text ?? string.Empty);
+            _queryBox.KeyDown += OnQueryKeyDown;
             panel.Children.Add(_queryBox);
         }
 
@@ -79,10 +86,20 @@ public sealed class EditorLanguagePickerPopup : Popup
     /// <summary>Raised when the user confirms a list selection.</summary>
     public event Action? ItemConfirmed;
 
+    /// <summary>Raised when the user dismisses the popup with Escape.</summary>
+    public event Action? DismissRequested;
+
     /// <summary>Raised when the workspace query text changes (query-enabled pickers only).</summary>
     public event Action<string>? QueryChanged;
 
-    public void SetHeader(string? text) => _header.Text = text ?? string.Empty;
+    public void SetHeader(string? text)
+    {
+        _header.Text = text ?? string.Empty;
+        AutomationProperties.SetName(_listBox, text ?? "Symbol picker");
+        AutomationProperties.SetHelpText(
+            _listBox,
+            "Use Up and Down to move, Enter to accept, Escape to dismiss.");
+    }
 
     public void BindItems(IReadOnlyList<string> labels, int selectedIndex)
     {
@@ -111,6 +128,61 @@ public sealed class EditorLanguagePickerPopup : Popup
     }
 
     public void ConfirmSelection() => ItemConfirmed?.Invoke();
+
+    private void OnListKeyDown(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Escape:
+                DismissRequested?.Invoke();
+                e.Handled = true;
+                break;
+            case Key.Up:
+                MoveSelection(-1);
+                e.Handled = true;
+                break;
+            case Key.Down:
+                MoveSelection(1);
+                e.Handled = true;
+                break;
+            case Key.Enter:
+                ConfirmSelection();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnQueryKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            DismissRequested?.Invoke();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Key.Enter or Key.Down && _listBox.ItemCount > 0)
+        {
+            _listBox.Focus(NavigationMethod.Unspecified);
+            e.Handled = true;
+        }
+    }
+
+    private void MoveSelection(int delta)
+    {
+        if (_listBox.ItemCount == 0)
+            return;
+
+        var next = _listBox.SelectedIndex + delta;
+        if (next < 0)
+            next = _listBox.ItemCount - 1;
+        else if (next >= _listBox.ItemCount)
+            next = 0;
+
+        _listBox.SelectedIndex = next;
+        if (_listBox.SelectedItem is not null)
+            _listBox.ScrollIntoView(_listBox.SelectedItem);
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

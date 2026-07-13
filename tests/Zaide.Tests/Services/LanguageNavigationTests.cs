@@ -191,7 +191,7 @@ public sealed class LanguageNavigationTests
                 Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
 
             Input = new EditorLanguageInputViewModel(
-                completion, hover, Service, symbols, formatting, Tabs, CommandRegistryFactory.Create());
+                completion, hover, Service, symbols, formatting, SessionService, Tabs, CommandRegistryFactory.Create());
 
             // Count open attempts without consuming command execution semantics.
             Tabs.OpenFileCommand.IsExecuting.Subscribe(_ => { });

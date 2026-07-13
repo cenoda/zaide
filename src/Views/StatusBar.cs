@@ -25,6 +25,8 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private static readonly ICommand StatusSegmentCommand = ReactiveCommand.Create(() => { });
     private readonly TextBlock _caretText = TextStyles.Caption("");
     private readonly TextBlock _languageText = TextStyles.Caption("—");
+    private readonly TextBlock _languageIntelligenceText = TextStyles.Caption("");
+    private readonly Button _languageIntelligenceButton;
     private readonly TextBlock _projectText = TextStyles.Caption("Zaide");
     private readonly TextBlock _branchText = TextStyles.Caption("");
     private readonly TextBlock _documentText = TextStyles.Caption("—");
@@ -61,6 +63,11 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             Children = { appNameIcon, appNameText }
         });
 
+        _languageIntelligenceText.Foreground =
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        _languageIntelligenceButton = BuildStatusSegmentButton("Icon.Code", _languageIntelligenceText);
+        _languageIntelligenceButton.IsVisible = false;
+
         _statusMessageText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
         _statusMessageText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
         _statusMessageText.MaxWidth = 320;
@@ -78,6 +85,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                 BuildStatusSegmentButton("Icon.Text", _documentText),
                 BuildStatusSegmentButton("Icon.Selection", _caretText),
                 BuildStatusSegmentButton("Icon.Code", _languageText),
+                _languageIntelligenceButton,
                 BuildStatusSegmentButton("Icon.Project", _projectText),
                 BuildStatusSegmentButton("Icon.GitBranch", _branchText),
                 _statusMessageText
@@ -111,6 +119,12 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
 
             d.Add(ViewModel.WhenAnyValue(x => x.CaretText).Subscribe(Observer.Create<string>(text => _caretText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.LanguageText).Subscribe(Observer.Create<string>(text => _languageText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.LanguageIntelligenceText)
+                .Subscribe(Observer.Create<string>(text =>
+                {
+                    _languageIntelligenceText.Text = text;
+                    _languageIntelligenceButton.IsVisible = !string.IsNullOrEmpty(text);
+                })));
             d.Add(ViewModel.WhenAnyValue(x => x.ProjectText).Subscribe(Observer.Create<string>(text => _projectText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.BranchText).Subscribe(Observer.Create<string>(text => _branchText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.DocumentText).Subscribe(Observer.Create<string>(text => _documentText.Text = text)));

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -30,6 +31,11 @@ public sealed class EditorCompletionPopup : Popup
             MaxHeight = 220,
             SelectionMode = SelectionMode.Single,
         };
+        AutomationProperties.SetName(_listBox, "Completion suggestions");
+        AutomationProperties.SetHelpText(
+            _listBox,
+            "Use Up and Down to move, Enter or Tab to accept, Escape to dismiss.");
+        _listBox.KeyDown += OnListKeyDown;
 
         var border = new Border
         {
@@ -40,12 +46,16 @@ public sealed class EditorCompletionPopup : Popup
             Padding = new Thickness(LayoutTokens.SpacingXxs),
             Child = _listBox,
         };
+        AutomationProperties.SetName(border, "Completion popup");
 
         Child = border;
     }
 
     /// <summary>Raised when the user confirms a list selection with pointer/keyboard.</summary>
     public event Action? ItemConfirmed;
+
+    /// <summary>Raised when the user dismisses the popup with Escape.</summary>
+    public event Action? DismissRequested;
 
     public void BindItems(IReadOnlyList<LanguageCompletionItem> items, int selectedIndex)
     {
@@ -78,13 +88,35 @@ public sealed class EditorCompletionPopup : Popup
 
     public void ConfirmSelection() => ItemConfirmed?.Invoke();
 
+    private void OnListKeyDown(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Escape:
+                DismissRequested?.Invoke();
+                e.Handled = true;
+                break;
+            case Key.Up:
+                MoveSelection(-1);
+                e.Handled = true;
+                break;
+            case Key.Down:
+                MoveSelection(1);
+                e.Handled = true;
+                break;
+            case Key.Enter:
+            case Key.Tab:
+                ConfirmSelection();
+                e.Handled = true;
+                break;
+        }
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
 
         if (change.Property == IsOpenProperty && IsOpen)
-        {
             _listBox.Focus(NavigationMethod.Unspecified);
-        }
     }
 }

@@ -46,7 +46,7 @@ public sealed class M5SettingsUiTests
         using var settings = new TestSettingsService();
         var secrets = new TestSecretStore();
         using var vm = CreateMainWindowViewModel();
-        using var status = new StatusBarViewModel(vm, settings, ImmediateScheduler.Instance);
+        using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
         var window = (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
         SetField(window, "_settings", settings);
         SetField(window, "_secrets", secrets);
@@ -77,7 +77,7 @@ public sealed class M5SettingsUiTests
         using var settings = new TestSettingsService();
         using var vm = CreateMainWindowViewModel();
         var scheduler = new RecordingScheduler();
-        using var status = new StatusBarViewModel(vm, settings, scheduler);
+        using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), scheduler);
         using var panelVm = new SettingsViewModel(settings, new TestSecretStore(), scheduler);
 
         var next = settings.Current with { Llm = settings.Current.Llm with { Model = "scheduler-model" } };
@@ -188,6 +188,17 @@ public sealed class M5SettingsUiTests
                 }
             }
         }
+    }
+
+    private sealed class EmptyLanguageSessionService : ILanguageSessionService
+    {
+        public LanguageSessionSnapshot Current { get; } = new(
+            LanguageSessionState.Unavailable, 0, null, null, null, null);
+        public IObservable<LanguageSessionSnapshot> WhenChanged { get; } =
+            Observable.Empty<LanguageSessionSnapshot>();
+        public ILanguageServerSession? TryGetReadySession(long generation) => null;
+        public Task RestartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void Dispose() { }
     }
 
     private sealed class RecordingScheduler : IScheduler

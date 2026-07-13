@@ -283,7 +283,7 @@ public sealed class LanguageSessionService : ILanguageSessionService
                     ServerProcessId: null,
                     new LanguageSessionFailure(
                         LanguageSessionFailureKind.InitializeFailed,
-                        ex.Message)))
+                        "Language server failed to start.")))
                 .ConfigureAwait(false);
         }
     }

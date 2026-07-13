@@ -42,6 +42,7 @@ public sealed class FormatDocumentCommandTests
             new LanguageNavigationService(workspace, sessionService, bridge, NullLogger<LanguageNavigationService>.Instance),
             new LanguageSymbolService(workspace, sessionService, bridge, NullLogger<LanguageSymbolService>.Instance),
             new LanguageFormattingService(workspace, sessionService, bridge, NullLogger<LanguageFormattingService>.Instance),
+            sessionService,
             tabs,
             registry);
 

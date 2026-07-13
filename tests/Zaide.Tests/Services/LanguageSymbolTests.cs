@@ -198,7 +198,7 @@ public sealed class LanguageSymbolTests
                 Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
 
             Input = new EditorLanguageInputViewModel(
-                completion, hover, navigation, Service, formatting, Tabs, CommandRegistryFactory.Create());
+                completion, hover, navigation, Service, formatting, SessionService, Tabs, CommandRegistryFactory.Create());
         }
 
         public string OpenActive(string name, string content, int version = 1, long generation = 1)

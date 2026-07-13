@@ -515,7 +515,7 @@ public sealed class LanguageSessionServiceTests
             var failed = await WaitForAsync(service, s => s.State == LanguageSessionState.Failed);
 
             Assert.Equal(LanguageSessionFailureKind.InitializeFailed, failed.Failure?.Kind);
-            Assert.Equal("initialize rejected", failed.Failure?.Message);
+            Assert.Equal("Language server failed to start.", failed.Failure?.Message);
         }
     }
 }

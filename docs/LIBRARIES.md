@@ -92,4 +92,4 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ---
 
-*Last updated: 2026-07-13 (Phase 10 M1 — StreamJsonRpc product pin + MessagePack override)*
+*Last updated: 2026-07-13 (Phase 10 complete — csharp-ls 0.25.0 + StreamJsonRpc 2.22.23 in production)*

@@ -21,6 +21,7 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
     private string _branchText = "";
     private string? _configuredModel;
     private string _documentText = "—";
+    private string _languageIntelligenceText = string.Empty;
     private string? _statusMessage;
 
     public string CaretText { get => _caretText; private set => this.RaiseAndSetIfChanged(ref _caretText, value); }
@@ -35,6 +36,15 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
     public string DocumentText { get => _documentText; private set => this.RaiseAndSetIfChanged(ref _documentText, value); }
 
     /// <summary>
+    /// Phase 10 M7: C# language-session lifecycle projection (empty when not applicable).
+    /// </summary>
+    public string LanguageIntelligenceText
+    {
+        get => _languageIntelligenceText;
+        private set => this.RaiseAndSetIfChanged(ref _languageIntelligenceText, value);
+    }
+
+    /// <summary>
     /// Transient status message (save/search/fold/command outcomes).
     /// null when no status is active.
     /// </summary>
@@ -42,12 +52,19 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> OpenSettingsCommand { get; }
 
-    public StatusBarViewModel(MainWindowViewModel mainWindow, ISettingsService settings)
-        : this(mainWindow, settings, AvaloniaScheduler.Instance)
+    public StatusBarViewModel(
+        MainWindowViewModel mainWindow,
+        ISettingsService settings,
+        ILanguageSessionService languageSession)
+        : this(mainWindow, settings, languageSession, AvaloniaScheduler.Instance)
     {
     }
 
-    internal StatusBarViewModel(MainWindowViewModel mainWindow, ISettingsService settings, IScheduler scheduler)
+    internal StatusBarViewModel(
+        MainWindowViewModel mainWindow,
+        ISettingsService settings,
+        ILanguageSessionService languageSession,
+        IScheduler scheduler)
     {
         OpenSettingsCommand = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -99,6 +116,12 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
             .StartWith(settings.Current)
             .ObserveOn(scheduler)
             .Subscribe(value => ConfiguredModel = string.IsNullOrWhiteSpace(value.Llm.Model) ? null : value.Llm.Model));
+
+        LanguageIntelligenceText = LanguageSessionStatusPolicy.MapStatusBarText(languageSession.Current);
+        _subscriptions.Add(languageSession.WhenChanged
+            .StartWith(languageSession.Current)
+            .ObserveOn(scheduler)
+            .Subscribe(snapshot => LanguageIntelligenceText = LanguageSessionStatusPolicy.MapStatusBarText(snapshot)));
     }
 
     /// <summary>

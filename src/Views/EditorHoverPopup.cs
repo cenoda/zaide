@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
@@ -33,6 +34,8 @@ public sealed class EditorHoverPopup : Popup
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = _textBlock,
         };
+        AutomationProperties.SetName(border, "Hover information");
+        AutomationProperties.SetHelpText(border, "Read-only hover tooltip for the symbol under the caret.");
 
         Child = border;
     }

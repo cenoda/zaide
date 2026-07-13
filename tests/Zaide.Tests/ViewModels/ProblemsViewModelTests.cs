@@ -170,7 +170,10 @@ public sealed class ProblemsViewModelTests
             new LanguageSessionFailure(LanguageSessionFailureKind.MissingServerBinary, "no server"),
             Array.Empty<LanguageDiagnostic>()));
         Assert.Equal(LanguageSessionState.Failed, harness.Problems.State);
-        Assert.Equal("no server", harness.Problems.StatusMessage);
+        Assert.Equal(
+            LanguageSessionStatusPolicy.MapFailureMessage(
+                new LanguageSessionFailure(LanguageSessionFailureKind.MissingServerBinary, "no server")),
+            harness.Problems.StatusMessage);
         Assert.Empty(harness.Problems.Problems);
     }
 

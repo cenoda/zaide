@@ -2,6 +2,7 @@ using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -54,6 +55,10 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
             BorderThickness = LayoutTokens.NoneThickness,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm),
         };
+        AutomationProperties.SetName(_list, "Problems list");
+        AutomationProperties.SetHelpText(
+            _list,
+            "Diagnostics from the C# language server. Enter or double-click navigates to the problem.");
 
         _list.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<ProblemItemViewModel>(
             (item, _) =>
@@ -122,10 +127,18 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
 
     private void OnListKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key is Key.Enter or Key.Return)
+        switch (e.Key)
         {
-            NavigateSelected();
-            e.Handled = true;
+            case Key.Enter:
+                NavigateSelected();
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                if (ViewModel is not null)
+                    ViewModel.SelectedProblem = null;
+                _list.SelectedItem = null;
+                e.Handled = true;
+                break;
         }
     }
 

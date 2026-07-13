@@ -15,7 +15,9 @@ Phase 8.3 (Authoritative Project Context) is implemented through M4 with
 automated verification green, including the manual failed-state GUI smoke
 check. Phase 9 adds the registry-backed Command Palette, active-document
 Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
-status projections. Phase 10 and later entries below remain planned direction.
+status projections. Phase 10 (C# language intelligence via LSP) is **complete**
+(M7 closeout, 2026-07-13). Phase 11 and later entries below remain planned
+direction.
 
 ---
 
@@ -96,6 +98,23 @@ The current app contains the agent-workspace shell delivered through V1:
 - `MainWindow` wires `TerminalTabHost` in the bottom panel; focus/startup routed through the view host seam without direct single-session calls
 - 565 tests pass, 0 fail
 
+### Phase 10 (C# language intelligence — complete, 2026-07-13)
+
+- **Stack:** `csharp-ls` 0.25.0 (global `dotnet tool`) + `StreamJsonRpc` 2.22.23
+  over stdio Content-Length JSON-RPC.
+- **Ownership:** `IProjectContextService` selects the project; `ILanguageSessionService`
+  owns one session per eligible context; `LanguageDocumentBridge` sends
+  didOpen/didChange/didClose from `Workspace`/tabs; feature services
+  (`ILanguageCompletionService`, `ILanguageHoverService`, `ILanguageNavigationService`,
+  `ILanguageSymbolService`, `ILanguageFormattingService`, `ILanguageDiagnosticsService`)
+  hold structured state; Views/ViewModels project results only.
+- **UI:** shared `EditorView` applies version-matched updates; `ProblemsPanel`
+  projects diagnostics; `StatusBarViewModel` shows `LanguageIntelligenceText`
+  (`C# · Ready` / `Loading…` / etc.); commands register through `ICommandRegistry`
+  (`Ctrl+Space`, `F12`, `Ctrl+Shift+O`, `Ctrl+T`, `Ctrl+Shift+I`).
+- **Limitations:** C# only; on-disk URIs only; no range formatting, format-on-type,
+  code actions, rename, multi-language, build/run/test, or DAP.
+
 ### Roadmap V1 agent and Git layers
 
 | Layer | Phase | Description |
@@ -146,7 +165,7 @@ agent foundation into richer AI-native orchestration.
 |---------------|-------|-----------|
 | Core platform and settings | 8 | Versioned settings with migration/recovery ownership, safe credential boundary, command/keybinding infrastructure, and authoritative C# project context |
 | Editor UX | 9 | Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
-| C# language intelligence | 10 | LSP lifecycle, diagnostics, completion, hover, definition, symbols, and document formatting |
+| C# language intelligence | 10 | ✅ LSP lifecycle, diagnostics, completion, hover, definition, symbols, document formatting, Format on Save (M7 closeout 2026-07-13) |
 | Project workflow | 11 | Execution profiles and structured Build/Run/Test orchestration over the Phase 8 project context, with Output, Problems, test results, cancellation, and error navigation |
 | C# debugging | 12 | Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
 | Release hardening | 13 | Measured performance, recovery, full settings compatibility matrix, E2E coverage, platform-status documentation, and closeout |
@@ -180,4 +199,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-12 (V1 complete; V2 IDE Core Upgrade in progress — Phase 8.3 M4 implemented)*
+*Last updated: 2026-07-13 (V1 complete; V2 IDE Core Upgrade in progress — Phase 10 complete)*

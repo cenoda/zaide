@@ -142,21 +142,7 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
         string.Equals(a.Message, b.Message, StringComparison.Ordinal);
 
     private static string? BuildStatusMessage(LanguageDiagnosticsSnapshot snapshot) =>
-        snapshot.State switch
-        {
-            LanguageSessionState.Ready when snapshot.Diagnostics.Count == 0 =>
-                "No problems.",
-            LanguageSessionState.Ready =>
-                null,
-            LanguageSessionState.Loading =>
-                "Language intelligence loading…",
-            LanguageSessionState.Failed =>
-                snapshot.Failure?.Message ?? "Language server failed.",
-            LanguageSessionState.Cancelled =>
-                "Language session cancelled.",
-            _ =>
-                "Language intelligence unavailable.",
-        };
+        LanguageSessionStatusPolicy.MapProblemsStatusMessage(snapshot);
 
     /// <summary>
     /// Opens/activates the diagnostic's file through <see cref="EditorTabViewModel"/>

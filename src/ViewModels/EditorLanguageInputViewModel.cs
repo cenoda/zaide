@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
+using Unit = System.Reactive.Unit;
 
 namespace Zaide.ViewModels;
 
@@ -22,6 +23,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private readonly ILanguageNavigationService _navigationService;
     private readonly ILanguageSymbolService _symbolService;
     private readonly ILanguageFormattingService _formattingService;
+    private readonly ILanguageSessionService _sessionService;
     private readonly EditorTabViewModel _editorTabs;
     private readonly ICommandRegistry _registry;
 
@@ -37,6 +39,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         ILanguageNavigationService navigationService,
         ILanguageSymbolService symbolService,
         ILanguageFormattingService formattingService,
+        ILanguageSessionService sessionService,
         EditorTabViewModel editorTabs,
         ICommandRegistry registry)
     {
@@ -45,8 +48,13 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _symbolService = symbolService ?? throw new ArgumentNullException(nameof(symbolService));
         _formattingService = formattingService ?? throw new ArgumentNullException(nameof(formattingService));
+        _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+
+        var availabilityChanged = Observable.Merge(
+            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId).Select(_ => Unit.Default),
+            _sessionService.WhenChanged.Select(_ => Unit.Default));
 
         CompletionWhenChanged = _completionService.WhenChanged;
         HoverWhenChanged = _hoverService.WhenChanged;
@@ -56,7 +64,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
 
         TriggerSuggestCommand = ReactiveCommand.Create(
             TriggerExplicitCompletion,
-            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+            availabilityChanged.Select(_ => CanUseCompletion()));
         CompletionMoveUpCommand = ReactiveCommand.Create(() => _completionService.MoveSelection(-1));
         CompletionMoveDownCommand = ReactiveCommand.Create(() => _completionService.MoveSelection(1));
         CompletionCommitCommand = ReactiveCommand.Create(CommitCompletion);
@@ -64,17 +72,19 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
 
         GoToDefinitionCommand = ReactiveCommand.CreateFromTask(
             GoToDefinitionAsync,
-            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+            availabilityChanged.Select(_ => CanUseDefinition()));
 
         DocumentSymbolCommand = ReactiveCommand.Create(
             RequestDocumentSymbols,
-            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+            availabilityChanged.Select(_ => CanUseDocumentSymbols()));
 
-        WorkspaceSymbolCommand = ReactiveCommand.Create(OpenWorkspaceSymbols);
+        WorkspaceSymbolCommand = ReactiveCommand.Create(
+            OpenWorkspaceSymbols,
+            availabilityChanged.Select(_ => CanUseWorkspaceSymbols()));
 
         FormatDocumentCommand = ReactiveCommand.CreateFromTask(
             FormatDocumentAsync,
-            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+            availabilityChanged.Select(_ => CanUseFormatting()));
 
         DefinitionMoveUpCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(-1));
         DefinitionMoveDownCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(1));
@@ -400,10 +410,36 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
             0);
     }
 
-    private bool CanTriggerSuggest()
-    {
-        return TryGetActiveContext(out _, out _);
-    }
+    private bool CanUseCompletion() =>
+        _activeEditor is not null &&
+        LanguageCommandAvailability.CanUseActiveDocumentFeature(
+            _sessionService,
+            _activeDocumentId,
+            c => c.CompletionSupported);
+
+    private bool CanUseDefinition() =>
+        _activeEditor is not null &&
+        LanguageCommandAvailability.CanUseActiveDocumentFeature(
+            _sessionService,
+            _activeDocumentId,
+            c => c.DefinitionSupported);
+
+    private bool CanUseDocumentSymbols() =>
+        _activeEditor is not null &&
+        LanguageCommandAvailability.CanUseActiveDocumentFeature(
+            _sessionService,
+            _activeDocumentId,
+            c => c.DocumentSymbolSupported);
+
+    private bool CanUseWorkspaceSymbols() =>
+        LanguageCommandAvailability.CanUseWorkspaceSymbols(_sessionService);
+
+    private bool CanUseFormatting() =>
+        _activeEditor is not null &&
+        LanguageCommandAvailability.CanUseActiveDocumentFeature(
+            _sessionService,
+            _activeDocumentId,
+            c => c.DocumentFormattingSupported);
 
     private bool TryGetActiveContext(out string filePath, out int caretOffset)
     {

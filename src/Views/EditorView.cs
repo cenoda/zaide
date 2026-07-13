@@ -163,9 +163,13 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _documentSymbolPicker.PlacementTarget = _textEditor;
         _workspaceSymbolPicker.PlacementTarget = _textEditor;
         _completionPopup.ItemConfirmed += OnCompletionItemConfirmed;
+        _completionPopup.DismissRequested += () => _languageInput.DismissAll();
         _definitionPicker.ItemConfirmed += OnDefinitionItemConfirmed;
+        _definitionPicker.DismissRequested += () => _languageInput.DefinitionDismissCommand.Execute().Subscribe();
         _documentSymbolPicker.ItemConfirmed += OnSymbolItemConfirmed;
+        _documentSymbolPicker.DismissRequested += () => _languageInput.SymbolDismissCommand.Execute().Subscribe();
         _workspaceSymbolPicker.ItemConfirmed += OnSymbolItemConfirmed;
+        _workspaceSymbolPicker.DismissRequested += () => _languageInput.SymbolDismissCommand.Execute().Subscribe();
         _workspaceSymbolPicker.QueryChanged += OnWorkspaceSymbolQueryChanged;
 
         this.WhenActivated(d =>
