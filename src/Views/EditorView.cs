@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Reactive.Concurrency;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaEdit;
@@ -28,9 +29,12 @@ namespace Zaide.Views;
 /// syntax highlighting. Uses event-based sync (not two-way Bind) to
 /// avoid feedback loops. Handles null ViewModel gracefully.
 /// </summary>
-public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable, IEditorTextOperations
+public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable, IEditorLanguageOperations
 {
     private readonly TextEditor _textEditor;
+    private readonly EditorLanguageInputViewModel _languageInput;
+    private readonly EditorCompletionPopup _completionPopup;
+    private readonly EditorHoverPopup _hoverPopup;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
     private readonly ContentControl _fileInfoIconHost;
@@ -48,9 +52,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private FontFamily _proseFont = new("Georgia, serif");
     private bool _disposed;
 
-    public EditorView(ISettingsService settings)
+    public EditorView(ISettingsService settings, EditorLanguageInputViewModel languageInput)
     {
         _settings = settings;
+        _languageInput = languageInput ?? throw new ArgumentNullException(nameof(languageInput));
+        _completionPopup = new EditorCompletionPopup
+        {
+            PlacementTarget = null,
+        };
+        _hoverPopup = new EditorHoverPopup
+        {
+            PlacementTarget = null,
+        };
         _textEditor = new TextEditor
         {
             ShowLineNumbers = true,
@@ -127,6 +140,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _settingsBinding = CreateSettingsBinding(
             settings,
             model => ApplyEditorSettings(model.Editor));
+
+        _completionPopup.PlacementTarget = _textEditor;
+        _hoverPopup.PlacementTarget = _textEditor;
+        _completionPopup.ItemConfirmed += OnCompletionItemConfirmed;
 
         this.WhenActivated(d =>
         {
@@ -205,9 +222,74 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 var caret = _textEditor.TextArea.Caret;
                 ViewModel.CaretLine = caret.Line;
                 ViewModel.CaretColumn = caret.Column;
+                _languageInput.OnCaretMoved();
             }
             _textEditor.TextArea.Caret.PositionChanged += OnCaretChanged;
             d.Add(Disposable.Create(() => _textEditor.TextArea.Caret.PositionChanged -= OnCaretChanged));
+
+            // Phase 10 M4: route active editor identity to language input VM.
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Subscribe(obj =>
+                {
+                    if (obj is EditorViewModel vm)
+                    {
+                        _languageInput.ActiveEditor = this;
+                        _languageInput.ActiveDocumentId = string.IsNullOrEmpty(vm.FilePath)
+                            ? null
+                            : vm.FilePath;
+                    }
+                    else
+                    {
+                        _languageInput.ActiveEditor = null;
+                        _languageInput.ActiveDocumentId = null;
+                    }
+
+                    ClearLanguagePresentation();
+                }));
+
+            d.Add(_languageInput.CompletionWhenChanged.Subscribe(ApplyCompletionSnapshot));
+            d.Add(_languageInput.HoverWhenChanged.Subscribe(ApplyHoverSnapshot));
+
+            void OnEditorKeyDown(object? s, KeyEventArgs e)
+            {
+                if (_completionPopup.IsOpen)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            _languageInput.DismissAll();
+                            e.Handled = true;
+                            return;
+                        case Key.Up:
+                            _languageInput.CompletionMoveUpCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Down:
+                            _languageInput.CompletionMoveDownCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Enter:
+                        case Key.Tab:
+                            _languageInput.CompletionCommitCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                    }
+                }
+            }
+
+            void OnEditorTextInput(object? s, TextInputEventArgs e)
+            {
+                if (!string.IsNullOrEmpty(e.Text))
+                    _lastTypedCharacter = e.Text[0];
+            }
+
+            _textEditor.KeyDown += OnEditorKeyDown;
+            _textEditor.TextInput += OnEditorTextInput;
+            d.Add(Disposable.Create(() =>
+            {
+                _textEditor.KeyDown -= OnEditorKeyDown;
+                _textEditor.TextInput -= OnEditorTextInput;
+            }));
 
             // Phase 10 M3: apply Problems/navigation requests from the active ViewModel.
             d.Add(this.GetObservable(ViewModelProperty)
@@ -294,11 +376,79 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             12);
     }
 
+    private char? _lastTypedCharacter;
+
     private void OnTextChanged(object? sender, EventArgs e)
     {
         if (ViewModel is null || _isUpdatingFromViewModel) return;
         ViewModel.TextContent = _textEditor.Text;
+
+        if (_lastTypedCharacter is char typed)
+        {
+            _languageInput.OnTextEdited(typed);
+            _lastTypedCharacter = null;
+        }
+        else
+        {
+            _languageInput.OnCaretMoved();
+        }
     }
+
+    private void OnCompletionItemConfirmed() =>
+        _languageInput.CompletionCommitCommand.Execute().Subscribe();
+
+    private void ApplyCompletionSnapshot(LanguageCompletionSnapshot snapshot)
+    {
+        if (!snapshot.IsPopupOpen)
+        {
+            _completionPopup.IsOpen = false;
+            return;
+        }
+
+        if (ViewModel is null ||
+            !string.Equals(ViewModel.FilePath, snapshot.FilePath, StringComparison.Ordinal))
+        {
+            _completionPopup.IsOpen = false;
+            return;
+        }
+
+        _completionPopup.BindItems(snapshot.Items, snapshot.SelectedIndex);
+        _completionPopup.IsOpen = true;
+        _hoverPopup.IsOpen = false;
+    }
+
+    private void ApplyHoverSnapshot(LanguageHoverSnapshot snapshot)
+    {
+        if (!snapshot.IsVisible)
+        {
+            _hoverPopup.IsOpen = false;
+            return;
+        }
+
+        if (ViewModel is null ||
+            !string.Equals(ViewModel.FilePath, snapshot.FilePath, StringComparison.Ordinal))
+        {
+            _hoverPopup.IsOpen = false;
+            return;
+        }
+
+        if (_completionPopup.IsOpen)
+        {
+            _hoverPopup.IsOpen = false;
+            return;
+        }
+
+        _hoverPopup.SetContent(snapshot.Content);
+        _hoverPopup.IsOpen = true;
+    }
+
+    private void ClearLanguagePresentation()
+    {
+        _completionPopup.IsOpen = false;
+        _hoverPopup.IsOpen = false;
+    }
+
+
 
     /// <summary>
     /// Applies a pending caret/selection navigation request from the active ViewModel.
@@ -435,6 +585,36 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
     public int GetSelectionLength() => _textEditor.SelectionLength;
 
+    public int GetCaretOffset() => _textEditor.CaretOffset;
+
+    public char? GetCharBeforeCaret()
+    {
+        var offset = _textEditor.CaretOffset;
+        if (offset <= 0)
+            return null;
+
+        return _textEditor.Document.GetCharAt(offset - 1);
+    }
+
+    public void ReplaceRange(int start, int length, string newText)
+    {
+        if (start < 0 || length < 0 || start + length > _textEditor.Document.TextLength)
+            return;
+
+        _isUpdatingFromViewModel = true;
+        try
+        {
+            _textEditor.Document.Replace(start, length, newText);
+        }
+        finally
+        {
+            _isUpdatingFromViewModel = false;
+        }
+
+        if (ViewModel is not null && ViewModel.TextContent != _textEditor.Text)
+            ViewModel.TextContent = _textEditor.Text;
+    }
+
     public int ReplaceAllMatches(string query, string replacement, bool caseSensitive)
     {
         if (string.IsNullOrEmpty(query)) return 0;
@@ -467,6 +647,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     {
         if (_disposed) return;
         _disposed = true;
+        _completionPopup.ItemConfirmed -= OnCompletionItemConfirmed;
+        _languageInput.DismissAll();
+        ClearLanguagePresentation();
         _settingsBinding.Dispose();
     }
 }

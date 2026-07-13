@@ -16,9 +16,15 @@ internal static class LanguageDocumentSyncPolicy
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (string.IsNullOrWhiteSpace(document.FilePath))
+        return IsEligiblePath(document.FilePath);
+    }
+
+    /// <summary>Returns whether <paramref name="filePath"/> is a synchronized C# document.</summary>
+    public static bool IsEligiblePath(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
             return false;
 
-        return string.Equals(Path.GetExtension(document.FilePath), ".cs", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase);
     }
 }

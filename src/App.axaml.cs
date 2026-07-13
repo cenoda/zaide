@@ -32,14 +32,18 @@ public partial class App : Application
             // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
             var paletteVm = Services.GetRequiredService<CommandPaletteViewModel>();
             var searchVm = Services.GetRequiredService<EditorSearchViewModel>();
+            var languageInputVm = Services.GetRequiredService<EditorLanguageInputViewModel>();
 
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
             _ = Services.GetRequiredService<ILanguageDocumentBridge>();
             // Phase 10 M3: resolve diagnostics ownership after the document bridge.
             _ = Services.GetRequiredService<ILanguageDiagnosticsService>();
+            // Phase 10 M4: completion/hover services before editors open.
+            _ = Services.GetRequiredService<ILanguageCompletionService>();
+            _ = Services.GetRequiredService<ILanguageHoverService>();
 
-            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm) { ViewModel = vm };
+            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm, languageInputVm) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.
@@ -49,7 +53,9 @@ public partial class App : Application
                 // so its WorkspaceFolderChanged subscription is released and any
                 // in-flight work is invalidated. App does not rely on implicit
                 // root-provider disposal.
-                // Tear down diagnostics/document sync before killing the language session.
+                // Tear down language features before document sync/session teardown.
+                Services.GetRequiredService<ILanguageCompletionService>().Dispose();
+                Services.GetRequiredService<ILanguageHoverService>().Dispose();
                 Services.GetRequiredService<ILanguageDiagnosticsService>().Dispose();
                 Services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
                 Services.GetRequiredService<ILanguageSessionService>().Dispose();

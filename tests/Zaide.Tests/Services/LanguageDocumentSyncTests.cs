@@ -96,6 +96,22 @@ public sealed class LanguageDocumentSyncTests
             return Task.CompletedTask;
         }
 
+        public LanguageServerCapabilities Capabilities => TestLanguageServerSession.DefaultCapabilities;
+
+        public Task<LanguageServerCompletionResult?> RequestCompletionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyCompletionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerHoverResult?> RequestHoverAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
         public void SimulateExit() => ProcessExited?.Invoke(Generation);

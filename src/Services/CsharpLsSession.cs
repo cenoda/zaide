@@ -19,6 +19,7 @@ internal sealed class CsharpLsSession : ILanguageServerSession
     private readonly LanguageServerStartOptions _options;
     private Process? _process;
     private JsonRpc? _rpc;
+    private LanguageServerCapabilities _capabilities = LanguageServerCapabilities.None;
     private bool _disposed;
     private int _exitSignaled;
 
@@ -123,12 +124,65 @@ internal sealed class CsharpLsSession : ILanguageServerSession
         var initParams = BuildInitializeParams(workspaceUri, _options);
 
         // LSP initialize params are a single object (not a positional array).
-        _ = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+        var initResult = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
             "initialize",
             initParams,
             cancellationToken).ConfigureAwait(false);
 
+        _capabilities = LanguageServerCapabilitiesParser.Parse(initResult);
+
         await _rpc.NotifyWithParameterObjectAsync("initialized", new { }).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public LanguageServerCapabilities Capabilities => _capabilities;
+
+    /// <inheritdoc />
+    public async Task<LanguageServerCompletionResult?> RequestCompletionAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "textDocument/completion",
+            new
+            {
+                textDocument = new { uri = documentUri },
+                position = new { line, character },
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerCompletionParser.Parse(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<LanguageServerHoverResult?> RequestHoverAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "textDocument/hover",
+            new
+            {
+                textDocument = new { uri = documentUri },
+                position = new { line, character },
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerHoverParser.Parse(result);
     }
 
     /// <inheritdoc />

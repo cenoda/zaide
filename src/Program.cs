@@ -82,6 +82,11 @@ class Program
         services.AddSingleton<ILanguageDiagnosticsService, LanguageDiagnosticsService>();
         services.AddSingleton<ProblemsViewModel>();
 
+        // Phase 10 M4: active-document completion and hover.
+        services.AddSingleton<ILanguageCompletionService, LanguageCompletionService>();
+        services.AddSingleton<ILanguageHoverService, LanguageHoverService>();
+        services.AddSingleton<EditorLanguageInputViewModel>();
+
         services.AddSingleton(_ =>
         {
             var client = new HttpClient();

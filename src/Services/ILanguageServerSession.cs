@@ -53,4 +53,21 @@ public interface ILanguageServerSession : IAsyncDisposable
     Task NotifyDidCloseAsync(
         string documentUri,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Capabilities negotiated during <c>initialize</c>.</summary>
+    LanguageServerCapabilities Capabilities { get; }
+
+    /// <summary>Issues <c>textDocument/completion</c> at a zero-based utf-16 position.</summary>
+    Task<LanguageServerCompletionResult?> RequestCompletionAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>textDocument/hover</c> at a zero-based utf-16 position.</summary>
+    Task<LanguageServerHoverResult?> RequestHoverAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default);
 }

@@ -55,6 +55,22 @@ public sealed class LanguageDiagnosticsServiceTests
         public Task NotifyDidCloseAsync(string documentUri,
             CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        public LanguageServerCapabilities Capabilities => TestLanguageServerSession.DefaultCapabilities;
+
+        public Task<LanguageServerCompletionResult?> RequestCompletionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyCompletionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerHoverResult?> RequestHoverAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
         public void Publish(LanguageServerPublishDiagnostics notification) =>

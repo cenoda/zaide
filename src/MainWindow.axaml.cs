@@ -42,6 +42,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly CommandPaletteViewModel _paletteViewModel;
     private readonly EditorSearchViewModel _searchViewModel;
+    private readonly EditorLanguageInputViewModel _languageInputViewModel;
     private readonly List<KeyBinding> _registryBindings = new();
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
@@ -76,7 +77,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow(ISettingsService settings, ISecretStore secrets,
         ICommandRegistry registry, StatusBarViewModel statusBarViewModel,
         CommandPaletteViewModel paletteViewModel,
-        EditorSearchViewModel searchViewModel)
+        EditorSearchViewModel searchViewModel,
+        EditorLanguageInputViewModel languageInputViewModel)
     {
         _settings = settings;
         _secrets = secrets;
@@ -84,6 +86,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _statusBarViewModel = statusBarViewModel;
         _paletteViewModel = paletteViewModel;
         _searchViewModel = searchViewModel;
+        _languageInputViewModel = languageInputViewModel;
         InitializeComponent();
 
         // === Window Chrome ===
@@ -527,7 +530,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // --- Column 3: Center — Townhall (real M3 view) ---
         _editorTabBar = new EditorTabBar();
-        _editorView = new EditorView(_settings);
+        _editorView = new EditorView(_settings, _languageInputViewModel);
         _welcomeText = TextStyles.Body("Open a file to begin");
         _welcomeText.VerticalAlignment = VerticalAlignment.Center;
         _welcomeText.HorizontalAlignment = HorizontalAlignment.Center;
