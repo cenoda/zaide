@@ -1,6 +1,6 @@
 # Phase 10: C# Language Intelligence — TOFIX
 
-**Status:** M4 complete (2026-07-13). No open findings.
+**Status:** M5 complete (2026-07-13). No open findings.
 
 ---
 
@@ -39,4 +39,4 @@ Regression test: `StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync` in
 
 ---
 
-*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-13 (M4 complete).*
+*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-13 (M5 complete).*

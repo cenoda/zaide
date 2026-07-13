@@ -112,6 +112,24 @@ public sealed class LanguageDocumentSyncTests
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
 
+        public Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyDefinitionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
         public void SimulateExit() => ProcessExited?.Invoke(Generation);
@@ -133,6 +151,11 @@ public sealed class LanguageDocumentSyncTests
             _current = snapshot;
             _subject.OnNext(snapshot);
         }
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
 
         /// <summary>
         /// Replays a delayed snapshot notification without regressing <see cref="Current"/>,

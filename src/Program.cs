@@ -85,6 +85,10 @@ class Program
         // Phase 10 M4: active-document completion and hover.
         services.AddSingleton<ILanguageCompletionService, LanguageCompletionService>();
         services.AddSingleton<ILanguageHoverService, LanguageHoverService>();
+
+        // Phase 10 M5: Go to Definition + document/workspace symbols.
+        services.AddSingleton<ILanguageNavigationService, LanguageNavigationService>();
+        services.AddSingleton<ILanguageSymbolService, LanguageSymbolService>();
         services.AddSingleton<EditorLanguageInputViewModel>();
 
         services.AddSingleton(_ =>

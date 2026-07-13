@@ -71,6 +71,24 @@ public sealed class LanguageCompletionTests
             int character,
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyDefinitionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -88,6 +106,11 @@ public sealed class LanguageCompletionTests
             _current = snapshot;
             _subject.OnNext(snapshot);
         }
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
 
         public ILanguageServerSession? TryGetReadySession(long generation) =>
             _current.State == LanguageSessionState.Ready && _current.Generation == generation
@@ -206,7 +229,7 @@ public sealed class LanguageCompletionTests
         using var harness = new Harness();
         var path = harness.OpenCs("auto.cs", "class C { void M() { } }");
         harness.SetReady();
-        harness.Session.Capabilities = new LanguageServerCapabilities(true, new[] { '.' }, true);
+        harness.Session.Capabilities = new LanguageServerCapabilities(true, new[] { '.' }, true, true, true, true);
 
         harness.Session.CompletionHandler = (_, _, _, _) =>
             Task.FromResult<LanguageServerCompletionResult?>(new LanguageServerCompletionResult(

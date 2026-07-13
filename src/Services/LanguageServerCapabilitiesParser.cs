@@ -43,9 +43,25 @@ internal static class LanguageServerCapabilitiesParser
             }
         }
 
-        var hoverSupported = capabilities.TryGetProperty("hoverProvider", out var hoverProvider) &&
-                             hoverProvider.ValueKind is JsonValueKind.True or JsonValueKind.Object;
+        var hoverSupported = IsProviderSupported(capabilities, "hoverProvider");
+        var definitionSupported = IsProviderSupported(capabilities, "definitionProvider");
+        var documentSymbolSupported = IsProviderSupported(capabilities, "documentSymbolProvider");
+        var workspaceSymbolSupported = IsProviderSupported(capabilities, "workspaceSymbolProvider");
 
-        return new LanguageServerCapabilities(completionSupported, triggerCharacters, hoverSupported);
+        return new LanguageServerCapabilities(
+            completionSupported,
+            triggerCharacters,
+            hoverSupported,
+            definitionSupported,
+            documentSymbolSupported,
+            workspaceSymbolSupported);
+    }
+
+    private static bool IsProviderSupported(JsonElement capabilities, string propertyName)
+    {
+        if (!capabilities.TryGetProperty(propertyName, out var provider))
+            return false;
+
+        return provider.ValueKind is JsonValueKind.True or JsonValueKind.Object;
     }
 }

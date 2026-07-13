@@ -1,36 +1,53 @@
 using System;
 using System.Reactive;
-using System.Windows.Input;
+using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
 
 namespace Zaide.ViewModels;
 
 /// <summary>
-/// Routes editor input to Phase 10 completion/hover services and projects accepted results.
+/// Routes editor input to Phase 10 language services and projects accepted results.
 /// Registered as a singleton; the shared <see cref="Views.EditorView"/> sets
 /// <see cref="ActiveEditor"/> and <see cref="ActiveDocumentId"/> on activation and tab switches.
+/// Navigation always goes through <see cref="EditorTabViewModel.OpenFileCommand"/> then
+/// <see cref="EditorViewModel.RequestNavigate"/>.
 /// </summary>
 public sealed class EditorLanguageInputViewModel : ReactiveObject
 {
     private readonly ILanguageCompletionService _completionService;
     private readonly ILanguageHoverService _hoverService;
+    private readonly ILanguageNavigationService _navigationService;
+    private readonly ILanguageSymbolService _symbolService;
+    private readonly EditorTabViewModel _editorTabs;
     private readonly ICommandRegistry _registry;
 
     private IEditorLanguageOperations? _activeEditor;
     private string? _activeDocumentId;
+    private string? _feedbackMessage;
+    private int _navigationInFlight;
 
     public EditorLanguageInputViewModel(
         ILanguageCompletionService completionService,
         ILanguageHoverService hoverService,
+        ILanguageNavigationService navigationService,
+        ILanguageSymbolService symbolService,
+        EditorTabViewModel editorTabs,
         ICommandRegistry registry)
     {
         _completionService = completionService ?? throw new ArgumentNullException(nameof(completionService));
         _hoverService = hoverService ?? throw new ArgumentNullException(nameof(hoverService));
+        _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _symbolService = symbolService ?? throw new ArgumentNullException(nameof(symbolService));
+        _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
 
         CompletionWhenChanged = _completionService.WhenChanged;
         HoverWhenChanged = _hoverService.WhenChanged;
+        NavigationWhenChanged = _navigationService.WhenChanged;
+        SymbolWhenChanged = _symbolService.WhenChanged;
 
         TriggerSuggestCommand = ReactiveCommand.Create(
             TriggerExplicitCompletion,
@@ -39,6 +56,30 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         CompletionMoveDownCommand = ReactiveCommand.Create(() => _completionService.MoveSelection(1));
         CompletionCommitCommand = ReactiveCommand.Create(CommitCompletion);
         CompletionDismissCommand = ReactiveCommand.Create(DismissAll);
+
+        GoToDefinitionCommand = ReactiveCommand.CreateFromTask(
+            GoToDefinitionAsync,
+            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+
+        DocumentSymbolCommand = ReactiveCommand.Create(
+            RequestDocumentSymbols,
+            this.WhenAnyValue(x => x.ActiveEditor, x => x.ActiveDocumentId, (_, _) => CanTriggerSuggest()));
+
+        WorkspaceSymbolCommand = ReactiveCommand.Create(OpenWorkspaceSymbols);
+
+        DefinitionMoveUpCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(-1));
+        DefinitionMoveDownCommand = ReactiveCommand.Create(() => _navigationService.MoveSelection(1));
+        DefinitionAcceptCommand = ReactiveCommand.CreateFromTask(AcceptDefinitionSelectionAsync);
+        DefinitionDismissCommand = ReactiveCommand.Create(() => _navigationService.Dismiss());
+
+        SymbolMoveUpCommand = ReactiveCommand.Create(() => _symbolService.MoveSelection(-1));
+        SymbolMoveDownCommand = ReactiveCommand.Create(() => _symbolService.MoveSelection(1));
+        SymbolAcceptCommand = ReactiveCommand.CreateFromTask(AcceptSymbolSelectionAsync);
+        SymbolDismissCommand = ReactiveCommand.Create(() => _symbolService.Dismiss());
+
+        // Auto-navigate single definition results; project feedback for terminal states.
+        _ = _navigationService.WhenChanged.Subscribe(OnNavigationSnapshot);
+        _ = _symbolService.WhenChanged.Subscribe(OnSymbolSnapshot);
 
         RegisterCommands();
     }
@@ -49,11 +90,32 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     /// <summary>Hover snapshots from the language service.</summary>
     public IObservable<LanguageHoverSnapshot> HoverWhenChanged { get; }
 
+    /// <summary>Definition snapshots from the language service.</summary>
+    public IObservable<LanguageNavigationSnapshot> NavigationWhenChanged { get; }
+
+    /// <summary>Symbol surface snapshots from the language service.</summary>
+    public IObservable<LanguageSymbolSnapshot> SymbolWhenChanged { get; }
+
     /// <summary>Current completion snapshot for one-shot view reads.</summary>
     public LanguageCompletionSnapshot Completion => _completionService.Current;
 
     /// <summary>Current hover snapshot for one-shot view reads.</summary>
     public LanguageHoverSnapshot Hover => _hoverService.Current;
+
+    /// <summary>Current definition snapshot for one-shot view reads.</summary>
+    public LanguageNavigationSnapshot Navigation => _navigationService.Current;
+
+    /// <summary>Current symbol snapshot for one-shot view reads.</summary>
+    public LanguageSymbolSnapshot Symbols => _symbolService.Current;
+
+    /// <summary>
+    /// Transient truthful feedback for definition/symbol outcomes (status bar projection).
+    /// </summary>
+    public string? FeedbackMessage
+    {
+        get => _feedbackMessage;
+        private set => this.RaiseAndSetIfChanged(ref _feedbackMessage, value);
+    }
 
     /// <summary>
     /// Active editor seam. Setting a different value dismisses transient language UI.
@@ -96,6 +158,23 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> CompletionCommitCommand { get; }
     public ReactiveCommand<Unit, Unit> CompletionDismissCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> GoToDefinitionCommand { get; }
+    public ReactiveCommand<Unit, Unit> DocumentSymbolCommand { get; }
+    public ReactiveCommand<Unit, Unit> WorkspaceSymbolCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> DefinitionMoveUpCommand { get; }
+    public ReactiveCommand<Unit, Unit> DefinitionMoveDownCommand { get; }
+    public ReactiveCommand<Unit, Unit> DefinitionAcceptCommand { get; }
+    public ReactiveCommand<Unit, Unit> DefinitionDismissCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> SymbolMoveUpCommand { get; }
+    public ReactiveCommand<Unit, Unit> SymbolMoveDownCommand { get; }
+    public ReactiveCommand<Unit, Unit> SymbolAcceptCommand { get; }
+    public ReactiveCommand<Unit, Unit> SymbolDismissCommand { get; }
+
+    /// <summary>Updates the workspace-symbol query (cancels/replaces outstanding work).</summary>
+    public void SetWorkspaceSymbolQuery(string query) => _symbolService.SetWorkspaceQuery(query);
+
     /// <summary>Notifies services that the caret moved in the active editor.</summary>
     public void OnCaretMoved()
     {
@@ -117,11 +196,158 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
             _completionService.RequestAutomatic(filePath, caretOffset, trigger);
     }
 
-    /// <summary>Dismisses completion and hover UI/state.</summary>
+    /// <summary>Dismisses completion, hover, definition chooser, and symbol surfaces.</summary>
     public void DismissAll()
     {
         _completionService.Dismiss();
         _hoverService.Dismiss();
+        _navigationService.Dismiss();
+        _symbolService.Dismiss();
+    }
+
+    private void OnNavigationSnapshot(LanguageNavigationSnapshot snapshot)
+    {
+        if (snapshot.State is LanguageNavigationState.Empty
+            or LanguageNavigationState.Unavailable
+            or LanguageNavigationState.Failed)
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.FeedbackMessage))
+                FeedbackMessage = snapshot.FeedbackMessage;
+            return;
+        }
+
+        if (snapshot.IsSingleNavigateReady &&
+            Interlocked.CompareExchange(ref _navigationInFlight, 1, 0) == 0)
+        {
+            _ = NavigateSingleDefinitionAsync();
+        }
+    }
+
+    private void OnSymbolSnapshot(LanguageSymbolSnapshot snapshot)
+    {
+        if (snapshot.State is LanguageSymbolState.Empty
+            or LanguageSymbolState.Unavailable
+            or LanguageSymbolState.Failed)
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.FeedbackMessage))
+                FeedbackMessage = snapshot.FeedbackMessage;
+        }
+    }
+
+    private async Task NavigateSingleDefinitionAsync()
+    {
+        try
+        {
+            var location = _navigationService.TryTakeSingleLocation();
+            if (location is null)
+                return;
+
+            var navigated = await NavigateToLocationAsync(location).ConfigureAwait(true);
+            if (!navigated)
+                FeedbackMessage = LanguageNavigationPolicy.InvalidMessage;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _navigationInFlight, 0);
+        }
+    }
+
+    private async Task GoToDefinitionAsync()
+    {
+        if (!TryGetActiveContext(out var filePath, out var caretOffset))
+        {
+            FeedbackMessage = LanguageNavigationPolicy.UnavailableMessage;
+            return;
+        }
+
+        _completionService.Dismiss();
+        _hoverService.Dismiss();
+        _symbolService.Dismiss();
+        _navigationService.RequestDefinition(filePath, caretOffset);
+
+        // Allow Loading → Ready/Empty/Failed to publish; single-result auto-nav handles Ready.
+        await Task.Yield();
+    }
+
+    private void RequestDocumentSymbols()
+    {
+        if (!TryGetActiveContext(out var filePath, out _))
+        {
+            FeedbackMessage = LanguageSymbolPolicy.DocumentUnavailableMessage;
+            return;
+        }
+
+        _completionService.Dismiss();
+        _hoverService.Dismiss();
+        _navigationService.Dismiss();
+        _symbolService.RequestDocumentSymbols(filePath);
+    }
+
+    private void OpenWorkspaceSymbols()
+    {
+        _completionService.Dismiss();
+        _hoverService.Dismiss();
+        _navigationService.Dismiss();
+        _symbolService.RequestWorkspaceSymbols(string.Empty);
+    }
+
+    private async Task AcceptDefinitionSelectionAsync()
+    {
+        var location = _navigationService.TryAcceptSelected();
+        if (location is null)
+            return;
+
+        var navigated = await NavigateToLocationAsync(location).ConfigureAwait(true);
+        if (!navigated)
+            FeedbackMessage = LanguageNavigationPolicy.InvalidMessage;
+    }
+
+    private async Task AcceptSymbolSelectionAsync()
+    {
+        var location = _symbolService.TryAcceptSelected();
+        if (location is null)
+            return;
+
+        var navigated = await NavigateToLocationAsync(location).ConfigureAwait(true);
+        if (!navigated)
+            FeedbackMessage = LanguageNavigationPolicy.InvalidMessage;
+    }
+
+    /// <summary>
+    /// Opens/activates the target through the existing tab path, re-validates the range
+    /// against the live document text, then requests selection via <see cref="EditorViewModel.RequestNavigate"/>.
+    /// </summary>
+    internal async Task<bool> NavigateToLocationAsync(LanguageLocation location)
+    {
+        if (location is null || string.IsNullOrWhiteSpace(location.FilePath))
+            return false;
+
+        var opened = await _editorTabs.OpenFileCommand.Execute(location.FilePath).FirstAsync();
+        if (!opened)
+            return false;
+
+        var tab = _editorTabs.ActiveTab;
+        if (tab is null ||
+            !string.Equals(tab.FilePath, location.FilePath, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var content = tab.Document.Content;
+        if (!LspUtf16PositionMapper.TryMapRange(
+                content,
+                location.Range,
+                out var startOffset,
+                out var endOffset))
+        {
+            return false;
+        }
+
+        if (startOffset < 0 || endOffset < startOffset || endOffset > content.Length)
+            return false;
+
+        tab.RequestNavigate(startOffset, endOffset - startOffset);
+        return true;
     }
 
     private void TriggerExplicitCompletion()
@@ -189,5 +415,26 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
             "Editor",
             LanguageCompletionTriggerPolicy.ExplicitDefaultGestures,
             TriggerSuggestCommand));
+
+        _registry.Register(new CommandDescriptor(
+            LanguageNavigationPolicy.GoToDefinitionCommandId,
+            "Go to Definition",
+            "Editor",
+            LanguageNavigationPolicy.GoToDefinitionDefaultGestures,
+            GoToDefinitionCommand));
+
+        _registry.Register(new CommandDescriptor(
+            LanguageSymbolPolicy.DocumentSymbolCommandId,
+            "Go to Symbol in Editor",
+            "Editor",
+            LanguageSymbolPolicy.DocumentSymbolDefaultGestures,
+            DocumentSymbolCommand));
+
+        _registry.Register(new CommandDescriptor(
+            LanguageSymbolPolicy.WorkspaceSymbolCommandId,
+            "Go to Symbol in Workspace",
+            "Editor",
+            LanguageSymbolPolicy.WorkspaceSymbolDefaultGestures,
+            WorkspaceSymbolCommand));
     }
 }

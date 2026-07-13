@@ -4,11 +4,13 @@ using System.IO;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Tests;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
 
@@ -93,6 +95,24 @@ public sealed class EditorLanguageInputRoutingTests
             int character,
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyDefinitionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -112,6 +132,11 @@ public sealed class EditorLanguageInputRoutingTests
                 LanguageSessionState.Ready, generation, "/p.csproj", TempRoot, 1, null);
             _subject.OnNext(_current);
         }
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
 
         public ILanguageServerSession? TryGetReadySession(long generation) =>
             _current.State == LanguageSessionState.Ready && _current.Generation == generation
@@ -146,23 +171,40 @@ public sealed class EditorLanguageInputRoutingTests
 
     private sealed class Harness : IDisposable
     {
+        private readonly ServiceProvider _sp;
+
         public Workspace Workspace { get; } = new();
         public FakeSessionService SessionService { get; } = new();
         public FakeDocumentBridge Bridge { get; } = new();
         public ConfigurableSession Session { get; } = new();
         public LanguageCompletionService Completion { get; }
         public LanguageHoverService Hover { get; }
+        public LanguageNavigationService Navigation { get; }
+        public LanguageSymbolService Symbols { get; }
+        public EditorTabViewModel Tabs { get; }
         public EditorLanguageInputViewModel Input { get; }
         public RecordingEditor Editor { get; } = new();
 
         public Harness()
         {
+            var services = new ServiceCollection();
+            services.AddSingleton(Workspace);
+            services.AddSingleton<IFileService>(new FileService());
+            services.AddTransient(sp =>
+                new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()));
+            _sp = services.BuildServiceProvider();
+            Tabs = new EditorTabViewModel(_sp, _sp.GetRequiredService<IFileService>(), Workspace);
+
             Completion = new LanguageCompletionService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageCompletionService>.Instance);
             Hover = new LanguageHoverService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageHoverService>.Instance);
+            Navigation = new LanguageNavigationService(
+                Workspace, SessionService, Bridge, NullLogger<LanguageNavigationService>.Instance);
+            Symbols = new LanguageSymbolService(
+                Workspace, SessionService, Bridge, NullLogger<LanguageSymbolService>.Instance);
             Input = new EditorLanguageInputViewModel(
-                Completion, Hover, CommandRegistryFactory.Create());
+                Completion, Hover, Navigation, Symbols, Tabs, CommandRegistryFactory.Create());
         }
 
         public string OpenActive(string name, string content)
@@ -181,8 +223,11 @@ public sealed class EditorLanguageInputRoutingTests
         {
             Completion.Dispose();
             Hover.Dispose();
+            Navigation.Dispose();
+            Symbols.Dispose();
             SessionService.Dispose();
             Bridge.Dispose();
+            _sp.Dispose();
         }
     }
 
@@ -256,23 +301,77 @@ public sealed class EditorLanguageInputRoutingTests
     [Fact]
     public void TriggerSuggest_IsRegisteredWithCtrlSpace()
     {
+        using var harness = new Harness();
         var registry = CommandRegistryFactory.Create();
+        var workspace = new Workspace();
+        var session = new FakeSessionService();
+        var bridge = new FakeDocumentBridge();
+        var tabs = new EditorTabViewModel(
+            new ServiceCollection()
+                .AddSingleton(workspace)
+                .AddSingleton<IFileService>(new FileService())
+                .AddTransient(sp => new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()))
+                .BuildServiceProvider(),
+            new FileService(),
+            workspace);
+
         _ = new EditorLanguageInputViewModel(
-            new LanguageCompletionService(
-                new Workspace(),
-                new FakeSessionService(),
-                new FakeDocumentBridge(),
-                NullLogger<LanguageCompletionService>.Instance),
-            new LanguageHoverService(
-                new Workspace(),
-                new FakeSessionService(),
-                new FakeDocumentBridge(),
-                NullLogger<LanguageHoverService>.Instance),
+            new LanguageCompletionService(workspace, session, bridge, NullLogger<LanguageCompletionService>.Instance),
+            new LanguageHoverService(workspace, session, bridge, NullLogger<LanguageHoverService>.Instance),
+            new LanguageNavigationService(workspace, session, bridge, NullLogger<LanguageNavigationService>.Instance),
+            new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
+            tabs,
             registry);
 
         var descriptor = registry.GetById(LanguageCompletionTriggerPolicy.ExplicitCommandId);
         Assert.NotNull(descriptor);
         Assert.Equal(LanguageCompletionTriggerPolicy.ExplicitDefaultGestures, descriptor!.DefaultGestures);
+    }
+
+    [Fact]
+    public void Phase10M5Commands_AreRegisteredWithDefaultGestures()
+    {
+        var registry = CommandRegistryFactory.Create();
+        var workspace = new Workspace();
+        var session = new FakeSessionService();
+        var bridge = new FakeDocumentBridge();
+        var services = new ServiceCollection()
+            .AddSingleton(workspace)
+            .AddSingleton<IFileService>(new FileService())
+            .AddTransient(sp => new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()))
+            .BuildServiceProvider();
+        var tabs = new EditorTabViewModel(services, services.GetRequiredService<IFileService>(), workspace);
+
+        _ = new EditorLanguageInputViewModel(
+            new LanguageCompletionService(workspace, session, bridge, NullLogger<LanguageCompletionService>.Instance),
+            new LanguageHoverService(workspace, session, bridge, NullLogger<LanguageHoverService>.Instance),
+            new LanguageNavigationService(workspace, session, bridge, NullLogger<LanguageNavigationService>.Instance),
+            new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
+            tabs,
+            registry);
+
+        var goToDef = registry.GetById(LanguageNavigationPolicy.GoToDefinitionCommandId);
+        Assert.NotNull(goToDef);
+        Assert.Equal("Go to Definition", goToDef!.DisplayName);
+        Assert.Equal(LanguageNavigationPolicy.GoToDefinitionDefaultGestures, goToDef.DefaultGestures);
+
+        var docSym = registry.GetById(LanguageSymbolPolicy.DocumentSymbolCommandId);
+        Assert.NotNull(docSym);
+        Assert.Equal(LanguageSymbolPolicy.DocumentSymbolDefaultGestures, docSym!.DefaultGestures);
+
+        var wsSym = registry.GetById(LanguageSymbolPolicy.WorkspaceSymbolCommandId);
+        Assert.NotNull(wsSym);
+        Assert.Equal(LanguageSymbolPolicy.WorkspaceSymbolDefaultGestures, wsSym!.DefaultGestures);
+
+        var settings = new Moq.Mock<ISettingsService>();
+        settings.SetupGet(s => s.Current).Returns(SettingsModel.Defaults);
+        var materialised = registry.ResolveKeyBindings(settings.Object);
+        Assert.Contains(materialised, b =>
+            b.CommandId == LanguageNavigationPolicy.GoToDefinitionCommandId && b.Gesture == "F12");
+        Assert.Contains(materialised, b =>
+            b.CommandId == LanguageSymbolPolicy.DocumentSymbolCommandId && b.Gesture == "Ctrl+Shift+O");
+        Assert.Contains(materialised, b =>
+            b.CommandId == LanguageSymbolPolicy.WorkspaceSymbolCommandId && b.Gesture == "Ctrl+T");
     }
 
     private static async Task WaitForCompletionReadyAsync(Harness harness)

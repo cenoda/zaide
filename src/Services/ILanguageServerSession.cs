@@ -70,4 +70,21 @@ public interface ILanguageServerSession : IAsyncDisposable
         int line,
         int character,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>textDocument/definition</c> at a zero-based utf-16 position.</summary>
+    Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>textDocument/documentSymbol</c> for an open document.</summary>
+    Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>workspace/symbol</c> for a query string.</summary>
+    Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+        string query,
+        CancellationToken cancellationToken = default);
 }

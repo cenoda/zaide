@@ -71,6 +71,23 @@ public sealed class LanguageHoverTests
 
             return new LanguageServerHoverResult(null);
         }
+
+        public Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyDefinitionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
     }
 
     private sealed class FakeSessionService : ILanguageSessionService
@@ -231,7 +248,7 @@ public sealed class LanguageHoverTests
         using var harness = new Harness();
         var path = harness.OpenCs("unsupported.cs", "class C {}");
         harness.SetReady();
-        harness.Session.Capabilities = new LanguageServerCapabilities(true, new[] { '.' }, false);
+        harness.Session.Capabilities = new LanguageServerCapabilities(true, new[] { '.' }, false, true, true, true);
         harness.Service.Schedule(path, 0);
         await Task.Delay(LanguageHoverTriggerPolicy.DwellDelay + TimeSpan.FromMilliseconds(100));
         Assert.False(harness.Service.Current.IsVisible);

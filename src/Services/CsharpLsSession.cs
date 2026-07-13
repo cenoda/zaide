@@ -186,6 +186,72 @@ internal sealed class CsharpLsSession : ILanguageServerSession
     }
 
     /// <inheritdoc />
+    public async Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+        string documentUri,
+        int line,
+        int character,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "textDocument/definition",
+            new
+            {
+                textDocument = new { uri = documentUri },
+                position = new { line, character },
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerDefinitionParser.Parse(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+        string documentUri,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "textDocument/documentSymbol",
+            new
+            {
+                textDocument = new { uri = documentUri },
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerSymbolParser.Parse(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed || _rpc is null)
+            return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = await _rpc.InvokeWithParameterObjectAsync<JsonElement?>(
+            "workspace/symbol",
+            new
+            {
+                query = query ?? string.Empty,
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        return LanguageServerSymbolParser.Parse(result);
+    }
+
+    /// <inheritdoc />
     public async Task ShutdownAsync(CancellationToken cancellationToken)
     {
         if (_disposed || _rpc is null)

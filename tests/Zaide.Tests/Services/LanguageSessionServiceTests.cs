@@ -139,6 +139,24 @@ public sealed class LanguageSessionServiceTests
             CancellationToken cancellationToken = default) =>
             TestLanguageServerSession.EmptyHoverAsync(documentUri, line, character, cancellationToken);
 
+        public Task<LanguageServerDefinitionResult?> RequestDefinitionAsync(
+            string documentUri,
+            int line,
+            int character,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptyDefinitionAsync(documentUri, line, character, cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
+            string documentUri,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+        public Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
+            string query,
+            CancellationToken cancellationToken = default) =>
+            TestLanguageServerSession.EmptySymbolsAsync(cancellationToken);
+
+
         public ValueTask DisposeAsync()
         {
             Disposed = true;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -35,6 +36,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private readonly EditorLanguageInputViewModel _languageInput;
     private readonly EditorCompletionPopup _completionPopup;
     private readonly EditorHoverPopup _hoverPopup;
+    private readonly EditorLanguagePickerPopup _definitionPicker;
+    private readonly EditorLanguagePickerPopup _documentSymbolPicker;
+    private readonly EditorLanguagePickerPopup _workspaceSymbolPicker;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
     private readonly ContentControl _fileInfoIconHost;
@@ -61,6 +65,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             PlacementTarget = null,
         };
         _hoverPopup = new EditorHoverPopup
+        {
+            PlacementTarget = null,
+        };
+        _definitionPicker = new EditorLanguagePickerPopup(showQuery: false)
+        {
+            PlacementTarget = null,
+        };
+        _documentSymbolPicker = new EditorLanguagePickerPopup(showQuery: false)
+        {
+            PlacementTarget = null,
+        };
+        _workspaceSymbolPicker = new EditorLanguagePickerPopup(showQuery: true)
         {
             PlacementTarget = null,
         };
@@ -143,7 +159,14 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
         _completionPopup.PlacementTarget = _textEditor;
         _hoverPopup.PlacementTarget = _textEditor;
+        _definitionPicker.PlacementTarget = _textEditor;
+        _documentSymbolPicker.PlacementTarget = _textEditor;
+        _workspaceSymbolPicker.PlacementTarget = _textEditor;
         _completionPopup.ItemConfirmed += OnCompletionItemConfirmed;
+        _definitionPicker.ItemConfirmed += OnDefinitionItemConfirmed;
+        _documentSymbolPicker.ItemConfirmed += OnSymbolItemConfirmed;
+        _workspaceSymbolPicker.ItemConfirmed += OnSymbolItemConfirmed;
+        _workspaceSymbolPicker.QueryChanged += OnWorkspaceSymbolQueryChanged;
 
         this.WhenActivated(d =>
         {
@@ -249,9 +272,57 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
             d.Add(_languageInput.CompletionWhenChanged.Subscribe(ApplyCompletionSnapshot));
             d.Add(_languageInput.HoverWhenChanged.Subscribe(ApplyHoverSnapshot));
+            d.Add(_languageInput.NavigationWhenChanged.Subscribe(ApplyNavigationSnapshot));
+            d.Add(_languageInput.SymbolWhenChanged.Subscribe(ApplySymbolSnapshot));
 
             void OnEditorKeyDown(object? s, KeyEventArgs e)
             {
+                if (_definitionPicker.IsOpen)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            _languageInput.DefinitionDismissCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Up:
+                            _languageInput.DefinitionMoveUpCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Down:
+                            _languageInput.DefinitionMoveDownCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Enter:
+                            _languageInput.DefinitionAcceptCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                    }
+                }
+
+                if (_documentSymbolPicker.IsOpen || _workspaceSymbolPicker.IsOpen)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            _languageInput.SymbolDismissCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Up:
+                            _languageInput.SymbolMoveUpCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Down:
+                            _languageInput.SymbolMoveDownCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                        case Key.Enter:
+                            _languageInput.SymbolAcceptCommand.Execute().Subscribe();
+                            e.Handled = true;
+                            return;
+                    }
+                }
+
                 if (_completionPopup.IsOpen)
                 {
                     switch (e.Key)
@@ -397,6 +468,15 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private void OnCompletionItemConfirmed() =>
         _languageInput.CompletionCommitCommand.Execute().Subscribe();
 
+    private void OnDefinitionItemConfirmed() =>
+        _languageInput.DefinitionAcceptCommand.Execute().Subscribe();
+
+    private void OnSymbolItemConfirmed() =>
+        _languageInput.SymbolAcceptCommand.Execute().Subscribe();
+
+    private void OnWorkspaceSymbolQueryChanged(string query) =>
+        _languageInput.SetWorkspaceSymbolQuery(query);
+
     private void ApplyCompletionSnapshot(LanguageCompletionSnapshot snapshot)
     {
         if (!snapshot.IsPopupOpen)
@@ -415,6 +495,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _completionPopup.BindItems(snapshot.Items, snapshot.SelectedIndex);
         _completionPopup.IsOpen = true;
         _hoverPopup.IsOpen = false;
+        _definitionPicker.IsOpen = false;
+        _documentSymbolPicker.IsOpen = false;
+        _workspaceSymbolPicker.IsOpen = false;
     }
 
     private void ApplyHoverSnapshot(LanguageHoverSnapshot snapshot)
@@ -432,7 +515,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             return;
         }
 
-        if (_completionPopup.IsOpen)
+        if (_completionPopup.IsOpen ||
+            _definitionPicker.IsOpen ||
+            _documentSymbolPicker.IsOpen ||
+            _workspaceSymbolPicker.IsOpen)
         {
             _hoverPopup.IsOpen = false;
             return;
@@ -442,10 +528,121 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _hoverPopup.IsOpen = true;
     }
 
+    private void ApplyNavigationSnapshot(LanguageNavigationSnapshot snapshot)
+    {
+        if (!snapshot.IsChooserOpen)
+        {
+            _definitionPicker.IsOpen = false;
+            return;
+        }
+
+        if (ViewModel is null ||
+            !string.Equals(ViewModel.FilePath, snapshot.SourceFilePath, StringComparison.Ordinal))
+        {
+            _definitionPicker.IsOpen = false;
+            return;
+        }
+
+        var labels = new List<string>(snapshot.Locations.Count);
+        foreach (var location in snapshot.Locations)
+            labels.Add(FormatLocationLabel(location));
+
+        _definitionPicker.SetHeader("Go to Definition");
+        _definitionPicker.BindItems(labels, snapshot.SelectedIndex);
+        _definitionPicker.IsOpen = true;
+        _completionPopup.IsOpen = false;
+        _hoverPopup.IsOpen = false;
+        _documentSymbolPicker.IsOpen = false;
+        _workspaceSymbolPicker.IsOpen = false;
+    }
+
+    private void ApplySymbolSnapshot(LanguageSymbolSnapshot snapshot)
+    {
+        if (!snapshot.IsSurfaceOpen)
+        {
+            _documentSymbolPicker.IsOpen = false;
+            _workspaceSymbolPicker.IsOpen = false;
+            return;
+        }
+
+        if (snapshot.Scope == LanguageSymbolScope.Document)
+        {
+            if (ViewModel is null ||
+                !string.Equals(ViewModel.FilePath, snapshot.FilePath, StringComparison.Ordinal))
+            {
+                _documentSymbolPicker.IsOpen = false;
+                return;
+            }
+
+            var labels = FormatSymbolLabels(snapshot.Symbols);
+            _documentSymbolPicker.SetHeader(
+                snapshot.State == LanguageSymbolState.Empty
+                    ? snapshot.FeedbackMessage ?? "No symbols"
+                    : "Document symbols");
+            _documentSymbolPicker.BindItems(labels, snapshot.SelectedIndex);
+            _documentSymbolPicker.IsOpen = true;
+            _workspaceSymbolPicker.IsOpen = false;
+            _completionPopup.IsOpen = false;
+            _hoverPopup.IsOpen = false;
+            _definitionPicker.IsOpen = false;
+            return;
+        }
+
+        if (snapshot.Scope == LanguageSymbolScope.Workspace)
+        {
+            var labels = FormatSymbolLabels(snapshot.Symbols);
+            _workspaceSymbolPicker.SetHeader(
+                snapshot.State == LanguageSymbolState.Empty
+                    ? snapshot.FeedbackMessage ?? "No symbols"
+                    : snapshot.State == LanguageSymbolState.Loading
+                        ? "Searching workspace symbols…"
+                        : "Workspace symbols");
+            _workspaceSymbolPicker.BindItems(labels, snapshot.SelectedIndex);
+            _workspaceSymbolPicker.IsOpen = true;
+            _documentSymbolPicker.IsOpen = false;
+            _completionPopup.IsOpen = false;
+            _hoverPopup.IsOpen = false;
+            _definitionPicker.IsOpen = false;
+        }
+    }
+
+    private static List<string> FormatSymbolLabels(IReadOnlyList<LanguageSymbol> symbols)
+    {
+        var labels = new List<string>(symbols.Count);
+        foreach (var symbol in symbols)
+        {
+            var indent = symbol.Depth > 0 ? new string(' ', symbol.Depth * 2) : string.Empty;
+            var path = symbol.Location?.FilePath is { Length: > 0 } filePath
+                ? Path.GetFileName(filePath)
+                : null;
+            var line = symbol.Location is null
+                ? string.Empty
+                : $":{symbol.Location.Range.StartLine + 1}";
+            var suffix = path is null ? string.Empty : $"  ({path}{line})";
+            labels.Add($"{indent}{symbol.Name}{suffix}");
+        }
+
+        return labels;
+    }
+
+    private static string FormatLocationLabel(LanguageLocation location)
+    {
+        var file = location.FilePath is { Length: > 0 }
+            ? Path.GetFileName(location.FilePath)
+            : location.DocumentUri;
+        var line = location.Range.StartLine + 1;
+        var column = location.Range.StartCharacter + 1;
+        var name = string.IsNullOrWhiteSpace(location.Name) ? string.Empty : $"{location.Name} — ";
+        return $"{name}{file}:{line}:{column}";
+    }
+
     private void ClearLanguagePresentation()
     {
         _completionPopup.IsOpen = false;
         _hoverPopup.IsOpen = false;
+        _definitionPicker.IsOpen = false;
+        _documentSymbolPicker.IsOpen = false;
+        _workspaceSymbolPicker.IsOpen = false;
     }
 
 
@@ -648,6 +845,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         if (_disposed) return;
         _disposed = true;
         _completionPopup.ItemConfirmed -= OnCompletionItemConfirmed;
+        _definitionPicker.ItemConfirmed -= OnDefinitionItemConfirmed;
+        _documentSymbolPicker.ItemConfirmed -= OnSymbolItemConfirmed;
+        _workspaceSymbolPicker.ItemConfirmed -= OnSymbolItemConfirmed;
+        _workspaceSymbolPicker.QueryChanged -= OnWorkspaceSymbolQueryChanged;
         _languageInput.DismissAll();
         ClearLanguagePresentation();
         _settingsBinding.Dispose();

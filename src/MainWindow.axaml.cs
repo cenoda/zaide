@@ -172,6 +172,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Phase 10 M3: Problems projection surface
             _problemsPanel.ViewModel = ViewModel.ProblemsViewModel;
 
+            // Phase 10 M5: route definition/symbol feedback to the status bar.
+            disposables.Add(_languageInputViewModel
+                .WhenAnyValue(x => x.FeedbackMessage)
+                .Where(msg => msg is not null)
+                .Subscribe(msg =>
+                {
+                    if (ViewModel is not null)
+                        ViewModel.StatusText = msg;
+                }));
+
             // Wire StatusBar to its singleton child ViewModel.
             _statusBar.ViewModel = _statusBarViewModel;
 
