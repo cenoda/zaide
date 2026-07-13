@@ -353,6 +353,33 @@ public class EditorTabViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Moves a tab from one index to another within <see cref="OpenTabs"/>.
+    /// All inputs are validated; invalid or no-op moves are safe.
+    ///
+    /// <para><b>Active-tab preservation:</b> The same <see cref="ActiveTab"/>
+    /// object remains active after moving — only its index in the collection
+    /// changes. <see cref="Workspace.ActiveDocument"/> is unchanged.</para>
+    ///
+    /// <para><b>Dirty-state / display-name preservation:</b> Tab content,
+    /// dirty state, and display name are properties on the ViewModel and are
+    /// not affected by collection reordering.</para>
+    ///
+    /// <para><b>CollectionChanged:</b> Fires a <c>Move</c> notification so
+    /// the View can reconcile visual order without full rebuild.</para>
+    /// </summary>
+    public void MoveTab(int fromIndex, int toIndex)
+    {
+        if (fromIndex < 0 || fromIndex >= OpenTabs.Count) return;
+        if (toIndex < 0 || toIndex >= OpenTabs.Count) return;
+        if (fromIndex == toIndex) return;
+
+        OpenTabs.Move(fromIndex, toIndex);
+
+        // ActiveTab reference preserved by object identity. Neither its
+        // content nor its dirty state changed. Workspace unchanged.
+    }
+
+    /// <summary>
     /// Opens a file in a new or existing tab. If a tab for the same path
     /// already exists, activates it instead of creating a duplicate.
     /// </summary>

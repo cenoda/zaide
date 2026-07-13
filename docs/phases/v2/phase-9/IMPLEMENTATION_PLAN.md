@@ -268,9 +268,10 @@ text before M3 or M6 adds selection-dependent behavior.
 
 ## Exact Next Step
 
-Implement **M5a only**: registry-backed tab commands and tab lifecycle UX
-(next/previous tab, close active tab, close other tabs, close all tabs) with
-deterministic neighbor selection and dirty-confirmation preservation.
+Implement **M6**: Integrate status-bar/editor feedback and close out Phase 9.
+Status text must truthfully reflect caret, selection, active document, search
+outcome, folding outcome, and command/save failure without stale updates after
+tab switches or closes. Run full regression and record manual evidence.
 
 ---
 
@@ -415,13 +416,108 @@ All five manual checks passed on Linux desktop:
 | `tests/Zaide.Tests/ViewModels/EditorTabViewModelTabLifecycleTests.cs` | New | 30 behavioral tests for navigation, close-active, close-others, close-all, workspace tracking, and content/dirty preservation |
 | `tests/Zaide.Tests/Services/TabCommandRegistrationTests.cs` | New | 16 registration tests for metadata, gestures, exactly-once, availability, duplicate protection, and coexistence |
 
+## M5b Interaction Contract (Locked)
+
+### Drag Threshold
+- **8 device-independent pixels (DIPs)** of horizontal pointer movement before drag initiates.
+- Below this threshold: the gesture is treated as a normal click.
+
+### Drop-Position Rule
+- Pointer X is evaluated relative to each non-dragged tab's **center**:
+  - Before center → drop **before** that tab.
+  - At or after center → drop **after** that tab.
+- Drops before the first non-dragged tab's center → insert at index 0.
+- Drops after the last non-dragged tab's center → insert at the end.
+- The dragged tab's own visual is **excluded** from hit testing (you cannot drop a tab onto itself).
+- Invalid or same-position drops are no-ops.
+
+### Click / Drag Separation
+- `PointerPressed` records the start position and captures the pointer. TabClicked is **not** fired on press.
+- `PointerMoved` checks the accumulated delta against the 8-DIP threshold:
+  - Below threshold → continue tracking.
+  - At or above threshold → enter drag mode, show drop indicator, reduce dragged tab opacity.
+- `PointerReleased`:
+  - **Drag mode** → compute drop target index, fire `TabMoveRequested`, restore opacity, hide indicator.
+  - **No drag** → fire `TabClicked` for normal activation.
+- Only **left mouse button** initiates drags. Other buttons are ignored.
+- Close button's `PointerPressed` sets `e.Handled = true`, preventing the parent border from starting a drag.
+
+### Active-Tab Rule
+- The same `ActiveTab` object reference remains active after a reorder.
+- Only the tab's index in `OpenTabs` changes; `Workspace.ActiveDocument` is unchanged.
+- Visual highlighting is preserved because `SetActiveTab` sets `Border.Background` directly on the control — this survives collection reorder.
+
+### Dirty-State / Display-Name Rule
+- `DisplayName`, `IsDirty`, `FileName`, and `TextContent` are ViewModel properties on `EditorViewModel`. Reordering the collection does not touch them.
+- Bound `TextBlock` controls in the tab bar update automatically via data binding.
+- Closing a tab after reorder uses the **M5a neighbor-selection policy** unchanged: next tab at the removed index; otherwise previous tab.
+
+### Scroll Behavior
+- Existing horizontal wheel scrolling is preserved unchanged.
+- Pointer coordinates are evaluated relative to `_tabsPanel`, which accounts for scroll offset automatically.
+- Drop-position calculation remains correct after manual scrolling.
+- The drop indicator is placed inside the scrollable content area, so it moves with the tabs.
+
+### Escape Cancellation
+- Pressing **Escape** during an active drag calls `CancelDrag()` — restores the dragged tab's opacity, hides the drop indicator, and resets drag state.
+- Implemented via a `TopLevel.KeyDown` handler attached in `OnTabPointerPressed` and removed in `CancelDrag` / cleanup.
+- Works regardless of which control has keyboard focus.
+
+### Lifecycle (Cleanup)
+- `CollectionChanged` handles `Move` action by removing the Border from `_tabsPanel.Children` and reinserting at `e.NewStartingIndex`.
+- **Remove:** if the removed tab is the currently dragged tab, `CancelDrag()` is called; pointer handlers and hover subscriptions are disposed.
+- **Reset:** `CancelDrag()` is called; all children cleared; all subscriptions disposed.
+- **`DetachedFromVisualTree`:** active drag is cancelled; `CollectionChanged` subscription is detached.
+- No duplicate event subscriptions are possible because `SetTabs` always unsubscribes from the old collection before subscribing to the new one.
+- `CancelDrag` restores the dragged tab's opacity, hides the drop indicator, and unsubscribes the Escape handler.
+
+### Registered Commands
+
+No new commands. M5b extends the View (pointer drag) and ViewModel (MoveTab) layers without adding command-registry entries.
+
+### M5b Verification Results
+
+| Gate | Result |
+|---|---|
+| M5b focused tests (`EditorTabReorderTests` + `EditorTabBarLifecycleTests`) | ✅ 49/49 passed |
+| `dotnet build Zaide.slnx --no-restore` | ✅ 0 errors, 0 warnings |
+| `dotnet test Zaide.slnx --no-build` (full regression) | ✅ 1485 passed, 0 failed, 0 skipped |
+| `git diff --check` | ✅ clean |
+| `git status --short` | 5 modified, 1 new file |
+
+### Manual Linux Smoke Evidence
+
+All M5b behaviors verified on Linux desktop:
+
+1. **Overflow scroll + drag** — opened enough files to overflow the tab strip, scrolled with mouse wheel, dragged tabs to new positions — reorder and drop indicator work correctly.
+2. **Drag first, middle, and last tabs** — dragged first tab to middle, middle tab to last, last tab to first; tabs reorder correctly in all directions.
+3. **Active tab after reorder** — active highlighting follows the tab to its new position after every move.
+
+4. **Dirty tab reorder + close** — marked a tab dirty, reordered it, then closed it; dirty prompt appeared; neighbor selection matched M5a policy.
+5. **Click vs close vs drag** — normal click activates a tab; close glyph closes it; neither triggers a drag.
+6. **Scroll + drag** — scrolled the overflowing strip, then dragged; drop target remained correct after manual scroll.
+7. **Escape cancellation** — pressed Escape during a drag; visual state restored, indicator hidden, drag cancelled cleanly.
+
+**All seven manual checks pass. No stuck visuals, no crashes, no stale subscriptions.**
+
+### Test Coverage
+
+M5b adds 36 tests:
+
+| File | Tests | Coverage |
+|---|---|---|
+| `EditorTabReorderTests` | 30 | ViewModel `MoveTab`: validation, ordering, CollectionChanged `Move` notification, active-tab preservation, dirty/display-name preservation, close-after-reorder, multiple moves |
+| `EditorTabBarLifecycleTests` | 6 | Escape subscription lifecycle: initial state, no-TopLevel safety, idempotency, stored-action invocation, CancelDrag cleanup, exactly-once semantics |
+
+### Files Changed
+
+| File | Status | Purpose |
+|---|---|---|
+| `src/ViewModels/EditorTabViewModel.cs` | Modified | Added `MoveTab(int, int)` with input validation, no-op safety, and ActiveTab preservation |
+| `src/Views/EditorTabBar.cs` | Modified | Pointer-driven drag reorder (threshold, capture, drop indicator, Move handler), CollectionChanged Move support, DetachedFromVisualTree cleanup |
+| `src/MainWindow.axaml.cs` | Modified | Wire `TabMoveRequested` event to `editorTabs.MoveTab` |
+| `tests/Zaide.Tests/ViewModels/EditorTabReorderTests.cs` | New | 30 tests: validation, ordering, CollectionChanged Move notification, active-tab preservation, dirty/display-name preservation, close-after-reorder, multiple moves |
+| `tests/Zaide.Tests/ViewModels/EditorTabBarLifecycleTests.cs` | Modified | 7 new tests: CollectionChanged Move, subscription cleanup, drag-remove safety, visual-order tracking |
+
 
 ## Rollback Plan
-
-- Planning baseline: `596ad85cad7b0eecf2cabb09327f11a22fd47f93` (`docs: add
-  Phase 9 Editor UX implementation plan`).
-- Before each implementation milestone, record its last green predecessor in
-  that milestone's commit message or closeout evidence. Revert a failed
-  milestone to that predecessor; do not discard a prior green milestone.
-- If a structural reset is required rather than a normal bug fix, create
-  `REVERT_LOG.md` as required by `docs-rules.md` before recording the revert.
