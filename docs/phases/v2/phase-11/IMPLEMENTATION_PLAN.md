@@ -2,10 +2,13 @@
 
 ## Status
 
-**M0 complete** (planning/proof gate, 2026-07-14). No production Build, Run,
-Test, Output, Problems-build, or test-results features yet.
+**M0 complete** (planning/proof gate, 2026-07-14; review-hardening doc pass
+same day). No production Build, Run, Test, Output, Problems-build, or
+test-results features yet.
 Evidence: [M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md).
-Verified against live code at `1569e6dad6e6f1615e3677460a44f2ad5cf8cd42`.
+Verified against live code at `1569e6dad6e6f1615e3677460a44f2ad5cf8cd42`
+(content contracts amended post-commit in this doc pass; re-verify live
+dispose order and seams when starting M1).
 
 **Prerequisite:** Phase 10 complete (M7 closeout, 2026-07-14). Phase 8.3
 project context and Phase 8.2 command registry are the authoritative seams.
@@ -43,6 +46,8 @@ existing editor/document seams.
 - No replacement of `ITerminalService` / PTY sessions for interactive shells
 - No agent automation or tool schemas (V3)
 - Do not clear or replace LSP diagnostics with build output; merge by source
+- No `OutputType` / Sdk probe for “is this runnable?” in Phase 11 (see U7 /
+  limitations)
 - No new NuGet required for M1 process execution (`System.Diagnostics.Process`
   matches `CsharpLsSession`); CliWrap remains catalogued only
 
@@ -51,12 +56,7 @@ existing editor/document seams.
 - [x] Live ownership graph verified: `Program.cs` DI, `IProjectContextService`,
       `CommandRegistry` registration/materialization, `MainWindowViewModel`,
       `ProblemsViewModel` navigation, terminal host, `Workspace` / tab open path
-- [x] Target-resolution contract locked for every `ProjectContextState`
-- [x] Command IDs, registry ownership, CanExecute, and default gestures locked
-- [x] Service ownership for execution, output, diagnostics, tests, cancel locked
-- [x] Output/Problems/Test Results vs interactive terminal separation locked
-- [x] Process lifecycle/result contracts locked
-- [x] Navigation ownership locked to existing editor seams
+- [x] Locked contracts **1–8** (see below) recorded in plan + proof
 - [x] Milestone decomposition M0–M6 with tests and commit boundaries
 - [x] Concrete verification commands and Linux smoke requirements recorded
 - [x] Limitations, YAGNI, and Rollback Plan recorded
@@ -65,10 +65,11 @@ existing editor/document seams.
 - [x] `git diff --check` clean for M0 docs
 - [ ] Production implementation (starts at M1 — not this session)
 
-## Locked Contracts (summary)
+## Locked Contracts (1–8)
 
-Full field-level evidence and line-of-code citations live in
-[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md). Summary:
+Full field-level evidence lives in
+[M0_DISCOVERY_PROOF.md](M0_DISCOVERY_PROOF.md). The numbered set below is the
+authoritative contract inventory; plan and proof use the same **1–8** numbering.
 
 ### 1. Target resolution
 
@@ -85,15 +86,24 @@ Full field-level evidence and line-of-code citations live in
 
 **Winning target:** `ProjectContext.SelectedProject.FilePath` (normalized
 absolute path). Working directory: `Path.GetDirectoryName(FilePath)`.
-Default tool: host `dotnet` on `PATH`. Command templates by `ProjectKind`:
+Default tool: host `dotnet` on `PATH`.
+
+**Locked default argv** (quote path as needed for the process API):
 
 | Kind | Build | Run | Test |
 |---|---|---|---|
-| `Solution` / `SolutionX` | `dotnet build <file>` | Not default-eligible as a whole-solution “run” without a startup project — see M0 unresolved | `dotnet test <file>` |
-| `CSharpProject` | `dotnet build <file>` | `dotnet run --project <file> --no-build` only after successful build in-session **or** `dotnet run --project <file>` (M1 locks exact default) | `dotnet test <file>` |
+| `Solution` / `SolutionX` | `dotnet build <file>` | **Ineligible** for Phase 11 default (U1 option a) | `dotnet test <file>` |
+| `CSharpProject` | `dotnet build <file>` | `dotnet run --project <file>` | `dotnet test <file>` |
 
-Folder open alone never starts a process. `Workspace.WorkspacePath` is **not**
-a build-target fallback.
+- Smart `--no-build` after an in-session successful build is **deferred**
+  (optional later); it is not the Phase 11 default.
+- Folder open alone never starts a process. `Workspace.WorkspacePath` is **not**
+  a build-target fallback.
+- **Non-executable projects (U7 / limitation):** any eligible `CSharpProject`
+  (including class libraries) may still enable Run by context eligibility.
+  Phase 11 does **not** parse `OutputType` / Sdk heuristics. `dotnet run` may
+  exit non-zero; surface as structured `Failed` (or `StartupFailed` if start
+  fails). No special CanExecute probe.
 
 ### 2. Commands
 
@@ -107,36 +117,53 @@ a build-target fallback.
 - **Only** `ICommandRegistry` / `CommandDescriptor` — no parallel menu-command
   system. Palette and keybinding materialization reuse Phase 8.2
   (`CommandRegistry.ResolveKeyBindings` + `MainWindow.MaterializeRegistryBindings`).
-- `CanExecute`: true only when context is eligible **and** (for build/run/test)
-  no operation is active; `project.cancel` true only when an operation is active.
-- ReactiveCommand `CanExecute` is the availability source; registry
+- **UI `CanExecute`:** build/run/test true only when context is eligible (and
+  for run: kind supports Run profile) **and** no operation is active;
+  `project.cancel` true only when an operation is active.
+- **API dual path (M1 must implement both):** when a caller invokes the
+  workflow service while a slot is busy, return structured
+  `RejectedConcurrent` even if UI `CanExecute` already hid the command.
+  Similarly return `RejectedContext` for ineligible context. UI path and
+  programmatic path must not diverge in outcome kinds.
+- ReactiveCommand `CanExecute` is the UI availability source; registry
   `Execute` already respects `ICommand.CanExecute`.
 
-### 3. Service ownership (UI-independent)
+### 3. Service ownership (UI-independent) and M1 DI surface
 
-| Concern | Owner | Notes |
+**Phase-wide ownership (by milestone of first introduction):**
+
+| Concern | Owner | First milestone |
 |---|---|---|
-| Target resolution + one operation + cancel + generation | `IProjectWorkflowService` | Singleton; consumes `IProjectContextService` only for project truth |
-| Process start, stdout/stderr capture, kill tree, exit | `IManagedProcessRunner` (or nested type owned by workflow) | No PTY; not `ITerminalService` |
-| Execution profile (argv, cwd, env) | `IProjectExecutionProfileResolver` | Pure function of candidate + operation kind + optional future settings |
-| Structured output lines | `IProjectOutputService` | Observable snapshot; not terminal scrollback |
-| Parsed build diagnostics | `IBuildDiagnosticsService` | Structured items; Problems projects them |
-| Test results | `ITestResultsService` | Structured suite/case outcomes |
-| Views/ViewModels | Projection + command invoke only | Never own process lifecycle |
+| Target resolution + one operation + cancel + generation | `IProjectWorkflowService` | **M1** |
+| Process start, stdout/stderr capture, kill tree, exit | `IManagedProcessRunner` (public DI **or** nested type owned by workflow) | **M1** |
+| Execution profile (argv, cwd, env) | Pure helper / `ProjectExecutionProfileResolver` — **not** required as a public DI singleton if kept internal to workflow | **M1** |
+| Structured output lines | `IProjectOutputService` | **M2** (not M1) |
+| Parsed build diagnostics | `IBuildDiagnosticsService` | **M3** (not M1) |
+| Test results | `ITestResultsService` | **M5** (not M1) |
+| Views/ViewModels | Projection + command invoke only | M2+ |
+
+**M1 DI registration (explicit YAGNI list):**
+
+- `IProjectWorkflowService` → `ProjectWorkflowService` (singleton)
+- `IManagedProcessRunner` → production runner **or** inject via workflow
+  constructor without a second empty facade
+- **Do not** register Output, build-diagnostics, or test-results services in M1
+- **Do not** register `project.*` commands in M1 unless tests need a temporary
+  host; product command registration is M2+ (Build/Cancel), M4 (Run), M5 (Test)
 
 ### 4. Output / Problems / Test Results vs Terminal
 
 - **Terminal** (`ITerminalService`, `ITerminalHost`): interactive PTY shells.
   Phase 11 must not send Build/Run/Test through the PTY.
-- **Output**: structured, append-only (per operation) process log with
+- **Output** (M2): structured, append-only (per operation) process log with
   timestamps/stream tags; clear or replace on new operation start.
-- **Problems**: continues to project LSP diagnostics; **also** projects build
-  diagnostics with `Source = "build"` (or equivalent). Build diagnostics are
-  replaced on each new build, not on LSP publish. LSP items are not cleared by
-  build start.
-- **Test Results**: dedicated structured surface (bottom-panel mode extension
-  or sibling list) — not terminal log heuristics (`LogCategorizer` remains
-  terminal-only).
+- **Problems** (M3): continues to project LSP diagnostics; **also** projects
+  build diagnostics with `Source = "build"` (or equivalent). Build diagnostics
+  are replaced on each new build, not on LSP publish. **LSP items must never
+  be cleared by build start.** Separate `IBuildDiagnosticsService` + VM
+  projection — do not merge into `ILanguageDiagnosticsService`.
+- **Test Results** (M5): dedicated structured surface — not terminal
+  `LogCategorizer` heuristics.
 
 ### 5. Process lifecycle / results
 
@@ -150,7 +177,7 @@ Structured outcome kinds (names illustrative; exact types in M1):
 | `Cancelled` | User/system cancel; process tree killed when started |
 | `RejectedConcurrent` | Second build/run/test while one active — no start |
 | `RejectedContext` | Ineligible/stale project context — no start |
-| `TimedOut` | **Not required for Phase 11 exit**; document as deferred unless M1 proves need |
+| `TimedOut` | **Not required for Phase 11 exit**; deferred |
 
 Rules:
 
@@ -160,9 +187,14 @@ Rules:
    generation is ignored.
 3. Project-context transition away from eligible selected path **cancels** the
    active operation (same spirit as language-session generation).
-4. App dispose / service dispose: cancel active operation, wait bounded, dispose
-   runner.
-5. Cancellation is never reported as `Failed` exit alone — use `Cancelled`.
+4. Cancellation is never reported as `Failed` exit alone — use `Cancelled`.
+5. **App dispose order (locked):** cancel/dispose **workflow first** (kill any
+   `dotnet` process tree), then the existing language stack, then
+   `IProjectContextService`, then `ITerminalHost`. Live exit path today
+   (`App.axaml.cs`) disposes language → project context → terminal; M1 must
+   insert workflow dispose **before** language session dispose so workflow
+   children are never orphaned after app exit. Bounded wait after cancel is
+   allowed; never rely on process exit alone without `Kill(entireProcessTree)`.
 
 ### 6. Navigation
 
@@ -174,29 +206,51 @@ Rules:
   parsing; invalid/missing files no-op safely.
 - Do not invent a second document host.
 
+### 7. Verification gates
+
+- Sequential full gates (never concurrent build+test):
+
+  ```bash
+  dotnet build Zaide.slnx --no-restore
+  dotnet test Zaide.slnx --no-build
+  git diff --check
+  ```
+
+- Focused filters per milestone (see milestones table).
+- Linux manual smoke with recorded evidence M2–M6.
+- **Default fixture path (locked for smoke reproducibility):**
+  `tests/fixtures/workflow-console/` — a small console + optional fail-build
+  and test projects created at first smoke milestone that needs them (M2).
+  Do not rely on ad-hoc temp folders without recording the path in evidence.
+
+### 8. Limitations, YAGNI, and rollback
+
+See [Phase 11 Limitations](#phase-11-limitations) and
+[Rollback Plan](#rollback-plan). Phase 11 does not add task runners, DAP,
+auto-build, multi-language builds, or OutputType probing.
+
 ## Milestones (Incremental)
 
 | Milestone | Scope and independent completion condition | Focused verification | Commit boundary |
 |---|---|---|---|
-| **M0** ✅ | Planning/proof only. Lock contracts 1–9; write this plan + `M0_DISCOVERY_PROOF.md`; truth-sync Phase 10 closeout dates; no production workflow code. | Live-code inspection recorded; `git diff --check` | `docs: phase-11 M0 project workflow plan` |
-| **M1** | UI-independent core: target resolution, execution-profile resolver, managed process runner, `IProjectWorkflowService` with one-at-a-time, cancel, generation, context-change cancel, structured outcomes, DI registration. **No** Output UI, Problems build merge, Run/Test product UX yet — optional internal Build smoke via tests only. | `ProjectTargetResolutionTests`, `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests`, DI resolve tests | `workflow: add project process orchestration core` |
-| **M2** | Build command + structured Output service + Output panel projection; register `project.build` / `project.cancel`; wire CanExecute. | `ProjectBuildCommandTests`, `ProjectOutputServiceTests`, Output VM tests; Linux smoke: build fixture project, Output shows lines | `workflow: build command and structured output` |
-| **M3** | Parse build diagnostics; `IBuildDiagnosticsService`; Problems merge (LSP + build) + navigation; clear build diags on new build. | `BuildDiagnosticParserTests`, `BuildDiagnosticsServiceTests`, `ProblemsBuildProjectionTests`, navigation tests; Linux smoke: intentional CS error → Problems → jump | `workflow: build diagnostics in problems` |
-| **M4** | Run command for eligible `CSharpProject` (and locked solution/run policy from M0 unresolved resolution); output reuse; cancel while running. | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
-| **M5** | Test command + `ITestResultsService` + Test Results surface (bottom mode or panel); basic TRX/console parse as locked in M5 plan slice; navigation from failing test if location available. | `ProjectTestCommandTests`, `TestResultsServiceTests`, VM tests; Linux smoke: pass + fail test | `workflow: test command and results surface` |
-| **M6** | Closeout: full regression, command availability matrix, status-bar/operation feedback, docs/architecture/library truth-sync, accessibility/keyboard smoke, limitations final. | Full sequential build/test; `git diff --check`; `M6_MANUAL_EVIDENCE.md` | `docs(phase-11): M6 closeout` |
+| **M0** ✅ | Planning/proof only. Lock contracts **1–8**; write this plan + `M0_DISCOVERY_PROOF.md`; truth-sync Phase 10 closeout dates; no production workflow code. | Live-code inspection recorded; `git diff --check` | `docs(phase-11): M0 project workflow plan` |
+| **M1** | UI-independent core only: target resolution, process runner, `IProjectWorkflowService` (one-at-a-time, cancel, generation, context-change cancel, structured outcomes including `RejectedConcurrent` / `RejectedContext`), dispose-before-language wiring, DI for workflow (+ runner). Profile helper may be internal. **No** Output/build-diags/test-results services, **no** product UI, **no** required `project.*` registration. | `ProjectTargetResolutionTests`, `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests` (include concurrent reject + dispose kill), DI resolve tests | `workflow: add project process orchestration core` |
+| **M2** | Build command + structured Output service + Output panel projection; register `project.build` / `project.cancel`; wire CanExecute. **Session risk:** if too large, split **M2a** (workflow Build API + Output service, no panel chrome) and **M2b** (bottom-panel mode + Output UI). Prefer the split over a rushed combined session. | `ProjectBuildCommandTests`, `ProjectOutputServiceTests`, Output VM tests; Linux smoke against `tests/fixtures/workflow-console/` | `workflow: build command and structured output` (or M2a/M2b commits) |
+| **M3** | Parse build diagnostics; `IBuildDiagnosticsService`; Problems **merge** (LSP + build by source) + navigation; clear **only** build diags on new build. **Acceptance must prove** LSP diagnostics survive build start/finish. | `BuildDiagnosticParserTests`, `BuildDiagnosticsServiceTests`, `ProblemsBuildProjectionTests` (LSP retention + build replace), navigation tests; Linux smoke: intentional CS error → Problems → jump | `workflow: build diagnostics in problems` |
+| **M4** | Run command for `CSharpProject` only (U1a); output reuse; cancel while running; library projects may `Failed` (U7). | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
+| **M5** | Test command + `ITestResultsService` + Test Results surface. Parse: console-first (U4). **Explicit exit condition:** if console parse fails, still report structured operation outcome from process exit code + raw Output lines; do not invent fake passed tests. TRX only if console is insufficient in the same milestone budget. | `ProjectTestCommandTests`, `TestResultsServiceTests`, VM tests; Linux smoke: pass + fail test | `workflow: test command and results surface` |
+| **M6** | Closeout: full regression, command availability matrix, status feedback (prefer dedicated workflow status property or single merge policy — U6; do not fight multi-writer `StatusText` ad hoc), docs truth-sync, accessibility/keyboard smoke. | Full sequential build/test; `git diff --check`; `M6_MANUAL_EVIDENCE.md` | `docs(phase-11): M6 closeout` |
 
 ### Milestone dependencies
 
 ```text
-M0 → M1 → M2 → M3
-         ↘ M4 (after M2 Output exists; may parallel M3 only if Output API stable)
-         ↘ M5 (after M2; Test Results UI may share Output patterns)
+M0 → M1 → M2 (or M2a → M2b) → M3
+                          ↘ M4 (after Output stream exists)
+                          ↘ M5 (after Output stream exists)
 M3 + M4 + M5 → M6
 ```
 
-Prefer sequential M1→M2→M3→M4→M5→M6 unless a later agent explicitly splits
-slices (`M4a`/`M4b`) for session size.
+Prefer sequential M1→M2→M3→M4→M5→M6 unless explicitly slicing M2.
 
 ## Test and Verification Strategy
 
@@ -219,23 +273,26 @@ dotnet test Zaide.slnx --no-build --filter FullyQualifiedName~ProjectTargetResol
 dotnet test Zaide.slnx --no-build --filter FullyQualifiedName~ManagedProcessRunner
 ```
 
-**Linux manual smoke (required M2–M6):** record host, date, commands, and
-pass/fail in `M*_MANUAL_EVIDENCE.md`. Minimum matrix by milestone:
+**Linux manual smoke (required M2–M6):** record host, date, commands, fixture
+path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
+`M*_MANUAL_EVIDENCE.md`.
 
 | Milestone | Smoke |
 |---|---|
-| M2 | Build eligible `.csproj` fixture; Output lines; cancel mid-build |
-| M3 | Build with deliberate error; Problems entry; navigate to line |
-| M4 | Run console app; stdout in Output; cancel |
-| M5 | `dotnet test` pass and fail; Test Results list |
+| M2 | Build fixture; Output lines; cancel mid-build |
+| M3 | Build with deliberate error; Problems entry; navigate; **LSP diags still present if any** |
+| M4 | Run console app; stdout in Output; cancel; optional library Failed path |
+| M5 | `dotnet test` pass and fail; Test Results or structured fallback |
 | M6 | Full loop build→test→problems nav + command palette + keybindings |
 
 ## Phase 11 Limitations
 
 - Linux is the primary validation platform (roadmap V2).
 - C# / `dotnet` only; no multi-language build systems.
-- Solution-level **Run** requires an explicit startup-project rule (see M0
-  unresolved decisions); until locked, Run may be limited to `CSharpProject`.
+- Solution-level **Run** is out of Phase 11 default (U1a); Run is
+  `CSharpProject` only via `dotnet run --project <file>`.
+- **Run may fail for non-executable projects** (class libraries, etc.); no
+  `OutputType` probe in Phase 11 (U7).
 - No watch mode, continuous test runner, code coverage UI, or Live Unit Testing.
 - No custom user task files in Phase 11 exit.
 - Interactive programs that require a TTY may misbehave under redirected
@@ -243,13 +300,28 @@ pass/fail in `M*_MANUAL_EVIDENCE.md`. Minimum matrix by milestone:
   Run.
 - `LogCategorizer` terminal heuristics are **not** the build-diagnostics source
   of truth.
+- Test console parse is best-effort; structured exit + raw Output is the
+  fallback when parse fails (M5).
+
+## Unresolved Decisions
+
+| # | Decision | Resolve by | M0 recommendation |
+|---|---|---|---|
+| U1 | Solution-level Run startup project | M4 | **(a)** Run ineligible for `Solution`/`SolutionX` |
+| U2 | Incremental vs end-of-build diagnostic parse | M3 | End-of-build parse; stream still goes to Output |
+| U3 | Partial diagnostics after cancel | M3 | Keep last partial set + Cancelled banner |
+| U4 | Test result format | M5 | Console first; TRX only if needed; fail-open to exit+Output |
+| U5 | Bottom-panel enum for Output/Test | M2 / M5 | Extend `BottomPanelMode` |
+| U6 | Status-bar operation text owner | M2 (design), M6 (polish) | Dedicated workflow status property or single merge policy — avoid ad-hoc multi-writer `StatusText` fights with LSP |
+| U7 | Non-executable `CSharpProject` Run policy | M4 (behavior already limited) | **No OutputType probe**; allow Run CanExecute on eligible project; surface `Failed`/`StartupFailed` truthfully |
 
 ## Exit Conditions
 
 - [ ] M0–M6 complete with named tests and recorded Linux evidence
 - [ ] Eligible project context can Build, Run (per locked policy), and Test
-- [ ] One-operation-at-a-time and cancel work
-- [ ] Output, Problems (build+LSP), and Test Results remain distinct from Terminal
+- [ ] One-operation-at-a-time and cancel work; API returns `RejectedConcurrent`
+- [ ] Output, Problems (build+LSP without clearing LSP), and Test Results remain
+      distinct from Terminal
 - [ ] Navigation uses existing editor/tab seams only
 - [ ] No second project discovery model
 - [ ] `dotnet build Zaide.slnx --no-restore`, `dotnet test Zaide.slnx --no-build`,
@@ -267,6 +339,7 @@ pass/fail in `M*_MANUAL_EVIDENCE.md`. Minimum matrix by milestone:
 
 ## Exact Next Step
 
-**M1 — Project process orchestration core** (no Output/Problems/Test UI yet):
-implement target resolution, managed process runner, workflow service,
-one-at-a-time policy, cancellation, generation, DI, and focused tests.
+**M1 — Project process orchestration core** only: target resolution, managed
+process runner, workflow service (one-at-a-time, cancel, generation,
+`RejectedConcurrent` / `RejectedContext`), dispose-before-language, DI for
+workflow (+ runner), focused tests. No Output/Problems/Test UI or services.
