@@ -113,5 +113,135 @@ Regression test: `StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync` in
 
 ---
 
+---
+
+## Open — F5: Blocking Dispose in LanguageSessionService
+
+**Severity:** Low
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageSessionService.cs`
+
+**Issue:** `Dispose()` calls `session.ForceKillAsync().GetAwaiter().GetResult()`
+and `session.DisposeAsync().AsTask().GetAwaiter().GetResult()`. If invoked on
+the UI thread while a `SynchronizationContext` is captured, this could
+deadlock. In practice the force-kill path is fast and unlikely to block, but
+the pattern is unsafe.
+
+**Suggested fix:** Replace blocking calls with a fire-and-forget teardown
+pattern, or ensure `Dispose` is only called from a context where blocking is
+safe (e.g., background thread). Alternatively, implement `IAsyncDisposable` on
+the service interface and propagate async disposal through the DI container.
+
+---
+
+## Open — F6: SemaphoreSlim gate held across async LSP I/O in LanguageDocumentBridge
+
+**Severity:** Low (throughput trade-off, not a bug)
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageDocumentBridge.cs`
+
+**Issue:** `HandleContentChangedAsync`, `TryOpenDocumentAsync`, and similar
+methods hold the `_gate` SemaphoreSlim across `await session.NotifyDidChangeAsync(...)`
+calls. This serializes all document operations for LSP message ordering
+correctness (didOpen before didChange before didClose), but means a slow LSP
+server blocks all document sync operations.
+
+**Suggested fix:** Acceptable as-is for correctness. If throughput becomes an
+issue, consider a two-phase approach: acquire gate for state read, release,
+send notification, re-acquire for state update. However, this risks
+reordering, so the current design is safer.
+
+---
+
+## Open — F7: Dead `immediate` parameter in LanguageCompletionService
+
+**Severity:** Trivial
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageCompletionService.cs`
+
+**Issue:** `ExecuteRequestAsync` has a `bool immediate` parameter that is
+explicitly discarded (`_ = immediate;`) and never used. This is leftover from
+an earlier design iteration that may have intended to differentiate explicit vs.
+automatic trigger LSP context kinds.
+
+**Suggested fix:** Remove the unused parameter from the method signature and
+all call sites. Alternatively, implement the intended differentiation by passing
+`CompletionTriggerKind.Invoked` for explicit and `CompletionTriggerKind.TriggerCharacter`
+for automatic triggers to the LSP server.
+
+---
+
+## Open — F8: LanguageDiagnosticRange reused for formatting edit ranges
+
+**Severity:** Trivial (naming clarity)
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageDiagnosticRange.cs`, `src/Services/LanguageTextEdit.cs`
+
+**Issue:** `LanguageTextEdit` uses `LanguageDiagnosticRange` for its range
+field. While functionally correct (both are LSP ranges with line/character
+positions), the name "Diagnostic" is misleading in a formatting-edit context.
+
+**Suggested fix:** Rename `LanguageDiagnosticRange` to `LspRange` or
+`LanguageRange` to reflect its general-purpose nature. Update all references
+(used in diagnostics, completion text edits, formatting edits, navigation
+locations). This is a straightforward rename refactor with no behavioral change.
+
+---
+
+## Open — F9: Unused LanguageSessionFailureKind enum values
+
+**Severity:** Trivial
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageSessionFailureKind.cs`
+
+**Issue:** `ProcessStartFailed` and `ShutdownFailed` enum values are defined
+but no code path creates them. `LanguageSessionService` only produces
+`MissingServerBinary`, `InitializeFailed`, and `ServerExited`.
+
+**Suggested fix:** Either remove the unused values (if YAGNI applies) or add
+code paths that use them (e.g., catch `Win32Exception` in session start and
+publish `ProcessStartFailed`, catch exceptions in `ShutdownAsync` and publish
+`ShutdownFailed`). The values are reasonable forward-looking additions, so
+keeping them is acceptable.
+
+---
+
+## Open — F10: CsharpLsSession is a 669-line monolith
+
+**Severity:** Info (maintainability)
+**Opened:** 2026-07-14
+**Area:** `src/Services/CsharpLsSession.cs`
+
+**Issue:** `CsharpLsSession` mixes transport setup (Process + StreamJsonRpc),
+LSP protocol marshalling (request/notification methods), diagnostic parsing,
+capability parsing, and process lifecycle management in a single 669-line file.
+This is the largest file in the Phase 10 implementation.
+
+**Suggested fix:** Decompose into focused classes if a second server backend is
+added or if the file becomes harder to maintain. Candidates for extraction:
+`LspTransport` (process + JSON-RPC setup), `LspProtocolMarshaller` (request/
+notification serialization), `LspDiagnosticParser`, `LspCapabilitiesParser`.
+Not urgent — the file is well-structured internally and hidden behind
+`ILanguageServerSession`.
+
+---
+
+## Open — F11: FindDocumentByPath is O(n) per diagnostics publish
+
+**Severity:** Info (performance)
+**Opened:** 2026-07-14
+**Area:** `src/Services/LanguageDiagnosticsService.cs`
+
+**Issue:** `FindDocumentByPath` performs a linear scan of `_workspace.Documents`
+on every `textDocument/publishDiagnostics` notification. For a small number of
+open documents this is negligible, but it could be optimized with a dictionary
+lookup if the document count grows large.
+
+**Suggested fix:** Add a `Dictionary<string, Document>` index keyed by path in
+`Workspace` or in `LanguageDiagnosticsService` itself. Update on document
+open/close. Not urgent — current performance is acceptable for typical usage.
+
+---
+
 *Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-14 (post-closeout
-audit: F1–F4 resolved).*
+audit: F1–F4 resolved; F5–F11 opened).*
