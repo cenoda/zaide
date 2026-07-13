@@ -92,4 +92,4 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ---
 
-*Last updated: 2026-07-14 (Phase 10 complete — csharp-ls 0.25.0 + StreamJsonRpc 2.22.23 in production)*
+*Last updated: 2026-07-14 (Phase 11 complete — no new NuGet; workflow uses `System.Diagnostics.Process` / existing DI stack. Phase 10 stack unchanged: csharp-ls 0.25.0 + StreamJsonRpc 2.22.23)*

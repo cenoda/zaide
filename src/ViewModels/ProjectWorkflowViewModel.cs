@@ -70,8 +70,9 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>
-    /// Raised when a build enters <see cref="ProjectWorkflowOperationState.Starting"/>
-    /// so hosts can reveal the Output panel before stdout streams.
+    /// Raised when Build, Run, or Test enters
+    /// <see cref="ProjectWorkflowOperationState.Starting"/> so hosts can reveal
+    /// the Output panel before stdout streams.
     /// </summary>
     public IObservable<Unit> WhenShowOutputRequested => _showOutputRequested;
 

@@ -26,6 +26,11 @@ namespace Zaide.Services;
 /// Captured stdout/stderr lines for the current or most recently finished
 /// operation generation. Never null.
 /// </param>
+/// <param name="LastOperation">
+/// The operation kind most recently started or completed. Retained when idle
+/// so status text can distinguish Build / Run / Test terminal outcomes.
+/// <c>null</c> only before any operation has run.
+/// </param>
 public sealed record ProjectWorkflowSnapshot(
     ProjectWorkflowOperationState State,
     long Generation,
@@ -33,4 +38,5 @@ public sealed record ProjectWorkflowSnapshot(
     ProjectWorkflowOutcomeKind? LastOutcome,
     string? TargetFilePath,
     int? ProcessId,
-    IReadOnlyList<ManagedProcessOutputLine> OutputLines);
+    IReadOnlyList<ManagedProcessOutputLine> OutputLines,
+    ProjectWorkflowOperation? LastOperation = null);

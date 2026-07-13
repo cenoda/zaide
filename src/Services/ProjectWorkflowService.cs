@@ -20,7 +20,8 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         LastOutcome: null,
         TargetFilePath: null,
         ProcessId: null,
-        OutputLines: Array.Empty<ManagedProcessOutputLine>());
+        OutputLines: Array.Empty<ManagedProcessOutputLine>(),
+        LastOperation: null);
 
     private readonly IProjectContextService _projectContext;
     private readonly IManagedProcessRunner _runner;
@@ -166,6 +167,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
             var generation = _current.Generation;
             var targetFilePath = _current.TargetFilePath;
+            var lastOperation = _current.ActiveOperation ?? _current.LastOperation;
 
             _operationGeneration++;
             _operationCts?.Cancel();
@@ -177,7 +179,8 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                 ProjectWorkflowOutcomeKind.Cancelled,
                 targetFilePath,
                 ProcessId: null,
-                _outputLines.ToArray()));
+                _outputLines.ToArray(),
+                LastOperation: lastOperation));
 
             shouldKill = true;
         }
@@ -248,7 +251,8 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                 LastOutcome: null,
                 target.FilePath,
                 ProcessId: null,
-                OutputLines: Array.Empty<ManagedProcessOutputLine>()));
+                OutputLines: Array.Empty<ManagedProcessOutputLine>(),
+                LastOperation: operation));
         }
         finally
         {
@@ -347,7 +351,8 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                 outcome,
                 targetFilePath,
                 ProcessId: null,
-                outputCopy));
+                outputCopy,
+                LastOperation: operation));
 
             return new ProjectWorkflowOperationResult(
                 outcome,
@@ -381,7 +386,8 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                 LastOutcome: null,
                 targetFilePath,
                 processId,
-                _outputLines.ToArray()));
+                _outputLines.ToArray(),
+                LastOperation: operation));
         }
         finally
         {

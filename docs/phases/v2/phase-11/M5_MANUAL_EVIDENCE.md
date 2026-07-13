@@ -8,7 +8,7 @@
 | Host | Linux `cenoda` 7.1.3-arch1-1, x86_64 |
 | `dotnet` | 10.0.109 (`/usr/bin/dotnet`) |
 | Parse strategy | Console-first (`TestResultsParser`); no TRX |
-| Commit | `545ac16` |
+| Commit | `a4f9727` |
 
 ## Fixture paths
 

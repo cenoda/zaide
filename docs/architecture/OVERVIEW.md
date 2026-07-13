@@ -16,8 +16,10 @@ automated verification green, including the manual failed-state GUI smoke
 check. Phase 9 adds the registry-backed Command Palette, active-document
 Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
 status projections. Phase 10 (C# language intelligence via LSP) is **complete**
-(M7 closeout, 2026-07-14). Phase 11 (Project Workflow) is at M0 planning;
-later entries below remain planned direction.
+(M7 closeout, 2026-07-14). Phase 11 (Project Workflow — Build / Run / Test,
+Output, build diagnostics, Test Results) is **complete** (M0–M6 closeout,
+2026-07-14). Phase 12 (DAP debugging) and later entries remain planned
+direction.
 
 ---
 
@@ -199,4 +201,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 10 complete; Phase 11 M0)*
+*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 not started)*

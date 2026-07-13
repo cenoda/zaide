@@ -19,10 +19,14 @@ namespace Zaide.Services;
 /// Absolute path of the active or last operation target, otherwise <c>null</c>.
 /// </param>
 /// <param name="Lines">Captured stdout/stderr lines for the current generation.</param>
+/// <param name="LastOperation">
+/// The operation kind most recently started or completed (for status text when idle).
+/// </param>
 public sealed record ProjectOutputSnapshot(
     long Generation,
     ProjectWorkflowOperationState State,
     ProjectWorkflowOperation? ActiveOperation,
     ProjectWorkflowOutcomeKind? LastOutcome,
     string? TargetFilePath,
-    IReadOnlyList<ManagedProcessOutputLine> Lines);
+    IReadOnlyList<ManagedProcessOutputLine> Lines,
+    ProjectWorkflowOperation? LastOperation = null);

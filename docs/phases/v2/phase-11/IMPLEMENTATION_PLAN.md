@@ -23,10 +23,18 @@ Evidence: [M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md).
 (U1a); output reuse; cancel while running; library projects may `Failed` (U7).
 Evidence: [M4_MANUAL_EVIDENCE.md](M4_MANUAL_EVIDENCE.md).
 
-**M5 complete** (2026-07-14). `project.test` for eligible projects and
-solutions; `ITestResultsService` + console-first parse (U4 fail-open); Test
-Results bottom panel (`BottomPanelMode.TestResults`); output reuse; cancel.
-Evidence: [M5_MANUAL_EVIDENCE.md](M5_MANUAL_EVIDENCE.md).
+**M5 complete** (2026-07-14, commit `a4f9727`). `project.test` for eligible
+projects and solutions; `ITestResultsService` + console-first parse (U4
+fail-open); Test Results bottom panel (`BottomPanelMode.TestResults`); output
+reuse; cancel. Evidence: [M5_MANUAL_EVIDENCE.md](M5_MANUAL_EVIDENCE.md).
+
+**M6 complete** (2026-07-14). Full regression, command availability matrix,
+U6 status polish (Option A: panel-local
+`ProjectWorkflowStatusPolicy` / `LastOperation`), docs truth-sync,
+accessibility/keyboard smoke evidence.
+Evidence: [M6_MANUAL_EVIDENCE.md](M6_MANUAL_EVIDENCE.md).
+
+**Phase 11 complete** for V2 (M0–M6). Phase 12 (DAP) not started.
 
 **Prerequisite:** Phase 10 complete (M7 closeout, 2026-07-14). Phase 8.3
 project context and Phase 8.2 command registry are the authoritative seams.
@@ -86,7 +94,7 @@ existing editor/document seams.
 - [x] M3 build diagnostics + Problems merge (not M4+)
 - [x] M4 Run command (output reuse, cancel, CSharpProject-only CanExecute)
 - [x] M5 Test command + test-results surface (not M6)
-- [ ] M6 closeout only
+- [x] M6 closeout only
 
 ## Locked Contracts (1–8)
 
@@ -262,7 +270,7 @@ auto-build, multi-language builds, or OutputType probing.
 | **M3** ✅ | Parse build diagnostics; `IBuildDiagnosticsService`; Problems **merge** (LSP + build by source) + navigation; clear **only** build diags on new build. **Acceptance must prove** LSP diagnostics survive build start/finish. | `BuildDiagnosticParserTests`, `BuildDiagnosticsServiceTests`, `ProblemsBuildProjectionTests` (LSP retention + build replace), navigation tests; Linux smoke: intentional CS error → Problems → jump | `workflow: build diagnostics in problems` |
 | **M4** ✅ | Run command for `CSharpProject` only (U1a); output reuse; cancel while running; library projects may `Failed` (U7). | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
 | **M5** ✅ | Test command + `ITestResultsService` + Test Results surface. Parse: console-first (U4). **Explicit exit condition:** if console parse fails, still report structured operation outcome from process exit code + raw Output lines; do not invent fake passed tests. TRX only if console is insufficient in the same milestone budget. | `ProjectTestCommandTests`, `TestResultsServiceTests`, VM tests; Linux smoke: pass + fail test | `workflow: test command and results surface` |
-| **M6** | Closeout: full regression, command availability matrix, status feedback (prefer dedicated workflow status property or single merge policy — U6; do not fight multi-writer `StatusText` ad hoc), docs truth-sync, accessibility/keyboard smoke. | Full sequential build/test; `git diff --check`; `M6_MANUAL_EVIDENCE.md` | `docs(phase-11): M6 closeout` |
+| **M6** ✅ | Closeout: full regression, command availability matrix, status feedback (U6 Option A: panel-local status via `ProjectWorkflowStatusPolicy` + `LastOperation`; no main-bar multi-writer fight), docs truth-sync, accessibility/keyboard smoke. | Full sequential build/test; `git diff --check`; `M6_MANUAL_EVIDENCE.md` | `docs(phase-11): M6 closeout` |
 
 ### Milestone dependencies
 
@@ -330,26 +338,28 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
 
 ## Unresolved Decisions
 
-| # | Decision | Resolve by | M0 recommendation |
+All Phase 11 decisions are **resolved** (none open):
+
+| # | Decision | Resolved by | Resolution |
 |---|---|---|---|
-| U1 | Solution-level Run startup project | M4 | **(a)** Run ineligible for `Solution`/`SolutionX` |
+| U1 | Solution-level Run startup project | M4 | **(a)** Run ineligible for `Solution`/`SolutionX` (U1a) |
 | U2 | Incremental vs end-of-build diagnostic parse | M3 | End-of-build parse; stream still goes to Output |
 | U3 | Partial diagnostics after cancel | M3 | Keep last partial set + Cancelled banner |
-| U4 | Test result format | M5 | Console first; TRX only if needed; fail-open to exit+Output |
-| U5 | Bottom-panel enum for Output/Test | M2 / M5 | Extend `BottomPanelMode` |
-| U6 | Status-bar operation text owner | M2 (design), M6 (polish) | Dedicated workflow status property or single merge policy — avoid ad-hoc multi-writer `StatusText` fights with LSP |
-| U7 | Non-executable `CSharpProject` Run policy | M4 (behavior already limited) | **No OutputType probe**; allow Run CanExecute on eligible project; surface `Failed`/`StartupFailed` truthfully |
+| U4 | Test result format | M5 | Console first; TRX deferred; fail-open to exit+Output |
+| U5 | Bottom-panel enum for Output/Test | M2 / M5 | Extended `BottomPanelMode` with Output and TestResults |
+| U6 | Status-bar operation text owner | M6 | **Option A:** workflow status only on Output/Test surfaces via `ProjectWorkflowViewModel.StatusMessage` + `ProjectWorkflowStatusPolicy`; `LastOperation` on snapshots for truthful Build/Run/Test terminal strings; main bar remains multi-writer with no new conflict |
+| U7 | Non-executable `CSharpProject` Run policy | M4 | **No OutputType probe**; allow Run CanExecute on eligible project; surface `Failed`/`StartupFailed` truthfully |
 
 ## Exit Conditions
 
-- [ ] M0–M6 complete with named tests and recorded Linux evidence
-- [ ] Eligible project context can Build, Run (per locked policy), and Test
-- [ ] One-operation-at-a-time and cancel work; API returns `RejectedConcurrent`
-- [ ] Output, Problems (build+LSP without clearing LSP), and Test Results remain
+- [x] M0–M6 complete with named tests and recorded Linux evidence
+- [x] Eligible project context can Build, Run (per locked policy), and Test
+- [x] One-operation-at-a-time and cancel work; API returns `RejectedConcurrent`
+- [x] Output, Problems (build+LSP without clearing LSP), and Test Results remain
       distinct from Terminal
-- [ ] Navigation uses existing editor/tab seams only
-- [ ] No second project discovery model
-- [ ] `dotnet build Zaide.slnx --no-restore`, `dotnet test Zaide.slnx --no-build`,
+- [x] Navigation uses existing editor/tab seams only
+- [x] No second project discovery model
+- [x] `dotnet build Zaide.slnx --no-restore`, `dotnet test Zaide.slnx --no-build`,
       and `git diff --check` pass at closeout
 
 ## Rollback Plan
@@ -364,6 +374,6 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
 
 ## Exact Next Step
 
-**M6 — Closeout** only: full regression, command availability matrix, status
-feedback (U6), docs truth-sync, accessibility/keyboard smoke. Do not start DAP
-(Phase 12) until M6 is complete unless explicitly re-planned.
+**Phase 11 complete** (M0–M6). Next roadmap item: **Phase 12 — C# Debugging
+(DAP)**. Do not start DAP work from this closeout commit; treat Phase 12 as a
+separate phase with its own M0.

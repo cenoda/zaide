@@ -52,5 +52,6 @@ public sealed class ProjectOutputService : IProjectOutputService, IDisposable
             snapshot.ActiveOperation,
             snapshot.LastOutcome,
             snapshot.TargetFilePath,
-            snapshot.OutputLines);
+            snapshot.OutputLines,
+            snapshot.LastOperation);
 }
