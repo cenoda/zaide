@@ -41,6 +41,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly ICommandRegistry _registry;
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly CommandPaletteViewModel _paletteViewModel;
+    private readonly EditorSearchViewModel _searchViewModel;
     private readonly List<KeyBinding> _registryBindings = new();
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
@@ -48,6 +49,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly TownhallView _townhallView;
     private readonly StatusBar _statusBar;
     private readonly CommandPaletteOverlay _commandPaletteOverlay;
+    private readonly SearchBar _searchBar;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -72,13 +74,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     public MainWindow(ISettingsService settings, ISecretStore secrets,
         ICommandRegistry registry, StatusBarViewModel statusBarViewModel,
-        CommandPaletteViewModel paletteViewModel)
+        CommandPaletteViewModel paletteViewModel,
+        EditorSearchViewModel searchViewModel)
     {
         _settings = settings;
         _secrets = secrets;
         _registry = registry;
         _statusBarViewModel = statusBarViewModel;
         _paletteViewModel = paletteViewModel;
+        _searchViewModel = searchViewModel;
         InitializeComponent();
 
         // === Window Chrome ===
@@ -105,6 +109,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             WindowTransparencyLevel.Blur,
             WindowTransparencyLevel.Transparent
         };
+
+        // Phase 9 M3: search/replace bar for the active editor document.
+        // Created before BuildLayout so it can be inserted into the editor panel.
+        _searchBar = new SearchBar(_searchViewModel);
 
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
@@ -194,6 +202,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             }));
 
             // Wire active tab → EditorView + tab bar highlight + welcome text + townhall link
+            // Phase 9 M3: also wire search VM's ActiveDocument and ActiveDocumentId.
+            // ActiveDocumentId uses the file path (or a unique counter for untitled tabs)
+            // so that tab switching resets search state even though the same EditorView
+            // instance is reused across all tabs.
+            var untitledCounter = 0;
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.EditorTabs.ActiveTab)
                 .Subscribe(active =>
                 {
@@ -202,6 +215,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _editorTabBar.SetActiveTab(active);
                     _editorTabBar.SetTownhallLinkVisible(active is not null);
                     _welcomeText.IsVisible = active is null;
+                    _searchViewModel.ActiveDocument = active is not null ? _editorView : null;
+                    _searchViewModel.ActiveDocumentId = active is not null
+                        ? (string.IsNullOrEmpty(active.FilePath)
+                            ? $"__untitled_{++untitledCounter}"
+                            : active.FilePath)
+                        : null;
                 }));
 
             // Left panel mode switching: show file tree or SC panel
@@ -273,6 +292,21 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             _commandPaletteOverlay.Dismissed += OnOverlayDismissed;
             disposables.Add(Disposable.Create(() =>
                 _commandPaletteOverlay.Dismissed -= OnOverlayDismissed));
+
+            // Phase 9 M3: search bar focus management.
+            // FocusRequested fires when Find/Replace opens the surface.
+            void OnSearchFocusRequested() => _searchBar.FocusQuery();
+            _searchViewModel.FocusRequested += OnSearchFocusRequested;
+            disposables.Add(Disposable.Create(() =>
+                _searchViewModel.FocusRequested -= OnSearchFocusRequested));
+
+            // When the search surface is dismissed, restore focus to the editor.
+            disposables.Add(_searchViewModel.WhenAnyValue(x => x.IsVisible)
+                .Subscribe(visible =>
+                {
+                    if (!visible && _editorView.IsVisible)
+                        _editorView.Focus();
+                }));
         });
     }
 
@@ -493,8 +527,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         {
             RowDefinitions =
             {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+                new RowDefinition { Height = GridLength.Auto },   // 0: tab bar
+                new RowDefinition { Height = GridLength.Auto },   // 1: search bar
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) } // 2: editor / welcome
             },
             Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             // M5-allow: M1 introduced the 1px panel seam as a visual divider, not semantic spacing.
@@ -502,13 +537,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Children =
             {
                 _editorTabBar,
+                _searchBar,
                 _editorView,
                 _welcomeText
             }
         };
         Grid.SetRow(_editorTabBar, 0);
-        Grid.SetRow(_editorView, 1);
-        Grid.SetRow(_welcomeText, 1);
+        Grid.SetRow(_searchBar, 1);
+        Grid.SetRow(_editorView, 2);
+        Grid.SetRow(_welcomeText, 2);
         _welcomeText.IsVisible = true;
 
         var agentPanelHostView = new AgentPanelHostView();

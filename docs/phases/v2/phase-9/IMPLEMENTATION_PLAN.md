@@ -2,7 +2,7 @@
 
 ## Status
 
-**M0–M2 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
+**M0–M3 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
 full proof document. Phase 8.1 (Settings Foundation), Phase 8.2 (Command
 Registry and Keybindings), and Phase 8.3 (Authoritative Project Context) are
 closed. This plan defines the next bounded product phase and must be completed
@@ -37,6 +37,104 @@ in milestone order.
 - [x] Ran the sequential baseline gates:
       `dotnet build Zaide.slnx --no-restore` ✅ and
       `dotnet test Zaide.slnx --no-build` ✅ (1207 passed, 0 failed).
+
+## M3 Search and Replace Contract (Locked)
+
+### Matching algorithm
+
+- **Literal substring only.** Regex is never used. Special regex characters
+  (`.` `*` `+` `?` `(` `)` `[` `]` `\` `^` `$` `|` `{` `}`) are treated as
+  literal characters.
+- **Case-sensitive by default** (`CaseSensitive = true`).
+  - Case-sensitive: `StringComparison.Ordinal`.
+  - Case-insensitive: `StringComparison.OrdinalIgnoreCase`.
+- **Non-overlapping matches.** Adjacent matches are found greedily left-to-right.
+- **Empty query** produces zero matches and performs no mutation.
+
+### Navigation (Find Next / Find Previous)
+
+- **Find Next** advances to the next match (index + 1). Wraps from the last
+  match to the first (index 0). Sets the editor selection to the match range
+  and scrolls it into view.
+- **Find Previous** goes to the previous match (index − 1). Wraps from the
+  first match (index 0) to the last. Sets the editor selection and scrolls.
+- **Initial position** after a search: index 0 (first match).
+
+### Zero-match feedback
+
+- `StatusMessage` is set to `"No matches found"` when the query produces zero
+  matches.
+- Find Next / Find Previous are unavailable (CanExecute = false) when there
+  are zero matches.
+
+### Replacement semantics
+
+- **Replace Next:** If the current editor selection exactly covers the current
+  match (same offset and length), the matched text is replaced with the
+  replacement text. The document is then re-searched, and the next match at
+  or after the replacement end-offset is selected. If no match follows,
+  selection wraps to the first match. If the selection does NOT match, the
+  command advances to the next match without replacing.
+- **Replace All:** All literal matches in the active document are replaced in
+  a single pass. The operation is wrapped in exactly **one undo group** using
+  AvaloniaEdit's `UndoStack.StartUndoGroup()` / `EndUndoGroup()` API.
+  After replacement, the document is re-searched; if no matches remain,
+  `StatusMessage` reports `"Replaced N occurrences"`.
+
+### Undo grouping
+
+- Replace All uses `TextDocument.UndoStack.StartUndoGroup()` before the first
+  replacement and `EndUndoGroup()` after the last. This makes the entire
+  Replace All operation a single undoable user action.
+- Individual Replace Next operations are separate undo entries (each SetText
+  call is one undo step).
+
+### Dirty state
+
+- All content changes flow through `IEditorTextOperations.SetText()`, which
+  in production calls `TextEditor.Text = ...`, triggering `EditorView.OnTextChanged`
+  which sets `ViewModel.TextContent`, which sets `Document.Content`, which
+  sets `IsDirty = true`. Dirty state is always truthful after any mutation.
+- Find Next, Find Previous, and Dismiss do NOT mutate the document.
+
+### Tab switching / closing
+
+- Setting `EditorSearchViewModel.ActiveDocument` to a different value (or null)
+  calls `Reset()` which clears: query, replacement text, matches, current match
+  index, visibility, replace mode, and status message. It also clears the
+  editor selection via `SetSelection(0, 0)`.
+- In `MainWindow`, the active-tab subscription sets
+  `_searchViewModel.ActiveDocument = active is not null ? _editorView : null`
+  on every tab switch, ensuring stale state from the old document never
+  reaches the new one.
+- The old document's text is never read or mutated after the switch.
+
+### Cancellation / dismissal
+
+- `Dismiss()` closes the search surface without any document text mutation.
+  It clears the query, matches, selection, replace mode, and status message.
+- The editor selection is cleared (set to zero-length at offset 0).
+
+### Commands registered by M3
+
+| ID | Default gesture | Availability |
+|---|---|---|
+| `editor.find` | Ctrl+F | Active tab non-null |
+| `editor.replace` | Ctrl+H | Active tab non-null |
+| `editor.findNext` | F3 | Active tab non-null, non-empty query, matches > 0 |
+| `editor.findPrevious` | Shift+F3 | Active tab non-null, non-empty query, matches > 0 |
+| `editor.replaceNext` | (unbound) | Active tab non-null, non-empty query, matches > 0, replace mode |
+| `editor.replaceAll` | (unbound) | Active tab non-null, non-empty query, matches > 0, replace mode |
+
+### Architecture
+
+- `SearchEngine` — pure static class, no dependencies. All matching logic.
+- `IEditorTextOperations` — interface implemented by `EditorView` (View layer).
+  Provides `GetText`, `SetText`, `SetSelection`, `GetSelectionOffset`,
+  `GetSelectionLength`, `ReplaceAllMatches`.
+- `EditorSearchViewModel` — singleton, depends on `ICommandRegistry` and
+  `IEditorTextOperations` (set via `ActiveDocument` property). No Avalonia
+  references.
 
 ## Scope
 
@@ -170,14 +268,14 @@ text before M3 or M6 adds selection-dependent behavior.
 
 ## Exact Next Step
 
-Implement **M3 only**: active-document Search and Replace with a focused search
-surface. Define exact literal matching, case-sensitivity, next/previous wrap
-behavior, zero-match feedback, selection replacement, replace-next, replace-all,
-cancellation/close behavior, undo grouping, and dirty-state result. All text
-changes flow through the existing document/editor path. Because one `TextEditor`
-is shared by all tabs, clear/reset search presentation on a tab switch and never
-apply old-document selection or replacement to the new active tab. Do not add
-folding, tab behavior, or status-bar changes during M3.
+Implement **M4 only**: active-editor code folding using only APIs proven in M0.
+Define a deterministic, syntax-neutral initial folding heuristic, expand/collapse
+current/all commands, caret visibility after folding changes, and no-folding
+feedback for unsupported/invalid text. Do not introduce a C# parser or language
+service. Because the `TextEditor` is shared between tabs, folding state must be
+explicitly discarded or restored by document identity on every tab change.
+Do not implement search/replace (M3 complete), tab lifecycle (M5), or
+status-bar changes (M6).
 
 ## Rollback Plan
 

@@ -8,6 +8,9 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaEdit;
+using AvaloniaEdit.Document;
+using AvaloniaEdit.Editing;
+using AvaloniaEdit.Search;
 using AvaloniaEdit.TextMate;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
@@ -24,7 +27,7 @@ namespace Zaide.Views;
 /// syntax highlighting. Uses event-based sync (not two-way Bind) to
 /// avoid feedback loops. Handles null ViewModel gracefully.
 /// </summary>
-public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable
+public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable, IEditorTextOperations
 {
     private readonly TextEditor _textEditor;
     private readonly TextMate.Installation _textMateInstallation;
@@ -307,6 +310,64 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         bool InsertSpaces,
         bool ShowTabs,
         bool ShowSpaces);
+
+    // ── IEditorTextOperations ────────────────────────────────────────────
+
+    public string GetText() => _textEditor.Text;
+
+    public void SetText(string text)
+    {
+        _isUpdatingFromViewModel = true;
+        try { _textEditor.Text = text; }
+        finally { _isUpdatingFromViewModel = false; }
+
+        // Push the new text to the ViewModel so Document.Content and IsDirty
+        // stay truthful. The guard above blocks OnTextChanged from doing this
+        // automatically, so we must sync explicitly after the assignment.
+        if (ViewModel is EditorViewModel evm && evm.TextContent != text)
+            evm.TextContent = text;
+    }
+
+    public void SetSelection(int offset, int length)
+    {
+        if (offset < 0 || offset > _textEditor.Document.TextLength) return;
+        var end = Math.Min(offset + length, _textEditor.Document.TextLength);
+        _textEditor.SelectionStart = offset;
+        _textEditor.SelectionLength = end - offset;
+        _textEditor.ScrollToLine(_textEditor.Document.GetLineByOffset(offset).LineNumber);
+    }
+
+    public int GetSelectionOffset() => _textEditor.SelectionStart;
+
+    public int GetSelectionLength() => _textEditor.SelectionLength;
+
+    public int ReplaceAllMatches(string query, string replacement, bool caseSensitive)
+    {
+        if (string.IsNullOrEmpty(query)) return 0;
+
+        var doc = _textEditor.Document;
+        var undoStack = doc.UndoStack;
+        undoStack.StartUndoGroup();
+        try
+        {
+            var count = 0;
+            var search = SearchEngine.FindAll(doc.Text, query, caseSensitive);
+
+            for (var i = search.Count - 1; i >= 0; i--)
+            {
+                var match = search[i];
+                doc.Replace(match.Offset, match.Length,
+                    new StringTextSource(replacement));
+                count++;
+            }
+
+            return count;
+        }
+        finally
+        {
+            undoStack.EndUndoGroup();
+        }
+    }
 
     public void Dispose()
     {

@@ -31,8 +31,9 @@ public partial class App : Application
             // palette.open in the ICommandRegistry singleton before
             // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
             var paletteVm = Services.GetRequiredService<CommandPaletteViewModel>();
+            var searchVm = Services.GetRequiredService<EditorSearchViewModel>();
 
-            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm) { ViewModel = vm };
+            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

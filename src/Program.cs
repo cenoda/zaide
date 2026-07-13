@@ -42,6 +42,7 @@ class Program
         services.AddSingleton<FileTreeViewModel>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<CommandPaletteViewModel>();
+        services.AddSingleton<EditorSearchViewModel>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();
         services.AddSingleton<EditorTabViewModel>();
