@@ -191,6 +191,8 @@ public sealed class LanguageDocumentSyncTests
             _subject.Dispose();
         }
 
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
         private static LanguageSessionSnapshot Unavailable(long generation) => new(
             LanguageSessionState.Unavailable,
             generation,

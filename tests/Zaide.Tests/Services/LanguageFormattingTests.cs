@@ -124,6 +124,8 @@ public sealed class LanguageFormattingTests
             _subject.Dispose();
         }
 
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
         private static LanguageSessionSnapshot Unavailable(long generation) => new(
             LanguageSessionState.Unavailable, generation, null, null, null, null);
     }

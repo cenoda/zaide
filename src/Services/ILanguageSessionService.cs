@@ -8,7 +8,7 @@ namespace Zaide.Services;
 /// Singleton service that owns the csharp-ls process and StreamJsonRpc transport.
 /// Consumes only <see cref="IProjectContextService"/> snapshots; never discovers projects.
 /// </summary>
-public interface ILanguageSessionService : IDisposable
+public interface ILanguageSessionService : IDisposable, IAsyncDisposable
 {
     /// <summary>The current immutable language-session snapshot.</summary>
     LanguageSessionSnapshot Current { get; }

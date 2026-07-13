@@ -83,5 +83,6 @@ public sealed class FormatDocumentCommandTests
         public ILanguageServerSession? TryGetReadySession(long generation) => null;
         public Task RestartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

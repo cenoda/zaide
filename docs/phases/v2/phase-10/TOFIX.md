@@ -115,22 +115,19 @@ Regression test: `StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync` in
 
 ---
 
-## Open — F5: Blocking Dispose in LanguageSessionService
+## Resolved — F5: Blocking Dispose in LanguageSessionService
 
 **Severity:** Low
-**Opened:** 2026-07-14
-**Area:** `src/Services/LanguageSessionService.cs`
+**Resolved:** 2026-07-14
+**Area:** `src/Services/LanguageSessionService.cs`, `src/Services/ILanguageSessionService.cs`
 
-**Issue:** `Dispose()` calls `session.ForceKillAsync().GetAwaiter().GetResult()`
-and `session.DisposeAsync().AsTask().GetAwaiter().GetResult()`. If invoked on
-the UI thread while a `SynchronizationContext` is captured, this could
-deadlock. In practice the force-kill path is fast and unlikely to block, but
-the pattern is unsafe.
-
-**Suggested fix:** Replace blocking calls with a fire-and-forget teardown
-pattern, or ensure `Dispose` is only called from a context where blocking is
-safe (e.g., background thread). Alternatively, implement `IAsyncDisposable` on
-the service interface and propagate async disposal through the DI container.
+**Fix:** Implemented `IAsyncDisposable` on `ILanguageSessionService` and
+`LanguageSessionService`. The synchronous `Dispose()` now offloads teardown I/O
+via `Task.Run` to avoid capturing a UI-thread `SynchronizationContext`,
+preventing a potential deadlock. `DisposeAsync()` performs the same teardown
+with proper `await` semantics for DI containers that support async disposal.
+Updated all 12 test fakes of `ILanguageSessionService` to implement the new
+`DisposeAsync()` method.
 
 ---
 

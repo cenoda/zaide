@@ -213,6 +213,7 @@ public sealed class LanguageCommandAvailabilityTests
 
         public Task RestartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public void Dispose() => _subject.Dispose();
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class FakeDocumentBridge : ILanguageDocumentBridge

@@ -199,6 +199,7 @@ public sealed class M5SettingsUiTests
         public ILanguageServerSession? TryGetReadySession(long generation) => null;
         public Task RestartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class RecordingScheduler : IScheduler

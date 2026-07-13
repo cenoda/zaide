@@ -173,6 +173,8 @@ public sealed class EditorLanguageInputRoutingTests
             _subject.OnCompleted();
             _subject.Dispose();
         }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class FakeDocumentBridge : ILanguageDocumentBridge

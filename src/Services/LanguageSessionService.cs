@@ -124,13 +124,55 @@ public sealed class LanguageSessionService : ILanguageSessionService
 
             try
             {
-                session.ForceKillAsync().GetAwaiter().GetResult();
-                session.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                // Offload to the thread pool so the continuation never posts back
+                // to a captured SynchronizationContext, avoiding a potential deadlock.
+                Task.Run(async () =>
+                {
+                    await session.ForceKillAsync().ConfigureAwait(false);
+                    await session.DisposeAsync().ConfigureAwait(false);
+                }).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
                 _logger.Log(LogLevel.Debug, new EventId(10004), ex,
                     "Language session dispose teardown encountered an error.");
+            }
+        }
+
+        _subject.OnCompleted();
+        _subject.Dispose();
+        _gate.Dispose();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+
+        _generation++;
+        _contextSubscription.Dispose();
+
+        _sessionCts?.Cancel();
+        _sessionCts?.Dispose();
+        _sessionCts = null;
+
+        if (_activeSession is not null)
+        {
+            _activeSession.ProcessExited -= OnSessionProcessExited;
+            var session = _activeSession;
+            _activeSession = null;
+
+            try
+            {
+                await session.ForceKillAsync().ConfigureAwait(false);
+                await session.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Debug, new EventId(10004), ex,
+                    "Language session async-dispose teardown encountered an error.");
             }
         }
 
