@@ -235,5 +235,5 @@ open/close. Not urgent — current performance is acceptable for typical usage.
 
 ---
 
-*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-14 (post-closeout
-audit: F1–F4 resolved; F5–F11 opened).*
+*Created: 2026-07-13 (M0 planning audit). Last updated: 2026-07-14 (F5–F9 resolved;
+F6, F10, F11 kept open as info-level trade-offs).*
