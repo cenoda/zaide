@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -13,15 +14,18 @@ using Zaide.Services;
 namespace Zaide.ViewModels;
 
 /// <summary>
-/// Projects structured diagnostics into the Problems surface and routes navigation
-/// through the existing editor-tab / workspace path only.
+/// Projects structured language and build diagnostics into the Problems surface
+/// and routes navigation through the existing editor-tab / workspace path only.
 /// </summary>
 public sealed class ProblemsViewModel : ReactiveObject, IDisposable
 {
     private readonly ILanguageDiagnosticsService _diagnosticsService;
+    private readonly IBuildDiagnosticsService _buildDiagnosticsService;
     private readonly EditorTabViewModel _editorTabs;
     private readonly Workspace _workspace;
     private readonly CompositeDisposable _subscriptions = new();
+    private readonly List<ProblemItemViewModel> _languageProblems = new();
+    private readonly List<ProblemItemViewModel> _buildProblems = new();
     private LanguageSessionState _state = LanguageSessionState.Unavailable;
     private string? _statusMessage = "Language intelligence unavailable.";
     private LanguageSessionFailure? _failure;
@@ -74,10 +78,13 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
 
     public ProblemsViewModel(
         ILanguageDiagnosticsService diagnosticsService,
+        IBuildDiagnosticsService buildDiagnosticsService,
         EditorTabViewModel editorTabs,
         Workspace workspace)
     {
         _diagnosticsService = diagnosticsService ?? throw new ArgumentNullException(nameof(diagnosticsService));
+        _buildDiagnosticsService = buildDiagnosticsService ??
+                                   throw new ArgumentNullException(nameof(buildDiagnosticsService));
         _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
         _workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
 
@@ -95,12 +102,18 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
         if (_disposed || _subscriptions.Count > 0)
             return;
 
-        ApplySnapshot(_diagnosticsService.Current);
+        ApplyLanguageSnapshot(_diagnosticsService.Current);
+        ApplyBuildSnapshot(_buildDiagnosticsService.Current);
 
         _subscriptions.Add(
             _diagnosticsService.WhenChanged
                 .ObserveOn(Scheduler)
-                .Subscribe(ApplySnapshot));
+                .Subscribe(ApplyLanguageSnapshot));
+
+        _subscriptions.Add(
+            _buildDiagnosticsService.WhenChanged
+                .ObserveOn(Scheduler)
+                .Subscribe(ApplyBuildSnapshot));
     }
 
     /// <inheritdoc />
@@ -112,34 +125,72 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
         _subscriptions.Dispose();
     }
 
-    private void ApplySnapshot(LanguageDiagnosticsSnapshot snapshot)
+    private void ApplyLanguageSnapshot(LanguageDiagnosticsSnapshot snapshot)
     {
         State = snapshot.State;
         Failure = snapshot.Failure;
         SessionGeneration = snapshot.SessionGeneration;
         StatusMessage = BuildStatusMessage(snapshot);
 
-        Problems.Clear();
+        _languageProblems.Clear();
         foreach (var diagnostic in snapshot.Diagnostics)
-            Problems.Add(new ProblemItemViewModel(diagnostic));
+            _languageProblems.Add(new ProblemItemViewModel(diagnostic));
+
+        RebuildProblemsList();
+    }
+
+    private void ApplyBuildSnapshot(BuildDiagnosticsSnapshot snapshot)
+    {
+        _buildProblems.Clear();
+        foreach (var diagnostic in snapshot.Diagnostics)
+            _buildProblems.Add(new ProblemItemViewModel(diagnostic, snapshot.BuildGeneration));
+
+        RebuildProblemsList();
+    }
+
+    private void RebuildProblemsList()
+    {
+        Problems.Clear();
+        foreach (var item in _languageProblems)
+            Problems.Add(item);
+        foreach (var item in _buildProblems)
+            Problems.Add(item);
 
         this.RaisePropertyChanged(nameof(ProblemCount));
 
         if (SelectedProblem is not null &&
-            Problems.All(p => !ReferenceEquals(p.Diagnostic, SelectedProblem.Diagnostic) &&
-                              !SameIdentity(p, SelectedProblem)))
+            Problems.All(p => !SameIdentity(p, SelectedProblem)))
         {
             SelectedProblem = null;
         }
     }
 
-    private static bool SameIdentity(ProblemItemViewModel a, ProblemItemViewModel b) =>
-        string.Equals(a.DocumentUri, b.DocumentUri, StringComparison.Ordinal) &&
-        a.DocumentVersion == b.DocumentVersion &&
-        a.SessionGeneration == b.SessionGeneration &&
-        a.StartOffset == b.StartOffset &&
-        a.EndOffset == b.EndOffset &&
-        string.Equals(a.Message, b.Message, StringComparison.Ordinal);
+    private static bool SameIdentity(ProblemItemViewModel a, ProblemItemViewModel b)
+    {
+        if (a.Kind != b.Kind)
+            return false;
+
+        return a.Kind switch
+        {
+            ProblemKind.Language =>
+                ReferenceEquals(a.Diagnostic, b.Diagnostic) ||
+                (string.Equals(a.DocumentUri, b.DocumentUri, StringComparison.Ordinal) &&
+                 a.DocumentVersion == b.DocumentVersion &&
+                 a.SessionGeneration == b.SessionGeneration &&
+                 a.StartOffset == b.StartOffset &&
+                 a.EndOffset == b.EndOffset &&
+                 string.Equals(a.Message, b.Message, StringComparison.Ordinal)),
+            ProblemKind.Build =>
+                a.BuildGeneration == b.BuildGeneration &&
+                string.Equals(a.FilePath, b.FilePath, StringComparison.Ordinal) &&
+                a.Line == b.Line &&
+                a.Column == b.Column &&
+                a.Severity == b.Severity &&
+                string.Equals(a.Code, b.Code, StringComparison.Ordinal) &&
+                string.Equals(a.Message, b.Message, StringComparison.Ordinal),
+            _ => false,
+        };
+    }
 
     private static string? BuildStatusMessage(LanguageDiagnosticsSnapshot snapshot) =>
         LanguageSessionStatusPolicy.MapProblemsStatusMessage(snapshot);
@@ -154,7 +205,16 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
         if (item is null || _disposed)
             return false;
 
-        // Re-validate against the live diagnostics snapshot immediately before navigation.
+        return item.Kind switch
+        {
+            ProblemKind.Language => await NavigateToLanguageProblemAsync(item).ConfigureAwait(false),
+            ProblemKind.Build => await NavigateToBuildProblemAsync(item).ConfigureAwait(false),
+            _ => false,
+        };
+    }
+
+    private async Task<bool> NavigateToLanguageProblemAsync(ProblemItemViewModel item)
+    {
         var snapshot = _diagnosticsService.Current;
         if (snapshot.State != LanguageSessionState.Ready ||
             snapshot.SessionGeneration != item.SessionGeneration)
@@ -176,7 +236,6 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
         if (string.IsNullOrWhiteSpace(live.FilePath))
             return false;
 
-        // Open/activate only through the existing editor-tab path.
         var opened = await _editorTabs.OpenFileCommand.Execute(live.FilePath);
         if (!opened)
             return false;
@@ -188,7 +247,6 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
             return false;
         }
 
-        // Re-validate offsets against current document text (may have changed).
         var content = tab.Document.Content;
         if (!LspUtf16PositionMapper.TryMapRange(
                 content,
@@ -203,6 +261,47 @@ public sealed class ProblemsViewModel : ReactiveObject, IDisposable
             return false;
 
         tab.RequestNavigate(startOffset, endOffset - startOffset);
+        return true;
+    }
+
+    private async Task<bool> NavigateToBuildProblemAsync(ProblemItemViewModel item)
+    {
+        var snapshot = _buildDiagnosticsService.Current;
+        if (snapshot.BuildGeneration != item.BuildGeneration)
+            return false;
+
+        var live = snapshot.Diagnostics.FirstOrDefault(d =>
+            string.Equals(d.FilePath, item.FilePath, StringComparison.Ordinal) &&
+            d.Line == item.Line &&
+            d.Column == item.Column &&
+            d.Severity == item.Severity &&
+            string.Equals(d.Code, item.Code, StringComparison.Ordinal) &&
+            string.Equals(d.Message, item.Message, StringComparison.Ordinal));
+
+        if (live is null || string.IsNullOrWhiteSpace(live.FilePath))
+            return false;
+
+        var opened = await _editorTabs.OpenFileCommand.Execute(live.FilePath);
+        if (!opened)
+            return false;
+
+        var tab = _editorTabs.ActiveTab;
+        if (tab is null ||
+            !string.Equals(tab.FilePath, live.FilePath, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var content = tab.Document.Content;
+        var line = live.Line - 1;
+        var column = live.Column > 0 ? live.Column - 1 : 0;
+        if (!LspUtf16PositionMapper.TryGetOffset(content, line, column, out var startOffset))
+            return false;
+
+        if (startOffset < 0 || startOffset > content.Length)
+            return false;
+
+        tab.RequestNavigate(startOffset, 0);
         return true;
     }
 }

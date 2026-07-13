@@ -69,4 +69,15 @@ public sealed class ProjectWorkflowServiceDiTests
 
         Assert.Same(first, second);
     }
+
+    [Fact]
+    public void ConfigureServices_ResolvesBuildDiagnosticsService()
+    {
+        using var provider = BuildProvider();
+
+        var service = provider.GetRequiredService<IBuildDiagnosticsService>();
+
+        Assert.NotNull(service);
+        Assert.IsType<BuildDiagnosticsService>(service);
+    }
 }

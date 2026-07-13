@@ -14,7 +14,7 @@ namespace Zaide.Tests;
 internal static class TestProblemsFactory
 {
     public static ProblemsViewModel Create(Workspace workspace, EditorTabViewModel editorTabs) =>
-        new(new EmptyLanguageDiagnosticsService(), editorTabs, workspace);
+        new(new EmptyLanguageDiagnosticsService(), new EmptyBuildDiagnosticsService(), editorTabs, workspace);
 
     public static ProblemsViewModel CreateWithWorkspace(Workspace workspace)
     {
@@ -34,6 +34,22 @@ internal static class TestProblemsFactory
         public LanguageDiagnosticsSnapshot Current => _subject.Value;
 
         public IObservable<LanguageDiagnosticsSnapshot> WhenChanged => _subject.AsObservable();
+
+        public void Dispose()
+        {
+            _subject.OnCompleted();
+            _subject.Dispose();
+        }
+    }
+
+    private sealed class EmptyBuildDiagnosticsService : IBuildDiagnosticsService
+    {
+        private readonly BehaviorSubject<BuildDiagnosticsSnapshot> _subject =
+            new(BuildDiagnosticsSnapshot.Empty);
+
+        public BuildDiagnosticsSnapshot Current => _subject.Value;
+
+        public IObservable<BuildDiagnosticsSnapshot> WhenChanged => _subject.AsObservable();
 
         public void Dispose()
         {

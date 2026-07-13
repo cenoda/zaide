@@ -74,6 +74,7 @@ public sealed class ProblemsNavigationProjectionTests
         Assert.NotNull(tabs.ActiveTab);
 
         var diagnostics = new MutableDiagnosticsService();
+        var buildDiagnostics = new EmptyBuildDiagnosticsService();
         var range = new LspRange(0, 10, 0, 11);
         Assert.True(LspUtf16PositionMapper.TryMapRange(content, range, out var start, out var end));
         var diagnostic = new LanguageDiagnostic(
@@ -91,7 +92,7 @@ public sealed class ProblemsNavigationProjectionTests
         diagnostics.Publish(new LanguageDiagnosticsSnapshot(
             LanguageSessionState.Ready, 1, null, new[] { diagnostic }));
 
-        var problems = new ProblemsViewModel(diagnostics, tabs, workspace)
+        var problems = new ProblemsViewModel(diagnostics, buildDiagnostics, tabs, workspace)
         {
             Scheduler = System.Reactive.Concurrency.ImmediateScheduler.Instance,
         };
@@ -102,6 +103,7 @@ public sealed class ProblemsNavigationProjectionTests
         Assert.Equal(path, tabs.ActiveTab!.FilePath);
         Assert.Equal(start, tabs.ActiveTab.PendingNavigationOffset);
         Assert.Equal(end - start, tabs.ActiveTab.PendingNavigationLength);
+        buildDiagnostics.Dispose();
     }
 
     [Fact]
@@ -121,6 +123,7 @@ public sealed class ProblemsNavigationProjectionTests
         Assert.True(await tabs.OpenFileCommand.Execute(path).FirstAsync());
 
         var diagnostics = new MutableDiagnosticsService();
+        var buildDiagnostics = new EmptyBuildDiagnosticsService();
         // Range at end of original text.
         var range = new LspRange(0, 6, 0, 8);
         Assert.True(LspUtf16PositionMapper.TryMapRange(original, range, out var start, out var end));
@@ -139,7 +142,7 @@ public sealed class ProblemsNavigationProjectionTests
         diagnostics.Publish(new LanguageDiagnosticsSnapshot(
             LanguageSessionState.Ready, 1, null, new[] { diagnostic }));
 
-        var problems = new ProblemsViewModel(diagnostics, tabs, workspace)
+        var problems = new ProblemsViewModel(diagnostics, buildDiagnostics, tabs, workspace)
         {
             Scheduler = System.Reactive.Concurrency.ImmediateScheduler.Instance,
         };
@@ -151,6 +154,7 @@ public sealed class ProblemsNavigationProjectionTests
 
         Assert.False(await problems.NavigateToProblemAsync(item));
         Assert.Null(tabs.ActiveTab.PendingNavigationOffset);
+        buildDiagnostics.Dispose();
     }
 
     private sealed class MutableDiagnosticsService : ILanguageDiagnosticsService
@@ -171,6 +175,17 @@ public sealed class ProblemsNavigationProjectionTests
         {
             _subject.OnCompleted();
             _subject.Dispose();
+        }
+    }
+
+    private sealed class EmptyBuildDiagnosticsService : IBuildDiagnosticsService
+    {
+        public BuildDiagnosticsSnapshot Current => BuildDiagnosticsSnapshot.Empty;
+        public IObservable<BuildDiagnosticsSnapshot> WhenChanged =>
+            System.Reactive.Linq.Observable.Empty<BuildDiagnosticsSnapshot>();
+
+        public void Dispose()
+        {
         }
     }
 }

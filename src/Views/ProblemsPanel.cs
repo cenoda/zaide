@@ -58,7 +58,7 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
         AutomationProperties.SetName(_list, "Problems list");
         AutomationProperties.SetHelpText(
             _list,
-            "Diagnostics from the C# language server. Enter or double-click navigates to the problem.");
+            "Diagnostics from the language server and build output. Enter or double-click navigates to the problem.");
 
         _list.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<ProblemItemViewModel>(
             (item, _) =>

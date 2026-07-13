@@ -80,6 +80,9 @@ class Program
         services.AddSingleton<IProjectOutputService, ProjectOutputService>();
         services.AddSingleton<ProjectWorkflowViewModel>();
 
+        // Phase 11 M3: parsed build diagnostics (Problems merge projection).
+        services.AddSingleton<IBuildDiagnosticsService, BuildDiagnosticsService>();
+
         // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
         services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
         services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();

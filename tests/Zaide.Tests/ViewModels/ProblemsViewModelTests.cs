@@ -46,10 +46,28 @@ public sealed class ProblemsViewModelTests
         }
     }
 
+    private sealed class FakeBuildDiagnosticsService : IBuildDiagnosticsService
+    {
+        private readonly BehaviorSubject<BuildDiagnosticsSnapshot> _subject =
+            new(BuildDiagnosticsSnapshot.Empty);
+
+        public BuildDiagnosticsSnapshot Current => _subject.Value;
+        public IObservable<BuildDiagnosticsSnapshot> WhenChanged => _subject.AsObservable();
+
+        public void Publish(BuildDiagnosticsSnapshot snapshot) => _subject.OnNext(snapshot);
+
+        public void Dispose()
+        {
+            _subject.OnCompleted();
+            _subject.Dispose();
+        }
+    }
+
     private sealed class Harness : IDisposable
     {
         public Workspace Workspace { get; } = new();
         public FakeDiagnosticsService Diagnostics { get; } = new();
+        public FakeBuildDiagnosticsService BuildDiagnostics { get; } = new();
         public EditorTabViewModel EditorTabs { get; }
         public ProblemsViewModel Problems { get; }
         private readonly ServiceProvider _sp;
@@ -61,7 +79,7 @@ public sealed class ProblemsViewModelTests
             services.AddSingleton<IFileService>(new FileService());
             _sp = services.BuildServiceProvider();
             EditorTabs = new EditorTabViewModel(_sp, _sp.GetRequiredService<IFileService>(), Workspace);
-            Problems = new ProblemsViewModel(Diagnostics, EditorTabs, Workspace)
+            Problems = new ProblemsViewModel(Diagnostics, BuildDiagnostics, EditorTabs, Workspace)
             {
                 Scheduler = ImmediateScheduler.Instance,
             };
@@ -104,6 +122,7 @@ public sealed class ProblemsViewModelTests
         {
             Problems.Dispose();
             Diagnostics.Dispose();
+            BuildDiagnostics.Dispose();
             _sp.Dispose();
         }
     }
