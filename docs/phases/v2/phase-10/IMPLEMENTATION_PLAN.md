@@ -2,8 +2,8 @@
 
 ## Status
 
-**Phase 10 complete** (M7 closeout, 2026-07-13).
-**M7 complete** (capability/status feedback, accessibility integration, docs truth-sync, 2026-07-13).
+**Phase 10 complete** (M7 closeout, 2026-07-14).
+**M7 complete** (capability/status feedback, accessibility integration, docs truth-sync, 2026-07-14).
 **M6 complete** (whole-document formatting + Format on Save, 2026-07-14).
 **M5 complete** (Go to Definition + document/workspace symbols, 2026-07-13).
 **M4 complete** (active-document completion + hover, 2026-07-13).

@@ -1,6 +1,6 @@
 # Phase 10 M7: Manual Linux Evidence — Closeout Integration
 
-**Date:** 2026-07-13  
+**Date:** 2026-07-14
 **Host:** Linux  
 **Server:** csharp-ls 0.25.0 (`/home/cenoda/.dotnet/tools/csharp-ls`)  
 **Client:** production language services + `LanguageSessionStatusPolicy` +
@@ -31,7 +31,7 @@ dotnet run --project tools/Phase10M7CloseoutSmoke/Phase10M7CloseoutSmoke.csproj 
 Fixture: /home/cenoda/zaide/tools/Phase10M0LanguageIntelligenceProof/fixture
 csharp-ls: /home/cenoda/.dotnet/tools/csharp-ls
 Host: Linux
-Date: 2026-07-13
+Date: 2026-07-14
 Session state=Ready gen=4 statusBar="C# · Ready"
 Capabilities: completion=True hover=True definition=True docSym=True wsSym=True format=True
 PASS diagnostics publish: count=3
