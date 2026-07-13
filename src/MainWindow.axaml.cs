@@ -304,6 +304,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             editorTabs.FoldingEditor = _editorView.Folding;
             disposables.Add(Disposable.Create(() => editorTabs.FoldingEditor = null));
 
+            // Phase 9 M6: route search outcomes to the status bar.
+            // Only non-empty status messages are piped; empty status (from dismiss)
+            // does not overwrite unrelated status text.
+            disposables.Add(_searchViewModel.WhenAnyValue(x => x.StatusMessage)
+                .Where(msg => !string.IsNullOrEmpty(msg))
+                .Subscribe(msg => ViewModel!.StatusText = msg));
+
             // Phase 9 M3: search bar focus management.
             // FocusRequested fires when Find/Replace opens the surface.
             void OnSearchFocusRequested() => _searchBar.FocusQuery();

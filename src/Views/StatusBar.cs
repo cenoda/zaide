@@ -27,6 +27,8 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly TextBlock _languageText = TextStyles.Caption("—");
     private readonly TextBlock _projectText = TextStyles.Caption("Zaide");
     private readonly TextBlock _branchText = TextStyles.Caption("");
+    private readonly TextBlock _documentText = TextStyles.Caption("—");
+    private readonly TextBlock _statusMessageText = TextStyles.Caption("");
     private readonly TextBlock _modelText;
     private readonly Button _settingsButton;
 
@@ -59,6 +61,11 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             Children = { appNameIcon, appNameText }
         });
 
+        _statusMessageText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        _statusMessageText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
+        _statusMessageText.MaxWidth = 320;
+        _statusMessageText.TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis;
+
         var leftStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -68,10 +75,12 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             Children =
             {
                 _settingsButton,
+                BuildStatusSegmentButton("Icon.Text", _documentText),
                 BuildStatusSegmentButton("Icon.Selection", _caretText),
                 BuildStatusSegmentButton("Icon.Code", _languageText),
                 BuildStatusSegmentButton("Icon.Project", _projectText),
-                BuildStatusSegmentButton("Icon.GitBranch", _branchText)
+                BuildStatusSegmentButton("Icon.GitBranch", _branchText),
+                _statusMessageText
             }
         };
 
@@ -104,6 +113,13 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             d.Add(ViewModel.WhenAnyValue(x => x.LanguageText).Subscribe(Observer.Create<string>(text => _languageText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.ProjectText).Subscribe(Observer.Create<string>(text => _projectText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.BranchText).Subscribe(Observer.Create<string>(text => _branchText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.DocumentText).Subscribe(Observer.Create<string>(text => _documentText.Text = text)));
+            d.Add(ViewModel.WhenAnyValue(x => x.StatusMessage)
+                .Subscribe(Observer.Create<string?>(msg =>
+                {
+                    _statusMessageText.Text = msg ?? "";
+                    _statusMessageText.IsVisible = msg is not null;
+                })));
             d.Add(ViewModel.WhenAnyValue(x => x.ConfiguredModel)
                 .Subscribe(Observer.Create<string?>(model =>
                 {

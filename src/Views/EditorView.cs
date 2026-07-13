@@ -209,6 +209,20 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             _textEditor.TextArea.Caret.PositionChanged += OnCaretChanged;
             d.Add(Disposable.Create(() => _textEditor.TextArea.Caret.PositionChanged -= OnCaretChanged));
 
+            // Phase 9 M6: selection tracking — push selection state to ViewModel.
+            void OnSelectionChanged(object? s, EventArgs e)
+            {
+                if (ViewModel is null) return;
+                var selection = _textEditor.TextArea.Selection;
+                var startPos = selection.StartPosition;
+                var startOffset = _textEditor.Document.GetOffset(startPos.Line, startPos.Column);
+                ViewModel.SelectionStart = startOffset;
+                ViewModel.SelectionLength = selection.Length;
+                ViewModel.SelectionText = selection.IsEmpty ? null : selection.GetText();
+            }
+            _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
+            d.Add(Disposable.Create(() => _textEditor.TextArea.SelectionChanged -= OnSelectionChanged));
+
             _textEditor.TextChanged += OnTextChanged;
             d.Add(Disposable.Create(() => _textEditor.TextChanged -= OnTextChanged));
         });

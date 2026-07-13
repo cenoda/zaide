@@ -270,4 +270,268 @@ public sealed class Phase83M4StatusBarViewModelProjectionTests
         var (vm, status, svc) = CreateImmediate();
         Assert.NotNull(status.OpenSettingsCommand);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M6: Caret + Selection display
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void CaretText_NoSelection_ShowsLineColumn()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document(""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        Assert.Equal(0, editor.SelectionLength);
+        Assert.Equal("Ln 1, Col 1", status.CaretText);
+    }
+
+    [Fact]
+    public void CaretText_WithSelection_ShowsSuffix()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document(""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        editor.CaretLine = 3;
+        editor.CaretColumn = 15;
+        editor.SelectionLength = 10;
+
+        Assert.Equal("Ln 3, Col 15 | Sel 10", status.CaretText);
+    }
+
+    [Fact]
+    public void CaretText_SelectionZero_NoSuffix()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document(""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        editor.CaretLine = 5;
+        editor.CaretColumn = 8;
+        editor.SelectionLength = 0;
+
+        Assert.Equal("Ln 5, Col 8", status.CaretText);
+        Assert.DoesNotContain("Sel", status.CaretText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CaretText_SelectionUpdatesDynamically()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document(""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        editor.CaretLine = 10;
+        editor.CaretColumn = 25;
+        editor.SelectionLength = 42;
+
+        Assert.Equal("Ln 10, Col 25 | Sel 42", status.CaretText);
+
+        // Clear selection — suffix must disappear.
+        editor.SelectionLength = 0;
+        Assert.Equal("Ln 10, Col 25", status.CaretText);
+    }
+
+    [Fact]
+    public void CaretText_SelectionResetsOnTabSwitch()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor1 = new EditorViewModel(new Document(""), new FileService());
+        var editor2 = new EditorViewModel(new Document(""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor1);
+        vm.EditorTabs.OpenTabs.Add(editor2);
+        vm.EditorTabs.ActiveTab = editor1;
+
+        editor1.CaretLine = 7;
+        editor1.CaretColumn = 12;
+        editor1.SelectionLength = 5;
+        Assert.Equal("Ln 7, Col 12 | Sel 5", status.CaretText);
+
+        // Switch to tab 2 — resets to tab 2's defaults.
+        vm.EditorTabs.ActiveTab = editor2;
+        Assert.Equal("Ln 1, Col 1", status.CaretText);
+    }
+
+    [Fact]
+    public void CaretText_NoActiveTab_ShowsDefault()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        Assert.Equal("Ln 1, Col 1", status.CaretText);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M6: DocumentText display
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void DocumentText_NoTab_ShowsDash()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        Assert.Equal("—", status.DocumentText);
+    }
+
+    [Fact]
+    public void DocumentText_WithFileTab_ShowsFileName()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document("/project/Program.cs", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        Assert.Equal("Program.cs", status.DocumentText);
+    }
+
+    [Fact]
+    public void DocumentText_UntitledTab_ShowsUntitled()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document("", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+
+        Assert.Equal("Untitled", status.DocumentText);
+    }
+
+    [Fact]
+    public void DocumentText_ClearsOnTabClose()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor = new EditorViewModel(new Document("/project/file.cs", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor);
+        vm.EditorTabs.ActiveTab = editor;
+        Assert.Equal("file.cs", status.DocumentText);
+
+        // Close the tab (remove from collection and clear active).
+        vm.EditorTabs.OpenTabs.Remove(editor);
+        vm.EditorTabs.ActiveTab = null;
+        Assert.Equal("—", status.DocumentText);
+    }
+
+    [Fact]
+    public void DocumentText_UpdatesOnTabSwitch()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor1 = new EditorViewModel(new Document("/a/first.cs", ""), new FileService());
+        var editor2 = new EditorViewModel(new Document("/b/second.cs", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor1);
+        vm.EditorTabs.OpenTabs.Add(editor2);
+        vm.EditorTabs.ActiveTab = editor1;
+
+        Assert.Equal("first.cs", status.DocumentText);
+
+        vm.EditorTabs.ActiveTab = editor2;
+        Assert.Equal("second.cs", status.DocumentText);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M6: StatusMessage (transient outcomes)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void StatusMessage_Default_Null()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        Assert.Null(status.StatusMessage);
+    }
+
+    [Fact]
+    public void StatusMessage_FromStatusText()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        vm.StatusText = "Saved: file.cs";
+        Assert.Equal("Saved: file.cs", status.StatusMessage);
+    }
+
+    [Fact]
+    public void StatusMessage_ClearsOnTabSwitch()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor1 = new EditorViewModel(new Document("/a/file1.cs", ""), new FileService());
+        var editor2 = new EditorViewModel(new Document("/b/file2.cs", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor1);
+        vm.EditorTabs.OpenTabs.Add(editor2);
+        vm.EditorTabs.ActiveTab = editor1;
+
+        // Set a status message.
+        vm.StatusText = "Search: 3 matches";
+        Assert.Equal("Search: 3 matches", status.StatusMessage);
+
+        // Switch tabs — MustBe cleared.
+        vm.EditorTabs.ActiveTab = editor2;
+        Assert.Null(status.StatusMessage);
+    }
+
+    [Fact]
+    public void StatusMessage_SaveFailureShowsMessage()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        vm.StatusText = "Save failed: disk full";
+        Assert.Equal("Save failed: disk full", status.StatusMessage);
+    }
+
+    [Fact]
+    public void StatusMessage_SearchOutcomeShowsMessage()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        vm.StatusText = "3 matches";
+        Assert.Equal("3 matches", status.StatusMessage);
+    }
+
+    [Fact]
+    public void StatusMessage_FoldOutcomeShowsMessage()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        vm.StatusText = "Folded all regions";
+        Assert.Equal("Folded all regions", status.StatusMessage);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M6: Stale-state prevention — events from old tabs
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void StatusText_ClearsOnActiveTabChange()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor1 = new EditorViewModel(new Document("/a/f1.cs", ""), new FileService());
+        var editor2 = new EditorViewModel(new Document("/b/f2.cs", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor1);
+        vm.EditorTabs.OpenTabs.Add(editor2);
+        vm.EditorTabs.ActiveTab = editor1;
+
+        vm.StatusText = "status before switch";
+
+        // Active-tab change triggers StatusText = null in Activate().
+        vm.EditorTabs.ActiveTab = editor2;
+        Assert.Null(vm.StatusText);
+        Assert.Null(status.StatusMessage);
+    }
+
+    [Fact]
+    public void LanguageText_UpdatesOnTabSwitch()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        var editor1 = new EditorViewModel(new Document("/a/file.cs", ""), new FileService());
+        var editor2 = new EditorViewModel(new Document("/b/file.py", ""), new FileService());
+        vm.EditorTabs.OpenTabs.Add(editor1);
+        vm.EditorTabs.OpenTabs.Add(editor2);
+        vm.EditorTabs.ActiveTab = editor1;
+
+        Assert.Equal("C#", status.LanguageText);
+
+        vm.EditorTabs.ActiveTab = editor2;
+        Assert.Equal("Python", status.LanguageText);
+    }
+
+    [Fact]
+    public void LanguageText_NoTab_ShowsDash()
+    {
+        var (vm, status, svc) = CreateImmediate();
+        Assert.Equal("—", status.LanguageText);
+    }
 }

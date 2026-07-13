@@ -26,7 +26,7 @@ public enum LeftPanelMode
 public class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private bool _isBottomPanelVisible;
-    private string? _statusText = "Open a folder to begin";
+    private string? _statusText;
     private CompositeDisposable? _disposables;
     private LeftPanelMode _leftPanelMode = LeftPanelMode.Explorer;
     private bool _isExplorerMode = true;
@@ -245,6 +245,20 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .ObserveOn(ProjectContextScheduler)
                 .Subscribe(ctx => CurrentProjectContext = ctx));
 
+        // Phase 9 M6: Clear status text on tab switch to prevent stale messages
+        // from old tabs leaking into the current view. Each new event from the
+        // active tab will set its own fresh status.
+        _disposables.Add(
+            this.WhenAnyValue(x => x.EditorTabs.ActiveTab)
+                .Subscribe(_ => StatusText = null));
+
+        // Phase 9 M6: Route fold status messages from the tab manager to the
+        // status bar. Cleared on tab switch via the ActiveTab subscription above.
+        _disposables.Add(
+            this.WhenAnyValue(x => x.EditorTabs.FoldStatusMessage)
+                .Where(msg => msg is not null)
+                .Subscribe(msg => StatusText = msg));
+
         // Surface save errors from the tab manager
         _disposables.Add(
             this.WhenAnyValue(x => x.EditorTabs.LastSaveError)
@@ -389,6 +403,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             return;
 
         var saved = await activeTab.SaveCommand.Execute();
+
+        // Phase 9 M6: stale-state check — the user may have switched tabs (or
+        // closed the tab) while the save was in flight. Only surface the result
+        // if the tab is still the active one.
+        if (!ReferenceEquals(activeTab, EditorTabs.ActiveTab))
+            return;
+
         if (saved)
         {
             StatusText = $"Saved: {activeTab.FileName}";

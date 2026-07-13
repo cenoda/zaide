@@ -101,6 +101,38 @@ public class EditorViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _caretColumn, value);
     }
 
+    // ── Selection state — updated by EditorView ───────────────────────────
+
+    /// <summary>
+    /// Offset of the selection start in the document. 0 when no selection.
+    /// </summary>
+    private int _selectionStart;
+    public int SelectionStart
+    {
+        get => _selectionStart;
+        set => this.RaiseAndSetIfChanged(ref _selectionStart, value);
+    }
+
+    /// <summary>
+    /// Length of the selection in characters. 0 when no selection.
+    /// </summary>
+    private int _selectionLength;
+    public int SelectionLength
+    {
+        get => _selectionLength;
+        set => this.RaiseAndSetIfChanged(ref _selectionLength, value);
+    }
+
+    /// <summary>
+    /// The currently selected text. null when no selection.
+    /// </summary>
+    private string? _selectionText;
+    public string? SelectionText
+    {
+        get => _selectionText;
+        set => this.RaiseAndSetIfChanged(ref _selectionText, value);
+    }
+
     /// <summary>
     /// ReactiveCommand for saving the file.
     /// </summary>

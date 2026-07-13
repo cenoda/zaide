@@ -247,14 +247,23 @@ public sealed class Phase9M0EditorUxProofTests
     }
 
     [Fact]
-    public void EditorViewModel_HasNoSelectionState()
+    public void EditorViewModel_HasSelectionState()
     {
         // M0 baseline: selection fields do NOT exist yet.
-        // These are planned for M3 implementation.
+        // Phase 9 M6: now they exist with zero defaults.
         var type = typeof(EditorViewModel);
-        Assert.Null(type.GetProperty("SelectionStart"));
-        Assert.Null(type.GetProperty("SelectionLength"));
-        Assert.Null(type.GetProperty("SelectionText"));
+        var startProp = type.GetProperty("SelectionStart");
+        var lengthProp = type.GetProperty("SelectionLength");
+        var textProp = type.GetProperty("SelectionText");
+        Assert.NotNull(startProp);
+        Assert.NotNull(lengthProp);
+        Assert.NotNull(textProp);
+
+        // Verify zero defaults.
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        Assert.Equal(0, startProp!.GetValue(vm));
+        Assert.Equal(0, lengthProp!.GetValue(vm));
+        Assert.Null(textProp!.GetValue(vm));
     }
 
     // ── 8. StatusBarViewModel baseline: projects caret only ────────────────

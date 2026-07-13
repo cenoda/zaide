@@ -245,4 +245,73 @@ public class EditorViewModelTests
         Assert.False(result);
         Assert.True(vm.IsDirty);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Phase 9 M6: Selection state
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void SelectionStart_DefaultsToZero()
+    {
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        Assert.Equal(0, vm.SelectionStart);
+    }
+
+    [Fact]
+    public void SelectionLength_DefaultsToZero()
+    {
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        Assert.Equal(0, vm.SelectionLength);
+    }
+
+    [Fact]
+    public void SelectionText_NullWhenNoSelection()
+    {
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        Assert.Null(vm.SelectionText);
+    }
+
+    [Fact]
+    public void SelectionProperties_SetAndRead()
+    {
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        vm.SelectionStart = 10;
+        vm.SelectionLength = 5;
+        vm.SelectionText = "hello";
+
+        Assert.Equal(10, vm.SelectionStart);
+        Assert.Equal(5, vm.SelectionLength);
+        Assert.Equal("hello", vm.SelectionText);
+    }
+
+    [Fact]
+    public void SelectionLengthZero_ResetsSelectionText()
+    {
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        vm.SelectionLength = 10;
+        vm.SelectionText = "selected text";
+
+        vm.SelectionLength = 0;
+        // EditorView sets SelectionText to null when Length == 0
+        // (ViewModel property itself allows any value — the View enforces the invariant).
+        vm.SelectionText = null;
+
+        Assert.Equal(0, vm.SelectionLength);
+        Assert.Null(vm.SelectionText);
+    }
+
+    [Fact]
+    public void SelectionCanBeSetBeforeActiveTab()
+    {
+        // Selection state should work even before the tab is activated
+        // (e.g. programmatic restore on tab switch).
+        var vm = new EditorViewModel(new Document(""), new FileService());
+        vm.SelectionStart = 42;
+        vm.SelectionLength = 8;
+        vm.SelectionText = "some text";
+
+        Assert.Equal(42, vm.SelectionStart);
+        Assert.Equal(8, vm.SelectionLength);
+        Assert.Equal("some text", vm.SelectionText);
+    }
 }

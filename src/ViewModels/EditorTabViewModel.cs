@@ -91,6 +91,18 @@ public class EditorTabViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _lastOpenError, value);
     }
 
+    /// <summary>
+    /// Phase 9 M6: Status message from the last folding command execution.
+    /// Set by fold command handlers; consumed by MainWindowViewModel to
+    /// surface in the status bar.
+    /// </summary>
+    private string? _foldStatusMessage;
+    public string? FoldStatusMessage
+    {
+        get => _foldStatusMessage;
+        set => this.RaiseAndSetIfChanged(ref _foldStatusMessage, value);
+    }
+
     public ReactiveCommand<string, bool> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
@@ -172,15 +184,29 @@ public class EditorTabViewModel : ReactiveObject
             (tab, fold) => tab is not null && fold is not null && fold.IsAvailable);
 
         FoldToggleCommand = ReactiveCommand.Create(
-            () => _foldingEditor?.ToggleCurrent(),
+            () =>
+            {
+                var result = _foldingEditor?.ToggleCurrent();
+                FoldStatusMessage = result == true
+                    ? "Toggled fold"
+                    : "No foldable region at caret";
+            },
             canFold);
 
         FoldAllCommand = ReactiveCommand.Create(
-            () => _foldingEditor?.FoldAll(),
+            () =>
+            {
+                _foldingEditor?.FoldAll();
+                FoldStatusMessage = "Folded all regions";
+            },
             canFold);
 
         UnfoldAllCommand = ReactiveCommand.Create(
-            () => _foldingEditor?.UnfoldAll(),
+            () =>
+            {
+                _foldingEditor?.UnfoldAll();
+                FoldStatusMessage = "Unfolded all regions";
+            },
             canFold);
 
         // Phase 9 M5a: tab lifecycle commands.
