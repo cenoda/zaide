@@ -293,6 +293,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(Disposable.Create(() =>
                 _commandPaletteOverlay.Dismissed -= OnOverlayDismissed));
 
+            // Phase 9 M4: wire folding operations from the shared EditorView
+            // to EditorTabViewModel so registered folding commands
+            // (editor.foldToggle, editor.foldAll, editor.unfoldAll) can
+            // reach the View-layer FoldingManager.
+            editorTabs.FoldingEditor = _editorView.Folding;
+            disposables.Add(Disposable.Create(() => editorTabs.FoldingEditor = null));
+
             // Phase 9 M3: search bar focus management.
             // FocusRequested fires when Find/Replace opens the surface.
             void OnSearchFocusRequested() => _searchBar.FocusQuery();

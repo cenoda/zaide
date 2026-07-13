@@ -2,7 +2,7 @@
 
 ## Status
 
-**M0–M3 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
+**M0–M4 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
 full proof document. Phase 8.1 (Settings Foundation), Phase 8.2 (Command
 Registry and Keybindings), and Phase 8.3 (Authoritative Project Context) are
 closed. This plan defines the next bounded product phase and must be completed
@@ -268,14 +268,94 @@ text before M3 or M6 adds selection-dependent behavior.
 
 ## Exact Next Step
 
-Implement **M4 only**: active-editor code folding using only APIs proven in M0.
-Define a deterministic, syntax-neutral initial folding heuristic, expand/collapse
-current/all commands, caret visibility after folding changes, and no-folding
-feedback for unsupported/invalid text. Do not introduce a C# parser or language
-service. Because the `TextEditor` is shared between tabs, folding state must be
-explicitly discarded or restored by document identity on every tab change.
-Do not implement search/replace (M3 complete), tab lifecycle (M5), or
-status-bar changes (M6).
+Implement **M5a only**: registry-backed tab commands and tab lifecycle UX
+(next/previous tab, close active tab, close other tabs, close all tabs) with
+deterministic neighbor selection and dirty-confirmation preservation.
+
+---
+
+## M4 Completion Record
+
+### M4 Folding Heuristic (Locked)
+
+See `src/Services/BraceFoldingStrategy.cs` for the full implementation.
+
+| Property | Value |
+|---|---|
+| **Eligible text** | Any `{` with a matching `}` spanning ≥2 lines |
+| **No-folding cases** | Plain text (no braces), unbalanced braces, regions <2 lines |
+| **Malformed behavior** | Unmatched `{` and `}` silently ignored |
+| **Min region size** | `MinRegionLines = 2` (at least two newlines between `{` and `}`) |
+| **Title policy** | Text on the opening-brace line after `{`, trimmed, max 80 chars; `"{...}"` if empty |
+| **Nesting** | Stack-based; inner regions discovered alongside outer; sorted by start offset |
+| **Current-fold selection** | Innermost containing region at caret offset (highest `Depth`) |
+| **Fold All** | `IsFolded = true` on every `FoldingSection`; `BringCaretToView` after |
+| **Unfold All** | `IsFolded = false` on every `FoldingSection`; `BringCaretToView` after |
+| **Caret fallback** | `BringCaretToView()` called after every fold/unfold operation |
+
+### Tab-Switch / Close Safety Contract
+
+- `FoldingOperations.Clear()` does full teardown: `FoldingManager.Clear()` → remove `FoldingMargin` → `FoldingManager.Uninstall()`.
+- `FoldingOperations.Install(text)` calls `FoldingManager.Clear()` first, then `UpdateFoldings(newFoldings, -1)` — old folds never leak.
+- `EditorView` tracks `_lastFoldVm` by reference; only re-installs folds on tab switches, not keystrokes.
+- On null ViewModel: `_foldingOperations.Clear()` + `_lastFoldVm = null`.
+- Settings/font changes: `ApplyEditorSettings` re-installs folds for current text if `IsAvailable`.
+- `MainWindow` sets `EditorTabViewModel.FoldingEditor` on activation and nulls on deactivation.
+
+### Registered Commands
+
+| ID | Display Name | Category | Default Gesture | Availability |
+|---|---|---|---|---|
+| `editor.foldToggle` | Toggle Current Fold | Editor | (unbound) | Active tab + folding available |
+| `editor.foldAll` | Fold All | Editor | (unbound) | Active tab + folding available |
+| `editor.unfoldAll` | Unfold All | Editor | (unbound) | Active tab + folding available |
+
+### M4 Verification Results (2026-07-13)
+
+| Gate | Result |
+|---|---|
+| M4 focused tests (`EditorFoldingTests`) | ✅ 33/33 passed |
+| `dotnet build Zaide.slnx --no-restore` | ✅ 0 errors, 0 warnings |
+| `dotnet test Zaide.slnx --no-build` | ✅ 1388 passed, 0 failed, 0 skipped |
+| `git diff --check` | ✅ clean |
+| `git status --short` | 3 modified, 4 new files |
+
+### Manual Linux Smoke Evidence (2026-07-13)
+
+All five manual checks passed on Linux desktop:
+
+1. **C# file with nested brace blocks** — folding affordances (margin markers)
+   appear deterministically for all balanced `{ ... }` regions spanning ≥2 lines.
+   Nested regions fold and unfold independently; collapsing an outer region
+   hides its inner regions as expected.
+2. **Registered folding commands** — `editor.foldToggle` toggles the innermost
+   region at the caret; `editor.foldAll` collapses every discovered region;
+   `editor.unfoldAll` expands them all. All three commands are unbound by
+   default and visible in the Command Palette.
+3. **Tab switching** — switching away from a tab and back to it (or to a
+   different tab) never leaks folds from the previous tab. The new tab's
+   folding state reflects only its own text.
+4. **Font settings change while folds exist** — changing the editor font
+   family or size re-installs folds for the current text with no stale
+   artifacts, no phantom fold markers, and no thrown exceptions.
+5. **Plain text and malformed braces** — plain text (no `{}`) produces zero
+   folding regions. Unbalanced braces (extra `{` with no `}`, extra `}` with
+   no `{`) silently skip the unmatched characters and only fold the balanced
+   pairs that meet the minimum-line threshold. No false-positive fold markers
+   appear.
+
+### Files Changed
+
+| File | Status | Purpose |
+|---|---|---|
+| `src/Services/BraceFoldingStrategy.cs` | New | Pure syntax-neutral brace-region discovery heuristic |
+| `src/ViewModels/IFoldingOperations.cs` | New | View-layer seam interface for folding operations |
+| `src/Views/FoldingOperations.cs` | New | View-layer implementation wrapping FoldingManager/FoldingMargin |
+| `src/ViewModels/EditorTabViewModel.cs` | Modified | Added ICommandRegistry param, FoldingEditor property, 3 folding commands |
+| `src/Views/EditorView.cs` | Modified | FoldingOperations lifecycle, tab-switch detection, settings re-install |
+| `src/MainWindow.axaml.cs` | Modified | Wire FoldingEditor on activation, clear on deactivation |
+| `tests/Zaide.Tests/ViewModels/EditorFoldingTests.cs` | New | 33 tests covering algorithm, commands, and safety contracts |
+
 
 ## Rollback Plan
 

@@ -10,6 +10,7 @@ using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
+using AvaloniaEdit.Folding;
 using AvaloniaEdit.Search;
 using AvaloniaEdit.TextMate;
 using ReactiveUI;
@@ -34,6 +35,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private readonly IndentGuideRenderer _indentGuideRenderer;
     private readonly ContentControl _fileInfoIconHost;
     private readonly TextBlock _fileInfoText;
+    private readonly FoldingOperations _foldingOperations;
 
     // Guard flag: true while the View is pushing text to the editor,
     // preventing OnTextChanged from bouncing it back to the ViewModel.
@@ -119,6 +121,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
         Content = layout;
 
+        // Phase 9 M4: folding operations wrapping the shared TextEditor.
+        _foldingOperations = new FoldingOperations(_textEditor);
+
         _settingsBinding = CreateSettingsBinding(
             settings,
             model => ApplyEditorSettings(model.Editor));
@@ -142,6 +147,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                     _isUpdatingFromViewModel = true;
                     try { _textEditor.Text = newContent; }
                     finally { _isUpdatingFromViewModel = false; }
+
+                    // Phase 9 M4: install folding when the source ViewModel
+                    // changes (tab switch). We compare by reference so folds
+                    // are not re-computed on every keystroke.
+                    if (!ReferenceEquals(ViewModel, _lastFoldVm))
+                    {
+                        _lastFoldVm = ViewModel;
+                        if (ViewModel is not null && newContent.Length > 0)
+                            _foldingOperations.Install(newContent);
+                        else
+                            _foldingOperations.Clear();
+                    }
                 }));
 
             // File mode (grammar + font): only on VM change, not on keystroke.
@@ -162,6 +179,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
                             12);
                         _fileInfoText.Text = "diff/edit";
+                        // Phase 9 M4: clear folding state when no tab is active.
+                        _lastFoldVm = null;
+                        _foldingOperations.Clear();
                     }
                 }));
 
@@ -271,6 +291,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             ApplyFileMode(ViewModel.FilePath);
         else
             _textEditor.FontFamily = _codeFont;
+
+        // Phase 9 M4: re-install folding after settings changes so folds
+        // remain visually consistent with the new font/size. The
+        // FoldingManager uses text offsets, so fold positions are
+        // unaffected by pixel-level changes, but re-installing ensures
+        // the margin and generation are refreshed.
+        if (ViewModel is not null && _foldingOperations.IsAvailable)
+        {
+            var currentText = _textEditor.Text;
+            if (currentText.Length > 0)
+                _foldingOperations.Install(currentText);
+        }
     }
 
     internal static EditorSettingsProjection ProjectSettings(EditorSettings settings) =>
@@ -310,6 +342,19 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         bool InsertSpaces,
         bool ShowTabs,
         bool ShowSpaces);
+
+    /// <summary>
+    /// Phase 9 M4: folding-operations seam for the shared TextEditor.
+    /// The MainWindow sets this on EditorTabViewModel.FoldingEditor so
+    /// registered folding commands can reach the view layer.
+    /// </summary>
+    public IFoldingOperations Folding => _foldingOperations;
+
+    /// <summary>
+    /// Tracks the last ViewModel for which we installed folds so we only
+    /// re-install on tab switches, not on every keystroke.
+    /// </summary>
+    private EditorViewModel? _lastFoldVm;
 
     // ── IEditorTextOperations ────────────────────────────────────────────
 

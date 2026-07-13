@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using Zaide.Models;
@@ -32,6 +33,17 @@ public class EditorTabViewModel : ReactiveObject
     private EditorViewModel? _activeTab;
 
     public ObservableCollection<EditorViewModel> OpenTabs { get; } = new();
+
+    /// <summary>
+    /// The folding-operations seam for the active editor. Set by the View
+    /// on activation. Commands read this to execute fold operations.
+    /// </summary>
+    private IFoldingOperations? _foldingEditor;
+    public IFoldingOperations? FoldingEditor
+    {
+        get => _foldingEditor;
+        set => this.RaiseAndSetIfChanged(ref _foldingEditor, value);
+    }
 
     public EditorViewModel? ActiveTab
     {
@@ -81,7 +93,29 @@ public class EditorTabViewModel : ReactiveObject
     public ReactiveCommand<string, bool> OpenFileCommand { get; }
     public ReactiveCommand<EditorViewModel, Unit> CloseTabCommand { get; }
 
-    public EditorTabViewModel(IServiceProvider services, IFileService fileService, Workspace workspace)
+    /// <summary>
+    /// Phase 9 M4: Toggles folding for the brace region at the current caret position.
+    /// Availability: active tab exists AND folding is available.
+    /// Default gesture: unbound.
+    /// </summary>
+    public ICommand FoldToggleCommand { get; }
+
+    /// <summary>
+    /// Phase 9 M4: Folds all discovered brace regions.
+    /// Availability: active tab exists AND folding is available.
+    /// Default gesture: unbound.
+    /// </summary>
+    public ICommand FoldAllCommand { get; }
+
+    /// <summary>
+    /// Phase 9 M4: Unfolds all folding sections.
+    /// Availability: active tab exists AND folding is available.
+    /// Default gesture: unbound.
+    /// </summary>
+    public ICommand UnfoldAllCommand { get; }
+
+    public EditorTabViewModel(IServiceProvider services, IFileService fileService, Workspace workspace,
+        ICommandRegistry? commandRegistry = null)
     {
         _services = services;
         _fileService = fileService;
@@ -89,6 +123,37 @@ public class EditorTabViewModel : ReactiveObject
 
         OpenFileCommand = ReactiveCommand.CreateFromTask<string, bool>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
+
+        // Phase 9 M4: folding commands.
+        // Availability: active tab exists AND folding is available.
+        var canFold = this.WhenAnyValue(
+            x => x.ActiveTab,
+            x => x.FoldingEditor,
+            (tab, fold) => tab is not null && fold is not null && fold.IsAvailable);
+
+        FoldToggleCommand = ReactiveCommand.Create(
+            () => _foldingEditor?.ToggleCurrent(),
+            canFold);
+
+        FoldAllCommand = ReactiveCommand.Create(
+            () => _foldingEditor?.FoldAll(),
+            canFold);
+
+        UnfoldAllCommand = ReactiveCommand.Create(
+            () => _foldingEditor?.UnfoldAll(),
+            canFold);
+
+        // Register folding commands with the same Phase 8.2 lifecycle.
+        // All three are unbound (no default gesture).
+        commandRegistry?.Register(new CommandDescriptor(
+            "editor.foldToggle", "Toggle Current Fold", "Editor",
+            Array.Empty<string>(), FoldToggleCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "editor.foldAll", "Fold All", "Editor",
+            Array.Empty<string>(), FoldAllCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "editor.unfoldAll", "Unfold All", "Editor",
+            Array.Empty<string>(), UnfoldAllCommand));
     }
 
     /// <summary>
