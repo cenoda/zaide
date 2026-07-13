@@ -74,6 +74,7 @@ public sealed class M9aKeyBindingMaterializationTests
             CreateSourceControlViewModel(),
             TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<Workspace>()),
             TestProjectWorkflowFactory.Create(registry: _registry),
+            TestTestResultsFactory.Create(),
             sp.GetRequiredService<Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }

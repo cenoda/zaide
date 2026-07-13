@@ -65,6 +65,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> RunCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> TestCommand { get; }
+
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>
@@ -72,6 +74,14 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     /// so hosts can reveal the Output panel before stdout streams.
     /// </summary>
     public IObservable<Unit> WhenShowOutputRequested => _showOutputRequested;
+
+    private readonly Subject<Unit> _showTestResultsRequested = new();
+
+    /// <summary>
+    /// Raised when a test enters <see cref="ProjectWorkflowOperationState.Starting"/>
+    /// so hosts can reveal the Test Results panel before completion.
+    /// </summary>
+    public IObservable<Unit> WhenShowTestResultsRequested => _showTestResultsRequested;
 
     public ProjectWorkflowViewModel(
         IProjectWorkflowService workflow,
@@ -104,6 +114,16 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
         RunCommand = ReactiveCommand.CreateFromTask(ExecuteRunAsync, canRun);
 
+        var canTest = Observable.CombineLatest(
+            _projectContext.WhenChanged.StartWith(_projectContext.Current),
+            _workflow.WhenChanged.StartWith(_workflow.Current),
+            (context, snapshot) =>
+                ProjectTargetResolver.IsEligible(context) &&
+                snapshot.State is not ProjectWorkflowOperationState.Starting
+                    and not ProjectWorkflowOperationState.Running);
+
+        TestCommand = ReactiveCommand.CreateFromTask(ExecuteTestAsync, canTest);
+
         var canCancel = _workflow.WhenChanged
             .StartWith(_workflow.Current)
             .Select(snapshot =>
@@ -116,6 +136,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
             "project.build", "Build", "Project", new[] { "Ctrl+Shift+B" }, BuildCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "project.run", "Run", "Project", new[] { "Ctrl+F5" }, RunCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "project.test", "Run Tests", "Project", Array.Empty<string>(), TestCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "project.cancel", "Cancel Build/Run/Test", "Project", Array.Empty<string>(), CancelCommand));
 
@@ -141,9 +163,18 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
                 .Where(snapshot =>
                     snapshot.State == ProjectWorkflowOperationState.Starting &&
                     snapshot.ActiveOperation is ProjectWorkflowOperation.Build
-                        or ProjectWorkflowOperation.Run)
+                        or ProjectWorkflowOperation.Run
+                        or ProjectWorkflowOperation.Test)
                 .ObserveOn(Scheduler)
                 .Subscribe(_ => _showOutputRequested.OnNext(Unit.Default)));
+
+        _subscriptions.Add(
+            _workflow.WhenChanged
+                .Where(snapshot =>
+                    snapshot.State == ProjectWorkflowOperationState.Starting &&
+                    snapshot.ActiveOperation == ProjectWorkflowOperation.Test)
+                .ObserveOn(Scheduler)
+                .Subscribe(_ => _showTestResultsRequested.OnNext(Unit.Default)));
     }
 
     /// <inheritdoc />
@@ -155,6 +186,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         _subscriptions.Dispose();
         _showOutputRequested.OnCompleted();
         _showOutputRequested.Dispose();
+        _showTestResultsRequested.OnCompleted();
+        _showTestResultsRequested.Dispose();
     }
 
     private Task ExecuteBuildAsync() =>
@@ -162,6 +195,9 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
     private Task ExecuteRunAsync() =>
         _workflow.StartRunAsync();
+
+    private Task ExecuteTestAsync() =>
+        _workflow.StartTestAsync();
 
     private Task ExecuteCancelAsync() => _workflow.CancelAsync();
 

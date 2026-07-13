@@ -83,6 +83,10 @@ class Program
         // Phase 11 M3: parsed build diagnostics (Problems merge projection).
         services.AddSingleton<IBuildDiagnosticsService, BuildDiagnosticsService>();
 
+        // Phase 11 M5: structured test results projection.
+        services.AddSingleton<ITestResultsService, TestResultsService>();
+        services.AddSingleton<TestResultsViewModel>();
+
         // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
         services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
         services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();

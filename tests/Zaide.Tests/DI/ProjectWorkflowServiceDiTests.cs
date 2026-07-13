@@ -80,4 +80,15 @@ public sealed class ProjectWorkflowServiceDiTests
         Assert.NotNull(service);
         Assert.IsType<BuildDiagnosticsService>(service);
     }
+
+    [Fact]
+    public void ConfigureServices_ResolvesTestResultsService()
+    {
+        using var provider = BuildProvider();
+
+        var service = provider.GetRequiredService<ITestResultsService>();
+
+        Assert.NotNull(service);
+        Assert.IsType<TestResultsService>(service);
+    }
 }

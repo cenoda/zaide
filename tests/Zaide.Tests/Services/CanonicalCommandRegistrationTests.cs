@@ -64,13 +64,14 @@ public sealed class CanonicalCommandRegistrationTests
     }
 
     [Fact]
-    public void ProjectWorkflowViewModel_RegistersBuildAndCancel()
+    public void ProjectWorkflowViewModel_RegistersBuildCancelAndTest()
     {
         var registry = NewRegistry();
         CreateMainWindowViewModel(registry);
 
         Assert.NotNull(registry.GetById("project.build"));
         Assert.NotNull(registry.GetById("project.cancel"));
+        Assert.NotNull(registry.GetById("project.test"));
     }
 
     // ── All canonical IDs from MainWindow composition are present exactly once ──
@@ -92,10 +93,11 @@ public sealed class CanonicalCommandRegistrationTests
             "sourcecontrol.refresh",
             "project.build",
             "project.run",
+            "project.test",
             "project.cancel",
         };
 
-        Assert.Equal(10, registry.GetAll().Count);
+        Assert.Equal(11, registry.GetAll().Count);
         foreach (var id in expected)
         {
             Assert.NotNull(registry.GetById(id));
@@ -114,6 +116,7 @@ public sealed class CanonicalCommandRegistrationTests
     [InlineData("sourcecontrol.commit", "Commit", "Source Control")]
     [InlineData("sourcecontrol.refresh", "Refresh", "Source Control")]
     [InlineData("project.run", "Run", "Project")]
+    [InlineData("project.test", "Run Tests", "Project")]
     public void Descriptor_MetadataMatchesD6a(string id, string displayName, string category)
     {
         var registry = NewRegistry();
@@ -149,6 +152,8 @@ public sealed class CanonicalCommandRegistrationTests
         Assert.Empty(registry.GetById("workspace.closeFolder")!.DefaultGestures);
         Assert.Empty(registry.GetById("sourcecontrol.commit")!.DefaultGestures);
         Assert.Empty(registry.GetById("sourcecontrol.refresh")!.DefaultGestures);
+        Assert.Empty(registry.GetById("project.test")!.DefaultGestures);
+        Assert.Empty(registry.GetById("project.cancel")!.DefaultGestures);
     }
 
     // ── view.toggleBottomPanel aliases ───────────────────────────────────
@@ -211,6 +216,7 @@ public sealed class CanonicalCommandRegistrationTests
             router, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
+            TestTestResultsFactory.Create(editorTabs),
             workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }

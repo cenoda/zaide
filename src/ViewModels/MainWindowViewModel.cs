@@ -31,6 +31,7 @@ public enum BottomPanelMode
     Terminal,
     Problems,
     Output,
+    TestResults,
 }
 
 public class MainWindowViewModel : ReactiveObject, IDisposable
@@ -45,6 +46,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isTerminalBottomMode = true;
     private bool _isProblemsBottomMode;
     private bool _isOutputBottomMode;
+    private bool _isTestResultsBottomMode;
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
@@ -103,6 +105,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             IsTerminalBottomMode = value == BottomPanelMode.Terminal;
             IsProblemsBottomMode = value == BottomPanelMode.Problems;
             IsOutputBottomMode = value == BottomPanelMode.Output;
+            IsTestResultsBottomMode = value == BottomPanelMode.TestResults;
         }
     }
 
@@ -124,6 +127,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _isOutputBottomMode, value);
     }
 
+    public bool IsTestResultsBottomMode
+    {
+        get => _isTestResultsBottomMode;
+        private set => this.RaiseAndSetIfChanged(ref _isTestResultsBottomMode, value);
+    }
+
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
@@ -135,6 +144,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> SwitchToTerminalBottomCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToProblemsBottomCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToOutputBottomCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToTestResultsBottomCommand { get; }
 
     /// <summary>
     /// M3 (Phase 8.1.3): Closes the open folder. Enabled only while a folder is open.
@@ -152,6 +162,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public SourceControlViewModel SourceControlViewModel { get; }
     public ProblemsViewModel ProblemsViewModel { get; }
     public ProjectWorkflowViewModel ProjectWorkflowViewModel { get; }
+    public TestResultsViewModel TestResultsViewModel { get; }
 
     /// <summary>
     /// M4: Authoritative UI-thread projection of the current project-context
@@ -186,6 +197,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 SourceControlViewModel sourceControlViewModel,
                                 ProblemsViewModel problemsViewModel,
                                 ProjectWorkflowViewModel projectWorkflowViewModel,
+                                TestResultsViewModel testResultsViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
                                 ICommandRegistry? commandRegistry = null)
@@ -201,6 +213,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         ProjectWorkflowViewModel = projectWorkflowViewModel
             ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
+        TestResultsViewModel = testResultsViewModel
+            ?? throw new ArgumentNullException(nameof(testResultsViewModel));
         _workspace = workspace;
         _projectContextService = projectContextService;
         CurrentProjectContext = projectContextService.Current;
@@ -238,6 +252,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         SwitchToOutputBottomCommand = ReactiveCommand.Create(() =>
         {
             BottomPanelMode = BottomPanelMode.Output;
+            IsBottomPanelVisible = true;
+        });
+        SwitchToTestResultsBottomCommand = ReactiveCommand.Create(() =>
+        {
+            BottomPanelMode = BottomPanelMode.TestResults;
             IsBottomPanelVisible = true;
         });
 
@@ -289,6 +308,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 .Subscribe(_ =>
                 {
                     BottomPanelMode = BottomPanelMode.Output;
+                    IsBottomPanelVisible = true;
+                }));
+
+        // Phase 11 M5: test-results projection and show-on-test affordance.
+        TestResultsViewModel.Activate();
+        _disposables.Add(TestResultsViewModel);
+        _disposables.Add(
+            ProjectWorkflowViewModel.WhenShowTestResultsRequested
+                .Subscribe(_ =>
+                {
+                    BottomPanelMode = BottomPanelMode.TestResults;
                     IsBottomPanelVisible = true;
                 }));
 
