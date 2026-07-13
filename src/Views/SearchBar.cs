@@ -178,6 +178,16 @@ public sealed class SearchBar : UserControl
         _queryBox.SelectAll();
     }
 
+    /// <summary>
+    /// Focuses the query text box without selecting all text.
+    /// Called after search navigation (FindNext/Previous) to ensure the
+    /// search bar retains focus without disrupting the user's query text.
+    /// </summary>
+    public void FocusQueryWithoutSelectAll()
+    {
+        _queryBox.Focus();
+    }
+
     private void OnQueryKeyDown(object? sender, KeyEventArgs e)
     {
         if (sender is not Control control) return;
@@ -191,6 +201,9 @@ public sealed class SearchBar : UserControl
                     vm.FindPreviousCommand.Execute(null);
                 else
                     vm.FindNextCommand.Execute(null);
+                // Restore focus to query box after navigation; SelectCurrentMatch
+                // may steal editor focus on Linux (X11 input-focus redirection).
+                _queryBox.Focus();
                 e.Handled = true;
                 break;
             case Key.Escape:

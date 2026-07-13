@@ -53,6 +53,13 @@ public sealed class EditorSearchViewModel : ReactiveObject
     public event Action? FocusRequested;
 
     /// <summary>
+    /// Raised when <see cref="SelectCurrentMatch"/> runs, which updates the editor selection.
+    /// The View should ensure the search query TextBox retains focus after this event,
+    /// because the editor selection update may steal X11 input focus on Linux.
+    /// </summary>
+    public event Action? SelectionUpdated;
+
+    /// <summary>
     /// The active document's text-operations seam. Set by the View on activation
     /// and on every active-tab switch. Setting to a different value (or null)
     /// resets all search state.
@@ -95,9 +102,7 @@ public sealed class EditorSearchViewModel : ReactiveObject
         get => _query;
         set
         {
-            if (_query == value) return;
-            _query = value;
-            this.RaisePropertyChanged();
+            this.RaiseAndSetIfChanged(ref _query, value);
             PerformSearch();
         }
     }
@@ -122,9 +127,7 @@ public sealed class EditorSearchViewModel : ReactiveObject
         get => _caseSensitive;
         set
         {
-            if (_caseSensitive == value) return;
-            _caseSensitive = value;
-            this.RaisePropertyChanged();
+            this.RaiseAndSetIfChanged(ref _caseSensitive, value);
             PerformSearch();
         }
     }
@@ -132,23 +135,13 @@ public sealed class EditorSearchViewModel : ReactiveObject
     public bool IsVisible
     {
         get => _isVisible;
-        set
-        {
-            if (_isVisible == value) return;
-            _isVisible = value;
-            this.RaisePropertyChanged();
-        }
+        set => this.RaiseAndSetIfChanged(ref _isVisible, value);
     }
 
     public bool IsReplaceMode
     {
         get => _isReplaceMode;
-        set
-        {
-            if (_isReplaceMode == value) return;
-            _isReplaceMode = value;
-            this.RaisePropertyChanged();
-        }
+        set => this.RaiseAndSetIfChanged(ref _isReplaceMode, value);
     }
 
     public IReadOnlyList<SearchMatch> Matches => _matches;
@@ -236,7 +229,7 @@ public sealed class EditorSearchViewModel : ReactiveObject
     {
         IsReplaceMode = false;
         IsVisible = true;
-        PerformSearch();
+        PerformSearchWithSelection();
         FocusRequested?.Invoke();
     }
 
@@ -244,7 +237,7 @@ public sealed class EditorSearchViewModel : ReactiveObject
     {
         IsReplaceMode = true;
         IsVisible = true;
-        PerformSearch();
+        PerformSearchWithSelection();
         FocusRequested?.Invoke();
     }
 
@@ -383,10 +376,21 @@ public sealed class EditorSearchViewModel : ReactiveObject
             MatchCount = _matches.Count;
             CurrentMatchIndex = 0;
             StatusMessage = $"{_matches.Count} match{(_matches.Count == 1 ? "" : "es")}";
-            SelectCurrentMatch();
         }
 
         this.RaisePropertyChanged(nameof(Matches));
+    }
+
+    /// <summary>
+    /// Runs a search AND selects the current match in the editor.
+    /// Used on explicit search open (Find/Replace) so the user sees
+    /// the first result highlighted. Not called during continuous
+    /// typing to avoid stealing editor focus on Linux.
+    /// </summary>
+    private void PerformSearchWithSelection()
+    {
+        PerformSearch();
+        SelectCurrentMatch();
     }
 
     private void SelectCurrentMatch()
@@ -397,6 +401,7 @@ public sealed class EditorSearchViewModel : ReactiveObject
         var match = Matches[_currentMatchIndex];
         _activeDocument.SetSelection(match.Offset, match.Length);
         StatusMessage = $"{_currentMatchIndex + 1} of {Matches.Count}";
+        SelectionUpdated?.Invoke();
     }
 
     // ── Command registration ─────────────────────────────────────────────

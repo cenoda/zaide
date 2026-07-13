@@ -318,6 +318,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(Disposable.Create(() =>
                 _searchViewModel.FocusRequested -= OnSearchFocusRequested));
 
+            // M5c: SelectionUpdated fires when SelectCurrentMatch runs (navigation).
+            // The editor selection update may steal X11 focus; ensure the search bar
+            // keeps focus so the user can continue typing their query.
+            void OnSearchSelectionUpdated() => _searchBar.FocusQueryWithoutSelectAll();
+            _searchViewModel.SelectionUpdated += OnSearchSelectionUpdated;
+            disposables.Add(Disposable.Create(() =>
+                _searchViewModel.SelectionUpdated -= OnSearchSelectionUpdated));
+
             // When the search surface is dismissed, restore focus to the editor.
             disposables.Add(_searchViewModel.WhenAnyValue(x => x.IsVisible)
                 .Subscribe(visible =>

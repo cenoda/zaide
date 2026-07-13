@@ -107,9 +107,10 @@ public sealed class EditorSearchIntegrationTests
         vm.ReplacementText = "hi";
         vm.IsReplaceMode = true;
 
-        // First match is auto-selected at offset 0, length 5
-        Assert.Equal(0, ops.GetSelectionOffset());
-        Assert.Equal(5, ops.GetSelectionLength());
+        // Simulate the initial selection that ExecuteReplace would set
+        // via PerformSearchWithSelection. Query set alone no longer auto-selects
+        // (to avoid stealing editor focus during continuous typing).
+        ops.SetSelection(0, 5);
 
         vm.ReplaceNextCommand.Execute(null);
 
@@ -266,13 +267,54 @@ public sealed class EditorSearchIntegrationTests
         vm.ActiveDocument = ops;
         vm.Query = "aaa";
 
-        // First match auto-selected
-        Assert.Equal(0, ops.GetSelectionOffset());
-        Assert.Equal(3, ops.GetSelectionLength());
+        // Query set updates match index; selection is deferred until explicit
+        // navigation to avoid stealing editor focus during continuous typing.
+        Assert.Equal(0, vm.CurrentMatchIndex);
 
         vm.FindNextCommand.Execute(null);
+        Assert.Equal(1, vm.CurrentMatchIndex);
         Assert.Equal(8, ops.GetSelectionOffset());
         Assert.Equal(3, ops.GetSelectionLength());
+    }
+
+    /// <summary>
+    /// Phase 9 M5c regression: sequential character entry in the search query
+    /// must not call <see cref="IEditorTextOperations.SetSelection"/> (which
+    /// can steal editor focus on Linux). Only explicit navigation or initial
+    /// open should update the editor selection.
+    /// </summary>
+    [Fact]
+    public void ContinuousTyping_DoesNotCallSetSelection()
+    {
+        var ops = new TrackingEditorOps("Avalonia is a cross-platform UI framework. Avalonia rocks.");
+        var vm = new EditorSearchViewModel(CreateRegistry());
+        vm.ActiveDocument = ops;
+        // ActiveDocument set calls Dismiss → SetSelection(0,0). Reset the counter
+        // so we only track SetSelection calls during query entry.
+        ops.ResetSelectionCallCount();
+
+        // Simulate typing "Avalonia" character by character
+        vm.Query = "A";
+        vm.Query = "Av";
+        vm.Query = "Ava";
+        vm.Query = "Aval";
+        vm.Query = "Avalo";
+        vm.Query = "Avalon";
+        vm.Query = "Avaloni";
+        vm.Query = "Avalonia";
+
+        // 1. Final query is exactly "Avalonia"
+        Assert.Equal("Avalonia", vm.Query);
+
+        // 2. Match results update for the final query
+        Assert.True(vm.MatchCount > 0);
+
+        // 3. SetSelection was NOT called during query entry (no SelectCurrentMatch).
+        //    The mock counter verifies that no SetSelection was invoked during typing.
+        Assert.Equal(0, ops.SelectionCallCount);
+
+        // 4. Active editor text is unchanged
+        Assert.Equal("Avalonia is a cross-platform UI framework. Avalonia rocks.", ops.GetText());
     }
 
     [Fact]
@@ -446,7 +488,10 @@ public sealed class EditorSearchIntegrationTests
         vm.ReplacementText = "hi";
         vm.IsReplaceMode = true;
 
-        // First match is auto-selected at offset 0, length 5
+        // Simulate the initial selection that ExecuteReplace would set
+        // via PerformSearchWithSelection.
+        ops.SetSelection(0, 5);
+
         vm.ReplaceNextCommand.Execute(null);
 
         Assert.Equal("hi world hello", document.Content);
@@ -524,6 +569,7 @@ public sealed class EditorSearchIntegrationTests
         private string _text;
         private int _selOffset;
         private int _selLength;
+        private int _selectionCallCount;
         private readonly List<string> _undoSnapshots = new();
         private int _undoGroupCount;
 
@@ -535,6 +581,13 @@ public sealed class EditorSearchIntegrationTests
         public string Text => _text;
         public bool IsDirty => _undoSnapshots.Count > 0;
         public int UndoGroupCount => _undoGroupCount;
+        public int SelectionCallCount => _selectionCallCount;
+
+        /// <summary>
+        /// Resets the selection-call counter to zero. Used in tests that need to
+        /// isolate SetSelection calls during a specific phase of execution.
+        /// </summary>
+        public void ResetSelectionCallCount() => _selectionCallCount = 0;
 
         public string GetText() => _text;
 
@@ -548,6 +601,7 @@ public sealed class EditorSearchIntegrationTests
         {
             _selOffset = offset;
             _selLength = length;
+            _selectionCallCount++;
         }
 
         public int GetSelectionOffset() => _selOffset;
