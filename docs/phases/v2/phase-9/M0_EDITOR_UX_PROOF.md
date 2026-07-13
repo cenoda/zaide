@@ -344,5 +344,5 @@ A focused `Phase9M0EditorUxProofTests` file has been added to `tests/Zaide.Tests
 |---|---|
 | `dotnet test --filter FullyQualifiedName~Phase9M0EditorUxProofTests` | ✅ 22/22 passed |
 | `dotnet build Zaide.slnx --no-restore` | ✅ 0 errors |
-| `dotnet test Zaide.slnx --no-build` | ✅ 1207 passed, 0 failed |
+| `dotnet test Zaide.slnx --no-build` | ✅ 1266 passed, 0 failed (M2 baseline) |
 | `git diff --check` | ✅ clean |

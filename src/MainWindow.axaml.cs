@@ -40,12 +40,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly ISecretStore _secrets;
     private readonly ICommandRegistry _registry;
     private readonly StatusBarViewModel _statusBarViewModel;
+    private readonly CommandPaletteViewModel _paletteViewModel;
     private readonly List<KeyBinding> _registryBindings = new();
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
     private readonly SourceControlPanel _sourceControlPanel;
     private readonly TownhallView _townhallView;
     private readonly StatusBar _statusBar;
+    private readonly CommandPaletteOverlay _commandPaletteOverlay;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
@@ -69,12 +71,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     }
 
     public MainWindow(ISettingsService settings, ISecretStore secrets,
-        ICommandRegistry registry, StatusBarViewModel statusBarViewModel)
+        ICommandRegistry registry, StatusBarViewModel statusBarViewModel,
+        CommandPaletteViewModel paletteViewModel)
     {
         _settings = settings;
         _secrets = secrets;
         _registry = registry;
         _statusBarViewModel = statusBarViewModel;
+        _paletteViewModel = paletteViewModel;
         InitializeComponent();
 
         // === Window Chrome ===
@@ -105,6 +109,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
          _terminalTabHost, _agentPanelHostView, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+
+        // Phase 9 M2: command palette overlay — hosted as a top-layer child of
+        // the layout root grid so it covers all content including the status bar.
+        _commandPaletteOverlay = new CommandPaletteOverlay(_paletteViewModel);
+        Grid.SetColumnSpan(_commandPaletteOverlay, 6);
+        Grid.SetRowSpan(_commandPaletteOverlay, 4);
+        _layoutRoot.Children.Add(_commandPaletteOverlay);
 
         _finalWindowCleanup = new FinalWindowCleanup(
             _editorView.Dispose,
@@ -245,6 +256,23 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(ViewModel.ShowSettings.RegisterHandler(async context =>
                 await HandleShowSettingsAsync(context)));
             disposables.Add(Disposable.Create(CloseSettingsPanel));
+
+            // Phase 9 M2: command palette overlay lifecycle.
+            // OpenRequested fires when palette.open executes (Ctrl+Shift+P or rebound gesture).
+            void OnPaletteOpenRequested() => _commandPaletteOverlay.Show();
+            _paletteViewModel.OpenRequested += OnPaletteOpenRequested;
+            disposables.Add(Disposable.Create(() =>
+                _paletteViewModel.OpenRequested -= OnPaletteOpenRequested));
+
+            // Dismissed fires on Escape, successful execution, or backdrop click.
+            void OnOverlayDismissed()
+            {
+                _commandPaletteOverlay.Hide();
+                RestoreFocusAfterPalette();
+            }
+            _commandPaletteOverlay.Dismissed += OnOverlayDismissed;
+            disposables.Add(Disposable.Create(() =>
+                _commandPaletteOverlay.Dismissed -= OnOverlayDismissed));
         });
     }
 
@@ -597,6 +625,20 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _settingsCompletion?.TrySetResult(true);
         _layoutRoot.Children.Remove(panel);
         panel.Dispose();
+    }
+
+    /// <summary>
+    /// Phase 9 M2: restore focus to the active editor after the command palette
+    /// is dismissed. If no active editor exists, does nothing (never throws).
+    /// Never restores focus to a closed/replaced tab.
+    /// </summary>
+    private void RestoreFocusAfterPalette()
+    {
+        var activeTab = ViewModel?.EditorTabs.ActiveTab;
+        if (activeTab is not null && _editorView.IsVisible)
+        {
+            _editorView.Focus();
+        }
     }
 
     private void OnFinalWindowClosed(object? sender, EventArgs e)

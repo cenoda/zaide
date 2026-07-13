@@ -30,9 +30,9 @@ public partial class App : Application
             // Phase 9 M1: eagerly resolve the palette VM so it registers
             // palette.open in the ICommandRegistry singleton before
             // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
-            Services.GetRequiredService<CommandPaletteViewModel>();
+            var paletteVm = Services.GetRequiredService<CommandPaletteViewModel>();
 
-            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar) { ViewModel = vm };
+            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

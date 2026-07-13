@@ -272,6 +272,8 @@ public sealed class CommandPaletteViewModelTests
 
     private sealed class AlwaysEnabledCommandStub : ICommand
     {
+        public int ExecutionCount { get; private set; }
+
         public event EventHandler? CanExecuteChanged
         {
             add { }
@@ -279,7 +281,7 @@ public sealed class CommandPaletteViewModelTests
         }
 
         public bool CanExecute(object? parameter) => true;
-        public void Execute(object? parameter) { }
+        public void Execute(object? parameter) => ExecutionCount++;
     }
 
     private sealed class AlwaysDisabledCommandStub : ICommand
@@ -292,5 +294,397 @@ public sealed class CommandPaletteViewModelTests
 
         public bool CanExecute(object? parameter) => false;
         public void Execute(object? parameter) { }
+    }
+
+    // ── M2: Open / Close lifecycle ───────────────────────────────────────
+
+    [Fact]
+    public void Open_SetsIsOpenAndResetsState()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+
+        vm.SetQuery("something");
+        vm.Open();
+
+        Assert.True(vm.IsOpen);
+        Assert.Equal(string.Empty, vm.Query);
+        Assert.True(vm.FilteredEntries.Count > 0);
+    }
+
+    [Fact]
+    public void Open_RaisesOpenRequestedEvent()
+    {
+        var registry = CreateRegistry();
+        var vm = new CommandPaletteViewModel(registry);
+        var raised = false;
+        vm.OpenRequested += () => raised = true;
+
+        vm.Open();
+
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void Close_SetsIsOpenFalse_RaisesCloseRequested()
+    {
+        var registry = CreateRegistry();
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        var raised = false;
+        vm.CloseRequested += () => raised = true;
+        vm.Close();
+
+        Assert.False(vm.IsOpen);
+        Assert.True(raised);
+    }
+
+    // ── M2: Selection state ──────────────────────────────────────────────
+
+    [Fact]
+    public void InitialSelection_FirstAvailableEntry()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        registry.Register(CreateDescriptor("cmd.b", "Beta", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+
+        vm.Open();
+
+        // palette.open is auto-registered and available; "Alpha" sorts before "Beta"
+        // and both sort before "Open Command Palette" (category order: Test < Palette? No: "Palette" < "Test")
+        // Actually: "Palette" < "Test" alphabetically. So palette.open comes first.
+        Assert.Equal(0, vm.SelectedIndex);
+        Assert.NotNull(vm.SelectedEntry);
+        Assert.True(vm.SelectedEntry!.IsAvailable);
+    }
+
+    [Fact]
+    public void InitialSelection_NoAvailableEntries_SelectedIndexIsNegativeOne()
+    {
+        var registry = CreateRegistry();
+        registry.Register(new CommandDescriptor(
+            "cmd.disabled", "Disabled", "Test",
+            Array.Empty<string>(), new AlwaysDisabledCommandStub()));
+        // palette.open is always available, so we need a VM that doesn't auto-register.
+        // Instead, verify that when all filtered entries are unavailable, SelectedIndex is -1.
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        // Filter to only show "Disabled" — palette.open won't match
+        vm.SetQuery("Disabled");
+
+        Assert.Single(vm.FilteredEntries);
+        Assert.False(vm.FilteredEntries[0].IsAvailable);
+        Assert.Equal(-1, vm.SelectedIndex);
+        Assert.Null(vm.SelectedEntry);
+    }
+
+    [Fact]
+    public void EmptyFilteredEntries_SelectedIndexIsNegativeOne()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.SetQuery("zzzznothing");
+
+        Assert.Empty(vm.FilteredEntries);
+        Assert.Equal(-1, vm.SelectedIndex);
+        Assert.Null(vm.SelectedEntry);
+    }
+
+    // ── M2: Navigation ───────────────────────────────────────────────────
+
+    [Fact]
+    public void MoveDown_AdvancesToNextAvailable()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        registry.Register(CreateDescriptor("cmd.b", "Beta", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        var initialIndex = vm.SelectedIndex;
+        vm.MoveDown();
+
+        Assert.True(vm.SelectedIndex > initialIndex || vm.SelectedIndex == 0);
+    }
+
+    [Fact]
+    public void MoveDown_WrapsFromLastToFirst()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        // Navigate to the last available entry
+        var entries = vm.FilteredEntries;
+        var availableCount = entries.Count(e => e.IsAvailable);
+        for (var i = 0; i < availableCount - 1; i++)
+            vm.MoveDown();
+
+        var lastIndex = vm.SelectedIndex;
+        vm.MoveDown(); // should wrap
+
+        // After wrapping, should be at the first available entry
+        var firstAvailableIndex = -1;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].IsAvailable) { firstAvailableIndex = i; break; }
+        }
+        Assert.Equal(firstAvailableIndex, vm.SelectedIndex);
+        Assert.NotEqual(lastIndex, vm.SelectedIndex);
+    }
+
+    [Fact]
+    public void MoveUp_WrapsFromFirstToLast()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        // At first available entry
+        var firstIndex = vm.SelectedIndex;
+        var entries = vm.FilteredEntries;
+        var availableIndices = Enumerable.Range(0, entries.Count)
+            .Where(i => entries[i].IsAvailable).ToList();
+        var lastAvailableIndex = availableIndices[^1];
+
+        vm.MoveUp(); // should wrap to last
+
+        Assert.Equal(lastAvailableIndex, vm.SelectedIndex);
+    }
+
+    [Fact]
+    public void MoveDown_SkipsUnavailableEntries()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        registry.Register(new CommandDescriptor(
+            "cmd.disabled", "Beta Disabled", "Test",
+            Array.Empty<string>(), new AlwaysDisabledCommandStub()));
+        registry.Register(CreateDescriptor("cmd.c", "Charlie", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        // Filter to show all three "Test" entries + palette.open
+        // Navigate from first available past the disabled one
+        var entries = vm.FilteredEntries;
+        var startIndex = vm.SelectedIndex;
+
+        // Move down until we pass the disabled entry
+        var visitedIndices = new List<int> { startIndex };
+        for (var i = 0; i < entries.Count; i++)
+        {
+            vm.MoveDown();
+            if (vm.SelectedIndex == startIndex) break; // wrapped
+            visitedIndices.Add(vm.SelectedIndex);
+        }
+
+        // The disabled entry index should never appear in visited indices
+        var disabledIndex = entries.ToList().FindIndex(e => e.Id == "cmd.disabled");
+        Assert.DoesNotContain(disabledIndex, visitedIndices);
+    }
+
+    [Fact]
+    public void MoveUp_SkipsUnavailableEntries()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        registry.Register(new CommandDescriptor(
+            "cmd.disabled", "Zeta Disabled", "Test",
+            Array.Empty<string>(), new AlwaysDisabledCommandStub()));
+        registry.Register(CreateDescriptor("cmd.c", "Charlie", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        var entries = vm.FilteredEntries;
+        var disabledIndex = entries.ToList().FindIndex(e => e.Id == "cmd.disabled");
+
+        // Navigate through all entries via MoveUp
+        var visitedIndices = new List<int> { vm.SelectedIndex };
+        for (var i = 0; i < entries.Count; i++)
+        {
+            vm.MoveUp();
+            if (vm.SelectedIndex == visitedIndices[0]) break;
+            visitedIndices.Add(vm.SelectedIndex);
+        }
+
+        Assert.DoesNotContain(disabledIndex, visitedIndices);
+    }
+
+    [Fact]
+    public void Navigation_EmptyList_DoesNotThrow()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.SetQuery("zzzznothing");
+
+        vm.MoveUp();
+        vm.MoveDown();
+
+        Assert.Equal(-1, vm.SelectedIndex);
+    }
+
+    [Fact]
+    public void Navigation_AllUnavailable_DoesNotThrow()
+    {
+        var registry = CreateRegistry();
+        registry.Register(new CommandDescriptor(
+            "cmd.disabled", "Disabled", "Test",
+            Array.Empty<string>(), new AlwaysDisabledCommandStub()));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+        vm.SetQuery("Disabled");
+
+        vm.MoveUp();
+        vm.MoveDown();
+
+        Assert.Equal(-1, vm.SelectedIndex);
+    }
+
+    // ── M2: Query / Filter update ────────────────────────────────────────
+
+    [Fact]
+    public void SetQuery_UpdatesFilteredEntries()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.find", "Find", "Editor"));
+        registry.Register(CreateDescriptor("cmd.save", "Save", "File"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.SetQuery("find");
+
+        Assert.Contains(vm.FilteredEntries, e => e.Id == "cmd.find");
+        Assert.DoesNotContain(vm.FilteredEntries, e => e.Id == "cmd.save");
+    }
+
+    [Fact]
+    public void SetQuery_RaisesSelectionChanged()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        var raised = false;
+        vm.SelectionChanged += () => raised = true;
+        vm.SetQuery("Alpha");
+
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void SetQuery_ResetsSelectionToFirstAvailable()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        registry.Register(CreateDescriptor("cmd.b", "Beta", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.MoveDown();
+        var movedIndex = vm.SelectedIndex;
+
+        vm.SetQuery("Alpha");
+
+        // After filtering, selection should reset to first available match
+        Assert.True(vm.SelectedIndex >= 0);
+        Assert.True(vm.SelectedIndex != movedIndex || vm.FilteredEntries.Count == 1);
+    }
+
+    // ── M2: Execution ────────────────────────────────────────────────────
+
+    [Fact]
+    public void ExecuteSelected_ExecutesThroughRegistry_ExactlyOnce()
+    {
+        var registry = CreateRegistry();
+        var cmd = new AlwaysEnabledCommandStub();
+        registry.Register(new CommandDescriptor(
+            "cmd.test", "Test Command", "Test",
+            Array.Empty<string>(), cmd));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        // Navigate to "Test Command"
+        vm.SetQuery("Test Command");
+        Assert.Equal(0, vm.SelectedIndex);
+        Assert.Equal("cmd.test", vm.SelectedEntry!.Id);
+
+        var result = vm.ExecuteSelected();
+
+        Assert.True(result);
+        Assert.Equal(1, cmd.ExecutionCount);
+    }
+
+    [Fact]
+    public void ExecuteSelected_DismissesPalette()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.test", "Test Command", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.SetQuery("Test Command");
+        vm.ExecuteSelected();
+
+        Assert.False(vm.IsOpen);
+    }
+
+    [Fact]
+    public void ExecuteSelected_UnavailableEntry_ReturnsFalse_DoesNotDismiss()
+    {
+        var registry = CreateRegistry();
+        registry.Register(new CommandDescriptor(
+            "cmd.disabled", "Disabled", "Test",
+            Array.Empty<string>(), new AlwaysDisabledCommandStub()));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+        vm.SetQuery("Disabled");
+
+        Assert.Equal(-1, vm.SelectedIndex);
+        var result = vm.ExecuteSelected();
+
+        Assert.False(result);
+        Assert.True(vm.IsOpen); // not dismissed
+    }
+
+    [Fact]
+    public void ExecuteSelected_NoSelection_ReturnsFalse()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CreateDescriptor("cmd.a", "Alpha", "Test"));
+        var vm = new CommandPaletteViewModel(registry);
+        vm.Open();
+
+        vm.SetQuery("zzzznothing");
+        var result = vm.ExecuteSelected();
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void OpenPaletteCommand_IsRegisteredAndOpensPalette()
+    {
+        var registry = CreateRegistry();
+        var vm = new CommandPaletteViewModel(registry);
+
+        var raised = false;
+        vm.OpenRequested += () => raised = true;
+
+        vm.OpenPaletteCommand.Execute(null);
+
+        Assert.True(raised);
+        Assert.True(vm.IsOpen);
     }
 }

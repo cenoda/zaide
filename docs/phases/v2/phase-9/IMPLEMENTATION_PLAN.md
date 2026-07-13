@@ -2,7 +2,7 @@
 
 ## Status
 
-**M0 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
+**M0–M2 complete.** See `docs/phases/v2/phase-9/M0_EDITOR_UX_PROOF.md` for the
 full proof document. Phase 8.1 (Settings Foundation), Phase 8.2 (Command
 Registry and Keybindings), and Phase 8.3 (Authoritative Project Context) are
 closed. This plan defines the next bounded product phase and must be completed
@@ -170,12 +170,14 @@ text before M3 or M6 adds selection-dependent behavior.
 
 ## Exact Next Step
 
-Implement **M1 only**: add the UI-independent palette query/presentation seam
-and the Phase 9 command IDs. The palette must enumerate only registry
-descriptors, use deterministic category/display-name/ID ordering, perform
-case-insensitive literal filtering, and report unavailable commands without
-executing them. Register no command twice. Do not add palette UI overlay (that
-is M2), search, folding, or tab behavior during M1.
+Implement **M3 only**: active-document Search and Replace with a focused search
+surface. Define exact literal matching, case-sensitivity, next/previous wrap
+behavior, zero-match feedback, selection replacement, replace-next, replace-all,
+cancellation/close behavior, undo grouping, and dirty-state result. All text
+changes flow through the existing document/editor path. Because one `TextEditor`
+is shared by all tabs, clear/reset search presentation on a tab switch and never
+apply old-document selection or replacement to the new active tab. Do not add
+folding, tab behavior, or status-bar changes during M3.
 
 ## Rollback Plan
 
