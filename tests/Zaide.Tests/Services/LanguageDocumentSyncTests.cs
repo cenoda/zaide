@@ -115,6 +115,13 @@ public sealed class LanguageDocumentSyncTests
             _subject.OnNext(snapshot);
         }
 
+        /// <summary>
+        /// Replays a delayed snapshot notification without regressing <see cref="Current"/>,
+        /// matching production where older generations are never re-published.
+        /// </summary>
+        public void EmitDelayedSnapshot(LanguageSessionSnapshot snapshot) =>
+            _subject.OnNext(snapshot);
+
         public ILanguageServerSession? TryGetReadySession(long generation) =>
             _current.State == LanguageSessionState.Ready &&
             _current.Generation == generation
@@ -411,6 +418,63 @@ public sealed class LanguageDocumentSyncTests
         Assert.DoesNotContain(
             harness.ServerSession.Notifications,
             n => n.Method == "didChange" && n.Text == "stale-edit");
+    }
+
+    [Fact]
+    public async Task StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync()
+    {
+        using var harness = new TestHarness();
+        harness.SetReady(1);
+
+        var path = CsPath("out-of-order");
+        var doc = harness.Workspace.OpenDocument(path, "initial");
+        await WaitForNotificationsAsync(harness.ServerSession, 1);
+
+        doc.Content = "before-bump";
+        await WaitForNotificationsAsync(harness.ServerSession, 2);
+
+        var sessionGen1 = harness.ServerSession;
+        var gen1NotificationCount = sessionGen1.Notifications.Count;
+
+        var sessionGen2 = new RecordingLanguageServerSession { Generation = 2 };
+        sessionGen2.DidOpenGate = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        harness.SetState(LanguageSessionState.Loading, 2);
+        harness.SessionService.SetSnapshot(
+            new LanguageSessionSnapshot(
+                LanguageSessionState.Ready,
+                2,
+                "/tmp/project/Project.csproj",
+                "/tmp/project",
+                ServerProcessId: 42,
+                Failure: null),
+            sessionGen2);
+
+        harness.SessionService.EmitDelayedSnapshot(
+            new LanguageSessionSnapshot(
+                LanguageSessionState.Ready,
+                1,
+                "/tmp/project/Project.csproj",
+                "/tmp/project",
+                ServerProcessId: 42,
+                Failure: null));
+
+        sessionGen2.DidOpenGate.SetResult(true);
+        await WaitForNotificationsAsync(sessionGen2, 1);
+
+        doc.Content = "after-gen2-ready";
+        await WaitForNotificationsAsync(sessionGen2, 2);
+
+        Assert.Equal(gen1NotificationCount, sessionGen1.Notifications.Count);
+
+        Assert.Equal(2, sessionGen2.Notifications.Count);
+        Assert.Equal("didOpen", sessionGen2.Notifications[0].Method);
+        Assert.Equal("before-bump", sessionGen2.Notifications[0].Text);
+        Assert.Equal(1, sessionGen2.Notifications[0].Version);
+        Assert.Equal("didChange", sessionGen2.Notifications[1].Method);
+        Assert.Equal("after-gen2-ready", sessionGen2.Notifications[1].Text);
+        Assert.Equal(2, sessionGen2.Notifications[1].Version);
     }
 
     [Fact]

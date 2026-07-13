@@ -387,7 +387,7 @@ public sealed class LanguageSessionServiceTests
         {
             var firstReady = await WaitForAsync(service, s => s.State == LanguageSessionState.Ready);
 
-            await service.RestartAsync().ConfigureAwait(false);
+            await service.RestartAsync();
 
             var secondReady = await WaitForAsync(
                 service,
@@ -450,7 +450,7 @@ public sealed class LanguageSessionServiceTests
                 s => s.State == LanguageSessionState.Ready && s.ProjectFilePath == second.FilePath);
 
             staleSession.SimulateExit();
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(100);
 
             Assert.Equal(LanguageSessionState.Ready, service.Current.State);
             Assert.Equal(newReady.Generation, service.Current.Generation);

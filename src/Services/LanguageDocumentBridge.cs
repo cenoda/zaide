@@ -102,7 +102,10 @@ public sealed class LanguageDocumentBridge : ILanguageDocumentBridge
             if (_disposed)
                 return;
 
-            if (snapshot.Generation != _syncGeneration)
+            if (snapshot.Generation < _syncGeneration)
+                return;
+
+            if (snapshot.Generation > _syncGeneration)
             {
                 _generationCts.Cancel();
                 _generationCts.Dispose();
