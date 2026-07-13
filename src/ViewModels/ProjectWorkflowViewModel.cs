@@ -63,6 +63,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> BuildCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> RunCommand { get; }
+
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>
@@ -91,6 +93,17 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
         BuildCommand = ReactiveCommand.CreateFromTask(ExecuteBuildAsync, canBuild);
 
+        var canRun = Observable.CombineLatest(
+            _projectContext.WhenChanged.StartWith(_projectContext.Current),
+            _workflow.WhenChanged.StartWith(_workflow.Current),
+            (context, snapshot) =>
+                ProjectTargetResolver.IsEligible(context) &&
+                context.SelectedProject!.Kind == ProjectKind.CSharpProject &&
+                snapshot.State is not ProjectWorkflowOperationState.Starting
+                    and not ProjectWorkflowOperationState.Running);
+
+        RunCommand = ReactiveCommand.CreateFromTask(ExecuteRunAsync, canRun);
+
         var canCancel = _workflow.WhenChanged
             .StartWith(_workflow.Current)
             .Select(snapshot =>
@@ -101,6 +114,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
         commandRegistry?.Register(new CommandDescriptor(
             "project.build", "Build", "Project", new[] { "Ctrl+Shift+B" }, BuildCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "project.run", "Run", "Project", new[] { "Ctrl+F5" }, RunCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "project.cancel", "Cancel Build/Run/Test", "Project", Array.Empty<string>(), CancelCommand));
 
@@ -125,7 +140,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
             _workflow.WhenChanged
                 .Where(snapshot =>
                     snapshot.State == ProjectWorkflowOperationState.Starting &&
-                    snapshot.ActiveOperation == ProjectWorkflowOperation.Build)
+                    snapshot.ActiveOperation is ProjectWorkflowOperation.Build
+                        or ProjectWorkflowOperation.Run)
                 .ObserveOn(Scheduler)
                 .Subscribe(_ => _showOutputRequested.OnNext(Unit.Default)));
     }
@@ -143,6 +159,9 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
     private Task ExecuteBuildAsync() =>
         _workflow.StartBuildAsync();
+
+    private Task ExecuteRunAsync() =>
+        _workflow.StartRunAsync();
 
     private Task ExecuteCancelAsync() => _workflow.CancelAsync();
 

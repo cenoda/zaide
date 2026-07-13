@@ -91,10 +91,11 @@ public sealed class CanonicalCommandRegistrationTests
             "sourcecontrol.commit",
             "sourcecontrol.refresh",
             "project.build",
+            "project.run",
             "project.cancel",
         };
 
-        Assert.Equal(9, registry.GetAll().Count);
+        Assert.Equal(10, registry.GetAll().Count);
         foreach (var id in expected)
         {
             Assert.NotNull(registry.GetById(id));
@@ -112,6 +113,7 @@ public sealed class CanonicalCommandRegistrationTests
     [InlineData("explorer.toggleHiddenFiles", "Toggle Hidden Files", "Explorer")]
     [InlineData("sourcecontrol.commit", "Commit", "Source Control")]
     [InlineData("sourcecontrol.refresh", "Refresh", "Source Control")]
+    [InlineData("project.run", "Run", "Project")]
     public void Descriptor_MetadataMatchesD6a(string id, string displayName, string category)
     {
         var registry = NewRegistry();
@@ -133,6 +135,7 @@ public sealed class CanonicalCommandRegistrationTests
         Assert.Equal(new[] { "Ctrl+O" }, registry.GetById("workspace.openFolder")!.DefaultGestures);
         Assert.Equal(new[] { "Ctrl+Oem3", "Ctrl+J" }, registry.GetById("view.toggleBottomPanel")!.DefaultGestures);
         Assert.Equal(new[] { "Ctrl+Shift+H" }, registry.GetById("explorer.toggleHiddenFiles")!.DefaultGestures);
+        Assert.Equal(new[] { "Ctrl+F5" }, registry.GetById("project.run")!.DefaultGestures);
     }
 
     // ── Unbound commands ─────────────────────────────────────────────────

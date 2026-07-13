@@ -19,6 +19,10 @@ Problems merge (LSP retained across build lifecycle); navigation via existing
 editor seams; fixture `tests/fixtures/workflow-fail-build/`.
 Evidence: [M3_MANUAL_EVIDENCE.md](M3_MANUAL_EVIDENCE.md).
 
+**M4 complete** (2026-07-14). `project.run` for eligible `CSharpProject` only
+(U1a); output reuse; cancel while running; library projects may `Failed` (U7).
+Evidence: [M4_MANUAL_EVIDENCE.md](M4_MANUAL_EVIDENCE.md).
+
 **Prerequisite:** Phase 10 complete (M7 closeout, 2026-07-14). Phase 8.3
 project context and Phase 8.2 command registry are the authoritative seams.
 
@@ -75,7 +79,8 @@ existing editor/document seams.
 - [x] M1 production core (workflow service + runner + DI)
 - [x] M2 build command + structured Output (not M3+)
 - [x] M3 build diagnostics + Problems merge (not M4+)
-- [ ] M4–M6 production implementation
+- [x] M4 Run command (output reuse, cancel, CSharpProject-only CanExecute)
+- [ ] M5–M6 production implementation
 
 ## Locked Contracts (1–8)
 
@@ -249,7 +254,7 @@ auto-build, multi-language builds, or OutputType probing.
 | **M1** ✅ | UI-independent core only: target resolution, process runner, `IProjectWorkflowService` (one-at-a-time, cancel, generation, context-change cancel, structured outcomes including `RejectedConcurrent` / `RejectedContext`), dispose-before-language wiring, DI for workflow (+ runner). Profile helper may be internal. **No** Output/build-diags/test-results services, **no** product UI, **no** required `project.*` registration. | `ProjectTargetResolutionTests`, `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests` (include concurrent reject + dispose kill), DI resolve tests | `workflow: add project process orchestration core` |
 | **M2** ✅ | Build command + structured Output service + Output panel projection; register `project.build` / `project.cancel`; wire CanExecute. **Session risk:** if too large, split **M2a** (workflow Build API + Output service, no panel chrome) and **M2b** (bottom-panel mode + Output UI). Prefer the split over a rushed combined session. | `ProjectBuildCommandTests`, `ProjectOutputServiceTests`, Output VM tests; Linux smoke against `tests/fixtures/workflow-console/` | `workflow: build command and structured output` (or M2a/M2b commits) |
 | **M3** ✅ | Parse build diagnostics; `IBuildDiagnosticsService`; Problems **merge** (LSP + build by source) + navigation; clear **only** build diags on new build. **Acceptance must prove** LSP diagnostics survive build start/finish. | `BuildDiagnosticParserTests`, `BuildDiagnosticsServiceTests`, `ProblemsBuildProjectionTests` (LSP retention + build replace), navigation tests; Linux smoke: intentional CS error → Problems → jump | `workflow: build diagnostics in problems` |
-| **M4** | Run command for `CSharpProject` only (U1a); output reuse; cancel while running; library projects may `Failed` (U7). | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
+| **M4** ✅ | Run command for `CSharpProject` only (U1a); output reuse; cancel while running; library projects may `Failed` (U7). | `ProjectRunCommandTests`; Linux smoke: run console fixture | `workflow: run command` |
 | **M5** | Test command + `ITestResultsService` + Test Results surface. Parse: console-first (U4). **Explicit exit condition:** if console parse fails, still report structured operation outcome from process exit code + raw Output lines; do not invent fake passed tests. TRX only if console is insufficient in the same milestone budget. | `ProjectTestCommandTests`, `TestResultsServiceTests`, VM tests; Linux smoke: pass + fail test | `workflow: test command and results surface` |
 | **M6** | Closeout: full regression, command availability matrix, status feedback (prefer dedicated workflow status property or single merge policy — U6; do not fight multi-writer `StatusText` ad hoc), docs truth-sync, accessibility/keyboard smoke. | Full sequential build/test; `git diff --check`; `M6_MANUAL_EVIDENCE.md` | `docs(phase-11): M6 closeout` |
 
@@ -353,6 +358,6 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
 
 ## Exact Next Step
 
-**M4 — Run command** only: `project.run` for eligible `CSharpProject`, output
-reuse, cancel while running. Do not start Test Results (M5) until M4 is complete
-unless explicitly re-planned.
+**M5 — Test command** only: `project.test` for eligible projects, `ITestResultsService`,
+Test Results surface, `dotnet test` parse. Do not start DAP (Phase 12) until M5 is
+complete unless explicitly re-planned.

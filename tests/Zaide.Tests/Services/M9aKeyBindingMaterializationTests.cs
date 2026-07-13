@@ -150,8 +150,8 @@ public sealed class M9aKeyBindingMaterializationTests
                 bindings.Add(kb);
         }
 
-        // Expect 6 bindings: Ctrl+S, Ctrl+O, Ctrl+Oem3, Ctrl+J, Ctrl+Shift+H, Ctrl+Shift+B
-        Assert.Equal(6, bindings.Count);
+        // Expect 7 bindings: Ctrl+S, Ctrl+O, Ctrl+Oem3, Ctrl+J, Ctrl+Shift+H, Ctrl+Shift+B, Ctrl+F5
+        Assert.Equal(7, bindings.Count);
     }
 
     [Fact]
@@ -245,12 +245,12 @@ public sealed class M9aKeyBindingMaterializationTests
 
         // First materialization
         Materialize();
-        Assert.Equal(6, keyBindings.Count);
+        Assert.Equal(7, keyBindings.Count);
 
         // Second materialization (simulating a refresh)
         Materialize();
-        Assert.Equal(6, keyBindings.Count);
-        Assert.Equal(6, tracked.Count);
+        Assert.Equal(7, keyBindings.Count);
+        Assert.Equal(7, tracked.Count);
     }
 
     // ── Test 6: Preservation of unrelated/view-local bindings ────────────
@@ -288,13 +288,13 @@ public sealed class M9aKeyBindingMaterializationTests
         }
 
         Materialize();
-        Assert.Equal(7, keyBindings.Count); // 1 unrelated + 6 registry
+        Assert.Equal(8, keyBindings.Count); // 1 unrelated + 7 registry
         Assert.Contains(unrelated, keyBindings);
 
         // Replace registry bindings
         Materialize();
         Assert.Contains(unrelated, keyBindings);
-        Assert.Equal(7, keyBindings.Count);
+        Assert.Equal(8, keyBindings.Count);
     }
 
     // ── Test 7: Empty registry produces no bindings ──────────────────────
