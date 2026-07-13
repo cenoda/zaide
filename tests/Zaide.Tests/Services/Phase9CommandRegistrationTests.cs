@@ -1,0 +1,163 @@
+using System;
+using System.Linq;
+using System.Reactive.Concurrency;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using ReactiveUI.Builder;
+using Xunit;
+using Zaide.Models;
+using Zaide.Services;
+using Zaide.Tests;
+using Zaide.ViewModels;
+
+namespace Zaide.Tests.Services;
+
+/// <summary>
+/// Phase 9 M1: Verifies <c>palette.open</c> is registered exactly once with
+/// M0-locked metadata, default gesture, and always-available semantics.
+/// Duplicate-registration fail-fast is preserved.
+/// </summary>
+public sealed class Phase9CommandRegistrationTests
+{
+    static Phase9CommandRegistrationTests()
+    {
+        // ReactiveUI must be initialized before using WhenAnyValue in constructors.
+        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
+    }
+
+    private static ICommandRegistry NewRegistry() => CommandRegistryFactory.Create();
+
+    // ── Metadata ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void PaletteOpen_IsRegisteredWithCorrectMetadata()
+    {
+        var registry = NewRegistry();
+        _ = new CommandPaletteViewModel(registry);
+
+        var descriptor = registry.GetById("palette.open");
+        Assert.NotNull(descriptor);
+        Assert.Equal("palette.open", descriptor!.Id);
+        Assert.Equal("Open Command Palette", descriptor.DisplayName);
+        Assert.Equal("Palette", descriptor.Category);
+    }
+
+    [Fact]
+    public void PaletteOpen_HasCorrectDefaultGesture()
+    {
+        var registry = NewRegistry();
+        _ = new CommandPaletteViewModel(registry);
+
+        var descriptor = registry.GetById("palette.open");
+        Assert.NotNull(descriptor);
+        Assert.Equal(new[] { "Ctrl+Shift+P" }, descriptor!.DefaultGestures);
+    }
+
+    [Fact]
+    public void PaletteOpen_IsAlwaysAvailable()
+    {
+        var registry = NewRegistry();
+        _ = new CommandPaletteViewModel(registry);
+
+        var descriptor = registry.GetById("palette.open");
+        Assert.NotNull(descriptor);
+        Assert.True(descriptor!.Command.CanExecute(null));
+    }
+
+    // ── Exactly-once registration ────────────────────────────────────────
+
+    [Fact]
+    public void PaletteOpen_RegisteredExactlyOnce()
+    {
+        var registry = NewRegistry();
+        _ = new CommandPaletteViewModel(registry);
+
+        var count = registry.GetAll().Count(d => d.Id == "palette.open");
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public void PaletteOpen_DuplicateRegistration_Throws()
+    {
+        var registry = NewRegistry();
+        _ = new CommandPaletteViewModel(registry);
+
+        // A second ViewModel with the same registry must fail.
+        Assert.Throws<InvalidOperationException>(() =>
+            new CommandPaletteViewModel(registry));
+    }
+
+    // ── Coexistence with Phase 8.2 canonical commands ─────────────────────
+
+    [Fact]
+    public void PaletteOpen_CoexistsWithCanonicalCommands()
+    {
+        var registry = NewRegistry();
+        // Simulate the canonical registration (only commands that exist).
+        CreateMainWindowViewModel(registry);
+        _ = new CommandPaletteViewModel(registry);
+
+        // palette.open is present alongside Phase 8.2 commands
+        Assert.NotNull(registry.GetById("palette.open"));
+        Assert.NotNull(registry.GetById("file.save"));
+        Assert.NotNull(registry.GetById("workspace.openFolder"));
+    }
+
+    // ── Test construction helpers ────────────────────────────────────────
+
+    /// <summary>
+    /// Minimal MainWindowViewModel wiring for coexistence tests.
+    /// Registers the four canonical window commands (file.save, workspace.openFolder,
+    /// workspace.closeFolder, view.toggleBottomPanel).
+    /// </summary>
+    private static MainWindowViewModel CreateMainWindowViewModel(ICommandRegistry registry)
+    {
+        var sp = new ServiceCollection()
+            .AddSingleton<IFileService>(new FileService())
+            .AddTransient<EditorViewModel>()
+            .AddSingleton<Workspace>()
+            .BuildServiceProvider();
+
+        var fileTreeViewModel = new FileTreeViewModel(
+            new FileTreeService(), CurrentThreadScheduler.Instance, registry);
+        var editorTabs = new EditorTabViewModel(
+            sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var terminalService = new Mock<ITerminalService>();
+        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
+        var factory = new Mock<ITerminalSessionFactory>();
+        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var terminalHost = new TerminalHost(factory.Object);
+        var townhallState = new TownhallState();
+        var townhallViewModel = new TownhallViewModel(townhallState);
+        var scViewModel = CreateSourceControlViewModel(registry);
+        var workspace = sp.GetRequiredService<Workspace>();
+        var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
+        var panelHost = new AgentPanelHost();
+        var parser = new MentionParser(panelHost);
+        var router = new AgentRouter(parser, panelHost, coordinator);
+
+        return new MainWindowViewModel(
+            fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
+            router, townhallViewModel, scViewModel, workspace,
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object,
+            registry);
+    }
+
+    private static SourceControlViewModel CreateSourceControlViewModel(ICommandRegistry registry)
+    {
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.NotFound(""));
+        git.Setup(g => g.ReadStatus(It.IsAny<string>()))
+            .Returns(new RepositoryStatusSnapshot());
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>()))
+            .Returns((FileDiffResult?)null);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+        var mutation = new Mock<IGitMutationService>();
+
+        return new SourceControlViewModel(
+            orchestrator, new Workspace(), diffService.Object,
+            mutation.Object, git.Object, registry);
+    }
+}

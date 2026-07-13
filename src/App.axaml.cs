@@ -26,6 +26,12 @@ public partial class App : Application
             var secrets = Services.GetRequiredService<ISecretStore>();
             var registry = Services.GetRequiredService<ICommandRegistry>();
             var statusBar = Services.GetRequiredService<StatusBarViewModel>();
+
+            // Phase 9 M1: eagerly resolve the palette VM so it registers
+            // palette.open in the ICommandRegistry singleton before
+            // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
+            Services.GetRequiredService<CommandPaletteViewModel>();
+
             desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar) { ViewModel = vm };
 
             // Dispose the terminal host on exit so the active session's shell

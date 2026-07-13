@@ -41,6 +41,7 @@ class Program
         services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
         services.AddSingleton<FileTreeViewModel>();
         services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<CommandPaletteViewModel>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();
         services.AddSingleton<EditorTabViewModel>();
