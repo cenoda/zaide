@@ -4,10 +4,14 @@ AI-native IDE. Agents talk to each other, not just to you.
 
 **Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4).
 [Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is in progress — Phase 8
-umbrella implementation and Phase 9 (Editor UX) are complete. Phase 9 delivers
+umbrella implementation, Phase 9 (Editor UX), Phase 10 (C# Language
+Intelligence), and Phase 11 (Project Workflow) are complete. Phase 9 delivers
 the Command Palette, active-document Search/Replace, syntax-neutral folding,
 tab lifecycle/reordering, and truthful editor/status-bar feedback. Phase 10
-through Phase 13 remain ahead. Zaide currently has the IDE
+adds C# LSP support with csharp-ls. Phase 11 delivers Build / Run / Test over
+Phase 8.3 project context, structured Output, build diagnostics in Problems,
+Test Results surface, and cancel/one-at-a-time workflow execution. Phase 12
+(DAP debugging) and Phase 13 remain ahead. Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
