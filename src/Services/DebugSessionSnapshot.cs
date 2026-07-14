@@ -23,6 +23,9 @@ namespace Zaide.Services;
 /// <param name="Failure">
 /// Non-null only when <see cref="State"/> is <see cref="DebugSessionState.Failed"/>.
 /// </param>
+/// <param name="LastOutcome">
+/// Terminal outcome for the most recently ended session when idle; not a failure.
+/// </param>
 /// <param name="DiagnosticOutput">
 /// Captured adapter stderr and DAP <c>output</c> event text in arrival order.
 /// </param>
@@ -38,6 +41,7 @@ public sealed record DebugSessionSnapshot(
     int? AdapterProcessId,
     DapStoppedInfo? StopInfo,
     DebugSessionFailure? Failure,
+    DebugSessionOutcomeKind? LastOutcome,
     IReadOnlyList<string> DiagnosticOutput,
     IReadOnlyList<DebugBreakpointVerification> BreakpointVerifications)
 {

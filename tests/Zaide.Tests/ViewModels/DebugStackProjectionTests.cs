@@ -48,6 +48,7 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: 42,
             StopInfo: new DapStoppedInfo("breakpoint", threadId),
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
@@ -62,6 +63,7 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
@@ -137,6 +139,7 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: 42,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
@@ -191,6 +194,7 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
@@ -229,6 +233,7 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 

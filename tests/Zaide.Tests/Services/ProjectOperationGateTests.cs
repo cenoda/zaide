@@ -102,6 +102,7 @@ public sealed class ProjectOperationGateTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
     }

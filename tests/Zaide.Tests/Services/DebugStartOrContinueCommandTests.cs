@@ -32,6 +32,7 @@ public sealed class DebugStartOrContinueCommandTests
             AdapterProcessId: null,
             StopInfo: threadId is null ? null : new DapStoppedInfo("breakpoint", threadId),
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 

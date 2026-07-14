@@ -68,6 +68,7 @@ public sealed class DebugCurrentLocationViewModelTests
             AdapterProcessId: 42,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
@@ -89,6 +90,7 @@ public sealed class DebugCurrentLocationViewModelTests
             AdapterProcessId: 42,
             StopInfo: new DapStoppedInfo("breakpoint", 1),
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
         var current = stopped;

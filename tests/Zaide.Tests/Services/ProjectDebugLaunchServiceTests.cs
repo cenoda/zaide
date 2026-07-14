@@ -142,6 +142,7 @@ public sealed class ProjectDebugLaunchServiceTests
             null,
             null,
             null,
+            null,
             Array.Empty<string>(),
             DebugSessionSnapshot.EmptyVerifications);
 
@@ -169,6 +170,7 @@ public sealed class ProjectDebugLaunchServiceTests
                 null,
                 null,
                 new DebugSessionFailure(kind, message),
+                null,
                 new[] { $"[error] {message}" },
                 DebugSessionSnapshot.EmptyVerifications);
             return Task.FromResult(new DebugSessionOperationResult(false, kind, message));
