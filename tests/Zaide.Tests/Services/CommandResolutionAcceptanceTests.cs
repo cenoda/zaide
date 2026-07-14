@@ -465,7 +465,7 @@ public sealed class CommandResolutionAcceptanceTests
         _ = new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
             router, townhallViewModel, scViewModel,
-            TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
+            TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }
 

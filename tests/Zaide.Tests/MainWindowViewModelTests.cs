@@ -76,7 +76,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
         return vm;
     }
@@ -100,7 +100,7 @@ public class MainWindowViewModelTests
         var panelHost = new AgentPanelHost();
         var parser = new MentionParser(panelHost);
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
         return vm;
     }
@@ -181,7 +181,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
 
         // Before opening a folder the (empty) workspace yields no branch.
@@ -254,7 +254,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
 
         Assert.Empty(scViewModel.Branches);
@@ -420,7 +420,7 @@ public class MainWindowViewModelTests
         var panelHost2 = new AgentPanelHost();
         var parser2 = new MentionParser(panelHost2);
         var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock());
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();
@@ -502,7 +502,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, panel);
     }
@@ -742,7 +742,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
 
         var channelId = vm.TownhallViewModel.Channels[0].Id;
@@ -870,7 +870,7 @@ public class MainWindowViewModelTests
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            mockCoordinator.Object, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, source, target);
     }
@@ -1076,7 +1076,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, diffService.Object, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
         return (vm, workspace, scViewModel, fileTreeViewModel);
     }
@@ -1246,7 +1246,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Workspace>();
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
 
         return (vm, panel, string.Empty);

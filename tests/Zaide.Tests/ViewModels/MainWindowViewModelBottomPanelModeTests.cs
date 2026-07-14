@@ -31,6 +31,22 @@ public sealed class MainWindowViewModelBottomPanelModeTests
         Assert.False(vm.IsTerminalBottomMode);
         Assert.False(vm.IsProblemsBottomMode);
         Assert.False(vm.IsOutputBottomMode);
+        Assert.False(vm.IsDebugBottomMode);
+    }
+
+    [Fact]
+    public void BottomPanelMode_Debug_SetsVisibilityFlags()
+    {
+        var vm = CreateViewModel();
+        vm.Activate();
+
+        vm.BottomPanelMode = BottomPanelMode.Debug;
+
+        Assert.True(vm.IsDebugBottomMode);
+        Assert.False(vm.IsTerminalBottomMode);
+        Assert.False(vm.IsProblemsBottomMode);
+        Assert.False(vm.IsOutputBottomMode);
+        Assert.False(vm.IsTestResultsBottomMode);
     }
 
     private static MainWindowViewModel CreateViewModel()
@@ -72,6 +88,7 @@ public sealed class MainWindowViewModelBottomPanelModeTests
             TestProjectWorkflowFactory.Create(),
             TestTestResultsFactory.Create(editorTabs),
             TestDebugSessionFactory.Create(),
+            TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs),
             workspace,
             projectContext.Object);

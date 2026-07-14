@@ -9,8 +9,8 @@ using Zaide.Services;
 namespace Zaide.ViewModels;
 
 /// <summary>
-/// Registers debug execution commands and dispatches F5 start/continue without
-/// owning DAP or process logic.
+/// Registers debug execution commands and dispatches start/continue/pause/stop/step
+/// without owning DAP or process logic.
 /// </summary>
 public sealed class DebugSessionViewModel : ReactiveObject, IDisposable
 {
@@ -40,6 +40,11 @@ public sealed class DebugSessionViewModel : ReactiveObject, IDisposable
     }
 
     public ReactiveCommand<Unit, Unit> StartOrContinueCommand { get; }
+    public ReactiveCommand<Unit, Unit> PauseCommand { get; }
+    public ReactiveCommand<Unit, Unit> StopCommand { get; }
+    public ReactiveCommand<Unit, Unit> StepOverCommand { get; }
+    public ReactiveCommand<Unit, Unit> StepIntoCommand { get; }
+    public ReactiveCommand<Unit, Unit> StepOutCommand { get; }
 
     public DebugSessionViewModel(
         IProjectDebugLaunchService debugLaunch,
@@ -49,16 +54,34 @@ public sealed class DebugSessionViewModel : ReactiveObject, IDisposable
         _debugLaunch = debugLaunch ?? throw new ArgumentNullException(nameof(debugLaunch));
         _debugSession = debugSession ?? throw new ArgumentNullException(nameof(debugSession));
 
-        var canStartOrContinue = _debugSession.WhenChanged
-            .StartWith(_debugSession.Current)
+        var sessionChanges = _debugSession.WhenChanged.StartWith(_debugSession.Current);
+
+        var canStartOrContinue = sessionChanges
             .Select(snapshot => snapshot.State is DebugSessionState.Idle
                 or DebugSessionState.Failed
                 or DebugSessionState.Unavailable
                 or DebugSessionState.Stopped);
 
+        var canPause = sessionChanges
+            .Select(snapshot => snapshot.State == DebugSessionState.Running);
+
+        var canStop = sessionChanges
+            .Select(snapshot => snapshot.State is DebugSessionState.Starting
+                or DebugSessionState.Running
+                or DebugSessionState.Stopped);
+
+        var canStep = sessionChanges
+            .Select(snapshot => snapshot.State == DebugSessionState.Stopped &&
+                                snapshot.StopInfo?.ThreadId is not null);
+
         StartOrContinueCommand = ReactiveCommand.CreateFromTask(
             ExecuteStartOrContinueAsync,
             canStartOrContinue);
+        PauseCommand = ReactiveCommand.CreateFromTask(ExecutePauseAsync, canPause);
+        StopCommand = ReactiveCommand.CreateFromTask(ExecuteStopAsync, canStop);
+        StepOverCommand = ReactiveCommand.CreateFromTask(ExecuteStepOverAsync, canStep);
+        StepIntoCommand = ReactiveCommand.CreateFromTask(ExecuteStepIntoAsync, canStep);
+        StepOutCommand = ReactiveCommand.CreateFromTask(ExecuteStepOutAsync, canStep);
 
         commandRegistry?.Register(new CommandDescriptor(
             "debug.startOrContinue",
@@ -66,6 +89,36 @@ public sealed class DebugSessionViewModel : ReactiveObject, IDisposable
             "Debug",
             new[] { "F5" },
             StartOrContinueCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "debug.pause",
+            "Pause",
+            "Debug",
+            Array.Empty<string>(),
+            PauseCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "debug.stop",
+            "Stop Debugging",
+            "Debug",
+            new[] { "Shift+F5" },
+            StopCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "debug.stepOver",
+            "Step Over",
+            "Debug",
+            new[] { "F10" },
+            StepOverCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "debug.stepInto",
+            "Step Into",
+            "Debug",
+            new[] { "F11" },
+            StepIntoCommand));
+        commandRegistry?.Register(new CommandDescriptor(
+            "debug.stepOut",
+            "Step Out",
+            "Debug",
+            new[] { "Shift+F11" },
+            StepOutCommand));
     }
 
     /// <summary>
@@ -114,6 +167,41 @@ public sealed class DebugSessionViewModel : ReactiveObject, IDisposable
         var start = await _debugLaunch.StartDebuggingAsync().ConfigureAwait(false);
         if (!start.Succeeded)
             StatusMessage = start.Message;
+    }
+
+    private async Task ExecutePauseAsync()
+    {
+        var result = await _debugSession.PauseAsync().ConfigureAwait(false);
+        if (!result.Succeeded)
+            StatusMessage = result.Message;
+    }
+
+    private async Task ExecuteStopAsync()
+    {
+        var result = await _debugSession.StopAsync().ConfigureAwait(false);
+        if (!result.Succeeded)
+            StatusMessage = result.Message;
+    }
+
+    private async Task ExecuteStepOverAsync()
+    {
+        var result = await _debugSession.StepOverAsync().ConfigureAwait(false);
+        if (!result.Succeeded)
+            StatusMessage = result.Message;
+    }
+
+    private async Task ExecuteStepIntoAsync()
+    {
+        var result = await _debugSession.StepIntoAsync().ConfigureAwait(false);
+        if (!result.Succeeded)
+            StatusMessage = result.Message;
+    }
+
+    private async Task ExecuteStepOutAsync()
+    {
+        var result = await _debugSession.StepOutAsync().ConfigureAwait(false);
+        if (!result.Succeeded)
+            StatusMessage = result.Message;
     }
 
     private async Task<bool> EnsureDirtyTabsSavedAsync()

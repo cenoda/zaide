@@ -39,6 +39,18 @@ public interface IDebugSessionService : IDisposable
         int threadId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Issues <c>pause</c> while the session is running.</summary>
+    Task<DebugSessionOperationResult> PauseAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>next</c> while the session is stopped.</summary>
+    Task<DebugSessionOperationResult> StepOverAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>stepIn</c> while the session is stopped.</summary>
+    Task<DebugSessionOperationResult> StepIntoAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Issues <c>stepOut</c> while the session is stopped.</summary>
+    Task<DebugSessionOperationResult> StepOutAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Issues <c>threads</c> while the session is stopped.</summary>
     Task<JsonElement?> RequestThreadsAsync(CancellationToken cancellationToken = default);
 

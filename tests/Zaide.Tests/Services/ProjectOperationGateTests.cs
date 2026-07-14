@@ -42,6 +42,22 @@ public sealed class ProjectOperationGateTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<DebugSessionOperationResult> PauseAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> StepOverAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> StepIntoAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> StepOutAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public Task<System.Text.Json.JsonElement?> RequestThreadsAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

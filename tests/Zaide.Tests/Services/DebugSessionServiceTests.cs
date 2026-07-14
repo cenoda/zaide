@@ -272,6 +272,62 @@ public sealed class DebugSessionServiceTests
     }
 
     [Fact]
+    public async Task PauseAsync_FromRunning_TransitionsToStopped()
+    {
+        var candidate = MakeCandidate("Pause.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            await service.ContinueAsync(1);
+            await WaitForAsync(service, s => s.State == DebugSessionState.Running);
+
+            var pause = await service.PauseAsync();
+            Assert.True(pause.Succeeded);
+            Assert.Equal("pause", factory.CreatedSessions[0].CallOrder[^1]);
+
+            var stopped = await WaitForAsync(service, s => s.State == DebugSessionState.Stopped);
+            Assert.Equal(DebugSessionState.Stopped, stopped.State);
+        }
+    }
+
+    [Fact]
+    public async Task StepOverAsync_FromStopped_IssuesNextAndRemainsStopped()
+    {
+        var candidate = MakeCandidate("Step.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+
+            var step = await service.StepOverAsync();
+            Assert.True(step.Succeeded);
+            Assert.Contains("next:1", factory.CreatedSessions[0].CallOrder);
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+        }
+    }
+
+    [Fact]
+    public async Task StepOverAsync_WhenRunning_RejectsWithoutIssuingNext()
+    {
+        var candidate = MakeCandidate("StepGuard.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            await service.ContinueAsync(1);
+            await WaitForAsync(service, s => s.State == DebugSessionState.Running);
+
+            var step = await service.StepOverAsync();
+            Assert.False(step.Succeeded);
+            Assert.DoesNotContain("next:", factory.CreatedSessions[0].CallOrder);
+        }
+    }
+
+    [Fact]
     public async Task StoppedState_AllowsThreadsStackScopesRequests()
     {
         var candidate = MakeCandidate("Inspect.csproj");

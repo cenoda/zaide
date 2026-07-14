@@ -211,6 +211,38 @@ internal sealed class NetCoreDbgAdapterSession : IDebugAdapterSession
             cancellationToken);
 
     /// <inheritdoc />
+    public Task PauseAsync(CancellationToken cancellationToken) =>
+        RequestWithTimeoutAsync(
+            "pause",
+            new { },
+            DebugSessionTimeouts.OrdinaryRequest,
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task NextAsync(int threadId, CancellationToken cancellationToken) =>
+        RequestWithTimeoutAsync(
+            "next",
+            new { threadId },
+            DebugSessionTimeouts.OrdinaryRequest,
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task StepInAsync(int threadId, CancellationToken cancellationToken) =>
+        RequestWithTimeoutAsync(
+            "stepIn",
+            new { threadId },
+            DebugSessionTimeouts.OrdinaryRequest,
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task StepOutAsync(int threadId, CancellationToken cancellationToken) =>
+        RequestWithTimeoutAsync(
+            "stepOut",
+            new { threadId },
+            DebugSessionTimeouts.OrdinaryRequest,
+            cancellationToken);
+
+    /// <inheritdoc />
     public async Task DisconnectAsync(CancellationToken cancellationToken)
     {
         if (_disposed || _transport is null)

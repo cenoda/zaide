@@ -121,6 +121,38 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
         return Task.CompletedTask;
     }
 
+    public Task PauseAsync(CancellationToken cancellationToken)
+    {
+        CallOrder.Add("pause");
+        cancellationToken.ThrowIfCancellationRequested();
+        Stopped?.Invoke(new DapStoppedEvent(Generation, "pause", StoppedThreadId));
+        return Task.CompletedTask;
+    }
+
+    public Task NextAsync(int threadId, CancellationToken cancellationToken)
+    {
+        CallOrder.Add($"next:{threadId}");
+        cancellationToken.ThrowIfCancellationRequested();
+        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        return Task.CompletedTask;
+    }
+
+    public Task StepInAsync(int threadId, CancellationToken cancellationToken)
+    {
+        CallOrder.Add($"stepIn:{threadId}");
+        cancellationToken.ThrowIfCancellationRequested();
+        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        return Task.CompletedTask;
+    }
+
+    public Task StepOutAsync(int threadId, CancellationToken cancellationToken)
+    {
+        CallOrder.Add($"stepOut:{threadId}");
+        cancellationToken.ThrowIfCancellationRequested();
+        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        return Task.CompletedTask;
+    }
+
     public Task DisconnectAsync(CancellationToken cancellationToken)
     {
         DisconnectCalled = true;

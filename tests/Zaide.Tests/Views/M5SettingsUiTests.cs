@@ -124,7 +124,7 @@ public sealed class M5SettingsUiTests
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         var workspace = provider.GetRequiredService<Workspace>();
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
-            sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object);
+            sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object);
         vm.Activate();
         return vm;
     }

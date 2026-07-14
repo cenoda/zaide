@@ -82,6 +82,7 @@ public sealed class M9bSettingsDrivenRefreshTests
             TestProjectWorkflowFactory.Create(registry: _registry),
             TestTestResultsFactory.Create(),
             TestDebugSessionFactory.Create(_registry),
+            TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, _registry),
             sp.GetRequiredService<Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
@@ -348,7 +349,11 @@ public sealed class M9bSettingsDrivenRefreshTests
                (gesture.Key == Key.B && gesture.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift)) ||
                (gesture.Key == Key.F5 && gesture.KeyModifiers == KeyModifiers.Control) ||
                (gesture.Key == Key.F5 && gesture.KeyModifiers == KeyModifiers.None) ||
+               (gesture.Key == Key.F5 && gesture.KeyModifiers == KeyModifiers.Shift) ||
                (gesture.Key == Key.F9 && gesture.KeyModifiers == KeyModifiers.None) ||
+               (gesture.Key == Key.F10 && gesture.KeyModifiers == KeyModifiers.None) ||
+               (gesture.Key == Key.F11 && gesture.KeyModifiers == KeyModifiers.None) ||
+               (gesture.Key == Key.F11 && gesture.KeyModifiers == KeyModifiers.Shift) ||
                (gesture.Key == Key.F2 && gesture.KeyModifiers == KeyModifiers.Control);
     }
 
@@ -470,7 +475,7 @@ public sealed class M9bSettingsDrivenRefreshTests
 
         // Verify 9 bindings after initial materialization
         var resolved = _registry.ResolveKeyBindings(settings);
-        Assert.Equal(10, resolved.Count);
+        Assert.Equal(14, resolved.Count);
 
         // Add an unrelated view-local binding (e.g., Enter key)
         var unrelated = new KeyBinding
@@ -492,7 +497,7 @@ public sealed class M9bSettingsDrivenRefreshTests
         Assert.Contains(unrelated, seam.KeyBindings);
 
         // Registry bindings should still be at expected count (9 after rebind)
-        Assert.Equal(10, CountRegistryBindings(seam.KeyBindings));
+        Assert.Equal(14, CountRegistryBindings(seam.KeyBindings));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -509,7 +514,7 @@ public sealed class M9bSettingsDrivenRefreshTests
         for (int i = 0; i < 5; i++)
             seam.MaterializeRegistryBindings();
 
-        Assert.Equal(10, CountRegistryBindings(seam.KeyBindings));
+        Assert.Equal(14, CountRegistryBindings(seam.KeyBindings));
 
         // Multiple settings changes
         for (int i = 0; i < 3; i++)
@@ -521,7 +526,7 @@ public sealed class M9bSettingsDrivenRefreshTests
         }
 
         // Still 9 bindings (8 defaults unchanged + 1 override)
-        Assert.Equal(10, CountRegistryBindings(seam.KeyBindings));
+        Assert.Equal(14, CountRegistryBindings(seam.KeyBindings));
 
         // Only one Ctrl+Shift+S
         var ctrlShiftS = seam.KeyBindings
@@ -588,7 +593,7 @@ public sealed class M9bSettingsDrivenRefreshTests
         Assert.False(HasGesture(seam.KeyBindings, Key.S, KeyModifiers.Control));
 
         // Other bindings remain intact
-        Assert.Equal(9, CountRegistryBindings(seam.KeyBindings));
+        Assert.Equal(13, CountRegistryBindings(seam.KeyBindings));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -686,10 +691,10 @@ public sealed class M9bSettingsDrivenRefreshTests
         Assert.Contains(unrelated2, seam.KeyBindings);
 
         // Registry bindings count is correct (9 after rebind)
-        Assert.Equal(10, CountRegistryBindings(seam.KeyBindings));
+        Assert.Equal(14, CountRegistryBindings(seam.KeyBindings));
 
-        // Total: 10 registry + 2 unrelated = 12
-        Assert.Equal(12, seam.KeyBindings.Count);
+        // Total: 14 registry + 2 unrelated = 16
+        Assert.Equal(16, seam.KeyBindings.Count);
     }
 
     /// <summary>

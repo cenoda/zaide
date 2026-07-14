@@ -87,6 +87,7 @@ class Program
         services.AddSingleton<IProjectDebugTargetResolver, ProjectDebugTargetResolver>();
         services.AddSingleton<IProjectDebugLaunchService, ProjectDebugLaunchService>();
         services.AddSingleton<DebugSessionViewModel>();
+        services.AddSingleton<DebugPanelViewModel>();
         services.AddSingleton<EditorBreakpointViewModel>();
 
         // Phase 11 M1: UI-independent build/run/test process orchestration core.

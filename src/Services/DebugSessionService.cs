@@ -361,27 +361,64 @@ public sealed class DebugSessionService : IDebugSessionService
                 "Continue is only available while the debuggee is stopped.");
         }
 
-        try
+        return await ExecuteSessionRequestAsync(
+            snapshot,
+            session,
+            token => session.ContinueAsync(threadId, token),
+            "Debug continue failed.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public Task<DebugSessionOperationResult> PauseAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var snapshot = _current;
+        var session = _activeSession;
+
+        if (snapshot.State != DebugSessionState.Running ||
+            session is null ||
+            session.Generation != snapshot.Generation)
         {
-            await WithTimeoutAsync(
-                token => session.ContinueAsync(threadId, token),
-                _timeoutPolicy.OrdinaryRequest,
-                cancellationToken).ConfigureAwait(false);
-            return new DebugSessionOperationResult(true, null, null);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Debug continue failed for generation {Generation}", snapshot.Generation);
-            return new DebugSessionOperationResult(
+            return Task.FromResult(new DebugSessionOperationResult(
                 false,
                 DebugSessionOutcomeKind.ProtocolFailed,
-                "Debug continue failed.");
+                "Pause is only available while the debuggee is running."));
         }
+
+        return ExecuteSessionRequestAsync(
+            snapshot,
+            session,
+            token => session.PauseAsync(token),
+            "Debug pause failed.",
+            cancellationToken);
     }
+
+    /// <inheritdoc />
+    public Task<DebugSessionOperationResult> StepOverAsync(CancellationToken cancellationToken = default) =>
+        ExecuteStoppedStepAsync(
+            (session, threadId, token) => session.NextAsync(threadId, token),
+            "Step over is only available while the debuggee is stopped.",
+            "Debug step over failed.",
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task<DebugSessionOperationResult> StepIntoAsync(CancellationToken cancellationToken = default) =>
+        ExecuteStoppedStepAsync(
+            (session, threadId, token) => session.StepInAsync(threadId, token),
+            "Step into is only available while the debuggee is stopped.",
+            "Debug step into failed.",
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task<DebugSessionOperationResult> StepOutAsync(CancellationToken cancellationToken = default) =>
+        ExecuteStoppedStepAsync(
+            (session, threadId, token) => session.StepOutAsync(threadId, token),
+            "Step out is only available while the debuggee is stopped.",
+            "Debug step out failed.",
+            cancellationToken);
 
     /// <inheritdoc />
     public async Task<JsonElement?> RequestThreadsAsync(CancellationToken cancellationToken = default)
@@ -761,6 +798,89 @@ public sealed class DebugSessionService : IDebugSessionService
         }
 
         await TearDownActiveSessionAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private async Task<DebugSessionOperationResult> ExecuteStoppedStepAsync(
+        Func<IDebugAdapterSession, int, CancellationToken, Task> action,
+        string unavailableMessage,
+        string failureMessage,
+        CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var snapshot = _current;
+        var session = _activeSession;
+        var threadId = snapshot.StopInfo?.ThreadId;
+
+        if (snapshot.State != DebugSessionState.Stopped ||
+            threadId is null ||
+            session is null ||
+            session.Generation != snapshot.Generation)
+        {
+            return new DebugSessionOperationResult(
+                false,
+                DebugSessionOutcomeKind.ProtocolFailed,
+                unavailableMessage);
+        }
+
+        return await ExecuteSessionRequestAsync(
+            snapshot,
+            session,
+            token => action(session, threadId.Value, token),
+            failureMessage,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<DebugSessionOperationResult> ExecuteSessionRequestAsync(
+        DebugSessionSnapshot snapshot,
+        IDebugAdapterSession session,
+        Func<CancellationToken, Task> action,
+        string failureMessage,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await WithTimeoutAsync(action, _timeoutPolicy.OrdinaryRequest, cancellationToken)
+                .ConfigureAwait(false);
+            return new DebugSessionOperationResult(true, null, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Debug session request failed for generation {Generation}",
+                snapshot.Generation);
+
+            await PublishOperationalDiagnosticAsync(snapshot.Generation, failureMessage)
+                .ConfigureAwait(false);
+
+            return new DebugSessionOperationResult(
+                false,
+                DebugSessionOutcomeKind.ProtocolFailed,
+                failureMessage);
+        }
+    }
+
+    private async Task PublishOperationalDiagnosticAsync(long generation, string message)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_disposed || generation != _generation)
+                return;
+
+            AppendDiagnostic($"[error] {message}");
+            PublishLocked(_current with { DiagnosticOutput = CopyDiagnosticsLocked() });
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     private IDebugAdapterSession RequireStoppedSession()

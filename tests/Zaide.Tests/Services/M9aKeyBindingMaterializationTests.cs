@@ -77,6 +77,7 @@ public sealed class M9aKeyBindingMaterializationTests
             TestProjectWorkflowFactory.Create(registry: _registry),
             TestTestResultsFactory.Create(),
             TestDebugSessionFactory.Create(_registry),
+            TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, _registry),
             sp.GetRequiredService<Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
@@ -154,8 +155,8 @@ public sealed class M9aKeyBindingMaterializationTests
                 bindings.Add(kb);
         }
 
-        // Expect 9 bindings: Ctrl+S, Ctrl+O, Ctrl+Oem3, Ctrl+J, Ctrl+Shift+H, Ctrl+Shift+B, Ctrl+F5, Ctrl+F2, F5
-        Assert.Equal(10, bindings.Count);
+        // Expect defaults including debug execution controls (F5/F9/F10/F11/Shift+F5/Shift+F11).
+        Assert.Equal(14, bindings.Count);
     }
 
     [Fact]
@@ -249,12 +250,12 @@ public sealed class M9aKeyBindingMaterializationTests
 
         // First materialization
         Materialize();
-        Assert.Equal(10, keyBindings.Count);
+        Assert.Equal(14, keyBindings.Count);
 
         // Second materialization (simulating a refresh)
         Materialize();
-        Assert.Equal(10, keyBindings.Count);
-        Assert.Equal(10, tracked.Count);
+        Assert.Equal(14, keyBindings.Count);
+        Assert.Equal(14, tracked.Count);
     }
 
     // ── Test 6: Preservation of unrelated/view-local bindings ────────────
@@ -292,13 +293,13 @@ public sealed class M9aKeyBindingMaterializationTests
         }
 
         Materialize();
-        Assert.Equal(11, keyBindings.Count); // 1 unrelated + 10 registry
+        Assert.Equal(15, keyBindings.Count); // 1 unrelated + 14 registry
         Assert.Contains(unrelated, keyBindings);
 
         // Replace registry bindings
         Materialize();
         Assert.Contains(unrelated, keyBindings);
-        Assert.Equal(11, keyBindings.Count);
+        Assert.Equal(15, keyBindings.Count);
     }
 
     // ── Test 7: Empty registry produces no bindings ──────────────────────

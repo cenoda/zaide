@@ -59,6 +59,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private ProblemsPanel _problemsPanel = null!;
     private OutputPanel _outputPanel = null!;
     private TestResultsPanel _testResultsPanel = null!;
+    private DebugPanel _debugPanel = null!;
     private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
     private Border _bottomPanel = null!;
@@ -184,6 +185,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Phase 11 M5: structured test-results surface
             _testResultsPanel.ViewModel = ViewModel.TestResultsViewModel;
 
+            // Phase 12 M4: debug console and call-stack shell
+            _debugPanel.ViewModel = ViewModel.DebugPanelViewModel;
+
             // Phase 10 M5: route definition/symbol feedback to the status bar.
             disposables.Add(_languageInputViewModel
                 .WhenAnyValue(x => x.FeedbackMessage)
@@ -303,6 +307,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     _problemsPanel.IsVisible = mode == BottomPanelMode.Problems;
                     _outputPanel.IsVisible = mode == BottomPanelMode.Output;
                     _testResultsPanel.IsVisible = mode == BottomPanelMode.TestResults;
+                    _debugPanel.IsVisible = mode == BottomPanelMode.Debug;
                     if (mode == BottomPanelMode.Terminal && ViewModel!.IsBottomPanelVisible)
                     {
                         _terminalTabHost.FocusActiveSession();
@@ -658,14 +663,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(bottomPanelSplitter);
 
         // --- Bottom Panel (spans columns 3-5: center + editor only) ---
-        // Hosts Terminal, Problems, Output, and Test Results surfaces with a mode strip.
+        // Hosts Terminal, Problems, Output, Test Results, and Debug surfaces with a mode strip.
         var terminalTabHost = new TerminalTabHost(_settings);
         var problemsPanel = new ProblemsPanel { IsVisible = false };
         var outputPanel = new OutputPanel { IsVisible = false };
         var testResultsPanel = new TestResultsPanel { IsVisible = false };
+        var debugPanel = new DebugPanel { IsVisible = false };
         _problemsPanel = problemsPanel;
         _outputPanel = outputPanel;
         _testResultsPanel = testResultsPanel;
+        _debugPanel = debugPanel;
 
         var terminalTabButton = new Button
         {
@@ -731,11 +738,34 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ViewModel.SwitchToTestResultsBottomCommand.Execute().Subscribe();
         };
 
+        var debugTabButton = new Button
+        {
+            Content = "Debug",
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            FontSize = 12,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Cursor = new Cursor(StandardCursorType.Hand),
+        };
+        debugTabButton.Click += (_, _) =>
+        {
+            if (ViewModel is not null)
+                ViewModel.SwitchToDebugBottomCommand.Execute().Subscribe();
+        };
+
         var bottomModeStrip = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXxs,
-            Children = { terminalTabButton, problemsTabButton, outputTabButton, testResultsTabButton },
+            Children =
+            {
+                terminalTabButton,
+                problemsTabButton,
+                outputTabButton,
+                testResultsTabButton,
+                debugTabButton,
+            },
         };
 
         var bottomContent = new Grid
@@ -745,13 +775,22 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
             },
-            Children = { bottomModeStrip, terminalTabHost, problemsPanel, outputPanel, testResultsPanel },
+            Children =
+            {
+                bottomModeStrip,
+                terminalTabHost,
+                problemsPanel,
+                outputPanel,
+                testResultsPanel,
+                debugPanel,
+            },
         };
         Grid.SetRow(bottomModeStrip, 0);
         Grid.SetRow(terminalTabHost, 1);
         Grid.SetRow(problemsPanel, 1);
         Grid.SetRow(outputPanel, 1);
         Grid.SetRow(testResultsPanel, 1);
+        Grid.SetRow(debugPanel, 1);
 
         var bottomPanel = new Border
         {

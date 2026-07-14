@@ -77,6 +77,18 @@ public interface IDebugAdapterSession : IAsyncDisposable
     /// <summary>Issues the DAP <c>continue</c> request.</summary>
     Task ContinueAsync(int threadId, CancellationToken cancellationToken);
 
+    /// <summary>Issues the DAP <c>pause</c> request.</summary>
+    Task PauseAsync(CancellationToken cancellationToken);
+
+    /// <summary>Issues the DAP <c>next</c> request.</summary>
+    Task NextAsync(int threadId, CancellationToken cancellationToken);
+
+    /// <summary>Issues the DAP <c>stepIn</c> request.</summary>
+    Task StepInAsync(int threadId, CancellationToken cancellationToken);
+
+    /// <summary>Issues the DAP <c>stepOut</c> request.</summary>
+    Task StepOutAsync(int threadId, CancellationToken cancellationToken);
+
     /// <summary>Graceful DAP <c>disconnect</c> with terminating debuggee.</summary>
     Task DisconnectAsync(CancellationToken cancellationToken);
 

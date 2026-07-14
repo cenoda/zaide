@@ -32,6 +32,7 @@ public enum BottomPanelMode
     Problems,
     Output,
     TestResults,
+    Debug,
 }
 
 public class MainWindowViewModel : ReactiveObject, IDisposable
@@ -47,6 +48,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isProblemsBottomMode;
     private bool _isOutputBottomMode;
     private bool _isTestResultsBottomMode;
+    private bool _isDebugBottomMode;
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
@@ -106,6 +108,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             IsProblemsBottomMode = value == BottomPanelMode.Problems;
             IsOutputBottomMode = value == BottomPanelMode.Output;
             IsTestResultsBottomMode = value == BottomPanelMode.TestResults;
+            IsDebugBottomMode = value == BottomPanelMode.Debug;
         }
     }
 
@@ -133,6 +136,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _isTestResultsBottomMode, value);
     }
 
+    public bool IsDebugBottomMode
+    {
+        get => _isDebugBottomMode;
+        private set => this.RaiseAndSetIfChanged(ref _isDebugBottomMode, value);
+    }
+
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveActiveTabCommand { get; }
@@ -145,6 +154,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> SwitchToProblemsBottomCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToOutputBottomCommand { get; }
     public ReactiveCommand<Unit, Unit> SwitchToTestResultsBottomCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToDebugBottomCommand { get; }
 
     /// <summary>
     /// M3 (Phase 8.1.3): Closes the open folder. Enabled only while a folder is open.
@@ -164,6 +174,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ProjectWorkflowViewModel ProjectWorkflowViewModel { get; }
     public TestResultsViewModel TestResultsViewModel { get; }
     public DebugSessionViewModel DebugSessionViewModel { get; }
+    public DebugPanelViewModel DebugPanelViewModel { get; }
 
     public EditorBreakpointViewModel EditorBreakpointViewModel { get; }
 
@@ -202,6 +213,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 ProjectWorkflowViewModel projectWorkflowViewModel,
                                 TestResultsViewModel testResultsViewModel,
                                 DebugSessionViewModel debugSessionViewModel,
+                                DebugPanelViewModel debugPanelViewModel,
                                 EditorBreakpointViewModel editorBreakpointViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
@@ -222,6 +234,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ?? throw new ArgumentNullException(nameof(testResultsViewModel));
         DebugSessionViewModel = debugSessionViewModel
             ?? throw new ArgumentNullException(nameof(debugSessionViewModel));
+        DebugPanelViewModel = debugPanelViewModel
+            ?? throw new ArgumentNullException(nameof(debugPanelViewModel));
         EditorBreakpointViewModel = editorBreakpointViewModel
             ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
 
@@ -274,6 +288,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             BottomPanelMode = BottomPanelMode.TestResults;
             IsBottomPanelVisible = true;
         });
+        SwitchToDebugBottomCommand = ReactiveCommand.Create(() =>
+        {
+            BottomPanelMode = BottomPanelMode.Debug;
+            IsBottomPanelVisible = true;
+        });
 
         // M3 (Phase 8.1.3): Close-folder command. Enabled only while a folder is open.
         // Calls SetRootPath(null) directly. The CloseFolderRequested interaction
@@ -322,6 +341,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Phase 12 M3a: debug session command projection.
         DebugSessionViewModel.Activate();
         _disposables.Add(DebugSessionViewModel);
+
+        // Phase 12 M4: debug console and call-stack shell projection.
+        DebugPanelViewModel.Activate();
+        _disposables.Add(DebugPanelViewModel);
+        _disposables.Add(
+            DebugPanelViewModel.WhenShowDebugRequested
+                .Subscribe(_ =>
+                {
+                    BottomPanelMode = BottomPanelMode.Debug;
+                    IsBottomPanelVisible = true;
+                }));
 
         // Phase 12 M3b: editor breakpoint projection and F9 command.
         EditorBreakpointViewModel.Activate();
