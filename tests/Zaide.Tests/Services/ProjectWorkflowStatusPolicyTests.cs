@@ -50,6 +50,32 @@ public sealed class ProjectWorkflowStatusPolicyTests
         Assert.Equal(expected, ProjectWorkflowStatusPolicy.MapOutputStatusMessage(snapshot));
     }
 
+    [Theory]
+    [InlineData(ProjectWorkflowOperation.Build, "Cancel build")]
+    [InlineData(ProjectWorkflowOperation.Run, "Cancel run")]
+    [InlineData(ProjectWorkflowOperation.Test, "Cancel tests")]
+    public void MapCancelAutomationName_InProgress_UsesActiveOperation(
+        ProjectWorkflowOperation operation,
+        string expected)
+    {
+        var snapshot = Active(operation, ProjectWorkflowOperationState.Running);
+
+        Assert.Equal(expected, ProjectWorkflowStatusPolicy.MapCancelAutomationName(snapshot));
+    }
+
+    [Theory]
+    [InlineData(ProjectWorkflowOperation.Build, "Cancel build")]
+    [InlineData(ProjectWorkflowOperation.Run, "Cancel run")]
+    [InlineData(ProjectWorkflowOperation.Test, "Cancel tests")]
+    public void MapCancelAutomationName_Terminal_UsesLastOperation(
+        ProjectWorkflowOperation lastOperation,
+        string expected)
+    {
+        var snapshot = Terminal(ProjectWorkflowOutcomeKind.Cancelled, lastOperation);
+
+        Assert.Equal(expected, ProjectWorkflowStatusPolicy.MapCancelAutomationName(snapshot));
+    }
+
     [Fact]
     public void MapOutputStatusMessage_IdleWithoutOutcome_ReturnsNull()
     {

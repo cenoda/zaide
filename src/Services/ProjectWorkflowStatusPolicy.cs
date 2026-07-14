@@ -61,4 +61,25 @@ public static class ProjectWorkflowStatusPolicy
             ProjectWorkflowOperation.Test => "Tests",
             _ => "Build",
         };
+
+    /// <summary>
+    /// Screen-reader name for the workflow Cancel affordance on Output and Test Results.
+    /// Uses <see cref="ProjectOutputSnapshot.ActiveOperation"/> while Starting/Running;
+    /// otherwise falls back to <see cref="ProjectOutputSnapshot.LastOperation"/>.
+    /// </summary>
+    public static string MapCancelAutomationName(ProjectOutputSnapshot snapshot)
+    {
+        var operation = snapshot.State is ProjectWorkflowOperationState.Starting
+            or ProjectWorkflowOperationState.Running
+            ? snapshot.ActiveOperation
+            : snapshot.LastOperation ?? snapshot.ActiveOperation;
+
+        return operation switch
+        {
+            ProjectWorkflowOperation.Build => "Cancel build",
+            ProjectWorkflowOperation.Run => "Cancel run",
+            ProjectWorkflowOperation.Test => "Cancel tests",
+            _ => "Cancel build",
+        };
+    }
 }

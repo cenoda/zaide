@@ -11,11 +11,14 @@ namespace Zaide.Tests;
 /// </summary>
 internal static class TestTestResultsFactory
 {
-    public static TestResultsViewModel Create(EditorTabViewModel? editorTabs = null)
+    public static TestResultsViewModel Create(
+        EditorTabViewModel? editorTabs = null,
+        ProjectWorkflowViewModel? workflow = null)
     {
         editorTabs ??= CreateMinimalEditorTabs();
+        workflow ??= TestProjectWorkflowFactory.Create();
         var service = new EmptyTestResultsService();
-        return new TestResultsViewModel(service, editorTabs);
+        return new TestResultsViewModel(service, editorTabs, workflow);
     }
 
     private static EditorTabViewModel CreateMinimalEditorTabs()

@@ -167,24 +167,35 @@ all pass.
 
 ---
 
-## Open — F6: Test UX — no Cancel on Test Results; Output flash then hide
+## Resolved — F6: Test UX — no Cancel on Test Results; Output flash then hide
 
 **Severity:** Medium (UX)  
 **Area:** `MainWindowViewModel` show-on-test, `TestResultsPanel`,
 `ProjectWorkflowViewModel`
 
-**Problem:** On Test start, both show-Output and show-TestResults fire; the
-host ends on **Test Results**. That panel has **no Cancel**. Cancel is only on
-Output (automation name always "Cancel build") or command palette
-(`project.cancel`, no default gesture). Users watching Test Results cannot
-cancel without switching panels or palette.
+**Resolution (2026-07-14):** Added Cancel to Test Results and truthful cancel
+automation names for Build / Run / Test.
 
-**Direction:** Add Cancel to Test Results (or shared workflow chrome) bound to
-`CancelCommand`; fix Cancel automation name for Build/Run/Test; optional
-default gesture for cancel if product wants it (plan currently allows none).
+- **`ProjectWorkflowStatusPolicy.MapCancelAutomationName`** — derives
+  screen-reader name from active (or last) operation: "Cancel build",
+  "Cancel run", "Cancel tests".
+- **`ProjectWorkflowViewModel.CancelAutomationName`** — exposed on the workflow
+  VM; updated in `ApplyStateOnly` alongside status text.
+- **`OutputPanel`** — binds Cancel automation name from the workflow VM instead
+  of hardcoded "Cancel build".
+- **`TestResultsViewModel.Workflow`** — holds the shared
+  `ProjectWorkflowViewModel` for cancel chrome (same `CancelCommand` /
+  `project.cancel`; no second command system).
+- **`TestResultsPanel`** — Cancel button in the header, mirroring Output:
+  visibility via `IsOperationActive`, click invokes `CancelCommand`.
 
-**Acceptance sketch:** Cancel visible/enabled while Test is active on Test
-Results mode; a11y name truthful; no second command system.
+**Tests:** `MapCancelAutomationName_*` (status policy),
+`ViewModel_CancelAutomationName_MatchesActiveOperation` (output VM),
+`Workflow_CancelCommand_IsEnabledWhileTestOperationActive` and
+`Workflow_CancelAutomationName_MatchesActiveOperation` (test-results VM).
+
+**Gates:** `dotnet build`, focused `TestResults` / `ProjectWorkflow` / `Output`
+tests, full suite, `git diff --check` all pass.
 
 ---
 
@@ -264,7 +275,7 @@ with it); keep runner ownership single and documented.
 
 | Item | Detail |
 |---|---|
-| Cancel a11y | Automation name always "Cancel build" for Run/Test |
+| Cancel a11y | ~~Automation name always "Cancel build" for Run/Test~~ (F6) |
 | Output scroll | Full list rebuild jumps scroll/selection; no stick-to-end |
 | Cancel gesture | Plan allows none; discoverability is palette-only |
 | Path compare | Context cancel uses `FilePath == TargetFilePath`; both are `GetFullPath` today — fragile if a future path source skips normalization |
@@ -293,7 +304,7 @@ with it); keep runner ownership single and documented.
 2. ~~**F2** — Gate-safe Dispose~~
 3. ~~**F4** — ProcessId after start~~
 4. ~~**F5** — Residual stream line~~
-5. **F6** — Test Results Cancel + a11y
+5. ~~**F6** — Test Results Cancel + a11y~~
 6. **F3** — Timeout and/or cancel discoverability (product decision)
 7. **F7** / **F8** — parse quality
 8. **F9**–**F11** — product polish / hygiene

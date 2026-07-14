@@ -26,6 +26,7 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     private ProjectWorkflowOutcomeKind? _lastOutcome;
     private string? _statusMessage;
     private bool _isOperationActive;
+    private string _cancelAutomationName = "Cancel build";
     private bool _disposed;
 
     /// <summary>
@@ -59,6 +60,15 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     {
         get => _isOperationActive;
         private set => this.RaiseAndSetIfChanged(ref _isOperationActive, value);
+    }
+
+    /// <summary>
+    /// Screen-reader name for Cancel on Output and Test Results (Build / Run / Test).
+    /// </summary>
+    public string CancelAutomationName
+    {
+        get => _cancelAutomationName;
+        private set => this.RaiseAndSetIfChanged(ref _cancelAutomationName, value);
     }
 
     public ReactiveCommand<Unit, Unit> BuildCommand { get; }
@@ -214,6 +224,7 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         IsOperationActive = snapshot.State is ProjectWorkflowOperationState.Starting
             or ProjectWorkflowOperationState.Running;
         StatusMessage = ProjectWorkflowStatusPolicy.MapOutputStatusMessage(snapshot);
+        CancelAutomationName = ProjectWorkflowStatusPolicy.MapCancelAutomationName(snapshot);
 
         if (snapshot.State == ProjectWorkflowOperationState.Starting)
             Lines.Clear();

@@ -89,6 +89,34 @@ public sealed class ProjectOutputServiceTests
         Assert.DoesNotContain("gen-1", vm.Lines[0].Text);
     }
 
+    [Theory]
+    [InlineData(ProjectWorkflowOperation.Build, "Cancel build")]
+    [InlineData(ProjectWorkflowOperation.Run, "Cancel run")]
+    [InlineData(ProjectWorkflowOperation.Test, "Cancel tests")]
+    public void ViewModel_CancelAutomationName_MatchesActiveOperation(
+        ProjectWorkflowOperation operation,
+        string expectedName)
+    {
+        var workflow = new RecordingWorkflowService();
+        using var output = new ProjectOutputService(workflow);
+        var context = new FakeIdleProjectContext();
+        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        vm.Scheduler = CurrentThreadScheduler.Instance;
+        vm.Activate();
+
+        workflow.Emit(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Running,
+            1,
+            operation,
+            null,
+            "/tmp/app.csproj",
+            12,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        Assert.Equal(expectedName, vm.CancelAutomationName);
+        Assert.True(vm.IsOperationActive);
+    }
+
     [Fact]
     public void ViewModel_CancelPath_SurfacesCancelledStatus()
     {

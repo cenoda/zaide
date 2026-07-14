@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Automation;
@@ -20,6 +21,7 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
 {
     private readonly TextBlock _summaryText;
     private readonly TextBlock _statusText;
+    private readonly Button _cancelButton;
     private readonly ListBox _list;
 
     public TestResultsPanel()
@@ -27,6 +29,14 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
         Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
 
         var title = TextStyles.Header("Test Results");
+
+        _cancelButton = new Button
+        {
+            Content = "Cancel",
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0),
+            IsVisible = false,
+        };
 
         var header = new StackPanel
         {
@@ -37,7 +47,7 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
                 LayoutTokens.SpacingSm,
                 LayoutTokens.SpacingMd,
                 LayoutTokens.SpacingXxs),
-            Children = { title },
+            Children = { title, _cancelButton },
         };
 
         _summaryText = TextStyles.Caption(string.Empty);
@@ -128,6 +138,19 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
                 ViewModel,
                 vm => vm.SelectedCase,
                 v => v._list.SelectedItem));
+
+            var workflow = ViewModel.Workflow;
+
+            d.Add(workflow.WhenAnyValue(w => w.IsOperationActive)
+                .Subscribe(active => _cancelButton.IsVisible = active));
+
+            d.Add(workflow.WhenAnyValue(w => w.CancelAutomationName)
+                .Subscribe(name => AutomationProperties.SetName(_cancelButton, name)));
+
+            void OnCancelClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
+                workflow.CancelCommand.Execute().Subscribe();
+            _cancelButton.Click += OnCancelClick;
+            d.Add(Disposable.Create(() => _cancelButton.Click -= OnCancelClick));
         });
     }
 

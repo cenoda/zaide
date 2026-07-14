@@ -18,6 +18,7 @@ public sealed class TestResultsViewModel : ReactiveObject, IDisposable
 {
     private readonly ITestResultsService _testResultsService;
     private readonly EditorTabViewModel _editorTabs;
+    private readonly ProjectWorkflowViewModel _workflow;
     private readonly CompositeDisposable _subscriptions = new();
     private string? _summaryText;
     private string? _statusMessage;
@@ -53,13 +54,20 @@ public sealed class TestResultsViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<TestCaseItemViewModel?, Unit> NavigateToCaseCommand { get; }
 
+    /// <summary>
+    /// Shared workflow projection for Cancel on Test Results (same command as Output).
+    /// </summary>
+    public ProjectWorkflowViewModel Workflow => _workflow;
+
     public TestResultsViewModel(
         ITestResultsService testResultsService,
-        EditorTabViewModel editorTabs)
+        EditorTabViewModel editorTabs,
+        ProjectWorkflowViewModel workflow)
     {
         _testResultsService = testResultsService ??
                               throw new ArgumentNullException(nameof(testResultsService));
         _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
+        _workflow = workflow ?? throw new ArgumentNullException(nameof(workflow));
 
         NavigateToCaseCommand = ReactiveCommand.CreateFromTask<TestCaseItemViewModel?>(
             NavigateToCaseAsync,

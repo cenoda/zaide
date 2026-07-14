@@ -35,8 +35,6 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0),
             IsVisible = false,
         };
-        AutomationProperties.SetName(_cancelButton, "Cancel build");
-
         var header = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -119,6 +117,9 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.IsOperationActive)
                 .Subscribe(active => _cancelButton.IsVisible = active));
+
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.CancelAutomationName)
+                .Subscribe(name => AutomationProperties.SetName(_cancelButton, name)));
 
             void OnCancelClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
                 ViewModel!.CancelCommand.Execute().Subscribe();

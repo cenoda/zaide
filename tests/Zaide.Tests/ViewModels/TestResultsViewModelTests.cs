@@ -1,6 +1,9 @@
 using System;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
 using Xunit;
@@ -69,6 +72,58 @@ public sealed class TestResultsViewModelTests
     }
 
     [Fact]
+    public void Workflow_CancelCommand_IsEnabledWhileTestOperationActive()
+    {
+        var registry = CommandRegistryFactory.Create();
+        var workflowService = new RecordingWorkflowService();
+        var workflowVm = TestProjectWorkflowFactory.Create(registry: registry, workflow: workflowService);
+        workflowVm.Scheduler = CurrentThreadScheduler.Instance;
+        workflowVm.Activate();
+
+        var service = new FakeTestResultsService();
+        using var vm = CreateViewModel(service, workflowVm);
+        vm.Activate();
+
+        workflowService.Emit(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Running,
+            1,
+            ProjectWorkflowOperation.Test,
+            null,
+            "/tmp/app.csproj",
+            42,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        Assert.True(vm.Workflow.IsOperationActive);
+        Assert.True(vm.Workflow.CancelCommand.CanExecute.FirstAsync().Wait());
+        Assert.Equal("Cancel tests", vm.Workflow.CancelAutomationName);
+    }
+
+    [Theory]
+    [InlineData(ProjectWorkflowOperation.Build, "Cancel build")]
+    [InlineData(ProjectWorkflowOperation.Run, "Cancel run")]
+    [InlineData(ProjectWorkflowOperation.Test, "Cancel tests")]
+    public void Workflow_CancelAutomationName_MatchesActiveOperation(
+        ProjectWorkflowOperation operation,
+        string expectedName)
+    {
+        var workflowService = new RecordingWorkflowService();
+        var workflowVm = TestProjectWorkflowFactory.Create(workflow: workflowService);
+        workflowVm.Scheduler = CurrentThreadScheduler.Instance;
+        workflowVm.Activate();
+
+        workflowService.Emit(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Running,
+            1,
+            operation,
+            null,
+            "/tmp/app.csproj",
+            42,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        Assert.Equal(expectedName, workflowVm.CancelAutomationName);
+    }
+
+    [Fact]
     public void SwitchToTestResultsBottomCommand_SetsMode()
     {
         var registry = CommandRegistryFactory.Create();
@@ -82,7 +137,9 @@ public sealed class TestResultsViewModelTests
         Assert.True(main.IsTestResultsBottomMode);
     }
 
-    private static TestResultsViewModel CreateViewModel(FakeTestResultsService service)
+    private static TestResultsViewModel CreateViewModel(
+        FakeTestResultsService service,
+        ProjectWorkflowViewModel? workflow = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton(new Workspace());
@@ -91,7 +148,8 @@ public sealed class TestResultsViewModelTests
         var sp = services.BuildServiceProvider();
         var workspace = sp.GetRequiredService<Workspace>();
         var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
-        var vm = new TestResultsViewModel(service, editorTabs);
+        workflow ??= TestProjectWorkflowFactory.Create();
+        var vm = new TestResultsViewModel(service, editorTabs, workflow);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         return vm;
     }
@@ -140,6 +198,53 @@ public sealed class TestResultsViewModelTests
             workspace,
             projectContext.Object,
             registry);
+    }
+
+    private sealed class RecordingWorkflowService : IProjectWorkflowService
+    {
+        private readonly Subject<ProjectWorkflowSnapshot> _subject = new();
+        private ProjectWorkflowSnapshot _current = new(
+            ProjectWorkflowOperationState.Idle,
+            0,
+            null,
+            null,
+            null,
+            null,
+            Array.Empty<ManagedProcessOutputLine>());
+
+        public ProjectWorkflowSnapshot Current => _current;
+
+        public IObservable<ProjectWorkflowSnapshot> WhenChanged => _subject;
+
+        public IObservable<ManagedProcessOutputLine> WhenOutputReceived =>
+            new Subject<ManagedProcessOutputLine>();
+
+        public void Emit(ProjectWorkflowSnapshot snapshot)
+        {
+            _current = snapshot;
+            _subject.OnNext(snapshot);
+        }
+
+        public Task<ProjectWorkflowOperationResult> StartBuildAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartRunAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartTestAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task CancelAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public void Dispose()
+        {
+            _subject.OnCompleted();
+            _subject.Dispose();
+        }
     }
 
     private sealed class FakeTestResultsService : ITestResultsService
