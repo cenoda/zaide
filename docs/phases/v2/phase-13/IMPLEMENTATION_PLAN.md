@@ -2,10 +2,14 @@
 
 ## Status
 
-**Not started.** M0 is the required planning and evidence gate. No Phase 13
-production change may begin until M0 records the supported Linux environment,
-representative fixtures, measured baselines, budgets, compatibility matrix, and
-the exact focused test commands used by later milestones.
+**M0 in progress — production work not started.** M0 is the required planning
+and evidence gate. The initial live-code inventory and automated baseline are
+recorded in [M0_RELEASE_BASELINE_PROOF.md](M0_RELEASE_BASELINE_PROOF.md), which
+currently blocks M1a pending five-sample desktop measurements and numeric
+budgets. No Phase 13 production change may begin until M0 records the supported
+Linux environment, representative fixtures, measured baselines, budgets,
+compatibility matrix, and the exact focused test commands used by later
+milestones.
 
 **Prerequisite:** Phases 8–12 are complete. Phase 13 hardens their existing
 contracts; it does not replace their ownership boundaries or introduce V3
