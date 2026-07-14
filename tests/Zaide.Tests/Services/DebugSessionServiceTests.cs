@@ -174,6 +174,11 @@ public sealed class DebugSessionServiceTests
             context,
             locator,
             factory,
+            new DebugSessionTimeoutPolicy(
+                initialize: TimeSpan.FromMilliseconds(300),
+                launchConfiguration: TimeSpan.FromMilliseconds(300),
+                ordinaryRequest: TimeSpan.FromMilliseconds(100),
+                disconnect: TimeSpan.FromMilliseconds(50)),
             NullLogger<DebugSessionService>.Instance);
 
         return (service, context, factory, locator);
@@ -414,7 +419,7 @@ public sealed class DebugSessionServiceTests
         var candidate = MakeCandidate("InitializeTimeout.csproj");
         var (service, context, factory, _) = CreateHarness();
         context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
-        factory.InitializeDelay = DebugSessionTimeouts.Initialize + TimeSpan.FromSeconds(2);
+        factory.InitializeDelay = TimeSpan.FromMilliseconds(500); // exceeds the 300ms fake timeout
         using (service)
         {
             var result = await service.StartLaunchAsync(MakeLaunchRequest());

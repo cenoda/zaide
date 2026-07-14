@@ -48,6 +48,7 @@ public sealed class NetCoreDbgLifecycleProofTests
             context,
             locator,
             factory,
+            new DebugSessionTimeoutPolicy(),
             NullLogger<DebugSessionService>.Instance);
 
         var launch = new DebugLaunchRequest(

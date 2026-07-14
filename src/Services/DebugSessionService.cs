@@ -31,6 +31,7 @@ public sealed class DebugSessionService : IDebugSessionService
     private readonly IProjectContextService _projectContext;
     private readonly IDebugAdapterLocator _adapterLocator;
     private readonly IDebugAdapterSessionFactory _sessionFactory;
+    private readonly DebugSessionTimeoutPolicy _timeoutPolicy;
     private readonly ILogger<DebugSessionService> _logger;
     private readonly Subject<DebugSessionSnapshot> _subject = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -47,11 +48,13 @@ public sealed class DebugSessionService : IDebugSessionService
         IProjectContextService projectContext,
         IDebugAdapterLocator adapterLocator,
         IDebugAdapterSessionFactory sessionFactory,
+        DebugSessionTimeoutPolicy timeoutPolicy,
         ILogger<DebugSessionService> logger)
     {
         _projectContext = projectContext ?? throw new ArgumentNullException(nameof(projectContext));
         _adapterLocator = adapterLocator ?? throw new ArgumentNullException(nameof(adapterLocator));
         _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        _timeoutPolicy = timeoutPolicy ?? throw new ArgumentNullException(nameof(timeoutPolicy));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _contextSubscription = _projectContext.WhenChanged.Subscribe(OnProjectContextChanged);
@@ -191,11 +194,11 @@ public sealed class DebugSessionService : IDebugSessionService
 
             await WithTimeoutAsync(
                 token => session.InitializeAsync(token),
-                DebugSessionTimeouts.Initialize,
+                _timeoutPolicy.Initialize,
                 sessionToken).ConfigureAwait(false);
             await WithTimeoutAsync(
                 token => session.LaunchAsync(programPath, workingDirectory, request.StopAtEntry, token),
-                DebugSessionTimeouts.LaunchConfiguration,
+                _timeoutPolicy.LaunchConfiguration,
                 sessionToken).ConfigureAwait(false);
 
             var breakpointsBySource = request.Breakpoints
@@ -206,7 +209,7 @@ public sealed class DebugSessionService : IDebugSessionService
             {
                 await WithTimeoutAsync(
                     token => session.SetBreakpointsAsync(sourcePath, lines, token),
-                    DebugSessionTimeouts.LaunchConfiguration,
+                    _timeoutPolicy.LaunchConfiguration,
                     sessionToken).ConfigureAwait(false);
             }
 
@@ -224,10 +227,10 @@ public sealed class DebugSessionService : IDebugSessionService
             {
                 await WithTimeoutAsync(
                     token => session.ConfigurationDoneAsync(token),
-                    DebugSessionTimeouts.LaunchConfiguration,
+                    _timeoutPolicy.LaunchConfiguration,
                     sessionToken).ConfigureAwait(false);
                 using var stoppedTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(sessionToken);
-                stoppedTimeoutCts.CancelAfter(DebugSessionTimeouts.LaunchConfiguration);
+                stoppedTimeoutCts.CancelAfter(_timeoutPolicy.LaunchConfiguration);
                 var stoppedEvent = await stoppedTcs.Task
                     .WaitAsync(stoppedTimeoutCts.Token)
                     .ConfigureAwait(false);
@@ -362,7 +365,7 @@ public sealed class DebugSessionService : IDebugSessionService
         {
             await WithTimeoutAsync(
                 token => session.ContinueAsync(threadId, token),
-                DebugSessionTimeouts.OrdinaryRequest,
+                _timeoutPolicy.OrdinaryRequest,
                 cancellationToken).ConfigureAwait(false);
             return new DebugSessionOperationResult(true, null, null);
         }
@@ -386,7 +389,7 @@ public sealed class DebugSessionService : IDebugSessionService
         var session = RequireStoppedSession();
         return await WithTimeoutAsync(
             token => session.RequestThreadsAsync(token),
-            DebugSessionTimeouts.OrdinaryRequest,
+            _timeoutPolicy.OrdinaryRequest,
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -398,7 +401,7 @@ public sealed class DebugSessionService : IDebugSessionService
         var session = RequireStoppedSession();
         return await WithTimeoutAsync(
             token => session.RequestStackTraceAsync(threadId, token),
-            DebugSessionTimeouts.OrdinaryRequest,
+            _timeoutPolicy.OrdinaryRequest,
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -410,7 +413,7 @@ public sealed class DebugSessionService : IDebugSessionService
         var session = RequireStoppedSession();
         return await WithTimeoutAsync(
             token => session.RequestScopesAsync(frameId, token),
-            DebugSessionTimeouts.OrdinaryRequest,
+            _timeoutPolicy.OrdinaryRequest,
             cancellationToken).ConfigureAwait(false);
     }
 

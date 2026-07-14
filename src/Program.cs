@@ -76,6 +76,7 @@ class Program
         services.AddSingleton<IDebugAdapterLocator>(_ =>
             new DebugAdapterLocator(Environment.GetEnvironmentVariable("ZAIDE_NETCOREDBG_PATH")));
         services.AddSingleton<IDebugAdapterSessionFactory, DebugAdapterSessionFactory>();
+        services.AddSingleton<DebugSessionTimeoutPolicy>();
         services.AddSingleton<IDebugSessionService, DebugSessionService>();
 
         // Phase 11 M1: UI-independent build/run/test process orchestration core.
