@@ -74,6 +74,11 @@ public interface IDebugAdapterSession : IAsyncDisposable
     /// <summary>Issues the DAP <c>scopes</c> request.</summary>
     Task<JsonElement?> RequestScopesAsync(int frameId, CancellationToken cancellationToken);
 
+    /// <summary>Issues the DAP <c>variables</c> request.</summary>
+    Task<JsonElement?> RequestVariablesAsync(
+        int variablesReference,
+        CancellationToken cancellationToken);
+
     /// <summary>Issues the DAP <c>continue</c> request.</summary>
     Task ContinueAsync(int threadId, CancellationToken cancellationToken);
 

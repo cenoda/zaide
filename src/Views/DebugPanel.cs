@@ -11,19 +11,25 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
+using Zaide.Services;
 using Zaide.Styles;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
 
 /// <summary>
-/// Debug bottom panel with separate Debug Console and Call Stack sections.
+/// Debug bottom panel with Debug Console, Call Stack, and Variables sections.
 /// </summary>
 public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
 {
     private readonly TextBlock _statusText;
     private readonly ListBox _consoleList;
     private readonly TextBlock _callStackStatus;
+    private readonly ListBox _threadList;
+    private readonly ListBox _frameList;
+    private readonly TextBlock _variablesStatus;
+    private readonly ListBox _scopeList;
+    private readonly ListBox _variableList;
 
     public DebugPanel()
     {
@@ -39,17 +45,7 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
         consoleHeader.Margin = LayoutTokens.Inset(
             LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXxs);
 
-        _consoleList = new ListBox
-        {
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm),
-        };
-        AutomationProperties.SetName(_consoleList, "Debug console lines");
-        AutomationProperties.SetHelpText(
-            _consoleList,
-            "Structured debug-session output distinct from terminal and workflow output. Read-only.");
-
+        _consoleList = CreateReadOnlyList("Debug console lines");
         _consoleList.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<DebugConsoleLineViewModel>(
             (item, _) =>
             {
@@ -81,9 +77,31 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
 
         _callStackStatus = TextStyles.Caption(string.Empty);
         _callStackStatus.Margin = LayoutTokens.Inset(
-            LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd);
+            LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingXxs);
         _callStackStatus.TextWrapping = TextWrapping.Wrap;
-        AutomationProperties.SetName(_callStackStatus, "Call stack status");
+
+        _threadList = CreateReadOnlyList("Debug threads");
+        _threadList.ItemTemplate = CreateCaptionTemplate<DebugThreadViewModel>(item => item!.DisplayText);
+        _threadList.MaxHeight = 72;
+
+        _frameList = CreateReadOnlyList("Call stack frames");
+        _frameList.ItemTemplate = CreateCaptionTemplate<DebugStackFrameViewModel>(item => item!.DisplayText);
+
+        var variablesHeader = TextStyles.Header("Variables");
+        variablesHeader.Margin = LayoutTokens.Inset(
+            LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXxs);
+
+        _variablesStatus = TextStyles.Caption(string.Empty);
+        _variablesStatus.Margin = LayoutTokens.Inset(
+            LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingXxs);
+        _variablesStatus.TextWrapping = TextWrapping.Wrap;
+
+        _scopeList = CreateReadOnlyList("Debug scopes");
+        _scopeList.ItemTemplate = CreateCaptionTemplate<DebugScopeViewModel>(item => item!.Name);
+        _scopeList.MaxHeight = 72;
+
+        _variableList = CreateReadOnlyList("Debug variables");
+        _variableList.ItemTemplate = CreateCaptionTemplate<DebugVariableViewModel>(item => item!.DisplayText);
 
         var consoleSection = new DockPanel
         {
@@ -92,12 +110,35 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
         };
         DockPanel.SetDock(consoleHeader, Dock.Top);
 
+        var callStackContent = new DockPanel
+        {
+            LastChildFill = true,
+            Children = { _callStackStatus, _threadList, _frameList },
+        };
+        DockPanel.SetDock(_callStackStatus, Dock.Top);
+        DockPanel.SetDock(_threadList, Dock.Top);
+
         var callStackSection = new DockPanel
         {
             LastChildFill = true,
-            Children = { callStackHeader, _callStackStatus },
+            Children = { callStackHeader, callStackContent },
         };
         DockPanel.SetDock(callStackHeader, Dock.Top);
+
+        var variablesContent = new DockPanel
+        {
+            LastChildFill = true,
+            Children = { _variablesStatus, _scopeList, _variableList },
+        };
+        DockPanel.SetDock(_variablesStatus, Dock.Top);
+        DockPanel.SetDock(_scopeList, Dock.Top);
+
+        var variablesSection = new DockPanel
+        {
+            LastChildFill = true,
+            Children = { variablesHeader, variablesContent },
+        };
+        DockPanel.SetDock(variablesHeader, Dock.Top);
 
         var sections = new Grid
         {
@@ -106,11 +147,14 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                 new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) },
                 new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
                 new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
             },
-            Children = { consoleSection, callStackSection },
+            Children = { consoleSection, callStackSection, variablesSection },
         };
         Grid.SetColumn(consoleSection, 0);
         Grid.SetColumn(callStackSection, 2);
+        Grid.SetColumn(variablesSection, 4);
 
         Content = new DockPanel
         {
@@ -157,8 +201,139 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                     _statusText.IsVisible = !string.IsNullOrEmpty(msg);
                 }));
 
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.CallStackStatusText)
-                .Subscribe(text => _callStackStatus.Text = text));
+            BindStackProjection(d);
         });
+    }
+
+    private void BindStackProjection(CompositeDisposable d)
+    {
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.Threads)
+            .Subscribe(threads => _threadList.ItemsSource = threads));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.Frames)
+            .Subscribe(frames => _frameList.ItemsSource = frames));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.Scopes)
+            .Subscribe(scopes => _scopeList.ItemsSource = scopes));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.Variables)
+            .Subscribe(variables => _variableList.ItemsSource = variables));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.CallStackStatusText)
+            .Subscribe(text =>
+            {
+                _callStackStatus.Text = text;
+                _callStackStatus.IsVisible = !string.IsNullOrEmpty(text);
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.VariablesStatusText)
+            .Subscribe(text =>
+            {
+                _variablesStatus.Text = text;
+                _variablesStatus.IsVisible = !string.IsNullOrEmpty(text);
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.CallStackState)
+            .Subscribe(state =>
+            {
+                _threadList.IsVisible = state == DebugProjectionState.Ready &&
+                                        ViewModel!.StackProjection.Threads.Count > 1;
+                _frameList.IsVisible = state == DebugProjectionState.Ready;
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.VariablesState)
+            .Subscribe(state =>
+            {
+                _scopeList.IsVisible = state == DebugProjectionState.Ready &&
+                                       ViewModel!.StackProjection.Scopes.Count > 1;
+                _variableList.IsVisible = state == DebugProjectionState.Ready;
+            }));
+
+        d.Add(Observable.FromEventPattern<EventHandler<SelectionChangedEventArgs>, SelectionChangedEventArgs>(
+                h => _threadList.SelectionChanged += h,
+                h => _threadList.SelectionChanged -= h)
+            .Subscribe(_ =>
+            {
+                if (ViewModel is null ||
+                    _threadList.SelectedItem is not DebugThreadViewModel thread)
+                    return;
+
+                ViewModel.StackProjection.SelectThreadCommand.Execute(thread).Subscribe();
+            }));
+
+        d.Add(Observable.FromEventPattern<EventHandler<SelectionChangedEventArgs>, SelectionChangedEventArgs>(
+                h => _frameList.SelectionChanged += h,
+                h => _frameList.SelectionChanged -= h)
+            .Subscribe(_ =>
+            {
+                if (ViewModel is null ||
+                    _frameList.SelectedItem is not DebugStackFrameViewModel frame)
+                    return;
+
+                ViewModel.StackProjection.SelectFrameCommand.Execute(frame).Subscribe();
+            }));
+
+        d.Add(Observable.FromEventPattern<EventHandler<SelectionChangedEventArgs>, SelectionChangedEventArgs>(
+                h => _scopeList.SelectionChanged += h,
+                h => _scopeList.SelectionChanged -= h)
+            .Subscribe(_ =>
+            {
+                if (ViewModel is null ||
+                    _scopeList.SelectedItem is not DebugScopeViewModel scope)
+                    return;
+
+                ViewModel.StackProjection.SelectScopeCommand.Execute(scope).Subscribe();
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedThread)
+            .Subscribe(thread =>
+            {
+                if (thread is null)
+                    _threadList.SelectedItem = null;
+                else if (!ReferenceEquals(_threadList.SelectedItem, thread))
+                    _threadList.SelectedItem = thread;
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedFrame)
+            .Subscribe(frame =>
+            {
+                if (frame is null)
+                    _frameList.SelectedItem = null;
+                else if (!ReferenceEquals(_frameList.SelectedItem, frame))
+                    _frameList.SelectedItem = frame;
+            }));
+
+        d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedScope)
+            .Subscribe(scope =>
+            {
+                if (scope is null)
+                    _scopeList.SelectedItem = null;
+                else if (!ReferenceEquals(_scopeList.SelectedItem, scope))
+                    _scopeList.SelectedItem = scope;
+            }));
+    }
+
+    private static ListBox CreateReadOnlyList(string automationName)
+    {
+        var list = new ListBox
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm),
+        };
+        AutomationProperties.SetName(list, automationName);
+        AutomationProperties.SetHelpText(list, "Read-only debug projection list.");
+        return list;
+    }
+
+    private static Avalonia.Controls.Templates.FuncDataTemplate<T> CreateCaptionTemplate<T>(
+        Func<T?, string> getText)
+    {
+        return new Avalonia.Controls.Templates.FuncDataTemplate<T>((item, _) =>
+            new Border
+            {
+                Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+                Child = TextStyles.Caption(getText(item)),
+            });
     }
 }

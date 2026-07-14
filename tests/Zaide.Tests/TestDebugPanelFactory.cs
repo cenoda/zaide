@@ -11,6 +11,23 @@ internal static class TestDebugPanelFactory
     public static DebugPanelViewModel Create(IDebugSessionService? debugSession = null)
     {
         debugSession ??= TestOperationGateFactory.CreateIdleDebugSession().Object;
-        return new DebugPanelViewModel(debugSession);
+        var stackProjection = new DebugStackProjectionViewModel(debugSession);
+        return new DebugPanelViewModel(debugSession, stackProjection);
+    }
+
+    public static DebugStackProjectionViewModel CreateStackProjection(IDebugSessionService? debugSession = null)
+    {
+        debugSession ??= TestOperationGateFactory.CreateIdleDebugSession().Object;
+        return new DebugStackProjectionViewModel(debugSession);
+    }
+
+    public static DebugCurrentLocationViewModel CreateCurrentLocation(
+        EditorTabViewModel editorTabs,
+        IDebugSessionService? debugSession = null,
+        DebugStackProjectionViewModel? stackProjection = null)
+    {
+        debugSession ??= TestOperationGateFactory.CreateIdleDebugSession().Object;
+        stackProjection ??= new DebugStackProjectionViewModel(debugSession);
+        return new DebugCurrentLocationViewModel(debugSession, stackProjection, editorTabs);
     }
 }

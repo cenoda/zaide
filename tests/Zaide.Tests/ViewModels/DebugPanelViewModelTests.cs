@@ -11,8 +11,8 @@ using Zaide.ViewModels;
 namespace Zaide.Tests.ViewModels;
 
 /// <summary>
-/// Phase 12 M4 tests for Debug Console history, isolation, error projection,
-/// and call-stack shell state.
+/// Phase 12 M4/M5 tests for Debug Console history, isolation, error projection,
+/// and debug-panel composition.
 /// </summary>
 public sealed class DebugPanelViewModelTests
 {
@@ -29,7 +29,8 @@ public sealed class DebugPanelViewModelTests
         debug.SetupGet(s => s.Current).Returns(initial);
         debug.SetupGet(s => s.WhenChanged).Returns(subject);
 
-        var panel = new DebugPanelViewModel(debug.Object);
+        var stack = new DebugStackProjectionViewModel(debug.Object);
+        var panel = new DebugPanelViewModel(debug.Object, stack);
         panel.Activate();
         return (panel, subject, debug);
     }
@@ -96,16 +97,18 @@ public sealed class DebugPanelViewModelTests
     }
 
     [Fact]
-    public void CallStack_ShowsDeferredM5ShellState()
+    public void DebugMode_IncludesStackAndVariablesProjection()
     {
-        var (panel, subject, _) = CreateHarness(Snapshot(DebugSessionState.Stopped));
-        Assert.Contains("M5", panel.CallStackStatusText, StringComparison.OrdinalIgnoreCase);
+        var (panel, subject, _) = CreateHarness(Snapshot(DebugSessionState.Idle));
+        Assert.NotNull(panel.StackProjection);
+        Assert.NotNull(panel.StackProjection.Variables);
 
         subject.OnNext(Snapshot(DebugSessionState.Running));
-        Assert.Contains("running", panel.CallStackStatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("running", panel.StackProjection.CallStackStatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("running", panel.StackProjection.VariablesStatusText, StringComparison.OrdinalIgnoreCase);
 
         subject.OnNext(Snapshot(DebugSessionState.Idle));
-        Assert.Contains("without an active debug session", panel.CallStackStatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("without an active debug session", panel.StackProjection.CallStackStatusText, StringComparison.OrdinalIgnoreCase);
         panel.Dispose();
     }
 

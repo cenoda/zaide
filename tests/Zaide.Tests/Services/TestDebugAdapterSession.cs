@@ -103,7 +103,10 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add($"stackTrace:{threadId}");
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult<JsonElement?>(JsonDocument.Parse("{\"stackFrames\":[{\"id\":10,\"name\":\"Main\"}]}").RootElement);
+        var sourcePath = StackSourcePath ?? string.Empty;
+        var json =
+            $"{{\"stackFrames\":[{{\"id\":10,\"name\":\"Main\",\"source\":{{\"path\":\"{sourcePath}\"}},\"line\":{StackLine}}}]}}";
+        return Task.FromResult<JsonElement?>(JsonDocument.Parse(json).RootElement);
     }
 
     public Task<JsonElement?> RequestScopesAsync(int frameId, CancellationToken cancellationToken)
@@ -111,6 +114,22 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
         CallOrder.Add($"scopes:{frameId}");
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<JsonElement?>(JsonDocument.Parse("{\"scopes\":[{\"name\":\"Locals\",\"variablesReference\":1}]}").RootElement);
+    }
+
+    public string? StackSourcePath { get; set; } = "/tmp/Program.cs";
+
+    public int StackLine { get; set; } = 1;
+
+    public string VariablesJson { get; set; } =
+        "{\"variables\":[{\"name\":\"count\",\"value\":\"1\",\"type\":\"int\"}]}";
+
+    public Task<JsonElement?> RequestVariablesAsync(
+        int variablesReference,
+        CancellationToken cancellationToken)
+    {
+        CallOrder.Add($"variables:{variablesReference}");
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<JsonElement?>(JsonDocument.Parse(VariablesJson).RootElement);
     }
 
     public Task ContinueAsync(int threadId, CancellationToken cancellationToken)

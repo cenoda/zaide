@@ -178,6 +178,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public EditorBreakpointViewModel EditorBreakpointViewModel { get; }
 
+    public DebugCurrentLocationViewModel? DebugCurrentLocationViewModel { get; }
+
     /// <summary>
     /// M4: Authoritative UI-thread projection of the current project-context
     /// snapshot. Updated by the <see cref="Activate"/> subscription to
@@ -217,7 +219,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 EditorBreakpointViewModel editorBreakpointViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
-                                ICommandRegistry? commandRegistry = null)
+                                ICommandRegistry? commandRegistry = null,
+                                DebugCurrentLocationViewModel? debugCurrentLocationViewModel = null)
     {
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
@@ -238,6 +241,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ?? throw new ArgumentNullException(nameof(debugPanelViewModel));
         EditorBreakpointViewModel = editorBreakpointViewModel
             ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
+        DebugCurrentLocationViewModel = debugCurrentLocationViewModel;
 
         // Phase 11 F9: save all dirty editor tabs before Build / Run / Test.
         ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () =>
@@ -356,6 +360,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Phase 12 M3b: editor breakpoint projection and F9 command.
         EditorBreakpointViewModel.Activate();
         _disposables.Add(EditorBreakpointViewModel);
+
+        // Phase 12 M5: selected-frame current execution location projection.
+        if (DebugCurrentLocationViewModel is not null)
+        {
+            DebugCurrentLocationViewModel.Activate();
+            _disposables.Add(DebugCurrentLocationViewModel);
+        }
         _disposables.Add(
             ProjectWorkflowViewModel.WhenShowOutputRequested
                 .Subscribe(_ =>

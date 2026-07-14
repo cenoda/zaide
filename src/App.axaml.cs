@@ -37,6 +37,7 @@ public partial class App : Application
             // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
             _ = Services.GetRequiredService<DebugSessionViewModel>();
             var editorBreakpointVm = Services.GetRequiredService<EditorBreakpointViewModel>();
+            var debugCurrentLocationVm = Services.GetRequiredService<DebugCurrentLocationViewModel>();
 
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
@@ -60,7 +61,8 @@ public partial class App : Application
                 paletteVm,
                 searchVm,
                 languageInputVm,
-                editorBreakpointVm)
+                editorBreakpointVm,
+                debugCurrentLocationVm)
             {
                 ViewModel = vm,
             };

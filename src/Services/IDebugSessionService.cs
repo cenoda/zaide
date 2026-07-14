@@ -64,6 +64,11 @@ public interface IDebugSessionService : IDisposable
         int frameId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Issues <c>variables</c> while the session is stopped.</summary>
+    Task<JsonElement?> RequestVariablesAsync(
+        int variablesReference,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Replaces persisted breakpoints for each source path while a configured
     /// debug session is running or stopped. No-ops when no adapter session is active.

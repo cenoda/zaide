@@ -11,7 +11,7 @@ using Zaide.Services;
 namespace Zaide.ViewModels;
 
 /// <summary>
-/// Projects debug-session diagnostics and call-stack shell state into the Debug
+/// Projects debug-session diagnostics, call stack, and variables into the Debug
 /// bottom panel. Does not own DAP or process logic.
 /// </summary>
 public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
@@ -20,16 +20,20 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
     private readonly CompositeDisposable _subscriptions = new();
     private readonly Subject<Unit> _showDebugRequested = new();
     private DebugSessionState _state = DebugSessionState.Idle;
-    private string _callStackStatusText = "Call stack is unavailable without an active debug session.";
     private string? _statusMessage;
     private int _projectedDiagnosticCount;
     private DebugSessionState? _lastAnnouncedState;
     private bool _disposed;
 
-    public DebugPanelViewModel(IDebugSessionService debugSession)
+    public DebugPanelViewModel(
+        IDebugSessionService debugSession,
+        DebugStackProjectionViewModel stackProjection)
     {
         _debugSession = debugSession ?? throw new ArgumentNullException(nameof(debugSession));
+        StackProjection = stackProjection ?? throw new ArgumentNullException(nameof(stackProjection));
     }
+
+    public DebugStackProjectionViewModel StackProjection { get; }
 
     public ObservableCollection<DebugConsoleLineViewModel> Lines { get; } = new();
 
@@ -37,12 +41,6 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
     {
         get => _state;
         private set => this.RaiseAndSetIfChanged(ref _state, value);
-    }
-
-    public string CallStackStatusText
-    {
-        get => _callStackStatusText;
-        private set => this.RaiseAndSetIfChanged(ref _callStackStatusText, value);
     }
 
     public string? StatusMessage
@@ -64,6 +62,7 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
         if (_disposed || _subscriptions.Count > 0)
             return;
 
+        StackProjection.Activate();
         ApplySnapshot(_debugSession.Current, isInitial: true);
         _subscriptions.Add(_debugSession.WhenChanged.Subscribe(snapshot => ApplySnapshot(snapshot)));
     }
@@ -75,6 +74,7 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
             return;
         _disposed = true;
         _subscriptions.Dispose();
+        StackProjection.Dispose();
         _showDebugRequested.OnCompleted();
         _showDebugRequested.Dispose();
     }
@@ -102,7 +102,6 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
         }
 
         AppendNewDiagnostics(snapshot.DiagnosticOutput);
-        UpdateCallStackStatus(snapshot);
         _lastAnnouncedState = snapshot.State;
     }
 
@@ -157,22 +156,5 @@ public sealed class DebugPanelViewModel : ReactiveObject, IDisposable
             return;
 
         Lines.Add(new DebugConsoleLineViewModel(text, kind));
-    }
-
-    private void UpdateCallStackStatus(DebugSessionSnapshot snapshot)
-    {
-        CallStackStatusText = snapshot.State switch
-        {
-            DebugSessionState.Stopped => snapshot.StopInfo?.ThreadId is null
-                ? "Stopped, but no thread is available for call stack projection (M5)."
-                : "Stopped. Call stack frames will be available in M5.",
-            DebugSessionState.Running => "Call stack is unavailable while the debuggee is running.",
-            DebugSessionState.Starting or DebugSessionState.Stopping =>
-                "Call stack is unavailable during session transitions.",
-            DebugSessionState.Failed => "Call stack is unavailable after a debug session failure.",
-            DebugSessionState.Idle or DebugSessionState.Unavailable =>
-                "Call stack is unavailable without an active debug session.",
-            _ => CallStackStatusText,
-        };
     }
 }

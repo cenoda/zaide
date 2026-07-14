@@ -203,6 +203,16 @@ internal sealed class NetCoreDbgAdapterSession : IDebugAdapterSession
             cancellationToken);
 
     /// <inheritdoc />
+    public Task<JsonElement?> RequestVariablesAsync(
+        int variablesReference,
+        CancellationToken cancellationToken) =>
+        RequestWithTimeoutAsync(
+            "variables",
+            new { variablesReference },
+            DebugSessionTimeouts.OrdinaryRequest,
+            cancellationToken);
+
+    /// <inheritdoc />
     public Task ContinueAsync(int threadId, CancellationToken cancellationToken) =>
         RequestWithTimeoutAsync(
             "continue",

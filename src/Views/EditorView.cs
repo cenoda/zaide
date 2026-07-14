@@ -42,7 +42,9 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
     private readonly BreakpointOperations _breakpointOperations;
+    private readonly InstructionPointerOperations _instructionPointerOperations;
     private readonly EditorBreakpointViewModel _breakpointViewModel;
+    private readonly DebugCurrentLocationViewModel _currentLocationViewModel;
     private readonly ContentControl _fileInfoIconHost;
     private readonly TextBlock _fileInfoText;
     private readonly FoldingOperations _foldingOperations;
@@ -61,12 +63,15 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     public EditorView(
         ISettingsService settings,
         EditorLanguageInputViewModel languageInput,
-        EditorBreakpointViewModel breakpointViewModel)
+        EditorBreakpointViewModel breakpointViewModel,
+        DebugCurrentLocationViewModel currentLocationViewModel)
     {
         _settings = settings;
         _languageInput = languageInput ?? throw new ArgumentNullException(nameof(languageInput));
         _breakpointViewModel = breakpointViewModel
             ?? throw new ArgumentNullException(nameof(breakpointViewModel));
+        _currentLocationViewModel = currentLocationViewModel
+            ?? throw new ArgumentNullException(nameof(currentLocationViewModel));
         _completionPopup = new EditorCompletionPopup
         {
             PlacementTarget = null,
@@ -117,6 +122,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _breakpointOperations = new BreakpointOperations(
             _textEditor,
             line => _breakpointViewModel.ToggleAtLineCommand.Execute(line).Subscribe());
+        _instructionPointerOperations = new InstructionPointerOperations(_textEditor);
 
         // M4: Focused file info bar — shows current file name and "diff/edit" indicator.
         // Styled with TextSecondaryBrush for a quieter, utility-focused appearance.
@@ -408,12 +414,20 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 .WhenAnyValue(x => x.ProjectionRevision)
                 .Subscribe(_ => SyncBreakpointMargin()));
 
+            d.Add(_currentLocationViewModel
+                .WhenAnyValue(x => x.ProjectionRevision)
+                .Subscribe(_ => SyncInstructionPointerMargin()));
+
             d.Add(this.GetObservable(ViewModelProperty)
                 .Select(vm => vm is EditorViewModel evm
                     ? evm.WhenAnyValue(x => x.FilePath)
                     : Observable.Never<string>())
                 .Switch()
-                .Subscribe(_ => SyncBreakpointMargin()));
+                .Subscribe(_ =>
+                {
+                    SyncBreakpointMargin();
+                    SyncInstructionPointerMargin();
+                }));
         });
     }
 
@@ -433,6 +447,24 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
         _breakpointOperations.Install();
         _breakpointOperations.SetMarkers(_breakpointViewModel.Markers);
+    }
+
+    private void SyncInstructionPointerMargin()
+    {
+        var normalizedPath = string.IsNullOrWhiteSpace(ViewModel?.FilePath)
+            ? null
+            : Path.GetFullPath(ViewModel.FilePath);
+
+        if (ViewModel is null ||
+            _currentLocationViewModel.ActiveDocumentPath is null ||
+            !string.Equals(normalizedPath, _currentLocationViewModel.ActiveDocumentPath, StringComparison.Ordinal))
+        {
+            _instructionPointerOperations.Clear();
+            return;
+        }
+
+        _instructionPointerOperations.Install();
+        _instructionPointerOperations.SetMarker(_currentLocationViewModel.Marker);
     }
 
     /// <summary>
@@ -991,6 +1023,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _languageInput.DismissAll();
         ClearLanguagePresentation();
         _breakpointOperations.Dispose();
+        _instructionPointerOperations.Dispose();
         _settingsBinding.Dispose();
     }
 }

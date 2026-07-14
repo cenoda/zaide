@@ -44,6 +44,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly EditorSearchViewModel _searchViewModel;
     private readonly EditorLanguageInputViewModel _languageInputViewModel;
     private readonly EditorBreakpointViewModel _editorBreakpointViewModel;
+    private readonly DebugCurrentLocationViewModel _debugCurrentLocationViewModel;
     private readonly List<KeyBinding> _registryBindings = new();
     private readonly NavBar _navBar;
     private readonly FileTreeView _fileTreeView;
@@ -83,7 +84,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         CommandPaletteViewModel paletteViewModel,
         EditorSearchViewModel searchViewModel,
         EditorLanguageInputViewModel languageInputViewModel,
-        EditorBreakpointViewModel editorBreakpointViewModel)
+        EditorBreakpointViewModel editorBreakpointViewModel,
+        DebugCurrentLocationViewModel debugCurrentLocationViewModel)
     {
         _settings = settings;
         _secrets = secrets;
@@ -94,6 +96,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _languageInputViewModel = languageInputViewModel;
         _editorBreakpointViewModel = editorBreakpointViewModel
             ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
+        _debugCurrentLocationViewModel = debugCurrentLocationViewModel
+            ?? throw new ArgumentNullException(nameof(debugCurrentLocationViewModel));
         InitializeComponent();
 
         // === Window Chrome ===
@@ -558,7 +562,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // --- Column 3: Center — Townhall (real M3 view) ---
         _editorTabBar = new EditorTabBar();
-        _editorView = new EditorView(_settings, _languageInputViewModel, _editorBreakpointViewModel);
+        _editorView = new EditorView(
+            _settings,
+            _languageInputViewModel,
+            _editorBreakpointViewModel,
+            _debugCurrentLocationViewModel);
         _welcomeText = TextStyles.Body("Open a file to begin");
         _welcomeText.VerticalAlignment = VerticalAlignment.Center;
         _welcomeText.HorizontalAlignment = HorizontalAlignment.Center;

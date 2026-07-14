@@ -87,6 +87,8 @@ class Program
         services.AddSingleton<IProjectDebugTargetResolver, ProjectDebugTargetResolver>();
         services.AddSingleton<IProjectDebugLaunchService, ProjectDebugLaunchService>();
         services.AddSingleton<DebugSessionViewModel>();
+        services.AddSingleton<DebugStackProjectionViewModel>();
+        services.AddSingleton<DebugCurrentLocationViewModel>();
         services.AddSingleton<DebugPanelViewModel>();
         services.AddSingleton<EditorBreakpointViewModel>();
 

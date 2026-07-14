@@ -30,6 +30,12 @@ production Linux proof. Evidence:
 projection, deterministic tests, and production Linux step/stop proof. Evidence:
 [M4_EXECUTION_CONTROLS_DEBUG_CONSOLE_PROOF.md](M4_EXECUTION_CONTROLS_DEBUG_CONSOLE_PROOF.md).
 
+**M5 complete** (2026-07-14). Stopped-state threads/stack/scopes/variables
+projection, Variables section in Debug mode, selected-frame current-execution-location
+navigation and instruction-pointer marker, lifecycle clearing, deterministic tests,
+and production Linux stack/variable proof. Evidence:
+[M5_STACK_VARIABLES_CURRENT_LOCATION_PROOF.md](M5_STACK_VARIABLES_CURRENT_LOCATION_PROOF.md).
+
 **Prerequisite:** Phase 11 is complete. `IProjectContextService` is the sole
 project-target owner; `ICommandRegistry` is the sole command/keybinding
 surface; Phase 11 owns Build/Run/Test and the structured Output surface.
@@ -329,7 +335,7 @@ structural. The M1 revert target is the committed M0 baseline: `6222ea5`.
 | **M3a** ✅ | Extract the shared project-operation gate; build-before-debug handoff under one gate lease using the locked MSBuild `TargetPath` query; `debug.startOrContinue` F5 command. No F9/editor chrome. Evidence: [M3a_DEBUG_LAUNCH_HANDOFF_PROOF.md](M3a_DEBUG_LAUNCH_HANDOFF_PROOF.md). | target-resolution + workflow-busy/debug-active + handoff-no-gap + F5 registry dispatch tests; Linux smoke: fresh build, F5 launch | `debug: start launch debugging` |
 | **M3b** ✅ | `debug.toggleBreakpoint` / F9 plus editor breakpoint margin/projection over M2 persistence and M3a session state. Evidence: [M3b_EDITOR_BREAKPOINT_PROOF.md](M3b_EDITOR_BREAKPOINT_PROOF.md). | breakpoint command + editor projection/path-identity tests; Linux smoke: F9, F5, breakpoint hit | `debug: add editor breakpoint projection` |
 | **M4** ✅ | Continue/pause/stop/step commands and DAP state gating; fixed Debug bottom mode with Debug Console + Call Stack; adapter error projection. Evidence: [M4_EXECUTION_CONTROLS_DEBUG_CONSOLE_PROOF.md](M4_EXECUTION_CONTROLS_DEBUG_CONSOLE_PROOF.md). | command availability/state transition and Debug-mode composition tests; Linux smoke: F5/F10/F11/Shift+F11/Shift+F5 + output | `debug: add execution controls and debug console` |
-| **M5** | Threads, call stack, frames, scopes, variables, selected-frame current-execution-location projection, and stale-data clearing on resume/end. | `DebugStackProjectionTests`, scope/variable/current-location tests, stale-generation tests; Linux smoke: stop → frame → scope → variable | `debug: project stack and variables` |
+| **M5** ✅ | Threads, call stack, frames, scopes, variables, selected-frame current-execution-location projection, and stale-data clearing on resume/end. Evidence: [M5_STACK_VARIABLES_CURRENT_LOCATION_PROOF.md](M5_STACK_VARIABLES_CURRENT_LOCATION_PROOF.md). | `DebugStackProjectionTests`, scope/variable/current-location tests, stale-generation tests; Linux smoke: stop → frame → scope → variable | `debug: project stack and variables` |
 | **M6** | Error/recovery hardening: missing adapter, build failure, launch failure, breakpoint rejected, adapter crash/disconnect, context change, rapid start/stop. | lifecycle/error regression tests; recorded Linux failure-path smoke | `debug: harden DAP recovery` |
 | **M7** | Closeout: sequential full regression, accessibility/keyboard/manual evidence, docs truth-sync, limitations review. | full sequential gates + `M7_MANUAL_EVIDENCE.md` | `docs(phase-12): M7 closeout` |
 
@@ -346,10 +352,9 @@ launch state, and M3b cannot start before M3a is complete.
 
 ## Exact Next Step
 
-Phase 12 M4 is complete. The next permitted implementation slice is **M5 only**:
-threads, call-stack frame retrieval/selection, scopes, variables, and
-current-source navigation projection. Do not add M6 recovery hardening in the
-same slice.
+Phase 12 M5 is complete. The next permitted implementation slice is **M6 only**:
+error/recovery hardening for adapter/build/launch/breakpoint/context failures.
+Do not add M7 closeout work in the same slice.
 
 ## Exit Conditions
 

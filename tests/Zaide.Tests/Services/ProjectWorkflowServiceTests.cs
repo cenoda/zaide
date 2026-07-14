@@ -128,6 +128,11 @@ public sealed class ProjectWorkflowServiceTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<System.Text.Json.JsonElement?> RequestVariablesAsync(
+            int variablesReference,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public Task<DebugSessionOperationResult> ReplaceBreakpointsBySourceAsync(
             System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<int>> replacementBySource,
             CancellationToken cancellationToken = default) =>

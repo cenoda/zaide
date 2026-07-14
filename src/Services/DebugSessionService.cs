@@ -455,6 +455,18 @@ public sealed class DebugSessionService : IDebugSessionService
     }
 
     /// <inheritdoc />
+    public async Task<JsonElement?> RequestVariablesAsync(
+        int variablesReference,
+        CancellationToken cancellationToken = default)
+    {
+        var session = RequireStoppedSession();
+        return await WithTimeoutAsync(
+            token => session.RequestVariablesAsync(variablesReference, token),
+            _timeoutPolicy.OrdinaryRequest,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<DebugSessionOperationResult> ReplaceBreakpointsBySourceAsync(
         IReadOnlyDictionary<string, IReadOnlyList<int>> replacementBySource,
         CancellationToken cancellationToken = default)
