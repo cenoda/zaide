@@ -19,10 +19,10 @@ status projections. Phase 10 (C# language intelligence via LSP) is **complete**
 (M7 closeout, 2026-07-14). Phase 11 (Project Workflow — Build / Run / Test,
 Output, build diagnostics, Test Results) is **complete** (M0–M6 closeout,
 2026-07-14). Phase 12 M0 (DAP debugging plan and live adapter/transport proof)
-M1 (UI-independent adapter/session lifecycle core), M2 (workspace-keyed
-breakpoint persistence), and M3a (shared operation gate, build-to-debug
-handoff, F5 launch command) are complete; M3b and later entries remain planned
-direction.
+through M5 are complete: UI-independent adapter/session lifecycle, workspace-keyed
+breakpoints, build-to-debug handoff, editor breakpoint projection, execution
+controls and Debug Console, plus live stack/variable/current-location
+projection. M6 recovery hardening is next.
 
 ---
 
@@ -204,4 +204,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 M0–M4 complete, M5 next)*
+*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 M0–M5 complete, M6 next)*
