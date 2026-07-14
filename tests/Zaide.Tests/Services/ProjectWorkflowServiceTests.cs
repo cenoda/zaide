@@ -376,6 +376,50 @@ public sealed class ProjectWorkflowServiceTests
         Assert.Equal(ProjectWorkflowOperationState.Idle, service.Current.State);
     }
 
+    [Fact]
+    public async Task Dispose_WhileFakeRunnerEmitting_DoesNotThrow()
+    {
+        // Stress test: Dispose while the fake runner is still emitting output
+        // lines from a background thread. The gate-safe Dispose must not throw
+        // ObjectDisposedException or allow OnNext after subject disposal.
+        var candidate = MakeCandidate("StressDispose.csproj");
+        var (service, _, runner) = CreateHarness(MakeContext(ProjectContextState.SingleProject, candidate));
+        runner.RunGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var buildTask = service.StartBuildAsync();
+        await WaitUntilAsync(() => service.Current.State == ProjectWorkflowOperationState.Running);
+        var generation = service.Current.Generation;
+
+        using var emitCts = new CancellationTokenSource();
+        var emitTask = Task.Run(() =>
+        {
+            var i = 0;
+            while (!emitCts.IsCancellationRequested)
+            {
+                runner.SimulateOutput(new ManagedProcessOutputLine(
+                    generation,
+                    ProcessStreamKind.StdOut,
+                    $"stress-line-{i++}",
+                    DateTimeOffset.UtcNow));
+            }
+        });
+
+        // Let a few emissions land before disposing.
+        await Task.Delay(100);
+
+        // Dispose while the emit loop is still running — this is the race window.
+        var exception = Record.Exception(() => service.Dispose());
+
+        emitCts.Cancel();
+        await emitTask;
+        var result = await buildTask;
+
+        Assert.Null(exception);
+        Assert.Equal(ProjectWorkflowOperationState.Idle, service.Current.State);
+        Assert.True(runner.Disposed);
+        Assert.Equal(ProjectWorkflowOutcomeKind.Cancelled, result.Outcome);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan? timeout = null)
     {
         timeout ??= TimeSpan.FromSeconds(5);

@@ -46,31 +46,34 @@ all pass.
 
 ---
 
-## Open — F2: `ProjectWorkflowService.Dispose` not synchronized with the operation gate
+## Resolved — F2: `ProjectWorkflowService.Dispose` not synchronized with the operation gate
 
 **Severity:** High  
 **Area:** `ProjectWorkflowService.Dispose`, `AppendOutputLine`,
-`PublishRunningIfCurrent`, `CompleteOperationAsync`, `ManagedProcessRunner`
+`PublishRunningIfCurrent`, `CompleteOperationAsync`
 
-**Problem:** Dispose sets `_disposed`, kills the runner, completes/disposes
-subjects, and **disposes `_gate` without taking `_gate`**. Concurrent
-`AppendOutputLine` / completion paths may call `_gate.Wait` / `WaitAsync` and
-hit `ObjectDisposedException`, or race `OnNext` after subject dispose, during
-app exit or dispose-while-running tests.
+**Resolution (2026-07-14):** Synchronized Dispose with the operation gate.
 
-App exit **order** (workflow before language) is correct in `App.axaml.cs`;
-lifecycle is not mutex-safe.
+- **`Dispose`** — takes `_gate` before any teardown; sets `_disposed` under the
+  gate; kills and disposes the runner; completes and disposes subjects; disposes
+  `_gate` in the `finally` without releasing (callers blocked on `Wait`/`WaitAsync`
+  receive `ObjectDisposedException`, which they handle).
+- **`AppendOutputLine`** — early `_disposed` / generation check before touching the
+  gate; `_gate.Wait()` and `_gate.Release()` wrapped in `try-catch` for
+  `ObjectDisposedException` so late output during shutdown is silently ignored
+  instead of throwing.
+- **`PublishRunningIfCurrent`** — same defensive pattern as `AppendOutputLine`.
+- **`CompleteOperationAsync`** — `_gate.WaitAsync()` wrapped in `try-catch` for
+  `ObjectDisposedException`; returns the caller's outcome immediately when the gate
+  is already disposed.
 
-**Direction:** Take the gate (or a dedicated dispose path) before tearing down;
-stop pumps / cancel CTS under the gate; complete subjects; dispose gate last.
-Ensure late generation-mismatched output is ignored without throwing.
+**Tests:** Existing `Dispose_KillsRunnerAndReturnsToIdle` still passes. New
+`Dispose_WhileFakeRunnerEmitting_DoesNotThrow` stress test: background thread
+emits output continuously while `Dispose` is called; asserts no exception, idle
+terminal state, runner disposed, operation cancelled.
 
-**Acceptance sketch:**
-
-- Existing dispose-kill test still passes.
-- Optional stress: dispose while fake runner still emitting lines — no
-  unobserved exception; idle/empty terminal state.
-- Sequential full gates green.
+**Gates:** `dotnet build`, `dotnet test` (focused 35 + full 1829), `git diff --check`
+all pass.
 
 ---
 

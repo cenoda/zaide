@@ -103,35 +103,56 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
     {
         if (_disposed)
             return;
-        _disposed = true;
 
-        _contextSubscription.Dispose();
-
-        _operationCts?.Cancel();
-        _operationCts?.Dispose();
-        _operationCts = null;
-
+        // Take the gate to synchronize with all in-flight operations
+        // (AppendOutputLine, PublishRunningIfCurrent, CompleteOperationAsync, etc.).
+        // This blocks until any current critical section releases the gate.
+        _gate.Wait();
         try
         {
-            _runner.KillAsync().GetAwaiter().GetResult();
+            if (_disposed)
+                return;
+            _disposed = true;
+
+            _contextSubscription.Dispose();
+
+            _operationCts?.Cancel();
+            _operationCts?.Dispose();
+            _operationCts = null;
+
+            try
+            {
+                _runner.KillAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(
+                    LogLevel.Debug,
+                    new EventId(11001),
+                    ex,
+                    "Project workflow dispose kill encountered an error.");
+            }
+
+            _runner.Dispose();
+
+            // Publish terminal snapshot and complete subjects under the gate.
+            // Any thread that subsequently acquires the gate will see _disposed
+            // and return without touching subjects.
+            PublishLocked(InitialSnapshot);
+            _snapshotSubject.OnCompleted();
+            _snapshotSubject.Dispose();
+            _outputSubject.OnCompleted();
+            _outputSubject.Dispose();
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.Log(
-                LogLevel.Debug,
-                new EventId(11001),
-                ex,
-                "Project workflow dispose kill encountered an error.");
+            // Dispose the gate while we still hold it — no Release() so we
+            // don't hit ObjectDisposedException ourselves.  Callers blocked on
+            // _gate.Wait() / WaitAsync() receive ObjectDisposedException, which
+            // AppendOutputLine, PublishRunningIfCurrent, and CompleteOperationAsync
+            // handle via try-catch so late output is silently ignored.
+            _gate.Dispose();
         }
-
-        _runner.Dispose();
-
-        PublishLocked(InitialSnapshot);
-        _snapshotSubject.OnCompleted();
-        _snapshotSubject.Dispose();
-        _outputSubject.OnCompleted();
-        _outputSubject.Dispose();
-        _gate.Dispose();
     }
 
     private void OnProjectContextChanged(ProjectContext context)
@@ -324,7 +345,19 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                 exitCode);
         }
 
-        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+        }
+        catch (ObjectDisposedException)
+        {
+            return new ProjectWorkflowOperationResult(
+                outcome,
+                generation,
+                operation,
+                targetFilePath,
+                exitCode);
+        }
         try
         {
             if (_disposed || generation != _operationGeneration)
@@ -373,7 +406,18 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         string targetFilePath,
         int? processId)
     {
-        _gate.Wait();
+        if (_disposed || generation != _operationGeneration)
+            return;
+
+        try
+        {
+            _gate.Wait();
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
         try
         {
             if (_disposed || generation != _operationGeneration)
@@ -391,13 +435,33 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            _gate.Release();
+            try
+            {
+                _gate.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Gate was disposed by Dispose() while we held it.
+            }
         }
     }
 
     private void AppendOutputLine(ManagedProcessOutputLine line)
     {
-        _gate.Wait();
+        // Early exit: if already disposed or the line is from a stale
+        // generation we can skip without touching the gate at all.
+        if (_disposed || line.Generation != _operationGeneration)
+            return;
+
+        try
+        {
+            _gate.Wait();
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
         try
         {
             if (_disposed || line.Generation != _operationGeneration)
@@ -422,7 +486,15 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            _gate.Release();
+            try
+            {
+                _gate.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Gate was disposed by Dispose() while we held it — expected
+                // during shutdown; nothing to do.
+            }
         }
     }
 
