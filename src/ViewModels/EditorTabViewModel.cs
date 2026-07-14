@@ -451,6 +451,29 @@ public class EditorTabViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Saves every dirty open tab. Stops on the first failure and sets
+    /// <see cref="LastSaveError"/> from the failing tab. Returns true when
+    /// every dirty tab was saved successfully or no tabs were dirty.
+    /// </summary>
+    public async Task<bool> SaveAllDirtyTabsAsync()
+    {
+        foreach (var tab in OpenTabs)
+        {
+            if (!tab.IsDirty)
+                continue;
+
+            var saved = await tab.SaveCommand.Execute();
+            if (!saved)
+            {
+                LastSaveError = tab.LastSaveError;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Closes a tab. If the tab is dirty, raises ConfirmClose to prompt
     /// the user via the unsaved-changes dialog. Removes the tab from
     /// the collection and activates a neighbor if needed.

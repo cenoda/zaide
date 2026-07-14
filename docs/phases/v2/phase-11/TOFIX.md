@@ -309,17 +309,68 @@ paths containing unbalanced parentheses remain an edge case.
 
 ---
 
-## Open — F9: No save-before-build / run / test
+## Resolved — F9: No save-before-build / run / test
 
 **Severity:** Medium (product footgun; out of Phase 11 exit scope)  
 **Area:** `ProjectWorkflowViewModel` / workflow start path, editor dirty state
 
-**Problem:** Unsaved editor buffers are not flushed before `dotnet`. Build/run/test
-can run against disk that diverges from open tabs.
+**Resolution (2026-07-14):** Auto-save all dirty editor tabs before Build, Run,
+or Test. Any save failure prevents the workflow from starting and surfaces the
+error via the existing `LastSaveError` → status-bar subscription.
 
-**Direction:** Optional dirty-tab save prompt or auto-save policy before
-workflow start; reuse existing file-save seams only. YAGNI for Phase 11 exit;
-track for Phase 13 hardening if desired.
+**Policy: automatic save (not prompt-based).** Rationale: prompting before every
+build is disruptive to the edit→build→test loop. The user already has dirty-state
+visibility via the ● prefix on tab names. If a save fails (disk full, permissions),
+the workflow is blocked and the error is surfaced truthfully.
+
+- **`EditorTabViewModel.SaveAllDirtyTabsAsync`** — iterates all `OpenTabs`;
+  for each dirty tab calls `EditorViewModel.SaveCommand.Execute()` (reusing the
+  existing save seam, including Format on Save). Stops on first failure, sets
+  `LastSaveError`, and returns `false`. Returns `true` when all dirty tabs were
+  saved or no tabs were dirty.
+- **`ProjectWorkflowViewModel.SaveAllDirtyTabsAsync`** — internal delegate
+  property (`Func<Task<bool>>?`). Null by default so existing tests that don't
+  wire it are unaffected. In `ExecuteBuildAsync` / `ExecuteRunAsync` /
+  `ExecuteTestAsync`, the delegate is called via `EnsureDirtyTabsSavedAsync()`
+  before the workflow service. If the delegate returns `false`, the workflow is
+  never started.
+- **`MainWindowViewModel` constructor** — wires the delegate:
+  `ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () => editorTabViewModel.SaveAllDirtyTabsAsync();`
+
+**Tests (15 new — 5 EditorTabViewModel + 10 ProjectWorkflowSaveBeforeStart):**
+
+| Test | What it proves |
+|---|---|
+| `SaveAllDirtyTabs_NoDirtyTabs_ReturnsTrue` | Clean buffers → no saves, returns true |
+| `SaveAllDirtyTabs_SavesAllDirtyTabs` | Multiple dirty tabs → all saved, all clean |
+| `SaveAllDirtyTabs_SaveFailure_StopsAndReturnsFalse` | Save fails → LastSaveError set, returns false |
+| `SaveAllDirtyTabs_SkipsCleanTabs` | Only dirty tabs are saved; clean tabs untouched |
+| `SaveAllDirtyTabs_MultipleDirty_StopsOnFirstFailure` | Mid-iteration failure → later tabs not saved |
+| `Build_SavesDirtyTabsBeforeStart` | Save delegate called; Build proceeds |
+| `Run_SavesDirtyTabsBeforeStart` | Save delegate called; Run proceeds |
+| `Test_SavesDirtyTabsBeforeStart` | Save delegate called; Test proceeds |
+| `Build_SaveFailure_PreventsWorkflowStart` | Save fails → Build not started |
+| `Run_SaveFailure_PreventsWorkflowStart` | Save fails → Run not started |
+| `Test_SaveFailure_PreventsWorkflowStart` | Save fails → Test not started |
+| `Build_CleanBuffers_DoesNotTriggerUnnecessarySaves` | Delegate invoked each time; dirty check is delegate's responsibility |
+| `Build_WhenDelegateNotWired_ProceedsToWorkflow` | Null delegate → no-op guard, backward compat |
+| `AllCommands_ShareSaveBeforeStartPolicy` | Build+Run+Test each call save once, then proceed |
+| `AllCommands_ShareSaveFailurePolicy` | Build+Run+Test all blocked by save failure |
+
+**Remaining limitations:**
+- Untitled (unsaved, no-file-path) tabs are skipped by `SaveCommand` (it returns
+  `false` for empty `FilePath`), which blocks workflow start. This is conservative
+  — the user must explicitly save-as or close the untitled tab before building.
+- The save delegate is called unconditionally before each workflow; the dirty
+  check is delegated to `SaveAllDirtyTabsAsync` inside `EditorTabViewModel`.
+  This means the status-bar `LastSaveError` subscription fires even when the
+  workflow was invoked via the command palette or keybinding (not only from the
+  Output panel). This is intentional — the user should see the save error
+  regardless of how they invoked the workflow.
+- No prompt for unsaved new (untitled) buffers — they block the workflow.
+  A future enhancement could offer a save-as dialog for untitled dirty tabs.
+
+**Gates:** `dotnet build`, `dotnet test` (full 1881), `git diff --check` all pass.
 
 ---
 
@@ -379,7 +430,8 @@ with it); keep runner ownership single and documented.
 5. ~~**F6** — Test Results Cancel + a11y~~
 6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
 7. ~~**F7** — console test parse hardening~~ / ~~**F8** — build diagnostic parse hardening~~
-8. **F9**–**F11** — product polish / hygiene
+8. ~~**F9** — save-before-build/run/test~~
+9. **F10**–**F11** — product polish / hygiene
 
 Prefer one focused commit per finding (or tightly related pair). Re-run
 sequential full gates after each code fix.

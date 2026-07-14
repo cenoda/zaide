@@ -215,6 +215,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
         TestResultsViewModel = testResultsViewModel
             ?? throw new ArgumentNullException(nameof(testResultsViewModel));
+
+        // Phase 11 F9: save all dirty editor tabs before Build / Run / Test.
+        ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () =>
+            editorTabViewModel.SaveAllDirtyTabsAsync();
         _workspace = workspace;
         _projectContextService = projectContextService;
         CurrentProjectContext = projectContextService.Current;

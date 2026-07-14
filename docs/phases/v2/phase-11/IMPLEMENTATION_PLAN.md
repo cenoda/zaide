@@ -350,6 +350,14 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   `Ctrl+F2` plus Cancel buttons on Output and Test Results (F6) and palette.
   No overall operation timeout — hung `dotnet` holds the one-at-a-time slot
   until explicit cancel; `TimedOut` remains deferred (contract 5).
+- **Save-before-workflow (F9, added 2026-07-14):** auto-save all dirty editor
+  tabs before Build, Run, or Test. Reuses `EditorViewModel.SaveCommand` (including
+  Format on Save). Any save failure prevents the workflow from starting and surfaces
+  the error via the existing `LastSaveError` → status-bar subscription. Untitled
+  (no-file-path) dirty tabs block the workflow because `SaveCommand` returns
+  `false` for empty `FilePath`; the user must explicitly save-as or close the
+  untitled tab before building. No prompt-based dialog — the policy is automatic
+  save, not interactive confirmation.
 
 ## Unresolved Decisions
 

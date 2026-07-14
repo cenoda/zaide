@@ -36,6 +36,14 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     internal System.Reactive.Concurrency.IScheduler Scheduler { get; set; }
         = AvaloniaScheduler.Instance;
 
+    /// <summary>
+    /// Delegate that saves every dirty open editor tab before Build, Run, or
+    /// Test. Set by the composition root after construction. When null (tests
+    /// that don't wire it), the save guard is skipped so existing command
+    /// tests are unaffected.
+    /// </summary>
+    internal Func<Task<bool>>? SaveAllDirtyTabsAsync { get; set; }
+
     public ObservableCollection<OutputLineViewModel> Lines { get; } = new();
 
     public ProjectWorkflowOperationState State
@@ -210,14 +218,40 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         _showTestResultsRequested.Dispose();
     }
 
-    private Task ExecuteBuildAsync() =>
-        _workflow.StartBuildAsync();
+    private async Task ExecuteBuildAsync()
+    {
+        if (!await EnsureDirtyTabsSavedAsync())
+            return;
+        await _workflow.StartBuildAsync();
+    }
 
-    private Task ExecuteRunAsync() =>
-        _workflow.StartRunAsync();
+    private async Task ExecuteRunAsync()
+    {
+        if (!await EnsureDirtyTabsSavedAsync())
+            return;
+        await _workflow.StartRunAsync();
+    }
 
-    private Task ExecuteTestAsync() =>
-        _workflow.StartTestAsync();
+    private async Task ExecuteTestAsync()
+    {
+        if (!await EnsureDirtyTabsSavedAsync())
+            return;
+        await _workflow.StartTestAsync();
+    }
+
+    /// <summary>
+    /// Saves all dirty editor tabs (via the delegate wired by the composition
+    /// root). Returns true when every dirty tab was saved or the delegate is
+    /// not configured. Returns false when a save failed, which prevents the
+    /// workflow from starting.
+    /// </summary>
+    private async Task<bool> EnsureDirtyTabsSavedAsync()
+    {
+        if (SaveAllDirtyTabsAsync is null)
+            return true;
+
+        return await SaveAllDirtyTabsAsync();
+    }
 
     private Task ExecuteCancelAsync() => _workflow.CancelAsync();
 

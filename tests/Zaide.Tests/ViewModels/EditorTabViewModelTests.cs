@@ -368,4 +368,164 @@ public class EditorTabViewModelTests
             if (File.Exists(path)) File.Delete(path);
         }
     }
+
+    // ── Phase 11 F9: SaveAllDirtyTabsAsync ───────────────────────────
+
+    [Fact]
+    public async Task SaveAllDirtyTabs_NoDirtyTabs_ReturnsTrue()
+    {
+        var vm = CreateViewModel();
+        var path = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
+
+        try
+        {
+            File.WriteAllText(path, "class Program { }");
+            await vm.OpenFileCommand.Execute(path);
+
+            Assert.False(vm.OpenTabs[0].IsDirty);
+
+            var result = await vm.SaveAllDirtyTabsAsync();
+
+            Assert.True(result);
+            Assert.Null(vm.LastSaveError);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAllDirtyTabs_SavesAllDirtyTabs()
+    {
+        var vm = CreateViewModel();
+        var path1 = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
+        var path2 = Path.Combine(Path.GetTempPath(), "zaide-test-" + Guid.NewGuid() + ".cs");
+
+        try
+        {
+            File.WriteAllText(path1, "class A { }");
+            File.WriteAllText(path2, "class B { }");
+            await vm.OpenFileCommand.Execute(path1);
+            await vm.OpenFileCommand.Execute(path2);
+
+            // Make both tabs dirty
+            vm.OpenTabs[0].TextContent = "class A { int x; }";
+            vm.OpenTabs[1].TextContent = "class B { int y; }";
+            Assert.True(vm.OpenTabs[0].IsDirty);
+            Assert.True(vm.OpenTabs[1].IsDirty);
+
+            var result = await vm.SaveAllDirtyTabsAsync();
+
+            Assert.True(result);
+            Assert.False(vm.OpenTabs[0].IsDirty);
+            Assert.False(vm.OpenTabs[1].IsDirty);
+            Assert.Null(vm.LastSaveError);
+        }
+        finally
+        {
+            if (File.Exists(path1)) File.Delete(path1);
+            if (File.Exists(path2)) File.Delete(path2);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAllDirtyTabs_SaveFailure_StopsAndReturnsFalse()
+    {
+        var mockFs = new MockFileService
+        {
+            WriteException = new IOException("disk full")
+        };
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<Zaide.Models.Workspace>();
+        var sp = services.BuildServiceProvider();
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+
+        var tab = new EditorViewModel(new Document(""), mockFs);
+        tab.FilePath = "/tmp/save-fail.txt";
+        tab.TextContent = "dirty";
+        Assert.True(tab.IsDirty);
+        vm.OpenTabs.Add(tab);
+
+        var result = await vm.SaveAllDirtyTabsAsync();
+
+        Assert.False(result);
+        Assert.True(tab.IsDirty, "Dirty flag should remain after failed save");
+        Assert.NotNull(vm.LastSaveError);
+        Assert.Equal("disk full", vm.LastSaveError);
+    }
+
+    [Fact]
+    public async Task SaveAllDirtyTabs_SkipsCleanTabs()
+    {
+        var vm = CreateViewModel();
+        var pathClean = Path.Combine(Path.GetTempPath(), "zaide-clean-" + Guid.NewGuid() + ".cs");
+        var pathDirty = Path.Combine(Path.GetTempPath(), "zaide-dirty-" + Guid.NewGuid() + ".cs");
+
+        try
+        {
+            File.WriteAllText(pathClean, "class Clean { }");
+            File.WriteAllText(pathDirty, "class Dirty { }");
+            await vm.OpenFileCommand.Execute(pathClean);
+            await vm.OpenFileCommand.Execute(pathDirty);
+
+            // Make only the second tab dirty
+            vm.OpenTabs[1].TextContent = "class Dirty { int x; }";
+            Assert.False(vm.OpenTabs[0].IsDirty, "First tab should be clean");
+            Assert.True(vm.OpenTabs[1].IsDirty, "Second tab should be dirty");
+
+            var result = await vm.SaveAllDirtyTabsAsync();
+
+            Assert.True(result);
+            Assert.False(vm.OpenTabs[0].IsDirty, "Clean tab should stay clean");
+            Assert.False(vm.OpenTabs[1].IsDirty, "Dirty tab should be saved");
+            Assert.Null(vm.LastSaveError);
+
+            // Verify clean tab content was not rewritten
+            var onDisk = File.ReadAllText(pathClean);
+            Assert.Equal("class Clean { }", onDisk);
+        }
+        finally
+        {
+            if (File.Exists(pathClean)) File.Delete(pathClean);
+            if (File.Exists(pathDirty)) File.Delete(pathDirty);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAllDirtyTabs_MultipleDirty_StopsOnFirstFailure()
+    {
+        var mockFs = new MockFileService
+        {
+            WriteException = new IOException("disk full")
+        };
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<Zaide.Models.Workspace>();
+        var sp = services.BuildServiceProvider();
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+
+        var tab1 = new EditorViewModel(new Document(""), mockFs);
+        tab1.FilePath = "/tmp/save-1.txt";
+        tab1.TextContent = "dirty 1";
+
+        var tab2 = new EditorViewModel(new Document(""), mockFs);
+        tab2.FilePath = "/tmp/save-2.txt";
+        tab2.TextContent = "dirty 2";
+
+        vm.OpenTabs.Add(tab1);
+        vm.OpenTabs.Add(tab2);
+        Assert.True(tab1.IsDirty);
+        Assert.True(tab2.IsDirty);
+
+        var result = await vm.SaveAllDirtyTabsAsync();
+
+        Assert.False(result);
+        Assert.True(tab1.IsDirty, "First tab save failed — should stay dirty");
+        Assert.True(tab2.IsDirty, "Second tab should remain dirty (never reached)");
+        Assert.NotNull(vm.LastSaveError);
+    }
 }
