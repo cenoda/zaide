@@ -82,6 +82,12 @@ class Program
         // Phase 12 M2: workspace-scoped persistent breakpoint storage.
         services.AddSingleton<IBreakpointService, BreakpointService>();
 
+        // Phase 12 M3a: shared project-operation gate and build-to-debug handoff.
+        services.AddSingleton<IProjectOperationGate, ProjectOperationGate>();
+        services.AddSingleton<IProjectDebugTargetResolver, ProjectDebugTargetResolver>();
+        services.AddSingleton<IProjectDebugLaunchService, ProjectDebugLaunchService>();
+        services.AddSingleton<DebugSessionViewModel>();
+
         // Phase 11 M1: UI-independent build/run/test process orchestration core.
         services.AddSingleton<IManagedProcessRunner, ManagedProcessRunner>();
         services.AddSingleton<IProjectWorkflowService, ProjectWorkflowService>();

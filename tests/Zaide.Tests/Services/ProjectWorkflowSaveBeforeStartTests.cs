@@ -272,8 +272,7 @@ public sealed class ProjectWorkflowSaveBeforeStartTests
     {
         context ??= new FakeProjectContextService(EligibleCSharpContext());
         workflow ??= new FakeAllOpsWorkflowService();
-        var output = new ProjectOutputService(workflow);
-        var vm = new ProjectWorkflowViewModel(workflow, output, context, registry);
+        var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context, registry);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
         return vm;
@@ -396,6 +395,11 @@ public sealed class ProjectWorkflowSaveBeforeStartTests
                 null,
                 0));
         }
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;

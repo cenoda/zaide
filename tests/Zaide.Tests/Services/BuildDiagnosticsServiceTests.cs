@@ -59,6 +59,11 @@ public sealed class BuildDiagnosticsServiceTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
+
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 

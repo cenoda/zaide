@@ -195,6 +195,7 @@ public sealed class TestResultsViewModelTests
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),
+            TestDebugSessionFactory.Create(registry),
             workspace,
             projectContext.Object,
             registry);
@@ -236,6 +237,11 @@ public sealed class TestResultsViewModelTests
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;

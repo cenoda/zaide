@@ -25,11 +25,11 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         LastOperation: null);
 
     private readonly IProjectContextService _projectContext;
+    private readonly IProjectOperationGate _operationGate;
     private readonly IManagedProcessRunner _runner;
     private readonly ILogger<ProjectWorkflowService> _logger;
     private readonly Subject<ProjectWorkflowSnapshot> _snapshotSubject = new();
     private readonly Subject<ManagedProcessOutputLine> _outputSubject = new();
-    private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly IDisposable _contextSubscription;
     private readonly List<ManagedProcessOutputLine> _outputLines = new();
 
@@ -40,10 +40,12 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
     public ProjectWorkflowService(
         IProjectContextService projectContext,
+        IProjectOperationGate operationGate,
         IManagedProcessRunner runner,
         ILogger<ProjectWorkflowService> logger)
     {
         _projectContext = projectContext ?? throw new ArgumentNullException(nameof(projectContext));
+        _operationGate = operationGate ?? throw new ArgumentNullException(nameof(operationGate));
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -65,6 +67,15 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         StartOperationAsync(ProjectWorkflowOperation.Build, cancellationToken);
 
     /// <inheritdoc />
+    public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+        IProjectOperationHandoffLease handoffLease,
+        CancellationToken cancellationToken = default) =>
+        StartOperationAsync(
+            ProjectWorkflowOperation.Build,
+            cancellationToken,
+            handoffLease);
+
+    /// <inheritdoc />
     public Task<ProjectWorkflowOperationResult> StartRunAsync(
         CancellationToken cancellationToken = default) =>
         StartOperationAsync(ProjectWorkflowOperation.Run, cancellationToken);
@@ -81,7 +92,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         cancellationToken.ThrowIfCancellationRequested();
 
         CancellationTokenSource? cts;
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _operationGate.EnterCriticalSectionAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -89,7 +100,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            _gate.Release();
+            _operationGate.ExitCriticalSection();
         }
 
         if (cts is not null)
@@ -105,12 +116,35 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         if (_disposed)
             return;
 
-        // Take the gate to synchronize with all in-flight operations
-        // (AppendOutputLine, PublishRunningIfCurrent, CompleteOperationAsync, etc.).
-        // This blocks until any current critical section releases the gate.
+        // Publish the disposed flag before taking the critical section or
+        // killing the runner so in-flight output/completion paths exit early and
+        // never block dispose behind a background AppendOutputLine waiter.
+        _disposed = true;
+
+        _contextSubscription.Dispose();
+
+        _operationCts?.Cancel();
+        _operationCts?.Dispose();
+        _operationCts = null;
+
         try
         {
-            _gate.Wait();
+            _runner.KillAsync().GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Log(
+                LogLevel.Debug,
+                new EventId(11001),
+                ex,
+                "Project workflow dispose kill encountered an error.");
+        }
+
+        _runner.Dispose();
+
+        try
+        {
+            _operationGate.EnterCriticalSectionAsync().GetAwaiter().GetResult();
         }
         catch (ObjectDisposedException)
         {
@@ -119,34 +153,6 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
         try
         {
-            if (_disposed)
-                return;
-            _disposed = true;
-
-            _contextSubscription.Dispose();
-
-            _operationCts?.Cancel();
-            _operationCts?.Dispose();
-            _operationCts = null;
-
-            try
-            {
-                _runner.KillAsync().GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(
-                    LogLevel.Debug,
-                    new EventId(11001),
-                    ex,
-                    "Project workflow dispose kill encountered an error.");
-            }
-
-            _runner.Dispose();
-
-            // Publish terminal snapshot and complete subjects under the gate.
-            // Any thread that subsequently acquires the gate will see _disposed
-            // and return without touching subjects.
             PublishLocked(InitialSnapshot);
             _snapshotSubject.OnCompleted();
             _snapshotSubject.Dispose();
@@ -155,30 +161,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            // MUST Release before Dispose. SemaphoreSlim.Dispose() does not wake
-            // waiters already blocked on Wait/WaitAsync — they hang forever.
-            // KillAsync above unblocks RunAsync, which then CompleteOperationAsync
-            // waits on this gate; without Release that waiter deadlocks, and
-            // Dispose_WhileFakeRunnerEmitting / Dispose_KillsRunner hang on
-            // await buildTask.
-            try
-            {
-                _gate.Release();
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            catch (SemaphoreFullException)
-            {
-            }
-
-            try
-            {
-                _gate.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-            }
+            _operationGate.ExitCriticalSection();
         }
     }
 
@@ -194,7 +177,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
     {
         var shouldKill = false;
 
-        await _gate.WaitAsync().ConfigureAwait(false);
+        await _operationGate.EnterCriticalSectionAsync().ConfigureAwait(false);
         try
         {
             if (_disposed)
@@ -238,7 +221,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            _gate.Release();
+            _operationGate.ExitCriticalSection();
         }
 
         if (shouldKill)
@@ -247,23 +230,19 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
     private async Task<ProjectWorkflowOperationResult> StartOperationAsync(
         ProjectWorkflowOperation operation,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProjectOperationHandoffLease? debugHandoffLease = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
 
-        ResolvedProjectTarget target;
-        ProjectExecutionProfile profile;
-        long generation;
-        CancellationTokenSource operationCts;
-
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        IProjectOperationLease? admissionLease = null;
+        if (debugHandoffLease is null)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-
-            if (_current.State is ProjectWorkflowOperationState.Starting
-                or ProjectWorkflowOperationState.Running)
+            var acquire = await _operationGate.TryAcquireWorkflowOperationAsync(
+                MapOperationKind(operation),
+                cancellationToken).ConfigureAwait(false);
+            if (!acquire.IsSuccess)
             {
                 return new ProjectWorkflowOperationResult(
                     ProjectWorkflowOutcomeKind.RejectedConcurrent,
@@ -273,100 +252,140 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
                     ExitCode: null);
             }
 
-            var resolution = ProjectTargetResolver.Resolve(_projectContext.Current, operation);
-            if (!resolution.IsSuccess)
+            admissionLease = acquire.Lease;
+        }
+        else
+        {
+            if (operation != ProjectWorkflowOperation.Build)
             {
-                return new ProjectWorkflowOperationResult(
-                    ProjectWorkflowOutcomeKind.RejectedContext,
-                    _current.Generation,
-                    operation,
-                    TargetFilePath: null,
-                    ExitCode: null);
+                throw new InvalidOperationException(
+                    "Debug handoff builds are limited to the Build operation.");
             }
 
-            target = resolution.Target!;
-            profile = ProjectExecutionProfileResolver.Resolve(target, operation);
-
-            _operationGeneration++;
-            generation = _operationGeneration;
-
-            _operationCts?.Cancel();
-            _operationCts?.Dispose();
-            operationCts = new CancellationTokenSource();
-            _operationCts = operationCts;
-
-            _outputLines.Clear();
-            PublishLocked(new ProjectWorkflowSnapshot(
-                ProjectWorkflowOperationState.Starting,
-                generation,
-                operation,
-                LastOutcome: null,
-                target.FilePath,
-                ProcessId: null,
-                OutputLines: Array.Empty<ManagedProcessOutputLine>(),
-                LastOperation: operation));
-        }
-        finally
-        {
-            _gate.Release();
+            ValidateDebugHandoffLease(debugHandoffLease);
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            operationCts.Token);
-
-        void OnOutput(ManagedProcessOutputLine line)
-        {
-            if (line.Generation != generation)
-                return;
-
-            AppendOutputLine(line);
-        }
-
-        void OnProcessStarted()
-        {
-            // Publish Running only after the child is started so ProcessId is
-            // current (not the pre-start null/stale value).
-            PublishRunningIfCurrent(
-                generation,
-                operation,
-                target.FilePath,
-                _runner.ProcessId);
-        }
-
-        _runner.OutputReceived += OnOutput;
-        _runner.ProcessStarted += OnProcessStarted;
         try
         {
-            var request = new ManagedProcessStartRequest(
-                profile.FileName,
-                profile.Arguments,
-                profile.WorkingDirectory,
-                generation);
+            ResolvedProjectTarget target;
+            ProjectExecutionProfile profile;
+            long generation;
+            CancellationTokenSource operationCts;
 
-            var runResult = await _runner.RunAsync(request, linked.Token).ConfigureAwait(false);
-            var outcome = MapRunResult(runResult);
+            await _operationGate.EnterCriticalSectionAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
 
-            return await CompleteOperationAsync(
-                generation,
-                operation,
-                target.FilePath,
-                outcome,
-                runResult.ExitCode).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (operationCts.IsCancellationRequested)
-        {
-            return await CompleteOperationAsync(
-                generation,
-                operation,
-                target.FilePath,
-                ProjectWorkflowOutcomeKind.Cancelled,
-                exitCode: null).ConfigureAwait(false);
+                if (debugHandoffLease is null &&
+                    _current.State is ProjectWorkflowOperationState.Starting
+                        or ProjectWorkflowOperationState.Running)
+                {
+                    return new ProjectWorkflowOperationResult(
+                        ProjectWorkflowOutcomeKind.RejectedConcurrent,
+                        _current.Generation,
+                        operation,
+                        _current.TargetFilePath,
+                        ExitCode: null);
+                }
+
+                var resolution = ProjectTargetResolver.Resolve(_projectContext.Current, operation);
+                if (!resolution.IsSuccess)
+                {
+                    return new ProjectWorkflowOperationResult(
+                        ProjectWorkflowOutcomeKind.RejectedContext,
+                        _current.Generation,
+                        operation,
+                        TargetFilePath: null,
+                        ExitCode: null);
+                }
+
+                target = resolution.Target!;
+                profile = ProjectExecutionProfileResolver.Resolve(target, operation);
+
+                _operationGeneration++;
+                generation = _operationGeneration;
+
+                _operationCts?.Cancel();
+                _operationCts?.Dispose();
+                operationCts = new CancellationTokenSource();
+                _operationCts = operationCts;
+
+                _outputLines.Clear();
+                PublishLocked(new ProjectWorkflowSnapshot(
+                    ProjectWorkflowOperationState.Starting,
+                    generation,
+                    operation,
+                    LastOutcome: null,
+                    target.FilePath,
+                    ProcessId: null,
+                    OutputLines: Array.Empty<ManagedProcessOutputLine>(),
+                    LastOperation: operation));
+            }
+            finally
+            {
+                _operationGate.ExitCriticalSection();
+            }
+
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                operationCts.Token);
+
+            void OnOutput(ManagedProcessOutputLine line)
+            {
+                if (line.Generation != generation)
+                    return;
+
+                AppendOutputLine(line);
+            }
+
+            void OnProcessStarted()
+            {
+                PublishRunningIfCurrent(
+                    generation,
+                    operation,
+                    target.FilePath,
+                    _runner.ProcessId);
+            }
+
+            _runner.OutputReceived += OnOutput;
+            _runner.ProcessStarted += OnProcessStarted;
+            try
+            {
+                var request = new ManagedProcessStartRequest(
+                    profile.FileName,
+                    profile.Arguments,
+                    profile.WorkingDirectory,
+                    generation);
+
+                var runResult = await _runner.RunAsync(request, linked.Token).ConfigureAwait(false);
+                var outcome = MapRunResult(runResult);
+
+                return await CompleteOperationAsync(
+                    generation,
+                    operation,
+                    target.FilePath,
+                    outcome,
+                    runResult.ExitCode).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (operationCts.IsCancellationRequested)
+            {
+                return await CompleteOperationAsync(
+                    generation,
+                    operation,
+                    target.FilePath,
+                    ProjectWorkflowOutcomeKind.Cancelled,
+                    exitCode: null).ConfigureAwait(false);
+            }
+            finally
+            {
+                _runner.ProcessStarted -= OnProcessStarted;
+                _runner.OutputReceived -= OnOutput;
+            }
         }
         finally
         {
-            _runner.ProcessStarted -= OnProcessStarted;
-            _runner.OutputReceived -= OnOutput;
+            admissionLease?.Dispose();
         }
     }
 
@@ -389,7 +408,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
         try
         {
-            await _gate.WaitAsync().ConfigureAwait(false);
+            await _operationGate.EnterCriticalSectionAsync().ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
         {
@@ -438,7 +457,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            _gate.Release();
+            _operationGate.ExitCriticalSection();
         }
     }
 
@@ -453,7 +472,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
         try
         {
-            _gate.Wait();
+            _operationGate.EnterCriticalSectionAsync().GetAwaiter().GetResult();
         }
         catch (ObjectDisposedException)
         {
@@ -477,14 +496,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            try
-            {
-                _gate.Release();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Gate was disposed by Dispose() while we held it.
-            }
+            _operationGate.ExitCriticalSection();
         }
     }
 
@@ -497,7 +509,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
         try
         {
-            _gate.Wait();
+            _operationGate.EnterCriticalSectionAsync().GetAwaiter().GetResult();
         }
         catch (ObjectDisposedException)
         {
@@ -512,12 +524,6 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
             _outputLines.Add(line);
             _outputSubject.OnNext(line);
 
-            // Update _current silently so the Current property reflects
-            // accumulated lines for pollers (e.g. activation seed). Do NOT
-            // publish through _snapshotSubject — per-line snapshots are the
-            // O(n²) projection this fix eliminates. State-transition publishes
-            // (PublishRunningIfCurrent, CompleteOperationAsync, context-change)
-            // still carry full OutputLines for diagnostic/test consumers.
             if (_current.Generation == line.Generation)
             {
                 _current = _current with
@@ -528,15 +534,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            try
-            {
-                _gate.Release();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Gate was disposed by Dispose() while we held it — expected
-                // during shutdown; nothing to do.
-            }
+            _operationGate.ExitCriticalSection();
         }
     }
 
@@ -559,6 +557,28 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         _current = snapshot;
         _snapshotSubject.OnNext(snapshot);
     }
+
+    private void ValidateDebugHandoffLease(IProjectOperationHandoffLease lease)
+    {
+        if (_operationGate is not ProjectOperationGate concrete)
+        {
+            if (!lease.IsActive)
+                throw new InvalidOperationException("An active debug handoff lease is required.");
+
+            return;
+        }
+
+        concrete.ValidateDebugHandoff(lease);
+    }
+
+    private static ProjectOperationKind MapOperationKind(ProjectWorkflowOperation operation) =>
+        operation switch
+        {
+            ProjectWorkflowOperation.Build => ProjectOperationKind.Build,
+            ProjectWorkflowOperation.Run => ProjectOperationKind.Run,
+            ProjectWorkflowOperation.Test => ProjectOperationKind.Test,
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null),
+        };
 
     private static void ObserveTask(Task task)
     {

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Tests;
 
 namespace Zaide.Tests.Services;
 
@@ -69,7 +70,7 @@ public sealed class ProjectOutputServiceTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -100,7 +101,7 @@ public sealed class ProjectOutputServiceTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -123,7 +124,7 @@ public sealed class ProjectOutputServiceTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -147,7 +148,7 @@ public sealed class ProjectOutputServiceTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -164,7 +165,7 @@ public sealed class ProjectOutputServiceTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -269,6 +270,11 @@ public sealed class ProjectOutputServiceTests
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

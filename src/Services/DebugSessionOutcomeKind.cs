@@ -8,6 +8,7 @@ public enum DebugSessionOutcomeKind
     RejectedConcurrent,
     RejectedContext,
     AdapterUnavailable,
+    UnsupportedLaunchTarget,
     BuildFailed,
     StartupFailed,
     ProtocolFailed,

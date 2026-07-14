@@ -350,6 +350,11 @@ public sealed class ProjectWorkflowProjectionShutdownTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
+
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -391,6 +396,11 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;

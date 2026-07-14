@@ -246,8 +246,7 @@ public sealed class ProjectTestCommandTests
     {
         context ??= new FakeProjectContextService(EligibleCSharpContext(ProjectContextState.SingleProject));
         workflow ??= new FakeProjectWorkflowService();
-        var output = new ProjectOutputService(workflow);
-        var vm = new ProjectWorkflowViewModel(workflow, output, context, registry);
+        var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context, registry);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
         return vm;
@@ -403,6 +402,11 @@ public sealed class ProjectTestCommandTests
                 FixtureProjectPath,
                 0);
         }
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default)
         {

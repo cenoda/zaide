@@ -28,6 +28,13 @@ public interface IProjectWorkflowService : IDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Builds through workflow ownership while an active debug handoff lease is held.
+    /// </summary>
+    Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+        IProjectOperationHandoffLease handoffLease,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Starts <c>dotnet run --project &lt;file&gt;</c> for eligible C# projects only.
     /// </summary>
     Task<ProjectWorkflowOperationResult> StartRunAsync(

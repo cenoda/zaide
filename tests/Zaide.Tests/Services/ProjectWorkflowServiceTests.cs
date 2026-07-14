@@ -67,6 +67,56 @@ public sealed class ProjectWorkflowServiceTests
             ErrorMessage: null);
     }
 
+    private sealed class FakeDebugSessionService : IDebugSessionService
+    {
+        private static readonly DebugSessionSnapshot Idle = new(
+            DebugSessionState.Idle,
+            Generation: 0,
+            ProgramPath: null,
+            WorkingDirectory: null,
+            AdapterProcessId: null,
+            StopInfo: null,
+            Failure: null,
+            DiagnosticOutput: Array.Empty<string>());
+
+        public DebugSessionSnapshot Current => Idle;
+
+        public IObservable<DebugSessionSnapshot> WhenChanged =>
+            new Subject<DebugSessionSnapshot>();
+
+        public Task<DebugSessionOperationResult> StartLaunchAsync(
+            DebugLaunchRequest request,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> StopAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> ContinueAsync(
+            int threadId,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<System.Text.Json.JsonElement?> RequestThreadsAsync(
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<System.Text.Json.JsonElement?> RequestStackTraceAsync(
+            int threadId,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<System.Text.Json.JsonElement?> RequestScopesAsync(
+            int frameId,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public void Dispose()
+        {
+        }
+    }
+
     private sealed class FakeManagedProcessRunner : IManagedProcessRunner
     {
         public TaskCompletionSource<bool>? RunGate { get; set; }
@@ -172,8 +222,11 @@ public sealed class ProjectWorkflowServiceTests
     {
         var context = new FakeProjectContextService();
         var runner = new FakeManagedProcessRunner();
+        var debugSession = new FakeDebugSessionService();
+        var gate = new ProjectOperationGate(debugSession);
         var service = new ProjectWorkflowService(
             context,
+            gate,
             runner,
             NullLogger<ProjectWorkflowService>.Instance);
 

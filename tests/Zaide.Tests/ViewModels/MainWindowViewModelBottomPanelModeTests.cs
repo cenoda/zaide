@@ -71,6 +71,7 @@ public sealed class MainWindowViewModelBottomPanelModeTests
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(),
             TestTestResultsFactory.Create(editorTabs),
+            TestDebugSessionFactory.Create(),
             workspace,
             projectContext.Object);
     }

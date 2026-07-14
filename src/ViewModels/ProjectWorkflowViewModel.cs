@@ -20,6 +20,8 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     private readonly IProjectWorkflowService _workflow;
     private readonly IProjectOutputService _outputService;
     private readonly IProjectContextService _projectContext;
+    private readonly IProjectOperationGate _operationGate;
+    private readonly IDebugSessionService _debugSession;
     private readonly CompositeDisposable _subscriptions = new();
     private readonly Subject<Unit> _showOutputRequested = new();
     private ProjectWorkflowOperationState _state = ProjectWorkflowOperationState.Idle;
@@ -106,40 +108,53 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         IProjectWorkflowService workflow,
         IProjectOutputService outputService,
         IProjectContextService projectContext,
+        IProjectOperationGate operationGate,
+        IDebugSessionService debugSession,
         ICommandRegistry? commandRegistry = null)
     {
         _workflow = workflow ?? throw new ArgumentNullException(nameof(workflow));
         _outputService = outputService ?? throw new ArgumentNullException(nameof(outputService));
         _projectContext = projectContext ?? throw new ArgumentNullException(nameof(projectContext));
+        _operationGate = operationGate ?? throw new ArgumentNullException(nameof(operationGate));
+        _debugSession = debugSession ?? throw new ArgumentNullException(nameof(debugSession));
 
         var canBuild = Observable.CombineLatest(
             _projectContext.WhenChanged.StartWith(_projectContext.Current),
             _workflow.WhenChanged.StartWith(_workflow.Current),
-            (context, snapshot) =>
+            _debugSession.WhenChanged.StartWith(_debugSession.Current),
+            (context, snapshot, debug) =>
                 ProjectTargetResolver.IsEligible(context) &&
                 snapshot.State is not ProjectWorkflowOperationState.Starting
-                    and not ProjectWorkflowOperationState.Running);
+                    and not ProjectWorkflowOperationState.Running &&
+                !IsWorkflowBlockedByDebug(debug) &&
+                !_operationGate.IsDebugHandoffActive);
 
         BuildCommand = ReactiveCommand.CreateFromTask(ExecuteBuildAsync, canBuild);
 
         var canRun = Observable.CombineLatest(
             _projectContext.WhenChanged.StartWith(_projectContext.Current),
             _workflow.WhenChanged.StartWith(_workflow.Current),
-            (context, snapshot) =>
+            _debugSession.WhenChanged.StartWith(_debugSession.Current),
+            (context, snapshot, debug) =>
                 ProjectTargetResolver.IsEligible(context) &&
                 context.SelectedProject!.Kind == ProjectKind.CSharpProject &&
                 snapshot.State is not ProjectWorkflowOperationState.Starting
-                    and not ProjectWorkflowOperationState.Running);
+                    and not ProjectWorkflowOperationState.Running &&
+                !IsWorkflowBlockedByDebug(debug) &&
+                !_operationGate.IsDebugHandoffActive);
 
         RunCommand = ReactiveCommand.CreateFromTask(ExecuteRunAsync, canRun);
 
         var canTest = Observable.CombineLatest(
             _projectContext.WhenChanged.StartWith(_projectContext.Current),
             _workflow.WhenChanged.StartWith(_workflow.Current),
-            (context, snapshot) =>
+            _debugSession.WhenChanged.StartWith(_debugSession.Current),
+            (context, snapshot, debug) =>
                 ProjectTargetResolver.IsEligible(context) &&
                 snapshot.State is not ProjectWorkflowOperationState.Starting
-                    and not ProjectWorkflowOperationState.Running);
+                    and not ProjectWorkflowOperationState.Running &&
+                !IsWorkflowBlockedByDebug(debug) &&
+                !_operationGate.IsDebugHandoffActive);
 
         TestCommand = ReactiveCommand.CreateFromTask(ExecuteTestAsync, canTest);
 
@@ -272,4 +287,10 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
     {
         Lines.Add(new OutputLineViewModel(line));
     }
+
+    private static bool IsWorkflowBlockedByDebug(DebugSessionSnapshot snapshot) =>
+        snapshot.State is DebugSessionState.Starting
+            or DebugSessionState.Running
+            or DebugSessionState.Stopped
+            or DebugSessionState.Stopping;
 }

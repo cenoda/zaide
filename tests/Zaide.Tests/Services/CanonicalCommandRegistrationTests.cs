@@ -95,9 +95,10 @@ public sealed class CanonicalCommandRegistrationTests
             "project.run",
             "project.test",
             "project.cancel",
+            "debug.startOrContinue",
         };
 
-        Assert.Equal(11, registry.GetAll().Count);
+        Assert.Equal(12, registry.GetAll().Count);
         foreach (var id in expected)
         {
             Assert.NotNull(registry.GetById(id));
@@ -217,6 +218,7 @@ public sealed class CanonicalCommandRegistrationTests
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),
+            TestDebugSessionFactory.Create(registry),
             workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }

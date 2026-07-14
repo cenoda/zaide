@@ -21,8 +21,24 @@ internal static class TestProjectWorkflowFactory
     {
         var context = projectContext ?? CreateIdleProjectContext();
         var wf = workflow ?? new IdleProjectWorkflowService();
-        var output = new ProjectOutputService(wf);
-        return new ProjectWorkflowViewModel(wf, output, context, registry);
+        return CreateViewModel(wf, context, registry);
+    }
+
+    public static ProjectWorkflowViewModel CreateViewModel(
+        IProjectWorkflowService workflow,
+        IProjectContextService context,
+        ICommandRegistry? registry = null)
+    {
+        var output = new ProjectOutputService(workflow);
+        var gate = TestOperationGateFactory.CreateIdleGate();
+        var debugSession = TestOperationGateFactory.CreateIdleDebugSession();
+        return new ProjectWorkflowViewModel(
+            workflow,
+            output,
+            context,
+            gate,
+            debugSession.Object,
+            registry);
     }
 
     public static IProjectContextService CreateIdleProjectContext()
@@ -76,6 +92,11 @@ internal static class TestProjectWorkflowFactory
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;

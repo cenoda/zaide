@@ -12,6 +12,7 @@ using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
+using Zaide.Tests;
 
 namespace Zaide.Tests.Views;
 
@@ -34,7 +35,7 @@ public sealed class OutputPanelScrollFollowTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
 
         var panel = new OutputPanel();
@@ -49,7 +50,7 @@ public sealed class OutputPanelScrollFollowTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -90,7 +91,7 @@ public sealed class OutputPanelScrollFollowTests
         var workflow = new RecordingWorkflowService();
         using var output = new ProjectOutputService(workflow);
         var context = new FakeIdleProjectContext();
-        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        using var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
@@ -172,6 +173,11 @@ public sealed class OutputPanelScrollFollowTests
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

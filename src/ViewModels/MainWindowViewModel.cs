@@ -163,6 +163,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ProblemsViewModel ProblemsViewModel { get; }
     public ProjectWorkflowViewModel ProjectWorkflowViewModel { get; }
     public TestResultsViewModel TestResultsViewModel { get; }
+    public DebugSessionViewModel DebugSessionViewModel { get; }
 
     /// <summary>
     /// M4: Authoritative UI-thread projection of the current project-context
@@ -198,6 +199,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 ProblemsViewModel problemsViewModel,
                                 ProjectWorkflowViewModel projectWorkflowViewModel,
                                 TestResultsViewModel testResultsViewModel,
+                                DebugSessionViewModel debugSessionViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
                                 ICommandRegistry? commandRegistry = null)
@@ -215,9 +217,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
         TestResultsViewModel = testResultsViewModel
             ?? throw new ArgumentNullException(nameof(testResultsViewModel));
+        DebugSessionViewModel = debugSessionViewModel
+            ?? throw new ArgumentNullException(nameof(debugSessionViewModel));
 
         // Phase 11 F9: save all dirty editor tabs before Build / Run / Test.
         ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () =>
+            editorTabViewModel.SaveAllDirtyTabsAsync();
+        DebugSessionViewModel.SaveAllDirtyTabsAsync = () =>
             editorTabViewModel.SaveAllDirtyTabsAsync();
         _workspace = workspace;
         _projectContextService = projectContextService;
@@ -307,6 +313,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Phase 11 M2: structured output projection and show-on-build affordance.
         ProjectWorkflowViewModel.Activate();
         _disposables.Add(ProjectWorkflowViewModel);
+
+        // Phase 12 M3a: debug session command projection.
+        DebugSessionViewModel.Activate();
+        _disposables.Add(DebugSessionViewModel);
         _disposables.Add(
             ProjectWorkflowViewModel.WhenShowOutputRequested
                 .Subscribe(_ =>

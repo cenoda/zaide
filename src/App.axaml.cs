@@ -34,6 +34,9 @@ public partial class App : Application
             var searchVm = Services.GetRequiredService<EditorSearchViewModel>();
             var languageInputVm = Services.GetRequiredService<EditorLanguageInputViewModel>();
 
+            // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
+            _ = Services.GetRequiredService<DebugSessionViewModel>();
+
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
             _ = Services.GetRequiredService<ILanguageDocumentBridge>();

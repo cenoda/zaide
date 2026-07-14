@@ -228,8 +228,7 @@ public sealed class ProjectBuildCommandTests
     {
         context ??= new FakeProjectContextService(EligibleContext(ProjectContextState.SingleProject));
         workflow ??= new FakeProjectWorkflowService();
-        var output = new ProjectOutputService(workflow);
-        var vm = new ProjectWorkflowViewModel(workflow, output, context, registry);
+        var vm = TestProjectWorkflowFactory.CreateViewModel(workflow, context, registry);
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
         return vm;
@@ -375,6 +374,11 @@ public sealed class ProjectBuildCommandTests
         public Task<ProjectWorkflowOperationResult> StartTestAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<ProjectWorkflowOperationResult> StartBuildForDebugHandoffAsync(
+            IProjectOperationHandoffLease handoffLease,
+            CancellationToken cancellationToken = default) =>
+            StartBuildAsync(cancellationToken);
 
         public Task CancelAsync(CancellationToken cancellationToken = default)
         {
