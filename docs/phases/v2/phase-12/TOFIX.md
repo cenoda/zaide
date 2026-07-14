@@ -7,41 +7,35 @@ implementation audit recorded the open finding below.
 breakpoint/command projection, and Phase 12 contracts in
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
-**Gates at audit time (2026-07-14):** `dotnet build Zaide.slnx --no-restore`
+**Gates at closeout (2026-07-14):** `dotnet build Zaide.slnx --no-restore`
 completed with 0 errors and the pre-existing `CS0067` test warning; `dotnet test
-Zaide.slnx --no-build` exited successfully; `git diff --check` was clean before
-this documentation change.
+Zaide.slnx --no-build` exited successfully; `git diff --check` was clean.
 
 ---
 
-## Open — F1: DAP pending-request map is accessed concurrently without synchronization
+## Resolved — F1: DAP pending-request map is accessed concurrently without synchronization
 
-**Severity:** High
+**Severity:** High (was)
 **Area:** `DapContentLengthTransport`
+**Resolved:** 2026-07-14
 
-`RequestAsync` adds and removes entries in `_pending` on caller threads, while
-the read-loop thread performs response lookups. `DisposeAsync` also enumerates
-and clears the same `Dictionary`. `Dictionary<TKey, TValue>` does not support
-these concurrent reads/writes. Real overlapping DAP requests can therefore
-lose a response, throw during dictionary access/enumeration, or corrupt the
-pending-request bookkeeping; the affected request then waits until its timeout
-and can incorrectly fail the entire debug session.
+**Problem:** `RequestAsync`, the read loop, and `DisposeAsync` accessed the same
+`Dictionary<int, TaskCompletionSource<JsonElement?>>` without synchronization.
+Overlapping DAP requests could lose responses, throw during enumeration, or
+leave stale pending entries until timeout.
 
-This conflicts with the Phase 12 request/recovery contract: protocol failures
-must produce a truthful terminal state and a later Start must remain possible.
-It is especially reachable while stopped, where stack/scopes/variables loads
-and a user selection can overlap, and during teardown racing an outstanding
-request.
+**Implementation:** Replaced `_pending` with
+`ConcurrentDictionary<int, TaskCompletionSource<JsonElement?>>`. Response
+dispatch, caller cancellation, and `RequestAsync` cleanup each `TryRemove` the
+sequence before completing/cancelling so only one path owns a pending entry.
+`DisposeAsync` now cancels the read loop, immediately drains pending requests
+via key snapshot + `TryRemove`, then tears down the read loop and write gate.
+Content-Length writes remain serialized behind `_writeGate` only.
 
-**Fix hint:** Make pending-request ownership thread-safe. Either guard all
-add/remove/lookup/snapshot-and-clear operations with one dedicated lock, or use
-`ConcurrentDictionary<int, TaskCompletionSource<JsonElement?>>` and remove each
-entry atomically before completing/cancelling it. Keep writes serialized only
-for stream framing; do not serialize request completion behind the write gate.
-Make disposal atomically detach/cancel a stable snapshot of pending requests,
-then add deterministic tests that race multiple outstanding requests, response
-dispatch, cancellation, and disposal.
-
-**Evidence:** `src/Services/DapContentLengthTransport.cs` lines 64, 83, 110–112,
-and 156 access `_pending` from independent request, disposal, and read-loop
-paths without a shared synchronization mechanism.
+**Tests:** Added `tests/Zaide.Tests/Services/DapContentLengthTransportTests.cs`
+with a non-parallel xUnit collection and deterministic harness coverage for:
+single request/response completion; 32 overlapping requests with out-of-order
+responses; cancellation racing response dispatch (50 iterations with `Barrier`);
+and disposal racing eight outstanding requests (50 iterations). Tests assert
+correct correlation, terminal completion (success or cancellation), and
+`_pending` count returning to zero without collection exceptions.

@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -18,7 +19,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
     private readonly Stream _input;
     private readonly Stream _output;
     private readonly Dictionary<string, Action<JsonElement>> _eventHandlers = new(StringComparer.Ordinal);
-    private readonly Dictionary<int, TaskCompletionSource<JsonElement?>> _pending = new();
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement?>> _pending = new();
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly object _readLoopGate = new();
     private int _nextSeq = 1;
@@ -75,12 +76,12 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
                 },
                 cancellationToken).ConfigureAwait(false);
 
-            using var registration = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            using var registration = cancellationToken.Register(() => CancelPendingRequest(seq, cancellationToken));
             return await tcs.Task.ConfigureAwait(false);
         }
         finally
         {
-            _pending.Remove(seq);
+            _pending.TryRemove(seq, out _);
         }
     }
 
@@ -91,6 +92,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
         _disposed = true;
 
         _readLoopCts?.Cancel();
+        CancelAllPendingRequests();
 
         if (_readLoop is not null)
         {
@@ -106,10 +108,21 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
 
         _readLoopCts?.Dispose();
         _writeGate.Dispose();
+    }
 
-        foreach (var pending in _pending.Values)
-            pending.TrySetCanceled();
-        _pending.Clear();
+    private void CancelPendingRequest(int seq, CancellationToken cancellationToken)
+    {
+        if (_pending.TryRemove(seq, out var tcs))
+            tcs.TrySetCanceled(cancellationToken);
+    }
+
+    private void CancelAllPendingRequests()
+    {
+        foreach (var key in _pending.Keys)
+        {
+            if (_pending.TryRemove(key, out var tcs))
+                tcs.TrySetCanceled();
+        }
     }
 
     private async Task ReadLoopAsync(CancellationToken cancellationToken)
@@ -153,7 +166,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
             case "response":
                 if (message.TryGetProperty("request_seq", out var requestSeqElement) &&
                     requestSeqElement.TryGetInt32(out var requestSeq) &&
-                    _pending.TryGetValue(requestSeq, out var tcs))
+                    _pending.TryRemove(requestSeq, out var tcs))
                 {
                     if (message.TryGetProperty("success", out var successElement) &&
                         successElement.ValueKind == JsonValueKind.False)
