@@ -57,11 +57,14 @@ public sealed class ProjectWorkflowProjectionShutdownTests
 
         App.DisposeServicesOnExit(provider);
 
+        var debugIndex = order.IndexOf("debugSession");
         var workflowIndex = order.IndexOf("workflow");
         var languageIndex = order.IndexOf("languageSession");
+        Assert.True(debugIndex >= 0);
         Assert.True(workflowIndex >= 0);
         Assert.True(languageIndex >= 0);
         Assert.True(runner.KillCalled);
+        Assert.True(debugIndex < workflowIndex);
         Assert.True(workflowIndex < languageIndex);
     }
 
@@ -80,12 +83,14 @@ public sealed class ProjectWorkflowProjectionShutdownTests
             return index;
         }
 
+        var debugSession = IndexOf(order, "debugSession");
         var workflow = IndexOf(order, "workflow");
         var output = IndexOf(order, "output");
         var buildDiagnostics = IndexOf(order, "buildDiagnostics");
         var testResults = IndexOf(order, "testResults");
         var languageSession = IndexOf(order, "languageSession");
 
+        Assert.True(debugSession < workflow);
         Assert.True(workflow < output);
         Assert.True(output < buildDiagnostics);
         Assert.True(buildDiagnostics < testResults);
@@ -238,6 +243,7 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         {
             _services = new Dictionary<Type, object>
             {
+                [typeof(IDebugSessionService)] = CreateRecordingDisposable<IDebugSessionService>(order, "debugSession"),
                 [typeof(IProjectWorkflowService)] = new RecordingWorkflowService(order, runner),
                 [typeof(IProjectOutputService)] = CreateRecordingDisposable<IProjectOutputService>(order, "output"),
                 [typeof(IBuildDiagnosticsService)] = CreateRecordingDisposable<IBuildDiagnosticsService>(order, "buildDiagnostics"),

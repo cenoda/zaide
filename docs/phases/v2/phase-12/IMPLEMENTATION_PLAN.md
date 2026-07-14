@@ -5,8 +5,13 @@
 **M0 complete** (planning and live adapter/transport proof, 2026-07-14).
 Evidence: [M0_DAP_ADAPTER_TRANSPORT_PROOF.md](M0_DAP_ADAPTER_TRANSPORT_PROOF.md).
 
-No Phase 12 production code, package reference, DI registration, command, or UI
-has been added by M0. M1 must start from the locked contracts below.
+**M1 complete** (2026-07-14). UI-independent NetCoreDbg locator, dedicated
+Content-Length DAP transport, session lifecycle/state ownership, DI, shutdown
+ordering, deterministic tests, and production Linux proof. Evidence:
+[M1_DAP_SESSION_LIFECYCLE_PROOF.md](M1_DAP_SESSION_LIFECYCLE_PROOF.md).
+
+M1 adds no breakpoint persistence, settings schema, commands, editor UI, or
+build-to-debug handoff. M2 must start from the locked contracts below.
 
 **Prerequisite:** Phase 11 is complete. `IProjectContextService` is the sole
 project-target owner; `ICommandRegistry` is the sole command/keybinding
@@ -82,10 +87,11 @@ download an adapter or fall back to an unrelated debugger.
 The transport is one adapter process per debug session with redirected stdin,
 stdout, and stderr. stdin/stdout carry only DAP `Content-Length` framed JSON.
 stderr is drained independently and becomes structured diagnostic output; it is
-never parsed as protocol JSON. Reuse `StreamJsonRpc`'s
-`HeaderDelimitedMessageHandler` and `SystemTextJsonFormatter` rather than a
-hand-rolled frame parser. DAP method parameters are single JSON objects, so the
-session must use the same single-object request pattern proven by Phase 10.
+never parsed as protocol JSON. NetCoreDbg's `--interpreter=vscode` accepts VS
+Code DAP envelopes, not JSON-RPC 2.0, so Phase 12 must use a dedicated tested
+`DapContentLengthTransport`; `StreamJsonRpc` remains the Phase 10 LSP transport
+precedent for child-process framing and shutdown only. DAP requests/events use
+the VS Code `seq`/`type`/`command`/`arguments`/`body` envelope.
 
 ### 2. Target, build handoff, and launch contract
 
@@ -185,10 +191,8 @@ live-frame data, and allow a later Start. The M1 constants are: initialize
 disconnect 5 seconds before process-tree kill. No operation may wait silently
 without one of these bounds.
 
-M1 registers local DAP event handlers before calling `JsonRpc.StartListening`:
-`stopped`, `continued`, `output`, `terminated`, and `exited` use explicit
-`JsonRpc.AddLocalRpcMethod` registrations with single-object parameter
-deserialization, following the Phase 10 notification seam. The session service,
+M1 registers `stopped`, `continued`, `output`, `terminated`, and `exited`
+handlers before the DAP transport starts its receive loop. The session service,
 not fire-and-forget callers, serializes the sequence above and correlates all
 replies/events to its active generation.
 
@@ -258,9 +262,10 @@ git diff --check
 
 M1+ use fake adapter/session seams for deterministic failure, ordering,
 generation, and disposal tests. **M1's first real-adapter gate uses the actual
-production `StreamJsonRpc` session**, not the M0 disposable frame client, to
-prove `initialize → launch → setBreakpoints → configurationDone → stopped →
-threads → stackTrace → scopes → continue → disconnect` against NetCoreDbg.
+production `DapContentLengthTransport` session**, not the M0 disposable frame
+client, to prove `initialize → launch → setBreakpoints → configurationDone →
+stopped → threads → stackTrace → scopes → continue → disconnect` against
+NetCoreDbg.
 Real adapter evidence uses `tests/fixtures/workflow-console/` and records the
 adapter version, executable origin/path, command argv, SDK, target DLL, and
 observed events. The M0 proof establishes the framing baseline, but every
@@ -302,7 +307,7 @@ structural. The M1 revert target is the committed M0 baseline: `6222ea5`.
 | Milestone | Scope and independent completion condition | Focused verification | Commit boundary |
 |---|---|---|---|
 | **M0** ✅ | Docs/proof only: live seams, NetCoreDbg 3.2.0-1092 stdio lifecycle proof, contracts 1–8, decomposition. No production code. | Recorded proof; `git diff --check` | `docs(phase-12): M0 DAP plan and proof` |
-| **M1** | UI-independent DAP core: locator (`ZAIDE_NETCOREDBG_PATH`, then PATH), session factory/service, pre-listening event registrations, Content-Length `StreamJsonRpc` transport, locked timeouts, state/generation/outcomes, stderr capture, disconnect/crash/timeout/dispose behavior, DI and shutdown ordering. No breakpoint persistence or UI commands. | `DebugSessionServiceTests`, fake-session ordering/event/failure tests, locator tests, DI/dispose tests; **production StreamJsonRpc** NetCoreDbg lifecycle proof | `debug: add DAP session lifecycle core` |
+| **M1** ✅ | UI-independent DAP core: locator (`ZAIDE_NETCOREDBG_PATH`, then PATH), session factory/service, pre-listening event registrations, dedicated Content-Length DAP transport, locked timeouts, state/generation/outcomes, stderr capture, disconnect/crash/timeout/dispose behavior, DI and shutdown ordering. No breakpoint persistence or UI commands. Evidence: [M1_DAP_SESSION_LIFECYCLE_PROOF.md](M1_DAP_SESSION_LIFECYCLE_PROOF.md). | `DebugSessionServiceTests`, fake-session ordering/event/failure tests, locator tests, DI/dispose tests; production DAP-transport NetCoreDbg lifecycle proof | `debug: add DAP session lifecycle core` |
 | **M2** | Schema-v3 workspace-root-keyed breakpoint persistence: `DebugSettings`, serializer ceiling, v2→v3 production migration registration, path/line normalization, full-source replacement request policy, verified/pending mapping. No editor chrome or F5. | `BreakpointServiceTests`, v2→v3 migration/round-trip/unknown-v4 tests, `SetBreakpoints` fake-session tests | `debug: add persistent breakpoint service` |
 | **M3a** | Extract the shared project-operation gate; build-before-debug handoff under one gate lease using the locked MSBuild `TargetPath` query; `debug.startOrContinue` F5 command. No F9/editor chrome. | target-resolution + workflow-busy/debug-active + handoff-no-gap + F5 registry dispatch tests; Linux smoke: fresh build, F5 launch | `debug: start launch debugging` |
 | **M3b** | `debug.toggleBreakpoint` / F9 plus editor breakpoint margin/projection over M2 persistence and M3a session state. | breakpoint command + editor projection/path-identity tests; Linux smoke: F9, F5, breakpoint hit | `debug: add editor breakpoint projection` |
@@ -324,9 +329,9 @@ launch state, and M3b cannot start before M3a is complete.
 
 ## Exact Next Step
 
-Phase 12 M0 is complete. The next permitted implementation slice is **M1 only**:
-the UI-independent adapter locator/session lifecycle core. Do not add
-breakpoints, F5, editor UI, stack panes, or a bundled adapter in M1.
+Phase 12 M1 is complete. The next permitted implementation slice is **M2 only**:
+schema-v3 workspace-keyed breakpoint persistence. Do not add F5/F9, editor UI,
+build-to-debug handoff, the shared operation gate, or debug panels in M2.
 
 ## Exit Conditions
 

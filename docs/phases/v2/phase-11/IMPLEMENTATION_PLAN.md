@@ -34,8 +34,8 @@ U6 status polish (Option A: panel-local
 accessibility/keyboard smoke evidence.
 Evidence: [M6_MANUAL_EVIDENCE.md](M6_MANUAL_EVIDENCE.md).
 
-**Phase 11 complete** for V2 (M0–M6). Phase 12 M0 (DAP planning and live
-adapter/transport proof) is complete; M1 is next.
+**Phase 11 complete** for V2 (M0–M6). Phase 12 M0–M1 (DAP planning/proof and
+UI-independent adapter/session lifecycle core) are complete; M2 is next.
 
 **Prerequisite:** Phase 10 complete (M7 closeout, 2026-07-14). Phase 8.3
 project context and Phase 8.2 command registry are the authoritative seams.

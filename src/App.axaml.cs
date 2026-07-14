@@ -70,6 +70,10 @@ public partial class App : Application
         var buildDiagnostics = services.GetRequiredService<IBuildDiagnosticsService>();
         var testResults = services.GetRequiredService<ITestResultsService>();
 
+        // Phase 12 M1: disconnect the debug adapter before workflow teardown so
+        // adapter/debuggee process trees are never orphaned.
+        services.GetRequiredService<IDebugSessionService>().Dispose();
+
         // Phase 11 M1: cancel and kill workflow dotnet trees before language
         // session teardown so child processes are never orphaned.
         services.GetRequiredService<IProjectWorkflowService>().Dispose();

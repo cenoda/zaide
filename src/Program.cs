@@ -72,6 +72,12 @@ class Program
         services.AddSingleton<IProjectDiscovery, ProjectDiscovery>();
         services.AddSingleton<IProjectContextService, ProjectContextService>();
 
+        // Phase 12 M1: UI-independent DAP adapter locator and session lifecycle core.
+        services.AddSingleton<IDebugAdapterLocator>(_ =>
+            new DebugAdapterLocator(Environment.GetEnvironmentVariable("ZAIDE_NETCOREDBG_PATH")));
+        services.AddSingleton<IDebugAdapterSessionFactory, DebugAdapterSessionFactory>();
+        services.AddSingleton<IDebugSessionService, DebugSessionService>();
+
         // Phase 11 M1: UI-independent build/run/test process orchestration core.
         services.AddSingleton<IManagedProcessRunner, ManagedProcessRunner>();
         services.AddSingleton<IProjectWorkflowService, ProjectWorkflowService>();
