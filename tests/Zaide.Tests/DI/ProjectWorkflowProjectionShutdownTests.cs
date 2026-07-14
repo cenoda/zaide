@@ -84,13 +84,21 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         }
 
         var debugSession = IndexOf(order, "debugSession");
+        var debugPanel = IndexOf(order, "debugPanel");
+        var debugCurrentLocation = IndexOf(order, "debugCurrentLocation");
+        var editorBreakpoint = IndexOf(order, "editorBreakpoint");
+        var debugSessionViewModel = IndexOf(order, "debugSessionViewModel");
         var workflow = IndexOf(order, "workflow");
         var output = IndexOf(order, "output");
         var buildDiagnostics = IndexOf(order, "buildDiagnostics");
         var testResults = IndexOf(order, "testResults");
         var languageSession = IndexOf(order, "languageSession");
 
-        Assert.True(debugSession < workflow);
+        Assert.True(debugSession < debugPanel);
+        Assert.True(debugPanel < debugCurrentLocation);
+        Assert.True(debugCurrentLocation < editorBreakpoint);
+        Assert.True(editorBreakpoint < debugSessionViewModel);
+        Assert.True(debugSessionViewModel < workflow);
         Assert.True(workflow < output);
         Assert.True(output < buildDiagnostics);
         Assert.True(buildDiagnostics < testResults);
@@ -244,6 +252,10 @@ public sealed class ProjectWorkflowProjectionShutdownTests
             _services = new Dictionary<Type, object>
             {
                 [typeof(IDebugSessionService)] = CreateRecordingDisposable<IDebugSessionService>(order, "debugSession"),
+                [typeof(DebugPanelViewModel)] = new RecordingDisposeMarker(order, "debugPanel"),
+                [typeof(DebugCurrentLocationViewModel)] = new RecordingDisposeMarker(order, "debugCurrentLocation"),
+                [typeof(EditorBreakpointViewModel)] = new RecordingDisposeMarker(order, "editorBreakpoint"),
+                [typeof(DebugSessionViewModel)] = new RecordingDisposeMarker(order, "debugSessionViewModel"),
                 [typeof(IProjectWorkflowService)] = new RecordingWorkflowService(order, runner),
                 [typeof(IProjectOutputService)] = CreateRecordingDisposable<IProjectOutputService>(order, "output"),
                 [typeof(IBuildDiagnosticsService)] = CreateRecordingDisposable<IBuildDiagnosticsService>(order, "buildDiagnostics"),
@@ -271,6 +283,20 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         var mock = new Mock<T>();
         mock.Setup(service => service.Dispose()).Callback(() => order.Add(name));
         return mock.Object;
+    }
+
+    private sealed class RecordingDisposeMarker : IDisposable
+    {
+        private readonly List<string> _order;
+        private readonly string _name;
+
+        public RecordingDisposeMarker(List<string> order, string name)
+        {
+            _order = order;
+            _name = name;
+        }
+
+        public void Dispose() => _order.Add(_name);
     }
 
     private static ILanguageSessionService CreateRecordingSessionService(List<string> order)

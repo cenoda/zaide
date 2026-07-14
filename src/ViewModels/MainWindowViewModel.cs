@@ -342,13 +342,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ProjectWorkflowViewModel.Activate();
         _disposables.Add(ProjectWorkflowViewModel);
 
-        // Phase 12 M3a: debug session command projection.
+        // Phase 12 M3a: debug session command projection. Singleton dispose is owned
+        // by App.DisposeServicesOnExit after IDebugSessionService (Contract 3).
         DebugSessionViewModel.Activate();
-        _disposables.Add(DebugSessionViewModel);
 
         // Phase 12 M4: debug console and call-stack shell projection.
         DebugPanelViewModel.Activate();
-        _disposables.Add(DebugPanelViewModel);
         _disposables.Add(
             DebugPanelViewModel.WhenShowDebugRequested
                 .Subscribe(_ =>
@@ -359,14 +358,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
         // Phase 12 M3b: editor breakpoint projection and F9 command.
         EditorBreakpointViewModel.Activate();
-        _disposables.Add(EditorBreakpointViewModel);
 
         // Phase 12 M5: selected-frame current execution location projection.
         if (DebugCurrentLocationViewModel is not null)
-        {
             DebugCurrentLocationViewModel.Activate();
-            _disposables.Add(DebugCurrentLocationViewModel);
-        }
         _disposables.Add(
             ProjectWorkflowViewModel.WhenShowOutputRequested
                 .Subscribe(_ =>

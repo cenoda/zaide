@@ -91,6 +91,13 @@ public partial class App : Application
         // adapter/debuggee process trees are never orphaned.
         services.GetRequiredService<IDebugSessionService>().Dispose();
 
+        // Phase 12 F4: tear down debug projection singletons after session
+        // disconnect and before workflow disposal (Contract 3 ordering).
+        DisposeDebugProjection<DebugPanelViewModel>(services);
+        DisposeDebugProjection<DebugCurrentLocationViewModel>(services);
+        DisposeDebugProjection<EditorBreakpointViewModel>(services);
+        DisposeDebugProjection<DebugSessionViewModel>(services);
+
         // Phase 11 M1: cancel and kill workflow dotnet trees before language
         // session teardown so child processes are never orphaned.
         services.GetRequiredService<IProjectWorkflowService>().Dispose();
@@ -116,5 +123,12 @@ public partial class App : Application
         services.GetRequiredService<ILanguageSessionService>().Dispose();
         services.GetRequiredService<IProjectContextService>().Dispose();
         services.GetService<ITerminalHost>()?.Dispose();
+    }
+
+    private static void DisposeDebugProjection<T>(IServiceProvider services)
+        where T : class
+    {
+        if (services.GetService(typeof(T)) is IDisposable disposable)
+            disposable.Dispose();
     }
 }
