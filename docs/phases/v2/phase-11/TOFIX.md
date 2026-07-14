@@ -1,7 +1,7 @@
 # Phase 11: Project Workflow — TOFIX
 
 **Status:** Phase 11 complete (M0–M6 closeout, 2026-07-14). Post-closeout
-implementation audit recorded open findings below. Items are ordered by
+implementation audit recorded findings below (all resolved). Items are ordered by
 recommended fix priority (highest first).
 
 **Source:** Live-code audit of `IProjectWorkflowService` / `ManagedProcessRunner`,
@@ -421,19 +421,50 @@ explicit ownership contract change — not introduced in F10.
 
 ---
 
-## Open — F11: Polish (a11y, scroll, path identity)
+## Resolved — F11: Polish (a11y, scroll, path identity)
 
-**Severity:** Low  
+**Severity:** Low
 **Area:** `OutputPanel`, `TestResultsPanel`, context-cancel path compare
 
 | Item | Detail |
 |---|---|
 | Cancel a11y | ~~Automation name always "Cancel build" for Run/Test~~ (F6) |
-| Output scroll | Full list rebuild jumps scroll/selection; no stick-to-end |
+| Output scroll | ~~Full list rebuild jumps scroll/selection; no stick-to-end~~ (F11) |
 | Cancel gesture | ~~Plan allows none~~ — F3: default `Ctrl+F2` + palette + panel buttons |
-| Path compare | Context cancel uses `FilePath == TargetFilePath`; both are `GetFullPath` today — fragile if a future path source skips normalization |
+| Path compare | ~~Context cancel uses `FilePath == TargetFilePath`; both are `GetFullPath` today — fragile if a future path source skips normalization~~ (F11) |
 | Interactive Run | Redirected stdio (no PTY) — documented; apps that `ReadLine` hang until Cancel |
 | U7 libraries | Run enabled for all eligible `.csproj`; class libs surface `Failed` — intentional |
+
+**Resolution (2026-07-14):** Output scroll-follow and path comparison hardening.
+
+**Output scroll-follow:**
+- `OutputPanel` subscribes to `Lines.CollectionChanged` and auto-scrolls to
+  the latest line only when the user is already near the bottom (within 20px
+  of `ScrollBarMaximum.Y`).
+- When the user has scrolled upward, new output does not forcibly jump the
+  viewport.
+- Selection is preserved (no `Clear`/rebuild of the list).
+- The append-only output projection from F1 is unchanged.
+
+**Context-cancel path identity:**
+- `ProjectWorkflowService.HandleContextChangeAsync` now normalizes the
+  incoming `context.SelectedProject.FilePath` via `Path.GetFullPath` before
+  comparing against the active `TargetFilePath` (which is already normalized
+  by `ProjectTargetResolver.Resolve`).
+- Comparison uses `string.Equals(…, StringComparison.Ordinal)`.
+- Handles equivalent absolute paths consistently (e.g. with `..` segments).
+
+**Tests:**
+- `ContextChangeAwayFromTarget_WithNormalizedPath_DoesNotCancel` — same file
+  via non-normalized path (`sub/../App.csproj`) does not cancel.
+- `ContextChangeAwayFromTarget_WithDifferentPath_Cancels` — different file
+  still cancels.
+- `ContextChangeAwayFromTarget_WithNullSelectedProject_Cancels` — null
+  selected project cancels.
+- `OutputPanelScrollFollowTests` — panel creates/activates without throwing;
+  adding lines does not throw; scroll does not jump when user scrolled up.
+
+**Gates:** `dotnet build`, `dotnet test`, `git diff --check` all pass.
 
 ---
 
@@ -461,7 +492,7 @@ explicit ownership contract change — not introduced in F10.
 6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
 7. ~~**F7** — console test parse hardening~~ / ~~**F8** — build diagnostic parse hardening~~
 8. ~~**F9** — save-before-build/run/test~~
-9. ~~**F10** — projection dispose on exit~~ / **F11** — product polish
+9. ~~**F10** — projection dispose on exit~~ / ~~**F11** — product polish~~
 
 Prefer one focused commit per finding (or tightly related pair). Re-run
 sequential full gates after each code fix.

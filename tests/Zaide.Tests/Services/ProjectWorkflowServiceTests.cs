@@ -313,7 +313,41 @@ public sealed class ProjectWorkflowServiceTests
     }
 
     [Fact]
-    public async Task ContextChangeAwayFromTarget_CancelsActiveOperation()
+    public async Task ContextChangeAwayFromTarget_WithNormalizedPath_DoesNotCancel()
+    {
+        // Same file, but the context emits a non-normalized path (e.g. with
+        // ".." segment). The normalized path policy must recognize it as the
+        // same target and NOT cancel the active operation.
+        var first = MakeCandidate("App.csproj");
+        var nonNormalized = new ProjectCandidate(
+            Path.Combine(TempRoot, "sub", "..", "App.csproj"),
+            "App",
+            ProjectKind.CSharpProject);
+        var (service, context, runner) = CreateHarness(MakeContext(ProjectContextState.SingleProject, first));
+        using (service)
+        {
+            runner.RunGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var buildTask = service.StartBuildAsync();
+            await WaitUntilAsync(() => service.Current.State == ProjectWorkflowOperationState.Running);
+
+            // Emit context with non-normalized path to the same file
+            context.Emit(MakeContext(ProjectContextState.Selected, nonNormalized, new[] { first, nonNormalized }));
+
+            // Give the context-change handler time to process
+            await Task.Delay(200);
+
+            // Operation should still be running (not cancelled)
+            Assert.Equal(ProjectWorkflowOperationState.Running, service.Current.State);
+
+            runner.RunGate.TrySetResult(true);
+            var result = await buildTask;
+            Assert.Equal(ProjectWorkflowOutcomeKind.Succeeded, result.Outcome);
+        }
+    }
+
+    [Fact]
+    public async Task ContextChangeAwayFromTarget_WithDifferentPath_Cancels()
     {
         var first = MakeCandidate("First.csproj");
         var second = MakeCandidate("Second.csproj");
@@ -331,6 +365,27 @@ public sealed class ProjectWorkflowServiceTests
 
             Assert.Equal(ProjectWorkflowOutcomeKind.Cancelled, result.Outcome);
             Assert.Equal(ProjectWorkflowOutcomeKind.Cancelled, service.Current.LastOutcome);
+        }
+    }
+
+    [Fact]
+    public async Task ContextChangeAwayFromTarget_WithNullSelectedProject_Cancels()
+    {
+        var first = MakeCandidate("First.csproj");
+        var (service, context, runner) = CreateHarness(MakeContext(ProjectContextState.SingleProject, first));
+        using (service)
+        {
+            runner.RunGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var buildTask = service.StartBuildAsync();
+            await WaitUntilAsync(() => service.Current.State == ProjectWorkflowOperationState.Running);
+
+            // Emit context with no selected project (e.g. Unloaded)
+            context.Emit(MakeContext(ProjectContextState.Unloaded, null));
+
+            var result = await buildTask;
+
+            Assert.Equal(ProjectWorkflowOutcomeKind.Cancelled, result.Outcome);
         }
     }
 

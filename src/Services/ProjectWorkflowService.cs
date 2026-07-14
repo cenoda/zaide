@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
@@ -207,7 +208,11 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
 
             var activePath = _current.TargetFilePath;
             if (ProjectTargetResolver.IsEligible(context) &&
-                context.SelectedProject?.FilePath == activePath)
+                context.SelectedProject is not null &&
+                string.Equals(
+                    Path.GetFullPath(context.SelectedProject.FilePath),
+                    activePath,
+                    StringComparison.Ordinal))
             {
                 return;
             }

@@ -367,6 +367,18 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   then language stack. `IManagedProcessRunner` remains a single public DI
   singleton disposed only by `ProjectWorkflowService`; a second owner would need
   an explicit ownership contract change.
+- **Output scroll-follow (F11, 2026-07-14):** `OutputPanel` auto-scrolls to the
+  latest output line only when the user is near the bottom (within 20px of
+  `ScrollBarMaximum.Y`). Scrolling upward pauses the follow; scrolling back to
+  the bottom resumes it. Selection is preserved — no `Clear`/rebuild of the
+  list. This is a single-threshold heuristic; a future enhancement could use
+  `ScrollViewer.ScrollChanged` for sub-pixel precision.
+- **Context-cancel path policy (F11, 2026-07-14):** `HandleContextChangeAsync`
+  now normalizes the incoming `context.SelectedProject.FilePath` via
+  `Path.GetFullPath` before comparing against `TargetFilePath` using
+  `string.Equals(…, StringComparison.Ordinal)`. This matches the normalization
+  already applied by `ProjectTargetResolver.Resolve` and handles equivalent
+  absolute paths (e.g. with `..` segments) correctly.
 
 ## Unresolved Decisions
 

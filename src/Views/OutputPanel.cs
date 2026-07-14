@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Specialized;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Styles;
@@ -24,7 +27,8 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
 
     public OutputPanel()
     {
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
+        Background = (IBrush?)Application.Current?.Resources["SurfacePanelBrush"]
+            ?? Brushes.Transparent;
 
         var title = TextStyles.Header("Output");
 
@@ -74,7 +78,8 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
                     FontSize = 12,
                     Foreground = item.StreamTag == "stderr"
                         ? Brushes.OrangeRed
-                        : (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+                        : (IBrush?)Application.Current?.Resources["TextPrimaryBrush"]
+                            ?? Brushes.White,
                 };
                 return new Border
                 {
@@ -106,6 +111,33 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
                 .Subscribe(vm =>
                 {
                     _list.ItemsSource = vm!.Lines;
+                }));
+
+            // Scroll-follow: auto-scroll to the latest line only when the user
+            // is already near the bottom. When the user has scrolled upward,
+            // new output does not forcibly jump the viewport.
+            d.Add(Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => ViewModel!.Lines.CollectionChanged += h,
+                    h => ViewModel!.Lines.CollectionChanged -= h)
+                .Subscribe(e =>
+                {
+                    if (e.EventArgs.Action != NotifyCollectionChangedAction.Add ||
+                        e.EventArgs.NewItems is not { Count: > 0 })
+                        return;
+
+                    var scrollViewer = _list.FindDescendantOfType<ScrollViewer>();
+                    if (scrollViewer is null)
+                        return;
+
+                    // "Near bottom" threshold: within 20px of the maximum
+                    // scroll offset. This prevents a jump when the user has
+                    // scrolled up to read earlier output.
+                    const double threshold = 20.0;
+                    var maxOffset = scrollViewer.ScrollBarMaximum.Y;
+                    if (scrollViewer.Offset.Y >= maxOffset - threshold)
+                    {
+                        _list.ScrollIntoView(e.EventArgs.NewItems[^1]!);
+                    }
                 }));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)
