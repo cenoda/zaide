@@ -374,20 +374,50 @@ the workflow is blocked and the error is surfaced truthfully.
 
 ---
 
-## Open — F10: Downstream workflow services not disposed on app exit
+## Resolved — F10: Downstream workflow services not disposed on app exit
 
 **Severity:** Low  
 **Area:** `App.axaml.cs`, `ProjectOutputService`, `BuildDiagnosticsService`,
 `TestResultsService`
 
-**Problem:** Exit disposes `IProjectWorkflowService` (and language stack) but
-not Output / build-diagnostics / test-results services. They usually complete
-when workflow subjects complete; incomplete hygiene vs explicit language
+**Problem:** Exit disposed `IProjectWorkflowService` (and language stack) but
+not Output / build-diagnostics / test-results services. They usually completed
+when workflow subjects completed; incomplete hygiene vs explicit language
 dispose. Workflow also **owns dispose of shared `IManagedProcessRunner`** —
 fine today, fragile if another owner appears.
 
-**Direction:** Explicit dispose of projection services after workflow (or
-with it); keep runner ownership single and documented.
+**Resolution (2026-07-14):** Explicit projection dispose on the locked exit
+path, after workflow process teardown.
+
+**Dispose order (locked):**
+
+1. Resolve `IProjectOutputService`, `IBuildDiagnosticsService`, and
+   `ITestResultsService` singletons (supports lazy DI — constructors subscribe
+   to workflow and must not run after workflow subjects are disposed).
+2. `IProjectWorkflowService` — cancel/kill managed `dotnet` trees and complete
+   workflow subjects (unchanged M1 rule; must stay before language).
+3. Projection services (resolved above) — release workflow subscriptions and
+   complete projection subjects. After workflow so processes are killed first;
+   before language so projection teardown does not race language shutdown.
+4. Language stack → `IProjectContextService` → `ITerminalHost` (unchanged).
+
+- **`App.DisposeServicesOnExit`** — extracted exit sequence for tests; desktop
+  `Exit` handler delegates to it.
+- **`IProjectOutputService`** — now extends `IDisposable`; implementation is
+  idempotent.
+- **`BuildDiagnosticsService` / `TestResultsService`** — unchanged dispose
+  semantics; now invoked explicitly on exit.
+
+**Tests:** `ProjectWorkflowProjectionShutdownTests` — exit path disposes all
+three projections; subscription release and subject completion; workflow kill
+before language; dispose order workflow → projections → language; repeated
+dispose safe; single shared `IManagedProcessRunner` registration.
+
+**Remaining limitation:** `IManagedProcessRunner` remains a public DI singleton
+disposed only by `ProjectWorkflowService`. A second owner would require an
+explicit ownership contract change — not introduced in F10.
+
+**Gates:** `dotnet build`, `dotnet test`, `git diff --check`.
 
 ---
 
@@ -415,7 +445,7 @@ with it); keep runner ownership single and documented.
 - Output vs Terminal separation; no PTY for workflow
 - Problems merge: language + build; build cleared only on new **build** start
 - Navigation via `OpenFileCommand` + `RequestNavigate` only
-- Dispose **order** policy: workflow before language
+- Dispose **order** policy: workflow → projections → language
 - Command IDs/gestures on `ICommandRegistry`
 - YAGNI: no task runner, DAP, OutputType probe, auto-build on folder open
 
@@ -431,7 +461,7 @@ with it); keep runner ownership single and documented.
 6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
 7. ~~**F7** — console test parse hardening~~ / ~~**F8** — build diagnostic parse hardening~~
 8. ~~**F9** — save-before-build/run/test~~
-9. **F10**–**F11** — product polish / hygiene
+9. ~~**F10** — projection dispose on exit~~ / **F11** — product polish
 
 Prefer one focused commit per finding (or tightly related pair). Re-run
 sequential full gates after each code fix.

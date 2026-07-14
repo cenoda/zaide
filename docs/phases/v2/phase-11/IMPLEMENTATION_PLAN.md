@@ -220,12 +220,16 @@ Rules:
    active operation (same spirit as language-session generation).
 4. Cancellation is never reported as `Failed` exit alone — use `Cancelled`.
 5. **App dispose order (locked):** cancel/dispose **workflow first** (kill any
-   `dotnet` process tree), then the existing language stack, then
-   `IProjectContextService`, then `ITerminalHost`. Live exit path today
-   (`App.axaml.cs`) disposes language → project context → terminal; M1 must
-   insert workflow dispose **before** language session dispose so workflow
-   children are never orphaned after app exit. Bounded wait after cancel is
-   allowed; never rely on process exit alone without `Kill(entireProcessTree)`.
+   `dotnet` process tree), then **projection services**
+   (`IProjectOutputService`, `IBuildDiagnosticsService`, `ITestResultsService`)
+   to release workflow subscriptions and complete projection subjects, then the
+   existing language stack, then `IProjectContextService`, then
+   `ITerminalHost`. Projections run after workflow so process kill and workflow
+   subject completion happen first; before language so projection teardown does
+   not race language session shutdown. M1 inserted workflow dispose before
+   language; F10 (2026-07-14) added explicit projection dispose between them.
+   Bounded wait after cancel is allowed; never rely on process exit alone
+   without `Kill(entireProcessTree)`.
 
 ### 6. Navigation
 
@@ -358,6 +362,11 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   `false` for empty `FilePath`; the user must explicitly save-as or close the
   untitled tab before building. No prompt-based dialog — the policy is automatic
   save, not interactive confirmation.
+- **Projection dispose on exit (F10, 2026-07-14):** `App.DisposeServicesOnExit`
+  disposes workflow, then Output / build-diagnostics / test-results services,
+  then language stack. `IManagedProcessRunner` remains a single public DI
+  singleton disposed only by `ProjectWorkflowService`; a second owner would need
+  an explicit ownership contract change.
 
 ## Unresolved Decisions
 

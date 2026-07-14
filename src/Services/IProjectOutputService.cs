@@ -6,7 +6,7 @@ namespace Zaide.Services;
 /// Projects structured build/run/test process output from
 /// <see cref="IProjectWorkflowService"/> for read-only UI surfaces.
 /// </summary>
-public interface IProjectOutputService
+public interface IProjectOutputService : IDisposable
 {
     /// <summary>The current immutable output snapshot.</summary>
     ProjectOutputSnapshot Current { get; }

@@ -52,30 +52,48 @@ public partial class App : Application
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.
-            desktop.Exit += (_, _) =>
-            {
-                // Phase 11 M1: cancel and kill workflow dotnet trees before language
-                // session teardown so child processes are never orphaned.
-                Services.GetRequiredService<IProjectWorkflowService>().Dispose();
-
-                // Phase 8.3 M3: explicit shutdown of the project-context service
-                // so its WorkspaceFolderChanged subscription is released and any
-                // in-flight work is invalidated. App does not rely on implicit
-                // root-provider disposal.
-                // Tear down language features before document sync/session teardown.
-                Services.GetRequiredService<ILanguageFormattingService>().Dispose();
-                Services.GetRequiredService<ILanguageNavigationService>().Dispose();
-                Services.GetRequiredService<ILanguageSymbolService>().Dispose();
-                Services.GetRequiredService<ILanguageCompletionService>().Dispose();
-                Services.GetRequiredService<ILanguageHoverService>().Dispose();
-                Services.GetRequiredService<ILanguageDiagnosticsService>().Dispose();
-                Services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
-                Services.GetRequiredService<ILanguageSessionService>().Dispose();
-                Services.GetRequiredService<IProjectContextService>().Dispose();
-                Services.GetService<ITerminalHost>()?.Dispose();
-            };
+            desktop.Exit += (_, _) => DisposeServicesOnExit(Services);
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Explicit application-shutdown dispose sequence. Extracted for unit tests
+    /// that verify ordering without a live Avalonia desktop host.
+    /// </summary>
+    internal static void DisposeServicesOnExit(IServiceProvider services)
+    {
+        // Phase 11 F10: resolve projection singletons before workflow dispose so
+        // lazy DI never constructs them against completed workflow subjects.
+        var output = services.GetRequiredService<IProjectOutputService>();
+        var buildDiagnostics = services.GetRequiredService<IBuildDiagnosticsService>();
+        var testResults = services.GetRequiredService<ITestResultsService>();
+
+        // Phase 11 M1: cancel and kill workflow dotnet trees before language
+        // session teardown so child processes are never orphaned.
+        services.GetRequiredService<IProjectWorkflowService>().Dispose();
+
+        // Release workflow subscriptions and complete projection subjects after
+        // process kill. Language teardown stays after both.
+        output.Dispose();
+        buildDiagnostics.Dispose();
+        testResults.Dispose();
+
+        // Phase 8.3 M3: explicit shutdown of the project-context service
+        // so its WorkspaceFolderChanged subscription is released and any
+        // in-flight work is invalidated. App does not rely on implicit
+        // root-provider disposal.
+        // Tear down language features before document sync/session teardown.
+        services.GetRequiredService<ILanguageFormattingService>().Dispose();
+        services.GetRequiredService<ILanguageNavigationService>().Dispose();
+        services.GetRequiredService<ILanguageSymbolService>().Dispose();
+        services.GetRequiredService<ILanguageCompletionService>().Dispose();
+        services.GetRequiredService<ILanguageHoverService>().Dispose();
+        services.GetRequiredService<ILanguageDiagnosticsService>().Dispose();
+        services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
+        services.GetRequiredService<ILanguageSessionService>().Dispose();
+        services.GetRequiredService<IProjectContextService>().Dispose();
+        services.GetService<ITerminalHost>()?.Dispose();
     }
 }

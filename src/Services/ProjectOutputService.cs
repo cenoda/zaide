@@ -23,6 +23,7 @@ public sealed class ProjectOutputService : IProjectOutputService, IDisposable
     private readonly IProjectWorkflowService _workflow;
     private readonly CompositeDisposable _subscriptions = new();
     private ProjectOutputSnapshot _current = Empty;
+    private bool _disposed;
 
     public ProjectOutputService(IProjectWorkflowService workflow)
     {
@@ -47,7 +48,13 @@ public sealed class ProjectOutputService : IProjectOutputService, IDisposable
         _workflow.WhenOutputReceived;
 
     /// <inheritdoc />
-    public void Dispose() => _subscriptions.Dispose();
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        _subscriptions.Dispose();
+    }
 
     private static ProjectOutputSnapshot Map(ProjectWorkflowSnapshot snapshot) =>
         new(
