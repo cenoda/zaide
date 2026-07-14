@@ -30,6 +30,7 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
     private readonly TextBlock _variablesStatus;
     private readonly ListBox _scopeList;
     private readonly ListBox _variableList;
+    private bool _syncingSelection;
 
     public DebugPanel()
     {
@@ -254,7 +255,8 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                 h => _threadList.SelectionChanged -= h)
             .Subscribe(_ =>
             {
-                if (ViewModel is null ||
+                if (_syncingSelection ||
+                    ViewModel is null ||
                     _threadList.SelectedItem is not DebugThreadViewModel thread)
                     return;
 
@@ -266,7 +268,8 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                 h => _frameList.SelectionChanged -= h)
             .Subscribe(_ =>
             {
-                if (ViewModel is null ||
+                if (_syncingSelection ||
+                    ViewModel is null ||
                     _frameList.SelectedItem is not DebugStackFrameViewModel frame)
                     return;
 
@@ -278,7 +281,8 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                 h => _scopeList.SelectionChanged -= h)
             .Subscribe(_ =>
             {
-                if (ViewModel is null ||
+                if (_syncingSelection ||
+                    ViewModel is null ||
                     _scopeList.SelectedItem is not DebugScopeViewModel scope)
                     return;
 
@@ -286,31 +290,47 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
             }));
 
         d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedThread)
-            .Subscribe(thread =>
-            {
-                if (thread is null)
-                    _threadList.SelectedItem = null;
-                else if (!ReferenceEquals(_threadList.SelectedItem, thread))
-                    _threadList.SelectedItem = thread;
-            }));
+            .Subscribe(thread => SyncListSelection(_threadList, thread)));
 
         d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedFrame)
-            .Subscribe(frame =>
-            {
-                if (frame is null)
-                    _frameList.SelectedItem = null;
-                else if (!ReferenceEquals(_frameList.SelectedItem, frame))
-                    _frameList.SelectedItem = frame;
-            }));
+            .Subscribe(frame => SyncListSelection(_frameList, frame)));
 
         d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.SelectedScope)
-            .Subscribe(scope =>
+            .Subscribe(scope => SyncListSelection(_scopeList, scope)));
+    }
+
+    private void SyncListSelection(ListBox list, object? item)
+    {
+        if (item is null)
+        {
+            if (list.SelectedItem is null)
+                return;
+
+            _syncingSelection = true;
+            try
             {
-                if (scope is null)
-                    _scopeList.SelectedItem = null;
-                else if (!ReferenceEquals(_scopeList.SelectedItem, scope))
-                    _scopeList.SelectedItem = scope;
-            }));
+                list.SelectedItem = null;
+            }
+            finally
+            {
+                _syncingSelection = false;
+            }
+
+            return;
+        }
+
+        if (ReferenceEquals(list.SelectedItem, item))
+            return;
+
+        _syncingSelection = true;
+        try
+        {
+            list.SelectedItem = item;
+        }
+        finally
+        {
+            _syncingSelection = false;
+        }
     }
 
     private static ListBox CreateReadOnlyList(string automationName)

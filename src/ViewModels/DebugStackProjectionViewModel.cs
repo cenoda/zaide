@@ -135,7 +135,7 @@ public sealed class DebugStackProjectionViewModel : ReactiveObject, IDisposable
 
     private void SelectThread(DebugThreadViewModel thread)
     {
-        if (thread is null)
+        if (thread is null || ReferenceEquals(SelectedThread, thread))
             return;
 
         SelectedThread = thread;
@@ -145,7 +145,7 @@ public sealed class DebugStackProjectionViewModel : ReactiveObject, IDisposable
 
     private void SelectFrame(DebugStackFrameViewModel frame)
     {
-        if (frame is null)
+        if (frame is null || ReferenceEquals(SelectedFrame, frame))
             return;
 
         SelectedFrame = frame;
@@ -155,7 +155,7 @@ public sealed class DebugStackProjectionViewModel : ReactiveObject, IDisposable
 
     private void SelectScope(DebugScopeViewModel scope)
     {
-        if (scope is null)
+        if (scope is null || ReferenceEquals(SelectedScope, scope))
             return;
 
         SelectedScope = scope;
