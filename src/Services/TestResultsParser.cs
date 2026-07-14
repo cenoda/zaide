@@ -24,6 +24,14 @@ public static class TestResultsParser
         @"at .+ in (.+):line (\d+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex XunitStackFrameRegex = new(
+        @"(?:^\[xUnit\.net[^\]]*\]\s+)?(.+?)\((\d+),\d+\):\s*at\s+.+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex XunitFailBannerRegex = new(
+        @"^\[xUnit\.net[^\]]*\]\s+(.+?)\s+\[FAIL\]",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly Regex TotalTestsRegex = new(
         @"^Total tests:\s*(\d+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -70,21 +78,19 @@ public static class TestResultsParser
             int? line = null;
             var stackFrames = pendingStack.Count > 0
                 ? pendingStack
-                : allLines.Select(l => l.Trim()).Where(l => StackFrameRegex.IsMatch(l)).ToList();
+                : allLines.Select(l => l.Trim()).Where(l => LooksLikeStackFrame(l)).ToList();
             var stackTrace = stackFrames.Count > 0
                 ? string.Join(Environment.NewLine, stackFrames)
                 : null;
 
             foreach (var frame in stackFrames)
             {
-                var match = StackFrameRegex.Match(frame);
-                if (!match.Success)
-                    continue;
-
-                filePath = NormalizePath(match.Groups[1].Value, workingDirectory);
-                if (int.TryParse(match.Groups[2].Value, out var parsedLine))
+                if (TryParseStackFrame(frame, workingDirectory, out var parsedPath, out var parsedLine))
+                {
+                    filePath = parsedPath;
                     line = parsedLine;
-                break;
+                    break;
+                }
             }
 
             cases.Add(new TestCaseResult(
@@ -117,7 +123,31 @@ public static class TestResultsParser
             allLines.Add(line);
 
             if (line.StartsWith("[xUnit.net", StringComparison.Ordinal))
+            {
+                var failBannerMatch = XunitFailBannerRegex.Match(line);
+                if (failBannerMatch.Success)
+                {
+                    inErrorMessage = false;
+                    inStackTrace = false;
+
+                    var name = failBannerMatch.Groups[1].Value.Trim();
+                    if (pendingDisplayName is null)
+                    {
+                        pendingDisplayName = name;
+                        pendingFqn = name;
+                    }
+
+                    continue;
+                }
+
+                if (LooksLikeStackFrame(line))
+                {
+                    pendingStack.Add(StripXunitPrefix(line).Trim());
+                    continue;
+                }
+
                 continue;
+            }
 
             var bannerMatch = SummaryBannerRegex.Match(line);
             if (bannerMatch.Success)
@@ -166,7 +196,7 @@ public static class TestResultsParser
 
             if (inStackTrace)
             {
-                if (line.StartsWith("  ", StringComparison.Ordinal) || StackFrameRegex.IsMatch(line))
+                if (line.StartsWith("  ", StringComparison.Ordinal) || LooksLikeStackFrame(line))
                 {
                     pendingStack.Add(line.Trim());
                     continue;
@@ -192,14 +222,22 @@ public static class TestResultsParser
             var caseMatch = CaseLineRegex.Match(line);
             if (caseMatch.Success)
             {
-                FlushPendingFailedCase();
-                inErrorMessage = false;
-                inStackTrace = false;
-
                 var outcomeLabel = caseMatch.Groups[1].Value;
                 var name = caseMatch.Groups[2].Value.Trim();
                 var duration = caseMatch.Groups[3].Success ? caseMatch.Groups[3].Value : null;
                 var outcome = MapOutcome(outcomeLabel);
+
+                if (outcome == TestCaseOutcome.Failed &&
+                    pendingDisplayName is not null &&
+                    string.Equals(pendingDisplayName, name, StringComparison.Ordinal))
+                {
+                    pendingDuration = duration ?? pendingDuration;
+                    continue;
+                }
+
+                FlushPendingFailedCase();
+                inErrorMessage = false;
+                inStackTrace = false;
 
                 if (outcome == TestCaseOutcome.Failed)
                 {
@@ -235,6 +273,9 @@ public static class TestResultsParser
                 inStackTrace = true;
                 continue;
             }
+
+            if (LooksLikeStackFrame(line) && pendingDisplayName is not null)
+                pendingStack.Add(line.Trim());
         }
 
         FlushPendingFailedCase();
@@ -250,8 +291,81 @@ public static class TestResultsParser
             summary = new TestResultsSummary(passedFromLines, failedFromLines, skippedFromLines, totalFromLines);
         }
 
-        var parseComplete = sawSummary || sawCase;
+        var parseComplete = (sawSummary && HasMeaningfulSummary(
+                totalFromBanner,
+                passedFromBanner,
+                failedFromBanner,
+                skippedFromBanner,
+                totalFromLines,
+                passedFromLines,
+                failedFromLines,
+                skippedFromLines)) || sawCase;
+
         return (cases, summary, parseComplete);
+    }
+
+    private static bool HasMeaningfulSummary(
+        int? totalFromBanner,
+        int? passedFromBanner,
+        int? failedFromBanner,
+        int? skippedFromBanner,
+        int? totalFromLines,
+        int? passedFromLines,
+        int? failedFromLines,
+        int? skippedFromLines) =>
+        totalFromBanner is not null ||
+        passedFromBanner is not null ||
+        failedFromBanner is not null ||
+        skippedFromBanner is not null ||
+        totalFromLines is not null ||
+        passedFromLines is not null ||
+        failedFromLines is not null ||
+        skippedFromLines is not null;
+
+    private static bool LooksLikeStackFrame(string line) =>
+        StackFrameRegex.IsMatch(line) || XunitStackFrameRegex.IsMatch(line);
+
+    private static bool TryParseStackFrame(
+        string frame,
+        string? workingDirectory,
+        out string? filePath,
+        out int? line)
+    {
+        filePath = null;
+        line = null;
+
+        var normalized = StripXunitPrefix(frame).Trim();
+
+        var vstestMatch = StackFrameRegex.Match(normalized);
+        if (vstestMatch.Success)
+        {
+            filePath = NormalizePath(vstestMatch.Groups[1].Value, workingDirectory);
+            if (int.TryParse(vstestMatch.Groups[2].Value, out var parsedLine))
+                line = parsedLine;
+            return filePath is not null;
+        }
+
+        var xunitMatch = XunitStackFrameRegex.Match(normalized);
+        if (xunitMatch.Success)
+        {
+            filePath = NormalizePath(xunitMatch.Groups[1].Value, workingDirectory);
+            if (int.TryParse(xunitMatch.Groups[2].Value, out var parsedLine))
+                line = parsedLine;
+            return filePath is not null;
+        }
+
+        return false;
+    }
+
+    private static string StripXunitPrefix(string line)
+    {
+        if (!line.StartsWith("[xUnit.net", StringComparison.Ordinal))
+            return line;
+
+        var close = line.IndexOf(']');
+        return close >= 0 && close + 1 < line.Length
+            ? line[(close + 1)..].TrimStart()
+            : line;
     }
 
     private static TestCaseOutcome MapOutcome(string label) =>

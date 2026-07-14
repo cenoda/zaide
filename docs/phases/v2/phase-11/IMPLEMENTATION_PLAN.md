@@ -333,8 +333,12 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   of truth.
 - Build diagnostic parse (M3) is end-of-build, CLI `path(line,col): error|warning`
   form only; relative paths resolve against target parent directory.
-- Test console parse is best-effort; structured exit + raw Output is the
-  fallback when parse fails (M5).
+- Test console parse is best-effort (F7 hardened 2026-07-14): locked test argv
+  stays `dotnet test "<path>"` without `--logger`/verbosity; parser handles
+  default `Passed!`/`Failed!` banners plus VSTest count lines and xUnit stack
+  variants; summary-only pass runs are complete with empty cases; fail summary
+  without matching failed-case rows stays `IsPartial`; structured exit + raw
+  Output is the fallback when parse is incomplete (M5 / U4).
 - **Cancel discoverability (F3):** `project.cancel` default gesture
   `Ctrl+F2` plus Cancel buttons on Output and Test Results (F6) and palette.
   No overall operation timeout — hung `dotnet` holds the one-at-a-time slot

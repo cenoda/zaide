@@ -219,24 +219,46 @@ tests, full suite, `git diff --check` all pass.
 
 ---
 
-## Open — F7: Console test parse brittle without locked verbosity/logger
+## Resolved — F7: Console test parse brittle without locked verbosity/logger
 
 **Severity:** Medium  
 **Area:** `ProjectExecutionProfileResolver`, `TestResultsParser`,
 `TestResultsService`
 
-**Problem:** U4 console-first parse is best-effort. Default `dotnet test`
-often emits **summary only** (empty case list). No `--logger` / verbosity in
-the locked profile. xUnit/VSTest format variants mark `IsPartial` and push
-users to Output. Navigable failed cases depend on stack frames matching
-`at … in path:line N`.
+**Problem:** U4 console-first parse was best-effort. Default `dotnet test`
+often emits **summary only** (empty case list). xUnit/VSTest format variants
+and missing failed-case rows could mark `IsPartial` and push users to Output.
+Navigable failed cases depended on stack frames matching `at … in path:line N`
+only.
 
-**Direction:** Optionally lock a default console logger/verbosity that still
-fails open; expand parser fixtures from real `dotnet test` captures; keep “no
-invented passes” contract.
+**Resolution (2026-07-14):** **Keep locked test argv unchanged** (no
+`--logger` / verbosity flags). Default `dotnet test` already emits the
+`Passed!` / `Failed!` summary banner; adding console logger verbosity would
+increase Output noise without improving pass-run case detail. **Strengthen
+parser + structural completeness** instead.
 
-**Acceptance sketch:** Pass/fail fixtures produce summary and, where console
-emits cases, structured rows; junk still fail-open.
+- **`ProjectExecutionProfileResolver`** — documents that test profile stays
+  `dotnet test "<path>"`; parser handles alternate console shapes fail-open.
+- **`TestResultsParser`** — VSTest `Total tests` / indented count lines;
+  xUnit `[FAIL]` banners; `path(line,col): at …` stack frames alongside
+  `in path:line N`; deduped failed-case assembly; `Test Run Successful`
+  without counts stays incomplete; never invents passes.
+- **`TestResultsService`** — `IsStructurallyComplete`: summary with
+  `Failed > 0` but fewer parsed failed cases than the summary reports →
+  `IsPartial` (user falls back to Output). Summary-only pass runs remain
+  complete with empty cases.
+
+**Tests:** Expanded `TestResultsParserTests` (default + VSTest pass/fail,
+xUnit stack variants, malformed/truncated output, non-navigable stacks) and
+`TestResultsServiceTests` (summary-only pass not partial; fail summary without
+cases partial; VSTest summary path).
+
+**Remaining limitations:** TRX deferred; NUnit/MSTest-only shapes unsupported;
+multi-failure runs with fewer parsed cases than `Failed` count stay partial;
+non-English CLI output unsupported (see F8 for build diagnostics); custom
+`dotnet test` logger/verbosity from user env not locked.
+
+**Gates:** `dotnet build`, `dotnet test`, `git diff --check`.
 
 ---
 
@@ -326,7 +348,7 @@ with it); keep runner ownership single and documented.
 4. ~~**F5** — Residual stream line~~
 5. ~~**F6** — Test Results Cancel + a11y~~
 6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
-7. **F7** / **F8** — parse quality
+7. ~~**F7** — console test parse hardening~~ / **F8** — parse quality
 8. **F9**–**F11** — product polish / hygiene
 
 Prefer one focused commit per finding (or tightly related pair). Re-run

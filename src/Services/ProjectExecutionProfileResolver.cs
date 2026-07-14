@@ -21,6 +21,9 @@ public static class ProjectExecutionProfileResolver
                 $"build {quotedPath}",
                 target.WorkingDirectory),
 
+            // Locked argv omits --logger / verbosity flags (F7): default dotnet test
+            // emits a summary banner sufficient for counts; per-case detail appears on
+            // failures without extra flags. Parser handles VSTest/xUnit variants fail-open.
             ProjectWorkflowOperation.Test => new ProjectExecutionProfile(
                 "dotnet",
                 $"test {quotedPath}",

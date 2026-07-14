@@ -197,6 +197,117 @@ public sealed class TestResultsServiceTests
     }
 
     [Fact]
+    public void TestComplete_SummaryOnlyPass_IsNotPartial()
+    {
+        var target = Path.Combine(TempRoot, "Pass.csproj");
+
+        using var workflow = new FakeWorkflowService(Idle());
+        using var service = new TestResultsService(workflow);
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Starting,
+            8,
+            ProjectWorkflowOperation.Test,
+            null,
+            target,
+            null,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Idle,
+            8,
+            null,
+            ProjectWorkflowOutcomeKind.Succeeded,
+            target,
+            null,
+            new[]
+            {
+                new ManagedProcessOutputLine(
+                    1,
+                    ProcessStreamKind.StdOut,
+                    "Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 1 ms",
+                    DateTimeOffset.UtcNow),
+            }));
+
+        Assert.False(service.Current.IsPartial);
+        Assert.Equal(3, service.Current.Summary!.Passed);
+        Assert.Empty(service.Current.Cases);
+    }
+
+    [Fact]
+    public void TestComplete_FailSummaryWithoutParsedCases_IsPartial()
+    {
+        var target = Path.Combine(TempRoot, "FailSummaryOnly.csproj");
+
+        using var workflow = new FakeWorkflowService(Idle());
+        using var service = new TestResultsService(workflow);
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Starting,
+            9,
+            ProjectWorkflowOperation.Test,
+            null,
+            target,
+            null,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Idle,
+            9,
+            null,
+            ProjectWorkflowOutcomeKind.Failed,
+            target,
+            null,
+            new[]
+            {
+                new ManagedProcessOutputLine(
+                    1,
+                    ProcessStreamKind.StdOut,
+                    "Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 1 ms",
+                    DateTimeOffset.UtcNow),
+            }));
+
+        Assert.True(service.Current.IsPartial);
+        Assert.Equal(2, service.Current.Summary!.Failed);
+        Assert.Empty(service.Current.Cases);
+    }
+
+    [Fact]
+    public void TestComplete_VstestFormat_IsNotPartialWithSummary()
+    {
+        var target = Path.Combine(TempRoot, "Vstest.csproj");
+
+        using var workflow = new FakeWorkflowService(Idle());
+        using var service = new TestResultsService(workflow);
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Starting,
+            10,
+            ProjectWorkflowOperation.Test,
+            null,
+            target,
+            null,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Idle,
+            10,
+            null,
+            ProjectWorkflowOutcomeKind.Succeeded,
+            target,
+            null,
+            new[]
+            {
+                new ManagedProcessOutputLine(1, ProcessStreamKind.StdOut, "Test Run Successful.", DateTimeOffset.UtcNow),
+                new ManagedProcessOutputLine(2, ProcessStreamKind.StdOut, "Total tests: 2", DateTimeOffset.UtcNow),
+                new ManagedProcessOutputLine(3, ProcessStreamKind.StdOut, "     Passed: 2", DateTimeOffset.UtcNow),
+            }));
+
+        Assert.False(service.Current.IsPartial);
+        Assert.Equal(2, service.Current.Summary!.Passed);
+    }
+
+    [Fact]
     public void StaleGeneration_IsIgnored()
     {
         var target = Path.Combine(TempRoot, "Stale.csproj");

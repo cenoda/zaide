@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Subjects;
@@ -81,7 +82,8 @@ public sealed class TestResultsService : ITestResultsService
 
         var lines = snapshot.OutputLines.Select(line => line.Text);
         var (cases, summary, parseComplete) = TestResultsParser.Parse(lines, workingDirectory);
-        var isPartial = snapshot.LastOutcome == ProjectWorkflowOutcomeKind.Cancelled || !parseComplete;
+        var structurallyComplete = parseComplete && IsStructurallyComplete(summary, cases);
+        var isPartial = snapshot.LastOutcome == ProjectWorkflowOutcomeKind.Cancelled || !structurallyComplete;
 
         Publish(new TestResultsSnapshot(
             snapshot.Generation,
@@ -95,5 +97,14 @@ public sealed class TestResultsService : ITestResultsService
     {
         _current = snapshot;
         _subject.OnNext(snapshot);
+    }
+
+    private static bool IsStructurallyComplete(TestResultsSummary? summary, IReadOnlyList<TestCaseResult> cases)
+    {
+        if (summary?.Failed is not int failedCount || failedCount <= 0)
+            return true;
+
+        var parsedFailed = cases.Count(c => c.Outcome == TestCaseOutcome.Failed);
+        return parsedFailed >= failedCount;
     }
 }
