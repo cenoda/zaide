@@ -25,8 +25,20 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     public string? StoppedReason { get; set; } = "entry";
     public int? StoppedThreadId { get; set; } = 1;
     public Exception? InitializeException { get; set; }
+    public Exception? LaunchException { get; set; }
+    public Exception? SetBreakpointsException { get; set; }
+    public Exception? ContinueException { get; set; }
+    public Exception? StepException { get; set; }
     public TimeSpan? InitializeDelay { get; set; }
     public TimeSpan? ConfigurationDoneDelay { get; set; }
+    public TimeSpan? ContinueDelay { get; set; }
+    public TimeSpan? OrdinaryRequestDelay { get; set; }
+
+    /// <summary>
+    /// Optional DAP <c>setBreakpoints</c> body JSON (without outer envelope), e.g.
+    /// <c>{"breakpoints":[{"line":1,"verified":true}]}</c>.
+    /// </summary>
+    public string? SetBreakpointsBodyJson { get; set; }
 
     public IReadOnlyList<string> StderrLines => _stderrLines;
 
@@ -63,6 +75,8 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add("launch");
         cancellationToken.ThrowIfCancellationRequested();
+        if (LaunchException is not null)
+            throw LaunchException;
         return Task.CompletedTask;
     }
 
@@ -73,7 +87,13 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add($"setBreakpoints:{sourcePath}:{string.Join(',', lines)}");
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult<JsonElement?>(default);
+        if (SetBreakpointsException is not null)
+            throw SetBreakpointsException;
+
+        if (SetBreakpointsBodyJson is null)
+            return Task.FromResult<JsonElement?>(default);
+
+        return Task.FromResult<JsonElement?>(JsonDocument.Parse(SetBreakpointsBodyJson).RootElement.Clone());
     }
 
     public async Task<JsonElement?> ConfigurationDoneAsync(CancellationToken cancellationToken)
@@ -132,12 +152,15 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
         return Task.FromResult<JsonElement?>(JsonDocument.Parse(VariablesJson).RootElement);
     }
 
-    public Task ContinueAsync(int threadId, CancellationToken cancellationToken)
+    public async Task ContinueAsync(int threadId, CancellationToken cancellationToken)
     {
         CallOrder.Add($"continue:{threadId}");
         cancellationToken.ThrowIfCancellationRequested();
+        if (ContinueDelay is not null)
+            await Task.Delay(ContinueDelay.Value, cancellationToken).ConfigureAwait(false);
+        if (ContinueException is not null)
+            throw ContinueException;
         Continued?.Invoke(new DapContinuedEvent(Generation, threadId));
-        return Task.CompletedTask;
     }
 
     public Task PauseAsync(CancellationToken cancellationToken)
@@ -152,6 +175,8 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add($"next:{threadId}");
         cancellationToken.ThrowIfCancellationRequested();
+        if (StepException is not null)
+            throw StepException;
         Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
         return Task.CompletedTask;
     }

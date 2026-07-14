@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Zaide.Services;
@@ -25,6 +26,10 @@ namespace Zaide.Services;
 /// <param name="DiagnosticOutput">
 /// Captured adapter stderr and DAP <c>output</c> event text in arrival order.
 /// </param>
+/// <param name="BreakpointVerifications">
+/// Session-only adapter breakpoint verification outcomes for the active generation.
+/// Empty when no session has published verification data.
+/// </param>
 public sealed record DebugSessionSnapshot(
     DebugSessionState State,
     long Generation,
@@ -33,4 +38,10 @@ public sealed record DebugSessionSnapshot(
     int? AdapterProcessId,
     DapStoppedInfo? StopInfo,
     DebugSessionFailure? Failure,
-    IReadOnlyList<string> DiagnosticOutput);
+    IReadOnlyList<string> DiagnosticOutput,
+    IReadOnlyList<DebugBreakpointVerification> BreakpointVerifications)
+{
+    /// <summary>Empty verification list shared by idle/failed/unavailable snapshots.</summary>
+    public static readonly IReadOnlyList<DebugBreakpointVerification> EmptyVerifications =
+        Array.Empty<DebugBreakpointVerification>();
+}

@@ -132,8 +132,9 @@ public sealed class ProjectDebugLaunchServiceTests
         public DebugLaunchRequest? LastLaunch { get; private set; }
         public DebugSessionOperationResult NextStartResult { get; set; } =
             new(true, null, null);
+        public List<(DebugSessionOutcomeKind Kind, string Message)> PreLaunchFailures { get; } = new();
 
-        public DebugSessionSnapshot Current { get; } = new(
+        public DebugSessionSnapshot Current { get; private set; } = new(
             DebugSessionState.Idle,
             0,
             null,
@@ -141,7 +142,8 @@ public sealed class ProjectDebugLaunchServiceTests
             null,
             null,
             null,
-            Array.Empty<string>());
+            Array.Empty<string>(),
+            DebugSessionSnapshot.EmptyVerifications);
 
         public IObservable<DebugSessionSnapshot> WhenChanged => new Subject<DebugSessionSnapshot>();
 
@@ -151,6 +153,25 @@ public sealed class ProjectDebugLaunchServiceTests
         {
             LastLaunch = request;
             return Task.FromResult(NextStartResult);
+        }
+
+        public Task<DebugSessionOperationResult> ReportPreLaunchFailureAsync(
+            DebugSessionOutcomeKind kind,
+            string message,
+            CancellationToken cancellationToken = default)
+        {
+            PreLaunchFailures.Add((kind, message));
+            Current = new DebugSessionSnapshot(
+                DebugSessionState.Failed,
+                Current.Generation + 1,
+                null,
+                null,
+                null,
+                null,
+                new DebugSessionFailure(kind, message),
+                new[] { $"[error] {message}" },
+                DebugSessionSnapshot.EmptyVerifications);
+            return Task.FromResult(new DebugSessionOperationResult(false, kind, message));
         }
 
         public Task<DebugSessionOperationResult> StopAsync(
@@ -320,7 +341,7 @@ public sealed class ProjectDebugLaunchServiceTests
     public async Task StartDebuggingAsync_BuildFailure_ReturnsBuildFailedAndReleasesHandoff()
     {
         var candidate = MakeCandidate("App.csproj");
-        var (service, _, workflow, _, _, gate) = CreateHarness(new ProjectContext(
+        var (service, _, workflow, _, debug, gate) = CreateHarness(new ProjectContext(
             ProjectContextState.SingleProject,
             TempRoot,
             new[] { candidate },
@@ -336,6 +357,8 @@ public sealed class ProjectDebugLaunchServiceTests
         Assert.Equal(DebugSessionOutcomeKind.BuildFailed, result.Outcome);
         Assert.False(gate.IsDebugHandoffActive);
         Assert.Equal(1, workflow.BuildForHandoffCount);
+        Assert.Contains(debug.PreLaunchFailures, f => f.Kind == DebugSessionOutcomeKind.BuildFailed);
+        Assert.Equal(DebugSessionState.Failed, debug.Current.State);
     }
 
     [Fact]
@@ -359,6 +382,7 @@ public sealed class ProjectDebugLaunchServiceTests
         Assert.Null(debug.LastLaunch);
         Assert.False(gate.IsDebugHandoffActive);
         Assert.Equal(1, workflow.BuildForHandoffCount);
+        Assert.Contains(debug.PreLaunchFailures, f => f.Kind == DebugSessionOutcomeKind.UnsupportedLaunchTarget);
     }
 
     [Fact]

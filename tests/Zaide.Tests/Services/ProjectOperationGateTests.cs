@@ -33,6 +33,12 @@ public sealed class ProjectOperationGateTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<DebugSessionOperationResult> ReportPreLaunchFailureAsync(
+            DebugSessionOutcomeKind kind,
+            string message,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public Task<DebugSessionOperationResult> StopAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
@@ -96,7 +102,8 @@ public sealed class ProjectOperationGateTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
     }
 
     [Fact]

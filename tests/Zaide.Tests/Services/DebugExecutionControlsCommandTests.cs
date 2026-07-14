@@ -35,7 +35,8 @@ public sealed class DebugExecutionControlsCommandTests
             AdapterProcessId: 42,
             StopInfo: threadId is null ? null : new DapStoppedInfo("entry", threadId),
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
     private static (DebugSessionViewModel ViewModel, Mock<IDebugSessionService> Debug) CreateHarness(
         DebugSessionState initialState,

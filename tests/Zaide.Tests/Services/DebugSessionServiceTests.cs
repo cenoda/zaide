@@ -83,6 +83,13 @@ public sealed class DebugSessionServiceTests
         public Exception? StartException { get; set; }
         public bool SuppressStoppedEvent { get; set; }
         public TimeSpan? InitializeDelay { get; set; }
+        public Exception? LaunchException { get; set; }
+        public Exception? SetBreakpointsException { get; set; }
+        public Exception? ContinueException { get; set; }
+        public Exception? StepException { get; set; }
+        public TimeSpan? ContinueDelay { get; set; }
+        public string? SetBreakpointsBodyJson { get; set; }
+        public Action<TestDebugAdapterSession>? ConfigureSession { get; set; }
 
         public async Task<IDebugAdapterSession> StartAsync(
             DebugAdapterStartOptions options,
@@ -103,7 +110,14 @@ public sealed class DebugSessionServiceTests
                 Generation = options.Generation,
                 EmitStoppedAfterConfigurationDone = !SuppressStoppedEvent,
                 InitializeDelay = InitializeDelay,
+                LaunchException = LaunchException,
+                SetBreakpointsException = SetBreakpointsException,
+                ContinueException = ContinueException,
+                StepException = StepException,
+                ContinueDelay = ContinueDelay,
+                SetBreakpointsBodyJson = SetBreakpointsBodyJson,
             };
+            ConfigureSession?.Invoke(session);
             CreatedSessions.Add(session);
             await session.ConnectAsync(cancellationToken).ConfigureAwait(false);
             return session;
@@ -640,6 +654,255 @@ public sealed class DebugSessionServiceTests
 
             Assert.True(result.Succeeded);
             Assert.Empty(factory.CreatedSessions);
+        }
+    }
+
+    [Fact]
+    public async Task StartLaunchAsync_LaunchException_PublishesStartupFailedAndCleansSession()
+    {
+        var candidate = MakeCandidate("LaunchFail.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        factory.LaunchException = new InvalidOperationException("launch rejected");
+        using (service)
+        {
+            var result = await service.StartLaunchAsync(MakeLaunchRequest());
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(DebugSessionOutcomeKind.StartupFailed, result.Outcome);
+            Assert.Equal(DebugSessionState.Failed, service.Current.State);
+            Assert.Null(service.Current.AdapterProcessId);
+            Assert.Null(service.Current.StopInfo);
+            Assert.Empty(service.Current.BreakpointVerifications);
+            Assert.True(factory.CreatedSessions[0].ForceKillCalled || factory.CreatedSessions[0].Disposed);
+            Assert.Contains(service.Current.DiagnosticOutput, line => line.Contains("[error]"));
+        }
+    }
+
+    [Fact]
+    public async Task ContinueAsync_RequestTimeout_FailsSessionAndAllowsRestart()
+    {
+        var candidate = MakeCandidate("ContinueTimeout.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        factory.ContinueDelay = TimeSpan.FromMilliseconds(500);
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var failedGeneration = service.Current.Generation;
+
+            var result = await service.ContinueAsync(1);
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(DebugSessionOutcomeKind.ProtocolFailed, result.Outcome);
+            Assert.Equal(DebugSessionState.Failed, service.Current.State);
+            Assert.True(service.Current.Generation > failedGeneration);
+            Assert.Null(service.Current.StopInfo);
+            Assert.Empty(service.Current.BreakpointVerifications);
+
+            factory.ContinueDelay = null;
+            var restart = await service.StartLaunchAsync(MakeLaunchRequest());
+            Assert.True(restart.Succeeded);
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+        }
+    }
+
+    [Fact]
+    public async Task StepOverAsync_ProtocolError_FailsSession_RetainsDiagnostics()
+    {
+        var candidate = MakeCandidate("StepFail.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        factory.StepException = new InvalidOperationException("step failed");
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            factory.CreatedSessions[0].SimulateOutput("pre-failure output");
+
+            var result = await service.StepOverAsync();
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(DebugSessionOutcomeKind.ProtocolFailed, result.Outcome);
+            Assert.Equal(DebugSessionState.Failed, service.Current.State);
+            Assert.Contains(service.Current.DiagnosticOutput, line => line.Contains("pre-failure output"));
+            Assert.Contains(service.Current.DiagnosticOutput, line => line.Contains("[error]"));
+        }
+    }
+
+    [Fact]
+    public async Task SetBreakpoints_ProjectsVerifiedPendingRejectedOutcomes()
+    {
+        var candidate = MakeCandidate("BpVerify.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        var source = Path.GetFullPath(Path.Combine(TempRoot, "fixture", "Program.cs"));
+        factory.SetBreakpointsBodyJson =
+            "{\"breakpoints\":[" +
+            "{\"line\":1,\"verified\":true}," +
+            "{\"line\":2,\"verified\":false}," +
+            "{\"line\":3,\"verified\":false,\"message\":\"No code on line\"}" +
+            "]}";
+        using (service)
+        {
+            var request = new DebugLaunchRequest(
+                Path.Combine(TempRoot, "fixture", "App.dll"),
+                Path.Combine(TempRoot, "fixture"),
+                StopAtEntry: true,
+                new[]
+                {
+                    new DebugBreakpointRequest(source, 1),
+                    new DebugBreakpointRequest(source, 2),
+                    new DebugBreakpointRequest(source, 3),
+                });
+
+            var result = await service.StartLaunchAsync(request);
+            Assert.True(result.Succeeded);
+
+            var verifications = service.Current.BreakpointVerifications;
+            Assert.Equal(3, verifications.Count);
+            Assert.Equal(DebugBreakpointVerificationState.Verified, verifications[0].State);
+            Assert.Equal(DebugBreakpointVerificationState.Pending, verifications[1].State);
+            Assert.Equal(DebugBreakpointVerificationState.Rejected, verifications[2].State);
+            Assert.Equal("No code on line", verifications[2].Message);
+            Assert.Contains(
+                service.Current.DiagnosticOutput,
+                line => line.Contains("Breakpoint rejected") && line.Contains("No code on line"));
+        }
+    }
+
+    [Fact]
+    public async Task StopDuringStartup_AbandonsAdapter_AllowsRestart()
+    {
+        var candidate = MakeCandidate("StopDuringStart.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        factory.StartGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using (service)
+        {
+            var startTask = service.StartLaunchAsync(MakeLaunchRequest());
+            await WaitForAsync(service, s => s.State == DebugSessionState.Starting);
+
+            var stop = await service.StopAsync();
+            Assert.True(stop.Succeeded);
+            Assert.Equal(DebugSessionState.Idle, service.Current.State);
+
+            factory.StartGate.TrySetResult(true);
+            try
+            {
+                await startTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancelled start is acceptable recovery.
+            }
+
+            // Late failure from the abandoned start must not leave a stuck active state.
+            await Task.Delay(50);
+            Assert.True(
+                service.Current.State is DebugSessionState.Idle or DebugSessionState.Failed,
+                $"Unexpected state after stop-during-start: {service.Current.State}");
+
+            factory.StartGate = null;
+            var restart = await service.StartLaunchAsync(MakeLaunchRequest());
+            Assert.True(restart.Succeeded, restart.Message);
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+        }
+    }
+
+    [Fact]
+    public async Task StartAfterFailure_SucceedsWithNewGeneration()
+    {
+        var candidate = MakeCandidate("StartAfterFail.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            factory.CreatedSessions[0].SimulateProcessExit();
+            await WaitForAsync(service, s => s.State == DebugSessionState.Failed);
+            var failedGeneration = service.Current.Generation;
+
+            var restart = await service.StartLaunchAsync(MakeLaunchRequest());
+            Assert.True(restart.Succeeded);
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+            Assert.True(service.Current.Generation > failedGeneration);
+            Assert.Equal(2, factory.CreatedSessions.Count);
+            Assert.True(factory.CreatedSessions[0].Disposed || factory.CreatedSessions[0].ForceKillCalled);
+        }
+    }
+
+    [Fact]
+    public async Task LateEventAfterRecovery_DoesNotMutateNewSession()
+    {
+        var candidate = MakeCandidate("StaleGen.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var oldSession = factory.CreatedSessions[0];
+            oldSession.SimulateProcessExit();
+            await WaitForAsync(service, s => s.State == DebugSessionState.Failed);
+
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var newGeneration = service.Current.Generation;
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+
+            oldSession.SimulateStopped("breakpoint", 99);
+            oldSession.SimulateOutput("stale output");
+            await Task.Delay(80);
+
+            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+            Assert.Equal(newGeneration, service.Current.Generation);
+            Assert.DoesNotContain(
+                service.Current.DiagnosticOutput,
+                line => line.Contains("stale output"));
+            Assert.NotEqual(99, service.Current.StopInfo?.ThreadId);
+        }
+    }
+
+    [Fact]
+    public async Task AdapterExited_ClearsLiveData_RetainsDiagnostics_AllowsStart()
+    {
+        var candidate = MakeCandidate("CrashRecover.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            factory.CreatedSessions[0].SimulateOutput("adapter noise");
+            factory.CreatedSessions[0].SimulateProcessExit();
+
+            var failed = await WaitForAsync(service, s => s.State == DebugSessionState.Failed);
+            Assert.Equal(DebugSessionOutcomeKind.AdapterExited, failed.Failure!.Kind);
+            Assert.Null(failed.StopInfo);
+            Assert.Null(failed.AdapterProcessId);
+            Assert.Empty(failed.BreakpointVerifications);
+            Assert.Contains(failed.DiagnosticOutput, line => line.Contains("adapter noise"));
+            Assert.Contains(failed.DiagnosticOutput, line => line.Contains("[error]"));
+        }
+    }
+
+    [Fact]
+    public async Task ReportPreLaunchFailure_PublishesFailedAndAllowsStart()
+    {
+        var candidate = MakeCandidate("PreLaunch.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            var report = await service.ReportPreLaunchFailureAsync(
+                DebugSessionOutcomeKind.BuildFailed,
+                "Build failed.");
+
+            Assert.False(report.Succeeded);
+            Assert.Equal(DebugSessionState.Failed, service.Current.State);
+            Assert.Equal(DebugSessionOutcomeKind.BuildFailed, service.Current.Failure!.Kind);
+            Assert.Contains(service.Current.DiagnosticOutput, line => line.Contains("Build failed."));
+
+            var start = await service.StartLaunchAsync(MakeLaunchRequest());
+            Assert.True(start.Succeeded);
+            Assert.Single(factory.CreatedSessions);
         }
     }
 }

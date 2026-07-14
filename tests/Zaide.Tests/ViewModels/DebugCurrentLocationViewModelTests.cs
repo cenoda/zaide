@@ -68,7 +68,8 @@ public sealed class DebugCurrentLocationViewModelTests
             AdapterProcessId: 42,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
         Assert.Null(location.Marker);
         Assert.Null(location.ActiveDocumentPath);
@@ -88,7 +89,8 @@ public sealed class DebugCurrentLocationViewModelTests
             AdapterProcessId: 42,
             StopInfo: new DapStoppedInfo("breakpoint", 1),
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
         var current = stopped;
         debug.SetupGet(s => s.Current).Returns(() => current);
         debug.SetupGet(s => s.WhenChanged).Returns(subject);

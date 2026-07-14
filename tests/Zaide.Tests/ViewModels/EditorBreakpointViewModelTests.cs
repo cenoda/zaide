@@ -251,7 +251,8 @@ public sealed class EditorBreakpointViewModelTests
             AdapterProcessId: 1,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
         debug.SetupGet(s => s.WhenChanged).Returns(new Subject<DebugSessionSnapshot>());
         debug.Setup(s => s.ReplaceBreakpointsBySourceAsync(
                 It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<int>>>(),

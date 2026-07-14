@@ -51,7 +51,8 @@ public sealed class DebugPanelViewModelTests
             Failure: failureMessage is null
                 ? null
                 : new DebugSessionFailure(DebugSessionOutcomeKind.StartupFailed, failureMessage),
-            DiagnosticOutput: diagnostics);
+            DiagnosticOutput: diagnostics,
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
     [Fact]
     public void Activate_Starting_RaisesShowDebugRequested()

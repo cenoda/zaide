@@ -48,7 +48,8 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: 42,
             StopInfo: new DapStoppedInfo("breakpoint", threadId),
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
     [Fact]
     public async Task Stopped_LoadsThreadsThenStackFrames()
@@ -61,7 +62,8 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
         debug.Setup(s => s.RequestThreadsAsync(default))
             .ReturnsAsync(JsonDocument.Parse("{\"threads\":[{\"id\":1,\"name\":\"main\"}]}").RootElement);
@@ -135,7 +137,8 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: 42,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
         Assert.Empty(projection.Frames);
         Assert.Empty(projection.Variables);
@@ -188,7 +191,8 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var callCount = 0;
@@ -225,7 +229,8 @@ public sealed class DebugStackProjectionTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>()));
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications));
 
         debug.Setup(s => s.RequestThreadsAsync(default))
             .ReturnsAsync(JsonDocument.Parse("{\"threads\":[{\"id\":1,\"name\":\"main\"}]}").RootElement);

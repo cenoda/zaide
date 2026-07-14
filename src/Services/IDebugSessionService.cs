@@ -28,6 +28,16 @@ public interface IDebugSessionService : IDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Publishes a terminal pre-launch failure while no adapter session is active
+    /// (build failure, target resolution, etc.). Idempotent no-op when a session
+    /// is already active. Leaves F5 startable from <see cref="DebugSessionState.Failed"/>.
+    /// </summary>
+    Task<DebugSessionOperationResult> ReportPreLaunchFailureAsync(
+        DebugSessionOutcomeKind kind,
+        string message,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Disconnects the active session. Idempotent when no session is active.
     /// </summary>
     Task<DebugSessionOperationResult> StopAsync(CancellationToken cancellationToken = default);

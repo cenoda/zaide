@@ -6,16 +6,23 @@ using Avalonia.Media;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
+using Zaide.Services;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
 
 /// <summary>
 /// Left margin that projects persisted breakpoints for the active on-disk document.
+/// Verified / pending / rejected adapter outcomes are distinguishable without
+/// changing persisted breakpoint intent.
 /// </summary>
 internal sealed class BreakpointMargin : AbstractMargin
 {
     private static readonly IBrush EnabledFill = new SolidColorBrush(Color.FromRgb(229, 20, 75));
+    private static readonly IBrush VerifiedFill = new SolidColorBrush(Color.FromRgb(229, 20, 75));
+    private static readonly IBrush PendingFill = new SolidColorBrush(Color.FromRgb(230, 170, 40));
+    private static readonly IBrush RejectedFill = new SolidColorBrush(Color.FromRgb(120, 120, 140));
+    private static readonly IBrush RejectedStroke = new SolidColorBrush(Color.FromRgb(220, 80, 80));
     private static readonly IBrush DisabledFill = new SolidColorBrush(Color.FromArgb(120, 180, 180, 200));
     private static readonly IBrush DisabledStroke = new SolidColorBrush(Color.FromRgb(180, 180, 200));
 
@@ -70,13 +77,26 @@ internal sealed class BreakpointMargin : AbstractMargin
             var top = PixelSnapHelpers.PixelAlign(centerY - (markerSize / 2.0), pixelSize.Height);
             var rect = new Rect(left, top, markerSize, markerSize);
 
-            if (marker.Enabled)
-            {
-                drawingContext.DrawEllipse(EnabledFill, null, rect);
-            }
-            else
+            if (!marker.Enabled)
             {
                 drawingContext.DrawEllipse(DisabledFill, new Pen(DisabledStroke, 1), rect);
+                continue;
+            }
+
+            switch (marker.Verification)
+            {
+                case DebugBreakpointVerificationState.Verified:
+                    drawingContext.DrawEllipse(VerifiedFill, null, rect);
+                    break;
+                case DebugBreakpointVerificationState.Pending:
+                    drawingContext.DrawEllipse(PendingFill, null, rect);
+                    break;
+                case DebugBreakpointVerificationState.Rejected:
+                    drawingContext.DrawEllipse(RejectedFill, new Pen(RejectedStroke, 1.5), rect);
+                    break;
+                default:
+                    drawingContext.DrawEllipse(EnabledFill, null, rect);
+                    break;
             }
         }
     }

@@ -27,7 +27,8 @@ internal static class TestOperationGateFactory
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
         debugSession.SetupGet(s => s.Current).Returns(idle);
         debugSession.SetupGet(s => s.WhenChanged).Returns(new Subject<DebugSessionSnapshot>());
         return debugSession;

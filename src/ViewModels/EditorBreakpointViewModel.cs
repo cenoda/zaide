@@ -132,6 +132,9 @@ public sealed class EditorBreakpointViewModel : ReactiveObject, IDisposable
         _subscriptions.Add(
             _projectContext.WhenChanged.Subscribe(_ => RefreshProjection()));
 
+        _subscriptions.Add(
+            _debugSession.WhenChanged.Subscribe(_ => RefreshProjection()));
+
         RefreshProjection();
     }
 
@@ -217,7 +220,8 @@ public sealed class EditorBreakpointViewModel : ReactiveObject, IDisposable
         {
             Markers = EditorBreakpointProjection.ForSource(
                 _breakpointService.GetBreakpoints(),
-                sourcePath);
+                sourcePath,
+                _debugSession.Current.BreakpointVerifications);
         }
 
         ProjectionRevision++;

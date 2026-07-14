@@ -17,6 +17,8 @@ namespace Zaide.Services;
 public sealed class DebugSessionService : IDebugSessionService
 {
     private static readonly IReadOnlyList<string> EmptyDiagnostics = Array.Empty<string>();
+    private static readonly IReadOnlyList<DebugBreakpointVerification> EmptyVerifications =
+        DebugSessionSnapshot.EmptyVerifications;
 
     private static readonly DebugSessionSnapshot InitialSnapshot = new(
         DebugSessionState.Idle,
@@ -26,7 +28,8 @@ public sealed class DebugSessionService : IDebugSessionService
         AdapterProcessId: null,
         StopInfo: null,
         Failure: null,
-        DiagnosticOutput: EmptyDiagnostics);
+        DiagnosticOutput: EmptyDiagnostics,
+        BreakpointVerifications: EmptyVerifications);
 
     private readonly IProjectContextService _projectContext;
     private readonly IDebugAdapterLocator _adapterLocator;
@@ -36,6 +39,7 @@ public sealed class DebugSessionService : IDebugSessionService
     private readonly Subject<DebugSessionSnapshot> _subject = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly List<string> _diagnosticOutput = new();
+    private readonly List<DebugBreakpointVerification> _breakpointVerifications = new();
     private readonly IDisposable _contextSubscription;
 
     private volatile DebugSessionSnapshot _current = InitialSnapshot;
@@ -95,19 +99,10 @@ public sealed class DebugSessionService : IDebugSessionService
         var adapterPath = _adapterLocator.Resolve();
         if (adapterPath is null)
         {
-            await PublishIfCurrentGenerationAsync(
-                _generation,
-                new DebugSessionSnapshot(
-                    DebugSessionState.Failed,
-                    _generation,
-                    ProgramPath: null,
-                    WorkingDirectory: null,
-                    AdapterProcessId: null,
-                    StopInfo: null,
-                    new DebugSessionFailure(
-                        DebugSessionOutcomeKind.AdapterUnavailable,
-                        DebugAdapterLocator.UnavailableMessage),
-                    EmptyDiagnostics))
+            await ReportPreLaunchFailureAsync(
+                    DebugSessionOutcomeKind.AdapterUnavailable,
+                    DebugAdapterLocator.UnavailableMessage,
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new DebugSessionOperationResult(
@@ -144,6 +139,7 @@ public sealed class DebugSessionService : IDebugSessionService
             _generation++;
             generation = _generation;
             _diagnosticOutput.Clear();
+            _breakpointVerifications.Clear();
             PublishLocked(BuildStartingSnapshot(generation, programPath, workingDirectory));
         }
         finally
@@ -207,10 +203,12 @@ public sealed class DebugSessionService : IDebugSessionService
 
             foreach (var (sourcePath, lines) in breakpointsBySource)
             {
-                await WithTimeoutAsync(
+                var response = await WithTimeoutAsync(
                     token => session.SetBreakpointsAsync(sourcePath, lines, token),
                     _timeoutPolicy.LaunchConfiguration,
                     sessionToken).ConfigureAwait(false);
+                await ApplyBreakpointVerificationsAsync(generation, sourcePath, lines, response)
+                    .ConfigureAwait(false);
             }
 
             var stoppedTcs = new TaskCompletionSource<DapStoppedEvent>(
@@ -301,11 +299,65 @@ public sealed class DebugSessionService : IDebugSessionService
     }
 
     /// <inheritdoc />
+    public async Task<DebugSessionOperationResult> ReportPreLaunchFailureAsync(
+        DebugSessionOutcomeKind kind,
+        string message,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!IsPreLaunchFailureKind(kind))
+        {
+            return new DebugSessionOperationResult(
+                false,
+                DebugSessionOutcomeKind.ProtocolFailed,
+                "Pre-launch failure kind is not supported.");
+        }
+
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
+            if (IsActiveState(_current.State))
+            {
+                return new DebugSessionOperationResult(
+                    false,
+                    DebugSessionOutcomeKind.RejectedConcurrent,
+                    "A debug session is already active.");
+            }
+
+            _generation++;
+            AppendDiagnostic($"[error] {message}");
+            _breakpointVerifications.Clear();
+            PublishLocked(new DebugSessionSnapshot(
+                DebugSessionState.Failed,
+                _generation,
+                ProgramPath: null,
+                WorkingDirectory: null,
+                AdapterProcessId: null,
+                StopInfo: null,
+                new DebugSessionFailure(kind, message),
+                CopyDiagnosticsLocked(),
+                EmptyVerifications));
+        }
+        finally
+        {
+            _gate.Release();
+        }
+
+        return new DebugSessionOperationResult(false, kind, message);
+    }
+
+    /// <inheritdoc />
     public async Task<DebugSessionOperationResult> StopAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
 
+        long stopGeneration;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -315,7 +367,11 @@ public sealed class DebugSessionService : IDebugSessionService
             if (!IsActiveState(_current.State))
                 return new DebugSessionOperationResult(true, null, null);
 
-            PublishLocked(BuildStoppingSnapshot(_current));
+            // Bump generation so late start/request callbacks cannot mutate after Stop.
+            _generation++;
+            stopGeneration = _generation;
+            var stopping = BuildStoppingSnapshot(_current with { Generation = stopGeneration });
+            PublishLocked(stopping);
         }
         finally
         {
@@ -330,7 +386,11 @@ public sealed class DebugSessionService : IDebugSessionService
             if (_disposed)
                 return new DebugSessionOperationResult(true, null, null);
 
-            PublishLocked(BuildIdleSnapshot(_generation));
+            if (_generation != stopGeneration)
+                return new DebugSessionOperationResult(true, null, null);
+
+            _breakpointVerifications.Clear();
+            PublishLocked(BuildIdleSnapshot(stopGeneration));
         }
         finally
         {
@@ -493,10 +553,16 @@ public sealed class DebugSessionService : IDebugSessionService
                     continue;
 
                 var normalized = Path.GetFullPath(sourcePath);
-                await WithTimeoutAsync(
+                var response = await WithTimeoutAsync(
                     token => session.SetBreakpointsAsync(normalized, lines, token),
                     _timeoutPolicy.OrdinaryRequest,
                     cancellationToken).ConfigureAwait(false);
+                await ApplyBreakpointVerificationsAsync(
+                        snapshot.Generation,
+                        normalized,
+                        lines,
+                        response)
+                    .ConfigureAwait(false);
             }
 
             return new DebugSessionOperationResult(true, null, null);
@@ -511,6 +577,12 @@ public sealed class DebugSessionService : IDebugSessionService
                 ex,
                 "Debug breakpoint replacement failed for generation {Generation}",
                 snapshot.Generation);
+
+            await FailActiveSessionAsync(
+                    snapshot.Generation,
+                    DebugSessionOutcomeKind.ProtocolFailed,
+                    "Debug breakpoint replacement failed.")
+                .ConfigureAwait(false);
 
             return new DebugSessionOperationResult(
                 false,
@@ -564,6 +636,7 @@ public sealed class DebugSessionService : IDebugSessionService
                 return;
 
             _generation++;
+            _breakpointVerifications.Clear();
 
             if (IsActiveState(_current.State))
             {
@@ -572,7 +645,11 @@ public sealed class DebugSessionService : IDebugSessionService
             }
             else
             {
-                PublishLocked(BuildContextSnapshot(context, _generation));
+                // Preserve diagnostics from a prior terminal failure; clear live verification.
+                PublishLocked(BuildContextSnapshot(context, _generation) with
+                {
+                    DiagnosticOutput = CopyDiagnosticsLocked(),
+                });
             }
         }
         finally
@@ -590,7 +667,11 @@ public sealed class DebugSessionService : IDebugSessionService
                 if (_disposed)
                     return;
 
-                PublishLocked(BuildContextSnapshot(context, _generation));
+                _breakpointVerifications.Clear();
+                PublishLocked(BuildContextSnapshot(context, _generation) with
+                {
+                    DiagnosticOutput = CopyDiagnosticsLocked(),
+                });
             }
             finally
             {
@@ -607,21 +688,51 @@ public sealed class DebugSessionService : IDebugSessionService
         DebugSessionOutcomeKind outcome,
         string message)
     {
-        if (session is not null)
-            await AbandonSessionAsync(session).ConfigureAwait(false);
+        await _gate.WaitAsync().ConfigureAwait(false);
+        IDebugAdapterSession? activeToTearDown = null;
+        try
+        {
+            if (_disposed || generation != _generation)
+            {
+                // Superseded by Stop/context change — still abandon the local session handle.
+            }
+            else
+            {
+                if (ReferenceEquals(_activeSession, session))
+                {
+                    activeToTearDown = _activeSession;
+                    _activeSession = null;
+                }
 
-        await PublishIfCurrentGenerationAsync(
-            generation,
-            new DebugSessionSnapshot(
-                DebugSessionState.Failed,
-                generation,
-                programPath,
-                workingDirectory,
-                session?.ProcessId,
-                StopInfo: null,
-                new DebugSessionFailure(outcome, message),
-                CopyDiagnostics(session)))
-            .ConfigureAwait(false);
+                AppendDiagnostic($"[error] {message}");
+                AppendStderrDiagnostics(session);
+                _breakpointVerifications.Clear();
+                PublishLocked(new DebugSessionSnapshot(
+                    DebugSessionState.Failed,
+                    generation,
+                    programPath,
+                    workingDirectory,
+                    AdapterProcessId: null,
+                    StopInfo: null,
+                    new DebugSessionFailure(outcome, message),
+                    CopyDiagnosticsLocked(),
+                    EmptyVerifications));
+            }
+        }
+        finally
+        {
+            _gate.Release();
+        }
+
+        if (activeToTearDown is not null)
+        {
+            DetachSessionHandlers(activeToTearDown);
+            await DisposeSessionBestEffortAsync(activeToTearDown, forceKill: true).ConfigureAwait(false);
+        }
+        else if (session is not null && !ReferenceEquals(session, activeToTearDown))
+        {
+            await AbandonSessionAsync(session).ConfigureAwait(false);
+        }
     }
 
     private async Task TearDownActiveSessionAsync(CancellationToken cancellationToken)
@@ -640,7 +751,9 @@ public sealed class DebugSessionService : IDebugSessionService
 
         try
         {
-            await session.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(_timeoutPolicy.Disconnect);
+            await session.DisconnectAsync(timeoutCts.Token).ConfigureAwait(false);
         }
         catch (Exception disconnectEx)
         {
@@ -660,16 +773,31 @@ public sealed class DebugSessionService : IDebugSessionService
 
     private static async Task AbandonSessionAsync(IDebugAdapterSession session)
     {
+        await DisposeSessionBestEffortAsync(session, forceKill: true).ConfigureAwait(false);
+    }
+
+    private static async Task DisposeSessionBestEffortAsync(IDebugAdapterSession session, bool forceKill)
+    {
+        if (forceKill)
+        {
+            try
+            {
+                await session.ForceKillAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best effort.
+            }
+        }
+
         try
         {
-            await session.ForceKillAsync().ConfigureAwait(false);
+            await session.DisposeAsync().ConfigureAwait(false);
         }
         catch
         {
             // Best effort.
         }
-
-        await session.DisposeAsync().ConfigureAwait(false);
     }
 
     private void AttachSessionHandlers(IDebugAdapterSession session, long generation)
@@ -781,14 +909,44 @@ public sealed class DebugSessionService : IDebugSessionService
 
     private async Task HandleSessionEndedAsync(long endedGeneration, string message)
     {
+        await FailActiveSessionAsync(
+                endedGeneration,
+                DebugSessionOutcomeKind.AdapterExited,
+                message)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Transitions the active generation to <see cref="DebugSessionState.Failed"/>, clears
+    /// live stop/verification data, retains diagnostics, tears down the adapter, and bumps
+    /// generation so late callbacks cannot mutate the recovered session.
+    /// </summary>
+    private async Task FailActiveSessionAsync(
+        long expectedGeneration,
+        DebugSessionOutcomeKind kind,
+        string message)
+    {
+        IDebugAdapterSession? sessionToTearDown = null;
+
         await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (_disposed || endedGeneration != _generation)
+            if (_disposed || expectedGeneration != _generation)
                 return;
 
-            if (_activeSession is null || _activeSession.Generation != endedGeneration)
-                return;
+            if (_activeSession is null || _activeSession.Generation != expectedGeneration)
+            {
+                // No live adapter for this generation — still publish terminal state if active.
+                if (!IsActiveState(_current.State) && _current.State != DebugSessionState.Starting)
+                    return;
+            }
+
+            sessionToTearDown = _activeSession;
+            _activeSession = null;
+
+            AppendDiagnostic($"[error] {message}");
+            AppendStderrDiagnostics(sessionToTearDown);
+            _breakpointVerifications.Clear();
 
             _generation++;
             var newGeneration = _generation;
@@ -799,17 +957,22 @@ public sealed class DebugSessionService : IDebugSessionService
                 newGeneration,
                 current.ProgramPath,
                 current.WorkingDirectory,
-                current.AdapterProcessId,
+                AdapterProcessId: null,
                 StopInfo: null,
-                new DebugSessionFailure(DebugSessionOutcomeKind.AdapterExited, message),
-                CopyDiagnosticsLocked()));
+                new DebugSessionFailure(kind, message),
+                CopyDiagnosticsLocked(),
+                EmptyVerifications));
         }
         finally
         {
             _gate.Release();
         }
 
-        await TearDownActiveSessionAsync(CancellationToken.None).ConfigureAwait(false);
+        if (sessionToTearDown is not null)
+        {
+            DetachSessionHandlers(sessionToTearDown);
+            await DisposeSessionBestEffortAsync(sessionToTearDown, forceKill: true).ConfigureAwait(false);
+        }
     }
 
     private async Task<DebugSessionOperationResult> ExecuteStoppedStepAsync(
@@ -868,32 +1031,83 @@ public sealed class DebugSessionService : IDebugSessionService
                 "Debug session request failed for generation {Generation}",
                 snapshot.Generation);
 
-            await PublishOperationalDiagnosticAsync(snapshot.Generation, failureMessage)
+            var outcome = ex is OperationCanceledException or TimeoutException
+                ? DebugSessionOutcomeKind.ProtocolFailed
+                : DebugSessionOutcomeKind.ProtocolFailed;
+            var message = ex is OperationCanceledException or TimeoutException
+                ? $"{failureMessage} Request timed out."
+                : failureMessage;
+
+            await FailActiveSessionAsync(snapshot.Generation, outcome, message)
                 .ConfigureAwait(false);
 
-            return new DebugSessionOperationResult(
-                false,
-                DebugSessionOutcomeKind.ProtocolFailed,
-                failureMessage);
+            return new DebugSessionOperationResult(false, outcome, message);
         }
     }
 
-    private async Task PublishOperationalDiagnosticAsync(long generation, string message)
+    private async Task ApplyBreakpointVerificationsAsync(
+        long generation,
+        string sourcePath,
+        IReadOnlyList<int> lines,
+        JsonElement? response)
     {
+        var parsed = DapBreakpointVerificationParser.Parse(sourcePath, lines, response);
+
         await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
             if (_disposed || generation != _generation)
                 return;
 
-            AppendDiagnostic($"[error] {message}");
-            PublishLocked(_current with { DiagnosticOutput = CopyDiagnosticsLocked() });
+            if (_activeSession is null || _activeSession.Generation != generation)
+                return;
+
+            ReplaceVerificationsForSource(Path.GetFullPath(sourcePath), parsed);
+            PublishLocked(_current with
+            {
+                BreakpointVerifications = CopyVerificationsLocked(),
+                DiagnosticOutput = CopyDiagnosticsLocked(),
+            });
+
+            foreach (var verification in parsed)
+            {
+                if (verification.State == DebugBreakpointVerificationState.Rejected)
+                {
+                    var detail = verification.Message is null
+                        ? $"Breakpoint rejected at {verification.SourcePath}:{verification.RequestedLine}."
+                        : $"Breakpoint rejected at {verification.SourcePath}:{verification.RequestedLine}: {verification.Message}";
+                    AppendDiagnostic($"[error] {detail}");
+                }
+            }
+
+            if (parsed.Any(v => v.State == DebugBreakpointVerificationState.Rejected))
+            {
+                PublishLocked(_current with
+                {
+                    BreakpointVerifications = CopyVerificationsLocked(),
+                    DiagnosticOutput = CopyDiagnosticsLocked(),
+                });
+            }
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    private void ReplaceVerificationsForSource(
+        string normalizedSource,
+        IReadOnlyList<DebugBreakpointVerification> replacements)
+    {
+        _breakpointVerifications.RemoveAll(v =>
+            string.Equals(v.SourcePath, normalizedSource, StringComparison.Ordinal));
+        _breakpointVerifications.AddRange(replacements);
+    }
+
+    private IReadOnlyList<DebugBreakpointVerification> CopyVerificationsLocked() =>
+        _breakpointVerifications.Count == 0
+            ? EmptyVerifications
+            : _breakpointVerifications.ToArray();
 
     private IDebugAdapterSession RequireStoppedSession()
     {
@@ -971,6 +1185,13 @@ public sealed class DebugSessionService : IDebugSessionService
             or DebugSessionState.Stopped
             or DebugSessionState.Stopping;
 
+    private static bool IsPreLaunchFailureKind(DebugSessionOutcomeKind kind) =>
+        kind is DebugSessionOutcomeKind.AdapterUnavailable
+            or DebugSessionOutcomeKind.BuildFailed
+            or DebugSessionOutcomeKind.UnsupportedLaunchTarget
+            or DebugSessionOutcomeKind.RejectedContext
+            or DebugSessionOutcomeKind.StartupFailed;
+
     private static bool IsDebugEligible(ProjectContext context) =>
         ProjectTargetResolver.IsEligible(context) &&
         context.SelectedProject?.Kind == ProjectKind.CSharpProject;
@@ -987,7 +1208,8 @@ public sealed class DebugSessionService : IDebugSessionService
                 AdapterProcessId: null,
                 StopInfo: null,
                 Failure: null,
-                DiagnosticOutput: EmptyDiagnostics);
+                DiagnosticOutput: EmptyDiagnostics,
+                BreakpointVerifications: EmptyVerifications);
         }
 
         return new DebugSessionSnapshot(
@@ -998,7 +1220,8 @@ public sealed class DebugSessionService : IDebugSessionService
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: EmptyDiagnostics);
+            DiagnosticOutput: EmptyDiagnostics,
+            BreakpointVerifications: EmptyVerifications);
     }
 
     private DebugSessionSnapshot BuildStartingSnapshot(
@@ -1014,7 +1237,8 @@ public sealed class DebugSessionService : IDebugSessionService
             adapterProcessId,
             StopInfo: null,
             Failure: null,
-            CopyDiagnosticsLocked());
+            CopyDiagnosticsLocked(),
+            CopyVerificationsLocked());
 
     private DebugSessionSnapshot BuildStoppedSnapshot(
         long generation,
@@ -1032,11 +1256,17 @@ public sealed class DebugSessionService : IDebugSessionService
             adapterProcessId,
             new DapStoppedInfo(stoppedEvent.Reason, stoppedEvent.ThreadId),
             Failure: null,
-            CopyDiagnosticsLocked());
+            CopyDiagnosticsLocked(),
+            CopyVerificationsLocked());
     }
 
     private DebugSessionSnapshot BuildStoppingSnapshot(DebugSessionSnapshot current) =>
-        current with { State = DebugSessionState.Stopping, StopInfo = null };
+        current with
+        {
+            State = DebugSessionState.Stopping,
+            StopInfo = null,
+            BreakpointVerifications = EmptyVerifications,
+        };
 
     private DebugSessionSnapshot BuildIdleSnapshot(long generation) =>
         new(
@@ -1047,7 +1277,8 @@ public sealed class DebugSessionService : IDebugSessionService
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            CopyDiagnosticsLocked());
+            CopyDiagnosticsLocked(),
+            EmptyVerifications);
 
     private static async Task WithTimeoutAsync(
         Func<CancellationToken, Task> action,

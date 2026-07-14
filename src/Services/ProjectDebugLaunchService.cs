@@ -73,10 +73,17 @@ public sealed class ProjectDebugLaunchService : IProjectDebugLaunchService
 
             if (buildResult.Outcome != ProjectWorkflowOutcomeKind.Succeeded)
             {
+                var buildMessage = MapBuildFailureMessage(buildResult.Outcome);
+                await _debugSession
+                    .ReportPreLaunchFailureAsync(
+                        DebugSessionOutcomeKind.BuildFailed,
+                        buildMessage,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 return new DebugSessionOperationResult(
                     false,
                     DebugSessionOutcomeKind.BuildFailed,
-                    MapBuildFailureMessage(buildResult.Outcome));
+                    buildMessage);
             }
 
             var csprojPath = buildResult.TargetFilePath
@@ -87,10 +94,17 @@ public sealed class ProjectDebugLaunchService : IProjectDebugLaunchService
 
             if (!resolution.IsSuccess)
             {
+                var targetMessage = resolution.Message ?? "Debug target could not be resolved.";
+                await _debugSession
+                    .ReportPreLaunchFailureAsync(
+                        DebugSessionOutcomeKind.UnsupportedLaunchTarget,
+                        targetMessage,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 return new DebugSessionOperationResult(
                     false,
                     DebugSessionOutcomeKind.UnsupportedLaunchTarget,
-                    resolution.Message ?? "Debug target could not be resolved.");
+                    targetMessage);
             }
 
             var workingDirectory = Path.GetDirectoryName(Path.GetFullPath(csprojPath))

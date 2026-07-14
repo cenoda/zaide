@@ -77,7 +77,8 @@ public sealed class ProjectWorkflowServiceTests
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
-            DiagnosticOutput: Array.Empty<string>());
+            DiagnosticOutput: Array.Empty<string>(),
+            BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
         public DebugSessionSnapshot Current => Idle;
 
@@ -86,6 +87,12 @@ public sealed class ProjectWorkflowServiceTests
 
         public Task<DebugSessionOperationResult> StartLaunchAsync(
             DebugLaunchRequest request,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<DebugSessionOperationResult> ReportPreLaunchFailureAsync(
+            DebugSessionOutcomeKind kind,
+            string message,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
