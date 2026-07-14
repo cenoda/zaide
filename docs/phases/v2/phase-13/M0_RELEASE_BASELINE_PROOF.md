@@ -4,9 +4,9 @@
 
 **Status: NO-GO for M1a–M5.** This M0 evidence pass verified the live baseline,
 ownership, reusable tests, fixtures, recovery coverage, and carry-over work. It
-records the required five comparable desktop samples for startup, but does
-**not** yet record them for editor, large-file, LSP, workflow, and DAP.
-Consequently, only the startup budget is locked and no production hardening or
+records five comparable samples for startup, real-server LSP, real-child
+workflow operations, and real-adapter DAP. It does **not** yet record desktop
+editor or large-file edit samples. Consequently, no production hardening or
 M1a harness work may start.
 
 This is a deliberate truthful M0 result, not a Phase 13 implementation failure.
@@ -153,7 +153,8 @@ than a separately discovered product issue.
 | Launch and main-window presentation | pass | Five fresh app processes each produced a `Zaide` window in the locked startup budget. |
 | Open `workflow-console` folder | pass | Real desktop view showed `Program.cs` and `WorkflowConsole.csproj` in the file tree, with `C# · Ready` and `WorkflowConsole` in the status bar. |
 | Open `Program.cs` | pass | Real desktop view showed selected `Program.cs`, its two source lines, `Opened: Program.cs`, and `C# · Ready`. |
-| Live completion invocation (`Ctrl+Space`) | not validated | The remote-control path did not deliver `Ctrl+Space`. This is an input-transport limitation, not evidence of an LSP failure; existing Phase 10 real-server proof remains the automated evidence. |
+| Open 8 MiB generated text fixture | pass (manual smoke) | Real desktop view showed `/tmp/zaide-phase13/large-file-8MiB.txt` open as a 87,382-line text document with intact rendering and no observed hang/crash. The user reported it felt fast. No stopwatch samples were captured, so this does not lock the large-file numeric budget. |
+| Live completion invocation (`Ctrl+Space`) | not validated | Remote-control delivery was unavailable. A direct XWayland `xdotool` injection then emitted the expected XTEST Control+Space press/release events to the Zaide window, but no completion popup appeared. Synthetic X11 input therefore does not prove Avalonia command routing on this Wayland desktop. This is not evidence of an LSP failure; existing Phase 10 real-server proof remains the automated evidence. |
 
 ### Critical C# Path Step Matrix
 
@@ -161,10 +162,10 @@ than a separately discovered product issue.
 |---|---|---|---|---|
 | Open selected C# project | Deterministic headless seam | Project-context tests | 10 s | not validated end-to-end |
 | Edit and save | Deterministic headless seam | Editor / format-on-save tests | 10 s | not validated end-to-end |
-| LSP result | Real-child integration where server is available | `csharp-ls` on PATH; Phase 10 production proofs | 30 s | not validated in M0 |
-| Build | Real-child integration | workflow console fixture | 60 s | not validated in M0 |
-| Run or test | Real-child integration | workflow console or pass-test fixture | 60 s | not validated in M0 |
-| Debug to one breakpoint | Real-child integration / Linux manual | `ZAIDE_NETCOREDBG_PATH` and workflow-console fixture | 60 s | not validated in M0 |
+| LSP result | Real-child integration where server is available | `csharp-ls` on PATH; Phase 10 production proofs | 30 s | PASS as focused real-server smoke; UI presentation remains unvalidated |
+| Build | Real-child integration | workflow console fixture | 60 s | PASS as focused CLI child process; UI projection remains unvalidated |
+| Run or test | Real-child integration | workflow console or pass-test fixture | 60 s | PASS as focused CLI child process; UI projection remains unvalidated |
+| Debug to one breakpoint | Real-child integration / Linux manual | `ZAIDE_NETCOREDBG_PATH` and workflow-console fixture | 60 s | PASS as real-adapter focused proof; UI presentation remains unvalidated |
 | Stop and verify cleanup | Existing focused real-adapter proof | `M6DebugRecoveryProofTests` | 30 s | automated proof reusable; end-to-end recheck pending |
 
 M4a may compose these existing seams and must not create a broad UI automation
@@ -190,6 +191,21 @@ suite. M4b owns the real desktop rows.
 - A budget miss requires named human approval before an accepted limitation is
   recorded. M1b may change production behavior only for an M0-locked miss.
 
+### Automated Process Samples (2026-07-15)
+
+These use existing real child-process / server / adapter proofs, not new
+production instrumentation. They are valid process budgets, but do not replace
+the remaining desktop editor and large-file evidence.
+
+| Area | Exact process / fixture | Five samples (ms) | Median | Result |
+|---|---|---|---:|---|
+| LSP completion + hover + stale-result smoke | `dotnet tools/Phase10M4CompletionHoverSmoke/bin/Debug/net10.0/Phase10M4CompletionHoverSmoke.dll <temporary copy of Phase10M0 fixture>` | 5724, 5708, 5713, 5706, 5706 | 5708 | All PASS; real `csharp-ls`, completion, hover, and stale-result paths |
+| Build cold | `dotnet build tests/fixtures/workflow-console/WorkflowConsole.csproj --no-restore` | 1905 | 1905 | PASS |
+| Build warm | same command, following samples | 418, 403, 411, 415 | 413 | All PASS |
+| Run | `dotnet run --project tests/fixtures/workflow-console/WorkflowConsole.csproj --no-restore` | 539, 537, 532, 528, 540 | 537 | All PASS |
+| Test | `dotnet test tests/fixtures/workflow-tests-pass/WorkflowTestsPass.csproj --no-restore` | 958, 838, 830, 826, 832 | 832 | All PASS |
+| DAP breakpoint → step → stop | `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName=Zaide.Tests.Services.M4DebugExecutionProofTests.ProductionProof_LaunchBreakpointStepAndStop'` | 1318, 1346, 1337, 1320, 1339 | 1337 | All PASS; real NetCoreDbg adapter and debuggee |
+
 ### Budget Matrix
 
 | Area | Measurement site / fixture | Samples | Median baseline | Numeric budget | Gate |
@@ -197,9 +213,11 @@ suite. M4b owns the real desktop rows.
 | Startup to usable main window | External monotonic timer (`date +%s%N`) to a new XWayland `Zaide` window owned by the newly launched PID; normal settings | 5 / 5 | 620 ms (`621, 620, 620, 621, 620`) | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (62 ms) | PASS; measured 1 ms range |
 | Editor open/edit/save | External timer; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M1a |
 | Large file open/edit | External timer; generated 8 MiB file / hash in §3 | 0 / 5 | not recorded | **not locked** | blocks M1a |
-| LSP ready / first result | Real `csharp-ls`; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M1a |
-| Build / Run / Test | Real child `dotnet`; Phase 11 fixtures | 0 / 5 | not recorded | **not locked** | blocks M1a |
-| DAP launch to breakpoint / stop | Real NetCoreDbg; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M1a |
+| LSP ready / first result | Real `csharp-ls`; temporary copy of the Phase 10 proof fixture; completion + hover + stale-result smoke | 5 / 5 | 5708 ms | ≤ 8,000 ms; maximum accepted sample variance ≤ 10% of median (571 ms) | PASS; measured 18 ms range |
+| Build | Real child `dotnet`; workflow-console fixture | 1 cold + 4 warm | 1905 ms cold; 413 ms warm | ≤ 2,500 ms cold; ≤ 600 ms warm; maximum accepted variance ≤ 10% of each median | PASS; cold/warm explicitly separated |
+| Run | Real child `dotnet`; workflow-console fixture | 5 / 5 | 537 ms | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (54 ms) | PASS; measured 12 ms range |
+| Test | Real child `dotnet`; workflow pass fixture | 5 / 5 | 832 ms | ≤ 1,500 ms; maximum accepted sample variance ≤ 10% of median (83 ms) | PASS; measured 132 ms range |
+| DAP launch to breakpoint / step / stop | Real NetCoreDbg; workflow-console fixture | 5 / 5 | 1337 ms | ≤ 2,000 ms; maximum accepted sample variance ≤ 10% of median (134 ms) | PASS; measured 28 ms range |
 
 The startup budget rounds the observed 620 ms median up to a 1,000 ms release
 envelope; a sample above it requires named human approval before an accepted
@@ -231,7 +249,7 @@ table before M1a begins.
 - [x] Carry-over triage and explicit platform/accessibility/critical-path matrices recorded.
 - [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped.
 - [x] Deterministic large-file fixture generator added and generated outside settings/repository data.
-- [ ] Five comparable performance samples and numeric budgets locked for every area (startup complete; editor, large-file, LSP, workflow, and DAP pending).
+- [ ] Five comparable performance samples and numeric budgets locked for every area (startup, LSP, workflow, and DAP complete; desktop editor and large-file pending).
 - [ ] Linux desktop release/keyboard/focus measurements recorded.
 
 **M0 remains open and M1a is blocked until the two unchecked gate items are
