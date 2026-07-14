@@ -2,14 +2,13 @@
 
 ## Status
 
-**M0 in progress — production work not started.** M0 is the required planning
-and evidence gate. The initial live-code inventory and automated baseline are
-recorded in [M0_RELEASE_BASELINE_PROOF.md](M0_RELEASE_BASELINE_PROOF.md), which
-currently blocks M1a pending five-sample desktop measurements and numeric
-budgets. No Phase 13 production change may begin until M0 records the supported
-Linux environment, representative fixtures, measured baselines, budgets,
-compatibility matrix, and the exact focused test commands used by later
-milestones.
+**M0 remains in progress — production work has not started.** The M1a local,
+production-neutral measurement runner is implemented and has recorded five
+samples for Startup, LSP, Build, Run, Test, and DAP. The initial live-code
+inventory, locked M0 baseline, and M1a evidence are recorded in
+[M0_RELEASE_BASELINE_PROOF.md](M0_RELEASE_BASELINE_PROOF.md). M0 remains
+blocked on truthful desktop editor and 8 MiB rendering measurements; therefore
+M1b and all production hardening remain unauthorized.
 
 **Prerequisite:** Phases 8–12 are complete. Phase 13 hardens their existing
 contracts; it does not replace their ownership boundaries or introduce V3
@@ -224,7 +223,7 @@ and ready for release closeout on the supported Linux validation environment.
 | Milestone | Description | Verification gate | Commit boundary |
 |---|---|---|---|
 | **M0** | Live-code discovery, reuse/gap inventory, carry-over triage, reproducible fixture manifest, baseline measurements, numeric budgets, all matrices, critical-path step matrix, and proof artifact. No production behavior change. | `M0_RELEASE_BASELINE_PROOF.md`; sequential build/test; `git diff --check` | `docs(phase-13): lock M0 release baseline` |
-| **M1a** | Add only the deterministic performance harnesses and focused tests required by M0's fixtures; establish repeatable remeasurement without changing production behavior unless M0 allowed a measurement-hook change to make the harness truthful. | M0-named harness commands; repeatability evidence; sequential build/test | `test(phase-13): add release performance harnesses` |
+| **M1a** | **Complete (2026-07-15):** local deterministic measurement runner and five-sample evidence for Startup, LSP, Build, Run, Test, and DAP. It changes no production behavior and retains editor/large-file as manual rows. | `tools/phase13-measure.py`; [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md); sequential build/test | `test(phase-13): add release performance harnesses` |
 | **M1b** | Optional. Implement narrowly measured performance fixes for one over-budget area or one tightly coupled set; repeat the affected baseline. Create further M1b slices rather than combining unrelated areas. **If every locked budget is already met after M0/M1a, skip M1b entirely** (zero slices); M5 remeasurement is sufficient. | Affected harness and full sequential gate; budget comparison — or M0 proof records "all budgets already met" | `perf(phase-13): meet <area> budget` (omit if zero slices) |
 | **M2** | Fill only settings/secrets compatibility and recovery gaps identified by M0 across settings schema v1/v2/v3, unknown future version, corruption, interrupted write (Phase 8 D2), last-known-good, and plaintext-secret absence. If M0 marks every row green, M2 is a documentation/evidence no-op (name existing tests; no new production code). | M0-named focused tests; fixture-file inspection; sequential build/test | `fix(phase-13): close settings recovery gaps` or `docs(phase-13): settings matrix already green` |
 | **M3a** | Gap-only: inventory Phase 11 workflow/process recovery proofs first; harden and prove only real gaps in managed Build/Run/Test lifecycle recovery, process-tree cleanup, and shared-gate (`IProjectOperationGate`) release under cancellation/disposal. Reuse `ManagedProcessRunnerTests` / `ProjectWorkflowServiceTests` when green. | Focused workflow/process tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden workflow process cleanup` or docs no-op commit if green |

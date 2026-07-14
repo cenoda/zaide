@@ -2,17 +2,17 @@
 
 ## Gate Result
 
-**Status: NO-GO for M1a–M5.** This M0 evidence pass verified the live baseline,
-ownership, reusable tests, fixtures, recovery coverage, and carry-over work. It
-records five comparable samples for startup, real-server LSP, real-child
-workflow operations, and real-adapter DAP. It does **not** yet record desktop
-editor or large-file edit samples. Consequently, no production hardening or
-M1a harness work may start.
+**Status: NO-GO for M1b–M5; M1a runner evidence complete.** This M0 evidence
+pass verified the live baseline, ownership, reusable tests, fixtures, recovery
+coverage, and carry-over work. The M1a local runner now records five comparable
+samples for startup, real-server LSP, real-child workflow operations, and
+real-adapter DAP. It does **not** record desktop editor or large-file edit
+samples. Consequently, no production hardening may start.
 
 This is a deliberate truthful M0 result, not a Phase 13 implementation failure.
-The required unblocked next action is the measurement session in §8 on the
-recorded Linux desktop. M0 introduced no `src/` or test-project production
-behavior change.
+The remaining unblocked action is truthful manual measurement on the recorded
+Linux desktop for editor open/edit/save and 8 MiB rendering. M0/M1a introduced
+no `src/` or test-project production behavior change.
 
 ## 1. Repository and Environment Baseline
 
@@ -198,6 +198,44 @@ These use existing real child-process / server / adapter proofs, not new
 production instrumentation. They are valid process budgets, but do not replace
 the remaining desktop editor and large-file evidence.
 
+### M1a Automated Runner Evidence (2026-07-15)
+
+The local runner command was:
+
+```bash
+ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg \
+  python3 tools/phase13-measure.py \
+  --output /tmp/zaide-phase13/measurements/m1a-20260715T-final
+```
+
+Raw, machine-specific evidence is intentionally untracked at
+`/tmp/zaide-phase13/measurements/m1a-20260715T-final/`:
+`raw-samples.tsv`, `raw-samples.json`, and `summary.json`. It records commands,
+the Linux/Wayland/.NET environment, process snapshot, every sample and fixture
+SHA-256. The runner has no production reference and does not inject keyboard
+events; startup observes only a new visible XWayland window. Its operation
+contract is [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md).
+
+| Area | Samples (ms) | Median | Min–max | Population variance | Budget result |
+|---|---|---:|---:|---:|---|
+| Startup | 909.358 median; five raw values in evidence | 909.358 | 906.738–929.235 | 66.104 ms² | PASS (`≤ 1,000 ms`; 22.497 ms range) |
+| LSP | 5704.385 median; five raw values in evidence | 5704.385 | 5703.829–5714.704 | 22.466 ms² | PASS (`≤ 8,000 ms`; 10.875 ms range) |
+| Build cold | 420.238 | 420.238 | 420.238–420.238 | 0 ms² | PASS (`≤ 2,500 ms`) |
+| Build warm | 409.521 median; four raw values in evidence | 409.521 | 401.885–417.467 | 46.321 ms² | PASS (`≤ 600 ms`; 15.581 ms range) |
+| Run | 532.207 median; five raw values in evidence | 532.207 | 511.246–540.083 | 109.641 ms² | PASS (`≤ 1,000 ms`; 28.837 ms range) |
+| Test | 832.732 median; five raw values in evidence | 832.732 | 828.273–835.950 | 6.466 ms² | PASS (`≤ 1,500 ms`; 7.677 ms range) |
+| DAP | 1344.623 median; five raw values in evidence | 1344.623 | 1321.616–1350.981 | 115.078 ms² | PASS (`≤ 2,000 ms`; 29.365 ms range) |
+
+This repeatability evidence supports M1a only. It does not claim that the
+desktop editor or 8 MiB text interaction was automated, and it does not turn
+synthetic X11 `Ctrl+Space` into Avalonia command-routing evidence.
+
+The captured process snapshot contains ambient editor language-server and
+Roslyn processes plus a pre-existing workflow-console process. They were not
+created or terminated by the runner. The samples pass the numeric comparison,
+but a future release-budget acceptance run must be repeated under the locked
+quiet-machine rule before it can supersede the M0 baseline.
+
 | Area | Exact process / fixture | Five samples (ms) | Median | Result |
 |---|---|---|---:|---|
 | LSP completion + hover + stale-result smoke | `dotnet tools/Phase10M4CompletionHoverSmoke/bin/Debug/net10.0/Phase10M4CompletionHoverSmoke.dll <temporary copy of Phase10M0 fixture>` | 5724, 5708, 5713, 5706, 5706 | 5708 | All PASS; real `csharp-ls`, completion, hover, and stale-result paths |
@@ -212,8 +250,8 @@ the remaining desktop editor and large-file evidence.
 | Area | Measurement site / fixture | Samples | Median baseline | Numeric budget | Gate |
 |---|---|---:|---:|---:|---|
 | Startup to usable main window | External monotonic timer (`date +%s%N`) to a new XWayland `Zaide` window owned by the newly launched PID; normal settings | 5 / 5 | 620 ms (`621, 620, 620, 621, 620`) | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (62 ms) | PASS; measured 1 ms range |
-| Editor open/edit/save | External timer; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M1a |
-| Large file open/edit | External timer; generated 8 MiB file / hash in §3 | 0 / 5 | not recorded | **not locked** | blocks M1a |
+| Editor open/edit/save | External timer; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M0 closure and M1b |
+| Large file open/edit | External timer; generated 8 MiB file / hash in §3 | 0 / 5 | not recorded | **not locked** | blocks M0 closure and M1b |
 | LSP ready / first result | Real `csharp-ls`; temporary copy of the Phase 10 proof fixture; completion + hover + stale-result smoke | 5 / 5 | 5708 ms | ≤ 8,000 ms; maximum accepted sample variance ≤ 10% of median (571 ms) | PASS; measured 18 ms range |
 | Build | Real child `dotnet`; workflow-console fixture | 1 cold + 4 warm | 1905 ms cold; 413 ms warm | ≤ 2,500 ms cold; ≤ 600 ms warm; maximum accepted variance ≤ 10% of each median | PASS; cold/warm explicitly separated |
 | Run | Real child `dotnet`; workflow-console fixture | 5 / 5 | 537 ms | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (54 ms) | PASS; measured 12 ms range |
@@ -226,13 +264,13 @@ limitation can be recorded. The full-suite `32 s` result in §4 is a regression
 baseline only; it is not a substitute for any UX budget. When five samples
 exist, lock a numeric release budget at the recorded median plus the approved
 maximum variance (rather than subjective responsiveness), then update this
-table before M1a begins.
+table before M1b or M0 closure.
 
 ## 9. M1a–M5 Handoff
 
 | Slice | M0 handoff |
 |---|---|
-| M1a | Blocked pending §8 numeric budgets. It may add only the named local performance harnesses/measurement hooks after this proof is updated to GO. |
+| M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral and leaves two desktop manual rows open. |
 | M1b | Potentially zero slices; decide only after M1a comparable remeasurement. |
 | M2 | One identified gap: orphan `.tmp` with valid primary. All other settings/secret rows name reusable tests. |
 | M3a | Evidence-only unless focused workflow/process inventory identifies a regression. |
@@ -250,8 +288,9 @@ table before M1a begins.
 - [x] Carry-over triage and explicit platform/accessibility/critical-path matrices recorded.
 - [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped.
 - [x] Deterministic large-file fixture generator added and generated outside settings/repository data.
-- [ ] Five comparable performance samples and numeric budgets locked for every area (startup, LSP, workflow, and DAP complete; desktop editor and large-file pending).
+- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; desktop editor and large-file remain pending manual evidence).
 - [ ] Linux desktop release/keyboard/focus measurements recorded.
 
-**M0 remains open and M1a is blocked until the two unchecked gate items are
-completed in this proof.**
+**M0 remains open and M1b is blocked until the two unchecked gate items are
+completed in this proof. M1a is complete only as the authorized local runner
+slice; it does not close the remaining desktop evidence.**
