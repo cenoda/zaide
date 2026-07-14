@@ -89,8 +89,9 @@ session must use the same single-object request pattern proven by Phase 10.
 
 ### 2. Target, build handoff, and launch contract
 
-Debug eligibility is exactly `ProjectTargetResolver.IsEligible(context)` with
-`SelectedProject.Kind == CSharpProject`; `Solution` and `SolutionX` have no
+The single debug-eligibility predicate is
+`ProjectTargetResolver.IsEligible(context) && context.SelectedProject?.Kind == CSharpProject`.
+`Solution` and `SolutionX` fail it and return `RejectedContext`; they have no
 default debug target in Phase 12. The target's normalized absolute `.csproj`
 path and parent directory come from `SelectedProject.FilePath` only.
 
@@ -108,7 +109,12 @@ relative, missing, non-DLL, malformed, or multiply-valued result is
 `UnsupportedLaunchTarget` and starts no adapter. The resolver's property-query
 process must be injected/testable and use the existing managed redirected
 process policy rather than a view-owned process. Phase 12 does not add an
-`OutputType` or framework matrix UI.
+`OutputType` or framework matrix UI. The property query uses the same default
+configuration as the immediately preceding `dotnet build` (Debug unless an
+already-supported workflow contract changes it). Multi-target projects are
+supported only when that one default evaluation yields exactly one valid target
+path; target-framework selection UI and configuration selection remain out of
+scope.
 
 If the workflow is already active, `StartBuildAsync` returns
 `RejectedConcurrent`; Debug Start must surface **Workflow busy** and start no
@@ -116,6 +122,16 @@ adapter. It must never silently cancel/kill an active Build, Run, or Test, and
 must not own a duplicate debug-build process. Thus Ctrl+F5 Run and F5 Debug
 remain distinct; an active Run makes F5 reject truthfully until the user stops
 or the workflow completes.
+
+The exclusion is mutual from M3a onward. M3a extracts Phase 11's admission
+into one UI-independent `IProjectOperationGate` shared by workflow and debug.
+Build, Run, Test, and Debug Start acquire the same lease; Debug Start retains
+its lease across its required build→TargetPath→adapter handoff, so no workflow
+operation can slip into the gap and replace the target DLL. A competing request
+returns structured `RejectedConcurrent` with either `Workflow busy` or `Debug
+session active` and starts no process. The existing workflow service must use
+the gate rather than retain a parallel one-operation lock. The user must Stop
+Debugging before a workflow operation can start.
 
 The proven DAP launch fields are `program` (absolute DLL), `cwd` (project
 directory), `stopAtEntry`, and `console: "internalConsole"`. M1 must make a
@@ -188,6 +204,14 @@ creates an empty map; it does not create a workspace-side JSON file. A missing
 or unselected workspace cannot persist a breakpoint. Adapter verification is
 session state and must not make a user breakpoint disappear.
 
+The M2 settings checklist is mandatory: add immutable `DebugSettings` and its
+JSON shape to `SettingsModel`; advance `Defaults.SchemaVersion` to 3; raise the
+`SettingsSerializer` accepted ceiling to 3 while preserving unknown-future
+rejection; implement/register `SettingsMigrationV2ToV3` after V1→V2 in the
+production `SettingsService` migrator; and update constructor/serialization,
+v2→v3, v3 round-trip, and unknown-v4-rejection tests. A field addition without
+the serializer, production migration chain, and test updates is not M2-complete.
+
 M3 adds the editor-margin toggle and visual projection. It must subscribe to
 the existing document/tab lifecycle, normalize paths, handle an unopened file,
 and remove/move all requested breakpoints for a source when DAP reports its
@@ -233,11 +257,14 @@ git diff --check
 ```
 
 M1+ use fake adapter/session seams for deterministic failure, ordering,
-generation, and disposal tests. Real adapter verification is Linux manual
-evidence using `tests/fixtures/workflow-console/` and records the adapter
-version, executable origin/path, command argv, SDK, target DLL, and observed
-events. The M0 proof establishes the required baseline, but every lifecycle or
-transport change must repeat it.
+generation, and disposal tests. **M1's first real-adapter gate uses the actual
+production `StreamJsonRpc` session**, not the M0 disposable frame client, to
+prove `initialize → launch → setBreakpoints → configurationDone → stopped →
+threads → stackTrace → scopes → continue → disconnect` against NetCoreDbg.
+Real adapter evidence uses `tests/fixtures/workflow-console/` and records the
+adapter version, executable origin/path, command argv, SDK, target DLL, and
+observed events. The M0 proof establishes the framing baseline, but every
+lifecycle or transport change must repeat the production-session proof.
 
 ### 8. Adapter location and rollback
 
@@ -255,24 +282,30 @@ well-known-directory scan in V2.
 Phase 12 validates launch-debugging a locally built C# executable only. It does
 not promise test debugging, library debugging, attach, remote, external
 console/TTY behavior, arbitrary launch configuration, data/conditional/log
-breakpoints, exception settings, watch/evaluate, or platform parity. Current
-execution location is included: M5 owns the stopped instruction-pointer line
-projection for the selected live stack frame. Its view may host a renderer or
-margin, but session data, selection, and lifecycle remain service/ViewModel
-owned.
+breakpoints, exception settings, watch/evaluate, or platform parity. There is
+no `OutputType`/runnable probe: a class library or other non-runnable project
+may reach adapter launch after valid `TargetPath` resolution and must surface a
+structured `StartupFailed` (or `UnsupportedLaunchTarget` when resolution fails).
+Breakpoints always address the on-disk normalized path and one-based line; M3
+does not auto-save dirty buffers, while Start's fresh build consumes the saved
+project state. Current execution location is included: M5 owns the stopped
+instruction-pointer line projection for the selected live stack frame. Its view
+may host a renderer or margin, but session data, selection, and lifecycle remain
+service/ViewModel owned.
 
 Each milestone has one focused commit. If a milestone must be reverted, revert
 only its recorded commit after preserving a `REVERT_LOG.md` when the reset is
-structural. Before M1 the known-good baseline is `0d6e042`.
+structural. The M1 revert target is the committed M0 baseline: `6222ea5`.
 
 ## Milestones (Incremental)
 
 | Milestone | Scope and independent completion condition | Focused verification | Commit boundary |
 |---|---|---|---|
 | **M0** ✅ | Docs/proof only: live seams, NetCoreDbg 3.2.0-1092 stdio lifecycle proof, contracts 1–8, decomposition. No production code. | Recorded proof; `git diff --check` | `docs(phase-12): M0 DAP plan and proof` |
-| **M1** | UI-independent DAP core: locator (`ZAIDE_NETCOREDBG_PATH`, then PATH), session factory/service, pre-listening event registrations, Content-Length `StreamJsonRpc` transport, locked timeouts, state/generation/outcomes, stderr capture, disconnect/crash/timeout/dispose behavior, DI and shutdown ordering. No breakpoint persistence or UI commands. | `DebugSessionServiceTests`, fake-session ordering/event/failure tests, locator tests, DI/dispose tests; repeat real initialize→disconnect proof | `debug: add DAP session lifecycle core` |
-| **M2** | Schema-v3 workspace-root-keyed breakpoint persistence, v2→v3 migration, path/line normalization, full-source replacement request policy, verified/pending mapping. No editor chrome or F5. | `BreakpointServiceTests`, v2→v3 migration tests, `SetBreakpoints` fake-session tests | `debug: add persistent breakpoint service` |
-| **M3** | Build-before-debug handoff using the locked MSBuild `TargetPath` query; reject a busy workflow; `debug.startOrContinue`/F5 and F9 registry behavior; editor breakpoint margin/projection. No execution controls/panes beyond truthful startup status. Split to M3a (handoff + F5) then M3b (F9/margin) if needed. | target-resolution + workflow-busy + command/keybinding + editor projection tests; Linux smoke: fresh build, F5, breakpoint hit | `debug: start launch debugging with breakpoints` |
+| **M1** | UI-independent DAP core: locator (`ZAIDE_NETCOREDBG_PATH`, then PATH), session factory/service, pre-listening event registrations, Content-Length `StreamJsonRpc` transport, locked timeouts, state/generation/outcomes, stderr capture, disconnect/crash/timeout/dispose behavior, DI and shutdown ordering. No breakpoint persistence or UI commands. | `DebugSessionServiceTests`, fake-session ordering/event/failure tests, locator tests, DI/dispose tests; **production StreamJsonRpc** NetCoreDbg lifecycle proof | `debug: add DAP session lifecycle core` |
+| **M2** | Schema-v3 workspace-root-keyed breakpoint persistence: `DebugSettings`, serializer ceiling, v2→v3 production migration registration, path/line normalization, full-source replacement request policy, verified/pending mapping. No editor chrome or F5. | `BreakpointServiceTests`, v2→v3 migration/round-trip/unknown-v4 tests, `SetBreakpoints` fake-session tests | `debug: add persistent breakpoint service` |
+| **M3a** | Extract the shared project-operation gate; build-before-debug handoff under one gate lease using the locked MSBuild `TargetPath` query; `debug.startOrContinue` F5 command. No F9/editor chrome. | target-resolution + workflow-busy/debug-active + handoff-no-gap + F5 registry dispatch tests; Linux smoke: fresh build, F5 launch | `debug: start launch debugging` |
+| **M3b** | `debug.toggleBreakpoint` / F9 plus editor breakpoint margin/projection over M2 persistence and M3a session state. | breakpoint command + editor projection/path-identity tests; Linux smoke: F9, F5, breakpoint hit | `debug: add editor breakpoint projection` |
 | **M4** | Continue/pause/stop/step commands and DAP state gating; fixed Debug bottom mode with Debug Console + Call Stack; adapter error projection. | command availability/state transition and Debug-mode composition tests; Linux smoke: F5/F10/F11/Shift+F11/Shift+F5 + output | `debug: add execution controls and debug console` |
 | **M5** | Threads, call stack, frames, scopes, variables, selected-frame current-execution-location projection, and stale-data clearing on resume/end. | `DebugStackProjectionTests`, scope/variable/current-location tests, stale-generation tests; Linux smoke: stop → frame → scope → variable | `debug: project stack and variables` |
 | **M6** | Error/recovery hardening: missing adapter, build failure, launch failure, breakpoint rejected, adapter crash/disconnect, context change, rapid start/stop. | lifecycle/error regression tests; recorded Linux failure-path smoke | `debug: harden DAP recovery` |
@@ -281,13 +314,13 @@ structural. Before M1 the known-good baseline is `0d6e042`.
 ### Milestone dependencies
 
 ```text
-M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7
+M0 → M1 → M2 → M3a → M3b → M4 → M5 → M6 → M7
 ```
 
-M3 deliberately owns both the build-to-debug handoff and the first visual
-breakpoint path so `F5` cannot be exposed before it can produce truthful launch
-and breakpoint state. Split M3 into `M3a` (launch handoff/Start) and `M3b`
-(editor margin/F9) if that cannot fit one independently verifiable session.
+M3 is deliberately split by default. M3a owns the build-to-debug handoff and
+F5 without editor chrome; M3b owns F9/margin path identity after the launch
+contract is proven. `F5` cannot be exposed before M3a can produce truthful
+launch state, and M3b cannot start before M3a is complete.
 
 ## Exact Next Step
 
