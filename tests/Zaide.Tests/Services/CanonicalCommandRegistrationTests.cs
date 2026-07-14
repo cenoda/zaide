@@ -96,9 +96,10 @@ public sealed class CanonicalCommandRegistrationTests
             "project.test",
             "project.cancel",
             "debug.startOrContinue",
+            "debug.toggleBreakpoint",
         };
 
-        Assert.Equal(12, registry.GetAll().Count);
+        Assert.Equal(13, registry.GetAll().Count);
         foreach (var id in expected)
         {
             Assert.NotNull(registry.GetById(id));
@@ -219,6 +220,7 @@ public sealed class CanonicalCommandRegistrationTests
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),
             TestDebugSessionFactory.Create(registry),
+            TestEditorBreakpointFactory.Create(editorTabs, registry),
             workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
     }

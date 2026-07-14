@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,5 +50,13 @@ public interface IDebugSessionService : IDisposable
     /// <summary>Issues <c>scopes</c> while the session is stopped.</summary>
     Task<JsonElement?> RequestScopesAsync(
         int frameId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Replaces persisted breakpoints for each source path while a configured
+    /// debug session is running or stopped. No-ops when no adapter session is active.
+    /// </summary>
+    Task<DebugSessionOperationResult> ReplaceBreakpointsBySourceAsync(
+        IReadOnlyDictionary<string, IReadOnlyList<int>> replacementBySource,
         CancellationToken cancellationToken = default);
 }

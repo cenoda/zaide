@@ -196,6 +196,7 @@ public sealed class TestResultsViewModelTests
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),
             TestDebugSessionFactory.Create(registry),
+            TestEditorBreakpointFactory.Create(editorTabs, registry),
             workspace,
             projectContext.Object,
             registry);

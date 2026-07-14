@@ -41,6 +41,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private readonly EditorLanguagePickerPopup _workspaceSymbolPicker;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
+    private readonly BreakpointOperations _breakpointOperations;
+    private readonly EditorBreakpointViewModel _breakpointViewModel;
     private readonly ContentControl _fileInfoIconHost;
     private readonly TextBlock _fileInfoText;
     private readonly FoldingOperations _foldingOperations;
@@ -56,10 +58,15 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private FontFamily _proseFont = new("Georgia, serif");
     private bool _disposed;
 
-    public EditorView(ISettingsService settings, EditorLanguageInputViewModel languageInput)
+    public EditorView(
+        ISettingsService settings,
+        EditorLanguageInputViewModel languageInput,
+        EditorBreakpointViewModel breakpointViewModel)
     {
         _settings = settings;
         _languageInput = languageInput ?? throw new ArgumentNullException(nameof(languageInput));
+        _breakpointViewModel = breakpointViewModel
+            ?? throw new ArgumentNullException(nameof(breakpointViewModel));
         _completionPopup = new EditorCompletionPopup
         {
             PlacementTarget = null,
@@ -106,6 +113,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
             new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
+
+        _breakpointOperations = new BreakpointOperations(
+            _textEditor,
+            line => _breakpointViewModel.ToggleAtLineCommand.Execute(line).Subscribe());
 
         // M4: Focused file info bar — shows current file name and "diff/edit" indicator.
         // Styled with TextSecondaryBrush for a quieter, utility-focused appearance.
@@ -392,7 +403,36 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
             _textEditor.TextChanged += OnTextChanged;
             d.Add(Disposable.Create(() => _textEditor.TextChanged -= OnTextChanged));
+
+            d.Add(_breakpointViewModel
+                .WhenAnyValue(x => x.ProjectionRevision)
+                .Subscribe(_ => SyncBreakpointMargin()));
+
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Select(vm => vm is EditorViewModel evm
+                    ? evm.WhenAnyValue(x => x.FilePath)
+                    : Observable.Never<string>())
+                .Switch()
+                .Subscribe(_ => SyncBreakpointMargin()));
         });
+    }
+
+    private void SyncBreakpointMargin()
+    {
+        var normalizedPath = string.IsNullOrWhiteSpace(ViewModel?.FilePath)
+            ? null
+            : Path.GetFullPath(ViewModel.FilePath);
+
+        if (ViewModel is null ||
+            _breakpointViewModel.ActiveDocumentPath is null ||
+            !string.Equals(normalizedPath, _breakpointViewModel.ActiveDocumentPath, StringComparison.Ordinal))
+        {
+            _breakpointOperations.Clear();
+            return;
+        }
+
+        _breakpointOperations.Install();
+        _breakpointOperations.SetMarkers(_breakpointViewModel.Markers);
     }
 
     /// <summary>
@@ -751,6 +791,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     public IFoldingOperations Folding => _foldingOperations;
 
     /// <summary>
+    /// Phase 12 M3b: breakpoint margin seam for tests and composition checks.
+    /// </summary>
+    public BreakpointOperations Breakpoints => _breakpointOperations;
+
+    /// <summary>
     /// Tracks the last ViewModel for which we installed folds so we only
     /// re-install on tab switches, not on every keystroke.
     /// </summary>
@@ -945,6 +990,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _workspaceSymbolPicker.QueryChanged -= OnWorkspaceSymbolQueryChanged;
         _languageInput.DismissAll();
         ClearLanguagePresentation();
+        _breakpointOperations.Dispose();
         _settingsBinding.Dispose();
     }
 }

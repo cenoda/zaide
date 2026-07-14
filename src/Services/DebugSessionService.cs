@@ -418,6 +418,59 @@ public sealed class DebugSessionService : IDebugSessionService
     }
 
     /// <inheritdoc />
+    public async Task<DebugSessionOperationResult> ReplaceBreakpointsBySourceAsync(
+        IReadOnlyDictionary<string, IReadOnlyList<int>> replacementBySource,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(replacementBySource);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var snapshot = _current;
+        var session = _activeSession;
+
+        if (snapshot.State is not (DebugSessionState.Running or DebugSessionState.Stopped) ||
+            session is null ||
+            session.Generation != snapshot.Generation)
+        {
+            return new DebugSessionOperationResult(true, null, null);
+        }
+
+        try
+        {
+            foreach (var (sourcePath, lines) in replacementBySource)
+            {
+                if (string.IsNullOrWhiteSpace(sourcePath))
+                    continue;
+
+                var normalized = Path.GetFullPath(sourcePath);
+                await WithTimeoutAsync(
+                    token => session.SetBreakpointsAsync(normalized, lines, token),
+                    _timeoutPolicy.OrdinaryRequest,
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            return new DebugSessionOperationResult(true, null, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Debug breakpoint replacement failed for generation {Generation}",
+                snapshot.Generation);
+
+            return new DebugSessionOperationResult(
+                false,
+                DebugSessionOutcomeKind.ProtocolFailed,
+                "Debug breakpoint replacement failed.");
+        }
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_disposed)

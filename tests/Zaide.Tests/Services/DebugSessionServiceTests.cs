@@ -522,4 +522,68 @@ public sealed class DebugSessionServiceTests
             Assert.Equal(DebugSessionState.Unavailable, service.Current.State);
         }
     }
+
+    [Fact]
+    public async Task ReplaceBreakpointsBySourceAsync_WhenStopped_SendsPerSourceReplacement()
+    {
+        var candidate = MakeCandidate("Breakpoints.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var session = factory.CreatedSessions[0];
+            var source = Path.GetFullPath(Path.Combine(TempRoot, "Program.cs"));
+
+            var result = await service.ReplaceBreakpointsBySourceAsync(
+                new Dictionary<string, IReadOnlyList<int>>
+                {
+                    [source] = new[] { 7 },
+                });
+
+            Assert.True(result.Succeeded);
+            Assert.Contains($"setBreakpoints:{source}:7", session.CallOrder);
+        }
+    }
+
+    [Fact]
+    public async Task ReplaceBreakpointsBySourceAsync_EmptyEnabledSet_SendsEmptyLineList()
+    {
+        var candidate = MakeCandidate("EmptyBreakpoints.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var session = factory.CreatedSessions[0];
+            var source = Path.GetFullPath(Path.Combine(TempRoot, "Removed.cs"));
+
+            var result = await service.ReplaceBreakpointsBySourceAsync(
+                new Dictionary<string, IReadOnlyList<int>>
+                {
+                    [source] = Array.Empty<int>(),
+                });
+
+            Assert.True(result.Succeeded);
+            Assert.Contains($"setBreakpoints:{source}:", session.CallOrder);
+        }
+    }
+
+    [Fact]
+    public async Task ReplaceBreakpointsBySourceAsync_WhenIdle_NoOps()
+    {
+        var (service, _, factory, _) = CreateHarness();
+        using (service)
+        {
+            var source = Path.GetFullPath(Path.Combine(TempRoot, "Idle.cs"));
+            var result = await service.ReplaceBreakpointsBySourceAsync(
+                new Dictionary<string, IReadOnlyList<int>>
+                {
+                    [source] = new[] { 1 },
+                });
+
+            Assert.True(result.Succeeded);
+            Assert.Empty(factory.CreatedSessions);
+        }
+    }
 }

@@ -165,6 +165,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public TestResultsViewModel TestResultsViewModel { get; }
     public DebugSessionViewModel DebugSessionViewModel { get; }
 
+    public EditorBreakpointViewModel EditorBreakpointViewModel { get; }
+
     /// <summary>
     /// M4: Authoritative UI-thread projection of the current project-context
     /// snapshot. Updated by the <see cref="Activate"/> subscription to
@@ -200,6 +202,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 ProjectWorkflowViewModel projectWorkflowViewModel,
                                 TestResultsViewModel testResultsViewModel,
                                 DebugSessionViewModel debugSessionViewModel,
+                                EditorBreakpointViewModel editorBreakpointViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
                                 ICommandRegistry? commandRegistry = null)
@@ -219,6 +222,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ?? throw new ArgumentNullException(nameof(testResultsViewModel));
         DebugSessionViewModel = debugSessionViewModel
             ?? throw new ArgumentNullException(nameof(debugSessionViewModel));
+        EditorBreakpointViewModel = editorBreakpointViewModel
+            ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
 
         // Phase 11 F9: save all dirty editor tabs before Build / Run / Test.
         ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () =>
@@ -317,6 +322,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Phase 12 M3a: debug session command projection.
         DebugSessionViewModel.Activate();
         _disposables.Add(DebugSessionViewModel);
+
+        // Phase 12 M3b: editor breakpoint projection and F9 command.
+        EditorBreakpointViewModel.Activate();
+        _disposables.Add(EditorBreakpointViewModel);
         _disposables.Add(
             ProjectWorkflowViewModel.WhenShowOutputRequested
                 .Subscribe(_ =>

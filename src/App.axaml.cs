@@ -36,6 +36,7 @@ public partial class App : Application
 
             // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
             _ = Services.GetRequiredService<DebugSessionViewModel>();
+            var editorBreakpointVm = Services.GetRequiredService<EditorBreakpointViewModel>();
 
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
@@ -51,7 +52,18 @@ public partial class App : Application
             // Phase 10 M6: formatting service before editors open.
             _ = Services.GetRequiredService<ILanguageFormattingService>();
 
-            desktop.MainWindow = new MainWindow(settings, secrets, registry, statusBar, paletteVm, searchVm, languageInputVm) { ViewModel = vm };
+            desktop.MainWindow = new MainWindow(
+                settings,
+                secrets,
+                registry,
+                statusBar,
+                paletteVm,
+                searchVm,
+                languageInputVm,
+                editorBreakpointVm)
+            {
+                ViewModel = vm,
+            };
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

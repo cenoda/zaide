@@ -1,0 +1,61 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Zaide.Models;
+
+namespace Zaide.ViewModels;
+
+/// <summary>
+/// Pure projection helpers for editor breakpoint margin state.
+/// </summary>
+internal static class EditorBreakpointProjection
+{
+    public static string? NormalizeDocumentPath(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return null;
+
+        return Path.GetFullPath(filePath);
+    }
+
+    public static bool HasSelectedWorkspace(string? workspaceRoot) =>
+        !string.IsNullOrWhiteSpace(workspaceRoot);
+
+    public static int GetLineCount(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return 1;
+
+        var count = 1;
+        foreach (var ch in text)
+        {
+            if (ch == '\n')
+                count++;
+        }
+
+        return count;
+    }
+
+    public static bool IsValidCaretLine(int line, string? text) =>
+        line >= 1 && line <= GetLineCount(text);
+
+    public static IReadOnlyList<EditorBreakpointMarker> ForSource(
+        IReadOnlyList<PersistedBreakpoint>? breakpoints,
+        string normalizedSourcePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(normalizedSourcePath);
+
+        if (breakpoints is null || breakpoints.Count == 0)
+            return Array.Empty<EditorBreakpointMarker>();
+
+        return breakpoints
+            .Where(bp => string.Equals(
+                bp.SourcePath,
+                normalizedSourcePath,
+                StringComparison.Ordinal))
+            .OrderBy(bp => bp.Line)
+            .Select(bp => new EditorBreakpointMarker(bp.Line, bp.Enabled))
+            .ToArray();
+    }
+}

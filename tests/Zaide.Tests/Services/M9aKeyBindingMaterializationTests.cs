@@ -62,9 +62,10 @@ public sealed class M9aKeyBindingMaterializationTests
             .BuildServiceProvider();
 
         _ = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance, _registry);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         _ = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
-            new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>()),
+            editorTabs,
             new TerminalHost(new Mock<ITerminalSessionFactory>().Object),
             new AgentPanelHost(),
             new Mock<IAgentExecutionCoordinator>().Object,
@@ -76,6 +77,7 @@ public sealed class M9aKeyBindingMaterializationTests
             TestProjectWorkflowFactory.Create(registry: _registry),
             TestTestResultsFactory.Create(),
             TestDebugSessionFactory.Create(_registry),
+            TestEditorBreakpointFactory.Create(editorTabs, _registry),
             sp.GetRequiredService<Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }
@@ -153,7 +155,7 @@ public sealed class M9aKeyBindingMaterializationTests
         }
 
         // Expect 9 bindings: Ctrl+S, Ctrl+O, Ctrl+Oem3, Ctrl+J, Ctrl+Shift+H, Ctrl+Shift+B, Ctrl+F5, Ctrl+F2, F5
-        Assert.Equal(9, bindings.Count);
+        Assert.Equal(10, bindings.Count);
     }
 
     [Fact]
@@ -247,12 +249,12 @@ public sealed class M9aKeyBindingMaterializationTests
 
         // First materialization
         Materialize();
-        Assert.Equal(9, keyBindings.Count);
+        Assert.Equal(10, keyBindings.Count);
 
         // Second materialization (simulating a refresh)
         Materialize();
-        Assert.Equal(9, keyBindings.Count);
-        Assert.Equal(9, tracked.Count);
+        Assert.Equal(10, keyBindings.Count);
+        Assert.Equal(10, tracked.Count);
     }
 
     // ── Test 6: Preservation of unrelated/view-local bindings ────────────
@@ -290,13 +292,13 @@ public sealed class M9aKeyBindingMaterializationTests
         }
 
         Materialize();
-        Assert.Equal(10, keyBindings.Count); // 1 unrelated + 9 registry
+        Assert.Equal(11, keyBindings.Count); // 1 unrelated + 10 registry
         Assert.Contains(unrelated, keyBindings);
 
         // Replace registry bindings
         Materialize();
         Assert.Contains(unrelated, keyBindings);
-        Assert.Equal(10, keyBindings.Count);
+        Assert.Equal(11, keyBindings.Count);
     }
 
     // ── Test 7: Empty registry produces no bindings ──────────────────────
