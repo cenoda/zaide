@@ -47,7 +47,29 @@ public sealed class ProjectBuildCommandTests
         Assert.NotNull(cancel);
         Assert.Equal("Cancel Build/Run/Test", cancel!.DisplayName);
         Assert.Equal("Project", cancel.Category);
-        Assert.Empty(cancel.DefaultGestures);
+        Assert.Equal(new[] { "Ctrl+F2" }, cancel.DefaultGestures);
+    }
+
+    [Fact]
+    public void Cancel_DefaultGesture_ResolvesToProjectCancel()
+    {
+        var registry = CommandRegistryFactory.Create();
+        using var vm = CreateViewModel(registry);
+
+        var bindings = registry.ResolveKeyBindings(new NoOpSettingsService());
+
+        Assert.Contains(
+            bindings,
+            b => b.Gesture == "Ctrl+F2" && b.CommandId == "project.cancel");
+    }
+
+    [Fact]
+    public void Cancel_RegistryExecute_WhenIdle_ReturnsFalse()
+    {
+        var registry = CommandRegistryFactory.Create();
+        using var vm = CreateViewModel(registry);
+
+        Assert.False(registry.Execute("project.cancel"));
     }
 
     [Theory]

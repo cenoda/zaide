@@ -85,23 +85,43 @@ all pass.
 
 ---
 
-## Open — F3: Hung process holds the global Build/Run/Test slot forever
+## Resolved — F3: Hung process holds the global Build/Run/Test slot forever
 
 **Severity:** High (product risk; partial YAGNI accept)  
 **Area:** `ManagedProcessRunner.RunAsync`, cancel discovery
 
 **Problem:** `WaitForExitAsync` has **no overall operation timeout**.
 `TimedOut` is deferred in the plan (contract 5). A hung `dotnet` (or child)
-occupies the one-at-a-time slot until the user cancels. Cancel works via
-API/UI, but `project.cancel` has **no default keybinding** and Cancel is only
-on the Output panel (not Test Results).
+occupies the one-at-a-time slot until the user cancels. Cancel worked via
+API/UI, but `project.cancel` had **no default keybinding**; discoverability
+depended on palette search or panel-local Cancel buttons.
 
-**Direction (when fixing):** Either introduce a bounded timeout + `TimedOut`
-outcome (plan-aware change), or improve cancel discoverability (gesture +
-Cancel on Test Results / shared chrome). Do not silently map hang to `Failed`.
+**Resolution (2026-07-14):** **Cancel discoverability** — not operation timeout.
 
-**Acceptance sketch:** Documented policy; cancel always reachable during Run
-and Test; tests for any new timeout kind if introduced.
+**Product decision:** Improve discoverability via **default keyboard gesture**
+(`Ctrl+F2`, JetBrains-style Stop) **plus** shared Cancel UI on Output and Test
+Results (F6). **Do not** add a bounded operation timeout or `TimedOut` outcome
+in F3 — contract 5 keeps timeout deferred; killing a hung process still
+requires explicit cancel (gesture, palette, or panel button). Never map hang to
+`Failed`.
+
+- **`ProjectWorkflowViewModel`** — `project.cancel` default gesture
+  `Ctrl+F2`; materialized window-wide via existing registry bindings so cancel
+  is reachable during Build / Run / Test regardless of bottom-panel mode or
+  focus. `CanExecute` remains operation-active only (one-at-a-time preserved).
+- **Shared Cancel UI** — unchanged from F6 (Output + Test Results headers).
+
+**Tests:** `BuildAndCancel_AreRegisteredWithMetadata`,
+`Cancel_DefaultGesture_ResolvesToProjectCancel`,
+`Cancel_RegistryExecute_WhenIdle_ReturnsFalse`, existing
+`Cancel_InvokesCancelAsyncWhileRunning` / run+test cancel tests,
+`CanonicalCommandRegistrationTests.DefaultGestures_MatchD6a`.
+
+**Remaining limitation:** No overall operation timeout; a hung `dotnet` still
+holds the slot until the user cancels. `TimedOut` remains a future plan-aware
+change if product needs automatic release.
+
+**Gates:** `dotnet build`, `dotnet test`, `git diff --check`.
 
 ---
 
@@ -277,7 +297,7 @@ with it); keep runner ownership single and documented.
 |---|---|
 | Cancel a11y | ~~Automation name always "Cancel build" for Run/Test~~ (F6) |
 | Output scroll | Full list rebuild jumps scroll/selection; no stick-to-end |
-| Cancel gesture | Plan allows none; discoverability is palette-only |
+| Cancel gesture | ~~Plan allows none~~ — F3: default `Ctrl+F2` + palette + panel buttons |
 | Path compare | Context cancel uses `FilePath == TargetFilePath`; both are `GetFullPath` today — fragile if a future path source skips normalization |
 | Interactive Run | Redirected stdio (no PTY) — documented; apps that `ReadLine` hang until Cancel |
 | U7 libraries | Run enabled for all eligible `.csproj`; class libs surface `Failed` — intentional |
@@ -305,7 +325,7 @@ with it); keep runner ownership single and documented.
 3. ~~**F4** — ProcessId after start~~
 4. ~~**F5** — Residual stream line~~
 5. ~~**F6** — Test Results Cancel + a11y~~
-6. **F3** — Timeout and/or cancel discoverability (product decision)
+6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
 7. **F7** / **F8** — parse quality
 8. **F9**–**F11** — product polish / hygiene
 

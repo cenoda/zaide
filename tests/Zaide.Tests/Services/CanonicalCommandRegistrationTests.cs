@@ -139,6 +139,7 @@ public sealed class CanonicalCommandRegistrationTests
         Assert.Equal(new[] { "Ctrl+Oem3", "Ctrl+J" }, registry.GetById("view.toggleBottomPanel")!.DefaultGestures);
         Assert.Equal(new[] { "Ctrl+Shift+H" }, registry.GetById("explorer.toggleHiddenFiles")!.DefaultGestures);
         Assert.Equal(new[] { "Ctrl+F5" }, registry.GetById("project.run")!.DefaultGestures);
+        Assert.Equal(new[] { "Ctrl+F2" }, registry.GetById("project.cancel")!.DefaultGestures);
     }
 
     // ── Unbound commands ─────────────────────────────────────────────────
@@ -153,7 +154,6 @@ public sealed class CanonicalCommandRegistrationTests
         Assert.Empty(registry.GetById("sourcecontrol.commit")!.DefaultGestures);
         Assert.Empty(registry.GetById("sourcecontrol.refresh")!.DefaultGestures);
         Assert.Empty(registry.GetById("project.test")!.DefaultGestures);
-        Assert.Empty(registry.GetById("project.cancel")!.DefaultGestures);
     }
 
     // ── view.toggleBottomPanel aliases ───────────────────────────────────

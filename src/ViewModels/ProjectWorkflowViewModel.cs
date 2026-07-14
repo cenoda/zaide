@@ -150,7 +150,11 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         commandRegistry?.Register(new CommandDescriptor(
             "project.test", "Run Tests", "Project", Array.Empty<string>(), TestCommand));
         commandRegistry?.Register(new CommandDescriptor(
-            "project.cancel", "Cancel Build/Run/Test", "Project", Array.Empty<string>(), CancelCommand));
+            "project.cancel",
+            "Cancel Build/Run/Test",
+            "Project",
+            new[] { "Ctrl+F2" },
+            CancelCommand));
 
     }
 

@@ -143,7 +143,7 @@ Default tool: host `dotnet` on `PATH`.
 | `project.build` | Build | Project | `Ctrl+Shift+B` | Workflow command host (ViewModel or dedicated registrar) |
 | `project.run` | Run | Project | `Ctrl+F5` | same |
 | `project.test` | Run Tests | Project | _(none)_ | same |
-| `project.cancel` | Cancel Build/Run/Test | Project | _(none)_ | same |
+| `project.cancel` | Cancel Build/Run/Test | Project | `Ctrl+F2` | same |
 
 - **Only** `ICommandRegistry` / `CommandDescriptor` — no parallel menu-command
   system. Palette and keybinding materialization reuse Phase 8.2
@@ -335,6 +335,10 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   form only; relative paths resolve against target parent directory.
 - Test console parse is best-effort; structured exit + raw Output is the
   fallback when parse fails (M5).
+- **Cancel discoverability (F3):** `project.cancel` default gesture
+  `Ctrl+F2` plus Cancel buttons on Output and Test Results (F6) and palette.
+  No overall operation timeout — hung `dotnet` holds the one-at-a-time slot
+  until explicit cancel; `TimedOut` remains deferred (contract 5).
 
 ## Unresolved Decisions
 
