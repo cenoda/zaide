@@ -18,12 +18,12 @@ Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
 status projections. Phase 10 (C# language intelligence via LSP) is **complete**
 (M7 closeout, 2026-07-14). Phase 11 (Project Workflow — Build / Run / Test,
 Output, build diagnostics, Test Results) is **complete** (M0–M6 closeout,
-2026-07-14). Phase 12 M0 (DAP debugging plan and live adapter/transport proof)
-through M6 are complete: UI-independent adapter/session lifecycle, workspace-keyed
-breakpoints, build-to-debug handoff, editor breakpoint projection, execution
-controls and Debug Console, live stack/variable/current-location projection,
-and DAP error/recovery hardening with session-only breakpoint verification.
-M7 closeout is next.
+2026-07-14). Phase 12 (DAP debugging) is **complete** (M0–M7 closeout, 2026-07-14):
+UI-independent adapter/session lifecycle, workspace-keyed breakpoints,
+build-to-debug handoff, editor breakpoint projection, execution controls and
+Debug Console, live stack/variable/current-location projection, DAP
+error/recovery hardening with session-only breakpoint verification, and
+manual closeout evidence. Phase 13 (Release Hardening) is next.
 
 ---
 
@@ -205,4 +205,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 M0–M6 complete, M7 next)*
+*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phases 8–12 complete; Phase 13 next)*

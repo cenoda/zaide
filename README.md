@@ -11,9 +11,10 @@ tab lifecycle/reordering, and truthful editor/status-bar feedback. Phase 10
 adds C# LSP support with csharp-ls. Phase 11 delivers Build / Run / Test over
 Phase 8.3 project context, structured Output, build diagnostics in Problems,
 Test Results surface, and cancel/one-at-a-time workflow execution. Phase 12
-(DAP debugging) has completed M0 planning/proof through M6 error/recovery
-hardening, including truthful breakpoint verification; M7 closeout is next.
-Phase 13 remains ahead. Zaide currently has the IDE
+(DAP debugging) is **complete** (M0–M7 closeout, 2026-07-14): NetCoreDbg adapter,
+breakpoints, execution controls, Debug Console, call stack, variables, and
+error/recovery hardening.
+Phase 13 (Release Hardening) is next. Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
@@ -159,7 +160,7 @@ AI-native orchestration work:
 - **Phase 9:** Editor UX
 - **Phase 10:** C# language intelligence and document formatting
 - **Phase 11:** Build, run, and test workflow
-- **Phase 12:** C# debugging through DAP
+- **Phase 12:** C# debugging through DAP ✅ complete
 - **Phase 13:** Release hardening
 
 V2 is in progress. Phase 8 umbrella plan is live-code-verified at
