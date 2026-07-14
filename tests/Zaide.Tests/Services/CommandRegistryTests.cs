@@ -689,7 +689,8 @@ public sealed class CommandRegistryTests
             SettingsModel.Defaults.SchemaVersion,
             SettingsModel.Defaults.Editor,
             SettingsModel.Defaults.Llm,
-            keybindings);
+            keybindings,
+            SettingsModel.Defaults.Debug);
 
         return new SimpleSettingsService(model);
     }

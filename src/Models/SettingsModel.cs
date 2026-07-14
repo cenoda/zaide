@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Zaide.Models;
@@ -9,7 +12,7 @@ namespace Zaide.Models;
 /// All nested types are also immutable records. Consumers create new instances
 /// via <c>with</c> expressions and cannot mutate a published snapshot.
 /// </summary>
-/// <param name="SchemaVersion">Version of the settings schema (currently <c>2</c>).</param>
+/// <param name="SchemaVersion">Version of the settings schema (currently <c>3</c>).</param>
 /// <param name="Editor">Editor/terminal display preferences.</param>
 /// <param name="Llm">LLM endpoint configuration.</param>
 /// <param name="Keybindings">
@@ -17,11 +20,13 @@ namespace Zaide.Models;
 /// An empty-string value explicitly unbinds the command; it is not treated as a
 /// missing override. The dictionary is always exposed as a read-only wrapper.
 /// </param>
+/// <param name="Debug">Debug-related persisted preferences such as breakpoints.</param>
 public sealed record SettingsModel(
     int SchemaVersion,
     EditorSettings Editor,
     LlmSettings Llm,
-    IReadOnlyDictionary<string, string> Keybindings
+    IReadOnlyDictionary<string, string> Keybindings,
+    DebugSettings Debug
 )
 {
     /// <summary>An immutable, empty keybindings dictionary.</summary>
@@ -29,14 +34,15 @@ public sealed record SettingsModel(
         new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
 
     /// <summary>
-    /// Default settings snapshot, corresponding to schema v2.
+    /// Default settings snapshot, corresponding to schema v3.
     /// Used when no settings file exists or when fallback is required.
     /// </summary>
     public static readonly SettingsModel Defaults = new(
-        SchemaVersion: 2,
+        SchemaVersion: 3,
         Editor: EditorSettings.Default,
         Llm: LlmSettings.Default,
-        Keybindings: EmptyKeybindings
+        Keybindings: EmptyKeybindings,
+        Debug: DebugSettings.Default
     );
 
     /// <summary>
@@ -61,6 +67,50 @@ public sealed record SettingsModel(
         return new ReadOnlyDictionary<string, string>(
             new Dictionary<string, string>(source));
     }
+
+    /// <summary>
+    /// Returns a defensive, immutable copy of the given debug settings snapshot.
+    /// Workspace-root keys and source paths are normalized to absolute full paths.
+    /// </summary>
+    internal static DebugSettings NormalizeDebug(DebugSettings? source)
+    {
+        if (source is null)
+            return DebugSettings.Default;
+
+        var breakpoints = source.BreakpointsByWorkspaceRoot;
+        if (breakpoints is null || breakpoints.Count == 0)
+            return DebugSettings.Default;
+
+        var copy = new Dictionary<string, IReadOnlyList<PersistedBreakpoint>>(
+            breakpoints.Count,
+            StringComparer.Ordinal);
+
+        foreach (var (workspaceRoot, breakpointList) in breakpoints)
+        {
+            if (string.IsNullOrWhiteSpace(workspaceRoot))
+                continue;
+
+            copy[NormalizeAbsolutePath(workspaceRoot)] =
+                NormalizeBreakpointList(breakpointList);
+        }
+
+        return new DebugSettings(
+            new ReadOnlyDictionary<string, IReadOnlyList<PersistedBreakpoint>>(copy));
+    }
+
+    private static IReadOnlyList<PersistedBreakpoint> NormalizeBreakpointList(
+        IReadOnlyList<PersistedBreakpoint>? source)
+    {
+        if (source is null || source.Count == 0)
+            return Array.Empty<PersistedBreakpoint>();
+
+        return source
+            .Where(bp => !string.IsNullOrWhiteSpace(bp.SourcePath) && bp.Line > 0)
+            .Select(bp => bp with { SourcePath = NormalizeAbsolutePath(bp.SourcePath) })
+            .ToArray();
+    }
+
+    private static string NormalizeAbsolutePath(string path) => Path.GetFullPath(path);
 }
 
 /// <summary>
@@ -143,3 +193,39 @@ public sealed record LlmSettings(
         ApiKeySource: "secret-store"
     );
 }
+
+/// <summary>
+/// Debug-related persisted settings. Adapter verification state is session-only
+/// and is not stored here.
+/// </summary>
+public sealed record DebugSettings(
+    [property: JsonPropertyName("breakpointsByWorkspaceRoot")]
+    IReadOnlyDictionary<string, IReadOnlyList<PersistedBreakpoint>> BreakpointsByWorkspaceRoot
+)
+{
+    /// <summary>An immutable, empty breakpoints-by-workspace map.</summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<PersistedBreakpoint>>
+        EmptyBreakpointsByWorkspaceRoot =
+            new ReadOnlyDictionary<string, IReadOnlyList<PersistedBreakpoint>>(
+                new Dictionary<string, IReadOnlyList<PersistedBreakpoint>>());
+
+    /// <summary>Default debug settings for schema v3.</summary>
+    public static readonly DebugSettings Default = new(EmptyBreakpointsByWorkspaceRoot);
+}
+
+/// <summary>
+/// One persisted source breakpoint (user intent only).
+/// </summary>
+/// <param name="SourcePath">Absolute normalized on-disk source path.</param>
+/// <param name="Line">One-based source line.</param>
+/// <param name="Enabled">Whether the breakpoint is enabled.</param>
+public sealed record PersistedBreakpoint(
+    [property: JsonPropertyName("sourcePath")]
+    string SourcePath,
+
+    [property: JsonPropertyName("line")]
+    int Line,
+
+    [property: JsonPropertyName("enabled")]
+    bool Enabled = true
+);

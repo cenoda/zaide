@@ -264,15 +264,16 @@ public sealed class FormatOnSaveTests
     }
 
     [Fact]
-    public void SettingsDefaults_SchemaV2_FormatOnSaveFalse()
+    public void SettingsDefaults_SchemaV3_FormatOnSaveFalse()
     {
-        Assert.Equal(2, SettingsModel.Defaults.SchemaVersion);
+        Assert.Equal(3, SettingsModel.Defaults.SchemaVersion);
         Assert.False(SettingsModel.Defaults.Editor.FormatOnSave);
         Assert.False(EditorSettings.Default.FormatOnSave);
+        Assert.Empty(SettingsModel.Defaults.Debug.BreakpointsByWorkspaceRoot);
     }
 
     [Fact]
-    public void Serializer_V2RoundTrip_IncludesFormatOnSave()
+    public void Serializer_V3RoundTrip_IncludesFormatOnSave()
     {
         var model = SettingsModel.Defaults with
         {
@@ -284,7 +285,7 @@ public sealed class FormatOnSaveTests
         var parsed = SettingsSerializer.Deserialize(json, out var rejected);
         Assert.False(rejected);
         Assert.NotNull(parsed);
-        Assert.Equal(2, parsed!.SchemaVersion);
+        Assert.Equal(3, parsed!.SchemaVersion);
         Assert.True(parsed.Editor.FormatOnSave);
     }
 
@@ -293,7 +294,7 @@ public sealed class FormatOnSaveTests
     {
         var json = """
             {
-              "schemaVersion": 3,
+              "schemaVersion": 4,
               "editor": {
                 "codeFontFamily": "x",
                 "codeFontSize": 14,
@@ -312,13 +313,46 @@ public sealed class FormatOnSaveTests
                 "model": "m",
                 "apiKeySource": "secret-store"
               },
-              "keybindings": {}
+              "keybindings": {},
+              "debug": {
+                "breakpointsByWorkspaceRoot": {}
+              }
             }
             """;
 
         var parsed = SettingsSerializer.Deserialize(json, out var rejected);
         Assert.Null(parsed);
         Assert.True(rejected);
+    }
+
+    [Fact]
+    public void Serializer_V3RoundTrip_IncludesDebugBreakpoints()
+    {
+        var workspaceRoot = Path.GetFullPath(Path.Combine(TempRoot, "ws"));
+        var sourcePath = Path.GetFullPath(Path.Combine(workspaceRoot, "Program.cs"));
+        var model = SettingsModel.Defaults with
+        {
+            Debug = new DebugSettings(new Dictionary<string, IReadOnlyList<PersistedBreakpoint>>
+            {
+                [workspaceRoot] = new[]
+                {
+                    new PersistedBreakpoint(sourcePath, 8, true),
+                    new PersistedBreakpoint(sourcePath, 15, false),
+                },
+            }),
+        };
+
+        var json = SettingsSerializer.Serialize(model);
+        Assert.Contains("\"breakpointsByWorkspaceRoot\"", json, StringComparison.Ordinal);
+
+        var parsed = SettingsSerializer.Deserialize(json, out var rejected);
+        Assert.False(rejected);
+        Assert.NotNull(parsed);
+        Assert.Equal(3, parsed!.SchemaVersion);
+        Assert.True(parsed.Debug.BreakpointsByWorkspaceRoot.ContainsKey(workspaceRoot));
+        Assert.Equal(2, parsed.Debug.BreakpointsByWorkspaceRoot[workspaceRoot].Count);
+        Assert.Equal(8, parsed.Debug.BreakpointsByWorkspaceRoot[workspaceRoot][0].Line);
+        Assert.False(parsed.Debug.BreakpointsByWorkspaceRoot[workspaceRoot][1].Enabled);
     }
 
     [Fact]
@@ -363,7 +397,8 @@ public sealed class FormatOnSaveTests
             Editor: new EditorSettings(
                 "MyFont", 16, "Prose", "Term", 12, 2, false, true, true, false),
             Llm: new LlmSettings("https://custom", "custom-model", "secret-store"),
-            Keybindings: new Dictionary<string, string> { ["palette.open"] = "Ctrl+P" });
+            Keybindings: new Dictionary<string, string> { ["palette.open"] = "Ctrl+P" },
+            Debug: DebugSettings.Default);
 
         var migration = new SettingsMigrationV1ToV2();
         Assert.Equal(1, migration.FromVersion);
@@ -380,7 +415,22 @@ public sealed class FormatOnSaveTests
     }
 
     [Fact]
-    public void Migration_ViaSettingsService_LoadsV1FileAsV2()
+    public void Migration_V2ToV3_AddsEmptyBreakpointMap_PreservesOtherFields()
+    {
+        var v2 = SettingsModel.Defaults with { SchemaVersion = 2 };
+        var migration = new SettingsMigrationV2ToV3();
+        Assert.Equal(2, migration.FromVersion);
+        Assert.Equal(3, migration.ToVersion);
+
+        var v3 = migration.Migrate(v2);
+        Assert.Equal(3, v3.SchemaVersion);
+        Assert.Empty(v3.Debug.BreakpointsByWorkspaceRoot);
+        Assert.False(v3.Editor.FormatOnSave);
+        Assert.Equal(SettingsModel.Defaults.Llm.Model, v3.Llm.Model);
+    }
+
+    [Fact]
+    public void Migration_ViaSettingsService_LoadsV1FileAsV3()
     {
         var dir = Path.Combine(TempRoot, "mig-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
@@ -413,12 +463,17 @@ public sealed class FormatOnSaveTests
             keybindings = new { }
         }));
 
-        var migrator = new SettingsMigrator(new ISettingsMigration[] { new SettingsMigrationV1ToV2() });
+        var migrator = new SettingsMigrator(new ISettingsMigration[]
+        {
+            new SettingsMigrationV1ToV2(),
+            new SettingsMigrationV2ToV3(),
+        });
         using var service = new SettingsService(settingsPath, lkgPath, tempPath, migrator);
 
-        Assert.Equal(2, service.Current.SchemaVersion);
+        Assert.Equal(3, service.Current.SchemaVersion);
         Assert.False(service.Current.Editor.FormatOnSave);
         Assert.Equal(20, service.Current.Editor.CodeFontSize);
+        Assert.Empty(service.Current.Debug.BreakpointsByWorkspaceRoot);
     }
 
     [Fact]

@@ -418,7 +418,8 @@ public sealed class CommandPaletteViewTests
             var kb = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
                 new Dictionary<string, string>(keybindings));
             _current = new SettingsModel(SettingsModel.Defaults.SchemaVersion,
-                SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb);
+                SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb,
+                SettingsModel.Defaults.Debug);
         }
 
         public SettingsModel Current => _current;
@@ -430,7 +431,8 @@ public sealed class CommandPaletteViewTests
             var kb = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
                 new Dictionary<string, string>(keybindings));
             _current = new SettingsModel(SettingsModel.Defaults.SchemaVersion,
-                SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb);
+                SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb,
+                SettingsModel.Defaults.Debug);
             _subject.OnNext(_current);
         }
 

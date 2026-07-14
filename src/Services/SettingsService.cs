@@ -99,7 +99,7 @@ public sealed class SettingsService : ISettingsService, IDisposable
 
     /// <summary>
     /// Production constructor. Resolves paths via <see cref="SettingsPathResolver"/>
-    /// and registers the ordered production migration chain (currently v1→v2).
+    /// and registers the ordered production migration chain (currently v1→v2→v3).
     /// </summary>
     public SettingsService()
         : this(SettingsPathResolver.GetSettingsPath(),
@@ -108,6 +108,7 @@ public sealed class SettingsService : ISettingsService, IDisposable
                new SettingsMigrator(new ISettingsMigration[]
                {
                    new SettingsMigrationV1ToV2(),
+                   new SettingsMigrationV2ToV3(),
                }))
     {
     }
@@ -195,7 +196,8 @@ public sealed class SettingsService : ISettingsService, IDisposable
             // backing dictionary owned elsewhere).
             next = next with
             {
-                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings)
+                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings),
+                Debug = SettingsModel.NormalizeDebug(next.Debug),
             };
 
             // Commit in-memory (volatile field — assignment is a volatile write).
@@ -261,7 +263,8 @@ public sealed class SettingsService : ISettingsService, IDisposable
             // backing dictionary owned elsewhere).
             next = next with
             {
-                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings)
+                Keybindings = SettingsModel.NormalizeKeybindings(next.Keybindings),
+                Debug = SettingsModel.NormalizeDebug(next.Debug),
             };
 
             // Commit in-memory (volatile field — assignment is a volatile write).

@@ -497,7 +497,8 @@ public sealed class CommandResolutionAcceptanceTests
             SettingsModel.Defaults.SchemaVersion,
             SettingsModel.Defaults.Editor,
             SettingsModel.Defaults.Llm,
-            keybindings);
+            keybindings,
+            SettingsModel.Defaults.Debug);
 
         return new SimpleSettingsCapture(model);
     }

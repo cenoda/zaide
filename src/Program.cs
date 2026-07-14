@@ -79,6 +79,9 @@ class Program
         services.AddSingleton<DebugSessionTimeoutPolicy>();
         services.AddSingleton<IDebugSessionService, DebugSessionService>();
 
+        // Phase 12 M2: workspace-scoped persistent breakpoint storage.
+        services.AddSingleton<IBreakpointService, BreakpointService>();
+
         // Phase 11 M1: UI-independent build/run/test process orchestration core.
         services.AddSingleton<IManagedProcessRunner, ManagedProcessRunner>();
         services.AddSingleton<IProjectWorkflowService, ProjectWorkflowService>();

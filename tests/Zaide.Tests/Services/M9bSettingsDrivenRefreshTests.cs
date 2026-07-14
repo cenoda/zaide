@@ -294,7 +294,8 @@ public sealed class M9bSettingsDrivenRefreshTests
             SettingsModel.Defaults.SchemaVersion,
             SettingsModel.Defaults.Editor,
             SettingsModel.Defaults.Llm,
-            keybindings);
+            keybindings,
+            SettingsModel.Defaults.Debug);
     }
 
     /// <summary>

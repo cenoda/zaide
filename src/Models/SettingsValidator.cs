@@ -17,7 +17,7 @@ public static class SettingsValidator
         var errors = new List<SettingsValidationError>();
 
         // ── Schema version ────────────────────────────────────────────────
-        // Floor remains 1; current production model is schema v2 (FormatOnSave).
+        // Floor remains 1; current production model is schema v3 (Debug breakpoints).
         if (settings.SchemaVersion < 1)
             errors.Add(new(nameof(SettingsModel.SchemaVersion),
                 "Schema version must be at least 1."));
@@ -59,6 +59,39 @@ public static class SettingsValidator
         if (string.IsNullOrWhiteSpace(settings.Llm.ApiKeySource))
             errors.Add(new("Llm.ApiKeySource",
                 "API key source must not be empty."));
+
+        // ── Debug ─────────────────────────────────────────────────────────
+        if (settings.Debug.BreakpointsByWorkspaceRoot is not null)
+        {
+            foreach (var (workspaceRoot, breakpoints) in settings.Debug.BreakpointsByWorkspaceRoot)
+            {
+                if (string.IsNullOrWhiteSpace(workspaceRoot))
+                {
+                    errors.Add(new("Debug.BreakpointsByWorkspaceRoot",
+                        "Workspace root keys must not be empty."));
+                    continue;
+                }
+
+                if (breakpoints is null)
+                    continue;
+
+                for (var i = 0; i < breakpoints.Count; i++)
+                {
+                    var breakpoint = breakpoints[i];
+                    if (string.IsNullOrWhiteSpace(breakpoint.SourcePath))
+                    {
+                        errors.Add(new($"Debug.BreakpointsByWorkspaceRoot[{workspaceRoot}][{i}].SourcePath",
+                            "Breakpoint source path must not be empty."));
+                    }
+
+                    if (breakpoint.Line < 1)
+                    {
+                        errors.Add(new($"Debug.BreakpointsByWorkspaceRoot[{workspaceRoot}][{i}].Line",
+                            "Breakpoint line must be at least 1."));
+                    }
+                }
+            }
+        }
 
         return errors.AsReadOnly();
     }
