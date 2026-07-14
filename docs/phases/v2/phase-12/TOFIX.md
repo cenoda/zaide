@@ -14,9 +14,14 @@ completed with 0 errors and the pre-existing `CS0067` test warning;
 `dotnet test Zaide.slnx --no-build` passed **2048** tests (0 failed, 0 skipped);
 `git diff --check` was clean.
 
+**Gates after F2–F7 closeout (2026-07-14):** `dotnet build Zaide.slnx --no-restore`
+completed with 0 errors and the pre-existing `CS0067` test warning;
+`dotnet test Zaide.slnx --no-build` passed **2053** tests (0 failed, 0 skipped);
+`git diff --check` clean.
+
 ---
 
-## Open — F2: DebugPanel selection bindings re-fire stack/scope/variable loads
+## Resolved — F2: DebugPanel selection bindings re-fire stack/scope/variable loads
 
 **Severity:** High  
 **Area:** `DebugPanel`, `DebugStackProjectionViewModel`
@@ -40,16 +45,18 @@ selection object is unchanged.
 **Contract violated:** Contract 4 (inspection requests should not be redundant);
 M5 exit condition (truthful stopped-state projection without races).
 
-**Suggested fix:** Add a programmatic-selection guard in `DebugPanel` (suppress
-`SelectionChanged` while syncing VM→UI), or make `SelectThread` / `SelectFrame` /
-`SelectScope` no-op when the target is already selected and the load token is
-current. Add a composition test that wires `DebugPanel` and asserts single
-`RequestStackTraceAsync` / `RequestScopesAsync` / `RequestVariablesAsync` per
-stop.
+**Resolved:** 2026-07-14
+
+**Implementation:** Added `_syncingSelection` guard and `SyncListSelection` in
+`DebugPanel` to suppress `SelectionChanged` during VM→UI mirroring. Made
+`SelectThread` / `SelectFrame` / `SelectScope` no-op when the target is already
+selected in `DebugStackProjectionViewModel`.
+
+**Tests:** `DebugPanelSelectionTests.Stopped_WithDebugPanel_IssuesSingleInspectionRequestPerKind`.
 
 ---
 
-## Open — F3: Continue/step returns before session state leaves `Stopped`
+## Resolved — F3: Continue/step returns before session state leaves `Stopped`
 
 **Severity:** Medium  
 **Area:** `DebugSessionService`, `NetCoreDbgAdapterSession`, `DebugSessionViewModel`
@@ -75,15 +82,21 @@ remain enabled and can issue overlapping adapter requests.
 **Contract violated:** Contract 4 (“valid only for the appropriate state”); exit
 condition (continue/step/stop clear stale data without conflicting commands).
 
-**Suggested fix:** Transition to `Running` (or introduce a short-lived
-`Continuing` / `Stepping` guard state) when the request succeeds, and disable
-conflicting commands until the matching event is observed. Update
-`TestDebugAdapterSession` to model the production async event delay so regression
-tests cover the race.
+**Resolved:** 2026-07-14
+
+**Implementation:** `ExecuteSessionRequestAsync` now publishes `Running` (clears
+`StopInfo`) on successful continue/step. `TestDebugAdapterSession` defers
+continued/stopped events by default (`DeferExecutionEvents`) and suppresses
+late emits after dispose. `DebugSessionService.Dispose` completes the snapshot
+subject without disposing it while projection VMs tear down.
+
+**Tests:** `DebugSessionServiceTests.ContinueAsync_ReturnsRunning_BeforeDeferredContinuedEvent`,
+`DebugSessionServiceTests.StepOverAsync_FromStopped_TransitionsToRunningBeforeNextStop`,
+`DebugExecutionControlsCommandTests.Continue_Gap_DisablesConflictingCommandsUntilRunningSnapshot`.
 
 ---
 
-## Open — F4: App shutdown order omits explicit debug-projection teardown
+## Resolved — F4: App shutdown order omits explicit debug-projection teardown
 
 **Severity:** Medium  
 **Area:** `App.axaml.cs`, `MainWindowViewModel`, `MainWindow.axaml.cs`
@@ -108,14 +121,19 @@ first among services but never explicitly disposes debug projection VMs.
 
 **Contract violated:** Contract 3 (disposal ordering).
 
-**Suggested fix:** Add explicit debug-projection disposal in `DisposeServicesOnExit`
-between session and workflow (mirror Phase 11 F10), or guarantee window/session
-ordering so the session always disconnects before projection VMs unsubscribe.
-Extend shutdown-order tests with debug VM markers.
+**Resolved:** 2026-07-14
+
+**Implementation:** `App.DisposeServicesOnExit` disposes
+`DebugPanelViewModel`, `DebugCurrentLocationViewModel`,
+`EditorBreakpointViewModel`, and `DebugSessionViewModel` after
+`IDebugSessionService` and before `IProjectWorkflowService`. Removed debug
+singleton dispose from `MainWindowViewModel.Activate` (App owns lifecycle).
+
+**Tests:** Extended `ProjectWorkflowProjectionShutdownTests.DisposeServicesOnExit_OrdersWorkflowBeforeProjectionsBeforeLanguage` with debug VM dispose markers.
 
 ---
 
-## Open — F5: `StoppedByUser` outcome is never produced
+## Resolved — F5: `StoppedByUser` outcome is never produced
 
 **Severity:** Low  
 **Area:** `DebugSessionService`, `DebugSessionOutcomeKind`
@@ -132,13 +150,17 @@ Extend shutdown-order tests with debug VM markers.
 
 **Contract violated:** Contract 3 (outcome taxonomy completeness).
 
-**Suggested fix:** Record `StoppedByUser` in the terminal snapshot (or a dedicated
-last-outcome field) before transitioning to `Idle`, without treating it as a
-failure. Add a unit test on `StopAsync` from `Running` and `Stopped`.
+**Resolved:** 2026-07-14
+
+**Implementation:** Added `LastOutcome` to `DebugSessionSnapshot`. `StopAsync`
+records `DebugSessionOutcomeKind.StoppedByUser` in the idle terminal snapshot.
+
+**Tests:** `DebugSessionServiceTests.StopAsync_FromRunning_RecordsStoppedByUserOutcome`,
+`DebugSessionServiceTests.StopAsync_FromStopped_RecordsStoppedByUserOutcome`.
 
 ---
 
-## Open — F6: Scopes/variables fetched without user frame/scope selection
+## Resolved — F6: Scopes/variables fetched without user frame/scope selection
 
 **Severity:** Medium  
 **Area:** `DebugStackProjectionViewModel`, `IMPLEMENTATION_PLAN.md` Contract 4
@@ -158,15 +180,15 @@ codify this auto-load behavior.
 **Contract violated:** Contract 4 (locked request policy). This is intentional M5
 UX drift versus the M0-locked contract text.
 
-**Suggested fix:** Either amend Contract 4 / limitations in
-`IMPLEMENTATION_PLAN.md` to document first-frame auto-inspection as accepted M5
-behavior, or defer scopes/variables until `SelectFrameCommand` /
-`SelectScopeCommand` fire from genuine user input (keep auto thread/frame list
-load only).
+**Resolved:** 2026-07-14
+
+**Implementation:** Amended Contract 4 in `IMPLEMENTATION_PLAN.md` to document
+first-frame auto-inspection (first thread, frame 0, scope 0) as accepted M5 UX.
+No projection behavior change.
 
 ---
 
-## Open — F7: M7 closeout docs report stale test count
+## Resolved — F7: M7 closeout docs report stale test count
 
 **Severity:** Low  
 **Area:** `M7_MANUAL_EVIDENCE.md`, `IMPLEMENTATION_PLAN.md` M7 status line
@@ -182,8 +204,11 @@ hardening added `DapContentLengthTransportTests`; the live suite now reports
 
 **Contract violated:** None (documentation accuracy only).
 
-**Suggested fix:** Update M7 evidence and plan status lines to 2048 when touching
-Phase 12 docs next; no code change required.
+**Resolved:** 2026-07-14
+
+**Implementation:** Updated `M7_MANUAL_EVIDENCE.md` and `IMPLEMENTATION_PLAN.md`
+M7 status lines to **2053** passing tests (2048 post-F1 plus five F2–F5
+regression tests).
 
 ---
 

@@ -6,7 +6,7 @@ This records Phase 12 M7 closeout: full sequential regression, manual Linux
 desktop evidence, M5 deferred-item resolution, Phase 12 limitations review, and
 documentation truth-sync.
 
-**Result: PASS.** Build 0 errors, 2043 tests pass, git clean, all seven debug
+**Result: PASS.** Build 0 errors, 2053 tests pass, git clean, all seven debug
 commands correctly registered with distinct default gestures, production adapter
 lifecycle proofs (M1–M6) re-verified, M5 deferred items resolved as implemented,
 Phase 12 limitations confirmed truthful.
@@ -43,7 +43,7 @@ dotnet build Zaide.slnx --no-restore
 dotnet test Zaide.slnx --no-build
 ```
 
-- **2043 passed**, 0 failed, 0 skipped
+- **2053 passed**, 0 failed, 0 skipped
 - Duration: ~32 s
 
 ```bash
@@ -379,7 +379,7 @@ To be run after all documentation updates are applied. See §7.
 
 ## 7. M7 Acceptance Checklist
 
-- [x] Sequential full regression: `dotnet build --no-restore` (0 errors, 1 pre-existing warning), `dotnet test --no-build` (2043 passed, 0 failed, 0 skipped), `git diff --check` (clean)
+- [x] Sequential full regression: `dotnet build --no-restore` (0 errors, 1 pre-existing warning), `dotnet test --no-build` (2053 passed, 0 failed, 0 skipped), `git diff --check` (clean)
 - [x] All 8 production adapter proof tests (M1–M6) re-verified against NetCoreDbg 3.2.0-1092
 - [x] All 7 debug commands registered via `ICommandRegistry` with documented default gestures
 - [x] No duplicate default gestures; `Registry_DebugGesturesResolveExactlyOnce` test passes

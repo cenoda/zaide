@@ -44,7 +44,7 @@ proof. Evidence:
 [M6_DAP_RECOVERY_PROOF.md](M6_DAP_RECOVERY_PROOF.md).
 
 **M7 complete** (2026-07-14). Closeout: sequential full regression (0 errors,
-2043 tests pass), manual evidence, M5 deferred-item resolution, Phase 12
+2053 tests pass), manual evidence, M5 deferred-item resolution, Phase 12
 limitations review, documentation truth-sync. Evidence:
 [M7_MANUAL_EVIDENCE.md](M7_MANUAL_EVIDENCE.md).
 
@@ -215,9 +215,12 @@ initialize → launch → setBreakpoints (all persisted source files)
 client must preserve requested breakpoints and project the returned
 `verified/message/line` result; a rejected or pending breakpoint is not shown
 as verified. Send `configurationDone` only after all initial breakpoint replies
-are received. While stopped, request `threads`, then `stackTrace(threadId)`;
-request `scopes(frameId)` and `variables(variablesReference)` only after a user
-selects a live frame/scope. `continue`, `next`, `stepIn`, `stepOut`, `pause`,
+are received. While stopped, request `threads`, then `stackTrace(threadId)`.
+Request `scopes(frameId)` and `variables(variablesReference)` after a user
+selects a live frame/scope, **or** automatically for the first stopped frame on
+each stop (M5 accepted UX: auto-select first thread, frame 0, and scope 0 so the
+Variables panel is populated without an extra click). `continue`, `next`,
+`stepIn`, `stepOut`, `pause`,
 and `disconnect(terminateDebuggee: true)` are valid only for the appropriate
 state and must be unavailable otherwise.
 
