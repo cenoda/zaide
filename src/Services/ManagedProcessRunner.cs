@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -211,28 +212,79 @@ public sealed class ManagedProcessRunner : IManagedProcessRunner
         long generation,
         CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            string? line;
-            try
-            {
-                line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (IOException)
-            {
-                break;
-            }
+        var buffer = new char[4096];
+        var remainder = new StringBuilder();
 
-            if (line is null)
-                break;
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                int charsRead;
+                try
+                {
+                    charsRead = await reader.ReadAsync(
+                        buffer.AsMemory(0, buffer.Length), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (IOException)
+                {
+                    break;
+                }
+
+                if (charsRead == 0)
+                    break;
+
+                remainder.Append(buffer, 0, charsRead);
+                EmitCompleteLines(remainder, stream, generation);
+            }
+        }
+        finally
+        {
+            // Emit any residual data that was never terminated by a newline.
+            // ReadLineAsync throws on cancel/IOException, discarding buffered
+            // data; this path ensures it is always flushed even on kill/cancel.
+            if (remainder.Length > 0)
+            {
+                OutputReceived?.Invoke(
+                    new ManagedProcessOutputLine(
+                        generation, stream, remainder.ToString(), DateTimeOffset.UtcNow));
+            }
+        }
+    }
+
+    private void EmitCompleteLines(
+        StringBuilder remainder,
+        ProcessStreamKind stream,
+        long generation)
+    {
+        int newlineIndex;
+        while ((newlineIndex = IndexOfNewline(remainder)) >= 0)
+        {
+            // Determine line length: exclude \r when it precedes \n.
+            int lineEnd = newlineIndex;
+            if (newlineIndex > 0 && remainder[newlineIndex - 1] == '\r')
+                lineEnd = newlineIndex - 1;
+
+            string line = remainder.ToString(0, lineEnd);
+            remainder.Remove(0, newlineIndex + 1);
 
             OutputReceived?.Invoke(
                 new ManagedProcessOutputLine(generation, stream, line, DateTimeOffset.UtcNow));
         }
+    }
+
+    private static int IndexOfNewline(StringBuilder sb)
+    {
+        for (int i = 0; i < sb.Length; i++)
+        {
+            if (sb[i] == '\n')
+                return i;
+        }
+        return -1;
     }
 
     private static void KillProcessTree(Process? process)

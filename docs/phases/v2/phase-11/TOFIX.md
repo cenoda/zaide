@@ -135,21 +135,35 @@ suite, `git diff --check`.
 
 ---
 
-## Open — F5: Last partial stream line dropped (no trailing newline)
+## Resolved — F5: Last partial stream line dropped (no trailing newline)
 
 **Severity:** Medium  
 **Area:** `ManagedProcessRunner.PumpStreamAsync`
 
-**Problem:** `ReadLineAsync` never emits a final buffer that lacks `\n` when
-the process exits. Truncates last Output line; can drop the last diagnostic or
-test summary fragment, especially after cancel.
+**Resolution (2026-07-14):** Replaced `ReadLineAsync` with `ReadAsync` and
+manual `\n`/`\r\n` splitting using a `StringBuilder` remainder. On stream end
+(EOF, cancel, or `IOException`), a `finally` block flushes any residual buffer
+that was never terminated by a newline.
 
-**Direction:** After EOF / exit, if a residual buffer remains, emit one final
-line (same generation/stream). Cover with a runner unit test that writes
-unterminated final bytes.
+- **`PumpStreamAsync`** — now reads with `reader.ReadAsync(Memory<char>, CT)`
+  into a 4 KiB char buffer, feeds chunks into a `StringBuilder` remainder, and
+  extracts complete lines via `EmitCompleteLines`. A `try-finally` block ensures
+  the remainder is always emitted, even when the pump exits via cancellation or
+  `IOException` (the paths where `ReadLineAsync` silently drops buffered data).
+- **`EmitCompleteLines`** — extracts and emits complete lines separated by `\n`
+  (with `\r` stripping before `\n`).
+- **`IndexOfNewline`** — linear scan for `\n` in the remainder.
 
-**Acceptance sketch:** Unterminated final stdout appears as one Output line;
-existing line-oriented tests unchanged.
+**Tests:**
+- `RunAsync_UnterminatedFinalLineAfterCancel_EmitsResidualLine` — writes
+  "unterminated" (no `\n`) then sleeps; cancels; asserts the residual line
+  appears (was empty before the fix, proving the bug).
+- `RunAsync_ExitsWithoutTrailingNewline_CapturesFinalLine` — writes
+  `line1\nline2\nfinal-without-newline` and exits; asserts all three lines
+  including the unterminated final one are captured (regression guard).
+
+**Gates:** `dotnet build`, `dotnet test` (focused 10 + full 1833), `git diff --check`
+all pass.
 
 ---
 
@@ -278,7 +292,7 @@ with it); keep runner ownership single and documented.
 1. ~~**F1** — Output incremental / non-O(n²) projection~~
 2. ~~**F2** — Gate-safe Dispose~~
 3. ~~**F4** — ProcessId after start~~
-4. **F5** — Residual stream line
+4. ~~**F5** — Residual stream line~~
 5. **F6** — Test Results Cancel + a11y
 6. **F3** — Timeout and/or cancel discoverability (product decision)
 7. **F7** / **F8** — parse quality
