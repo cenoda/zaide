@@ -286,8 +286,10 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         public bool IsRunning => false;
         public int? ProcessId => null;
 
+#pragma warning disable CS0067 // Events required by IManagedProcessRunner; never raised in this fake
         public event Action<ManagedProcessOutputLine>? OutputReceived;
         public event Action? ProcessStarted;
+#pragma warning restore CS0067
 
         public Task<ManagedProcessRunResult> RunAsync(
             ManagedProcessStartRequest request,
