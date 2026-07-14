@@ -55,9 +55,8 @@ all pass.
 **Resolution (2026-07-14):** Synchronized Dispose with the operation gate.
 
 - **`Dispose`** — takes `_gate` before any teardown; sets `_disposed` under the
-  gate; kills and disposes the runner; completes and disposes subjects; disposes
-  `_gate` in the `finally` without releasing (callers blocked on `Wait`/`WaitAsync`
-  receive `ObjectDisposedException`, which they handle).
+  gate; kills and disposes the runner; completes and disposes subjects; **must
+  `Release()` then `Dispose()` the gate** (see F2 follow-up below).
 - **`AppendOutputLine`** — early `_disposed` / generation check before touching the
   gate; `_gate.Wait()` and `_gate.Release()` wrapped in `try-catch` for
   `ObjectDisposedException` so late output during shutdown is silently ignored
@@ -66,6 +65,15 @@ all pass.
 - **`CompleteOperationAsync`** — `_gate.WaitAsync()` wrapped in `try-catch` for
   `ObjectDisposedException`; returns the caller's outcome immediately when the gate
   is already disposed.
+
+**F2 follow-up (same day, with F4):** Initial F2 disposed `_gate` **without
+`Release()`**, relying on waiters seeing `ObjectDisposedException`. That is
+incorrect: `SemaphoreSlim.Dispose()` does **not** wake waiters already blocked on
+`Wait`/`WaitAsync` — they hang forever. Race: Dispose holds gate → KillAsync
+unblocks `RunAsync` → `CompleteOperationAsync` queues `WaitAsync` → Dispose
+disposes gate without Release → `await buildTask` deadlocks. Fix: `Release()`
+then `Dispose()` so in-flight completion can acquire, observe `_disposed`, and
+return.
 
 **Tests:** Existing `Dispose_KillsRunnerAndReturnsToIdle` still passes. New
 `Dispose_WhileFakeRunnerEmitting_DoesNotThrow` stress test: background thread
@@ -97,33 +105,33 @@ and Test; tests for any new timeout kind if introduced.
 
 ---
 
-## Open — F4: `ProcessId` on Running snapshots is always null/stale
+## Resolved — F4: `ProcessId` on Running snapshots is always null/stale
 
 **Severity:** Medium  
 **Area:** `ProjectWorkflowService.StartOperationAsync` /
-`PublishRunningIfCurrent`
+`PublishRunningIfCurrent`, `IManagedProcessRunner.ProcessStarted`
 
-**Problem:** Running is published **before** `IManagedProcessRunner.RunAsync`
-starts the process:
+**Resolution (2026-07-14):** Publish `Running` only after the child process
+has started, when `ProcessId` is known.
 
-```text
-PublishRunningIfCurrent(..., _runner.ProcessId);  // before start
-await _runner.RunAsync(...);
-```
+- **`IManagedProcessRunner.ProcessStarted`** — raised once after a successful
+  process start (`ManagedProcessRunner` after `Process.Start()`; fake after
+  setting `IsRunning`). Not raised on startup failure.
+- **`ProjectWorkflowService.StartOperationAsync`** — removed the pre-`RunAsync`
+  `PublishRunningIfCurrent` call that always passed null/stale PID. Subscribes
+  to `ProcessStarted` and publishes `Running` with `_runner.ProcessId` then.
+  Slot stays `Starting` (ProcessId null) until start; concurrent rejection
+  still covers Starting + Running.
+- Idle / Starting / Failed / Cancelled / StartupFailed paths keep `ProcessId`
+  null via existing complete/start publishes.
 
-No later snapshot updates PID after start. Consumers of
-`ProjectWorkflowSnapshot.ProcessId` are wrong. Tests only assert
-`State == Running`, so this was uncaught.
+**Tests:** `StartBuildAsync_WhileRunning_SnapshotProcessIdMatchesRunner`
+asserts `ProcessId == 9001` (fake) while Running and null when Idle after
+success. `StartupFailed_SnapshotProcessIdRemainsNull` asserts null PID on
+startup failure.
 
-**Direction:** Publish Running after process start (or emit a follow-up
-snapshot when PID is available). Assert non-null PID (or known fake id) while
-running in service tests with the fake runner that sets `IsRunning`/`ProcessId`
-inside `RunAsync`.
-
-**Acceptance sketch:**
-
-- While fake/real process is running, snapshot `ProcessId` matches runner.
-- Idle/start/fail paths still null ProcessId as appropriate.
+**Gates:** sequential `dotnet build`, focused `ProjectWorkflow` tests, full
+suite, `git diff --check`.
 
 ---
 
@@ -267,14 +275,14 @@ with it); keep runner ownership single and documented.
 
 ## Suggested fix order
 
-1. **F1** — Output incremental / non-O(n²) projection  
-2. **F2** — Gate-safe Dispose  
-3. **F4** — ProcessId after start (small, good follow-on)  
-4. **F5** — Residual stream line  
-5. **F6** — Test Results Cancel + a11y  
-6. **F3** — Timeout and/or cancel discoverability (product decision)  
-7. **F7** / **F8** — parse quality  
-8. **F9**–**F11** — product polish / hygiene  
+1. ~~**F1** — Output incremental / non-O(n²) projection~~
+2. ~~**F2** — Gate-safe Dispose~~
+3. ~~**F4** — ProcessId after start~~
+4. **F5** — Residual stream line
+5. **F6** — Test Results Cancel + a11y
+6. **F3** — Timeout and/or cancel discoverability (product decision)
+7. **F7** / **F8** — parse quality
+8. **F9**–**F11** — product polish / hygiene
 
 Prefer one focused commit per finding (or tightly related pair). Re-run
 sequential full gates after each code fix.

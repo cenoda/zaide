@@ -81,13 +81,22 @@ public sealed class ProjectWorkflowServiceTests
         public int? ProcessId => IsRunning ? 9001 : null;
 
         public event Action<ManagedProcessOutputLine>? OutputReceived;
+        public event Action? ProcessStarted;
 
         public async Task<ManagedProcessRunResult> RunAsync(
             ManagedProcessStartRequest request,
             CancellationToken cancellationToken = default)
         {
             LastRequest = request;
+
+            if (SimulateStartupFailed)
+            {
+                IsRunning = false;
+                return new ManagedProcessRunResult(null, false, StartupFailed: true);
+            }
+
             IsRunning = true;
+            ProcessStarted?.Invoke();
 
             OutputReceived?.Invoke(
                 new ManagedProcessOutputLine(
@@ -95,12 +104,6 @@ public sealed class ProjectWorkflowServiceTests
                     ProcessStreamKind.StdOut,
                     "line-1",
                     DateTimeOffset.UtcNow));
-
-            if (SimulateStartupFailed)
-            {
-                IsRunning = false;
-                return new ManagedProcessRunResult(null, false, StartupFailed: true);
-            }
 
             try
             {
@@ -243,6 +246,48 @@ public sealed class ProjectWorkflowServiceTests
 
             runner.RunGate.TrySetResult(true);
             await first;
+        }
+    }
+
+    [Fact]
+    public async Task StartBuildAsync_WhileRunning_SnapshotProcessIdMatchesRunner()
+    {
+        var candidate = MakeCandidate("ProcessId.csproj");
+        var (service, _, runner) = CreateHarness(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            runner.RunGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var buildTask = service.StartBuildAsync();
+            await WaitUntilAsync(() => service.Current.State == ProjectWorkflowOperationState.Running);
+
+            Assert.Equal(ProjectWorkflowOperationState.Running, service.Current.State);
+            Assert.Equal(9001, service.Current.ProcessId);
+            Assert.Equal(runner.ProcessId, service.Current.ProcessId);
+
+            runner.RunGate.TrySetResult(true);
+            var result = await buildTask;
+
+            Assert.Equal(ProjectWorkflowOutcomeKind.Succeeded, result.Outcome);
+            Assert.Equal(ProjectWorkflowOperationState.Idle, service.Current.State);
+            Assert.Null(service.Current.ProcessId);
+        }
+    }
+
+    [Fact]
+    public async Task StartupFailed_SnapshotProcessIdRemainsNull()
+    {
+        var candidate = MakeCandidate("StartupPid.csproj");
+        var (service, _, runner) = CreateHarness(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            runner.SimulateStartupFailed = true;
+
+            var result = await service.StartBuildAsync();
+
+            Assert.Equal(ProjectWorkflowOutcomeKind.StartupFailed, result.Outcome);
+            Assert.Null(service.Current.ProcessId);
+            Assert.Equal(ProjectWorkflowOperationState.Idle, service.Current.State);
         }
     }
 

@@ -107,7 +107,15 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         // Take the gate to synchronize with all in-flight operations
         // (AppendOutputLine, PublishRunningIfCurrent, CompleteOperationAsync, etc.).
         // This blocks until any current critical section releases the gate.
-        _gate.Wait();
+        try
+        {
+            _gate.Wait();
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
         try
         {
             if (_disposed)
@@ -146,12 +154,30 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
-            // Dispose the gate while we still hold it — no Release() so we
-            // don't hit ObjectDisposedException ourselves.  Callers blocked on
-            // _gate.Wait() / WaitAsync() receive ObjectDisposedException, which
-            // AppendOutputLine, PublishRunningIfCurrent, and CompleteOperationAsync
-            // handle via try-catch so late output is silently ignored.
-            _gate.Dispose();
+            // MUST Release before Dispose. SemaphoreSlim.Dispose() does not wake
+            // waiters already blocked on Wait/WaitAsync — they hang forever.
+            // KillAsync above unblocks RunAsync, which then CompleteOperationAsync
+            // waits on this gate; without Release that waiter deadlocks, and
+            // Dispose_WhileFakeRunnerEmitting / Dispose_KillsRunner hang on
+            // await buildTask.
+            try
+            {
+                _gate.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (SemaphoreFullException)
+            {
+            }
+
+            try
+            {
+                _gate.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
         }
     }
 
@@ -292,11 +318,21 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
             AppendOutputLine(line);
         }
 
+        void OnProcessStarted()
+        {
+            // Publish Running only after the child is started so ProcessId is
+            // current (not the pre-start null/stale value).
+            PublishRunningIfCurrent(
+                generation,
+                operation,
+                target.FilePath,
+                _runner.ProcessId);
+        }
+
         _runner.OutputReceived += OnOutput;
+        _runner.ProcessStarted += OnProcessStarted;
         try
         {
-            PublishRunningIfCurrent(generation, operation, target.FilePath, _runner.ProcessId);
-
             var request = new ManagedProcessStartRequest(
                 profile.FileName,
                 profile.Arguments,
@@ -324,6 +360,7 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
         }
         finally
         {
+            _runner.ProcessStarted -= OnProcessStarted;
             _runner.OutputReceived -= OnOutput;
         }
     }

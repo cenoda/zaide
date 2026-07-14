@@ -47,6 +47,9 @@ public sealed class ManagedProcessRunner : IManagedProcessRunner
     public event Action<ManagedProcessOutputLine>? OutputReceived;
 
     /// <inheritdoc />
+    public event Action? ProcessStarted;
+
+    /// <inheritdoc />
     public async Task<ManagedProcessRunResult> RunAsync(
         ManagedProcessStartRequest request,
         CancellationToken cancellationToken = default)
@@ -89,6 +92,8 @@ public sealed class ManagedProcessRunner : IManagedProcessRunner
 
             if (!process.Start())
                 return new ManagedProcessRunResult(null, false, StartupFailed: true);
+
+            ProcessStarted?.Invoke();
 
             var stdoutTask = PumpStreamAsync(
                 process.StandardOutput,

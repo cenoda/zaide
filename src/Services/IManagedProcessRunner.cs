@@ -22,6 +22,13 @@ public interface IManagedProcessRunner : IDisposable
     event Action<ManagedProcessOutputLine>? OutputReceived;
 
     /// <summary>
+    /// Raised once after the child process has successfully started.
+    /// <see cref="ProcessId"/> is available while handlers run.
+    /// Not raised on startup failure.
+    /// </summary>
+    event Action? ProcessStarted;
+
+    /// <summary>
     /// Starts the requested process and waits until it exits or
     /// <paramref name="cancellationToken"/> is cancelled.
     /// </summary>
