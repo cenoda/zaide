@@ -12,8 +12,8 @@ adds C# LSP support with csharp-ls. Phase 11 delivers Build / Run / Test over
 Phase 8.3 project context, structured Output, build diagnostics in Problems,
 Test Results surface, and cancel/one-at-a-time workflow execution. Phase 12
 (DAP debugging) has completed M0 planning/proof, the M1 DAP session lifecycle
-core, M2 breakpoint persistence, and M3a launch handoff; M3b editor breakpoint
-projection remains ahead. Phase 13 remains ahead. Zaide currently has the IDE
+core, M2 breakpoint persistence, M3a launch handoff, and M3b editor breakpoint
+projection; M4 execution controls and debug surfaces remain ahead. Phase 13 remains ahead. Zaide currently has the IDE
 foundation, Townhall workspace, direct agent panels, `@mention` routing, and
 local Git status/diff/stage/commit workflows delivered by V1. The completed V1
 plans are archived under [`docs/phases/v1/`](docs/phases/v1/).

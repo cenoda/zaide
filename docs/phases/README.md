@@ -8,7 +8,7 @@ global across versions so historical references stay unambiguous.
 | Version | Scope | Status |
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
-| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | In progress — Phase 8 (umbrella), Phase 9 (Editor UX), Phase 10 (C# LSP), and Phase 11 (Project Workflow) complete; Phase 12 DAP debugging M0–M3a complete, M3b next |
+| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | In progress — Phase 8 (umbrella), Phase 9 (Editor UX), Phase 10 (C# LSP), and Phase 11 (Project Workflow) complete; Phase 12 DAP debugging M0–M3b complete, M4 next |
 
 Roadmap V2 planning has started. Phase 8 umbrella plan is complete at
 [`v2/phase-8/IMPLEMENTATION_PLAN.md`](v2/phase-8/IMPLEMENTATION_PLAN.md).

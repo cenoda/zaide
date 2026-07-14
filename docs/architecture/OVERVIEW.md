@@ -204,4 +204,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 M0–M3a complete, M3b next)*
+*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phase 11 complete; Phase 12 M0–M3b complete, M4 next)*
