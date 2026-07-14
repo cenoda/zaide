@@ -10,8 +10,12 @@ Content-Length DAP transport, session lifecycle/state ownership, DI, shutdown
 ordering, deterministic tests, and production Linux proof. Evidence:
 [M1_DAP_SESSION_LIFECYCLE_PROOF.md](M1_DAP_SESSION_LIFECYCLE_PROOF.md).
 
-M1 adds no breakpoint persistence, settings schema, commands, editor UI, or
-build-to-debug handoff. M2 must start from the locked contracts below.
+**M2 complete** (2026-07-14, commit `44f5f77`). Schema-v3 `DebugSettings` with
+workspace-root-keyed persisted breakpoints, production V1→V2→V3 migration,
+path/line validation, immutable service snapshots, and DAP replacement mapping.
+
+M2 adds no F5/F9 commands, editor UI, build-to-debug handoff, shared operation
+gate, or debug panels. M3a must start from the locked contracts below.
 
 **Prerequisite:** Phase 11 is complete. `IProjectContextService` is the sole
 project-target owner; `ICommandRegistry` is the sole command/keybinding
@@ -308,7 +312,7 @@ structural. The M1 revert target is the committed M0 baseline: `6222ea5`.
 |---|---|---|---|
 | **M0** ✅ | Docs/proof only: live seams, NetCoreDbg 3.2.0-1092 stdio lifecycle proof, contracts 1–8, decomposition. No production code. | Recorded proof; `git diff --check` | `docs(phase-12): M0 DAP plan and proof` |
 | **M1** ✅ | UI-independent DAP core: locator (`ZAIDE_NETCOREDBG_PATH`, then PATH), session factory/service, pre-listening event registrations, dedicated Content-Length DAP transport, locked timeouts, state/generation/outcomes, stderr capture, disconnect/crash/timeout/dispose behavior, DI and shutdown ordering. No breakpoint persistence or UI commands. Evidence: [M1_DAP_SESSION_LIFECYCLE_PROOF.md](M1_DAP_SESSION_LIFECYCLE_PROOF.md). | `DebugSessionServiceTests`, fake-session ordering/event/failure tests, locator tests, DI/dispose tests; production DAP-transport NetCoreDbg lifecycle proof | `debug: add DAP session lifecycle core` |
-| **M2** | Schema-v3 workspace-root-keyed breakpoint persistence: `DebugSettings`, serializer ceiling, v2→v3 production migration registration, path/line normalization, full-source replacement request policy, verified/pending mapping. No editor chrome or F5. | `BreakpointServiceTests`, v2→v3 migration/round-trip/unknown-v4 tests, `SetBreakpoints` fake-session tests | `debug: add persistent breakpoint service` |
+| **M2** ✅ | Schema-v3 workspace-root-keyed breakpoint persistence: `DebugSettings`, serializer ceiling, v2→v3 production migration registration, path/line normalization, full-source replacement request policy, verified/pending mapping. No editor chrome or F5. | `BreakpointServiceTests`, v2→v3 migration/round-trip/unknown-v4 tests, `SetBreakpoints` fake-session tests | `debug: add persistent breakpoint service` |
 | **M3a** | Extract the shared project-operation gate; build-before-debug handoff under one gate lease using the locked MSBuild `TargetPath` query; `debug.startOrContinue` F5 command. No F9/editor chrome. | target-resolution + workflow-busy/debug-active + handoff-no-gap + F5 registry dispatch tests; Linux smoke: fresh build, F5 launch | `debug: start launch debugging` |
 | **M3b** | `debug.toggleBreakpoint` / F9 plus editor breakpoint margin/projection over M2 persistence and M3a session state. | breakpoint command + editor projection/path-identity tests; Linux smoke: F9, F5, breakpoint hit | `debug: add editor breakpoint projection` |
 | **M4** | Continue/pause/stop/step commands and DAP state gating; fixed Debug bottom mode with Debug Console + Call Stack; adapter error projection. | command availability/state transition and Debug-mode composition tests; Linux smoke: F5/F10/F11/Shift+F11/Shift+F5 + output | `debug: add execution controls and debug console` |
@@ -329,9 +333,9 @@ launch state, and M3b cannot start before M3a is complete.
 
 ## Exact Next Step
 
-Phase 12 M1 is complete. The next permitted implementation slice is **M2 only**:
-schema-v3 workspace-keyed breakpoint persistence. Do not add F5/F9, editor UI,
-build-to-debug handoff, the shared operation gate, or debug panels in M2.
+Phase 12 M2 is complete. The next permitted implementation slice is **M3a only**:
+the shared project-operation gate, build-to-debug handoff, and F5 launch command.
+Do not add F9/editor breakpoint UI, debug panels, stack/variables, or M3b work.
 
 ## Exit Conditions
 
