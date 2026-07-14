@@ -288,4 +288,43 @@ public sealed class BuildDiagnosticsServiceTests
 
         Assert.Empty(service.Current.Diagnostics);
     }
+
+    [Fact]
+    public void BuildComplete_ParsesDoneAndMessageSeverities()
+    {
+        var target = Path.Combine(TempRoot, "SevFlow.csproj");
+        var file = Path.Combine(TempRoot, "SevFlow.cs");
+
+        using var workflow = new FakeWorkflowService(Idle());
+        using var service = new BuildDiagnosticsService(workflow);
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Starting,
+            20,
+            ProjectWorkflowOperation.Build,
+            null,
+            target,
+            null,
+            Array.Empty<ManagedProcessOutputLine>()));
+
+        workflow.Publish(new ProjectWorkflowSnapshot(
+            ProjectWorkflowOperationState.Idle,
+            20,
+            null,
+            ProjectWorkflowOutcomeKind.Succeeded,
+            target,
+            null,
+            new[]
+            {
+                new ManagedProcessOutputLine(1, ProcessStreamKind.StdOut,
+                    $"{file}(1,1): done build completed successfully", DateTimeOffset.UtcNow),
+                new ManagedProcessOutputLine(2, ProcessStreamKind.StdOut,
+                    $"{file}(2,1): message MSB3123: some hint", DateTimeOffset.UtcNow),
+            }));
+
+        Assert.Equal(2, service.Current.Diagnostics.Count);
+        Assert.Equal(LanguageDiagnosticSeverity.Information, service.Current.Diagnostics[0].Severity);
+        Assert.Equal(LanguageDiagnosticSeverity.Hint, service.Current.Diagnostics[1].Severity);
+        Assert.False(service.Current.IsPartial);
+    }
 }

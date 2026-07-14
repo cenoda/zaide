@@ -11,10 +11,11 @@ namespace Zaide.Services;
 /// </summary>
 public static partial class BuildDiagnosticParser
 {
-    // path(line,col): error CSxxxx: message [optional project suffix]
-    // path(line): warning CSxxxx: message
+    // Supports English MSBuild CLI severity keywords only (invariant policy:
+    // child processes should set DOTNET_CLI_UI_LANGUAGE=en).
+    // path(line,col): error|warning|done|message [CODE:] message [project suffix]
     [GeneratedRegex(
-        @"^(?<path>.+?)\((?<line>\d+)(?:,(?<col>\d+))?\):\s*(?<severity>error|warning)\s+(?:(?<code>\S+):\s*)?(?<message>.+?)(?:\s+\[[^\]]+\])?\s*$",
+        @"^(?<path>.+?)\((?<line>\d+)(?:,(?<col>\d+))?\):\s*(?<severity>error|warning|done|message)\s+(?:(?<code>\S+):\s*)?(?<message>.+?)(?:\s+\[[^\]]+\])?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled)]
     private static partial Regex DiagnosticLineRegex();
 
@@ -54,9 +55,15 @@ public static partial class BuildDiagnosticParser
             }
 
             var severityText = match.Groups["severity"].Value;
-            var severity = severityText.Equals("warning", StringComparison.OrdinalIgnoreCase)
-                ? LanguageDiagnosticSeverity.Warning
-                : LanguageDiagnosticSeverity.Error;
+            LanguageDiagnosticSeverity severity;
+            if (severityText.Equals("warning", StringComparison.OrdinalIgnoreCase))
+                severity = LanguageDiagnosticSeverity.Warning;
+            else if (severityText.Equals("done", StringComparison.OrdinalIgnoreCase))
+                severity = LanguageDiagnosticSeverity.Information;
+            else if (severityText.Equals("message", StringComparison.OrdinalIgnoreCase))
+                severity = LanguageDiagnosticSeverity.Hint;
+            else
+                severity = LanguageDiagnosticSeverity.Error;
 
             var code = match.Groups["code"].Success && match.Groups["code"].Length > 0
                 ? match.Groups["code"].Value

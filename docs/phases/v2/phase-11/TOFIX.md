@@ -262,20 +262,50 @@ non-English CLI output unsupported (see F8 for build diagnostics); custom
 
 ---
 
-## Open — F8: Build diagnostic parse is English-only MSBuild CLI shape
+## Resolved — F8: Build diagnostic parse is English-only MSBuild CLI shape
 
-**Severity:** Medium (locale / tooling)  
+**Severity:** Medium (locale / tooling)
 **Area:** `BuildDiagnosticParser`
 
-**Problem:** Regex requires English `error`/`warning` and
+**Problem:** Regex required English `error`/`warning` and
 `path(line[,col]):` form only. Localized MSBuild, multi-line messages, or
 non-CLI tooling → empty Problems while Output still shows failures.
 
-**Direction:** Document as known limit, or add limited alternate patterns /
-invariant culture CLI env if product needs it. Do not clear LSP on parse miss.
+**Resolution (2026-07-14):** Documented invariant English CLI policy and
+expanded parser to cover additional MSBuild severity keywords.
 
-**Acceptance sketch:** Existing English fixtures still parse; any new patterns
-have unit tests; LSP retention tests unchanged.
+- **Invariant CLI policy:** `BuildDiagnosticParser` regex uses
+  `CultureInvariant` and matches English severity keywords only
+  (`error`, `warning`, `done`, `message`). `DOTNET_CLI_UI_LANGUAGE=en`
+  should be set on build child processes to guarantee English output
+  regardless of host locale. Enforcement of this environment variable in
+  `ManagedProcessRunner` is deferred (requires process-request
+  infrastructure change beyond F8 scope).
+- **Parser expansion:** Regex now matches `done` (→ `Information`) and
+  `message` (→ `Hint`) severity keywords alongside existing `error` and
+  `warning`. Code-less diagnostics (`path(line): severity message`
+  without a `CODE:` prefix) are explicitly supported. All severity
+  matching is case-insensitive. Malformed and unsupported-severity lines
+  continue to fail open (silently ignored).
+- **LSP retention:** Unchanged — build parse misses never clear LSP
+  diagnostics (existing merge-by-source policy preserved).
+
+**Tests:** `Parse_DiagnosticWithoutCode_ParsesMessageOnly`,
+`Parse_DoneSeverity_MapsToInformation`,
+`Parse_MessageSeverity_MapsToHint`,
+`Parse_SeverityKeyword_IsCaseInsensitive`,
+`Parse_MixedSeverities_AllParsedAndSorted`,
+`Parse_DoneWithoutCode_ParsesCorrectly`,
+`Parse_UnsupportedSeverity_IsIgnored`,
+`BuildComplete_ParsesDoneAndMessageSeverities` (service flow-through).
+Existing English fixtures unchanged.
+
+**Remaining limitations:** Non-English CLI output still unparseable
+without `DOTNET_CLI_UI_LANGUAGE=en` enforcement in the process runner;
+multi-line diagnostic messages (continuation lines) unsupported;
+paths containing unbalanced parentheses remain an edge case.
+
+**Gates:** `dotnet build`, `dotnet test`, `git diff --check`.
 
 ---
 
@@ -348,7 +378,7 @@ with it); keep runner ownership single and documented.
 4. ~~**F5** — Residual stream line~~
 5. ~~**F6** — Test Results Cancel + a11y~~
 6. ~~**F3** — Timeout and/or cancel discoverability (product decision)~~
-7. ~~**F7** — console test parse hardening~~ / **F8** — parse quality
+7. ~~**F7** — console test parse hardening~~ / ~~**F8** — build diagnostic parse hardening~~
 8. **F9**–**F11** — product polish / hygiene
 
 Prefer one focused commit per finding (or tightly related pair). Re-run

@@ -331,8 +331,15 @@ path (`tests/fixtures/workflow-console/` or subprojects), and pass/fail in
   Run.
 - `LogCategorizer` terminal heuristics are **not** the build-diagnostics source
   of truth.
-- Build diagnostic parse (M3) is end-of-build, CLI `path(line,col): error|warning`
-  form only; relative paths resolve against target parent directory.
+- Build diagnostic parse (M3, F8 hardened 2026-07-14) is end-of-build,
+  English-only MSBuild CLI form: `path(line,col): error|warning|done|message
+  [CODE:] message`; severity maps to LSP levels (error→Error,
+  warning→Warning, done→Information, message→Hint); code-less diagnostics
+  supported; case-insensitive severity; relative paths resolve against
+  target parent directory. Invariant policy: `DOTNET_CLI_UI_LANGUAGE=en`
+  should be set on build child processes (not yet enforced in runner).
+  Multi-line continuation messages and non-English locales remain
+  unsupported.
 - Test console parse is best-effort (F7 hardened 2026-07-14): locked test argv
   stays `dotnet test "<path>"` without `--logger`/verbosity; parser handles
   default `Passed!`/`Failed!` banners plus VSTest count lines and xUnit stack
