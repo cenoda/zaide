@@ -28,6 +28,7 @@ public sealed class DebugSessionService : IDebugSessionService
         AdapterProcessId: null,
         StopInfo: null,
         Failure: null,
+        LastOutcome: null,
         DiagnosticOutput: EmptyDiagnostics,
         BreakpointVerifications: EmptyVerifications);
 
@@ -340,6 +341,7 @@ public sealed class DebugSessionService : IDebugSessionService
                 AdapterProcessId: null,
                 StopInfo: null,
                 new DebugSessionFailure(kind, message),
+                LastOutcome: null,
                 CopyDiagnosticsLocked(),
                 EmptyVerifications));
         }
@@ -390,7 +392,7 @@ public sealed class DebugSessionService : IDebugSessionService
                 return new DebugSessionOperationResult(true, null, null);
 
             _breakpointVerifications.Clear();
-            PublishLocked(BuildIdleSnapshot(stopGeneration));
+            PublishLocked(BuildIdleSnapshot(stopGeneration, DebugSessionOutcomeKind.StoppedByUser));
         }
         finally
         {
@@ -426,7 +428,8 @@ public sealed class DebugSessionService : IDebugSessionService
             session,
             token => session.ContinueAsync(threadId, token),
             "Debug continue failed.",
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            transitionToRunningOnSuccess: true).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -453,7 +456,8 @@ public sealed class DebugSessionService : IDebugSessionService
             session,
             token => session.PauseAsync(token),
             "Debug pause failed.",
-            cancellationToken);
+            cancellationToken,
+            transitionToRunningOnSuccess: false);
     }
 
     /// <inheritdoc />
@@ -615,7 +619,6 @@ public sealed class DebugSessionService : IDebugSessionService
         }
 
         _subject.OnCompleted();
-        _subject.Dispose();
         _gate.Dispose();
     }
 
@@ -715,6 +718,7 @@ public sealed class DebugSessionService : IDebugSessionService
                     AdapterProcessId: null,
                     StopInfo: null,
                     new DebugSessionFailure(outcome, message),
+                    LastOutcome: null,
                     CopyDiagnosticsLocked(),
                     EmptyVerifications));
             }
@@ -960,6 +964,7 @@ public sealed class DebugSessionService : IDebugSessionService
                 AdapterProcessId: null,
                 StopInfo: null,
                 new DebugSessionFailure(kind, message),
+                LastOutcome: null,
                 CopyDiagnosticsLocked(),
                 EmptyVerifications));
         }
@@ -1004,7 +1009,8 @@ public sealed class DebugSessionService : IDebugSessionService
             session,
             token => action(session, threadId.Value, token),
             failureMessage,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            transitionToRunningOnSuccess: true).ConfigureAwait(false);
     }
 
     private async Task<DebugSessionOperationResult> ExecuteSessionRequestAsync(
@@ -1012,12 +1018,17 @@ public sealed class DebugSessionService : IDebugSessionService
         IDebugAdapterSession session,
         Func<CancellationToken, Task> action,
         string failureMessage,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool transitionToRunningOnSuccess)
     {
         try
         {
             await WithTimeoutAsync(action, _timeoutPolicy.OrdinaryRequest, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (transitionToRunningOnSuccess)
+                await PublishRunningAfterExecutionRequestAsync(snapshot).ConfigureAwait(false);
+
             return new DebugSessionOperationResult(true, null, null);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1042,6 +1053,32 @@ public sealed class DebugSessionService : IDebugSessionService
                 .ConfigureAwait(false);
 
             return new DebugSessionOperationResult(false, outcome, message);
+        }
+    }
+
+    private async Task PublishRunningAfterExecutionRequestAsync(DebugSessionSnapshot snapshot)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_disposed || snapshot.Generation != _generation)
+                return;
+
+            if (_activeSession is null || _activeSession.Generation != snapshot.Generation)
+                return;
+
+            if (_current.State != DebugSessionState.Stopped)
+                return;
+
+            PublishLocked(_current with
+            {
+                State = DebugSessionState.Running,
+                StopInfo = null,
+            });
+        }
+        finally
+        {
+            _gate.Release();
         }
     }
 
@@ -1208,6 +1245,7 @@ public sealed class DebugSessionService : IDebugSessionService
                 AdapterProcessId: null,
                 StopInfo: null,
                 Failure: null,
+                LastOutcome: null,
                 DiagnosticOutput: EmptyDiagnostics,
                 BreakpointVerifications: EmptyVerifications);
         }
@@ -1220,6 +1258,7 @@ public sealed class DebugSessionService : IDebugSessionService
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: EmptyDiagnostics,
             BreakpointVerifications: EmptyVerifications);
     }
@@ -1237,6 +1276,7 @@ public sealed class DebugSessionService : IDebugSessionService
             adapterProcessId,
             StopInfo: null,
             Failure: null,
+            LastOutcome: null,
             CopyDiagnosticsLocked(),
             CopyVerificationsLocked());
 
@@ -1256,6 +1296,7 @@ public sealed class DebugSessionService : IDebugSessionService
             adapterProcessId,
             new DapStoppedInfo(stoppedEvent.Reason, stoppedEvent.ThreadId),
             Failure: null,
+            LastOutcome: null,
             CopyDiagnosticsLocked(),
             CopyVerificationsLocked());
     }
@@ -1265,10 +1306,13 @@ public sealed class DebugSessionService : IDebugSessionService
         {
             State = DebugSessionState.Stopping,
             StopInfo = null,
+            LastOutcome = null,
             BreakpointVerifications = EmptyVerifications,
         };
 
-    private DebugSessionSnapshot BuildIdleSnapshot(long generation) =>
+    private DebugSessionSnapshot BuildIdleSnapshot(
+        long generation,
+        DebugSessionOutcomeKind? lastOutcome = null) =>
         new(
             DebugSessionState.Idle,
             generation,
@@ -1277,6 +1321,7 @@ public sealed class DebugSessionService : IDebugSessionService
             AdapterProcessId: null,
             StopInfo: null,
             Failure: null,
+            lastOutcome,
             CopyDiagnosticsLocked(),
             EmptyVerifications);
 

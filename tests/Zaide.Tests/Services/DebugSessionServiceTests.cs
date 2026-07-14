@@ -286,6 +286,27 @@ public sealed class DebugSessionServiceTests
     }
 
     [Fact]
+    public async Task ContinueAsync_ReturnsRunning_BeforeDeferredContinuedEvent()
+    {
+        var candidate = MakeCandidate("ContinueGap.csproj");
+        var (service, context, factory, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            var session = factory.CreatedSessions[0];
+            session.DeferExecutionEvents = true;
+            session.ExecutionEventDelay = TimeSpan.FromMilliseconds(100);
+
+            var result = await service.ContinueAsync(1);
+
+            Assert.True(result.Succeeded);
+            Assert.Equal(DebugSessionState.Running, service.Current.State);
+            Assert.Null(service.Current.StopInfo);
+        }
+    }
+
+    [Fact]
     public async Task PauseAsync_FromRunning_TransitionsToStopped()
     {
         var candidate = MakeCandidate("Pause.csproj");
@@ -307,7 +328,7 @@ public sealed class DebugSessionServiceTests
     }
 
     [Fact]
-    public async Task StepOverAsync_FromStopped_IssuesNextAndRemainsStopped()
+    public async Task StepOverAsync_FromStopped_TransitionsToRunningBeforeNextStop()
     {
         var candidate = MakeCandidate("Step.csproj");
         var (service, context, factory, _) = CreateHarness();
@@ -319,7 +340,46 @@ public sealed class DebugSessionServiceTests
             var step = await service.StepOverAsync();
             Assert.True(step.Succeeded);
             Assert.Contains("next:1", factory.CreatedSessions[0].CallOrder);
-            Assert.Equal(DebugSessionState.Stopped, service.Current.State);
+            Assert.Equal(DebugSessionState.Running, service.Current.State);
+
+            var stopped = await WaitForAsync(service, s => s.State == DebugSessionState.Stopped);
+            Assert.Equal(DebugSessionState.Stopped, stopped.State);
+        }
+    }
+
+    [Fact]
+    public async Task StopAsync_FromRunning_RecordsStoppedByUserOutcome()
+    {
+        var candidate = MakeCandidate("StopRunning.csproj");
+        var (service, context, _, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+            await service.ContinueAsync(1);
+            await WaitForAsync(service, s => s.State == DebugSessionState.Running);
+
+            var stop = await service.StopAsync();
+            Assert.True(stop.Succeeded);
+            Assert.Equal(DebugSessionState.Idle, service.Current.State);
+            Assert.Equal(DebugSessionOutcomeKind.StoppedByUser, service.Current.LastOutcome);
+        }
+    }
+
+    [Fact]
+    public async Task StopAsync_FromStopped_RecordsStoppedByUserOutcome()
+    {
+        var candidate = MakeCandidate("StopStopped.csproj");
+        var (service, context, _, _) = CreateHarness();
+        context.Emit(MakeContext(ProjectContextState.SingleProject, candidate));
+        using (service)
+        {
+            await service.StartLaunchAsync(MakeLaunchRequest());
+
+            var stop = await service.StopAsync();
+            Assert.True(stop.Succeeded);
+            Assert.Equal(DebugSessionState.Idle, service.Current.State);
+            Assert.Equal(DebugSessionOutcomeKind.StoppedByUser, service.Current.LastOutcome);
         }
     }
 

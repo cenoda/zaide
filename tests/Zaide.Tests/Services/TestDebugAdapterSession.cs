@@ -18,6 +18,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     public int? ProcessId { get; init; } = 9001;
     public bool HasExited { get; private set; }
     public bool Disposed { get; private set; }
+    private int _emitDisabled;
     public bool DisconnectCalled { get; private set; }
     public bool ForceKillCalled { get; private set; }
     public List<string> CallOrder { get; } = new();
@@ -33,6 +34,14 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     public TimeSpan? ConfigurationDoneDelay { get; set; }
     public TimeSpan? ContinueDelay { get; set; }
     public TimeSpan? OrdinaryRequestDelay { get; set; }
+
+    /// <summary>
+    /// When true, continued/stopped execution events are raised asynchronously after
+    /// the DAP response completes, matching production adapter timing.
+    /// </summary>
+    public bool DeferExecutionEvents { get; set; } = true;
+
+    public TimeSpan ExecutionEventDelay { get; set; } = TimeSpan.FromMilliseconds(20);
 
     /// <summary>
     /// Optional DAP <c>setBreakpoints</c> body JSON (without outer envelope), e.g.
@@ -160,7 +169,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
             await Task.Delay(ContinueDelay.Value, cancellationToken).ConfigureAwait(false);
         if (ContinueException is not null)
             throw ContinueException;
-        Continued?.Invoke(new DapContinuedEvent(Generation, threadId));
+        EmitContinued(threadId);
     }
 
     public Task PauseAsync(CancellationToken cancellationToken)
@@ -177,7 +186,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
         cancellationToken.ThrowIfCancellationRequested();
         if (StepException is not null)
             throw StepException;
-        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        EmitStepStopped(threadId);
         return Task.CompletedTask;
     }
 
@@ -185,7 +194,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add($"stepIn:{threadId}");
         cancellationToken.ThrowIfCancellationRequested();
-        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        EmitStepStopped(threadId);
         return Task.CompletedTask;
     }
 
@@ -193,7 +202,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     {
         CallOrder.Add($"stepOut:{threadId}");
         cancellationToken.ThrowIfCancellationRequested();
-        Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        EmitStepStopped(threadId);
         return Task.CompletedTask;
     }
 
@@ -215,6 +224,7 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
     public ValueTask DisposeAsync()
     {
         Disposed = true;
+        Interlocked.Exchange(ref _emitDisabled, 1);
         return ValueTask.CompletedTask;
     }
 
@@ -234,6 +244,48 @@ internal sealed class TestDebugAdapterSession : IDebugAdapterSession
 
     public void SimulateStopped(string reason = "breakpoint", int threadId = 1) =>
         Stopped?.Invoke(new DapStoppedEvent(Generation, reason, threadId));
+
+    private void EmitContinued(int threadId)
+    {
+        if (Volatile.Read(ref _emitDisabled) != 0)
+            return;
+
+        if (!DeferExecutionEvents)
+        {
+            Continued?.Invoke(new DapContinuedEvent(Generation, threadId));
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(ExecutionEventDelay).ConfigureAwait(false);
+            if (Volatile.Read(ref _emitDisabled) != 0)
+                return;
+
+            Continued?.Invoke(new DapContinuedEvent(Generation, threadId));
+        });
+    }
+
+    private void EmitStepStopped(int threadId)
+    {
+        if (Volatile.Read(ref _emitDisabled) != 0)
+            return;
+
+        if (!DeferExecutionEvents)
+        {
+            Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(ExecutionEventDelay).ConfigureAwait(false);
+            if (Volatile.Read(ref _emitDisabled) != 0)
+                return;
+
+            Stopped?.Invoke(new DapStoppedEvent(Generation, "step", threadId));
+        });
+    }
 
     public void SimulateTerminated() => Terminated?.Invoke(Generation);
 

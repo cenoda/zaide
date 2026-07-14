@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -35,6 +36,7 @@ public sealed class DebugExecutionControlsCommandTests
             AdapterProcessId: 42,
             StopInfo: threadId is null ? null : new DapStoppedInfo("entry", threadId),
             Failure: null,
+            LastOutcome: null,
             DiagnosticOutput: Array.Empty<string>(),
             BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications);
 
@@ -180,6 +182,44 @@ public sealed class DebugExecutionControlsCommandTests
         var (vm, debug) = CreateHarness(DebugSessionState.Stopped, threadId: 9);
         await vm.StepOverCommand.Execute();
         debug.Verify(s => s.StepOverAsync(default), Times.Once);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public async Task Continue_Gap_DisablesConflictingCommandsUntilRunningSnapshot()
+    {
+        var launch = new Mock<IProjectDebugLaunchService>();
+        var subject = new Subject<DebugSessionSnapshot>();
+        var debug = new Mock<IDebugSessionService>();
+        var stopped = MakeSnapshot(DebugSessionState.Stopped, threadId: 3);
+        var current = stopped;
+        debug.SetupGet(s => s.Current).Returns(() => current);
+        debug.SetupGet(s => s.WhenChanged).Returns(subject);
+        subject.Subscribe(snapshot => current = snapshot);
+
+        var continueStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        debug.Setup(s => s.ContinueAsync(3, default))
+            .Returns(async () =>
+            {
+                subject.OnNext(MakeSnapshot(DebugSessionState.Running, threadId: null));
+                continueStarted.TrySetResult(true);
+                await Task.Delay(50).ConfigureAwait(false);
+                return new DebugSessionOperationResult(true, null, null);
+            });
+
+        var vm = new DebugSessionViewModel(launch.Object, debug.Object);
+        vm.Activate();
+
+        Assert.True(vm.StartOrContinueCommand.CanExecute.FirstAsync().Wait());
+        Assert.True(vm.StepOverCommand.CanExecute.FirstAsync().Wait());
+
+        var executeTask = vm.StartOrContinueCommand.Execute();
+        await continueStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+        Assert.False(vm.StartOrContinueCommand.CanExecute.FirstAsync().Wait());
+        Assert.False(vm.StepOverCommand.CanExecute.FirstAsync().Wait());
+
+        await executeTask;
         vm.Dispose();
     }
 
