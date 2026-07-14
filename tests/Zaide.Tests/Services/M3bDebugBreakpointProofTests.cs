@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -57,7 +58,7 @@ public sealed class M3bDebugBreakpointProofTests
         var context = new ProofProjectContextService(FixtureRoot);
         var breakpoints = new BreakpointService(context, settings);
         var normalizedSource = Path.GetFullPath(ProgramSource);
-        var add = await breakpoints.AddAsync(normalizedSource, 1);
+        var add = await breakpoints.AddAsync(normalizedSource, 2);
         Assert.True(add.Succeeded, add.Message);
 
         var debugSession = new DebugSessionService(
@@ -126,6 +127,13 @@ public sealed class M3bDebugBreakpointProofTests
         Func<DebugSessionSnapshot, bool> predicate,
         TimeSpan timeout)
     {
+        var snapshots = new List<string> { DescribeSnapshot(service.Current) };
+        using var subscription = service.WhenChanged.Subscribe(snapshot =>
+        {
+            lock (snapshots)
+                snapshots.Add(DescribeSnapshot(snapshot));
+        });
+
         var deadline = DateTime.UtcNow + timeout;
         while (DateTime.UtcNow < deadline)
         {
@@ -135,8 +143,23 @@ public sealed class M3bDebugBreakpointProofTests
             await Task.Delay(50);
         }
 
+        string sequence;
+        lock (snapshots)
+            sequence = string.Join(" -> ", snapshots);
+
         throw new TimeoutException(
-            $"Timed out waiting for debug session predicate. state={service.Current.State}; reason={service.Current.StopInfo?.Reason}");
+            $"Timed out waiting for debug session predicate. state={service.Current.State}; " +
+            $"reason={service.Current.StopInfo?.Reason}; snapshots={sequence}");
+    }
+
+    private static string DescribeSnapshot(DebugSessionSnapshot snapshot)
+    {
+        var verification = string.Join(
+            ",",
+            snapshot.BreakpointVerifications.Select(item =>
+                $"{item.RequestedLine}>{item.ActualLine}:{item.State}"));
+        return $"{DateTime.UtcNow:O}[{snapshot.State};reason={snapshot.StopInfo?.Reason};" +
+               $"breakpoints={verification};diagnostics={snapshot.DiagnosticOutput.Count}]";
     }
 
     private sealed class ProofProjectContextService : IProjectContextService

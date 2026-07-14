@@ -22,7 +22,7 @@ regression gates are green.
 | Adapter argv | `netcoredbg --interpreter=vscode` |
 | Fixture project | `tests/fixtures/workflow-console/WorkflowConsole.csproj` |
 | Fixture source | `tests/fixtures/workflow-console/Program.cs` |
-| Breakpoint line | 1 (one-based) |
+| Breakpoint line | 2 (one-based) |
 
 ## Automated proof gates
 
@@ -39,6 +39,10 @@ Observed on 2026-07-14:
 - `EditorBreakpointRegressionTests` — PASS (folding/tab/search unaffected)
 - `DebugSessionServiceTests.ReplaceBreakpointsBySourceAsync_*` — PASS
 - `M3bDebugBreakpointProofTests.ProductionProof_PersistedBreakpointSentAndHitAfterContinue` — PASS (~1 s)
+
+The fixture keeps the entry stop on line 1 and places this proof's persisted
+breakpoint on the later executable line 2. Reusing the entry location does not
+exercise a post-continue breakpoint stop and can time out after a valid continue.
 
 ## Operator smoke checklist (workflow-console)
 
