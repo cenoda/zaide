@@ -152,12 +152,17 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
         if (_disposed || _subscriptions.Count > 0)
             return;
 
-        ApplySnapshot(_outputService.Current);
+        ApplyStateOnly(_outputService.Current);
 
         _subscriptions.Add(
             _outputService.WhenChanged
                 .ObserveOn(Scheduler)
-                .Subscribe(ApplySnapshot));
+                .Subscribe(ApplyStateOnly));
+
+        _subscriptions.Add(
+            _outputService.WhenLineReceived
+                .ObserveOn(Scheduler)
+                .Subscribe(OnLineReceived));
 
         _subscriptions.Add(
             _workflow.WhenChanged
@@ -202,7 +207,7 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
 
     private Task ExecuteCancelAsync() => _workflow.CancelAsync();
 
-    private void ApplySnapshot(ProjectOutputSnapshot snapshot)
+    private void ApplyStateOnly(ProjectOutputSnapshot snapshot)
     {
         State = snapshot.State;
         LastOutcome = snapshot.LastOutcome;
@@ -210,8 +215,12 @@ public sealed class ProjectWorkflowViewModel : ReactiveObject, IDisposable
             or ProjectWorkflowOperationState.Running;
         StatusMessage = ProjectWorkflowStatusPolicy.MapOutputStatusMessage(snapshot);
 
-        Lines.Clear();
-        foreach (var line in snapshot.Lines)
-            Lines.Add(new OutputLineViewModel(line));
+        if (snapshot.State == ProjectWorkflowOperationState.Starting)
+            Lines.Clear();
+    }
+
+    private void OnLineReceived(ManagedProcessOutputLine line)
+    {
+        Lines.Add(new OutputLineViewModel(line));
     }
 }

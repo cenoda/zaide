@@ -14,36 +14,35 @@ Output / Problems / Test Results projection, and app dispose wiring against
 
 ---
 
-## Open — F1: Output projection is O(n²) and UI-hostile under real builds
+## Resolved — F1: Output projection is O(n²) and UI-hostile under real builds
 
 **Severity:** High  
 **Area:** `ProjectWorkflowService.AppendOutputLine`, `ProjectOutputService`,
 `ProjectWorkflowViewModel.ApplySnapshot`, `OutputPanel`
 
-**Problem:** Every stdout/stderr line does all of:
+**Resolution (2026-07-14):** Converted UI projection from full-snapshot rebuild
+per line to append-only line deltas.
 
-1. Append + **full list copy** + publish a new workflow snapshot
-   (`_outputLines.ToArray()` inside the gate).
-2. Map to another snapshot (`ProjectOutputService.Map`).
-3. On the UI thread: **`Lines.Clear()` + re-add every line** as new
-   `OutputLineViewModel` instances.
+- **`IProjectOutputService.WhenLineReceived`** — new per-line observable,
+  forwards `WhenOutputReceived` so the VM can subscribe to line deltas
+  without snapshot overhead.
+- **`ProjectWorkflowService.AppendOutputLine`** — no longer publishes a
+  full workflow snapshot per line. Only emits on `_outputSubject` and
+  silently updates `_current` for the polling `Current` property.
+  State-transition publishes (PublishRunningIfCurrent, CompleteOperationAsync,
+  context-change) still carry full `OutputLines` so `BuildDiagnosticsService`
+  and `TestResultsService` get complete output at operation end.
+- **`ProjectWorkflowViewModel`** — split `ApplySnapshot` into
+  `ApplyStateOnly` (state/status only, clears lines on `Starting`) and
+  `OnLineReceived` (append-only `Lines.Add`). No more `Clear()` + re-add
+  per line.
 
-A multi-thousand-line MSBuild log thrashes GC and Avalonia bindings and can
-freeze or jank the Output surface on non-trivial solutions.
+**Tests:** `ViewModel_AppendsLinesWithoutRebuild` asserts items are not
+reallocated across multiple line emissions; existing output/VM tests
+updated to feed lines via deltas.
 
-**Direction:** Prefer line-delta events (or append-only collection updates) for
-UI projection; avoid full snapshot rebuild per line. Throttle or batch UI
-updates if full snapshots remain required for idle terminal state. Keep
-generation filtering.
-
-**Acceptance sketch:**
-
-- Build / run / test still stream lines into Output.
-- Idle terminal snapshot still has complete `OutputLines` for diagnostics/test
-  parse consumers.
-- Focused tests: output service/VM do not reallocate entire line list per line
-  under a multi-line fake runner (or assert append-only behavior).
-- Sequential full gates green.
+**Gates:** `dotnet build`, `dotnet test` (focused + full 1828), `git diff --check`
+all pass.
 
 ---
 

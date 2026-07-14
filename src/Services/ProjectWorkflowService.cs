@@ -406,12 +406,18 @@ public sealed class ProjectWorkflowService : IProjectWorkflowService
             _outputLines.Add(line);
             _outputSubject.OnNext(line);
 
+            // Update _current silently so the Current property reflects
+            // accumulated lines for pollers (e.g. activation seed). Do NOT
+            // publish through _snapshotSubject — per-line snapshots are the
+            // O(n²) projection this fix eliminates. State-transition publishes
+            // (PublishRunningIfCurrent, CompleteOperationAsync, context-change)
+            // still carry full OutputLines for diagnostic/test consumers.
             if (_current.Generation == line.Generation)
             {
-                PublishLocked(_current with
+                _current = _current with
                 {
                     OutputLines = _outputLines.ToArray(),
-                });
+                };
             }
         }
         finally

@@ -43,6 +43,10 @@ public sealed class ProjectOutputService : IProjectOutputService, IDisposable
         _workflow.WhenChanged.Select(Map);
 
     /// <inheritdoc />
+    public IObservable<ManagedProcessOutputLine> WhenLineReceived =>
+        _workflow.WhenOutputReceived;
+
+    /// <inheritdoc />
     public void Dispose() => _subscriptions.Dispose();
 
     private static ProjectOutputSnapshot Map(ProjectWorkflowSnapshot snapshot) =>

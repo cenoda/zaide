@@ -73,13 +73,17 @@ public sealed class ProjectOutputServiceTests
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
-        workflow.Emit(RunningWithLine(1, "gen-1"));
+        // Generation 1: start and feed lines via deltas
+        workflow.Emit(StartingSnapshot(1));
+        workflow.EmitLine(MakeLine(1, "gen-1"));
         Assert.Single(vm.Lines);
         Assert.Contains("gen-1", vm.Lines[0].Text);
 
+        // Generation 2: Starting clears lines, then new deltas append
         workflow.Emit(StartingSnapshot(2));
-        workflow.Emit(RunningWithLine(2, "gen-2"));
+        Assert.Empty(vm.Lines);
 
+        workflow.EmitLine(MakeLine(2, "gen-2"));
         Assert.Single(vm.Lines);
         Assert.Contains("gen-2", vm.Lines[0].Text);
         Assert.DoesNotContain("gen-1", vm.Lines[0].Text);
@@ -119,10 +123,42 @@ public sealed class ProjectOutputServiceTests
         vm.Scheduler = CurrentThreadScheduler.Instance;
         vm.Activate();
 
-        workflow.Emit(RunningWithLine(1, "warn", ProcessStreamKind.StdErr));
+        workflow.Emit(StartingSnapshot(1));
+        workflow.EmitLine(MakeLine(1, "warn", ProcessStreamKind.StdErr));
 
         Assert.Equal("stderr", vm.Lines[0].StreamTag);
         Assert.Contains("warn", vm.Lines[0].DisplayText);
+    }
+
+    [Fact]
+    public void ViewModel_AppendsLinesWithoutRebuild()
+    {
+        var workflow = new RecordingWorkflowService();
+        using var output = new ProjectOutputService(workflow);
+        var context = new FakeIdleProjectContext();
+        using var vm = new ProjectWorkflowViewModel(workflow, output, context);
+        vm.Scheduler = CurrentThreadScheduler.Instance;
+        vm.Activate();
+
+        workflow.Emit(StartingSnapshot(1));
+
+        // Feed multiple lines and verify they accumulate without clearing
+        workflow.EmitLine(MakeLine(1, "first"));
+        Assert.Single(vm.Lines);
+        Assert.Contains("first", vm.Lines[0].Text);
+
+        var firstRef = vm.Lines[0];
+        workflow.EmitLine(MakeLine(1, "second"));
+        Assert.Equal(2, vm.Lines.Count);
+        Assert.Same(firstRef, vm.Lines[0]); // first item not reallocated
+
+        workflow.EmitLine(MakeLine(1, "third"));
+        Assert.Equal(3, vm.Lines.Count);
+        Assert.Same(firstRef, vm.Lines[0]); // still no reallocation
+
+        Assert.Contains("first", vm.Lines[0].Text);
+        Assert.Contains("second", vm.Lines[1].Text);
+        Assert.Contains("third", vm.Lines[2].Text);
     }
 
     private static ProjectWorkflowSnapshot IdleSnapshot(long generation) =>
@@ -165,6 +201,12 @@ public sealed class ProjectOutputServiceTests
                     DateTimeOffset.UtcNow),
             });
 
+    private static ManagedProcessOutputLine MakeLine(
+        long generation,
+        string text,
+        ProcessStreamKind stream = ProcessStreamKind.StdOut) =>
+        new(generation, stream, text, DateTimeOffset.UtcNow);
+
     private sealed class RecordingWorkflowService : IProjectWorkflowService
     {
         private readonly Subject<ProjectWorkflowSnapshot> _snapshotSubject = new();
@@ -181,6 +223,11 @@ public sealed class ProjectOutputServiceTests
         {
             _current = snapshot;
             _snapshotSubject.OnNext(snapshot);
+        }
+
+        public void EmitLine(ManagedProcessOutputLine line)
+        {
+            _outputSubject.OnNext(line);
         }
 
         public Task<ProjectWorkflowOperationResult> StartBuildAsync(
