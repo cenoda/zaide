@@ -1,6 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Zaide.Styles;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;
@@ -15,6 +16,11 @@ public partial class UnsavedDialog : Window
     public UnsavedDialog()
     {
         InitializeComponent();
+
+        // SpacingXl is an x:Double token; Layoutable.Margin requires Thickness.
+        // Binding Margin="{StaticResource SpacingXl}" throws InvalidCastException
+        // in compiled Avalonia XAML (see ISSUE-007).
+        RootPanel.Margin = LayoutTokens.Uniform(LayoutTokens.SpacingXl);
 
         // M1.5: Enable backdrop blur on the dialog window.
         // Priority order matches MainWindow: AcrylicBlur → Blur → Transparent.

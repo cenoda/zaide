@@ -8,6 +8,7 @@
 | 004 | Shared icons render invisible across non-nav surfaces | BUG | high | closed |
 | 005 | `dotnet test` hangs under redirected output | BUG | high | closed |
 | 006 | Editor crashes on selection change via GetOffset(line, column) | BUG | critical | closed |
+| 007 | Unsaved-changes dialog crashes with XAML InvalidCastException | BUG | critical | closed |
 
 ---
 

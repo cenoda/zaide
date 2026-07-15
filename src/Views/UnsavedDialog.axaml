@@ -8,7 +8,9 @@
         CanResize="False"
         ShowInTaskbar="False">
 
-    <StackPanel Margin="{StaticResource SpacingXl}" Spacing="{StaticResource SpacingLg}">
+    <!-- Margin is Thickness; Spacing* tokens are Double. Apply uniform
+         SpacingXl margin from code-behind via LayoutTokens (not StaticResource). -->
+    <StackPanel x:Name="RootPanel" Spacing="{StaticResource SpacingLg}">
         <TextBlock x:Name="MessageText"
                    TextWrapping="Wrap" />
 
