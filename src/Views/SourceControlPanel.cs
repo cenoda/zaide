@@ -187,11 +187,10 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
         };
 
-        // --- Commit Error Text (visible only when CommitError is non-null) ---
+        // --- Primary action feedback (errors or brief success notice) ---
         _commitErrorText = new TextBlock
         {
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.Parse("#E05555")),
             TextWrapping = TextWrapping.Wrap,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             IsVisible = false
@@ -334,13 +333,32 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 .Select(_ => Unit.Default)
                 .InvokeCommand(ViewModel, vm => vm.PrimaryActionCommand));
 
-            // Commit/push error surface (visible when either error is non-null)
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.CommitError, x => x.ViewModel!.PushError)
+            d.Add(this.WhenAnyValue(
+                    x => x.ViewModel!.CommitError,
+                    x => x.ViewModel!.PushError,
+                    x => x.ViewModel!.ActionNotice)
                 .Subscribe(tuple =>
                 {
                     var err = tuple.Item1 ?? tuple.Item2;
-                    _commitErrorText.Text = err ?? string.Empty;
-                    _commitErrorText.IsVisible = !string.IsNullOrEmpty(err);
+                    var notice = tuple.Item3;
+                    if (!string.IsNullOrEmpty(err))
+                    {
+                        _commitErrorText.Foreground = new SolidColorBrush(Color.Parse("#E05555"));
+                        _commitErrorText.Text = err;
+                        _commitErrorText.IsVisible = true;
+                    }
+                    else if (!string.IsNullOrEmpty(notice))
+                    {
+                        _commitErrorText.Foreground =
+                            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+                        _commitErrorText.Text = notice;
+                        _commitErrorText.IsVisible = true;
+                    }
+                    else
+                    {
+                        _commitErrorText.Text = string.Empty;
+                        _commitErrorText.IsVisible = false;
+                    }
                 }));
         });
     }

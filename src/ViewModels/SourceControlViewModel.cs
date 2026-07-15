@@ -28,6 +28,7 @@ public class SourceControlViewModel : ReactiveObject
     private string _commitMessage = string.Empty;
     private string? _commitError;
     private string? _pushError;
+    private string? _actionNotice;
     private SourceControlPrimaryAction _primaryAction = SourceControlPrimaryAction.Commit;
     private int _aheadBy;
     private bool _hasUpstream;
@@ -73,6 +74,16 @@ public class SourceControlViewModel : ReactiveObject
     {
         get => _pushError;
         private set => this.RaiseAndSetIfChanged(ref _pushError, value);
+    }
+
+    /// <summary>
+    /// Brief success notice for the latest primary action (e.g. push completed).
+    /// Cleared when the user retries commit/push or a new error is surfaced.
+    /// </summary>
+    public string? ActionNotice
+    {
+        get => _actionNotice;
+        private set => this.RaiseAndSetIfChanged(ref _actionNotice, value);
     }
 
     /// <summary>
@@ -366,6 +377,7 @@ public class SourceControlViewModel : ReactiveObject
 
     private async Task ExecutePrimaryActionAsync()
     {
+        ActionNotice = null;
         var action = PrimaryAction;
         if (action == SourceControlPrimaryAction.Push)
         {
@@ -431,6 +443,7 @@ public class SourceControlViewModel : ReactiveObject
     {
         if (UnstagedCount > 0 || StagedCount > 0)
         {
+            ActionNotice = null;
             PushError = "Cannot push with uncommitted changes.";
             return;
         }
@@ -438,19 +451,29 @@ public class SourceControlViewModel : ReactiveObject
         var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
         if (!discovery.IsRepository || discovery.RepositoryRoot is null)
         {
+            ActionNotice = null;
             PushError = "No repository — open a folder inside a git repository";
             return;
         }
 
+        var branchName = CurrentBranchName;
         var repoRoot = discovery.RepositoryRoot;
         var result = await Task.Run(() => _mutationService.Push(repoRoot));
 
-        RefreshCommand.Execute().Subscribe();
-
         if (result.IsSuccess)
+        {
+            ApplyResult(_orchestrator.Refresh(_workspace.WorkspacePath));
             PushError = null;
+            ActionNotice = string.IsNullOrEmpty(branchName)
+                ? "Push completed."
+                : $"Pushed {branchName}.";
+        }
         else
+        {
+            RefreshCommand.Execute().Subscribe();
+            ActionNotice = null;
             PushError = result.ErrorMessage;
+        }
     }
 
     private void UpdatePrimaryAction(bool hasRepository)

@@ -310,6 +310,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         vm.PrimaryActionCommand.Execute().Wait();
 
         Assert.Null(vm.PushError);
+        Assert.False(string.IsNullOrEmpty(vm.ActionNotice));
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
         Assert.Equal(0, vm.AheadBy);
         Assert.True(vm.HasUpstream);

@@ -321,6 +321,7 @@ public class SourceControlViewModelTests
 
         mutation.Verify(m => m.Push("/ws/.git/"), Times.Once);
         Assert.Null(vm.PushError);
+        Assert.Equal("Pushed main.", vm.ActionNotice);
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
         Assert.Equal(0, vm.AheadBy);
     }
