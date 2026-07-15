@@ -30,4 +30,10 @@ public interface IGitMutationService
     /// before attempting the commit.
     /// </summary>
     CommitResult Commit(string repositoryRoot, string message);
+
+    /// <summary>
+    /// Pushes the current branch to its configured upstream remote when the
+    /// working tree is clean and local commits are ahead of the remote.
+    /// </summary>
+    PushResult Push(string repositoryRoot);
 }

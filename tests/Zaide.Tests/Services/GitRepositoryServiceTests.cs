@@ -154,4 +154,53 @@ public class GitRepositoryServiceTests
             Directory.Delete(path, recursive: true);
         }
     }
+
+    [Fact]
+    public void ReadStatus_WithUpstream_TracksAheadAndBehindCounts()
+    {
+        var barePath = CreateTempDir();
+        var localPath = CreateTempDir();
+        try
+        {
+            Repository.Init(barePath, isBare: true);
+            Repository.Init(localPath);
+            using (var local = new Repository(localPath))
+            {
+                local.Network.Remotes.Add("origin", barePath);
+                local.Config.Set("user.name", "Test");
+                local.Config.Set("user.email", "test@example.com");
+            }
+
+            File.WriteAllText(Path.Combine(localPath, "seed.txt"), "seed\n");
+            using (var local = new Repository(localPath))
+            {
+                Commands.Stage(local, "seed.txt");
+                var author = new Signature("Test", "test@example.com", DateTimeOffset.UtcNow);
+                local.Commit("seed", author, author);
+                local.Network.Push(local.Network.Remotes["origin"], local.Head.CanonicalName, new PushOptions());
+                local.Branches.Update(local.Head, b =>
+                    b.TrackedBranch = $"refs/remotes/origin/{local.Head.FriendlyName}");
+            }
+
+            File.WriteAllText(Path.Combine(localPath, "seed.txt"), "ahead\n");
+            using (var local = new Repository(localPath))
+            {
+                Commands.Stage(local, "seed.txt");
+                var author = new Signature("Test", "test@example.com", DateTimeOffset.UtcNow);
+                local.Commit("ahead", author, author);
+            }
+
+            var discovery = _service.Discover(localPath);
+            var snapshot = _service.ReadStatus(discovery.RepositoryRoot!);
+
+            Assert.True(snapshot.HasUpstream);
+            Assert.Equal(1, snapshot.AheadBy);
+            Assert.Equal(0, snapshot.BehindBy);
+        }
+        finally
+        {
+            Directory.Delete(barePath, recursive: true);
+            Directory.Delete(localPath, recursive: true);
+        }
+    }
 }

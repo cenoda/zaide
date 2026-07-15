@@ -69,12 +69,16 @@ public class SourceControlViewModelTests
     private static RepositoryStatusSnapshot Snapshot(
         string currentBranch = "main",
         GitBranch[]? branches = null,
-        FileChange[]? changes = null) =>
+        FileChange[]? changes = null,
+        int aheadBy = 0,
+        bool hasUpstream = false) =>
         new()
         {
             CurrentBranchName = currentBranch,
             Branches = branches ?? Array.Empty<GitBranch>(),
             Changes = changes ?? Array.Empty<FileChange>(),
+            AheadBy = aheadBy,
+            HasUpstream = hasUpstream,
         };
 
     [Fact]
@@ -242,19 +246,141 @@ public class SourceControlViewModelTests
     }
 
     [Fact]
+    public void PrimaryAction_WithUncommittedChanges_IsCommit()
+    {
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+        }, aheadBy: 2, hasUpstream: true);
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
+    }
+
+    [Fact]
+    public void PrimaryAction_CleanTreeAheadOfUpstream_IsPush()
+    {
+        var snapshot = Snapshot(aheadBy: 1, hasUpstream: true);
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+        Assert.Equal("Push", vm.PrimaryActionLabel);
+    }
+
+    [Fact]
+    public void PrimaryAction_NewChangesBeforePush_RevertsToCommit()
+    {
+        var cleanAheadSnapshot = Snapshot(aheadBy: 1, hasUpstream: true);
+        var dirtySnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+        }, aheadBy: 1, hasUpstream: true);
+
+        var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
+        orchestratorMock.SetupSequence(o => o.Refresh("/ws"))
+            .Returns(SnapshotRefreshResult.Success("/ws", cleanAheadSnapshot))
+            .Returns(SnapshotRefreshResult.Success("/ws", dirtySnapshot));
+
+        var vm = new SourceControlViewModel(
+            orchestratorMock.Object,
+            WorkspaceWithPath(),
+            NullDiffService(),
+            DefaultMutation(),
+            DefaultGitRepo());
+
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
+    }
+
+    [Fact]
+    public void PushCommand_Success_ClearsErrorAndRefreshes()
+    {
+        var aheadSnapshot = Snapshot(aheadBy: 1, hasUpstream: true);
+        var upToDateSnapshot = Snapshot(aheadBy: 0, hasUpstream: true);
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(aheadSnapshot)
+            .Returns(upToDateSnapshot);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.Push("/ws/.git/")).Returns(PushResult.Success());
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+
+        vm.PushCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Push("/ws/.git/"), Times.Once);
+        Assert.Null(vm.PushError);
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal(0, vm.AheadBy);
+    }
+
+    [Fact]
+    public void PushCommand_DirtyTree_DoesNotCallMutation()
+    {
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+        }, aheadBy: 1, hasUpstream: true);
+        var orchestrator = CreateOrchestrator(snapshot);
+        var mutation = new Mock<IGitMutationService>();
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+
+        vm.PushCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Push(It.IsAny<string>()), Times.Never);
+        Assert.Equal("Cannot push with uncommitted changes.", vm.PushError);
+    }
+
+    [Fact]
+    public void PrimaryActionCommand_WhenPush_InvokesPushPath()
+    {
+        var aheadSnapshot = Snapshot(aheadBy: 1, hasUpstream: true);
+        var upToDateSnapshot = Snapshot(aheadBy: 0, hasUpstream: true);
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(aheadSnapshot)
+            .Returns(upToDateSnapshot);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.Push("/ws/.git/")).Returns(PushResult.Success());
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+
+        vm.PrimaryActionCommand.Execute().Wait();
+
+        mutation.Verify(m => m.Push("/ws/.git/"), Times.Once);
+        mutation.Verify(m => m.Commit(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public void CommitCommand_Success_ClearsMessageAndErrorAndRefreshes()
     {
         var stagedSnapshot = Snapshot(changes: new[]
         {
             new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
         });
-        var emptySnapshot = Snapshot();
+        var emptyAheadSnapshot = Snapshot(aheadBy: 1, hasUpstream: true);
 
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
         git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
             .Returns(stagedSnapshot)
-            .Returns(emptySnapshot);
+            .Returns(emptyAheadSnapshot);
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
 
         var mutation = new Mock<IGitMutationService>();
@@ -269,6 +395,7 @@ public class SourceControlViewModelTests
         Assert.Equal(string.Empty, vm.CommitMessage);
         Assert.Null(vm.CommitError);
         Assert.Empty(vm.StagedChanges);
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
     }
 
     [Fact]

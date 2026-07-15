@@ -31,18 +31,25 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     }
 
     private readonly string _repoDir;
+    private readonly string _bareRemoteDir;
 
     public SourceControlMutationFlowTests()
     {
+        _bareRemoteDir = Directory.CreateTempSubdirectory("zaide-scflow-remote-").FullName;
         _repoDir = Directory.CreateTempSubdirectory("zaide-scflow-").FullName;
+        Repository.Init(_bareRemoteDir, isBare: true);
         Repository.Init(_repoDir);
         using var repo = new Repository(_repoDir);
+        repo.Network.Remotes.Add("origin", _bareRemoteDir);
         repo.Config.Set("user.name", "Flow Test");
         repo.Config.Set("user.email", "flow@example.com");
         File.WriteAllText(Path.Combine(_repoDir, "seed.txt"), "seed\n");
         Commands.Stage(repo, "seed.txt");
         var author = new Signature("Flow Test", "flow@example.com", DateTimeOffset.UtcNow);
         repo.Commit("seed", author, author);
+        repo.Network.Push(repo.Network.Remotes["origin"], repo.Head.CanonicalName, new PushOptions());
+        repo.Branches.Update(repo.Head, b =>
+            b.TrackedBranch = $"refs/remotes/origin/{repo.Head.FriendlyName}");
     }
 
     public void Dispose()
@@ -50,6 +57,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         try
         {
             Directory.Delete(_repoDir, recursive: true);
+            Directory.Delete(_bareRemoteDir, recursive: true);
         }
         catch
         {
@@ -262,6 +270,52 @@ public sealed class SourceControlMutationFlowTests : IDisposable
 
         Assert.Equal("Nothing staged to commit.", vm.CommitError);
         Assert.Equal(beforeCommit, HeadCommitCount());
+    }
+
+    [Fact]
+    public void CommitPushWorkflow_TransitionsPrimaryActionFromCommitToPushAndBack()
+    {
+        var vm = CreateViewModel();
+
+        Write("pushme.txt", "hello\n");
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
+
+        var unstaged = vm.UnstagedChanges.Single(c => c.FilePath == "pushme.txt");
+        vm.StageFileCommand.Execute(unstaged).Wait();
+
+        vm.CommitMessage = "add pushme.txt";
+        vm.CommitCommand.Execute().Wait();
+
+        Assert.Null(vm.CommitError);
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+        Assert.Equal("Push", vm.PrimaryActionLabel);
+        Assert.True(vm.AheadBy > 0);
+
+        Write("interrupt.txt", "block push\n");
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
+
+        var interrupt = vm.UnstagedChanges.Single(c => c.FilePath == "interrupt.txt");
+        vm.StageFileCommand.Execute(interrupt).Wait();
+        vm.CommitMessage = "add interrupt.txt";
+        vm.CommitCommand.Execute().Wait();
+
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+
+        vm.PrimaryActionCommand.Execute().Wait();
+
+        Assert.Null(vm.PushError);
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal(0, vm.AheadBy);
+        Assert.True(vm.HasUpstream);
+
+        using var bare = new Repository(_bareRemoteDir);
+        Assert.Equal(3, bare.Commits.Count());
     }
 
     [Fact]

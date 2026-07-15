@@ -27,6 +27,10 @@ public class SourceControlViewModel : ReactiveObject
     private readonly Workspace _workspace;
     private string _commitMessage = string.Empty;
     private string? _commitError;
+    private string? _pushError;
+    private SourceControlPrimaryAction _primaryAction = SourceControlPrimaryAction.Commit;
+    private int _aheadBy;
+    private bool _hasUpstream;
     private GitBranch? _selectedBranch;
     private FileChange? _selectedFileChange;
     private string? _selectedFilePath;
@@ -58,6 +62,51 @@ public class SourceControlViewModel : ReactiveObject
     {
         get => _commitError;
         private set => this.RaiseAndSetIfChanged(ref _commitError, value);
+    }
+
+    /// <summary>
+    /// Push-specific error message. Set when a push attempt fails. Cleared on a
+    /// successful push and on a successful refresh. Distinct from
+    /// <see cref="CommitError"/>.
+    /// </summary>
+    public string? PushError
+    {
+        get => _pushError;
+        private set => this.RaiseAndSetIfChanged(ref _pushError, value);
+    }
+
+    /// <summary>
+    /// Primary action derived from working-tree cleanliness and ahead/upstream
+    /// status. Never relies on a cached post-commit flag.
+    /// </summary>
+    public SourceControlPrimaryAction PrimaryAction
+    {
+        get => _primaryAction;
+        private set
+        {
+            var changed = !EqualityComparer<SourceControlPrimaryAction>.Default.Equals(_primaryAction, value);
+            this.RaiseAndSetIfChanged(ref _primaryAction, value);
+            if (changed)
+                this.RaisePropertyChanged(nameof(PrimaryActionLabel));
+        }
+    }
+
+    /// <summary>User-facing label for the primary action button.</summary>
+    public string PrimaryActionLabel =>
+        PrimaryAction == SourceControlPrimaryAction.Push ? "Push" : "Commit";
+
+    /// <summary>Local commits ahead of the tracked upstream branch.</summary>
+    public int AheadBy
+    {
+        get => _aheadBy;
+        private set => this.RaiseAndSetIfChanged(ref _aheadBy, value);
+    }
+
+    /// <summary>Whether the current branch tracks an upstream remote branch.</summary>
+    public bool HasUpstream
+    {
+        get => _hasUpstream;
+        private set => this.RaiseAndSetIfChanged(ref _hasUpstream, value);
     }
 
     public GitBranch? SelectedBranch
@@ -123,6 +172,8 @@ public class SourceControlViewModel : ReactiveObject
     public ReactiveCommand<FileChange, Unit> StageFileCommand { get; }
     public ReactiveCommand<FileChange, Unit> UnstageFileCommand { get; }
     public ReactiveCommand<Unit, Unit> CommitCommand { get; }
+    public ReactiveCommand<Unit, Unit> PushCommand { get; }
+    public ReactiveCommand<Unit, Unit> PrimaryActionCommand { get; }
     public ReactiveCommand<GitBranch, Unit> SelectBranchCommand { get; }
     public ReactiveCommand<FileChange, Unit> SelectFileCommand { get; }
 
@@ -191,53 +242,11 @@ public class SourceControlViewModel : ReactiveObject
             }
         });
 
-        CommitCommand = ReactiveCommand.CreateFromTask(async () =>
-        {
-            // Empty-message guard: no service call, no repository access.
-            if (string.IsNullOrWhiteSpace(CommitMessage))
-            {
-                CommitError = "Commit message cannot be empty.";
-                return;
-            }
+        CommitCommand = ReactiveCommand.CreateFromTask(ExecuteCommitAsync);
 
-            var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
-            if (!discovery.IsRepository || discovery.RepositoryRoot is null)
-            {
-                CommitError = "No repository — open a folder inside a git repository";
-                return;
-            }
+        PushCommand = ReactiveCommand.CreateFromTask(ExecutePushAsync);
 
-            // Nothing-staged guard: no service call. The service also checks
-            // this (using repo truth), but the VM guard avoids the cost of
-            // opening the repository when the staged list is visibly empty.
-            if (StagedChanges.Count == 0)
-            {
-                CommitError = "Nothing staged to commit.";
-                return;
-            }
-
-            var repoRoot = discovery.RepositoryRoot;
-            var message = CommitMessage;
-            var result = await Task.Run(() => _mutationService.Commit(repoRoot, message));
-
-            // Refresh unconditionally so the post-commit state is truthful.
-            RefreshCommand.Execute().Subscribe();
-
-            if (result.IsSuccess)
-            {
-                CommitMessage = string.Empty;
-                CommitError = null;
-            }
-            else
-            {
-                CommitError = result.ErrorMessage;
-                // Do NOT set StatusMessage here — StatusMessage is reserved for
-                // refresh-state notices (non-repo, failure). CommitError has its
-                // own dedicated surface in SourceControlPanel.
-                // Do NOT set LastRefreshError/LastRefreshStatus — those are for
-                // refresh failures only.
-            }
-        });
+        PrimaryActionCommand = ReactiveCommand.CreateFromTask(ExecutePrimaryActionAsync);
 
         SelectBranchCommand = ReactiveCommand.Create<GitBranch>(branch =>
         {
@@ -292,6 +301,9 @@ public class SourceControlViewModel : ReactiveObject
             _currentBranchName = result.Status == SnapshotRefreshStatus.Failed
                 ? "—"
                 : "no repo";
+            AheadBy = 0;
+            HasUpstream = false;
+            UpdatePrimaryAction(hasRepository: false);
             this.RaisePropertyChanged(nameof(UnstagedCount));
             this.RaisePropertyChanged(nameof(StagedCount));
             this.RaisePropertyChanged(nameof(SelectedBranch));
@@ -302,6 +314,7 @@ public class SourceControlViewModel : ReactiveObject
 
         StatusMessage = null;
         CommitError = null;
+        PushError = null;
 
         Branches.Clear();
         UnstagedChanges.Clear();
@@ -320,10 +333,13 @@ public class SourceControlViewModel : ReactiveObject
 
         _selectedBranch = result.Snapshot.Branches.FirstOrDefault(b => b.IsCurrent);
         _currentBranchName = result.Snapshot.CurrentBranchName;
+        AheadBy = result.Snapshot.AheadBy;
+        HasUpstream = result.Snapshot.HasUpstream;
         this.RaisePropertyChanged(nameof(UnstagedCount));
         this.RaisePropertyChanged(nameof(StagedCount));
         this.RaisePropertyChanged(nameof(SelectedBranch));
         this.RaisePropertyChanged(nameof(CurrentBranchName));
+        UpdatePrimaryAction(hasRepository: true);
 
         // Re-select file by path across refresh.
         if (previouslySelectedPath != null)
@@ -346,5 +362,104 @@ public class SourceControlViewModel : ReactiveObject
                 CurrentDiff = null;
             }
         }
+    }
+
+    private async Task ExecutePrimaryActionAsync()
+    {
+        var action = PrimaryAction;
+        if (action == SourceControlPrimaryAction.Push)
+        {
+            if (UnstagedCount > 0 || StagedCount > 0)
+                return;
+
+            await ExecutePushAsync();
+            return;
+        }
+
+        await ExecuteCommitAsync();
+    }
+
+    private async Task ExecuteCommitAsync()
+    {
+        // Empty-message guard: no service call, no repository access.
+        if (string.IsNullOrWhiteSpace(CommitMessage))
+        {
+            CommitError = "Commit message cannot be empty.";
+            return;
+        }
+
+        var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+        if (!discovery.IsRepository || discovery.RepositoryRoot is null)
+        {
+            CommitError = "No repository — open a folder inside a git repository";
+            return;
+        }
+
+        // Nothing-staged guard: no service call. The service also checks
+        // this (using repo truth), but the VM guard avoids the cost of
+        // opening the repository when the staged list is visibly empty.
+        if (StagedChanges.Count == 0)
+        {
+            CommitError = "Nothing staged to commit.";
+            return;
+        }
+
+        var repoRoot = discovery.RepositoryRoot;
+        var message = CommitMessage;
+        var result = await Task.Run(() => _mutationService.Commit(repoRoot, message));
+
+        // Refresh unconditionally so the post-commit state is truthful.
+        RefreshCommand.Execute().Subscribe();
+
+        if (result.IsSuccess)
+        {
+            CommitMessage = string.Empty;
+            CommitError = null;
+        }
+        else
+        {
+            CommitError = result.ErrorMessage;
+            // Do NOT set StatusMessage here — StatusMessage is reserved for
+            // refresh-state notices (non-repo, failure). CommitError has its
+            // own dedicated surface in SourceControlPanel.
+            // Do NOT set LastRefreshError/LastRefreshStatus — those are for
+            // refresh failures only.
+        }
+    }
+
+    private async Task ExecutePushAsync()
+    {
+        if (UnstagedCount > 0 || StagedCount > 0)
+        {
+            PushError = "Cannot push with uncommitted changes.";
+            return;
+        }
+
+        var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+        if (!discovery.IsRepository || discovery.RepositoryRoot is null)
+        {
+            PushError = "No repository — open a folder inside a git repository";
+            return;
+        }
+
+        var repoRoot = discovery.RepositoryRoot;
+        var result = await Task.Run(() => _mutationService.Push(repoRoot));
+
+        RefreshCommand.Execute().Subscribe();
+
+        if (result.IsSuccess)
+            PushError = null;
+        else
+            PushError = result.ErrorMessage;
+    }
+
+    private void UpdatePrimaryAction(bool hasRepository)
+    {
+        PrimaryAction = SourceControlActionDeriver.Derive(
+            UnstagedCount,
+            StagedCount,
+            AheadBy,
+            HasUpstream,
+            hasRepository);
     }
 }

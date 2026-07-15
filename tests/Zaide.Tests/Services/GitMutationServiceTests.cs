@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using LibGit2Sharp;
 using Xunit;
 using Zaide.Services;
@@ -34,6 +35,13 @@ public class GitMutationServiceTests
     }
 
     private readonly IGitMutationService _service = new GitMutationService();
+
+    private static void ConfigureUpstreamAfterInitialPush(string localDir)
+    {
+        using var local = new Repository(localDir);
+        local.Branches.Update(local.Head, b =>
+            b.TrackedBranch = $"refs/remotes/origin/{local.Head.FriendlyName}");
+    }
 
     [Fact]
     public void Stage_UntrackedFile_MovesToIndex()
@@ -297,5 +305,94 @@ public class GitMutationServiceTests
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.ErrorMessage);
+    }
+
+    [Fact]
+    public void Push_CleanTreeWithAheadCommits_Succeeds()
+    {
+        var bareDir = CreateTempDir();
+        var localDir = CreateTempDir();
+        try
+        {
+            Repository.Init(bareDir, isBare: true);
+            Repository.Init(localDir);
+            using (var local = new Repository(localDir))
+            {
+                local.Network.Remotes.Add("origin", bareDir);
+                local.Config.Set("user.name", "Test");
+                local.Config.Set("user.email", "test@example.com");
+            }
+
+            File.WriteAllText(Path.Combine(localDir, "seed.txt"), "seed\n");
+            using (var local = new Repository(localDir))
+            {
+                Commands.Stage(local, "seed.txt");
+                var author = new Signature("Test", "test@example.com", DateTimeOffset.UtcNow);
+                local.Commit("seed", author, author);
+                local.Network.Push(local.Network.Remotes["origin"], local.Head.CanonicalName, new PushOptions());
+            }
+            ConfigureUpstreamAfterInitialPush(localDir);
+
+            File.WriteAllText(Path.Combine(localDir, "seed.txt"), "seed\nmore\n");
+            using (var local = new Repository(localDir))
+            {
+                Commands.Stage(local, "seed.txt");
+                var author = new Signature("Test", "test@example.com", DateTimeOffset.UtcNow);
+                local.Commit("ahead", author, author);
+            }
+
+            var result = _service.Push(localDir);
+
+            Assert.True(result.IsSuccess);
+            Assert.Null(result.ErrorMessage);
+
+            using var bare = new Repository(bareDir);
+            Assert.Equal(2, bare.Commits.Count());
+        }
+        finally
+        {
+            Directory.Delete(bareDir, recursive: true);
+            Directory.Delete(localDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Push_DirtyTree_ReturnsFailureWithoutPushing()
+    {
+        var bareDir = CreateTempDir();
+        var localDir = CreateTempDir();
+        try
+        {
+            Repository.Init(bareDir, isBare: true);
+            Repository.Init(localDir);
+            using (var local = new Repository(localDir))
+            {
+                local.Network.Remotes.Add("origin", bareDir);
+                local.Config.Set("user.name", "Test");
+                local.Config.Set("user.email", "test@example.com");
+            }
+
+            File.WriteAllText(Path.Combine(localDir, "seed.txt"), "seed\n");
+            using (var local = new Repository(localDir))
+            {
+                Commands.Stage(local, "seed.txt");
+                var author = new Signature("Test", "test@example.com", DateTimeOffset.UtcNow);
+                local.Commit("seed", author, author);
+                local.Network.Push(local.Network.Remotes["origin"], local.Head.CanonicalName, new PushOptions());
+            }
+            ConfigureUpstreamAfterInitialPush(localDir);
+
+            File.WriteAllText(Path.Combine(localDir, "dirty.txt"), "uncommitted\n");
+
+            var result = _service.Push(localDir);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Cannot push with uncommitted changes.", result.ErrorMessage);
+        }
+        finally
+        {
+            Directory.Delete(bareDir, recursive: true);
+            Directory.Delete(localDir, recursive: true);
+        }
     }
 }

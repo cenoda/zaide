@@ -87,7 +87,7 @@ public class SourceControlPanelCommandWiringTests
     {
         var vm = CreateViewModel();
         var clicks = new Subject<EventPattern<RoutedEventArgs>>();
-        using var sub = clicks.Select(_ => Unit.Default).InvokeCommand(vm, x => x.CommitCommand);
+        using var sub = clicks.Select(_ => Unit.Default).InvokeCommand(vm, x => x.PrimaryActionCommand);
 
         // Empty-message path runs synchronously to the CommitError guard and must
         // not throw when the click event fires.

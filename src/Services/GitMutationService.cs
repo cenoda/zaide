@@ -44,6 +44,36 @@ public sealed class GitMutationService : IGitMutationService
     }
 
     /// <inheritdoc/>
+    public PushResult Push(string repositoryRoot)
+    {
+        try
+        {
+            using var repo = new Repository(repositoryRoot);
+
+            if (repo.Info.IsHeadDetached)
+                return PushResult.Failure("Cannot push from detached HEAD.");
+
+            if (repo.RetrieveStatus().IsDirty)
+                return PushResult.Failure("Cannot push with uncommitted changes.");
+
+            var branch = repo.Head;
+            if (branch.TrackedBranch is null)
+                return PushResult.Failure("Current branch has no upstream branch.");
+
+            var tracking = branch.TrackingDetails;
+            if (tracking is null || (tracking.AheadBy ?? 0) == 0)
+                return PushResult.Failure("Nothing to push.");
+
+            repo.Network.Push(branch, new PushOptions());
+            return PushResult.Success();
+        }
+        catch (System.Exception ex)
+        {
+            return PushResult.Failure(ex.Message);
+        }
+    }
+
+    /// <inheritdoc/>
     public CommitResult Commit(string repositoryRoot, string message)
     {
         // Empty-message validation happens before any repository access so

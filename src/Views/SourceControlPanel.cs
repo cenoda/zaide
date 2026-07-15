@@ -174,10 +174,10 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             FontSize = 13
         };
 
-        // --- Commit Button ---
+        // --- Primary Action Button (Commit or Push) ---
         _commitButton = new Button
         {
-            Content = "Commit Staged",
+            Content = "Commit",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingLg),
             Height = 30,
@@ -323,18 +323,22 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             // Commit message binding
             d.Add(this.Bind(ViewModel, vm => vm.CommitMessage, v => v._commitInput.Text));
 
-            // Commit button. Project the event to Unit so it matches
-            // CommitCommand's parameter type (see refresh button note above).
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.PrimaryActionLabel)
+                .Subscribe(label => _commitButton.Content = label));
+
+            // Primary action button. Project the event to Unit so it matches
+            // PrimaryActionCommand's parameter type (see refresh button note above).
             d.Add(Observable.FromEventPattern<RoutedEventArgs>(
                     h => _commitButton.Click += h,
                     h => _commitButton.Click -= h)
                 .Select(_ => Unit.Default)
-                .InvokeCommand(ViewModel, vm => vm.CommitCommand));
+                .InvokeCommand(ViewModel, vm => vm.PrimaryActionCommand));
 
-            // Commit error surface (visible only when CommitError is non-null)
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.CommitError)
-                .Subscribe(err =>
+            // Commit/push error surface (visible when either error is non-null)
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.CommitError, x => x.ViewModel!.PushError)
+                .Subscribe(tuple =>
                 {
+                    var err = tuple.Item1 ?? tuple.Item2;
                     _commitErrorText.Text = err ?? string.Empty;
                     _commitErrorText.IsVisible = !string.IsNullOrEmpty(err);
                 }));

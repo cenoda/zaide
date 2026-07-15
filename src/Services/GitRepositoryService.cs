@@ -44,12 +44,29 @@ public sealed class GitRepositoryService : IGitRepositoryService
             .SelectMany(ToChanges)
             .ToList();
 
+        var hasUpstream = false;
+        var aheadBy = 0;
+        var behindBy = 0;
+        if (!isDetached)
+        {
+            var tracking = repo.Head.TrackingDetails;
+            if (tracking is not null && repo.Head.TrackedBranch is not null)
+            {
+                hasUpstream = true;
+                aheadBy = tracking.AheadBy ?? 0;
+                behindBy = tracking.BehindBy ?? 0;
+            }
+        }
+
         return new RepositoryStatusSnapshot
         {
             CurrentBranchName = currentBranchName,
             IsDetachedHead = isDetached,
             Branches = branches,
-            Changes = changes
+            Changes = changes,
+            HasUpstream = hasUpstream,
+            AheadBy = aheadBy,
+            BehindBy = behindBy,
         };
     }
 

@@ -32,4 +32,22 @@ public sealed class RepositoryStatusSnapshot
     /// </summary>
     public IReadOnlyList<Zaide.Models.FileChange> Changes { get; init; }
         = System.Array.Empty<Zaide.Models.FileChange>();
+
+    /// <summary>
+    /// True when the current branch tracks an upstream remote branch.
+    /// False for detached HEAD or branches without upstream configuration.
+    /// </summary>
+    public bool HasUpstream { get; init; }
+
+    /// <summary>
+    /// Number of local commits ahead of the tracked upstream branch.
+    /// Zero when there is no upstream or the branch is up to date.
+    /// </summary>
+    public int AheadBy { get; init; }
+
+    /// <summary>
+    /// Number of local commits behind the tracked upstream branch.
+    /// Zero when there is no upstream or the branch is up to date.
+    /// </summary>
+    public int BehindBy { get; init; }
 }
