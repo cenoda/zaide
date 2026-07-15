@@ -2,17 +2,20 @@
 
 ## Gate Result
 
-**Status: NO-GO for M1b–M5; M1a runner evidence complete.** This M0 evidence
-pass verified the live baseline, ownership, reusable tests, fixtures, recovery
-coverage, and carry-over work. The M1a local runner now records five comparable
-samples for startup, real-server LSP, real-child workflow operations, and
-real-adapter DAP. It does **not** record desktop editor or large-file edit
-samples. Consequently, no production hardening may start.
+**Status: NO-GO for M1b–M5; M1a runner evidence complete; desktop timing partial.**
+This M0 evidence pass verified the live baseline, ownership, reusable tests,
+fixtures, recovery coverage, and carry-over work. The M1a local runner records
+five comparable samples for startup, real-server LSP, real-child workflow
+operations, and real-adapter DAP. A follow-on manual desktop pass (2026-07-15)
+recorded five large-file-open samples and five editor **open-only** sub-samples,
+but **did not** complete the editor harmless-edit/save/restore substep under the
+locked no-key-injection constraint. Consequently, no production hardening may
+start.
 
 This is a deliberate truthful M0 result, not a Phase 13 implementation failure.
-The remaining unblocked action is truthful manual measurement on the recorded
-Linux desktop for editor open/edit/save and 8 MiB rendering. M0/M1a introduced
-no `src/` or test-project production behavior change.
+The remaining unblocked action is a mouse-only or operator-timed editor
+edit/save/restore recheck (or named approval of the documented limitation).
+M0/M1a introduced no `src/` or test-project production behavior change.
 
 ## 1. Repository and Environment Baseline
 
@@ -245,13 +248,76 @@ quiet-machine rule before it can supersede the M0 baseline.
 | Test | `dotnet test tests/fixtures/workflow-tests-pass/WorkflowTestsPass.csproj --no-restore` | 958, 838, 830, 826, 832 | 832 | All PASS |
 | DAP breakpoint → step → stop | `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName=Zaide.Tests.Services.M4DebugExecutionProofTests.ProductionProof_LaunchBreakpointStepAndStop'` | 1318, 1346, 1337, 1320, 1339 | 1337 | All PASS; real NetCoreDbg adapter and debuggee |
 
+### Manual Desktop Timing Evidence (2026-07-15)
+
+Truthful desktop samples on the recorded KDE Plasma Wayland session. No
+production code, test, or Phase 13 scope change. No `xdotool`, no synthetic
+keyboard injection into Zaide, and no `Ctrl+Space` routing claim.
+
+Raw evidence (untracked):
+`/tmp/zaide-phase13/measurements/m0-desktop-20260715/raw-desktop-samples.json`
+
+#### Fixtures
+
+| Fixture | Path | SHA-256 |
+|---|---|---|
+| Workflow console source | `/home/cenoda/zaide/tests/fixtures/workflow-console/Program.cs` | `617a20b62997f6cbed8a0658a011ac1de1b59d68f999381866ac7ca20bee7020` |
+| Large text | `/tmp/zaide-phase13/large-file-8MiB.txt` | `0a014ac760b7eb31cd7b75b2aa1a897b7fe430571a5ac874a3c8706c54c9ffd9` |
+
+Generated with:
+`python3 /home/cenoda/zaide/tools/phase13-generate-large-file.py /tmp/zaide-phase13/large-file-8MiB.txt`
+
+Fixture A bytes were restored to the committed SHA-256 after the pass.
+
+#### Environment
+
+| Item | Recorded value |
+|---|---|
+| Evidence commit | `fd000ddd28947e359d53d09e8548827496425e83` |
+| Host / kernel | Linux `arch` x64; `7.1.3-arch1-1` |
+| Session | `XDG_SESSION_TYPE=wayland`; `DISPLAY=:1`; `WAYLAND_DISPLAY=wayland-0`; `XDG_CURRENT_DESKTOP=KDE` |
+| Desktop | Wayland KDE Plasma |
+| Timer | `time.monotonic_ns()` external to the Zaide process; setup excluded |
+| Zaide binary | `/home/cenoda/zaide/src/bin/Debug/net10.0/Zaide` |
+| Interaction | AT-SPI for portal/dialog discovery; XTest mouse for Zaide tree/editor; `wl-copy` + middle-click paste attempted for edit (did not dirty editor) |
+
+#### Editor open/edit/save (`Program.cs`)
+
+| Substep | Samples (ms) | Median | Min | Max | Range | Population variance | Gate |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| Open to ready (5 / 5) | `574.469`, `583.535`, `567.640`, `563.177`, `542.222` | `567.640` | `542.222` | `583.535` | `41.313` | `191.009 ms²` | PASS open-only variance (41 ms ≤ 57 ms = 10% of median) |
+| Harmless edit / save / restore | — | — | — | — | — | — | **FAIL / blocked** |
+
+Edit/save blocked: `wl-copy` + middle-click paste does not mark the Avalonia
+`TextEditor` dirty; Save is reachable only via command palette or `Ctrl+S` under
+the locked no-synthetic-key-injection rule. The full editor open/edit/save row
+therefore remains **0 / 5** complete samples and blocks M0 closure and M1b.
+
+#### Large file open (`large-file-8MiB.txt`)
+
+| Samples (ms) | Median | Min | Max | Range | Population variance | Gate |
+|---:|---:|---:|---:|---:|---:|---|
+| `1106.994`, `900.015`, `871.603`, `875.345`, `883.433` | `883.433` | `871.603` | `1106.994` | `235.392` | `8152.061 ms²` | **FAIL** variance gate (235 ms range > 88 ms = 10% of median); sample 1 retained (possible cold open) |
+
+Large-file rendering and scroll/caret responsiveness were observed for all five
+samples. No save was performed on the generated fixture.
+
+Locked release envelope from median: **≤ 972 ms** (883 ms median + 88 ms
+approved variance). Sample 1 (**1107 ms**) exceeds that envelope and requires
+named human approval before an accepted limitation can be recorded.
+
+#### Ctrl+Space
+
+Live completion invocation remains **not validated** (no real desktop invocation
+observed).
+
 ### Budget Matrix
 
 | Area | Measurement site / fixture | Samples | Median baseline | Numeric budget | Gate |
 |---|---|---:|---:|---:|---|
 | Startup to usable main window | External monotonic timer (`date +%s%N`) to a new XWayland `Zaide` window owned by the newly launched PID; normal settings | 5 / 5 | 620 ms (`621, 620, 620, 621, 620`) | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (62 ms) | PASS; measured 1 ms range |
-| Editor open/edit/save | External timer; workflow-console source | 0 / 5 | not recorded | **not locked** | blocks M0 closure and M1b |
-| Large file open/edit | External timer; generated 8 MiB file / hash in §3 | 0 / 5 | not recorded | **not locked** | blocks M0 closure and M1b |
+| Editor open/edit/save | External timer; `Program.cs` / SHA in manual § | 0 / 5 complete (5 / 5 open-only sub-samples at 568 ms median) | open-only median 568 ms; full row **not locked** | ≤ 628 ms open envelope from 568 ms + 10% once edit/save is proven | **FAIL / blocked** — edit/save not proven; blocks M0 and M1b |
+| Large file open | External timer; `large-file-8MiB.txt` / SHA in manual § | 5 / 5 | 883 ms (`1107, 900, 872, 875, 883`) | ≤ 972 ms (883 ms + 10% variance) | **FAIL** — range 235 ms > 88 ms; sample 1 (1107 ms) > 972 ms envelope |
 | LSP ready / first result | Real `csharp-ls`; temporary copy of the Phase 10 proof fixture; completion + hover + stale-result smoke | 5 / 5 | 5708 ms | ≤ 8,000 ms; maximum accepted sample variance ≤ 10% of median (571 ms) | PASS; measured 18 ms range |
 | Build | Real child `dotnet`; workflow-console fixture | 1 cold + 4 warm | 1905 ms cold; 413 ms warm | ≤ 2,500 ms cold; ≤ 600 ms warm; maximum accepted variance ≤ 10% of each median | PASS; cold/warm explicitly separated |
 | Run | Real child `dotnet`; workflow-console fixture | 5 / 5 | 537 ms | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (54 ms) | PASS; measured 12 ms range |
@@ -288,7 +354,7 @@ table before M1b or M0 closure.
 - [x] Carry-over triage and explicit platform/accessibility/critical-path matrices recorded.
 - [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped.
 - [x] Deterministic large-file fixture generator added and generated outside settings/repository data.
-- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; desktop editor and large-file remain pending manual evidence).
+- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; large-file has 5 / 5 open samples but fails variance/envelope gate; editor edit/save remains unproven).
 - [ ] Linux desktop release/keyboard/focus measurements recorded.
 
 **M0 remains open and M1b is blocked until the two unchecked gate items are
