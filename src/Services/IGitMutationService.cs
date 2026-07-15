@@ -34,6 +34,7 @@ public interface IGitMutationService
     /// <summary>
     /// Pushes the current branch to its configured upstream remote when the
     /// working tree is clean and local commits are ahead of the remote.
+    /// Uses the system <c>git</c> CLI so SSH and credential-helper remotes work.
     /// </summary>
     PushResult Push(string repositoryRoot);
 }
