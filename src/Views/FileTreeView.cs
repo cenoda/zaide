@@ -387,6 +387,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         showHiddenItem.Click += (_, _) => ViewModel!.ToggleHiddenFilesCommand.Execute().Subscribe();
         contextMenu.Items.Add(showHiddenItem);
 
+        var refreshItem = CreateStyledMenuItem("Refresh");
+        refreshItem.Click += (_, _) => ViewModel!.RefreshCommand.Execute().Subscribe();
+        contextMenu.Items.Add(refreshItem);
+
         // M3: Copy Path / Copy Relative Path
         contextMenu.Items.Add(new Separator());
         var copyPathItem = CreateStyledMenuItem("Copy Path");

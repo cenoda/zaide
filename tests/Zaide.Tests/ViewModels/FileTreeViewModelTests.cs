@@ -336,4 +336,241 @@ public class FileTreeViewModelTests
         var result = await vm.CloseFolderRequested.Handle(Unit.Default).FirstAsync().ToTask();
         Assert.Equal(Unit.Default, result);
     }
+
+    // ── Live-sync tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void HandleCreated_SetsDepthCorrectly_ForRootLevel()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Empty(vm.RootNodes);
+
+            // Simulate a file creation at root level
+            var newFilePath = Path.Combine(root, "newfile.txt");
+            File.WriteAllText(newFilePath, "content");
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, newFilePath));
+
+            Assert.Single(vm.RootNodes);
+            Assert.Equal(0, vm.RootNodes[0].Depth);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void HandleCreated_SetsDepthCorrectly_ForNestedFile()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var subdir = Directory.CreateDirectory(Path.Combine(root, "subdir"));
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+
+            var subdirNode = vm.RootNodes.FirstOrDefault(n => n.Name == "subdir");
+            Assert.NotNull(subdirNode);
+            Assert.Equal(0, subdirNode.Depth);
+
+            // Simulate a file creation inside subdir
+            var newFilePath = Path.Combine(subdir.FullName, "nested.txt");
+            File.WriteAllText(newFilePath, "content");
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, newFilePath));
+
+            Assert.Single(subdirNode.Children);
+            Assert.Equal(1, subdirNode.Children[0].Depth);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void HandleCreated_MaintainsSortOrder_DirectoriesBeforeFiles()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "z-file.txt"), "z");
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Single(vm.RootNodes);
+
+            // Create a directory — should be inserted before the file
+            var newDirPath = Path.Combine(root, "a-dir");
+            Directory.CreateDirectory(newDirPath);
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, newDirPath));
+
+            Assert.Equal(2, vm.RootNodes.Count);
+            Assert.True(vm.RootNodes[0].IsDirectory);
+            Assert.Equal("a-dir", vm.RootNodes[0].Name);
+            Assert.False(vm.RootNodes[1].IsDirectory);
+            Assert.Equal("z-file.txt", vm.RootNodes[1].Name);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void HandleCreated_MaintainsSortOrder_AlphabeticalWithinCategory()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "a-file.txt"), "a");
+            File.WriteAllText(Path.Combine(root, "c-file.txt"), "c");
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Equal(2, vm.RootNodes.Count);
+
+            // Create a file that should be inserted between a-file and c-file
+            var newFilePath = Path.Combine(root, "b-file.txt");
+            File.WriteAllText(newFilePath, "b");
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, newFilePath));
+
+            Assert.Equal(3, vm.RootNodes.Count);
+            Assert.Equal("a-file.txt", vm.RootNodes[0].Name);
+            Assert.Equal("b-file.txt", vm.RootNodes[1].Name);
+            Assert.Equal("c-file.txt", vm.RootNodes[2].Name);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void HandleCreated_DoesNotAddDuplicate_WhenNodeAlreadyExists()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "existing.txt"), "content");
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Single(vm.RootNodes);
+
+            // Simulate a duplicate Created event for the same file
+            var existingPath = Path.Combine(root, "existing.txt");
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, existingPath));
+
+            // Should still be only one node — no duplicate
+            Assert.Single(vm.RootNodes);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Refresh_ReEnumeratesTree_WithoutRestartingWatcher()
+    {
+        var mockService = new Moq.Mock<IFileTreeService>();
+        var callCount = 0;
+        mockService.Setup(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(() =>
+            {
+                callCount++;
+                return new List<FileTreeNode>
+                {
+                    new FileTreeNode { Name = $"file-{callCount}.txt", FullPath = $"/fake/file-{callCount}.txt", IsDirectory = false, Depth = 0 }
+                };
+            });
+        mockService.Setup(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(System.Reactive.Linq.Observable.Never<FileChangeEvent>());
+
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+        vm.SetRootPath("/fake/path");
+        Assert.Single(vm.RootNodes);
+        Assert.Equal("file-1.txt", vm.RootNodes[0].Name);
+
+        // Refresh should re-enumerate without calling StopWatching/StartWatching
+        vm.Refresh();
+
+        Assert.Single(vm.RootNodes);
+        Assert.Equal("file-2.txt", vm.RootNodes[0].Name);
+        // StopWatching was called once during SetRootPath, NOT again during Refresh
+        mockService.Verify(s => s.StopWatching(), Moq.Times.Once);
+        // StartWatching was called once during SetRootPath, not again during Refresh
+        mockService.Verify(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Once);
+    }
+
+    [Fact]
+    public void Refresh_IsNoOp_WhenNoFolderOpen()
+    {
+        var mockService = new Moq.Mock<IFileTreeService>();
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+
+        vm.Refresh();
+
+        mockService.Verify(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Never);
+    }
+
+    [Fact]
+    public void HandleDeleted_IsNoOp_WhenNodeDoesNotExist()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            Assert.Empty(vm.RootNodes);
+
+            // Deleting a non-existent file should not throw
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Deleted, Path.Combine(root, "ghost.txt")));
+            Assert.Empty(vm.RootNodes);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SetRootPath_SwitchingWorkspaces_StopsOldWatcherAndStartsNew()
+    {
+        var mockService = new Moq.Mock<IFileTreeService>();
+        mockService.Setup(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(new List<FileTreeNode>());
+        mockService.Setup(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(System.Reactive.Linq.Observable.Never<FileChangeEvent>());
+
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+
+        vm.SetRootPath("/workspace-a");
+        vm.SetRootPath("/workspace-b");
+
+        // StopWatching called at least once during the transition
+        mockService.Verify(s => s.StopWatching(), Moq.Times.AtLeastOnce);
+        // StartWatching called for each workspace
+        mockService.Verify(s => s.StartWatching("/workspace-a", It.IsAny<bool>()), Moq.Times.Once);
+        mockService.Verify(s => s.StartWatching("/workspace-b", It.IsAny<bool>()), Moq.Times.Once);
+    }
 }

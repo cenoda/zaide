@@ -145,7 +145,9 @@ public class FileTreeService : IFileTreeService
             .Merge(deleted.Select(e => new FileChangeEvent(ChangeType.Deleted, e.EventArgs.FullPath)))
             .Merge(renamed.Select(e => new FileChangeEvent(ChangeType.Renamed, e.EventArgs.FullPath, e.EventArgs.OldFullPath)))
             .Where(change => !ShouldSkip(Path.GetFileName(change.FullPath), currentIncludeHidden))
-            .Throttle(TimeSpan.FromMilliseconds(100));
+            .Buffer(TimeSpan.FromMilliseconds(200))
+            .Where(batch => batch.Count > 0)
+            .SelectMany(batch => batch);
 
         _watcher.EnableRaisingEvents = true;
         return observable;

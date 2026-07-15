@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -59,6 +60,9 @@ public class FileTreeViewModel : ReactiveObject
     // M3: Copy path commands — execute with a FileTreeNode payload
     public ReactiveCommand<FileTreeNode, Unit> CopyPathCommand { get; }
     public ReactiveCommand<FileTreeNode, Unit> CopyRelativePathCommand { get; }
+
+    // Live-sync fallback: re-enumerates the tree without toggling any state.
+    public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
 
     /// <summary>
     /// M3: Fires when a path string should be copied to clipboard.
@@ -192,6 +196,10 @@ public class FileTreeViewModel : ReactiveObject
         commandRegistry?.Register(new CommandDescriptor(
             "explorer.toggleHiddenFiles", "Toggle Hidden Files", "Explorer",
             new[] { "Ctrl+Shift+H" }, ToggleHiddenFilesCommand));
+
+        // Live-sync fallback: re-enumerates the current root without changing
+        // any toggle state. The watcher keeps running, so no observation gap.
+        RefreshCommand = ReactiveCommand.Create(Refresh);
     }
 
     /// <summary>
@@ -256,6 +264,29 @@ public class FileTreeViewModel : ReactiveObject
         return false;
     }
 
+    /// <summary>
+    /// Re-enumerates the current root directory and replaces RootNodes.
+    /// The watcher is NOT stopped — it continues observing throughout the
+    /// refresh so no filesystem events are missed.
+    /// </summary>
+    public void Refresh()
+    {
+        if (RootPath is null) return;
+
+        try
+        {
+            var nodes = _fileTreeService.EnumerateDirectory(RootPath, ShowHiddenFiles);
+            RootNodes.Clear();
+            foreach (var node in nodes)
+                RootNodes.Add(node);
+            StatusText = null;
+        }
+        catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
+        {
+            StatusText = $"Refresh failed: {ex.Message}";
+        }
+    }
+
     private static void SetExpandedRecursive(FileTreeNode node, bool isExpanded)
     {
         node.IsExpanded = isExpanded;
@@ -266,7 +297,7 @@ public class FileTreeViewModel : ReactiveObject
         }
     }
 
-    private void HandleFileChange(FileChangeEvent change)
+    internal void HandleFileChange(FileChangeEvent change)
     {
         switch (change.Type)
         {
@@ -292,12 +323,19 @@ public class FileTreeViewModel : ReactiveObject
         {
             var name = Path.GetFileName(fullPath);
             var isDir = Directory.Exists(fullPath);
-            RootNodes.Add(new FileTreeNode
+
+            // Duplicate guard: watcher may fire Created more than once for the same path
+            if (RootNodes.Any(n => n.FullPath == fullPath))
+                return;
+
+            var node = new FileTreeNode
             {
                 Name = name,
                 FullPath = fullPath,
-                IsDirectory = isDir
-            });
+                IsDirectory = isDir,
+                Depth = 0
+            };
+            InsertNodeSorted(RootNodes, node);
             return;
         }
 
@@ -307,12 +345,54 @@ public class FileTreeViewModel : ReactiveObject
         var nodeName = Path.GetFileName(fullPath);
         var nodeIsDir = Directory.Exists(fullPath);
 
-        parent.Children.Add(new FileTreeNode
+        // Duplicate guard
+        if (parent.Children.Any(c => c.FullPath == fullPath))
+            return;
+
+        var newNode = new FileTreeNode
         {
             Name = nodeName,
             FullPath = fullPath,
-            IsDirectory = nodeIsDir
-        });
+            IsDirectory = nodeIsDir,
+            Depth = parent.Depth + 1
+        };
+        InsertNodeSorted(parent.Children, newNode);
+    }
+
+    /// <summary>
+    /// Inserts a node into a sorted collection maintaining the tree's sort order:
+    /// directories first (alphabetical), then files (alphabetical).
+    /// </summary>
+    private static void InsertNodeSorted(ObservableCollection<FileTreeNode> collection, FileTreeNode node)
+    {
+        var insertIndex = 0;
+
+        if (node.IsDirectory)
+        {
+            // Directories go before all files; find position among directories
+            while (insertIndex < collection.Count && collection[insertIndex].IsDirectory)
+            {
+                if (string.Compare(node.Name, collection[insertIndex].Name, StringComparison.OrdinalIgnoreCase) < 0)
+                    break;
+                insertIndex++;
+            }
+        }
+        else
+        {
+            // Files go after all directories
+            while (insertIndex < collection.Count && collection[insertIndex].IsDirectory)
+                insertIndex++;
+
+            // Find position among files
+            while (insertIndex < collection.Count)
+            {
+                if (string.Compare(node.Name, collection[insertIndex].Name, StringComparison.OrdinalIgnoreCase) < 0)
+                    break;
+                insertIndex++;
+            }
+        }
+
+        collection.Insert(insertIndex, node);
     }
 
     private void HandleDeleted(string fullPath)
