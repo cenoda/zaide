@@ -41,6 +41,19 @@ public sealed class SettingsPanelViewTests
     }
 
     [Fact]
+    public void PanelContent_IncludesVerticalScrollViewer()
+    {
+        using var settings = new TestSettingsService();
+        using var vm = new SettingsViewModel(settings, new TestSecretStore());
+        using var panel = new SettingsPanelView(vm);
+
+        var scrollViewer = GetAllDescendants(panel).OfType<ScrollViewer>().Single();
+        Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
+        Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, scrollViewer.HorizontalScrollBarVisibility);
+        Assert.IsType<StackPanel>(scrollViewer.Content);
+    }
+
+    [Fact]
     public void LabelledSections_EditorTerminalLlm_ArePresent()
     {
         using var settings = new TestSettingsService();

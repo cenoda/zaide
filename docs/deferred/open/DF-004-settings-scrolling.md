@@ -1,7 +1,7 @@
 # DF-004: Add scrolling to the settings panel
 
 **Area:** UI
-**Status:** open
+**Status:** closed
 **Priority:** medium
 **Discovered:** 2026-07-12
 **Related:** settings panel, scrolling, window size
@@ -24,11 +24,11 @@ overflow behavior and affected window sizes have not yet been measured.
 
 ## Evidence
 
-- Test or smoke-check: Manual UI review
+- Test or smoke-check: Manual UI review; `SettingsPanelViewTests.PanelContent_IncludesVerticalScrollViewer`
 - Reproduction steps: Open the settings panel at a constrained window height
   and inspect whether all controls remain reachable
 - Output, screenshot, or log: None captured
-- Relevant code path: Settings panel layout and container hierarchy
+- Relevant code path: `src/Views/SettingsPanelView.cs` layout and container hierarchy
 
 ## Why deferred
 
@@ -38,9 +38,10 @@ layout pass.
 
 ## Investigation notes
 
-Unknown — not investigated yet. Confirm the intended scroll direction,
-viewport sizing, scrollbar styling, keyboard focus behavior, and whether the
-whole panel or only a settings-content region should scroll.
+Vertical scroll only: wrap the existing right-aligned 520px settings stack in a
+`ScrollViewer` with `VerticalScrollBarVisibility=Auto` and
+`HorizontalScrollBarVisibility=Disabled`. Layout, bindings, and buttons are
+unchanged; only the content region scrolls when it exceeds available height.
 
 ## Revisit trigger
 
@@ -48,6 +49,6 @@ Revisit during the next settings-panel layout and usability pass.
 
 ## Resolution
 
-- **Outcome:** open
-- **Fix/issue/phase:**
-- **Commit or date:**
+- **Outcome:** fixed
+- **Fix/issue/phase:** Settings panel vertical `ScrollViewer` in `SettingsPanelView`
+- **Commit or date:** 2026-07-15

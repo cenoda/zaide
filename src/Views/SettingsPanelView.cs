@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI.Avalonia;
@@ -186,27 +187,34 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             LabelledField("Base URL", _baseUrl),
             LabelledField("API Key", _apiKey));
 
+        // ScrollViewer so every setting stays reachable when content exceeds
+        // the available height (mouse wheel / trackpad / scrollbar).
         Content = new Border
         {
             Padding = LayoutTokens.Inset(LayoutTokens.SpacingXl, LayoutTokens.SpacingXl, LayoutTokens.SpacingXl, LayoutTokens.SpacingXl),
-            Child = new StackPanel
+            Child = new ScrollViewer
             {
-                Width = 520,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Spacing = LayoutTokens.SpacingMd,
-                Children =
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = new StackPanel
                 {
-                    TextStyles.Header("Settings"),
-                    TextStyles.Caption("Saved settings. Environment variables may override runtime values."),
-                    editorSection,
-                    terminalSection,
-                    llmSection,
-                    _conflict, _errors,
-                    new StackPanel
+                    Width = 520,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Spacing = LayoutTokens.SpacingMd,
+                    Children =
                     {
-                        Orientation = Orientation.Horizontal,
-                        Spacing = LayoutTokens.SpacingSm,
-                        Children = { apply, rebase, discard, close }
+                        TextStyles.Header("Settings"),
+                        TextStyles.Caption("Saved settings. Environment variables may override runtime values."),
+                        editorSection,
+                        terminalSection,
+                        llmSection,
+                        _conflict, _errors,
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = LayoutTokens.SpacingSm,
+                            Children = { apply, rebase, discard, close }
+                        }
                     }
                 }
             }
