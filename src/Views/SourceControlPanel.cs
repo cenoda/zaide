@@ -9,6 +9,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
@@ -110,6 +111,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _statusMessage.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
 
         // --- Unstaged Changes List ---
+        var changeListItemStyle = CreateChangeListItemStyle();
+
         _unstagedList = new ListBox
         {
             Background = Brushes.Transparent,
@@ -117,6 +120,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             SelectionMode = SelectionMode.Single,
             Margin = LayoutTokens.NoneThickness
         };
+        _unstagedList.Styles.Add(changeListItemStyle);
         _unstagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: false);
 
         // --- Staged Section Header ---
@@ -131,6 +135,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             SelectionMode = SelectionMode.Single,
             Margin = LayoutTokens.NoneThickness
         };
+        _stagedList.Styles.Add(CreateChangeListItemStyle());
         _stagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: true);
 
         // --- Diff Surface (inline unified diff, shown on file selection) ---
@@ -363,6 +368,14 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         });
     }
 
+    private Style CreateChangeListItemStyle()
+    {
+        var style = new Style(s => s.OfType<ListBoxItem>());
+        style.Setters.Add(new Setter(ListBoxItem.PaddingProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(ListBoxItem.MinHeightProperty, 24.0));
+        return style;
+    }
+
     private FuncDataTemplate<FileChange> CreateChangeItemTemplate(bool isStaged)
     {
         return new FuncDataTemplate<FileChange>((change, _) =>
@@ -386,8 +399,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 
             var statusIcon = new Border
             {
-                Width = 20,
-                Height = 20,
+                Width = 16,
+                Height = 16,
                 CornerRadius = LayoutTokens.RadiusSm,
                 Child = statusText
             };
@@ -406,8 +419,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             var stageButton = new Button
             {
                 Content = isStaged ? "−" : "+",
-                Width = 20,
-                Height = 20,
+                Width = 16,
+                Height = 16,
                 FontSize = 12,
                 Padding = LayoutTokens.NoneThickness,
                 Background = Brushes.Transparent,
@@ -442,7 +455,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
                     new ColumnDefinition { Width = new GridLength(24) }
                 },
-                Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
+                Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingSm, 0),
+                MinHeight = 24,
                 Children =
                 {
                     statusIcon,
