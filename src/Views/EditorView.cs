@@ -394,15 +394,26 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 .Subscribe(ApplyPendingNavigation));
 
             // Phase 9 M6: selection tracking — push selection state to ViewModel.
+            // Use offset-based TextEditor properties only. EmptySelection.StartPosition
+            // is TextLocation.Empty (line 0); Document.GetOffset rejects line 0 and
+            // any stale line beyond LineCount during document transitions.
             void OnSelectionChanged(object? s, EventArgs e)
             {
                 if (ViewModel is null) return;
+                var document = _textEditor.Document;
+                if (document is null) return;
+
                 var selection = _textEditor.TextArea.Selection;
-                var startPos = selection.StartPosition;
-                var startOffset = _textEditor.Document.GetOffset(startPos.Line, startPos.Column);
-                ViewModel.SelectionStart = startOffset;
-                ViewModel.SelectionLength = selection.Length;
-                ViewModel.SelectionText = selection.IsEmpty ? null : selection.GetText();
+                var projection = ProjectSelectionState(
+                    document.TextLength,
+                    _textEditor.SelectionStart,
+                    _textEditor.SelectionLength,
+                    selection.IsEmpty,
+                    selection.IsEmpty ? null : selection.GetText());
+
+                ViewModel.SelectionStart = projection.Start;
+                ViewModel.SelectionLength = projection.Length;
+                ViewModel.SelectionText = projection.Text;
             }
             _textEditor.TextArea.SelectionChanged += OnSelectionChanged;
             d.Add(Disposable.Create(() => _textEditor.TextArea.SelectionChanged -= OnSelectionChanged));
@@ -1009,6 +1020,57 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         }
 
         return Math.Clamp(preOffset, 0, document.TextLength);
+    }
+
+    /// <summary>
+    /// Offset-based selection projection for status / ViewModel reporting.
+    /// Never converts selection line/column through <see cref="TextDocument.GetOffset(int, int)"/>:
+    /// AvaloniaEdit's empty selection reports <see cref="TextLocation.Empty"/> (line 0),
+    /// and document replace/delete can leave line/column temporarily out of range.
+    /// </summary>
+    internal readonly record struct SelectionProjection(int Start, int Length, string? Text);
+
+    /// <summary>
+    /// Projects editor selection offsets into clamped ViewModel state.
+    /// </summary>
+    /// <param name="documentTextLength">Current document length (0 if empty).</param>
+    /// <param name="selectionStart">
+    /// Offset-based selection start (or caret offset when the selection is empty).
+    /// </param>
+    /// <param name="selectionLength">Offset-based selection length (0 when empty).</param>
+    /// <param name="isEmpty">True when AvaloniaEdit reports an empty selection.</param>
+    /// <param name="selectedText">Selected text when non-empty; ignored when empty.</param>
+    internal static SelectionProjection ProjectSelectionState(
+        int documentTextLength,
+        int selectionStart,
+        int selectionLength,
+        bool isEmpty,
+        string? selectedText)
+    {
+        if (documentTextLength < 0)
+            documentTextLength = 0;
+
+        if (isEmpty || selectionLength <= 0)
+        {
+            return new SelectionProjection(
+                Math.Clamp(selectionStart, 0, documentTextLength),
+                0,
+                null);
+        }
+
+        // In-range non-empty selection: trust offset-based editor values and text.
+        if (selectionStart >= 0 &&
+            selectionLength > 0 &&
+            selectionStart + selectionLength <= documentTextLength)
+        {
+            return new SelectionProjection(selectionStart, selectionLength, selectedText);
+        }
+
+        // Document replace/delete can transiently report offsets past TextLength.
+        // Clamp offsets for status continuity; drop text rather than report a lie.
+        var start = Math.Clamp(selectionStart, 0, documentTextLength);
+        var length = Math.Clamp(selectionLength, 0, documentTextLength - start);
+        return new SelectionProjection(start, length, null);
     }
 
     public void Dispose()

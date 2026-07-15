@@ -10,6 +10,13 @@ inventory, locked M0 baseline, and M1a evidence are recorded in
 blocked on truthful desktop editor and 8 MiB rendering measurements; therefore
 M1b and all production hardening remain unauthorized.
 
+**Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
+crash in Phase 9 M6 selection-status projection (`EditorView` called
+`GetOffset` with empty/stale line-column). That change is a focused editor
+stability fix only; it does not start M1b, recovery work, or other Phase 13
+production scope. After ISSUE-006, the M0 desktop editor measurement path can
+resume without the selection-change crash.
+
 **Prerequisite:** Phases 8–12 are complete. Phase 13 hardens their existing
 contracts; it does not replace their ownership boundaries or introduce V3
 features.

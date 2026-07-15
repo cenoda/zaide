@@ -7,6 +7,7 @@
 | 003 | Tab close button (×) never appears on hover | BUG | medium | closed |
 | 004 | Shared icons render invisible across non-nav surfaces | BUG | high | closed |
 | 005 | `dotnet test` hangs under redirected output | BUG | high | closed |
+| 006 | Editor crashes on selection change via GetOffset(line, column) | BUG | critical | closed |
 
 ---
 
