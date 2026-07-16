@@ -44,13 +44,19 @@ the remaining samples are `warm`. A run exits non-zero if any sample fails, a
 sample exceeds its numeric budget, or the accepted-sample range exceeds ten
 percent of the median. No outlier is silently discarded.
 
-## Explicit Manual Rows
+## Remaining App-Internal Automation Rows
 
-The runner does not attempt editor open/edit/save or 8 MiB rendering. Those
-rows remain manual-smoke evidence because an automated input sequence here
-would be synthetic and would not truthfully establish interactive Avalonia
-behavior. Use the deterministic fixture generator above and record the file
-SHA-256 in the manual evidence.
+The completed runner does not attempt editor open/edit/save or 8 MiB rendering.
+Those rows are not human stopwatch tasks. A follow-up M0-only extension must
+add a local, test-only app-internal measurement seam that calls the same
+application command paths for document load, edit, save, restore, and large
+document load. It must record the fixture SHA-256, five raw samples, clock
+boundary, and post-save restoration result.
+
+The extension must not use injected keyboard or pointer input, and it must not
+add production telemetry or persistent measurement collection. It provides
+numeric performance evidence only; the real Linux desktop smoke and
+keyboard/focus/status audit remain M4b responsibilities.
 
 On the supported Wayland desktop, the runner uses `xdotool` only to observe a
 new visible XWayland startup window. It never injects keys. In particular, an
@@ -63,5 +69,6 @@ truthful desktop interaction.
 M1a establishes repeatable automation for Startup, LSP, Build, Run, Test, and
 DAP. Its raw evidence is local and timestamped under the selected output
 directory; it is intentionally not committed because timing samples are
-machine-specific. Editor open/edit/save and 8 MiB rendering remain required
-manual rows, so this runner alone cannot close M0 or authorize M1b.
+machine-specific. The planned M0-only app-internal extension must still measure
+editor open/edit/save and 8 MiB rendering, so M1a alone cannot close M0 or
+authorize M1b.

@@ -7,8 +7,10 @@ production-neutral measurement runner is implemented and has recorded five
 samples for Startup, LSP, Build, Run, Test, and DAP. The initial live-code
 inventory, locked M0 baseline, and M1a evidence are recorded in
 [M0_RELEASE_BASELINE_PROOF.md](M0_RELEASE_BASELINE_PROOF.md). M0 remains
-blocked on truthful desktop editor and 8 MiB rendering measurements; therefore
-M1b and all production hardening remain unauthorized.
+blocked on automated editor open/edit/save and 8 MiB rendering measurements;
+therefore M1b and all production hardening remain unauthorized. The remaining
+numeric rows must use a test-only, app-internal automation seam; they do not
+require a human to operate a stopwatch or inject desktop input.
 
 **Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
 crash in Phase 9 M6 selection-status projection (`EditorView` called
@@ -149,6 +151,12 @@ and ready for release closeout on the supported Linux validation environment.
       removal. Lock a maximum accepted variance and the named human approval
       required for a budget miss. Lock numeric budgets from the recorded
       baseline; do not use a developer's subjective responsiveness as a budget.
+      The remaining editor and 8 MiB rows use a local, test-only app-internal
+      seam: it must drive the same open, edit, save, restore, and document-load
+      command paths used by the application; record fixture hash, five raw
+      samples, post-save restoration, and the clock boundary. It must not rely
+      on injected keyboard or pointer events, production telemetry, or a human
+      stopwatch.
 - [ ] Define one bounded critical-path scenario before M4: open a selected C#
       project → edit/save → LSP result → build → run or test → debug to one
       breakpoint → stop. Publish a **step matrix** in the M0 proof: for every
@@ -230,7 +238,7 @@ and ready for release closeout on the supported Linux validation environment.
 | Milestone | Description | Verification gate | Commit boundary |
 |---|---|---|---|
 | **M0** | Live-code discovery, reuse/gap inventory, carry-over triage, reproducible fixture manifest, baseline measurements, numeric budgets, all matrices, critical-path step matrix, and proof artifact. No production behavior change. | `M0_RELEASE_BASELINE_PROOF.md`; sequential build/test; `git diff --check` | `docs(phase-13): lock M0 release baseline` |
-| **M1a** | **Complete (2026-07-15):** local deterministic measurement runner and five-sample evidence for Startup, LSP, Build, Run, Test, and DAP. It changes no production behavior and retains editor/large-file as manual rows. | `tools/phase13-measure.py`; [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md); sequential build/test | `test(phase-13): add release performance harnesses` |
+| **M1a** | **Complete (2026-07-15):** local deterministic measurement runner and five-sample evidence for Startup, LSP, Build, Run, Test, and DAP. It changes no production behavior. The remaining editor and 8 MiB measurements are an M0 test-only automation extension, not manual timing work. | `tools/phase13-measure.py`; [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md); sequential build/test | `test(phase-13): add release performance harnesses` |
 | **M1b** | Optional. Implement narrowly measured performance fixes for one over-budget area or one tightly coupled set; repeat the affected baseline. Create further M1b slices rather than combining unrelated areas. **If every locked budget is already met after M0/M1a, skip M1b entirely** (zero slices); M5 remeasurement is sufficient. | Affected harness and full sequential gate; budget comparison — or M0 proof records "all budgets already met" | `perf(phase-13): meet <area> budget` (omit if zero slices) |
 | **M2** | Fill only settings/secrets compatibility and recovery gaps identified by M0 across settings schema v1/v2/v3, unknown future version, corruption, interrupted write (Phase 8 D2), last-known-good, and plaintext-secret absence. If M0 marks every row green, M2 is a documentation/evidence no-op (name existing tests; no new production code). | M0-named focused tests; fixture-file inspection; sequential build/test | `fix(phase-13): close settings recovery gaps` or `docs(phase-13): settings matrix already green` |
 | **M3a** | Gap-only: inventory Phase 11 workflow/process recovery proofs first; harden and prove only real gaps in managed Build/Run/Test lifecycle recovery, process-tree cleanup, and shared-gate (`IProjectOperationGate`) release under cancellation/disposal. Reuse `ManagedProcessRunnerTests` / `ProjectWorkflowServiceTests` when green. | Focused workflow/process tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden workflow process cleanup` or docs no-op commit if green |

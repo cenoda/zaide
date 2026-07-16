@@ -250,6 +250,18 @@ quiet-machine rule before it can supersede the M0 baseline.
 
 ### Manual Desktop Timing Evidence (2026-07-15)
 
+#### Method amendment (2026-07-16)
+
+The recorded samples below remain historical evidence. They do not require a
+human to repeat stopwatch-driven interaction. The remaining editor
+open/edit/save and 8 MiB numeric rows are superseded by a planned local,
+test-only app-internal automation seam. That seam must exercise the same
+application command paths, use a monotonic in-process or test-host clock,
+record five raw samples plus fixture hashes and restoration verification, and
+must not use injected keyboard or pointer input. It is performance evidence
+only; M4b still owns real Linux desktop smoke and keyboard/focus/status
+evidence.
+
 Truthful desktop samples on the recorded KDE Plasma Wayland session. No
 production code, test, or Phase 13 scope change. No `xdotool`, no synthetic
 keyboard injection into Zaide, and no `Ctrl+Space` routing claim.
@@ -288,10 +300,11 @@ Fixture A bytes were restored to the committed SHA-256 after the pass.
 | Open to ready (5 / 5) | `574.469`, `583.535`, `567.640`, `563.177`, `542.222` | `567.640` | `542.222` | `583.535` | `41.313` | `191.009 ms²` | PASS open-only variance (41 ms ≤ 57 ms = 10% of median) |
 | Harmless edit / save / restore | — | — | — | — | — | — | **FAIL / blocked** |
 
-Edit/save blocked: `wl-copy` + middle-click paste does not mark the Avalonia
-`TextEditor` dirty; Save is reachable only via command palette or `Ctrl+S` under
-the locked no-synthetic-key-injection rule. The full editor open/edit/save row
-therefore remains **0 / 5** complete samples and blocks M0 closure and M1b.
+Edit/save was blocked: `wl-copy` + middle-click paste did not mark the Avalonia
+`TextEditor` dirty, while the no-synthetic-key-injection rule prevented an
+automated desktop save. This does not require human timing. The planned M0
+app-internal seam replaces this failed approach; until it records five complete
+samples, the row remains **0 / 5** and blocks M0 closure and M1b.
 
 #### Large file open (`large-file-8MiB.txt`)
 
@@ -316,8 +329,8 @@ observed).
 | Area | Measurement site / fixture | Samples | Median baseline | Numeric budget | Gate |
 |---|---|---:|---:|---:|---|
 | Startup to usable main window | External monotonic timer (`date +%s%N`) to a new XWayland `Zaide` window owned by the newly launched PID; normal settings | 5 / 5 | 620 ms (`621, 620, 620, 621, 620`) | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (62 ms) | PASS; measured 1 ms range |
-| Editor open/edit/save | External timer; `Program.cs` / SHA in manual § | 0 / 5 complete (5 / 5 open-only sub-samples at 568 ms median) | open-only median 568 ms; full row **not locked** | ≤ 628 ms open envelope from 568 ms + 10% once edit/save is proven | **FAIL / blocked** — edit/save not proven; blocks M0 and M1b |
-| Large file open | External timer; `large-file-8MiB.txt` / SHA in manual § | 5 / 5 | 883 ms (`1107, 900, 872, 875, 883`) | ≤ 972 ms (883 ms + 10% variance) | **FAIL** — range 235 ms > 88 ms; sample 1 (1107 ms) > 972 ms envelope |
+| Editor open/edit/save | Planned test-only app-internal seam; `Program.cs` / SHA | 0 / 5 complete (historical open-only sub-samples at 568 ms median) | full row **not locked** | Lock after five complete automated samples | **BLOCKED** — automation seam not implemented; blocks M0 and M1b |
+| Large file open | Planned test-only app-internal seam; `large-file-8MiB.txt` / SHA | historical 5 / 5 invalidated for the new method | full row **not locked** | Lock after five comparable automated samples | **BLOCKED** — automation seam not implemented; blocks M0 and M1b |
 | LSP ready / first result | Real `csharp-ls`; temporary copy of the Phase 10 proof fixture; completion + hover + stale-result smoke | 5 / 5 | 5708 ms | ≤ 8,000 ms; maximum accepted sample variance ≤ 10% of median (571 ms) | PASS; measured 18 ms range |
 | Build | Real child `dotnet`; workflow-console fixture | 1 cold + 4 warm | 1905 ms cold; 413 ms warm | ≤ 2,500 ms cold; ≤ 600 ms warm; maximum accepted variance ≤ 10% of each median | PASS; cold/warm explicitly separated |
 | Run | Real child `dotnet`; workflow-console fixture | 5 / 5 | 537 ms | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (54 ms) | PASS; measured 12 ms range |
@@ -336,7 +349,7 @@ table before M1b or M0 closure.
 
 | Slice | M0 handoff |
 |---|---|
-| M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral and leaves two desktop manual rows open. |
+| M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral. A separate M0-only app-internal automation extension remains for editor and 8 MiB measurements. |
 | M1b | Potentially zero slices; decide only after M1a comparable remeasurement. |
 | M2 | One identified gap: orphan `.tmp` with valid primary. All other settings/secret rows name reusable tests. |
 | M3a | Evidence-only unless focused workflow/process inventory identifies a regression. |
@@ -354,7 +367,7 @@ table before M1b or M0 closure.
 - [x] Carry-over triage and explicit platform/accessibility/critical-path matrices recorded.
 - [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped.
 - [x] Deterministic large-file fixture generator added and generated outside settings/repository data.
-- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; large-file has 5 / 5 open samples but fails variance/envelope gate; editor edit/save remains unproven).
+- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; the remaining editor and 8 MiB rows require the planned test-only app-internal automation seam).
 - [ ] Linux desktop release/keyboard/focus measurements recorded.
 
 **M0 remains open and M1b is blocked until the two unchecked gate items are
