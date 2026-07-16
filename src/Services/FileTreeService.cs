@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Zaide.Models;
 
 namespace Zaide.Services;
@@ -21,6 +23,11 @@ public class FileTreeService : IFileTreeService
 
     private FileSystemWatcher? _watcher;
     private bool _includeHidden;
+    private string? _currentPath;
+    private readonly Subject<Unit> _restartSubject = new();
+
+    /// <inheritdoc/>
+    public IObservable<Unit> WhenWatcherRestarted => _restartSubject.AsObservable();
 
     /// <summary>
     /// Recursively enumerate a directory into a list of FileTreeNode.
@@ -110,44 +117,101 @@ public class FileTreeService : IFileTreeService
     }
 
     /// <summary>
-    /// Start monitoring a directory tree for file/directory creation, deletion, and rename.
-    /// includeHidden controls whether the watcher's filter pipeline skips hidden entries.
+    /// Start monitoring a directory tree for file/directory creation, deletion, rename,
+    /// and content/attribute changes. Handles internal buffer overflow by restarting the
+    /// watcher and signalling consumers via <see cref="WhenWatcherRestarted"/>.
     /// Returns an observable that emits file change events.
     /// </summary>
     public IObservable<FileChangeEvent> StartWatching(string path, bool includeHidden = false)
     {
         StopWatching();
         _includeHidden = includeHidden;
+        _currentPath = path;
 
+        return BuildWatcher(path, includeHidden);
+    }
+
+    /// <summary>
+    /// Creates the FileSystemWatcher, wires up event streams, and returns the merged
+    /// observable pipeline. Extracted so the Error handler can restart cleanly.
+    /// </summary>
+    private IObservable<FileChangeEvent> BuildWatcher(string path, bool includeHidden)
+    {
         _watcher = new FileSystemWatcher(path)
         {
             IncludeSubdirectories = true,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+            NotifyFilter = NotifyFilters.FileName
+                         | NotifyFilters.DirectoryName
+                         | NotifyFilters.LastWrite
+                         | NotifyFilters.Size,
+            InternalBufferSize = 65536 // 64 KB — reduce overflow on busy trees
         };
 
+        // Capture the watcher locally so FromEventPattern remove handlers
+        // use the captured reference, not the field (which StopWatching nulls).
+        var watcher = _watcher;
+
         var created = Observable.FromEventPattern<FileSystemEventHandler, FileSystemEventArgs>(
-            h => _watcher.Created += h,
-            h => _watcher.Created -= h);
+            h => watcher.Created += h,
+            h => watcher.Created -= h);
 
         var deleted = Observable.FromEventPattern<FileSystemEventHandler, FileSystemEventArgs>(
-            h => _watcher.Deleted += h,
-            h => _watcher.Deleted -= h);
+            h => watcher.Deleted += h,
+            h => watcher.Deleted -= h);
+
+        var changed = Observable.FromEventPattern<FileSystemEventHandler, FileSystemEventArgs>(
+            h => watcher.Changed += h,
+            h => watcher.Changed -= h);
 
         var renamed = Observable.FromEventPattern<RenamedEventHandler, RenamedEventArgs>(
-            h => _watcher.Renamed += h,
-            h => _watcher.Renamed -= h);
+            h => watcher.Renamed += h,
+            h => watcher.Renamed -= h);
+
+        var errors = Observable.FromEventPattern<ErrorEventHandler, ErrorEventArgs>(
+            h => watcher.Error += h,
+            h => watcher.Error -= h);
 
         // Capture the current flag so the closure matches the toggle state at watch time
-        var currentIncludeHidden = _includeHidden;
+        var currentIncludeHidden = includeHidden;
+
+        // On internal buffer overflow, restart the watcher and signal consumers
+        // so they can re-enumerate to reconcile any missed events.
+        errors
+            .Subscribe(e =>
+            {
+                try
+                {
+                    // Dispose the broken watcher, build a fresh one, and notify
+                    StopWatching();
+                    _watcher = null;
+                    _restartSubject.OnNext(Unit.Default);
+                }
+                catch
+                {
+                    // Best-effort recovery; don't let watcher errors crash the app
+                }
+            });
 
         var observable = created
             .Select(e => new FileChangeEvent(ChangeType.Created, e.EventArgs.FullPath))
             .Merge(deleted.Select(e => new FileChangeEvent(ChangeType.Deleted, e.EventArgs.FullPath)))
+            .Merge(changed.Select(e => new FileChangeEvent(ChangeType.Changed, e.EventArgs.FullPath)))
             .Merge(renamed.Select(e => new FileChangeEvent(ChangeType.Renamed, e.EventArgs.FullPath, e.EventArgs.OldFullPath)))
             .Where(change => !ShouldSkip(Path.GetFileName(change.FullPath), currentIncludeHidden))
             .Buffer(TimeSpan.FromMilliseconds(200))
             .Where(batch => batch.Count > 0)
-            .SelectMany(batch => batch);
+            .SelectMany(batch =>
+            {
+                // Deduplicate Changed events per path within the buffer window.
+                // A single file save can produce multiple Changed events
+                // (last-write then size), so we collapse them to one per path.
+                var seenChanged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                return batch.Where(e =>
+                {
+                    if (e.Type != ChangeType.Changed) return true;
+                    return seenChanged.Add(e.FullPath);
+                });
+            });
 
         _watcher.EnableRaisingEvents = true;
         return observable;
@@ -182,6 +246,7 @@ public class FileTreeService : IFileTreeService
     public void Dispose()
     {
         StopWatching();
+        _restartSubject.Dispose();
     }
 
     private static bool IsHidden(string name)

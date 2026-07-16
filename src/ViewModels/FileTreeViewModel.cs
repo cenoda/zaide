@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -18,16 +19,22 @@ namespace Zaide.ViewModels;
 /// Holds root nodes, open-folder command, selected file, current path,
 /// and live file system change monitoring.
 /// </summary>
-public class FileTreeViewModel : ReactiveObject
+public class FileTreeViewModel : ReactiveObject, IDisposable
 {
     private readonly IFileTreeService _fileTreeService;
     private readonly IScheduler _scheduler;
     private FileTreeNode? _selectedFile;
     private string? _rootPath;
     private IDisposable? _watcherSubscription;
+    private IDisposable? _restartSubscription;
     private string? _statusText;
     private bool _showHiddenFiles;
     private readonly Subject<FileTreeNode> _openFileSubject = new();
+
+    // Tracks Created events whose parent directory node hasn't arrived yet.
+    // Retried on each subsequent HandleFileChange call; dropped after MaxDeferRetries attempts.
+    private readonly List<(FileChangeEvent Event, int RetryCount)> _pendingEvents = new();
+    private const int MaxDeferRetries = 5;
 
     /// <summary>
     /// Fires when a file open is requested. Payload is the FileTreeNode.
@@ -216,6 +223,8 @@ public class FileTreeViewModel : ReactiveObject
         {
             _watcherSubscription?.Dispose();
             _watcherSubscription = null;
+            _restartSubscription?.Dispose();
+            _restartSubscription = null;
             _fileTreeService.StopWatching();
             RootNodes.Clear();
             SelectedFile = null;
@@ -231,6 +240,7 @@ public class FileTreeViewModel : ReactiveObject
 
             // Validation succeeded — tear down old watcher and tree
             _watcherSubscription?.Dispose();
+            _restartSubscription?.Dispose();
             _fileTreeService.StopWatching();
 
             RootPath = path;
@@ -242,6 +252,12 @@ public class FileTreeViewModel : ReactiveObject
             _watcherSubscription = fileChanges
                 .ObserveOn(_scheduler)
                 .Subscribe(HandleFileChange);
+
+            // Re-enumerate the tree if the watcher is restarted (e.g. after buffer overflow)
+            // so any events missed during the gap are reconciled.
+            _restartSubscription = _fileTreeService.WhenWatcherRestarted
+                .ObserveOn(_scheduler)
+                .Subscribe(_ => Refresh());
             return true;
         }
         catch (DirectoryNotFoundException ex)
@@ -311,7 +327,14 @@ public class FileTreeViewModel : ReactiveObject
                 // M1 Fix B1/B2
                 HandleRenamed(change.FullPath, change.OldPath!);
                 break;
+            case ChangeType.Changed:
+                HandleChanged(change.FullPath);
+                break;
         }
+
+        // After any tree mutation, retry deferred Created events whose
+        // parent directory may now be present in the tree.
+        RetryPendingEvents();
     }
 
     private void HandleCreated(string fullPath)
@@ -340,7 +363,13 @@ public class FileTreeViewModel : ReactiveObject
         }
 
         var parent = FindNodeByPath(parentDir!);
-        if (parent is null) return;
+        if (parent is null)
+        {
+            // Parent directory node not yet in tree (watcher may fire
+            // child Created before parent Created). Defer and retry later.
+            _pendingEvents.Add((new FileChangeEvent(ChangeType.Created, fullPath), 0));
+            return;
+        }
 
         var nodeName = Path.GetFileName(fullPath);
         var nodeIsDir = Directory.Exists(fullPath);
@@ -431,12 +460,124 @@ public class FileTreeViewModel : ReactiveObject
         var node = FindNodeByPath(oldPath);
         if (node is null) return;
 
-        // 1. Update basic node properties
+        // 1. Find the parent collection so we can re-sort after the rename
+        var parentCollection = GetParentCollection(node);
+
+        // 2. Remove from old position before updating (to avoid stale sort position)
+        if (parentCollection is not null)
+            parentCollection.Remove(node);
+
+        // 3. Update basic node properties
         node.Name = Path.GetFileName(newPath);
         node.FullPath = newPath;
 
-        // B1 Fix: Recursively update FullPath for all descendants if the old/new paths represent a directory rename
+        // 4. B1 Fix: Recursively update FullPath for all descendants if the old/new paths represent a directory rename
         UpdateDescendantPaths(node, oldPath, newPath);
+
+        // 5. Re-insert in sorted order (name may have changed alphabetical position)
+        if (parentCollection is not null)
+            InsertNodeSorted(parentCollection, node);
+    }
+
+    /// <summary>
+    /// Returns the ObservableCollection that contains the given node —
+    /// either RootNodes or a parent directory's Children collection.
+    /// </summary>
+    private ObservableCollection<FileTreeNode>? GetParentCollection(FileTreeNode node)
+    {
+        // Check if the node is a direct child of RootNodes
+        if (RootNodes.Contains(node))
+            return RootNodes;
+
+        // Otherwise find the parent directory that owns this node
+        var parent = FindParentNode(node);
+        return parent?.Children;
+    }
+
+    /// <summary>
+    /// Finds the directory node whose Children collection contains <paramref name="node"/>.
+    /// </summary>
+    private FileTreeNode? FindParentNode(FileTreeNode node)
+    {
+        foreach (var rootNode in RootNodes)
+        {
+            if (rootNode.Children.Contains(node))
+                return rootNode;
+
+            var found = FindParentInChildren(rootNode, node);
+            if (found is not null)
+                return found;
+        }
+        return null;
+    }
+
+    private static FileTreeNode? FindParentInChildren(FileTreeNode parent, FileTreeNode target)
+    {
+        foreach (var child in parent.Children)
+        {
+            if (child.Children.Contains(target))
+                return child;
+
+            var found = FindParentInChildren(child, target);
+            if (found is not null)
+                return found;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Handles content/metadata change events from the file system watcher.
+    /// Currently a no-op — the file tree does not display content-derived state.
+    /// Wired up so that when metadata display is added to FileTreeNode, the
+    /// handling logic goes here without needing pipeline changes.
+    /// </summary>
+    internal void HandleChanged(string fullPath)
+    {
+        // Future: find the node by path and update any displayed metadata
+        // (e.g. file size, last-modified time, git-status overlay).
+        // For now, the event is consumed so it doesn't stall the buffer.
+    }
+
+    /// <summary>
+    /// Retries deferred Created events whose parent directory may now exist.
+    /// Called after every HandleFileChange mutation. Events that exceed
+    /// <see cref="MaxDeferRetries"/> attempts are dropped with a status message.
+    /// </summary>
+    private void RetryPendingEvents()
+    {
+        for (var i = _pendingEvents.Count - 1; i >= 0; i--)
+        {
+            var (ev, retryCount) = _pendingEvents[i];
+            var parentDir = Path.GetDirectoryName(ev.FullPath);
+
+            // Check if the parent is now available (either root level or found in tree)
+            if (parentDir is not null && (parentDir == RootPath || FindNodeByPath(parentDir) is not null))
+            {
+                _pendingEvents.RemoveAt(i);
+                HandleCreated(ev.FullPath);
+            }
+            else if (retryCount >= MaxDeferRetries)
+            {
+                _pendingEvents.RemoveAt(i);
+                StatusText = $"Could not process file creation: {ev.FullPath}";
+            }
+            else
+            {
+                _pendingEvents[i] = (ev, retryCount + 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Disposes watcher subscriptions. Called by the DI container on app shutdown.
+    /// </summary>
+    public void Dispose()
+    {
+        _watcherSubscription?.Dispose();
+        _watcherSubscription = null;
+        _restartSubscription?.Dispose();
+        _restartSubscription = null;
+        _pendingEvents.Clear();
     }
 
     /// <summary>

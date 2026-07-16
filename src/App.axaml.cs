@@ -122,6 +122,7 @@ public partial class App : Application
         services.GetRequiredService<ILanguageDocumentBridge>().Dispose();
         services.GetRequiredService<ILanguageSessionService>().Dispose();
         services.GetRequiredService<IProjectContextService>().Dispose();
+        services.GetService<IFileTreeService>()?.Dispose();
         services.GetService<ITerminalHost>()?.Dispose();
     }
 

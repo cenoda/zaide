@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive;
 using Zaide.Models;
 
 namespace Zaide.Services;
@@ -26,6 +27,12 @@ public interface IFileTreeService : IDisposable
     /// Stop monitoring.
     /// </summary>
     void StopWatching();
+
+    /// <summary>
+    /// Emits when the watcher is restarted after an internal error (e.g. buffer overflow).
+    /// Consumers should re-enumerate the tree to reconcile any missed events.
+    /// </summary>
+    IObservable<Unit> WhenWatcherRestarted { get; }
 
     /// <summary>
     /// Creates an empty file at the given path.

@@ -4,7 +4,8 @@ public enum ChangeType
 {
     Created,
     Deleted,
-    Renamed
+    Renamed,
+    Changed
 }
 
 /// <summary>

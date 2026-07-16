@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Threading;
 using Xunit;
+using Zaide.Models;
 using Zaide.Services;
 
 namespace Zaide.Tests.Services;
@@ -178,6 +182,214 @@ public class FileTreeServiceTests
         }
         finally
         {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    // ── Live FileSystemWatcher integration tests ──────────────────────────
+    //
+    // These tests use polling-based collection rather than async/await
+    // because FileSystemWatcher on Linux may fire events on OS threads
+    // that don't interact with xUnit's synchronization context.
+
+    [Fact]
+    public void StartWatching_EmitsCreatedEvent_WhenFileCreated()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var collected = new System.Collections.Generic.List<FileChangeEvent>();
+            var fileChanges = _service.StartWatching(root);
+            using var _ = fileChanges.Subscribe(collected.Add);
+
+            // Brief settle period for the watcher to initialise on the OS
+            System.Threading.Thread.Sleep(300);
+
+            var filePath = Path.Combine(root, "external-file.txt");
+            File.WriteAllText(filePath, "content");
+
+            // Poll up to 5 seconds for the Created event
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            FileChangeEvent? found = null;
+            while (DateTime.UtcNow < deadline)
+            {
+                found = collected.FirstOrDefault(e => e.Type == ChangeType.Created && e.FullPath == filePath);
+                if (found is not null) break;
+                System.Threading.Thread.Sleep(100);
+            }
+            _service.StopWatching();
+
+            Assert.NotNull(found);
+            Assert.Equal(ChangeType.Created, found!.Type);
+            Assert.Equal(filePath, found.FullPath);
+        }
+        finally
+        {
+            _service.StopWatching();
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StartWatching_EmitsChangedEvent_WhenFileModified()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var filePath = Path.Combine(root, "file.txt");
+            File.WriteAllText(filePath, "initial");
+
+            var collected = new System.Collections.Generic.List<FileChangeEvent>();
+            var fileChanges = _service.StartWatching(root);
+            using var _ = fileChanges.Subscribe(collected.Add);
+
+            System.Threading.Thread.Sleep(300);
+
+            // Modify the file
+            File.WriteAllText(filePath, "modified");
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            FileChangeEvent? found = null;
+            while (DateTime.UtcNow < deadline)
+            {
+                found = collected.FirstOrDefault(e => e.Type == ChangeType.Changed && e.FullPath == filePath);
+                if (found is not null) break;
+                System.Threading.Thread.Sleep(100);
+            }
+            _service.StopWatching();
+
+            Assert.NotNull(found);
+            Assert.Equal(ChangeType.Changed, found!.Type);
+            Assert.Equal(filePath, found.FullPath);
+        }
+        finally
+        {
+            _service.StopWatching();
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StartWatching_EmitsDeletedEvent_WhenFileDeleted()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var filePath = Path.Combine(root, "to-delete.txt");
+            File.WriteAllText(filePath, "delete me");
+
+            var collected = new System.Collections.Generic.List<FileChangeEvent>();
+            var fileChanges = _service.StartWatching(root);
+            using var _ = fileChanges.Subscribe(collected.Add);
+
+            System.Threading.Thread.Sleep(300);
+
+            File.Delete(filePath);
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            FileChangeEvent? found = null;
+            while (DateTime.UtcNow < deadline)
+            {
+                found = collected.FirstOrDefault(e => e.Type == ChangeType.Deleted && e.FullPath == filePath);
+                if (found is not null) break;
+                System.Threading.Thread.Sleep(100);
+            }
+            _service.StopWatching();
+
+            Assert.NotNull(found);
+            Assert.Equal(ChangeType.Deleted, found!.Type);
+            Assert.Equal(filePath, found.FullPath);
+        }
+        finally
+        {
+            _service.StopWatching();
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StartWatching_EmitsRenamedEvent_WhenFileRenamed()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var oldPath = Path.Combine(root, "old-name.txt");
+            var newPath = Path.Combine(root, "new-name.txt");
+            File.WriteAllText(oldPath, "rename me");
+
+            var collected = new System.Collections.Generic.List<FileChangeEvent>();
+            var fileChanges = _service.StartWatching(root);
+            using var _ = fileChanges.Subscribe(collected.Add);
+
+            System.Threading.Thread.Sleep(300);
+
+            File.Move(oldPath, newPath);
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            FileChangeEvent? found = null;
+            while (DateTime.UtcNow < deadline)
+            {
+                found = collected.FirstOrDefault(e => e.Type == ChangeType.Renamed && e.FullPath == newPath);
+                if (found is not null) break;
+                System.Threading.Thread.Sleep(100);
+            }
+            _service.StopWatching();
+
+            Assert.NotNull(found);
+            Assert.Equal(ChangeType.Renamed, found!.Type);
+            Assert.Equal(newPath, found.FullPath);
+            Assert.Equal(oldPath, found.OldPath);
+        }
+        finally
+        {
+            _service.StopWatching();
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StartWatching_BuffersRapidChanges()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var collected = new System.Collections.Generic.List<FileChangeEvent>();
+            var fileChanges = _service.StartWatching(root);
+            using var _ = fileChanges.Subscribe(collected.Add);
+
+            System.Threading.Thread.Sleep(300);
+
+            // Rapidly create 5 files
+            for (var i = 0; i < 5; i++)
+                File.WriteAllText(Path.Combine(root, $"rapid-{i}.txt"), $"content-{i}");
+
+            // Poll for up to 10 seconds
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (DateTime.UtcNow < deadline)
+            {
+                var createdCount = collected.Count(e => e.Type == ChangeType.Created);
+                if (createdCount >= 5) break;
+                System.Threading.Thread.Sleep(100);
+            }
+            _service.StopWatching();
+
+            var created = collected.Where(e => e.Type == ChangeType.Created).ToList();
+            Assert.True(created.Count >= 5, $"Expected at least 5 Created events, got {created.Count}");
+            Assert.All(created, e => Assert.Equal(ChangeType.Created, e.Type));
+        }
+        finally
+        {
+            _service.StopWatching();
             if (Directory.Exists(root))
                 Directory.Delete(root, recursive: true);
         }
