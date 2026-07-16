@@ -218,6 +218,26 @@ incremental structure as feature phases, but differ in scope and boundaries:
 - **Template is identical** to the Feature Phase template in §3, but the
   title line reads `Refactor N: [Title] — Implementation Plan`.
 
+### Refactor families
+
+When one structural program contains multiple independently verifiable
+refactors with different risk, rollback, and acceptance boundaries, use a
+decimal refactor family such as `refactor-6.1`, `refactor-6.2`, and
+`refactor-6.3`.
+
+- An optional umbrella `docs/refactor/refactor-6/BRIEF.md` may record shared
+  order, boundaries, and non-goals. A brief is not an implementation plan and
+  does not authorize code changes.
+- Every independently implemented family member owns its own
+  `IMPLEMENTATION_PLAN.md`, M0, milestones, verification gates, commit
+  boundaries, and rollback plan.
+- A family member is a refactor, not a feature sub-phase and not a milestone.
+- If one milestone is still too large, split it into milestone slices such as
+  `M2a`/`M2b`; do not create another decimal refactor merely to rename an
+  oversized milestone.
+- Preserve historical refactor identifiers and reports. Do not repurpose an
+  earlier number for a new structural program.
+
 ### Rules (from §3, with refactor-specific notes)
 
 1. **Verify against live code** — src/ before claim.
@@ -231,6 +251,9 @@ incremental structure as feature phases, but differ in scope and boundaries:
    commands, not vibes.
 6. **One concern per milestone** — each milestone independently testable.
 7. **All existing tests must pass** — regression is the top priority.
+8. **M0 comes first** — every independently implemented refactor or refactor-
+   family member must verify live boundaries, scope, dependencies, concrete
+   test commands, and rollback points before structural edits begin.
 
 ### Revert Log
 

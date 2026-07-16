@@ -10,17 +10,12 @@ global across versions so historical references stay unambiguous.
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
 
-Roadmap V2 planning has started. Phase 8 umbrella plan is complete at
-[`v2/phase-8/IMPLEMENTATION_PLAN.md`](v2/phase-8/IMPLEMENTATION_PLAN.md).
-Sub-phase 8.1 (Settings Foundation) is **complete** across its five
-implementation slices (M1–M6 closeout 2026-07-11). Phase 8.2 (Command Registry
-and Keybindings) is **complete** across its eight milestones (M7a–M10 closeout
-2026-07-12); all seven canonical commands, gesture resolution, window binding
-materialization, and settings-driven refresh are delivered. Phase 8.3 is
-implemented through M4 with automated verification green; its bounded
-implementation plan at
-[`v2/phase-8/phase-8.3/IMPLEMENTATION_PLAN.md`](v2/phase-8/phase-8.3/IMPLEMENTATION_PLAN.md)
-records the completed failed-state GUI smoke verification.
+Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
+implementation record under [`v2/`](v2/). The
+[Roadmap V3 discovery draft](../roadmap/V3.md) is direction-setting only; no V3
+phase plan exists and Phase 14 implementation is not active. The expected next
+implementation work, after explicit approval and independent M0 plans, is the
+pre-Phase-14 refactor sequence recorded in that draft.
 
 ## Archive Policy
 

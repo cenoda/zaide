@@ -17,6 +17,9 @@ Phase 12 (DAP debugging) are complete. Phase 13 (Release Hardening) is
 performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
+[Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is a **discovery
+draft**. It records the candidate pre-Phase-14 refactor sequence and agent-
+orchestration direction, but authorizes no implementation.
 
 ---
 
@@ -182,11 +185,38 @@ invoke them autonomously.
 
 ---
 
-## Future Technical Considerations
+## Roadmap V3 Direction (discovery only)
 
-The following decisions were discussed but were **not implemented in Roadmap
-V1**. Roadmap V2 schedules only the narrow settings persistence and provider
-configuration described above; the broader items below remain unscheduled.
+V3 is expected to add AI-native orchestration without making the IDE dependent
+on one provider or harness. The current discovery direction is:
+
+- one Townhall conversation model for public channels and direct
+  conversations;
+- durable Actor/Agent Identity separated from runtime, session, conversation,
+  and memory scope;
+- a first-party, research-driven Zaide native harness;
+- ACP as an independent external-agent backend, not a wrapper around the
+  native harness;
+- equal product placement with truthful capability negotiation across
+  backends;
+- structured, user-configurable IDE/debug context and optional redacted raw
+  trace;
+- explicit tools, permissions, audit, workspace-mutation, memory, and trust
+  boundaries;
+- feature-first source/module refactoring before Phase 14.
+
+The live V2 code remains authoritative until each refactor or phase completes.
+See the discovery roadmap for observed debt, unresolved questions, and the
+required Refactor 6.1–6.3, Refactor 7, Refactor 8, and Phase 14 ordering.
+
+---
+
+## Earlier Future Technical Considerations
+
+The following decisions were discussed earlier and were **not implemented in
+Roadmap V1 or V2**. Where this table conflicts with the newer V3 discovery
+draft, the V3 draft is the current direction-setting source; neither document
+authorizes implementation by itself.
 
 | Consideration | Planned Approach | Rationale |
 |---------------|------------------|-----------|
@@ -198,4 +228,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-16 (V1 complete; V2 IDE Core Upgrade complete — Phases 8–13 closed with documented limitations)*
+*Last updated: 2026-07-16 (V1 and V2 complete; V3 discovery draft linked, no V3 implementation active)*

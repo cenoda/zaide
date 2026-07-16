@@ -19,6 +19,8 @@ smoke, and doc truth-sync. Zaide has the IDE foundation, Townhall workspace,
 direct agent panels, `@mention` routing, and local Git
 status/diff/stage/commit workflows delivered by V1, plus the V2 IDE core.
 Completed plans are archived under [`docs/phases/`](docs/phases/).
+[Roadmap V3 — AI-Native Orchestration](docs/roadmap/V3.md) is now a
+**discovery draft**. No V3 refactor or feature implementation is active yet.
 
 ## Philosophy
 
@@ -183,6 +185,23 @@ from an agent-workspace foundation into a credible standalone IDE core:
 
 Six days of focused work turned the roadmap into a project that now feels like
 an IDE, not merely an editor. V2 is done.
+
+## Roadmap V3 Discovery
+
+[Roadmap V3](docs/roadmap/V3.md) explores the next agent-native layer while
+preserving the completed V2 IDE core. The current direction is:
+
+- unify Townhall channels and Agent direct conversations;
+- build a research-driven native Zaide harness with license-compliant
+  open-source reuse;
+- support ACP as an independent, equally presented external-agent backend;
+- add configurable live IDE/debug context, optional redacted raw traces,
+  memory scopes, tools, permissions, and attributable workspace changes;
+- begin with bounded architecture refactors (`6.1`–`6.3`, then Refactors 7
+  and 8) before Phase 14.
+
+This is direction-setting only. Phase 14 and the preceding refactors require
+their own live-code-verified M0 plans before implementation.
 
 ## Why "Zaide"
 

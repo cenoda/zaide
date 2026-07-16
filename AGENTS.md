@@ -33,6 +33,10 @@ boundaries explicit:
   onward, every sub-phase owns its own independent `M0`; do not use the
   umbrella phase's M0 as a substitute.
 - Prefer one clear commit at each milestone or milestone-slice boundary.
+- Independently implemented refactors also require their own M0. Decimal
+  refactor-family members such as `6.1`/`6.2`/`6.3` are independent refactors,
+  not milestones or feature sub-phases; each owns its own plan and rollback
+  boundary. An umbrella brief does not authorize implementation.
 
 ## Code
 
@@ -44,5 +48,6 @@ boundaries explicit:
 ## Planning
 
 - Before coding a phase, create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version.
+- Before coding a refactor, create `docs/refactor/refactor-N/IMPLEMENTATION_PLAN.md` (including each decimal refactor-family member).
 - Verify against live code before claiming something exists.
 - YAGNI: build for this phase only.
