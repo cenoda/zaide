@@ -2,7 +2,7 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); next is M2.**
+**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); next is M3a.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
@@ -15,7 +15,8 @@ meaningful release criterion for low-latency command paths. The replacement is
 20 functional samples with nearest-rank p95 below 50 ms. The accepted
 quiet-machine run (2026-07-16T05:16:38Z) locked both command-path budgets under
 that method. M0/M1a introduced no `src/` production behavior change (test-only
-seam + local runner extension only). No production hardening has started.
+seam + local runner extension only). M2 closed the orphan-temp matrix gap with a
+focused proof test only (no production behavior change).
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -103,7 +104,7 @@ repeat the full gate and record any intermittent failure by test name/pattern.
 | v3 round trip | `FormatOnSaveTests.Serializer_V3RoundTrip_IncludesFormatOnSave` and `Serializer_V3RoundTrip_IncludesDebugBreakpoints` | Green; reuse |
 | unknown future v4 / no overwrite | `FormatOnSaveTests.Serializer_FutureSchema_Rejected`; `Phase8ProofOfConceptTests.UnknownFutureVersion_FallsBackToDefaults` and `RejectedSourceFile_IsNotOverwrittenDuringFallback` | Green; M2 names these proofs unless a later audit finds a composed gap |
 | corrupt primary | `Phase8ProofOfConceptTests.CorruptFile_FallsBackToLastKnownGood` and `CorruptFile_NoLastKnownGood_UsesDefaults` | Green; reuse |
-| orphan `.tmp`, primary intact | `Phase8ProofOfConceptTests.AtomicWrite_WritesTempThenRenames` establishes D2 temp-then-rename; no dedicated orphan-temp load test was found | **Gap:** M2 must add a focused load test proving an orphan `settings.json.tmp` leaves a valid primary authoritative. No new recovery mode is authorized. |
+| orphan `.tmp`, primary intact | `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative` (Phase 13 M2); write path still covered by `AtomicWrite_WritesTempThenRenames` | Green; evidence-only. Production already satisfied Phase 8 D2 (`TryLoadFrom` reads only the primary path; orphan `.tmp` is never consulted on load). Focused test proves primary values win, primary bytes unchanged, and load does not promote/overwrite/delete primary from the orphan. |
 | LKG path | `Phase8ProofOfConceptTests.LastKnownGood_UpdatedOnSuccessfulLoad` and `SyntheticMigration_LastKnownGood_IsMigratedCopy` | Green; reuse |
 | plaintext secret absence | `SecretStoreTests.SettingsJson_NeverContainsApiKey_WhenSecretStoreIsUsed` and `SettingsJson_LlmSection_HasNoApiKeyField` | Green; reuse |
 
@@ -131,9 +132,11 @@ user-visible recovery state unless a separately approved gap requires it.
 | DF-003 | Settings alignment | Not a Phase 13 concern | Visual polish outside adopted M4b rows |
 | DF-004 | Settings scrolling | Not a Phase 13 concern | Deferred UI enhancement |
 
-No new deferred finding was created: the one real settings test gap is already
-named and bounded for M2, and the measurement block is a required M0 gate rather
-than a separately discovered product issue.
+No new deferred finding was created: the one real settings test gap (orphan
+`.tmp` with valid primary) was closed in M2 as evidence-only
+(`OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`), and the
+measurement block is a required M0 gate rather than a separately discovered
+product issue.
 
 ## 7. Platform, Accessibility, and Critical-path Matrices
 
@@ -423,7 +426,7 @@ nearest-rank p95 below 50 ms).
 |---|---|
 | M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral. The M0 app-internal editor/large-file extension is implemented with accepted quiet-machine p95 evidence. |
 | M1b | **Skipped (zero slices).** Every locked M0 budget already passes; no production performance fix is authorized from M0. |
-| M2 | One identified gap: orphan `.tmp` with valid primary. All other settings/secret rows name reusable tests. **Next milestone.** |
+| M2 | **Complete (evidence-only):** orphan `.tmp` with valid primary proven by `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`. Production already satisfied Phase 8 D2; no `src/` change. All other settings/secret rows remain green via named existing tests. |
 | M3a | Evidence-only unless focused workflow/process inventory identifies a regression. |
 | M3b | Evidence-only unless locked LSP measurements/recovery recheck expose a real gap. |
 | M3c | Evidence-only unless focused DAP recovery recheck exposes a real gap. |
@@ -444,6 +447,7 @@ nearest-rank p95 below 50 ms).
 - [x] Linux desktop smoke matrix and measurement method locked in §7; completion of desktop/keyboard/focus/status evidence is **M4b**, not an M0 blocker.
 
 **M0 is closed.** All locked performance budgets are met, so **M1b is skipped**.
-The exact next milestone is **M2** (orphan `settings.json.tmp` with valid
-primary). App-internal numeric evidence remains command-path only and is not
-interactive desktop, Avalonia render, keyboard-routing, or UX proof.
+**M2 is closed** (evidence-only orphan-temp D2 proof). The exact next milestone
+is **M3a** (gap-only workflow/process recovery inventory). App-internal numeric
+evidence remains command-path only and is not interactive desktop, Avalonia
+render, keyboard-routing, or UX proof.

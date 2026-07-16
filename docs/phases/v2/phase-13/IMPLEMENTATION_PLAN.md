@@ -2,7 +2,7 @@
 
 ## Status
 
-**M0 complete (2026-07-16) — production hardening has not started.** The M1a
+**M0 complete (2026-07-16); M2 complete (2026-07-16, evidence-only).** The M1a
 local, production-neutral measurement runner recorded five samples for Startup,
 LSP, Build, Run, Test, and DAP. The M0 test-only app-internal measurement seam
 (`Phase13M0EditorMeasurementSeam` + `tools/phase13-measure.py --areas editor
@@ -13,7 +13,10 @@ verification and fixture SHA-256. Nearest-rank p95 is locked below 50 ms
 budgets, not UX, Avalonia render, keyboard-routing, or desktop-responsiveness
 budgets. M4b owns completing desktop/keyboard/focus/status evidence; M0 only
 locks the matrix and method. **M1b is skipped** (all locked budgets already
-met). Exact next milestone: **M2**.
+met). **M2 is complete (evidence-only):** production already satisfied Phase 8
+D2 (load reads only the primary path); the focused proof is
+`Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`.
+No production behavior change. Exact next milestone: **M3a**.
 
 **Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
 crash in Phase 9 M6 selection-status projection (`EditorView` called
@@ -245,7 +248,7 @@ and ready for release closeout on the supported Linux validation environment.
 | **M0** | Live-code discovery, reuse/gap inventory, carry-over triage, reproducible fixture manifest, baseline measurements, numeric budgets, all matrices, critical-path step matrix, and proof artifact. No production behavior change. | `M0_RELEASE_BASELINE_PROOF.md`; sequential build/test; `git diff --check` | `docs(phase-13): lock M0 release baseline` |
 | **M1a** | **Complete (2026-07-15):** local deterministic measurement runner and five-sample evidence for Startup, LSP, Build, Run, Test, and DAP. It changes no production behavior. Editor/8 MiB rows are the M0 app-internal extension (`phase13-measure.py --areas editor large-file`), not manual timing work. | `tools/phase13-measure.py`; [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md); sequential build/test | `test(phase-13): add release performance harnesses` |
 | **M1b** | **Skipped (2026-07-16).** Optional performance fixes only for an M0-locked budget miss. Every locked budget already passes under M0/M1a evidence, so M1b is zero slices; M5 remeasurement remains the later recheck. | M0 proof records all budgets already met; no production change | omit (zero slices) |
-| **M2** | Fill only settings/secrets compatibility and recovery gaps identified by M0 across settings schema v1/v2/v3, unknown future version, corruption, interrupted write (Phase 8 D2), last-known-good, and plaintext-secret absence. If M0 marks every row green, M2 is a documentation/evidence no-op (name existing tests; no new production code). | M0-named focused tests; fixture-file inspection; sequential build/test | `fix(phase-13): close settings recovery gaps` or `docs(phase-13): settings matrix already green` |
+| **M2** | **Complete (2026-07-16, evidence-only).** M0 named one gap: orphan `settings.json.tmp` beside a valid primary. Live `SettingsService.TryLoadFrom` already reads only the primary path and never promotes/overwrites/deletes the primary from an orphan temp — Phase 8 D2 already held. Added focused proof `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative` (conflicting orphan content; primary values load; primary bytes unchanged; orphan not promoted). No production code change; no new recovery mode, migration policy, or user-facing recovery surface. All other matrix rows remain green via existing named tests. | Focused test + sequential build/test + `git diff --check` | `test(phase-13): prove orphan settings temp leaves primary authoritative` |
 | **M3a** | Gap-only: inventory Phase 11 workflow/process recovery proofs first; harden and prove only real gaps in managed Build/Run/Test lifecycle recovery, process-tree cleanup, and shared-gate (`IProjectOperationGate`) release under cancellation/disposal. Reuse `ManagedProcessRunnerTests` / `ProjectWorkflowServiceTests` when green. | Focused workflow/process tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden workflow process cleanup` or docs no-op commit if green |
 | **M3b** | Gap-only: inventory Phase 10 language-session recovery proofs first; harden and prove only real gaps in LSP lifecycle recovery and language-session cleanup. | Focused language-session tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden LSP recovery` or docs no-op commit if green |
 | **M3c** | Gap-only: inventory Phase 12 DAP recovery proofs first (`M6DebugRecoveryProofTests`, `DebugSessionServiceTests`); harden and prove only real gaps in DAP lifecycle recovery and adapter/debuggee cleanup. | Focused debug-session tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden DAP recovery` or docs no-op commit if green |
@@ -340,7 +343,9 @@ structural revert baseline; any full-phase rollback targets that commit.
 
 ## Exact Next Step
 
-**M0 is closed.** Proceed to **M2 only**: fill the M0-named settings gap for an
-orphan `settings.json.tmp` with a valid primary (Phase 8 D2 contract). Do not
-start M1b (skipped), M3, M4, or production performance work unless a later
-remeasurement creates a real locked-budget miss.
+**M0 and M2 are closed.** M2 was **evidence-only** (no production fix):
+`Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`
+proves Phase 8 D2 for orphan `.tmp` + valid primary. Proceed to **M3a only**:
+gap-only workflow/process recovery inventory (reuse green Phase 11 proofs;
+harden only real gaps). Do not start M1b (skipped), M3b/M3c, M4, or production
+performance work unless a later remeasurement creates a real locked-budget miss.

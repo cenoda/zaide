@@ -310,6 +310,92 @@ public sealed class Phase8ProofOfConceptTests : IDisposable
         Assert.Equal("Primary Font", lkgDoc.RootElement.GetProperty("editor").GetProperty("codeFontFamily").GetString());
     }
 
+    // ── Phase 8 D2: orphan temp does not override valid primary ─────────
+
+    /// <summary>
+    /// Phase 13 M2 / Phase 8 D2: when <c>settings.json</c> is valid and an
+    /// orphan <c>settings.json.tmp</c> remains from an interrupted atomic write,
+    /// the primary file stays authoritative. Load must not promote, overwrite,
+    /// or delete the primary based on the orphan.
+    /// </summary>
+    [Fact]
+    public void OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative()
+    {
+        // Arrange: valid primary with known values.
+        const string primaryJson = """
+            {
+              "schemaVersion": 1,
+              "editor": {
+                "codeFontFamily": "Primary Authority Font",
+                "codeFontSize": 14,
+                "proseFontFamily": "Georgia, serif",
+                "terminalFontFamily": "Mono, monospace",
+                "terminalFontSize": 14,
+                "tabSize": 4,
+                "insertSpaces": true,
+                "showWhitespace": false,
+                "showTabs": false,
+                "showSpaces": false
+              },
+              "llm": {
+                "baseUrl": "https://primary.example.com",
+                "model": "primary-model",
+                "apiKeySource": "secret-store"
+              },
+              "keybindings": {}
+            }
+            """;
+        // Deliberately conflicting orphan temp from an interrupted write.
+        const string orphanTempJson = """
+            {
+              "schemaVersion": 1,
+              "editor": {
+                "codeFontFamily": "Orphan Temp Font",
+                "codeFontSize": 99,
+                "proseFontFamily": "Orphan Serif",
+                "terminalFontFamily": "Orphan Mono",
+                "terminalFontSize": 99,
+                "tabSize": 2,
+                "insertSpaces": false,
+                "showWhitespace": true,
+                "showTabs": true,
+                "showSpaces": true
+              },
+              "llm": {
+                "baseUrl": "https://orphan-temp.example.com",
+                "model": "orphan-temp-model",
+                "apiKeySource": "orphan"
+              },
+              "keybindings": {}
+            }
+            """;
+        WriteFile(_settingsPath, primaryJson);
+        WriteFile(_tempPath, orphanTempJson);
+        var primaryBytesBefore = File.ReadAllBytes(_settingsPath);
+        var orphanBytesBefore = File.ReadAllBytes(_tempPath);
+
+        // Act
+        using var service = CreateService();
+
+        // Assert: load returns primary values, not the orphan temp.
+        Assert.Equal(SettingsLoadResult.Loaded, service.LoadResult);
+        Assert.Equal("Primary Authority Font", service.Current.Editor.CodeFontFamily);
+        Assert.Equal(14, service.Current.Editor.CodeFontSize);
+        Assert.Equal("https://primary.example.com", service.Current.Llm.BaseUrl);
+        Assert.Equal("primary-model", service.Current.Llm.Model);
+        Assert.NotEqual("Orphan Temp Font", service.Current.Editor.CodeFontFamily);
+        Assert.NotEqual(99, service.Current.Editor.CodeFontSize);
+        Assert.NotEqual("orphan-temp-model", service.Current.Llm.Model);
+
+        // Primary file bytes are unchanged (not overwritten or replaced by orphan).
+        Assert.True(File.Exists(_settingsPath));
+        Assert.Equal(primaryBytesBefore, File.ReadAllBytes(_settingsPath));
+
+        // Orphan temp is not promoted over the primary and is not deleted by load.
+        Assert.True(File.Exists(_tempPath));
+        Assert.Equal(orphanBytesBefore, File.ReadAllBytes(_tempPath));
+    }
+
     // ── Atomic write: temp-then-rename ──────────────────────────────────
 
     [Fact]
