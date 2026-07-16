@@ -49,9 +49,11 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         appNameText.VerticalAlignment = VerticalAlignment.Center;
         appNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
 
-        // Caret position (dynamic text)
+        // Configured model (far-right caption). Centered like button segments so it
+        // shares the same vertical midline as the rest of the 24px status bar.
         _modelText = TextStyles.Caption("");
         _modelText.HorizontalAlignment = HorizontalAlignment.Right;
+        _modelText.VerticalAlignment = VerticalAlignment.Center;
         _modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
         _modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
@@ -68,7 +70,10 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         _languageIntelligenceButton = BuildStatusSegmentButton("Icon.Code", _languageIntelligenceText);
         _languageIntelligenceButton.IsVisible = false;
 
+        // Transient "Opened: …" / save/search feedback. Same center rule as segment
+        // buttons: bare TextBlocks default to Stretch and paint text at the top.
         _statusMessageText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        _statusMessageText.VerticalAlignment = VerticalAlignment.Center;
         _statusMessageText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
         _statusMessageText.MaxWidth = 320;
         _statusMessageText.TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis;
