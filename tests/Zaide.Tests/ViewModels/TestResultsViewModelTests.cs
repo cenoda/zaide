@@ -188,10 +188,9 @@ public sealed class TestResultsViewModelTests
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Moq.Mock<IGitRepositoryService>().Object),
                 workspace,
-                new Moq.Mock<IFileDiffService>().Object,
                 new Moq.Mock<IGitMutationService>().Object,
                 new Moq.Mock<IGitRepositoryService>().Object,
-                registry),
+                commandRegistry: registry),
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),

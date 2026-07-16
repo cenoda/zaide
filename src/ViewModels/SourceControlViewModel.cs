@@ -21,7 +21,7 @@ namespace Zaide.ViewModels;
 public class SourceControlViewModel : ReactiveObject
 {
     private readonly ISourceControlSnapshotOrchestrator _orchestrator;
-    private readonly IFileDiffService _fileDiffService;
+    private readonly ISourceControlDiffTabService _diffTabService;
     private readonly IGitMutationService _mutationService;
     private readonly IGitRepositoryService _gitRepositoryService;
     private readonly Workspace _workspace;
@@ -35,7 +35,6 @@ public class SourceControlViewModel : ReactiveObject
     private GitBranch? _selectedBranch;
     private FileChange? _selectedFileChange;
     private string? _selectedFilePath;
-    private FileDiffResult? _currentDiff;
     private string _currentBranchName = "no repo";
     private string? _statusMessage;
     private SnapshotRefreshStatus _lastRefreshStatus = SnapshotRefreshStatus.NotARepository;
@@ -181,12 +180,6 @@ public class SourceControlViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _selectedFilePath, value);
     }
 
-    public FileDiffResult? CurrentDiff
-    {
-        get => _currentDiff;
-        private set => this.RaiseAndSetIfChanged(ref _currentDiff, value);
-    }
-
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<FileChange, Unit> StageFileCommand { get; }
     public ReactiveCommand<Unit, Unit> StageAllCommand { get; }
@@ -200,14 +193,14 @@ public class SourceControlViewModel : ReactiveObject
     public SourceControlViewModel(
         ISourceControlSnapshotOrchestrator orchestrator,
         Workspace workspace,
-        IFileDiffService fileDiffService,
         IGitMutationService mutationService,
         IGitRepositoryService gitRepositoryService,
+        ISourceControlDiffTabService? diffTabService = null,
         ICommandRegistry? commandRegistry = null)
     {
         _orchestrator = orchestrator;
         _workspace = workspace;
-        _fileDiffService = fileDiffService;
+        _diffTabService = diffTabService ?? NullSourceControlDiffTabService.Instance;
         _mutationService = mutationService;
         _gitRepositoryService = gitRepositoryService;
 
@@ -284,12 +277,9 @@ public class SourceControlViewModel : ReactiveObject
             SelectedFileChange = file;
             SelectedFilePath = file?.FilePath;
             if (file == null || string.IsNullOrEmpty(_workspace.WorkspacePath))
-            {
-                CurrentDiff = null;
                 return;
-            }
 
-            CurrentDiff = _fileDiffService.GetDiff(_workspace.WorkspacePath, file);
+            _diffTabService.OpenOrUpdateDiff(file);
         });
 
         // Phase 8.2 M8a: register the canonical source-control commands with stable
@@ -319,7 +309,8 @@ public class SourceControlViewModel : ReactiveObject
             _selectedBranch = null;
             SelectedFileChange = null;
             SelectedFilePath = null;
-            CurrentDiff = null;
+            if (previouslySelectedPath != null)
+                _diffTabService.RefreshOpenDiff(previouslySelectedPath, change: null);
             StatusMessage = result.Status == SnapshotRefreshStatus.Failed
                 ? $"Source Control unavailable: {result.ErrorMessage ?? "unknown error"}"
                 : "No repository — open a folder inside a git repository";
@@ -375,16 +366,13 @@ public class SourceControlViewModel : ReactiveObject
             {
                 SelectedFileChange = match;
                 SelectedFilePath = match.FilePath;
-                if (!string.IsNullOrEmpty(_workspace.WorkspacePath))
-                {
-                    CurrentDiff = _fileDiffService.GetDiff(_workspace.WorkspacePath, match);
-                }
+                _diffTabService.RefreshOpenDiff(match.FilePath, match);
             }
             else
             {
                 SelectedFileChange = null;
                 SelectedFilePath = null;
-                CurrentDiff = null;
+                _diffTabService.RefreshOpenDiff(previouslySelectedPath, change: null);
             }
         }
     }

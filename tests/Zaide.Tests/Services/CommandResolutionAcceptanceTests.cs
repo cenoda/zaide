@@ -484,7 +484,7 @@ public sealed class CommandResolutionAcceptanceTests
 
         return new SourceControlViewModel(
             orchestrator, new Workspace(),
-            diffService.Object, mutation.Object, git.Object, _registry);
+            mutation.Object, git.Object, commandRegistry: _registry);
     }
 
     private static ISettingsService CreateSettings(

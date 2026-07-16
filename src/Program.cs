@@ -63,6 +63,7 @@ class Program
 
         // M1: file diff service for Source Control diff view
         services.AddSingleton<IFileDiffService, FileDiffService>();
+        services.AddSingleton<ISourceControlDiffTabService, SourceControlDiffTabService>();
 
         // Phase 7.4 M1: git mutation seam for stage/unstage operations
         services.AddSingleton<IGitMutationService, GitMutationService>();

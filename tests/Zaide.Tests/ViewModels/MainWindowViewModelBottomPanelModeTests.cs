@@ -81,7 +81,6 @@ public sealed class MainWindowViewModelBottomPanelModeTests
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
                 workspace,
-                new Mock<IFileDiffService>().Object,
                 new Mock<IGitMutationService>().Object,
                 new Mock<IGitRepositoryService>().Object),
             TestProblemsFactory.Create(workspace, editorTabs),

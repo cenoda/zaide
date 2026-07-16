@@ -253,10 +253,9 @@ public sealed class DebugExecutionControlsCommandTests
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
                 workspace,
-                new Mock<IFileDiffService>().Object,
                 new Mock<IGitMutationService>().Object,
                 new Mock<IGitRepositoryService>().Object,
-                registry),
+                commandRegistry: registry),
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),

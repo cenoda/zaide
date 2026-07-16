@@ -88,11 +88,9 @@ public sealed class M9aKeyBindingMaterializationTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
-        var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
 
-        return new SourceControlViewModel(orchestrator, new Workspace(), diffService.Object,
+        return new SourceControlViewModel(orchestrator, new Workspace(),
             new Mock<IGitMutationService>().Object, git.Object, /* commandRegistry: */ null);
     }
 

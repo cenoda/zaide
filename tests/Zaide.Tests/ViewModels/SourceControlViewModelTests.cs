@@ -15,6 +15,8 @@ namespace Zaide.Tests.ViewModels;
 
 public class SourceControlViewModelTests
 {
+    private const string DefaultRepoRoot = "/ws/.git/";
+
     static SourceControlViewModelTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
@@ -34,18 +36,6 @@ public class SourceControlViewModelTests
         var mock = new Mock<IGitRepositoryService>();
         mock.Setup(g => g.Discover(It.IsAny<string>())).Returns(discovery);
         return new SourceControlSnapshotOrchestrator(mock.Object);
-    }
-
-    /// <summary>
-    /// Returns a mock <see cref="IFileDiffService"/> whose <c>GetDiff</c> returns null.
-    /// Used by existing tests that do not exercise diff behavior.
-    /// </summary>
-    private static IFileDiffService NullDiffService()
-    {
-        var mock = new Mock<IFileDiffService>();
-        mock.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>()))
-            .Returns((FileDiffResult?)null);
-        return mock.Object;
     }
 
     private static Workspace WorkspaceWithPath(string path = "/ws")
@@ -86,7 +76,7 @@ public class SourceControlViewModelTests
     public void InitialState_LoadsBranchesFromSnapshot()
     {
         var snapshot = Snapshot(branches: new[] { new GitBranch("main", true), new GitBranch("dev") });
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(2, vm.Branches.Count);
         Assert.Equal("main", vm.CurrentBranchName);
@@ -100,7 +90,7 @@ public class SourceControlViewModelTests
             new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
             new FileChange("b.cs", GitChangeType.Added, isStaged: true),
         });
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(1, vm.UnstagedCount);
         Assert.Equal(1, vm.StagedCount);
@@ -112,7 +102,6 @@ public class SourceControlViewModelTests
         var vm = new SourceControlViewModel(
             CreateOrchestrator(RepositoryDiscoveryResult.NotFound("/ws")),
             WorkspaceWithPath(),
-            NullDiffService(),
             DefaultMutation(),
             DefaultGitRepo());
 
@@ -127,7 +116,6 @@ public class SourceControlViewModelTests
         var vm = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
             new Workspace(),
-            NullDiffService(),
             DefaultMutation(),
             DefaultGitRepo());
 
@@ -158,7 +146,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Stage("/ws/.git/", "a.cs")).Returns(StageResult.Success());
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         var file = vm.UnstagedChanges.First();
         vm.StageFileCommand.Execute(file).Wait();
@@ -192,7 +180,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Unstage("/ws/.git/", "b.cs")).Returns(StageResult.Success());
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         var file = vm.StagedChanges.First();
         vm.UnstageFileCommand.Execute(file).Wait();
@@ -219,7 +207,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Stage("/ws/.git/", "a.cs")).Returns(StageResult.Failure("boom"));
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         var file = vm.UnstagedChanges.First();
         vm.StageFileCommand.Execute(file).Wait();
@@ -237,7 +225,7 @@ public class SourceControlViewModelTests
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound("/ws"));
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
         var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
 
         vm.StageFileCommand.Execute(file).Wait();
@@ -273,7 +261,7 @@ public class SourceControlViewModelTests
         mutation.Setup(m => m.StageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
             .Returns(StageResult.Success());
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         Assert.Equal(2, vm.UnstagedCount);
         Assert.True(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
@@ -318,7 +306,7 @@ public class SourceControlViewModelTests
         mutation.Setup(m => m.StageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
             .Returns(StageResult.Failure("partial boom"));
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         vm.StageAllCommand.Execute(Unit.Default).Wait();
 
@@ -337,7 +325,7 @@ public class SourceControlViewModelTests
         {
             new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
         });
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(0, vm.UnstagedCount);
         Assert.False(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
@@ -359,7 +347,7 @@ public class SourceControlViewModelTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound("/ws"));
 
-        var vm = new SourceControlViewModel(orchestratorMock.Object, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestratorMock.Object, WorkspaceWithPath(), mutation.Object, git.Object);
 
         Assert.True(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
         vm.StageAllCommand.Execute(Unit.Default).Wait();
@@ -375,7 +363,7 @@ public class SourceControlViewModelTests
         {
             new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
         }, aheadBy: 2, hasUpstream: true);
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
         Assert.Equal("Commit", vm.PrimaryActionLabel);
@@ -385,7 +373,7 @@ public class SourceControlViewModelTests
     public void PrimaryAction_CleanTreeAheadOfUpstream_IsPush()
     {
         var snapshot = Snapshot(aheadBy: 1, hasUpstream: true);
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
         Assert.Equal("Push (1)", vm.PrimaryActionLabel);
@@ -395,7 +383,7 @@ public class SourceControlViewModelTests
     public void PrimaryAction_MultipleOutgoingCommits_ShowsExactCount()
     {
         var snapshot = Snapshot(aheadBy: 3, hasUpstream: true);
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
         Assert.Equal("Push (3)", vm.PrimaryActionLabel);
@@ -405,7 +393,7 @@ public class SourceControlViewModelTests
     public void PrimaryAction_AheadWithoutUpstream_StaysCommitWithoutPushCount()
     {
         var snapshot = Snapshot(aheadBy: 2, hasUpstream: false);
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
         Assert.Equal("Commit", vm.PrimaryActionLabel);
@@ -428,7 +416,6 @@ public class SourceControlViewModelTests
         var vm = new SourceControlViewModel(
             orchestratorMock.Object,
             WorkspaceWithPath(),
-            NullDiffService(),
             DefaultMutation(),
             DefaultGitRepo());
 
@@ -456,7 +443,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Push("/ws/.git/")).Returns(PushResult.Success());
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
 
@@ -480,7 +467,7 @@ public class SourceControlViewModelTests
         var orchestrator = CreateOrchestrator(snapshot);
         var mutation = new Mock<IGitMutationService>();
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, DefaultGitRepo());
 
         vm.PushCommand.Execute().Wait();
 
@@ -504,7 +491,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Push("/ws/.git/")).Returns(PushResult.Success());
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
 
         vm.PrimaryActionCommand.Execute().Wait();
 
@@ -531,7 +518,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Commit("/ws/.git/", "test commit")).Returns(CommitResult.Success("abc123"));
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
         vm.CommitMessage = "test commit";
 
         vm.CommitCommand.Execute().Wait();
@@ -550,7 +537,7 @@ public class SourceControlViewModelTests
         var orchestrator = CreateOrchestrator(snapshot);
         var mutation = new Mock<IGitMutationService>();
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, DefaultGitRepo());
         vm.CommitMessage = "test commit";
 
         vm.CommitCommand.Execute().Wait();
@@ -570,7 +557,7 @@ public class SourceControlViewModelTests
         var orchestrator = CreateOrchestrator(stagedSnapshot);
         var mutation = new Mock<IGitMutationService>();
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, DefaultGitRepo());
         vm.CommitMessage = string.Empty;
 
         vm.CommitCommand.Execute().Wait();
@@ -590,7 +577,7 @@ public class SourceControlViewModelTests
         var mutation = new Mock<IGitMutationService>();
         mutation.Setup(m => m.Commit("/ws/.git/", "test commit")).Returns(CommitResult.Failure("commit failed"));
 
-        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, DefaultGitRepo());
         vm.CommitMessage = "test commit";
 
         vm.CommitCommand.Execute().Wait();
@@ -608,7 +595,7 @@ public class SourceControlViewModelTests
             new GitBranch("main", true),
             new GitBranch("feature/agent-ui"),
         });
-        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         var featureBranch = vm.Branches[1];
         vm.SelectBranchCommand.Execute(featureBranch).Wait();
@@ -623,7 +610,7 @@ public class SourceControlViewModelTests
         var workspace = WorkspaceWithPath();
         var orchestrator = CreateOrchestrator(
             Snapshot(branches: new[] { new GitBranch("main", true) }));
-        var vm = new SourceControlViewModel(orchestrator, workspace, NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, workspace, DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SnapshotRefreshStatus.Success, vm.LastRefreshStatus);
         Assert.Null(vm.LastRefreshError);
@@ -642,7 +629,7 @@ public class SourceControlViewModelTests
     {
         var workspace = WorkspaceWithPath();
         var orchestrator = CreateOrchestrator(RepositoryDiscoveryResult.NotFound("/ws"));
-        var vm = new SourceControlViewModel(orchestrator, workspace, NullDiffService(), DefaultMutation(), DefaultGitRepo());
+        var vm = new SourceControlViewModel(orchestrator, workspace, DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SnapshotRefreshStatus.NotARepository, vm.LastRefreshStatus);
         Assert.Empty(vm.Branches);
@@ -669,7 +656,7 @@ public class SourceControlViewModelTests
         var orchestrator = new SourceControlSnapshotOrchestrator(mock.Object);
 
         var vm = new SourceControlViewModel(
-            orchestrator, WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+            orchestrator, WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SnapshotRefreshStatus.Failed, vm.LastRefreshStatus);
         Assert.Equal("boom", vm.LastRefreshError);
@@ -681,7 +668,7 @@ public class SourceControlViewModelTests
     }
 
     // ---------------------------------------------------------------
-    // M2: File selection and diff state
+    // M2: File selection opens editor diff tabs
     // ---------------------------------------------------------------
 
     [Fact]
@@ -697,20 +684,25 @@ public class SourceControlViewModelTests
             AddedLines = 1,
             DeletedLines = 1,
         };
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(expectedDiff);
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(expectedDiff);
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             CreateOrchestrator(snapshot),
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
         vm.SelectFileCommand.Execute(file).Wait();
 
         Assert.Same(file, vm.SelectedFileChange);
         Assert.Equal("a.cs", vm.SelectedFilePath);
-        Assert.Same(expectedDiff, vm.CurrentDiff);
+        var tab = Assert.Single(tabs.OpenTabs);
+        Assert.True(tab.IsSourceControlDiff);
+        Assert.True(tab.IsReadOnly);
+        Assert.Equal("a.cs", tab.SourceControlDiffKey);
+        Assert.Equal("Changes", tab.SourceControlComparisonState);
+        Assert.Equal(expectedDiff.DiffText, tab.TextContent);
     }
 
     [Fact]
@@ -726,20 +718,22 @@ public class SourceControlViewModelTests
             AddedLines = 5,
             DeletedLines = 0,
         };
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(expectedDiff);
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(expectedDiff);
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             CreateOrchestrator(snapshot),
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
         vm.SelectFileCommand.Execute(file).Wait();
 
         Assert.Same(file, vm.SelectedFileChange);
         Assert.Equal("b.cs", vm.SelectedFilePath);
-        Assert.Equal(expectedDiff, vm.CurrentDiff);
+        var tab = Assert.Single(tabs.OpenTabs);
+        Assert.Equal("Staged Changes", tab.SourceControlComparisonState);
+        Assert.Equal(expectedDiff.DiffText, tab.TextContent);
     }
 
     [Fact]
@@ -748,47 +742,66 @@ public class SourceControlViewModelTests
         var file = new FileChange("binary.dll", GitChangeType.Modified, isStaged: false);
         var snapshot = Snapshot(changes: new[] { file });
         var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(
             new FileDiffResult { FilePath = "binary.dll", IsBinary = true });
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             CreateOrchestrator(snapshot),
             WorkspaceWithPath(),
-            diffService.Object,
+            DefaultMutation(),
+            DefaultGitRepo(),
+            diffService.Object);
+
+        vm.SelectFileCommand.Execute(file).Wait();
+
+        var tab = Assert.Single(tabs.OpenTabs);
+        Assert.Equal("Binary file — diff not available", tab.TextContent);
+    }
+
+    [Fact]
+    public void SelectFileCommand_ReusesExistingDiffTab()
+    {
+        var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
+        var snapshot = Snapshot(changes: new[] { file });
+        var diffService = new Mock<IFileDiffService>();
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(
+            new FileDiffResult { FilePath = "a.cs", DiffText = "diff content" });
+
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
+            CreateOrchestrator(snapshot),
+            WorkspaceWithPath(),
+            DefaultMutation(),
+            DefaultGitRepo(),
+            diffService.Object);
+
+        vm.SelectFileCommand.Execute(file).Wait();
+        var firstTab = Assert.Single(tabs.OpenTabs);
+
+        vm.SelectFileCommand.Execute(file).Wait();
+
+        Assert.Single(tabs.OpenTabs);
+        Assert.Same(firstTab, tabs.ActiveTab);
+    }
+
+    [Fact]
+    public void SelectFileCommand_NoWorkspacePath_DoesNotOpenDiffTab()
+    {
+        var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
+        var snapshot = Snapshot(changes: new[] { file });
+        var orchestrator = CreateOrchestrator(snapshot);
+        var workspace = new Workspace();
+
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
+            orchestrator,
+            workspace,
             DefaultMutation(),
             DefaultGitRepo());
 
         vm.SelectFileCommand.Execute(file).Wait();
 
-        Assert.NotNull(vm.CurrentDiff);
-        Assert.True(vm.CurrentDiff.IsBinary);
-        Assert.Null(vm.CurrentDiff.DiffText);
-    }
-
-    [Fact]
-    public void SelectFileCommand_NoWorkspacePath_ClearsDiff()
-    {
-        var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
-        var snapshot = Snapshot(changes: new[] { file });
-        var orchestrator = CreateOrchestrator(snapshot);
-
-        // Create a workspace without a path — constructor snapshot still loads
-        // because the orchestrator is called with null path.
-        var workspace = new Workspace();
-
-        var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>()))
-            .Returns((FileDiffResult?)null);
-
-        var vm = new SourceControlViewModel(orchestrator, workspace, diffService.Object, DefaultMutation(), DefaultGitRepo());
-
-        vm.SelectFileCommand.Execute(file).Wait();
-
-        // File is selected but diff is null because there is no workspace path
-        // to pass to the diff service.
         Assert.Same(file, vm.SelectedFileChange);
         Assert.Equal("a.cs", vm.SelectedFilePath);
-        Assert.Null(vm.CurrentDiff);
+        Assert.Empty(tabs.OpenTabs);
     }
 
     [Fact]
@@ -804,85 +817,69 @@ public class SourceControlViewModelTests
             AddedLines = 1,
             DeletedLines = 1,
         };
-        // Set up the diff service so it returns the same diff for both the initial
-        // select and the re-select after refresh.
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(expectedDiff);
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(expectedDiff);
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             CreateOrchestrator(snapshot),
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
         vm.SelectFileCommand.Execute(file).Wait();
+        var tab = Assert.Single(tabs.OpenTabs);
 
-        // Confirm selection state before refresh.
-        Assert.Same(file, vm.SelectedFileChange);
-        Assert.NotNull(vm.CurrentDiff);
-        Assert.Equal("a.cs", vm.CurrentDiff.FilePath);
-
-        // Refresh — the file still exists in the snapshot, so the VM should
-        // re-select it and reload its diff.
         vm.RefreshCommand.Execute().Wait();
 
         Assert.NotNull(vm.SelectedFileChange);
-        Assert.Equal("a.cs", vm.SelectedFileChange.FilePath);
         Assert.Equal("a.cs", vm.SelectedFilePath);
-        Assert.NotNull(vm.CurrentDiff);
-        Assert.Equal(expectedDiff.DiffText, vm.CurrentDiff.DiffText);
+        Assert.Same(tab, Assert.Single(tabs.OpenTabs));
+        Assert.Equal(expectedDiff.DiffText, tab.TextContent);
     }
 
     [Fact]
-    public void Refresh_FileRemovedAfterRefresh_ClearsSelectionAndDiff()
+    public void Refresh_FileRemovedAfterRefresh_ClearsSelectionAndUpdatesDiffTab()
     {
         var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
         var snapshotWithFile = Snapshot(changes: new[] { file });
         var snapshotWithoutFile = Snapshot(changes: Array.Empty<FileChange>());
 
         var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(
             new FileDiffResult { FilePath = "a.cs", DiffText = "some diff" });
 
-        // Mock the orchestrator directly so we can return different snapshots
-        // on successive calls.
         var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
         orchestratorMock.SetupSequence(o => o.Refresh("/ws"))
             .Returns(SnapshotRefreshResult.Success("/ws", snapshotWithFile))
             .Returns(SnapshotRefreshResult.Success("/ws", snapshotWithoutFile));
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             orchestratorMock.Object,
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
-        // First snapshot has a.cs — select it.
         vm.SelectFileCommand.Execute(file).Wait();
-        Assert.NotNull(vm.SelectedFileChange);
-        Assert.Equal("a.cs", vm.SelectedFilePath);
-        Assert.NotNull(vm.CurrentDiff);
+        var tab = Assert.Single(tabs.OpenTabs);
 
-        // Refresh with a snapshot that no longer contains a.cs.
         vm.RefreshCommand.Execute().Wait();
 
         Assert.Null(vm.SelectedFileChange);
         Assert.Null(vm.SelectedFilePath);
-        Assert.Null(vm.CurrentDiff);
+        Assert.Contains("no longer in the change list", tab.TextContent);
     }
 
     [Fact]
-    public void Refresh_FileMovedToStaged_ReselectsAndPreservesDiff()
+    public void Refresh_FileMovedToStaged_ReselectsAndUpdatesDiffTab()
     {
-        // Simulate a file changing from unstaged to staged across refresh.
         var unstagedFile = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
         var stagedFile = new FileChange("a.cs", GitChangeType.Modified, isStaged: true);
         var snapshotUnstaged = Snapshot(changes: new[] { unstagedFile });
         var snapshotStaged = Snapshot(changes: new[] { stagedFile });
 
         var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff("/ws", It.Is<FileChange>(c => c.FilePath == "a.cs")))
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, It.Is<FileChange>(c => c.FilePath == "a.cs")))
             .Returns(new FileDiffResult { FilePath = "a.cs", DiffText = "diff content" });
 
         var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
@@ -890,34 +887,32 @@ public class SourceControlViewModelTests
             .Returns(SnapshotRefreshResult.Success("/ws", snapshotUnstaged))
             .Returns(SnapshotRefreshResult.Success("/ws", snapshotStaged));
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             orchestratorMock.Object,
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
-        // Select file when it's unstaged.
         vm.SelectFileCommand.Execute(unstagedFile).Wait();
-        Assert.NotNull(vm.CurrentDiff);
+        var tab = Assert.Single(tabs.OpenTabs);
+        Assert.Equal("Changes", tab.SourceControlComparisonState);
 
-        // Refresh: now the file is staged (same path, different FileChange instance).
         vm.RefreshCommand.Execute().Wait();
 
         Assert.NotNull(vm.SelectedFileChange);
-        Assert.Equal("a.cs", vm.SelectedFileChange.FilePath);
         Assert.True(vm.SelectedFileChange.IsStaged);
-        Assert.Equal("a.cs", vm.SelectedFilePath);
-        Assert.NotNull(vm.CurrentDiff);
+        Assert.Same(tab, Assert.Single(tabs.OpenTabs));
+        Assert.Equal("Staged Changes", tab.SourceControlComparisonState);
     }
 
     [Fact]
-    public void Refresh_NonRepository_ClearsSelectionAndDiff()
+    public void Refresh_NonRepository_ClearsSelectionAndUpdatesDiffTab()
     {
         var file = new FileChange("a.cs", GitChangeType.Modified, isStaged: false);
         var snapshot = Snapshot(changes: new[] { file });
         var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff("/ws", file)).Returns(
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(
             new FileDiffResult { FilePath = "a.cs", DiffText = "diff" });
 
         var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
@@ -925,22 +920,19 @@ public class SourceControlViewModelTests
             .Returns(SnapshotRefreshResult.Success("/ws", snapshot))
             .Returns(SnapshotRefreshResult.NotARepository("/ws"));
 
-        var vm = new SourceControlViewModel(
+        var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             orchestratorMock.Object,
             WorkspaceWithPath(),
-            diffService.Object,
             DefaultMutation(),
-            DefaultGitRepo());
+            DefaultGitRepo(),
+            diffService.Object);
 
         vm.SelectFileCommand.Execute(file).Wait();
-        Assert.NotNull(vm.SelectedFileChange);
-        Assert.NotNull(vm.CurrentDiff);
+        var tab = Assert.Single(tabs.OpenTabs);
 
-        // Refresh transitions to non-repository state.
         vm.RefreshCommand.Execute().Wait();
 
         Assert.Null(vm.SelectedFileChange);
-        Assert.Null(vm.SelectedFilePath);
-        Assert.Null(vm.CurrentDiff);
+        Assert.Contains("no longer in the change list", tab.TextContent);
     }
 }

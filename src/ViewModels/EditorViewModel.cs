@@ -54,8 +54,74 @@ public class EditorViewModel : ReactiveObject
 
     /// <summary>
     /// Tab label shown in the tab bar. Prefixed with ● when the tab is dirty.
+    /// Source Control diff tabs show the repository path and comparison state.
     /// </summary>
-    public string DisplayName => IsDirty ? $"● {FileName}" : FileName;
+    public string DisplayName
+    {
+        get
+        {
+            if (IsSourceControlDiff)
+            {
+                var path = SourceControlDiffKey ?? FileName;
+                var state = SourceControlComparisonState ?? "Diff";
+                return $"{path} — {state}";
+            }
+
+            return IsDirty ? $"● {FileName}" : FileName;
+        }
+    }
+
+    /// <summary>
+    /// When true, the editor surface is read-only and cannot alter git or disk state.
+    /// </summary>
+    private bool _isReadOnly;
+    public bool IsReadOnly
+    {
+        get => _isReadOnly;
+        set => this.RaiseAndSetIfChanged(ref _isReadOnly, value);
+    }
+
+    /// <summary>
+    /// True for tabs opened from Source Control diff selection.
+    /// </summary>
+    private bool _isSourceControlDiff;
+    public bool IsSourceControlDiff
+    {
+        get => _isSourceControlDiff;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isSourceControlDiff, value);
+            this.RaisePropertyChanged(nameof(DisplayName));
+        }
+    }
+
+    /// <summary>
+    /// Repository-relative path used to reuse a Source Control diff tab.
+    /// </summary>
+    private string? _sourceControlDiffKey;
+    public string? SourceControlDiffKey
+    {
+        get => _sourceControlDiffKey;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _sourceControlDiffKey, value);
+            this.RaisePropertyChanged(nameof(DisplayName));
+        }
+    }
+
+    /// <summary>
+    /// Human-readable comparison state for a Source Control diff tab.
+    /// </summary>
+    private string? _sourceControlComparisonState;
+    public string? SourceControlComparisonState
+    {
+        get => _sourceControlComparisonState;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _sourceControlComparisonState, value);
+            this.RaisePropertyChanged(nameof(DisplayName));
+        }
+    }
 
     /// <summary>
     /// Current text content of the editor. Delegates to <see cref="Models.Document.Content"/>.

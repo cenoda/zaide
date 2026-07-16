@@ -49,7 +49,6 @@ public class SourceControlPanelCommandWiringTests
         return new SourceControlViewModel(
             orchestrator,
             workspace,
-            Mock.Of<IFileDiffService>(),
             Mock.Of<IGitMutationService>(),
             git.Object);
     }

@@ -480,6 +480,13 @@ public class EditorTabViewModel : ReactiveObject
     /// </summary>
     private async Task CloseTabAsync(EditorViewModel tab)
     {
+        if (tab.IsSourceControlDiff && tab.IsDirty)
+        {
+            // Read-only diff tabs should never be dirty; if they are, discard safely
+            // without prompting or writing to disk.
+            tab.MarkClean();
+        }
+
         if (tab.IsDirty)
         {
             var shouldSave = await ConfirmClose.Handle(tab);

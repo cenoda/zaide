@@ -358,10 +358,9 @@ public sealed class Phase9M0EditorUxProofTests
         git.Setup(g => g.ReadStatus(It.IsAny<string>()))
             .Returns(new RepositoryStatusSnapshot());
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
-        var diffService = new Mock<IFileDiffService>();
         var mutation = new Mock<IGitMutationService>();
         var scViewModel = new SourceControlViewModel(
-            orchestrator, new Workspace(), diffService.Object, mutation.Object, git.Object, registry);
+            orchestrator, new Workspace(), mutation.Object, git.Object, commandRegistry: registry);
         var workspace = sp.GetRequiredService<Workspace>();
 
         return new MainWindowViewModel(

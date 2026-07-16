@@ -95,14 +95,12 @@ public sealed class M9bSettingsDrivenRefreshTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
-        var diffService = new Mock<IFileDiffService>();
-        diffService.Setup(d => d.GetDiff(It.IsAny<string>(), It.IsAny<FileChange>())).Returns((FileDiffResult?)null);
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
         var mutation = new Mock<IGitMutationService>();
 
         return new SourceControlViewModel(
             orchestrator, new Workspace(),
-            diffService.Object, mutation.Object, git.Object, _registry);
+            mutation.Object, git.Object, commandRegistry: _registry);
     }
 
     /// <summary>

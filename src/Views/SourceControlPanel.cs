@@ -36,8 +36,6 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
     private readonly TextBlock _statusMessage;
-    private readonly Border _diffContainer;
-    private readonly TextBlock _diffTextBlock;
 
     public SourceControlPanel()
     {
@@ -167,34 +165,6 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _stagedList.Styles.Add(CreateChangeListItemStyle());
         _stagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: true);
 
-        // --- Diff Surface (inline unified diff, shown on file selection) ---
-        _diffTextBlock = new TextBlock
-        {
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
-            TextWrapping = TextWrapping.NoWrap
-        };
-
-        var diffScrollViewer = new ScrollViewer
-        {
-            Content = _diffTextBlock,
-            MaxHeight = 300,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Margin = LayoutTokens.Uniform(LayoutTokens.SpacingSm)
-        };
-
-        _diffContainer = new Border
-        {
-            Child = diffScrollViewer,
-            Background = new SolidColorBrush(Color.FromArgb(0x08, 0xFF, 0xFF, 0xFF)),
-            BorderThickness = LayoutTokens.NoneThickness,
-            CornerRadius = LayoutTokens.RadiusSm,
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
-            IsVisible = false
-        };
-
         // --- Commit Input ---
         _commitInput = new TextBox
         {
@@ -245,7 +215,6 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _unstagedList,
                     _stagedHeader,
                     _stagedList,
-                    _diffContainer,
                     _commitInput,
                     _commitButton,
                     _commitErrorText
@@ -316,25 +285,6 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 .Select(_ => _stagedList.SelectedItem as FileChange)
                 .Where(f => f is not null)
                 .Subscribe(f => ViewModel?.SelectFileCommand.Execute(f!).Subscribe()));
-
-            // --- Diff surface visibility and content ---
-            d.Add(this.WhenAnyValue(x => x.ViewModel!.CurrentDiff)
-                .Subscribe(diff =>
-                {
-                    _diffContainer.IsVisible = diff != null;
-                    if (diff == null)
-                    {
-                        _diffTextBlock.Text = string.Empty;
-                    }
-                    else if (diff.IsBinary)
-                    {
-                        _diffTextBlock.Text = "Binary file \u2014 diff not available";
-                    }
-                    else
-                    {
-                        _diffTextBlock.Text = diff.DiffText ?? string.Empty;
-                    }
-                }));
 
             // Surface non-repo / error notice; hidden on success
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)

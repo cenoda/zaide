@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Concurrency;
@@ -215,12 +216,25 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                     if (!ReferenceEquals(ViewModel, _lastFoldVm))
                     {
                         _lastFoldVm = ViewModel;
-                        if (ViewModel is not null && newContent.Length > 0)
+                        if (ViewModel is not null &&
+                            newContent.Length > 0 &&
+                            !ViewModel.IsSourceControlDiff)
+                        {
                             _foldingOperations.Install(newContent);
+                        }
                         else
+                        {
                             _foldingOperations.Clear();
+                        }
                     }
                 }));
+
+            d.Add(this.GetObservable(ViewModelProperty)
+                .Select(vm => vm is EditorViewModel evm
+                    ? evm.WhenAnyValue(x => x.IsReadOnly)
+                    : Observable.Return(false))
+                .Switch()
+                .Subscribe(readOnly => _textEditor.IsReadOnly = readOnly));
 
             // File mode (grammar + font): only on VM change, not on keystroke.
             d.Add(this.GetObservable(ViewModelProperty)
@@ -228,7 +242,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 {
                     if (obj is EditorViewModel vm)
                     {
-                        ApplyFileMode(vm.FilePath);
+                        ApplyFileMode(vm);
                         UpdateFileInfoBar(vm);
                     }
                     else
@@ -250,8 +264,12 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             // and update the file info bar text accordingly.
             d.Add(this.GetObservable(ViewModelProperty)
                 .Select(vm => vm is EditorViewModel evm
-                    ? evm.WhenAnyValue(x => x.FileName)
-                    : Observable.Never<string>())
+                    ? evm.WhenAnyValue(
+                        x => x.FileName,
+                        x => x.IsSourceControlDiff,
+                        x => x.SourceControlDiffKey,
+                        x => x.SourceControlComparisonState)
+                    : Observable.Never<(string, bool, string?, string?)>())
                 .Switch()
                 .Subscribe(_ =>
                 {
@@ -277,10 +295,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 {
                     if (obj is EditorViewModel vm)
                     {
-                        _languageInput.ActiveEditor = this;
-                        _languageInput.ActiveDocumentId = string.IsNullOrEmpty(vm.FilePath)
-                            ? null
-                            : vm.FilePath;
+                        if (vm.IsSourceControlDiff)
+                        {
+                            _languageInput.ActiveEditor = null;
+                            _languageInput.ActiveDocumentId = null;
+                        }
+                        else
+                        {
+                            _languageInput.ActiveEditor = this;
+                            _languageInput.ActiveDocumentId = string.IsNullOrEmpty(vm.FilePath)
+                                ? null
+                                : vm.FilePath;
+                        }
                     }
                     else
                     {
@@ -500,8 +526,17 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     /// Applies syntax highlighting and font based on the file extension.
     /// Parses the extension once — no duplicated Path.GetExtension calls.
     /// </summary>
-    private void ApplyFileMode(string filePath)
+    private void ApplyFileMode(EditorViewModel vm)
     {
+        if (vm.IsSourceControlDiff)
+        {
+            _textMateInstallation.SetGrammar("source.diff");
+            _textEditor.FontFamily = _codeFont;
+            _indentGuideRenderer.IsEnabled = false;
+            return;
+        }
+
+        var filePath = vm.FilePath;
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
 
         // Grammar — always set, even for unsupported files.
@@ -526,6 +561,18 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     /// </summary>
     private void UpdateFileInfoBar(EditorViewModel vm)
     {
+        if (vm.IsSourceControlDiff)
+        {
+            var path = vm.SourceControlDiffKey ?? vm.FileName;
+            var state = vm.SourceControlComparisonState ?? "Diff";
+            _fileInfoText.Text = $"{path}  —  {state} (read-only)";
+            _fileInfoIconHost.Content = IconFactory.Create(
+                FileIconKeyResolver.GetIconKey(path),
+                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                12);
+            return;
+        }
+
         var name = string.IsNullOrEmpty(vm.FileName) ? "Untitled" : vm.FileName;
         _fileInfoText.Text = $"{name}  —  diff/edit";
         _fileInfoIconHost.Content = IconFactory.Create(
@@ -771,7 +818,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _textEditor.Options.ShowSpaces = projection.ShowSpaces;
 
         if (ViewModel is not null)
-            ApplyFileMode(ViewModel.FilePath);
+            ApplyFileMode(ViewModel);
         else
             _textEditor.FontFamily = _codeFont;
 

@@ -65,15 +65,18 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         }
     }
 
-    private SourceControlViewModel CreateViewModel()
+    private (SourceControlViewModel ViewModel, EditorTabViewModel EditorTabs) CreateViewModel()
     {
         var gitRepo = new GitRepositoryService();
         var orchestrator = new SourceControlSnapshotOrchestrator(gitRepo);
-        var diff = new FileDiffService();
         var mutation = new GitMutationService();
         var workspace = new Workspace();
         workspace.SetProjectFromPath(_repoDir);
-        return new SourceControlViewModel(orchestrator, workspace, diff, mutation, gitRepo);
+        return SourceControlTestFactory.CreateWithDiffTabs(
+            orchestrator,
+            workspace,
+            mutation,
+            gitRepo);
     }
 
     private void Write(string relativePath, string content) =>
@@ -88,7 +91,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void FullLoop_CreateStageViewDiffCommit_FileDisappearsFromBothLists()
     {
-        var vm = CreateViewModel();
+        var (vm, tabs) = CreateViewModel();
 
         Write("a.txt", "hello\n");
         vm.RefreshCommand.Execute().Wait();
@@ -101,12 +104,13 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         Assert.DoesNotContain(vm.UnstagedChanges, c => c.FilePath == "a.txt");
         var staged = vm.StagedChanges.Single(c => c.FilePath == "a.txt");
 
-        // Viewing the staged delta produces a coherent unified diff.
+        // Viewing the staged delta opens a coherent unified diff in the editor.
         vm.SelectFileCommand.Execute(staged).Wait();
-        Assert.NotNull(vm.CurrentDiff);
-        Assert.Equal("a.txt", vm.CurrentDiff!.FilePath);
-        Assert.False(vm.CurrentDiff.IsBinary);
-        Assert.False(string.IsNullOrEmpty(vm.CurrentDiff.DiffText));
+        var diffTab = Assert.Single(tabs.OpenTabs);
+        Assert.Equal("a.txt", diffTab.SourceControlDiffKey);
+        Assert.True(diffTab.IsReadOnly);
+        Assert.False(string.IsNullOrEmpty(diffTab.TextContent));
+        Assert.Contains("diff --git", diffTab.TextContent);
 
         var beforeCommit = HeadCommitCount();
         vm.CommitMessage = "add a.txt";
@@ -118,7 +122,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         Assert.DoesNotContain(vm.StagedChanges, c => c.FilePath == "a.txt");
         Assert.DoesNotContain(vm.UnstagedChanges, c => c.FilePath == "a.txt");
         Assert.Null(vm.SelectedFileChange);
-        Assert.Null(vm.CurrentDiff);
+        Assert.Contains("no longer in the change list", diffTab.TextContent);
     }
 
     [Fact]
@@ -129,7 +133,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         // modification is never staged, so the commit captures only the staged
         // snapshot and the file remains as an unstaged modification. The panel
         // must reflect this rather than claiming the file fully disappeared.
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         Write("a.txt", "hello\n");
         vm.RefreshCommand.Execute().Wait();
@@ -157,7 +161,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void UnstageRestageCommitLoop_FileDisappearsFromBothLists()
     {
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         Write("b.txt", "content\n");
         vm.RefreshCommand.Execute().Wait();
@@ -192,7 +196,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void RepeatedStageUnstageCycles_StayTruthfulAndDoNotDegrade()
     {
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         Write("c.txt", "content\n");
         vm.RefreshCommand.Execute().Wait();
@@ -219,7 +223,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void SelectionPersistsAcrossStageMutationRefresh()
     {
-        var vm = CreateViewModel();
+        var (vm, tabs) = CreateViewModel();
 
         Write("d.txt", "content\n");
         vm.RefreshCommand.Execute().Wait();
@@ -227,22 +231,24 @@ public sealed class SourceControlMutationFlowTests : IDisposable
 
         vm.SelectFileCommand.Execute(file).Wait();
         Assert.Equal("d.txt", vm.SelectedFilePath);
+        var diffTab = Assert.Single(tabs.OpenTabs);
 
         // Stage -> unconditional refresh; the selection must follow the file to
-        // the staged list (re-selected by path) and the diff must stay coherent.
+        // the staged list (re-selected by path) and the diff tab must stay coherent.
         vm.StageFileCommand.Execute(file).Wait();
 
         Assert.NotNull(vm.SelectedFileChange);
         Assert.Equal("d.txt", vm.SelectedFilePath);
         Assert.True(vm.SelectedFileChange!.IsStaged);
-        Assert.NotNull(vm.CurrentDiff);
-        Assert.Equal("d.txt", vm.CurrentDiff!.FilePath);
+        Assert.Same(diffTab, Assert.Single(tabs.OpenTabs));
+        Assert.Equal("d.txt", diffTab.SourceControlDiffKey);
+        Assert.Equal("Staged Changes", diffTab.SourceControlComparisonState);
     }
 
     [Fact]
     public void EmptyCommitMessage_RejectedInViewModelWithoutCreatingCommit()
     {
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         Write("e.txt", "content\n");
         vm.RefreshCommand.Execute().Wait();
@@ -262,7 +268,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void NothingStaged_RejectedInViewModelWithoutCreatingCommit()
     {
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         var beforeCommit = HeadCommitCount();
         vm.CommitMessage = "nothing to commit";
@@ -275,7 +281,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
     [Fact]
     public void CommitPushWorkflow_TransitionsPrimaryActionFromCommitToPushAndBack()
     {
-        var vm = CreateViewModel();
+        var (vm, _) = CreateViewModel();
 
         Write("pushme.txt", "hello\n");
         vm.RefreshCommand.Execute().Wait();
@@ -347,8 +353,11 @@ public sealed class SourceControlMutationFlowTests : IDisposable
             var orchestrator = new SourceControlSnapshotOrchestrator(gitRepo);
             var workspace = new Workspace();
             workspace.SetProjectFromPath(isolatedDir);
-            var vm = new SourceControlViewModel(
-                orchestrator, workspace, new FileDiffService(), new GitMutationService(), gitRepo);
+            var (vm, _) = SourceControlTestFactory.CreateWithDiffTabs(
+                orchestrator,
+                workspace,
+                new GitMutationService(),
+                gitRepo);
 
             File.WriteAllText(Path.Combine(isolatedDir, "f.txt"), "content\n");
             vm.RefreshCommand.Execute().Wait();

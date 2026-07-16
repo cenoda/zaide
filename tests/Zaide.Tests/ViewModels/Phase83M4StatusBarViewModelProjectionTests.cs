@@ -111,11 +111,10 @@ public sealed class Phase83M4StatusBarViewModelProjectionTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
-        var diff = new Mock<IFileDiffService>();
         var mutation = new Mock<IGitMutationService>();
         var sourceControl = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object),
-            new Workspace(), diff.Object, mutation.Object, git.Object);
+            new Workspace(), mutation.Object, git.Object);
 
         var workspace = sp.GetRequiredService<Workspace>();
         var vm = new MainWindowViewModel(

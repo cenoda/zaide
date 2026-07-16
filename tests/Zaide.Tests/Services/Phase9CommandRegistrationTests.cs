@@ -158,7 +158,7 @@ public sealed class Phase9CommandRegistrationTests
         var mutation = new Mock<IGitMutationService>();
 
         return new SourceControlViewModel(
-            orchestrator, new Workspace(), diffService.Object,
-            mutation.Object, git.Object, registry);
+            orchestrator, new Workspace(),
+            mutation.Object, git.Object, commandRegistry: registry);
     }
 }

@@ -115,11 +115,10 @@ public sealed class M5SettingsUiTests
         var git = new Mock<IGitRepositoryService>();
         git.Setup(service => service.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(service => service.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
-        var diff = new Mock<IFileDiffService>();
         var mutation = new Mock<IGitMutationService>();
         var sourceControl = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object),
-            new Workspace(), diff.Object, mutation.Object, git.Object);
+            new Workspace(), mutation.Object, git.Object);
         var ctxMock = new Mock<IProjectContextService>(MockBehavior.Loose);
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         var workspace = provider.GetRequiredService<Workspace>();
