@@ -31,6 +31,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private readonly ListBox _stagedList;
     private readonly TextBox _commitInput;
     private readonly Button _commitButton;
+    private readonly Button _stageAllButton;
     private readonly TextBlock _commitErrorText;
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
@@ -99,9 +100,37 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             FontSize = 13
         };
 
-        // --- Unstaged Changes Header ---
+        // --- Unstaged Changes Header (caption + Stage All) ---
         _unstagedHeader = TextStyles.Caption("Unstaged Changes");
-        _unstagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
+        _unstagedHeader.VerticalAlignment = VerticalAlignment.Center;
+
+        _stageAllButton = new Button
+        {
+            Content = "Stage All",
+            FontSize = 11,
+            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Background = Brushes.Transparent,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            BorderThickness = LayoutTokens.NoneThickness,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            // Bound to UnstagedCount > 0 on activation; hidden until then.
+            IsVisible = false
+        };
+
+        var unstagedHeaderRow = new Grid
+        {
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Children = { _unstagedHeader, _stageAllButton }
+        };
+        Grid.SetColumn(_unstagedHeader, 0);
+        Grid.SetColumn(_stageAllButton, 1);
 
         // --- Status Message (non-repo / error notice; hidden on success) ---
         _statusMessage = TextStyles.Body("");
@@ -212,7 +241,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     header,
                     _branchSelector,
                     _statusMessage,
-                    _unstagedHeader,
+                    unstagedHeaderRow,
                     _unstagedList,
                     _stagedHeader,
                     _stagedList,
@@ -315,14 +344,28 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _statusMessage.IsVisible = !string.IsNullOrEmpty(msg);
                 }));
 
-            // Update headers when counts change
+            // Update headers when counts change. Stage All is shown only when
+            // there are unstaged files; CanExecute separately disables it while
+            // a stage-all is in flight (prevents duplicate submissions).
             d.Add(this.WhenAnyValue(x => x.ViewModel!.UnstagedCount)
                 .Subscribe(count =>
-                    _unstagedHeader.Text = $"Changes ({count})"));
+                {
+                    _unstagedHeader.Text = $"Changes ({count})";
+                    _stageAllButton.IsVisible = count > 0;
+                }));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StagedCount)
                 .Subscribe(count =>
                     _stagedHeader.Text = $"Staged ({count})"));
+
+            // Stage All: project click to Unit so InvokeCommand matches StageAllCommand.
+            d.Add(Observable.FromEventPattern<RoutedEventArgs>(
+                    h => _stageAllButton.Click += h,
+                    h => _stageAllButton.Click -= h)
+                .Select(_ => Unit.Default)
+                .InvokeCommand(ViewModel, vm => vm.StageAllCommand));
+            d.Add(this.WhenAnyObservable(x => x.ViewModel!.StageAllCommand.CanExecute)
+                .Subscribe(can => _stageAllButton.IsEnabled = can));
 
             // Commit message binding
             d.Add(this.Bind(ViewModel, vm => vm.CommitMessage, v => v._commitInput.Text));

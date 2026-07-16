@@ -33,6 +33,24 @@ public sealed class GitMutationService : IGitMutationService
     }
 
     /// <inheritdoc/>
+    public StageResult StageAll(string repositoryRoot, IReadOnlyList<string> filePaths)
+    {
+        if (filePaths is null || filePaths.Count == 0)
+            return StageResult.Success();
+
+        try
+        {
+            using var repo = new Repository(repositoryRoot);
+            Commands.Stage(repo, filePaths);
+            return StageResult.Success();
+        }
+        catch (System.Exception ex)
+        {
+            return StageResult.Failure(ex.Message);
+        }
+    }
+
+    /// <inheritdoc/>
     public StageResult Unstage(string repositoryRoot, string filePath)
     {
         try

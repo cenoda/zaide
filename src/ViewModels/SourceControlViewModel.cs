@@ -181,6 +181,7 @@ public class SourceControlViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<FileChange, Unit> StageFileCommand { get; }
+    public ReactiveCommand<Unit, Unit> StageAllCommand { get; }
     public ReactiveCommand<FileChange, Unit> UnstageFileCommand { get; }
     public ReactiveCommand<Unit, Unit> CommitCommand { get; }
     public ReactiveCommand<Unit, Unit> PushCommand { get; }
@@ -230,6 +231,11 @@ public class SourceControlViewModel : ReactiveObject
                 StatusMessage = result.ErrorMessage;
             }
         });
+
+        // Disabled when there are no unstaged files. ReactiveCommand also
+        // disables while executing so a second click cannot re-enter.
+        var canStageAll = this.WhenAnyValue(x => x.UnstagedCount, count => count > 0);
+        StageAllCommand = ReactiveCommand.CreateFromTask(ExecuteStageAllAsync, canStageAll);
 
         UnstageFileCommand = ReactiveCommand.CreateFromTask<FileChange>(async file =>
         {
@@ -372,6 +378,34 @@ public class SourceControlViewModel : ReactiveObject
                 SelectedFilePath = null;
                 CurrentDiff = null;
             }
+        }
+    }
+
+    private async Task ExecuteStageAllAsync()
+    {
+        var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+        if (!discovery.IsRepository || discovery.RepositoryRoot is null)
+        {
+            StatusMessage = "No repository - open a folder inside a git repository";
+            return;
+        }
+
+        // Snapshot paths before the mutation so a concurrent refresh cannot
+        // shrink the collection mid-iteration.
+        var paths = UnstagedChanges.Select(c => c.FilePath).ToList();
+        if (paths.Count == 0)
+            return;
+
+        var repoRoot = discovery.RepositoryRoot;
+        var result = await Task.Run(() => _mutationService.StageAll(repoRoot, paths));
+
+        // Always refresh from repo truth — partial stage may have succeeded
+        // before a failure, and the UI must not assume every path staged.
+        RefreshCommand.Execute().Subscribe();
+
+        if (!result.IsSuccess)
+        {
+            StatusMessage = result.ErrorMessage;
         }
     }
 

@@ -96,4 +96,19 @@ public class SourceControlPanelCommandWiringTests
         Assert.Null(ex);
         Assert.Equal("Commit message cannot be empty.", vm.CommitError);
     }
+
+    [Fact]
+    public void StageAllButtonPipeline_WithUnitProjection_DoesNotThrowWhenCanExecuteFalse()
+    {
+        // With no unstaged changes StageAllCommand cannot execute; InvokeCommand
+        // must still accept the Unit-projected click stream without throwing.
+        var vm = CreateViewModel();
+        var clicks = new Subject<EventPattern<RoutedEventArgs>>();
+        using var sub = clicks.Select(_ => Unit.Default).InvokeCommand(vm, x => x.StageAllCommand);
+
+        var ex = Record.Exception(() => clicks.OnNext(Click()));
+
+        Assert.Null(ex);
+        Assert.False(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
+    }
 }

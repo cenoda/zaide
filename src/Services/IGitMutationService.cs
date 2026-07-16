@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Zaide.Services;
 
 /// <summary>
@@ -15,6 +17,14 @@ public interface IGitMutationService
     /// already staged.
     /// </summary>
     StageResult Stage(string repositoryRoot, string filePath);
+
+    /// <summary>
+    /// Stages every path in <paramref name="filePaths"/> (relative to
+    /// <paramref name="repositoryRoot"/>) in a single repository open. A true
+    /// no-op (returns success) when the list is empty. On failure some paths
+    /// may already be staged — callers must refresh from repository truth.
+    /// </summary>
+    StageResult StageAll(string repositoryRoot, IReadOnlyList<string> filePaths);
 
     /// <summary>
     /// Unstages <paramref name="filePath"/> (relative to <paramref name="repositoryRoot"/>)

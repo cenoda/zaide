@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -242,6 +243,128 @@ public class SourceControlViewModelTests
         vm.StageFileCommand.Execute(file).Wait();
 
         mutation.Verify(m => m.Stage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        Assert.Equal("No repository - open a folder inside a git repository", vm.StatusMessage);
+    }
+
+    [Fact]
+    public void StageAllCommand_StagesAllUnstagedFilesAndRefreshes()
+    {
+        var unstagedSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: false),
+            new FileChange("c.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var afterStageSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: true),
+            new FileChange("c.cs", GitChangeType.Modified, isStaged: true),
+        });
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(unstagedSnapshot)
+            .Returns(afterStageSnapshot);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.StageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
+            .Returns(StageResult.Success());
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+
+        Assert.Equal(2, vm.UnstagedCount);
+        Assert.True(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
+
+        vm.StageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.StageAll(
+            "/ws/.git/",
+            It.Is<IReadOnlyList<string>>(paths =>
+                paths.Count == 2 && paths.Contains("a.cs") && paths.Contains("b.cs"))),
+            Times.Once);
+        Assert.Empty(vm.UnstagedChanges);
+        Assert.Equal(3, vm.StagedCount);
+        Assert.Null(vm.StatusMessage);
+        Assert.False(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+    }
+
+    [Fact]
+    public void StageAllCommand_MutationFailure_SurfacesStatusMessageAndStillRefreshes()
+    {
+        var before = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: false),
+        });
+        // Partial success reflected by repo truth after failure.
+        var afterPartial = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: false),
+        });
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(before)
+            .Returns(afterPartial);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.StageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
+            .Returns(StageResult.Failure("partial boom"));
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+
+        vm.StageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.StageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()), Times.Once);
+        git.Verify(g => g.ReadStatus("/ws/.git/"), Times.AtLeast(2));
+        Assert.Equal("partial boom", vm.StatusMessage);
+        Assert.Single(vm.StagedChanges);
+        Assert.Single(vm.UnstagedChanges);
+        Assert.Equal("b.cs", vm.UnstagedChanges[0].FilePath);
+    }
+
+    [Fact]
+    public void StageAllCommand_NoUnstagedChanges_CannotExecute()
+    {
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(0, vm.UnstagedCount);
+        Assert.False(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
+    }
+
+    [Fact]
+    public void StageAllCommand_NoRepository_SurfacesStatusMessageAndDoesNotCallMutation()
+    {
+        // Seed unstaged changes via orchestrator, but Discover at mutation time fails.
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+        });
+        var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
+        orchestratorMock.Setup(o => o.Refresh(It.IsAny<string?>()))
+            .Returns(SnapshotRefreshResult.Success("/ws", snapshot));
+
+        var mutation = new Mock<IGitMutationService>();
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound("/ws"));
+
+        var vm = new SourceControlViewModel(orchestratorMock.Object, WorkspaceWithPath(), NullDiffService(), mutation.Object, git.Object);
+
+        Assert.True(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
+        vm.StageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.StageAll(It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()), Times.Never);
         Assert.Equal("No repository - open a folder inside a git repository", vm.StatusMessage);
     }
 
