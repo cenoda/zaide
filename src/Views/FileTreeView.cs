@@ -379,6 +379,14 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
         contextMenu.Items.Add(newFolderItem);
 
+        var deleteFileItem = CreateStyledMenuItem("Delete");
+        deleteFileItem.Click += (_, _) =>
+        {
+            if (_treeView.SelectedItem is FileTreeNode selected && !selected.IsDirectory)
+                ViewModel!.DeleteFileCommand.Execute(selected).Subscribe();
+        };
+        contextMenu.Items.Add(deleteFileItem);
+
         // M2: Show Hidden Files toggle
         contextMenu.Items.Add(new Separator());
         var showHiddenItem = CreateStyledMenuItem("Show Hidden Files");
@@ -478,6 +486,16 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             d.Add(this.WhenAnyValue(x => x.ViewModel!.RootPath)
                 .Subscribe(path => copyRelativePathItem.IsEnabled = path is not null));
 
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedFile)
+                .Subscribe(selected =>
+                    deleteFileItem.IsEnabled = selected is { IsDirectory: false }));
+
+            d.Add(ViewModel!.ConfirmDeleteFile.RegisterHandler(async interaction =>
+            {
+                var confirmed = await ShowDeleteConfirmationAsync(interaction.Input);
+                interaction.SetOutput(confirmed);
+            }));
+
             // M3.3: When the view-model selection changes, repaint every
             // visible row. The row paint reads ViewModel.SelectedFile
             // directly, so re-attached rows catch up automatically; this
@@ -493,8 +511,17 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         {
             // M9a: Ctrl+Shift+H removed — handled by registry-driven window binding.
 
-            if (e.Key != Key.Enter) return;
             var selected = ViewModel!.SelectedFile;
+
+            if (e.Key == Key.Delete)
+            {
+                if (selected is null || selected.IsDirectory) return;
+                e.Handled = true;
+                ViewModel!.DeleteFileCommand.Execute(selected).Subscribe();
+                return;
+            }
+
+            if (e.Key != Key.Enter) return;
             if (selected is null || selected.IsDirectory) return;
             e.Handled = true;
             ViewModel!.RequestOpenFileCommand.Execute(selected).Subscribe();
@@ -579,6 +606,83 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             return selected.FullPath;
 
         return ViewModel.RootPath;
+    }
+
+    /// <summary>
+    /// Shows a destructive-action confirmation dialog for file deletion.
+    /// Returns true only when the user explicitly confirms.
+    /// </summary>
+    private async Task<bool> ShowDeleteConfirmationAsync(FileTreeNode node)
+    {
+        var warningBrush = (IBrush?)Application.Current!.Resources["WarningBrush"];
+        var message = new TextBlock
+        {
+            Text = $"Are you sure you want to permanently delete '{node.Name}'?\n\n{node.FullPath}\n\nThis action cannot be undone.",
+            TextWrapping = TextWrapping.Wrap,
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, 0)
+        };
+
+        var deleteButton = new Button
+        {
+            Content = "Delete",
+            Foreground = warningBrush,
+            Margin = LayoutTokens.Uniform(LayoutTokens.SpacingXs)
+        };
+        var cancelButton = new Button { Content = "Cancel", Margin = LayoutTokens.Uniform(LayoutTokens.SpacingXs) };
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm),
+            Children = { cancelButton, deleteButton }
+        };
+
+        var stackPanel = new StackPanel
+        {
+            Children = { message, buttonPanel }
+        };
+
+        var window = new Window
+        {
+            Title = "Delete File",
+            SizeToContent = SizeToContent.WidthAndHeight,
+            MinWidth = 360,
+            Content = stackPanel,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false
+        };
+
+        var tcs = new TaskCompletionSource<bool>();
+        deleteButton.Click += (_, _) =>
+        {
+            tcs.TrySetResult(true);
+            window.Close();
+        };
+        cancelButton.Click += (_, _) =>
+        {
+            tcs.TrySetResult(false);
+            window.Close();
+        };
+
+        window.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                tcs.TrySetResult(false);
+                window.Close();
+            }
+        };
+
+        window.Closed += (_, _) => tcs.TrySetResult(false);
+
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow is not null)
+            await window.ShowDialog(parentWindow);
+        else
+            window.Show();
+
+        return await tcs.Task;
     }
 
     /// <summary>

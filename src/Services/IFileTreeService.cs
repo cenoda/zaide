@@ -43,4 +43,9 @@ public interface IFileTreeService : IDisposable
     /// Creates a directory at the given path.
     /// </summary>
     void CreateDirectory(string path);
+
+    /// <summary>
+    /// Permanently deletes a file at the given path.
+    /// </summary>
+    void DeleteFile(string path);
 }

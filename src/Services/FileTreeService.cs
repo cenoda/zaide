@@ -245,6 +245,14 @@ public class FileTreeService : IFileTreeService
         Directory.CreateDirectory(path);
     }
 
+    /// <summary>
+    /// Permanently deletes a file at the given path. The FileSystemWatcher picks it up.
+    /// </summary>
+    public void DeleteFile(string path)
+    {
+        File.Delete(path);
+    }
+
     public void Dispose()
     {
         StopWatching();

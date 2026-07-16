@@ -394,4 +394,25 @@ public class FileTreeServiceTests
                 Directory.Delete(root, recursive: true);
         }
     }
+
+    [Fact]
+    public void DeleteFile_RemovesFileFromDisk()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var filePath = Path.Combine(root, "to-delete.txt");
+            File.WriteAllText(filePath, "content");
+
+            _service.DeleteFile(filePath);
+
+            Assert.False(File.Exists(filePath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
 }

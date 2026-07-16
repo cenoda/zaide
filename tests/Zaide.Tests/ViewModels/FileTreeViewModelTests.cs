@@ -857,4 +857,148 @@ public class FileTreeViewModelTests
         }
     }
 
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_DoesNotDelete_WhenNotConfirmed()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var filePath = Path.Combine(root, "keep-me.txt");
+            File.WriteAllText(filePath, "content");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var node = vm.RootNodes.Single();
+            vm.SelectedFile = node;
+
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(false));
+
+            await vm.DeleteFileCommand.Execute(node);
+
+            Assert.True(File.Exists(filePath));
+            Assert.Single(vm.RootNodes);
+            Assert.Equal(node, vm.SelectedFile);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_RemovesFileFromTree_WhenConfirmed()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var filePath = Path.Combine(root, "remove-me.txt");
+            File.WriteAllText(filePath, "content");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var node = vm.RootNodes.Single();
+
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(true));
+
+            await vm.DeleteFileCommand.Execute(node);
+
+            Assert.False(File.Exists(filePath));
+            Assert.Empty(vm.RootNodes);
+            Assert.Null(vm.SelectedFile);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_IsNoOp_ForDirectory()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "subdir");
+            Directory.CreateDirectory(dirPath);
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var dirNode = vm.RootNodes.Single();
+
+            var handlerCalled = false;
+            vm.ConfirmDeleteFile.RegisterHandler(ctx =>
+            {
+                handlerCalled = true;
+                ctx.SetOutput(true);
+            });
+
+            await vm.DeleteFileCommand.Execute(dirNode);
+
+            Assert.False(handlerCalled);
+            Assert.True(Directory.Exists(dirPath));
+            Assert.Single(vm.RootNodes);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_SetsStatusText_AndRefreshes_OnFailure()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(root);
+        var filePath = Path.Combine(root, "locked.txt");
+        File.WriteAllText(filePath, "content");
+
+        var mockService = new Moq.Mock<IFileTreeService>();
+        mockService.Setup(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(() => new List<FileTreeNode>
+            {
+                new FileTreeNode
+                {
+                    Name = "locked.txt",
+                    FullPath = filePath,
+                    IsDirectory = false,
+                    Depth = 0
+                }
+            });
+        mockService.Setup(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(Observable.Never<FileChangeEvent>());
+        mockService.Setup(s => s.DeleteFile(filePath))
+            .Throws(new UnauthorizedAccessException("access denied"));
+
+        var vm = new FileTreeViewModel(mockService.Object, _scheduler);
+
+        try
+        {
+            vm.SetRootPath(root);
+            var node = vm.RootNodes.Single();
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(true));
+
+            await vm.DeleteFileCommand.Execute(node);
+
+            Assert.NotNull(vm.StatusText);
+            Assert.Contains("Failed to delete file", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("locked.txt", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+            mockService.Verify(s => s.EnumerateDirectory(root, It.IsAny<bool>()), Moq.Times.AtLeast(2));
+            Assert.True(File.Exists(filePath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
 }

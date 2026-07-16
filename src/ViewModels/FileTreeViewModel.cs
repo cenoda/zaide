@@ -7,6 +7,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Concurrency;
+using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
@@ -61,6 +62,9 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     // M1: Create file or directory. Tuple: (parentDir, name, isDirectory).
     public ReactiveCommand<(string ParentDir, string Name, bool IsDirectory), Unit> CreateNodeCommand { get; }
 
+    // Delete the selected file after explicit confirmation (files only).
+    public ReactiveCommand<FileTreeNode, Unit> DeleteFileCommand { get; }
+
     // M2: Show hidden files toggle
     public ReactiveCommand<Unit, Unit> ToggleHiddenFilesCommand { get; }
 
@@ -76,6 +80,12 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     /// MainWindowViewModel registers the handler that calls topLevel.Clipboard.SetTextAsync.
     /// </summary>
     public Interaction<string, Unit> CopyToClipboard { get; } = new();
+
+    /// <summary>
+    /// Fires when the user requests file deletion. The view shows a confirmation
+    /// dialog and returns whether the user explicitly confirmed the destructive action.
+    /// </summary>
+    public Interaction<FileTreeNode, bool> ConfirmDeleteFile { get; } = new();
 
     public bool ShowHiddenFiles
     {
@@ -207,6 +217,32 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
         // Live-sync fallback: re-enumerates the current root without changing
         // any toggle state. The watcher keeps running, so no observation gap.
         RefreshCommand = ReactiveCommand.Create(Refresh);
+
+        DeleteFileCommand = ReactiveCommand.CreateFromTask<FileTreeNode>(DeleteFileAsync);
+    }
+
+    private async Task DeleteFileAsync(FileTreeNode node)
+    {
+        if (node is null || node.IsDirectory)
+            return;
+
+        var confirmed = await ConfirmDeleteFile.Handle(node);
+        if (!confirmed)
+            return;
+
+        StatusText = null;
+        var fullPath = node.FullPath;
+
+        try
+        {
+            _fileTreeService.DeleteFile(fullPath);
+            HandleDeleted(fullPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Refresh();
+            StatusText = $"Failed to delete file '{node.Name}': {ex.Message}";
+        }
     }
 
     /// <summary>
@@ -500,6 +536,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
                 if (PathsEqual(RootNodes[i].FullPath, fullPath))
                 {
                     RootNodes.RemoveAt(i);
+                    ClearSelectionIfDeleted(fullPath);
                     return;
                 }
             }
@@ -514,9 +551,16 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
             if (PathsEqual(parent.Children[i].FullPath, fullPath))
             {
                 parent.Children.RemoveAt(i);
+                ClearSelectionIfDeleted(fullPath);
                 return;
             }
         }
+    }
+
+    private void ClearSelectionIfDeleted(string fullPath)
+    {
+        if (SelectedFile is not null && PathsEqual(SelectedFile.FullPath, fullPath))
+            SelectedFile = null;
     }
 
     public void HandleRenamed(string newPath, string oldPath)
