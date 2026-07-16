@@ -23,6 +23,7 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
     private string _documentText = "—";
     private string _languageIntelligenceText = string.Empty;
     private string? _statusMessage;
+    private bool _isSettingsOpen;
 
     public string CaretText { get => _caretText; private set => this.RaiseAndSetIfChanged(ref _caretText, value); }
     public string LanguageText { get => _languageText; private set => this.RaiseAndSetIfChanged(ref _languageText, value); }
@@ -50,6 +51,15 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
     /// </summary>
     public string? StatusMessage { get => _statusMessage; private set => this.RaiseAndSetIfChanged(ref _statusMessage, value); }
 
+    /// <summary>
+    /// Mirrors <see cref="MainWindowViewModel.IsSettingsOpen"/> for status-bar button styling.
+    /// </summary>
+    public bool IsSettingsOpen
+    {
+        get => _isSettingsOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isSettingsOpen, value);
+    }
+
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> OpenSettingsCommand { get; }
 
     public StatusBarViewModel(
@@ -70,6 +80,10 @@ public sealed class StatusBarViewModel : ReactiveObject, IDisposable
         {
             await mainWindow.ShowSettings.Handle(System.Reactive.Unit.Default);
         });
+
+        _subscriptions.Add(mainWindow.WhenAnyValue(x => x.IsSettingsOpen)
+            .ObserveOn(scheduler)
+            .Subscribe(value => IsSettingsOpen = value));
 
         // Phase 9 M6: CaretText — include SelectionLength suffix when non-zero.
         _subscriptions.Add(mainWindow.WhenAnyValue(x => x.EditorTabs.ActiveTab)

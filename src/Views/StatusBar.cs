@@ -33,21 +33,27 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly TextBlock _statusMessageText = TextStyles.Caption("");
     private readonly TextBlock _modelText;
     private readonly Button _settingsButton;
+    private readonly Viewbox _settingsIcon;
+    private readonly TextBlock _settingsAppNameText;
+    private readonly SolidColorBrush _settingsActiveBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
+    private readonly SolidColorBrush _settingsHoverBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
+    private readonly SolidColorBrush _settingsPressedBackground = new(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF));
+    private bool _isSettingsButtonActive;
 
     public StatusBar()
     {
         Height = 24;
         Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
 
-        // App name — PrimaryAccentBrush
-        var appNameIcon = IconFactory.Create(
+        _settingsIcon = IconFactory.Create(
             "Icon.Config",
-            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             14);
 
-        var appNameText = TextStyles.Brand("Zaide");
-        appNameText.VerticalAlignment = VerticalAlignment.Center;
-        appNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
+        _settingsAppNameText = TextStyles.Brand("Zaide");
+        _settingsAppNameText.VerticalAlignment = VerticalAlignment.Center;
+        _settingsAppNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
+        ApplySettingsButtonVisualState(false);
 
         // Configured model (far-right caption). Centered like button segments so it
         // shares the same vertical midline as the rest of the 24px status bar.
@@ -62,8 +68,9 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { appNameIcon, appNameText }
+            Children = { _settingsIcon, _settingsAppNameText }
         });
+        WireSettingsButtonPointerFeedback(_settingsButton);
 
         _languageIntelligenceText.Foreground =
             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
@@ -145,7 +152,46 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                     _modelText.Text = FormatConfiguredModel(model) ?? "";
                     _modelText.IsVisible = model is not null;
                 })));
+            d.Add(ViewModel.WhenAnyValue(x => x.IsSettingsOpen)
+                .Subscribe(Observer.Create<bool>(isOpen =>
+                {
+                    ApplySettingsButtonVisualState(isOpen);
+                    UpdateSettingsButtonBackground();
+                })));
         });
+    }
+
+    private void ApplySettingsButtonVisualState(bool isActive)
+    {
+        _isSettingsButtonActive = isActive;
+        var accentBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
+        var secondaryBrush = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        IconFactory.SetForeground(_settingsIcon, isActive ? accentBrush : secondaryBrush);
+        _settingsAppNameText.Foreground = isActive ? accentBrush : secondaryBrush;
+    }
+
+    private void UpdateSettingsButtonBackground()
+    {
+        _settingsButton.Background = _isSettingsButtonActive
+            ? _settingsActiveBackground
+            : Brushes.Transparent;
+    }
+
+    private void WireSettingsButtonPointerFeedback(Button button)
+    {
+        button.PointerEntered += (_, _) =>
+        {
+            if (!button.IsPressed)
+            {
+                button.Background = _settingsHoverBackground;
+            }
+        };
+        button.PointerExited += (_, _) => UpdateSettingsButtonBackground();
+        button.PointerPressed += (_, _) => button.Background = _settingsPressedBackground;
+        button.PointerReleased += (_, _) =>
+            button.Background = button.IsPointerOver || _isSettingsButtonActive
+                ? _settingsHoverBackground
+                : Brushes.Transparent;
     }
 
     private static Button BuildStatusSegmentButton(string iconKey, TextBlock text)

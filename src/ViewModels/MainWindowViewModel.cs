@@ -49,6 +49,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isOutputBottomMode;
     private bool _isTestResultsBottomMode;
     private bool _isDebugBottomMode;
+    private bool _isSettingsOpen;
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
@@ -140,6 +141,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     {
         get => _isDebugBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isDebugBottomMode, value);
+    }
+
+    /// <summary>
+    /// True while the full-window settings overlay is visible.
+    /// </summary>
+    public bool IsSettingsOpen
+    {
+        get => _isSettingsOpen;
+        internal set => this.RaiseAndSetIfChanged(ref _isSettingsOpen, value);
     }
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }

@@ -71,7 +71,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _statusBarRow;
     private Grid _layoutRoot = null!;
     private SettingsPanelView? _settingsPanel;
-    private TaskCompletionSource<bool>? _settingsCompletion;
+    private SettingsViewModel? _settingsPanelViewModel;
+    private LeftPanelMode _settingsReturnLeftPanelMode = LeftPanelMode.Explorer;
+    private MainWindowViewModel? _settingsLifecycleViewModel;
 
     [Obsolete("Use the ISettingsService composition constructor.")]
     public MainWindow()
@@ -149,6 +151,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
         {
+            _settingsLifecycleViewModel = ViewModel;
+
             // Wire NavBar to ViewModel
             _navBar.ViewModel = ViewModel;
 
@@ -837,49 +841,101 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             terminalTabHost, agentPanelHostView, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 
-    private async Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
+    private Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
     {
-        if (_settingsPanel is not null)
+        var vm = RequireSettingsLifecycleViewModel();
+        if (vm.IsSettingsOpen)
         {
+            HideSettingsPanel();
             context.SetOutput(false);
+            return Task.CompletedTask;
+        }
+
+        ShowSettingsPanel();
+        context.SetOutput(true);
+        return Task.CompletedTask;
+    }
+
+    private MainWindowViewModel RequireSettingsLifecycleViewModel() =>
+        _settingsLifecycleViewModel
+        ?? throw new InvalidOperationException("MainWindow settings lifecycle is not bound.");
+
+    private void ShowSettingsPanel()
+    {
+        var vm = RequireSettingsLifecycleViewModel();
+        _settingsReturnLeftPanelMode = vm.LeftPanelMode;
+        if (_settingsPanel is null)
+        {
+            var viewModel = new SettingsViewModel(_settings, _secrets);
+            var panel = new SettingsPanelView(viewModel);
+            _settingsPanelViewModel = viewModel;
+            _settingsPanel = panel;
+            Grid.SetColumn(panel, 0);
+            Grid.SetColumnSpan(panel, 6);
+            Grid.SetRow(panel, 0);
+            Grid.SetRowSpan(panel, 3);
+            viewModel.CloseRequested += OnSettingsCloseRequested;
+        }
+
+        AttachSettingsPanelToLayout();
+        vm.IsSettingsOpen = true;
+    }
+
+    private void HideSettingsPanel()
+    {
+        var vm = RequireSettingsLifecycleViewModel();
+        if (_settingsPanel is null || !vm.IsSettingsOpen)
             return;
-        }
 
-        var viewModel = new SettingsViewModel(_settings, _secrets);
-        var panel = new SettingsPanelView(viewModel);
-        _settingsPanel = panel;
-        Grid.SetColumn(panel, 0);
-        Grid.SetColumnSpan(panel, 6);
-        Grid.SetRow(panel, 0);
-        Grid.SetRowSpan(panel, 3);
-        _layoutRoot.Children.Add(panel);
+        DetachSettingsPanelFromLayout();
+        vm.IsSettingsOpen = false;
+        vm.LeftPanelMode = _settingsReturnLeftPanelMode;
+        RestoreFocusAfterSettings();
+    }
 
-        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _settingsCompletion = completion;
-        void OnClose(object? sender, EventArgs args) => completion.TrySetResult(true);
-        viewModel.CloseRequested += OnClose;
-        try
+    private void OnSettingsCloseRequested(object? sender, EventArgs e) => HideSettingsPanel();
+
+    private void AttachSettingsPanelToLayout()
+    {
+        if (_settingsPanel is null || !_layoutRoot.CheckAccess())
+            return;
+
+        if (!_layoutRoot.Children.Contains(_settingsPanel))
+            _layoutRoot.Children.Add(_settingsPanel);
+    }
+
+    private void DetachSettingsPanelFromLayout()
+    {
+        if (_settingsPanel is null || !_layoutRoot.CheckAccess())
+            return;
+
+        if (_layoutRoot.Children.Contains(_settingsPanel))
+            _layoutRoot.Children.Remove(_settingsPanel);
+    }
+
+    private void RestoreFocusAfterSettings()
+    {
+        var activeTab = _settingsLifecycleViewModel?.EditorTabs.ActiveTab;
+        if (activeTab is not null && _editorView is not null && _editorView.IsVisible)
         {
-            await completion.Task;
-            _layoutRoot.Children.Remove(panel);
-            panel.Dispose();
-            _settingsPanel = null;
-            context.SetOutput(true);
-        }
-        finally
-        {
-            viewModel.CloseRequested -= OnClose;
-            if (ReferenceEquals(_settingsCompletion, completion)) _settingsCompletion = null;
+            _editorView.Focus();
         }
     }
 
     private void CloseSettingsPanel()
     {
-        if (_settingsPanel is null) return;
+        if (_settingsPanel is null)
+            return;
+
+        if (_settingsPanelViewModel is not null)
+            _settingsPanelViewModel.CloseRequested -= OnSettingsCloseRequested;
+
         var panel = _settingsPanel;
         _settingsPanel = null;
-        _settingsCompletion?.TrySetResult(true);
-        _layoutRoot.Children.Remove(panel);
+        _settingsPanelViewModel = null;
+        RequireSettingsLifecycleViewModel().IsSettingsOpen = false;
+        if (_layoutRoot.CheckAccess() && _layoutRoot.Children.Contains(panel))
+            _layoutRoot.Children.Remove(panel);
         panel.Dispose();
     }
 

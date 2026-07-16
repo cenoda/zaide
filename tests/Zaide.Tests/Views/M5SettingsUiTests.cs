@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
@@ -41,33 +42,70 @@ public sealed class M5SettingsUiTests
     }
 
     [Fact]
-    public async Task GearCommand_UsesRealMainWindowHandler_AndPanelRemovalCompletesAndDisposesOnce()
+    public async Task GearCommand_TogglesSettingsOpenState_AndReusesSinglePanelInstance()
     {
         using var settings = new TestSettingsService();
         var secrets = new TestSecretStore();
         using var vm = CreateMainWindowViewModel();
         using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
-        var window = (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
-        SetField(window, "_settings", settings);
-        SetField(window, "_secrets", secrets);
-        SetField(window, "_layoutRoot", new Grid());
-        var handler = typeof(MainWindow).GetMethod("HandleShowSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var opened = false;
-        using var registration = vm.ShowSettings.RegisterHandler(async context =>
-        {
-            var task = (Task)handler.Invoke(window, new object[] { context })!;
-            opened = GetSettingsPanel(window) is not null;
-            typeof(MainWindow).GetMethod("CloseSettingsPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(window, null);
-            await task;
-        });
+        var window = CreateSettingsTestWindow(settings, secrets, vm);
 
+        await status.OpenSettingsCommand.Execute().ToTask();
+        var firstPanel = GetSettingsPanel(window);
+        Assert.NotNull(firstPanel);
+        Assert.True(vm.IsSettingsOpen);
+        Assert.True(status.IsSettingsOpen);
+
+        await status.OpenSettingsCommand.Execute().ToTask();
+        Assert.False(vm.IsSettingsOpen);
+        Assert.False(status.IsSettingsOpen);
+        Assert.Same(firstPanel, GetSettingsPanel(window));
+
+        await status.OpenSettingsCommand.Execute().ToTask();
+        Assert.True(vm.IsSettingsOpen);
+        Assert.Same(firstPanel, GetSettingsPanel(window));
+    }
+
+    [Fact]
+    public async Task GearCommand_RestoresPreviousLeftPanelMode_WithExplorerFallback()
+    {
+        using var settings = new TestSettingsService();
+        var secrets = new TestSecretStore();
+        using var vm = CreateMainWindowViewModel();
+        using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
+        var window = CreateSettingsTestWindow(settings, secrets, vm);
+
+        vm.LeftPanelMode = LeftPanelMode.SourceControl;
+        await status.OpenSettingsCommand.Execute().ToTask();
+        Assert.True(vm.IsSettingsOpen);
+
+        await status.OpenSettingsCommand.Execute().ToTask();
+        Assert.False(vm.IsSettingsOpen);
+        Assert.Equal(LeftPanelMode.SourceControl, vm.LeftPanelMode);
+
+        vm.LeftPanelMode = LeftPanelMode.Explorer;
+        await status.OpenSettingsCommand.Execute().ToTask();
+        await status.OpenSettingsCommand.Execute().ToTask();
+        Assert.Equal(LeftPanelMode.Explorer, vm.LeftPanelMode);
+    }
+
+    [Fact]
+    public async Task GearCommand_WindowDeactivate_DisposesSettingsPanelOnce()
+    {
+        using var settings = new TestSettingsService();
+        var secrets = new TestSecretStore();
+        using var vm = CreateMainWindowViewModel();
+        using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
+        var window = CreateSettingsTestWindow(settings, secrets, vm);
+
+        await status.OpenSettingsCommand.Execute().ToTask();
         var subscriptionCountBeforeClose = settings.SubscriptionDisposeCount;
-        var commandTask = status.OpenSettingsCommand.Execute().ToTask();
-        await commandTask;
-        Assert.True(opened);
+
+        typeof(MainWindow).GetMethod("CloseSettingsPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(window, null);
+
         Assert.Null(GetSettingsPanel(window));
-        Assert.Equal(subscriptionCountBeforeClose + 1, settings.SubscriptionDisposeCount);
+        Assert.False(vm.IsSettingsOpen);
         Assert.Equal(subscriptionCountBeforeClose + 1, settings.SubscriptionDisposeCount);
     }
 
@@ -93,6 +131,25 @@ public sealed class M5SettingsUiTests
 
     private static void SetField<T>(MainWindow window, string name, T value) =>
         typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(window, value);
+
+    private static MainWindow CreateSettingsTestWindow(
+        TestSettingsService settings,
+        TestSecretStore secrets,
+        MainWindowViewModel vm)
+    {
+        var window = (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
+        SetField(window, "_settings", settings);
+        SetField(window, "_secrets", secrets);
+        SetField(window, "_layoutRoot", new Grid());
+        SetField(window, "_settingsLifecycleViewModel", vm);
+        var handler = typeof(MainWindow).GetMethod("HandleShowSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        vm.ShowSettings.RegisterHandler(async context =>
+        {
+            var task = (Task)handler.Invoke(window, new object[] { context })!;
+            await task;
+        });
+        return window;
+    }
 
     private static MainWindowViewModel CreateMainWindowViewModel()
     {
