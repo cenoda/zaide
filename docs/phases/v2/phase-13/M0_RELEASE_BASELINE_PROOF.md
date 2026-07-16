@@ -2,7 +2,7 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); M3c complete (evidence-only); next is M4a.**
+**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); M3c complete (evidence-only); M4a complete (bounded automated critical-path composition); next is M4b.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
@@ -34,7 +34,13 @@ debuggee-adapter process exit / disposal / child-process cleanup, stale session
 events and stack/variable/current-location projection, breakpoint session
 scoping, project-context change, and application-exit ordering found **no real
 production gap**; all recovery rows are green via existing Phase 12 proofs or
-accepted limitations (see §5 M3c inventory). No `src/` change and no new tests.
+accepted limitations (see §5 M3c inventory). **M4a (2026-07-16) closed:**
+bounded automated critical-path composition for `workflow-console` is recorded
+in `M4A_CRITICAL_PATH_EVIDENCE.md`. Open-project and edit/save are focused
+headless **PASS** (`Phase13M4aCriticalPathEvidenceTests`); LSP/build/run are
+real-child **PASS**; debug/stop are **not re-run / environment-limited**
+(NetCoreDbg absent; Phase 12 `M4DebugExecutionProofTests` /
+`M6DebugRecoveryProofTests` cited). No `src/` production behavior change.
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -367,16 +373,20 @@ M0 exit requirement.
 
 | Step | Evidence type | Existing seam / requirement | Maximum wall-clock | Status |
 |---|---|---|---|---|
-| Open selected C# project | Deterministic headless seam | Project-context tests | 10 s | not validated end-to-end |
-| Edit and save | Deterministic headless seam | Editor / format-on-save tests | 10 s | not validated end-to-end |
-| LSP result | Real-child integration where server is available | `csharp-ls` on PATH; Phase 10 production proofs | 30 s | PASS as focused real-server smoke; UI presentation remains unvalidated |
-| Build | Real-child integration | workflow console fixture | 60 s | PASS as focused CLI child process; UI projection remains unvalidated |
-| Run or test | Real-child integration | workflow console or pass-test fixture | 60 s | PASS as focused CLI child process; UI projection remains unvalidated |
-| Debug to one breakpoint | Real-child integration / Linux manual | `ZAIDE_NETCOREDBG_PATH` and workflow-console fixture | 60 s | PASS as real-adapter focused proof; UI presentation remains unvalidated |
-| Stop and verify cleanup | Existing focused real-adapter proof | `M6DebugRecoveryProofTests` | 30 s | automated proof reusable; end-to-end recheck pending |
+| Open selected C# project | Deterministic headless seam | `Phase13M4aCriticalPathEvidenceTests.OpenSelectedCSharpProject_WorkflowConsole_LoadsSingleProjectContext` — production `FileSystemProjectFileSystem` + `ProjectDiscovery` + `ProjectContextService.LoadAsync` on `workflow-console` | 10 s | **PASS** (M4a 2026-07-16); desktop folder open remains M4b |
+| Edit and save | Deterministic headless seam | `Phase13M4aCriticalPathEvidenceTests.EditAndSave_WorkflowConsole_OpenEditSaveRestore_Passes` (same M0 editor command-path seam as `Phase13M0EditorMeasurementTests`) | 10 s | **PASS** (M4a 2026-07-16); Avalonia/keyboard edit remains M4b |
+| LSP result | Real-child integration where server is available | `csharp-ls` on PATH; Phase 10 M4 `Phase10M4CompletionHoverSmoke` real-server smoke | 30 s | **PASS** (M4a re-run 2026-07-16); UI presentation remains M4b |
+| Build | Real-child integration | `dotnet build tests/fixtures/workflow-console/WorkflowConsole.csproj --no-restore` | 60 s | **PASS** (M4a re-run 2026-07-16); UI projection remains M4b |
+| Run or test | Real-child integration | `dotnet run --project tests/fixtures/workflow-console/WorkflowConsole.csproj --no-restore --no-build` | 60 s | **PASS** (M4a re-run 2026-07-16); UI projection remains M4b |
+| Debug to one breakpoint | Real-child integration / Linux manual | `ZAIDE_NETCOREDBG_PATH` and workflow-console fixture; `M4DebugExecutionProofTests.ProductionProof_LaunchBreakpointStepAndStop` | 60 s | **not re-run / environment-limited** (M4a 2026-07-16: NetCoreDbg absent); Phase 12 real-adapter proof remains the named evidence when adapter is present; UI remains M4b |
+| Stop and verify cleanup | Existing focused real-adapter proof | `M6DebugRecoveryProofTests.ProductionProof_StopRecoverAndRestart_ClearsLiveStateAndAdapterProcess` | 30 s | **not re-run / environment-limited** (M4a 2026-07-16: NetCoreDbg absent); Phase 12 M6 proof remains the named cleanup evidence when adapter is present |
 
-M4a may compose these existing seams and must not create a broad UI automation
-suite. M4b owns the real desktop rows.
+**M4a composition (2026-07-16):** full row detail, commands, durations, and
+adapter limitation are in
+[`M4A_CRITICAL_PATH_EVIDENCE.md`](M4A_CRITICAL_PATH_EVIDENCE.md). Composition is
+named focused proofs plus one minimal open-project real-fixture proof — not a
+monolithic UI automation suite and not a fake end-to-end that calls unrelated
+test methods. M4b owns the real desktop rows.
 
 ## 8. Performance Measurement Method and Budget Gate
 
@@ -620,7 +630,7 @@ nearest-rank p95 below 50 ms).
 | M3a | **Complete (evidence-only, 2026-07-16):** live inventory found no production gap; all recovery rows green via existing tests or accepted limitations (see §5 M3a inventory). No `src/` change; no new tests. Focused filter 35 passed. |
 | M3b | **Complete (evidence-only, 2026-07-16):** live inventory of language-session / document-bridge / stale-request recovery found no production gap; all recovery rows green via existing Phase 10 tests or accepted limitations (see §5 M3b inventory). No `src/` change; no new tests. Focused filter 36 passed. |
 | M3c | **Complete (evidence-only, 2026-07-16):** live inventory of DAP / debug-session recovery found no production gap; all recovery rows green via existing Phase 12 tests or accepted limitations (see §5 M3c inventory). No `src/` change; no new tests. Focused filter 38 passed. Real-adapter proofs require `ZAIDE_NETCOREDBG_PATH`; they skip when absent. |
-| M4a | Compose the bounded §7 path after M2/M3 gates or documented no-ops. |
+| M4a | **Complete (2026-07-16):** bounded automated critical-path composition in `M4A_CRITICAL_PATH_EVIDENCE.md`. Open/edit/save/LSP/build/run **PASS**; debug/stop **not re-run / environment-limited** (adapter absent; Phase 12 proofs cited). Minimal new tests: `Phase13M4aCriticalPathEvidenceTests`. No production change. |
 | M4b | Owns completing Linux desktop smoke, platform status, keyboard/focus/status, and all Phase 12 display rows. M0 only locks the empty/method matrices in §7; rows remain **not validated** until M4b. |
 | M5 | Re-run comparable budgets and the full sequential gate; truth-sync only after every matrix row has an explicit status. |
 
@@ -641,7 +651,9 @@ nearest-rank p95 below 50 ms).
 (evidence-only workflow/process recovery inventory; no production gap).
 **M3b is closed** (evidence-only language-session / LSP recovery inventory; no
 production gap). **M3c is closed** (evidence-only DAP / debug-session recovery
-inventory; no production gap). The exact next milestone is **M4a** (bounded
-critical-path regression per §7 step matrix). App-internal numeric evidence
-remains command-path only and is not interactive desktop, Avalonia render,
+inventory; no production gap). **M4a is closed** (bounded automated critical-path
+composition; see `M4A_CRITICAL_PATH_EVIDENCE.md` and §7 matrix). The exact next
+milestone is **M4b** (Linux desktop smoke, keyboard/focus/status, platform
+status, Phase 12 display rows). App-internal numeric evidence remains
+command-path only and is not interactive desktop, Avalonia render,
 keyboard-routing, or UX proof.

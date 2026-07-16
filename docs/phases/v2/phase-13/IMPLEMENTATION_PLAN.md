@@ -4,10 +4,10 @@
 
 **M0 complete (2026-07-16); M2 complete (2026-07-16, evidence-only); M3a
 complete (2026-07-16, evidence-only); M3b complete (2026-07-16,
-evidence-only); M3c complete (2026-07-16, evidence-only).** The M1a local,
-production-neutral measurement runner recorded five samples for Startup, LSP,
-Build, Run, Test, and DAP. The M0 test-only app-internal measurement seam
-(`Phase13M0EditorMeasurementSeam` +
+evidence-only); M3c complete (2026-07-16, evidence-only); M4a complete
+(2026-07-16).** The M1a local, production-neutral measurement runner recorded
+five samples for Startup, LSP, Build, Run, Test, and DAP. The M0 test-only
+app-internal measurement seam (`Phase13M0EditorMeasurementSeam` +
 `tools/phase13-measure.py --areas editor large-file`) recorded 20 functional
 samples for editor open/edit/save/restore and 8 MiB document load under
 quiet-machine conditions, with post-save restore verification and fixture
@@ -29,7 +29,14 @@ Phase 10 focused tests or accepted limitations (see
 (evidence-only):** live audit of DAP / debug-session recovery found no
 production gap; all recovery rows are green via existing Phase 12 focused tests
 or accepted limitations (see `M0_RELEASE_BASELINE_PROOF.md` §5 M3c inventory).
-No production behavior change; no new tests. Exact next milestone: **M4a**.
+**M4a is complete:** bounded automated critical-path composition for
+workflow-console is recorded in `M4A_CRITICAL_PATH_EVIDENCE.md`. Open-project
+and edit/save are focused headless **PASS**; LSP/build/run are real-child
+**PASS**; debug/stop are **not re-run / environment-limited** (NetCoreDbg
+absent; Phase 12 `M4DebugExecutionProofTests` /
+`M6DebugRecoveryProofTests` cited). Minimal new proof:
+`Phase13M4aCriticalPathEvidenceTests` (no production behavior change). Exact
+next milestone: **M4b**.
 
 **Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
 crash in Phase 9 M6 selection-status projection (`EditorView` called
@@ -265,7 +272,7 @@ and ready for release closeout on the supported Linux validation environment.
 | **M3a** | **Complete (2026-07-16, evidence-only).** Live inventory of `ProjectWorkflowService`, `ManagedProcessRunner`, `IProjectOperationGate`, context-change / cancel / dispose / app-exit cleanup found **no real production gap**. All recovery rows green via reused `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests`, `ProjectWorkflowProjectionShutdownTests` (plus supporting `ProjectOperationGateTests` for gate lease release), or accepted limitations (no op timeout, single runner owner, gate not disposed on app exit). No production code change; no new tests; no multi-child Linux smoke (no orphan-child gap). Focused filter: 35 passed. | Focused workflow/process tests (named existing); sequential build/test | `docs(phase-13): close M3a workflow process recovery inventory` |
 | **M3b** | **Complete (2026-07-16, evidence-only).** Live inventory of `LanguageSessionService`, `LanguageDocumentBridge`, start eligibility / missing-server, cancel / restart / process-exit / dispose, project-context change, and stale generation / diagnostics / completion / hover / definition / close-reopen found **no real production gap**. All recovery rows green via reused `LanguageSessionServiceTests`, `LanguageDocumentSyncTests` (plus supporting diagnostics/completion/hover/navigation/DI/shutdown proofs), or accepted limitations (Phase 10 F6/F10/F11; no auto-restart after `ServerExited`). No production code change; no new tests; no Linux child-process re-smoke (no orphan-child gap). Focused filter: 36 passed. | Focused language-session/document-bridge tests (named existing); sequential build/test | `docs(phase-13): close M3b language session recovery inventory` |
 | **M3c** | **Complete (2026-07-16, evidence-only).** Live inventory of `DebugSessionService`, `DebugAdapterLocator`, adapter launch/initialize/start failure/missing-adapter/restart, stop/cancel/process-exit/dispose/child-process cleanup, stale events and stack/variable/location projection, breakpoint session scoping, project-context change, and app-exit ordering found **no real production gap**. All recovery rows green via reused `DebugSessionServiceTests`, `M6DebugRecoveryProofTests` (plus supporting M4 real-adapter proof, locator/DI/launch-handoff/shutdown/stack/location tests), or accepted limitations (launch-only scope; real proofs skip without `ZAIDE_NETCOREDBG_PATH`). No production code change; no new tests; no extra Linux real-adapter smoke (no orphan-child gap). Focused filter: 38 passed. | Focused debug-session tests (named existing); sequential build/test | `docs(phase-13): close M3c DAP recovery inventory` |
-| **M4a** | Add only the M0-defined automated critical-path regression (prefer composing existing Phase 10–12 proofs). Respect the step matrix: headless vs real-child boundary, env requirements, and max duration. | Focused golden-path test/evidence; sequential build/test | `test(phase-13): cover V2 critical path` |
+| **M4a** | **Complete (2026-07-16).** Bounded automated critical-path composition for `workflow-console`: open project + edit/save via `Phase13M4aCriticalPathEvidenceTests`; LSP via Phase 10 M4 real-server smoke; build/run via real `dotnet` child; debug/stop cite Phase 12 real-adapter proofs and record **not re-run / environment-limited** when NetCoreDbg is absent. No production change; no fake monolith. Evidence: `M4A_CRITICAL_PATH_EVIDENCE.md`. | Focused M4a tests + composed real-child commands; sequential build/test | `test(phase-13): cover V2 critical path` |
 | **M4b** | Record the Linux release, keyboard/focus/status, and adopted visual/gesture matrices on a real Linux desktop with a display. Fill in the platform matrix rows for Windows and macOS — default **not validated** unless prior evidence exists; M4b does **not** require running on those platforms, only recording their honest status. Display-dependent Phase 12 M7 rows are re-smoked on the Linux desktop or explicitly marked **not validated** with reason. | `M4_RELEASE_SMOKE_EVIDENCE.md`; every matrix row status recorded | `docs(phase-13): record release smoke evidence` |
 | **M5** | Close out: repeat all M0 measurements, prove every locked budget and mapped V2 exit row, resolve or explicitly defer findings, truth-sync docs (`V2.md`, `PHASES.md`, `OVERVIEW.md`, `LIBRARIES.md`, `CONVENTIONS.md`, `DESIGN.md`, `README.md`), and run full sequential regression. | Full sequential build/test; `git diff --check`; `M5_RELEASE_CLOSEOUT_EVIDENCE.md` | `docs(phase-13): close release hardening` |
 
@@ -356,18 +363,18 @@ structural revert baseline; any full-phase rollback targets that commit.
 
 ## Exact Next Step
 
-**M0, M2, M3a, M3b, and M3c are closed.** M2 was **evidence-only** (no production
-fix):
+**M0, M2, M3a, M3b, M3c, and M4a are closed.** M2 was **evidence-only** (no
+production fix):
 `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`
-proves Phase 8 D2 for orphan `.tmp` + valid primary. M3a was **evidence-only**
-(no production fix, no new tests): workflow/process recovery inventory is fully
-green via existing Phase 11/12 proofs; see `M0_RELEASE_BASELINE_PROOF.md` §5.
-M3b was **evidence-only** (no production fix, no new tests): language-session /
-LSP recovery inventory is fully green via existing Phase 10 proofs; see
-`M0_RELEASE_BASELINE_PROOF.md` §5 M3b inventory. M3c was **evidence-only** (no
-production fix, no new tests): DAP / debug-session recovery inventory is fully
-green via existing Phase 12 proofs; see `M0_RELEASE_BASELINE_PROOF.md` §5 M3c
-inventory. Proceed to **M4a only**: add only the M0-defined automated
-critical-path regression (compose existing Phase 10–12 proofs per the step
-matrix). Do not start M1b (skipped), M4b, M5, or production performance work
+proves Phase 8 D2 for orphan `.tmp` + valid primary. M3a–M3c were
+**evidence-only** (no production fix): recovery inventories green via existing
+Phase 10–12 proofs; see `M0_RELEASE_BASELINE_PROOF.md` §5. **M4a** composed the
+§7 automated critical path for `workflow-console` in
+`M4A_CRITICAL_PATH_EVIDENCE.md`: open/edit/save focused **PASS**; LSP/build/run
+real-child **PASS**; debug/stop **not re-run / environment-limited** (adapter
+absent; Phase 12 proofs cited). Minimal new tests only:
+`Phase13M4aCriticalPathEvidenceTests`. No production behavior change. Proceed to
+**M4b only**: Linux release smoke, keyboard/focus/status, platform matrix, and
+Phase 12 display-dependent rows on a real desktop. Do not start M5 until M4b
+matrix rows have explicit statuses. Do not start production performance work
 unless a later remeasurement creates a real locked-budget miss.
