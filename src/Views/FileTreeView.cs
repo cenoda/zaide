@@ -382,7 +382,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         var deleteFileItem = CreateStyledMenuItem("Delete");
         deleteFileItem.Click += (_, _) =>
         {
-            if (_treeView.SelectedItem is FileTreeNode selected && !selected.IsDirectory)
+            if (_treeView.SelectedItem is FileTreeNode selected)
                 ViewModel!.DeleteFileCommand.Execute(selected).Subscribe();
         };
         contextMenu.Items.Add(deleteFileItem);
@@ -487,8 +487,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 .Subscribe(path => copyRelativePathItem.IsEnabled = path is not null));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedFile)
-                .Subscribe(selected =>
-                    deleteFileItem.IsEnabled = selected is { IsDirectory: false }));
+                .Subscribe(selected => deleteFileItem.IsEnabled = selected is not null));
 
             d.Add(ViewModel!.ConfirmDeleteFile.RegisterHandler(async interaction =>
             {
@@ -515,7 +514,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
             if (e.Key == Key.Delete)
             {
-                if (selected is null || selected.IsDirectory) return;
+                if (selected is null) return;
                 e.Handled = true;
                 ViewModel!.DeleteFileCommand.Execute(selected).Subscribe();
                 return;
@@ -609,15 +608,18 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     }
 
     /// <summary>
-    /// Shows a destructive-action confirmation dialog for file deletion.
+    /// Shows a destructive-action confirmation dialog for file or folder deletion.
     /// Returns true only when the user explicitly confirms.
     /// </summary>
     private async Task<bool> ShowDeleteConfirmationAsync(FileTreeNode node)
     {
         var warningBrush = (IBrush?)Application.Current!.Resources["WarningBrush"];
+        var messageText = node.IsDirectory
+            ? $"Are you sure you want to permanently delete the folder '{node.Name}' and all of its contents?\n\n{node.FullPath}\n\nThis is a recursive deletion. All files and subfolders will be permanently removed. This action cannot be undone."
+            : $"Are you sure you want to permanently delete '{node.Name}'?\n\n{node.FullPath}\n\nThis action cannot be undone.";
         var message = new TextBlock
         {
-            Text = $"Are you sure you want to permanently delete '{node.Name}'?\n\n{node.FullPath}\n\nThis action cannot be undone.",
+            Text = messageText,
             TextWrapping = TextWrapping.Wrap,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, LayoutTokens.SpacingSm, 0)
         };
@@ -644,7 +646,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         var window = new Window
         {
-            Title = "Delete File",
+            Title = node.IsDirectory ? "Delete Folder" : "Delete File",
             SizeToContent = SizeToContent.WidthAndHeight,
             MinWidth = 360,
             Content = stackPanel,

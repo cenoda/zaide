@@ -415,4 +415,49 @@ public class FileTreeServiceTests
                 Directory.Delete(root, recursive: true);
         }
     }
+
+    [Fact]
+    public void DeleteDirectory_RemovesEmptyDirectoryFromDisk()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "empty-dir");
+            Directory.CreateDirectory(dirPath);
+
+            _service.DeleteDirectory(dirPath);
+
+            Assert.False(Directory.Exists(dirPath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void DeleteDirectory_RemovesDirectoryAndContentsRecursively()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "nested-dir");
+            Directory.CreateDirectory(dirPath);
+            File.WriteAllText(Path.Combine(dirPath, "child.txt"), "content");
+            Directory.CreateDirectory(Path.Combine(dirPath, "sub"));
+            File.WriteAllText(Path.Combine(dirPath, "sub", "grandchild.txt"), "nested");
+
+            _service.DeleteDirectory(dirPath);
+
+            Assert.False(Directory.Exists(dirPath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
 }

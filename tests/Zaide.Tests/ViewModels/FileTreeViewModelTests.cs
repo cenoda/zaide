@@ -919,7 +919,7 @@ public class FileTreeViewModelTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task DeleteFileCommand_IsNoOp_ForDirectory()
+    public async System.Threading.Tasks.Task DeleteFileCommand_DoesNotDeleteFolder_WhenNotConfirmed()
     {
         var vm = new FileTreeViewModel(_service, _scheduler);
         var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
@@ -927,24 +927,118 @@ public class FileTreeViewModelTests
         try
         {
             Directory.CreateDirectory(root);
-            var dirPath = Path.Combine(root, "subdir");
+            var dirPath = Path.Combine(root, "keep-dir");
+            Directory.CreateDirectory(dirPath);
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var dirNode = vm.RootNodes.Single();
+            vm.SelectedFile = dirNode;
+
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(false));
+
+            await vm.DeleteFileCommand.Execute(dirNode);
+
+            Assert.True(Directory.Exists(dirPath));
+            Assert.Single(vm.RootNodes);
+            Assert.Equal(dirNode, vm.SelectedFile);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_RemovesEmptyFolderFromTree_WhenConfirmed()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "empty-dir");
             Directory.CreateDirectory(dirPath);
 
             vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
             var dirNode = vm.RootNodes.Single();
 
-            var handlerCalled = false;
-            vm.ConfirmDeleteFile.RegisterHandler(ctx =>
-            {
-                handlerCalled = true;
-                ctx.SetOutput(true);
-            });
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(true));
 
             await vm.DeleteFileCommand.Execute(dirNode);
 
-            Assert.False(handlerCalled);
-            Assert.True(Directory.Exists(dirPath));
-            Assert.Single(vm.RootNodes);
+            Assert.False(Directory.Exists(dirPath));
+            Assert.Empty(vm.RootNodes);
+            Assert.Null(vm.SelectedFile);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_RemovesNonemptyFolderAndDescendantsFromTree_WhenConfirmed()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "parent-dir");
+            Directory.CreateDirectory(dirPath);
+            File.WriteAllText(Path.Combine(dirPath, "child.txt"), "content");
+            Directory.CreateDirectory(Path.Combine(dirPath, "sub"));
+            File.WriteAllText(Path.Combine(dirPath, "sub", "grandchild.txt"), "nested");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var dirNode = vm.RootNodes.Single();
+            Assert.Equal(2, dirNode.Children.Count);
+
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(true));
+
+            await vm.DeleteFileCommand.Execute(dirNode);
+
+            Assert.False(Directory.Exists(dirPath));
+            Assert.Empty(vm.RootNodes);
+            Assert.Null(vm.SelectedFile);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task DeleteFileCommand_ClearsSelection_WhenChildInsideDeletedFolderWasSelected()
+    {
+        var vm = new FileTreeViewModel(_service, _scheduler);
+        var root = Path.Combine(Path.GetTempPath(), "zaide-test-" + Path.GetRandomFileName());
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var dirPath = Path.Combine(root, "parent-dir");
+            Directory.CreateDirectory(dirPath);
+            var childPath = Path.Combine(dirPath, "child.txt");
+            File.WriteAllText(childPath, "content");
+
+            vm.OpenFolderCommand.Execute(root).Subscribe(_ => { });
+            var dirNode = vm.RootNodes.Single();
+            var childNode = dirNode.Children.Single(c => !c.IsDirectory);
+            vm.SelectedFile = childNode;
+
+            vm.ConfirmDeleteFile.RegisterHandler(ctx => ctx.SetOutput(true));
+
+            await vm.DeleteFileCommand.Execute(dirNode);
+
+            Assert.False(Directory.Exists(dirPath));
+            Assert.Empty(vm.RootNodes);
+            Assert.Null(vm.SelectedFile);
         }
         finally
         {
@@ -977,6 +1071,7 @@ public class FileTreeViewModelTests
             .Returns(Observable.Never<FileChangeEvent>());
         mockService.Setup(s => s.DeleteFile(filePath))
             .Throws(new UnauthorizedAccessException("access denied"));
+        mockService.Setup(s => s.DeleteDirectory(It.IsAny<string>()));
 
         var vm = new FileTreeViewModel(mockService.Object, _scheduler);
 

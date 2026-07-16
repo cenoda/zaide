@@ -62,7 +62,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     // M1: Create file or directory. Tuple: (parentDir, name, isDirectory).
     public ReactiveCommand<(string ParentDir, string Name, bool IsDirectory), Unit> CreateNodeCommand { get; }
 
-    // Delete the selected file after explicit confirmation (files only).
+    // Delete the selected file or folder after explicit confirmation.
     public ReactiveCommand<FileTreeNode, Unit> DeleteFileCommand { get; }
 
     // M2: Show hidden files toggle
@@ -82,8 +82,9 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     public Interaction<string, Unit> CopyToClipboard { get; } = new();
 
     /// <summary>
-    /// Fires when the user requests file deletion. The view shows a confirmation
-    /// dialog and returns whether the user explicitly confirmed the destructive action.
+    /// Fires when the user requests deletion of a file or folder. The view shows a
+    /// confirmation dialog and returns whether the user explicitly confirmed the
+    /// destructive action.
     /// </summary>
     public Interaction<FileTreeNode, bool> ConfirmDeleteFile { get; } = new();
 
@@ -223,7 +224,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
 
     private async Task DeleteFileAsync(FileTreeNode node)
     {
-        if (node is null || node.IsDirectory)
+        if (node is null)
             return;
 
         var confirmed = await ConfirmDeleteFile.Handle(node);
@@ -235,13 +236,18 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
 
         try
         {
-            _fileTreeService.DeleteFile(fullPath);
+            if (node.IsDirectory)
+                _fileTreeService.DeleteDirectory(fullPath);
+            else
+                _fileTreeService.DeleteFile(fullPath);
+
             HandleDeleted(fullPath);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Refresh();
-            StatusText = $"Failed to delete file '{node.Name}': {ex.Message}";
+            var kind = node.IsDirectory ? "folder" : "file";
+            StatusText = $"Failed to delete {kind} '{node.Name}': {ex.Message}";
         }
     }
 
@@ -559,8 +565,14 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
 
     private void ClearSelectionIfDeleted(string fullPath)
     {
-        if (SelectedFile is not null && PathsEqual(SelectedFile.FullPath, fullPath))
+        if (SelectedFile is null)
+            return;
+
+        if (PathsEqual(SelectedFile.FullPath, fullPath)
+            || SelectedFile.FullPath.StartsWith(fullPath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        {
             SelectedFile = null;
+        }
     }
 
     public void HandleRenamed(string newPath, string oldPath)

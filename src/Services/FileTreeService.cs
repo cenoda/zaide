@@ -253,6 +253,14 @@ public class FileTreeService : IFileTreeService
         File.Delete(path);
     }
 
+    /// <summary>
+    /// Permanently deletes a directory and all of its contents. The FileSystemWatcher picks it up.
+    /// </summary>
+    public void DeleteDirectory(string path)
+    {
+        Directory.Delete(path, recursive: true);
+    }
+
     public void Dispose()
     {
         StopWatching();

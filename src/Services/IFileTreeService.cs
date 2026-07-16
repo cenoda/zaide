@@ -48,4 +48,9 @@ public interface IFileTreeService : IDisposable
     /// Permanently deletes a file at the given path.
     /// </summary>
     void DeleteFile(string path);
+
+    /// <summary>
+    /// Permanently deletes a directory and all of its contents.
+    /// </summary>
+    void DeleteDirectory(string path);
 }
