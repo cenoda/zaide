@@ -291,7 +291,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
 
         Assert.Null(vm.CommitError);
         Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
-        Assert.Equal("Push", vm.PrimaryActionLabel);
+        Assert.Equal($"Push ({vm.AheadBy})", vm.PrimaryActionLabel);
         Assert.True(vm.AheadBy > 0);
 
         Write("interrupt.txt", "block push\n");
@@ -312,6 +312,7 @@ public sealed class SourceControlMutationFlowTests : IDisposable
         Assert.Null(vm.PushError);
         Assert.False(string.IsNullOrEmpty(vm.ActionNotice));
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
         Assert.Equal(0, vm.AheadBy);
         Assert.True(vm.HasUpstream);
 

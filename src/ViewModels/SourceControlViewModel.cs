@@ -104,13 +104,21 @@ public class SourceControlViewModel : ReactiveObject
 
     /// <summary>User-facing label for the primary action button.</summary>
     public string PrimaryActionLabel =>
-        PrimaryAction == SourceControlPrimaryAction.Push ? "Push" : "Commit";
+        PrimaryAction == SourceControlPrimaryAction.Push
+            ? $"Push ({AheadBy})"
+            : "Commit";
 
     /// <summary>Local commits ahead of the tracked upstream branch.</summary>
     public int AheadBy
     {
         get => _aheadBy;
-        private set => this.RaiseAndSetIfChanged(ref _aheadBy, value);
+        private set
+        {
+            var changed = _aheadBy != value;
+            this.RaiseAndSetIfChanged(ref _aheadBy, value);
+            if (changed)
+                this.RaisePropertyChanged(nameof(PrimaryActionLabel));
+        }
     }
 
     /// <summary>Whether the current branch tracks an upstream remote branch.</summary>

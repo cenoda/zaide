@@ -388,7 +388,27 @@ public class SourceControlViewModelTests
         var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
 
         Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
-        Assert.Equal("Push", vm.PrimaryActionLabel);
+        Assert.Equal("Push (1)", vm.PrimaryActionLabel);
+    }
+
+    [Fact]
+    public void PrimaryAction_MultipleOutgoingCommits_ShowsExactCount()
+    {
+        var snapshot = Snapshot(aheadBy: 3, hasUpstream: true);
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(SourceControlPrimaryAction.Push, vm.PrimaryAction);
+        Assert.Equal("Push (3)", vm.PrimaryActionLabel);
+    }
+
+    [Fact]
+    public void PrimaryAction_AheadWithoutUpstream_StaysCommitWithoutPushCount()
+    {
+        var snapshot = Snapshot(aheadBy: 2, hasUpstream: false);
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), NullDiffService(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
     }
 
     [Fact]
@@ -446,6 +466,7 @@ public class SourceControlViewModelTests
         Assert.Null(vm.PushError);
         Assert.Equal("Pushed main.", vm.ActionNotice);
         Assert.Equal(SourceControlPrimaryAction.Commit, vm.PrimaryAction);
+        Assert.Equal("Commit", vm.PrimaryActionLabel);
         Assert.Equal(0, vm.AheadBy);
     }
 
