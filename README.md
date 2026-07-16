@@ -171,6 +171,19 @@ real NetCoreDbg proofs, and desktop keyboard/focus rows that remain not
 validated without a non-synthetic input path. Multi-cursor editing and broader
 AI-native orchestration are outside V2.
 
+### V2 by the Numbers
+
+From the V1 closeout (`84b5246`) to the V2 closeout (`f56711a`), Zaide grew
+from an agent-workspace foundation into a credible standalone IDE core:
+
+- **186 commits** across Phase 8 through Phase 13
+- **523 files changed**: 465 added and 58 modified
+- **83,523 net new lines**: 84,292 insertions and 769 deletions
+- **2,172 passing tests**, up from 817 at the V1 closeout
+
+Six days of focused work turned the roadmap into a project that now feels like
+an IDE, not merely an editor. V2 is done.
+
 ## Why "Zaide"
 
 Mozart's unfinished opera. Like an IDE that grows with you.
