@@ -92,9 +92,12 @@ document load. Accepted quiet-machine evidence
 (`/tmp/zaide-phase13/measurements/m0-p95-20260716T051638Z/`) recorded 20
 functional samples per area with nearest-rank p95 **0.289 ms** (editor) and
 **15.705 ms** (large-file), both below the locked **50 ms** command-path budget.
-This checks command-path latency only; it does not prove Avalonia rendering,
-interactive UX, keyboard routing, or desktop responsiveness, and it does not
-replace M4b Linux desktop smoke.
+M5 remeasurement
+(`/tmp/zaide-phase13/measurements/m5-p95-20260716T100010Z/`) reconfirmed both
+gates (editor p95 **0.380 ms**, large-file p95 **19.168 ms**). This checks
+command-path latency only; it does not prove Avalonia rendering, interactive UX,
+keyboard routing, or desktop responsiveness, and it does not replace M4b Linux
+desktop smoke. DAP was not remeasured at M5 because NetCoreDbg was absent.
 
 On the supported Wayland desktop, the runner uses `xdotool` only to observe a
 new visible XWayland startup window. It never injects keys. In particular, an

@@ -4,26 +4,19 @@ Zaide is an **AI-native IDE** built around a real agent workspace foundation.
 One agent codes, another reviews. They argue. You get better code.
 
 **Roadmap status:** V1 is complete (Phase 0 through Phase 7.4).
-[Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is in progress — Phase 8
-umbrella implementation and Phase 9 Editor UX are complete. Sub-phase 8.1
-(Settings Foundation) is complete across its five implementation slices (M1–M6
-closeout 2026-07-11). Phase 8.2 (Command Registry and Keybindings) is complete
-(M7a–M10 closeout 2026-07-12); command registry contract, canonical command
-registration, gesture resolution, window binding materialization, and
-settings-driven lifecycle refresh are delivered.
-Phase 8.3 (Authoritative Project Context) is implemented through M4 with
-automated verification green, including the manual failed-state GUI smoke
-check. Phase 9 adds the registry-backed Command Palette, active-document
-Search/Replace, syntax-neutral folding, tab lifecycle/reordering, and editor
-status projections. Phase 10 (C# language intelligence via LSP) is **complete**
-(M7 closeout, 2026-07-14). Phase 11 (Project Workflow — Build / Run / Test,
-Output, build diagnostics, Test Results) is **complete** (M0–M6 closeout,
-2026-07-14). Phase 12 (DAP debugging) is **complete** (M0–M7 closeout, 2026-07-14):
-UI-independent adapter/session lifecycle, workspace-keyed breakpoints,
-build-to-debug handoff, editor breakpoint projection, execution controls and
-Debug Console, live stack/variable/current-location projection, DAP
-error/recovery hardening with session-only breakpoint verification, and
-manual closeout evidence. Phase 13 (Release Hardening) is next.
+[Roadmap V2 — IDE Core Upgrade](../roadmap/V2.md) is **complete** (Phase 8
+through Phase 13, closeout 2026-07-16) with documented limitations. Sub-phase
+8.1 (Settings Foundation), 8.2 (Command Registry and Keybindings), and 8.3
+(Authoritative Project Context) are complete. Phase 9 delivers the registry-
+backed Command Palette, active-document Search/Replace, syntax-neutral folding,
+tab lifecycle/reordering, and editor status projections. Phase 10 (C# language
+intelligence via LSP), Phase 11 (Project Workflow — Build / Run / Test), and
+Phase 12 (DAP debugging) are complete. Phase 13 (Release Hardening) is
+**complete with explicit limitations**
+([M5 closeout](../phases/v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)): locked
+performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
+path evidence, Linux release smoke with honest not-validated rows, and
+documentation truth-sync.
 
 ---
 
@@ -162,24 +155,24 @@ seed data.
 
 ---
 
-## Planned Roadmap V2 Direction
+## Roadmap V2 Direction (delivered)
 
-Roadmap V2 strengthens the standalone IDE core before V3 expands the existing
+Roadmap V2 strengthened the standalone IDE core before V3 expands the existing
 agent foundation into richer AI-native orchestration.
 
-| Planned layer | Phase | Direction |
+| Layer | Phase | Direction |
 |---------------|-------|-----------|
-| Core platform and settings | 8 | Versioned settings with migration/recovery ownership, safe credential boundary, command/keybinding infrastructure, and authoritative C# project context |
-| Editor UX | 9 | Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
+| Core platform and settings | 8 | ✅ Versioned settings with migration/recovery ownership, safe credential boundary, command/keybinding infrastructure, and authoritative C# project context |
+| Editor UX | 9 | ✅ Command Palette, Search/Replace, folding, and tab/status improvements; multi-cursor deferred |
 | C# language intelligence | 10 | ✅ LSP lifecycle, diagnostics, completion, hover, definition, symbols, document formatting, Format on Save (M7 closeout 2026-07-14) |
-| Project workflow | 11 | Execution profiles and structured Build/Run/Test orchestration over the Phase 8 project context, with Output, Problems, test results, cancellation, and error navigation |
-| C# debugging | 12 | Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
-| Release hardening | 13 | Measured performance, recovery, full settings compatibility matrix, E2E coverage, platform-status documentation, and closeout |
+| Project workflow | 11 | ✅ Execution profiles and structured Build/Run/Test orchestration over the Phase 8 project context, with Output, Problems, test results, cancellation, and error navigation |
+| C# debugging | 12 | ✅ Linux-validated DAP workflow with breakpoints, stepping, call stack, variables, and debug output |
+| Release hardening | 13 | ✅ Measured performance, recovery, full settings compatibility matrix, E2E coverage, platform-status documentation, and closeout (M5 2026-07-16; explicit limitations retained) |
 
 V2 continues to require the IDE to work without full agent infrastructure.
 Specific LSP server, DAP adapter, protocol libraries, secret storage, and
-performance budgets remain implementation-plan decisions and are not yet
-architecture commitments.
+performance budgets are phase-plan decisions with recorded evidence, not
+universal architecture guarantees.
 
 V2 core capabilities must be exposed through UI-independent, cancellable
 services with structured results and observable state. The V2 UI consumes those
@@ -205,4 +198,4 @@ configuration described above; the broader items below remain unscheduled.
 
 ---
 
-*Last updated: 2026-07-14 (V1 complete; V2 IDE Core Upgrade in progress — Phases 8–12 complete; Phase 13 next)*
+*Last updated: 2026-07-16 (V1 complete; V2 IDE Core Upgrade complete — Phases 8–13 closed with documented limitations)*

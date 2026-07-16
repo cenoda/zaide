@@ -8,7 +8,7 @@ global across versions so historical references stay unambiguous.
 | Version | Scope | Status |
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
-| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | In progress — Phase 8 (umbrella), Phase 9 (Editor UX), Phase 10 (C# LSP), Phase 11 (Project Workflow), and Phase 12 (C# Debugging DAP) complete; Phase 13 M0 evidence gate in progress, with no production hardening started |
+| [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
 
 Roadmap V2 planning has started. Phase 8 umbrella plan is complete at
 [`v2/phase-8/IMPLEMENTATION_PLAN.md`](v2/phase-8/IMPLEMENTATION_PLAN.md).

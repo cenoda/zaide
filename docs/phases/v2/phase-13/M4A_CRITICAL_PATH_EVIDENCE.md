@@ -109,6 +109,7 @@ Focused M4a filter: **2** passed (`Phase13M4aCriticalPathEvidenceTests`).
 
 ## Exact next milestone
 
-**M4b** — Linux release smoke, keyboard/focus/status, platform matrix status, and
-Phase 12 display-dependent visual/gesture rows on a real desktop with a display.
-Do not start M5 until M4b matrices have explicit row statuses.
+**M4b and M5 are closed.** M4b records desktop/platform/keyboard/focus/status
+rows in `M4_RELEASE_SMOKE_EVIDENCE.md`. M5 closeout is in
+`M5_RELEASE_CLOSEOUT_EVIDENCE.md` (Phase 13 COMPLETE with explicit limitations).
+Debug/stop remain environment-limited when NetCoreDbg is absent.

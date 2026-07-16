@@ -2,52 +2,18 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); M3c complete (evidence-only); M4a complete (bounded automated critical-path composition); M4b complete with explicit limitations; next is M5.**
-This M0 evidence pass verified the live baseline, ownership, reusable tests,
-fixtures, recovery coverage, and carry-over work. The M1a local runner records
-five comparable samples for startup, real-server LSP, real-child workflow
-operations, and real-adapter DAP. The M0 app-internal measurement extension
-(2026-07-16) measures editor open/edit/save/restore and 8 MiB document load via
-the production `EditorTabViewModel.OpenFileCommand` / `EditorViewModel.TextContent` /
-`SaveCommand` paths, with post-save restore verification and fixture SHA-256.
-The former five-sample relative-variance gate was rejected because it is not a
-meaningful release criterion for low-latency command paths. The replacement is
-20 functional samples with nearest-rank p95 below 50 ms. The accepted
-quiet-machine run (2026-07-16T05:16:38Z) locked both command-path budgets under
-that method. M0/M1a introduced no `src/` production behavior change (test-only
-seam + local runner extension only). M2 closed the orphan-temp matrix gap with a
-focused proof test only (no production behavior change). **M3a (2026-07-16)
-closed as evidence-only:** live audit of `ProjectWorkflowService`,
-`ManagedProcessRunner`, `IProjectOperationGate`, context-change / cancel /
-dispose / app-exit cleanup found **no real production gap**; all recovery rows
-are green via existing focused tests or accepted limitations (see §5 M3a
-inventory). **M3b (2026-07-16) closed as evidence-only:** live audit of
-`LanguageSessionService`, `LanguageDocumentBridge`, start eligibility /
-missing-server handling, cancel / restart / process-exit / dispose cleanup,
-project-context change, and stale generation / diagnostics / completion /
-hover / definition / close-reopen contracts found **no real production gap**;
-all recovery rows are green via existing Phase 10 proofs or accepted
-limitations (see §5 M3b inventory). **M3c (2026-07-16) closed as evidence-only:**
-live audit of `DebugSessionService`, `DebugAdapterLocator`, adapter launch /
-initialize / start failure / missing-adapter / restart, stop / cancellation /
-debuggee-adapter process exit / disposal / child-process cleanup, stale session
-events and stack/variable/current-location projection, breakpoint session
-scoping, project-context change, and application-exit ordering found **no real
-production gap**; all recovery rows are green via existing Phase 12 proofs or
-accepted limitations (see §5 M3c inventory). **M4a (2026-07-16) closed:**
-bounded automated critical-path composition for `workflow-console` is recorded
-in `M4A_CRITICAL_PATH_EVIDENCE.md`. Open-project and edit/save are focused
-headless **PASS** (`Phase13M4aCriticalPathEvidenceTests`); LSP/build/run are
-real-child **PASS**; debug/stop are **not re-run / environment-limited**
-(NetCoreDbg absent; Phase 12 `M4DebugExecutionProofTests` /
-`M6DebugRecoveryProofTests` cited). No `src/` production behavior change.
-**M4b (2026-07-16) closed with explicit limitations:** the current Release
-binary launched and rendered on a real Arch/Wayland desktop; every platform,
-release-smoke, keyboard/focus/status, and Phase 12 display/gesture row has an
-explicit status in `M4_RELEASE_SMOKE_EVIDENCE.md`. There are no `fail` rows.
-Input-dependent rows remain **not validated** because no non-synthetic remote
-input path was available; debug-dependent rows remain **not validated** because
-NetCoreDbg was absent.
+**Status: M0 COMPLETE; Phase 13 CLOSED by M5 (2026-07-16) — GO with explicit
+limitations.** M1b skipped (all locked budgets already met); M2–M3c complete
+(evidence-only); M4a complete; M4b complete with explicit limitations; **M5
+complete** (`M5_RELEASE_CLOSEOUT_EVIDENCE.md`). This M0 evidence pass verified
+the live baseline, ownership, reusable tests, fixtures, recovery coverage, and
+carry-over work. Locked command-path budgets remain editor p95 **0.289 ms** and
+large-file p95 **15.705 ms** (quiet-machine 2026-07-16T05:16:38Z); M5
+remeasurement confirmed both still under 50 ms (editor p95 **0.380 ms**,
+large-file p95 **19.168 ms**). Process budgets remeasured PASS where available;
+**DAP not remeasured** (adapter absent). Full sequential gate at M5: **2172**
+passed. Desktop/input/adapter **not validated** and debug **environment-limited**
+rows are retained honestly in M4a/M4b/M5 evidence.
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -655,7 +621,7 @@ nearest-rank p95 below 50 ms).
 | M3c | **Complete (evidence-only, 2026-07-16):** live inventory of DAP / debug-session recovery found no production gap; all recovery rows green via existing Phase 12 tests or accepted limitations (see §5 M3c inventory). No `src/` change; no new tests. Focused filter 38 passed. Real-adapter proofs require `ZAIDE_NETCOREDBG_PATH`; they skip when absent. |
 | M4a | **Complete (2026-07-16):** bounded automated critical-path composition in `M4A_CRITICAL_PATH_EVIDENCE.md`. Open/edit/save/LSP/build/run **PASS**; debug/stop **not re-run / environment-limited** (adapter absent; Phase 12 proofs cited). Minimal new tests: `Phase13M4aCriticalPathEvidenceTests`. No production change. |
 | M4b | **Complete with explicit limitations (2026-07-16):** real Linux Release launch/render **pass**; every required platform, smoke, keyboard/focus/status, and Phase 12 display row explicitly recorded in `M4_RELEASE_SMOKE_EVIDENCE.md`. No fail rows. Input- and adapter-dependent rows remain **not validated** for the exact recorded environment reasons. |
-| M5 | Re-run comparable budgets and the full sequential gate; truth-sync only after every matrix row has an explicit status. |
+| M5 | **Complete (2026-07-16):** comparable remeasurement of available budgets PASS; DAP unavailable recorded honestly; sequential gate 2172 passed; truth-sync in `M5_RELEASE_CLOSEOUT_EVIDENCE.md`. Phase 13 closed. |
 
 ## 10. M0 Exit Checklist
 
@@ -678,6 +644,7 @@ inventory; no production gap). **M4a is closed** (bounded automated critical-pat
 composition; see `M4A_CRITICAL_PATH_EVIDENCE.md` and §7 matrix). **M4b is
 closed with explicit limitations** (see `M4_RELEASE_SMOKE_EVIDENCE.md`): every
 matrix row is documented, there are no fail rows, and no TOFIX item was found.
-The exact next milestone is **M5**. App-internal numeric evidence remains
-command-path only and is not interactive desktop, Avalonia render,
-keyboard-routing, or UX proof.
+**M5 is closed** — see `M5_RELEASE_CLOSEOUT_EVIDENCE.md`. App-internal numeric
+evidence remains command-path only and is not interactive desktop, Avalonia
+render, keyboard-routing, or UX proof. Phase 13 is complete with explicit
+limitations; Roadmap V2 is closed.

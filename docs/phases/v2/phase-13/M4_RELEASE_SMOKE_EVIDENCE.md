@@ -112,4 +112,5 @@ The required full sequential gate is recorded after the documentation sync:
 
 ## Exact next milestone
 
-**M5 — Release closeout.** M5 has not started in this milestone.
+**M5 is closed.** See `M5_RELEASE_CLOSEOUT_EVIDENCE.md`. Phase 13 is complete
+with the explicit not-validated desktop/adapter limitations recorded above.

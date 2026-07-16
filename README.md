@@ -3,21 +3,22 @@
 AI-native IDE. Agents talk to each other, not just to you.
 
 **Status:** Roadmap V1 is complete (Phase 0 through Phase 7.4).
-[Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is in progress — Phase 8
-umbrella implementation, Phase 9 (Editor UX), Phase 10 (C# Language
-Intelligence), and Phase 11 (Project Workflow) are complete. Phase 9 delivers
-the Command Palette, active-document Search/Replace, syntax-neutral folding,
-tab lifecycle/reordering, and truthful editor/status-bar feedback. Phase 10
-adds C# LSP support with csharp-ls. Phase 11 delivers Build / Run / Test over
-Phase 8.3 project context, structured Output, build diagnostics in Problems,
-Test Results surface, and cancel/one-at-a-time workflow execution. Phase 12
-(DAP debugging) is **complete** (M0–M7 closeout, 2026-07-14): NetCoreDbg adapter,
-breakpoints, execution controls, Debug Console, call stack, variables, and
-error/recovery hardening.
-Phase 13 (Release Hardening) is next. Zaide currently has the IDE
-foundation, Townhall workspace, direct agent panels, `@mention` routing, and
-local Git status/diff/stage/commit workflows delivered by V1. The completed V1
-plans are archived under [`docs/phases/v1/`](docs/phases/v1/).
+[Roadmap V2 — IDE Core Upgrade](docs/roadmap/V2.md) is **complete** (Phase 8
+through Phase 13, closeout 2026-07-16) with documented limitations. Phase 9
+delivers the Command Palette, active-document Search/Replace, syntax-neutral
+folding, tab lifecycle/reordering, and truthful editor/status-bar feedback.
+Phase 10 adds C# LSP support with csharp-ls. Phase 11 delivers Build / Run /
+Test over Phase 8.3 project context, structured Output, build diagnostics in
+Problems, Test Results surface, and cancel/one-at-a-time workflow execution.
+Phase 12 (DAP debugging) is complete: NetCoreDbg adapter, breakpoints,
+execution controls, Debug Console, call stack, variables, and error/recovery
+hardening. Phase 13 (Release Hardening) is complete with explicit limitations
+([M5 closeout](docs/phases/v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)):
+measured budgets, recovery inventories, critical-path evidence, Linux release
+smoke, and doc truth-sync. Zaide has the IDE foundation, Townhall workspace,
+direct agent panels, `@mention` routing, and local Git
+status/diff/stage/commit workflows delivered by V1, plus the V2 IDE core.
+Completed plans are archived under [`docs/phases/`](docs/phases/).
 
 ## Philosophy
 
@@ -161,20 +162,14 @@ AI-native orchestration work:
 - **Phase 10:** C# language intelligence and document formatting
 - **Phase 11:** Build, run, and test workflow
 - **Phase 12:** C# debugging through DAP ✅ complete
-- **Phase 13:** Release hardening
+- **Phase 13:** Release hardening ✅ complete with explicit limitations
+  ([M5 evidence](docs/phases/v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md))
 
-V2 is in progress. Phase 8 umbrella plan is live-code-verified at
-`docs/phases/v2/phase-8/IMPLEMENTATION_PLAN.md`. Sub-phase 8.1 (Settings
-Foundation) is complete across its five implementation slices (M1–M6 closeout
-2026-07-11, full suite green); Phase 8.2 (command registry and keybindings) has
-closed on 2026-07-12; Phase 8.3 is implemented through M4 with automated
-verification green, including the manual `Failed` → `Project error` GUI smoke
-check. Phase 9 (Editor UX) is complete with recorded Linux desktop smoke
-evidence. Phase 10 is **complete** (session, document sync, diagnostics/Problems,
-completion/hover, definition/symbols, whole-document formatting, Format on
-Save, and M7 closeout — see
-[`docs/phases/v2/phase-10/M7_MANUAL_EVIDENCE.md`](docs/phases/v2/phase-10/M7_MANUAL_EVIDENCE.md)).
-Multi-cursor editing and broader AI-native orchestration are outside V2.
+V2 is **complete** (2026-07-16). Phase plans live under `docs/phases/v2/`.
+Documented limitations include Linux-first validation, environment-dependent
+real NetCoreDbg proofs, and desktop keyboard/focus rows that remain not
+validated without a non-synthetic input path. Multi-cursor editing and broader
+AI-native orchestration are outside V2.
 
 ## Why "Zaide"
 
