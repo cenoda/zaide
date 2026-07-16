@@ -12,6 +12,7 @@ using ReactiveUI.Avalonia;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
@@ -264,9 +265,18 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         : null;
                 }));
 
-            // Left panel mode switching: show file tree or SC panel
+            // Left panel mode switching: show file tree or SC panel.
+            // When switching to Source Control, immediately refresh git state so the
+            // panel reflects the current repository state without requiring a manual
+            // refresh click.
             disposables.Add(this.WhenAnyValue(x => x.ViewModel!.LeftPanelMode)
                 .Subscribe(mode => _ = AnimateLeftPanelModeSwitchAsync(mode)));
+
+            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.LeftPanelMode)
+                .Where(mode => mode == LeftPanelMode.SourceControl)
+                .Subscribe(_ =>
+                    ViewModel!.SourceControlViewModel.RefreshCommand
+                        .Execute(Unit.Default).Subscribe()));
 
             // M9a: materialize registry-driven keybindings atomically
             // Replaces all imperative per-command binding blocks below.
