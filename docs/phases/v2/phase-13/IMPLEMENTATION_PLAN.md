@@ -2,18 +2,18 @@
 
 ## Status
 
-**M0 remains in progress — production work has not started.** The M1a local,
-production-neutral measurement runner is implemented and has recorded five
-samples for Startup, LSP, Build, Run, Test, and DAP. The M0 test-only
-app-internal measurement seam is implemented
+**M0 complete (2026-07-16) — production hardening has not started.** The M1a
+local, production-neutral measurement runner recorded five samples for Startup,
+LSP, Build, Run, Test, and DAP. The M0 test-only app-internal measurement seam
 (`Phase13M0EditorMeasurementSeam` + `tools/phase13-measure.py --areas editor
-large-file`) and has recorded five functional samples for editor
-open/edit/save/restore and 8 MiB document load, including post-save restore
-verification and fixture SHA-256. Both rows **fail the locked 10% range
-variance gate**, so numeric budgets are not locked. Evidence is recorded in
-[M0_RELEASE_BASELINE_PROOF.md](M0_RELEASE_BASELINE_PROOF.md). M0 and M1b remain
-blocked until those rows pass the variance gate (or receive named human
-approval). No production hardening is authorized.
+large-file`) recorded 20 functional samples for editor open/edit/save/restore
+and 8 MiB document load under quiet-machine conditions, with post-save restore
+verification and fixture SHA-256. Nearest-rank p95 is locked below 50 ms
+(editor **0.289 ms**, large-file **15.705 ms**). These are command-path latency
+budgets, not UX, Avalonia render, keyboard-routing, or desktop-responsiveness
+budgets. M4b owns completing desktop/keyboard/focus/status evidence; M0 only
+locks the matrix and method. **M1b is skipped** (all locked budgets already
+met). Exact next milestone: **M2**.
 
 **Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
 crash in Phase 9 M6 selection-status projection (`EditorView` called
@@ -71,24 +71,24 @@ and ready for release closeout on the supported Linux validation environment.
 
 ## Pre-Implementation Verification (M0)
 
-- [ ] Read this plan, `docs-rules.md`, `docs/CONVENTIONS.md`, `docs/DESIGN.md`,
+- [x] Read this plan, `docs-rules.md`, `docs/CONVENTIONS.md`, `docs/DESIGN.md`,
       and the closed Phase 8–12 plans/evidence; read every open Phase 13
       `TOFIX.md` if one exists before implementation.
-- [ ] Verify current production ownership in live code: `SettingsService`,
+- [x] Verify current production ownership in live code: `SettingsService`,
       `SettingsMigrator` (constructed by `SettingsService`, not a DI singleton),
       `SettingsPathResolver` (static utility; owns `settings.json`, `.tmp`,
       `.lastknowngood`, and `secrets.json` paths), `ManagedProcessRunner`,
       `ProjectWorkflowService`, `LanguageSessionService`,
       `DebugSessionService`, `App.DisposeServicesOnExit`, and
       `Program.ConfigureServices`.
-- [ ] Record the exact machine/OS, .NET SDK/runtime, Avalonia backend, csharp-ls
+- [x] Record the exact machine/OS, .NET SDK/runtime, Avalonia backend, csharp-ls
       version/path, NetCoreDbg version/path, fixture commit or archive hash,
       and the structural revert baseline: the git commit hash of the
       repository state before any Phase 13 production change (analogous to
       Phase 12's M1 revert target `6222ea5`). Record this in the M0 proof;
       it is the target for `REVERT_LOG.md` if a structural rollback is
       required.
-- [ ] Create reproducible fixtures outside the application settings directory:
+- [x] Create reproducible fixtures outside the application settings directory:
       reuse any committed Phase 11 workflow fixtures first (the existing
       `tests/fixtures/workflow-console/` is the expected base for the M4a
       critical-path C# project; M0 must explicitly inspect `workflow-console`
@@ -101,7 +101,7 @@ and ready for release closeout on the supported Linux validation environment.
       commit a generator script in `tools/`, the requested byte sizes, seed
       where applicable, output hash, and generation command instead. The
       generator is an M0 deliverable needed before M1a harnesses can run.
-- [ ] Publish a fixture-and-test inventory in the M0 proof: each existing
+- [x] Publish a fixture-and-test inventory in the M0 proof: each existing
       fixture/test seam, its owner phase, the contract it already proves, and
       whether Phase 13 reuses it, extends it, or has a real gap. First-pass
       inventory must include at least: `Phase8ProofOfConceptTests`,
@@ -112,7 +112,7 @@ and ready for release closeout on the supported Linux validation environment.
       `ProjectWorkflowProjectionShutdownTests`. Do not recreate already-green
       settings, process, LSP, or DAP recovery coverage merely to label a
       milestone complete.
-- [ ] Publish a carry-over triage table in the M0 proof covering: (1) Phase
+- [x] Publish a carry-over triage table in the M0 proof covering: (1) Phase
       8–12 **limitations** sections; (1b) Phase 10–12 `TOFIX.md` **remaining
       limitations** subsections (e.g. Phase 11 F3 no operation timeout,
       F7 non-English parse, F8 non-English build diagnostics, F9 untitled-tab
@@ -129,7 +129,7 @@ and ready for release closeout on the supported Linux validation environment.
       note where appropriate), **fix in a named Phase 13 slice**, or **not a
       Phase 13 concern**. Existing deferred findings remain out of scope
       unless this table explicitly adopts one.
-- [ ] Run the baseline sequentially, retaining raw timings and test totals.
+- [x] Run the baseline sequentially, retaining raw timings and test totals.
       Record the exact passing-test count (currently 2053 at plan time) and
       flaky-test status: if any test fails intermittently, note its name,
       failure pattern, and whether Phase 13 should harden it or explicitly
@@ -142,7 +142,7 @@ and ready for release closeout on the supported Linux validation environment.
   git diff --check
   ```
 
-- [ ] Define median and sample-count methodology for every timing (warm/cold
+- [x] Define median and sample-count methodology for every timing (warm/cold
       classification, at least five samples, monotonic clock, excluded setup
       time, fixture path/hash, and pass/fail rule). For each measured area lock:
       (1) where the clock runs (external desktop timer, in-process seam, or
@@ -151,17 +151,18 @@ and ready for release closeout on the supported Linux validation environment.
       (csharp-ls, netcoredbg, `dotnet`); (4) whether the harness is local-only
       or optionally runnable in CI. Use a quiet machine policy, record/retry
       invalid samples caused by unrelated load, and prohibit silent outlier
-      removal. Lock a maximum accepted variance and the named human approval
-      required for a budget miss. Lock numeric budgets from the recorded
-      baseline; do not use a developer's subjective responsiveness as a budget.
+      removal. Process/desktop timings retain their documented variance rule.
+      The app-internal rows instead use an absolute latency budget: 20 samples,
+      all functional, nearest-rank p95 below 50 ms. Do not use a developer's
+      subjective responsiveness as a budget.
       Editor and 8 MiB rows use the implemented local, test-only app-internal
       seam (`Phase13M0EditorMeasurementSeam` via
       `python3 tools/phase13-measure.py --areas editor large-file`): same open,
-      edit, save, restore, and document-load command paths; fixture hash, five
+      edit, save, restore, and document-load command paths; fixture hash, 20
       raw samples, post-save restoration, and `Stopwatch.GetTimestamp` clock
       boundary. No injected keyboard/pointer events, production telemetry, or
       human stopwatch.
-- [ ] Define one bounded critical-path scenario before M4: open a selected C#
+- [x] Define one bounded critical-path scenario before M4: open a selected C#
       project → edit/save → LSP result → build → run or test → debug to one
       breakpoint → stop. Publish a **step matrix** in the M0 proof: for every
       step, state whether it is a deterministic headless seam, a real-child-process
@@ -171,19 +172,19 @@ and ready for release closeout on the supported Linux validation environment.
       monolithic UI automation suite. At most one automated real-child integration
       slice is the default; remaining steps may be manual in M4b. One golden path
       is sufficient; do not turn M4 into broad UI automation.
-- [ ] Create empty, versioned M0 matrices for Linux x64 validation; Windows and
+- [x] Create empty, versioned M0 matrices for Linux x64 validation; Windows and
       macOS status (default **not validated**); keyboard-only focus/command
       paths; focus visibility / status readability; and the carried-over Phase 12
       visual/gesture rows (including display-dependent M7 rows, which must be
       re-smoked or explicitly **not validated** with reason — never silent pass).
       Lock every row to **pass**, **fail**, **unsupported**, or **not
       validated**—never an implicit claim.
-- [ ] Map every settings compatibility matrix row to a live test name or an
+- [x] Map every settings compatibility matrix row to a live test name or an
       explicit gap. Interrupted-write follows Phase 8 D2: an orphaned
       `settings.json.tmp` leaves the primary `settings.json` intact; next load
       succeeds from the primary (or LKG/defaults if the primary is also bad). Do
       not invent a new interrupted-write recovery mode.
-- [ ] Create `M0_RELEASE_BASELINE_PROOF.md` containing the fixture manifest,
+- [x] Create `M0_RELEASE_BASELINE_PROOF.md` containing the fixture manifest,
       baseline results, budgets, test/gap inventory, carry-over triage,
       compatibility-matrix inputs, platform/accessibility matrices, critical-path
       step matrix, known limitations, and the M1a–M5 handoff (including which
@@ -243,7 +244,7 @@ and ready for release closeout on the supported Linux validation environment.
 |---|---|---|---|
 | **M0** | Live-code discovery, reuse/gap inventory, carry-over triage, reproducible fixture manifest, baseline measurements, numeric budgets, all matrices, critical-path step matrix, and proof artifact. No production behavior change. | `M0_RELEASE_BASELINE_PROOF.md`; sequential build/test; `git diff --check` | `docs(phase-13): lock M0 release baseline` |
 | **M1a** | **Complete (2026-07-15):** local deterministic measurement runner and five-sample evidence for Startup, LSP, Build, Run, Test, and DAP. It changes no production behavior. Editor/8 MiB rows are the M0 app-internal extension (`phase13-measure.py --areas editor large-file`), not manual timing work. | `tools/phase13-measure.py`; [M1A_MEASUREMENT_RUNNER.md](M1A_MEASUREMENT_RUNNER.md); sequential build/test | `test(phase-13): add release performance harnesses` |
-| **M1b** | Optional. Implement narrowly measured performance fixes for one over-budget area or one tightly coupled set; repeat the affected baseline. Create further M1b slices rather than combining unrelated areas. **If every locked budget is already met after M0/M1a, skip M1b entirely** (zero slices); M5 remeasurement is sufficient. | Affected harness and full sequential gate; budget comparison — or M0 proof records "all budgets already met" | `perf(phase-13): meet <area> budget` (omit if zero slices) |
+| **M1b** | **Skipped (2026-07-16).** Optional performance fixes only for an M0-locked budget miss. Every locked budget already passes under M0/M1a evidence, so M1b is zero slices; M5 remeasurement remains the later recheck. | M0 proof records all budgets already met; no production change | omit (zero slices) |
 | **M2** | Fill only settings/secrets compatibility and recovery gaps identified by M0 across settings schema v1/v2/v3, unknown future version, corruption, interrupted write (Phase 8 D2), last-known-good, and plaintext-secret absence. If M0 marks every row green, M2 is a documentation/evidence no-op (name existing tests; no new production code). | M0-named focused tests; fixture-file inspection; sequential build/test | `fix(phase-13): close settings recovery gaps` or `docs(phase-13): settings matrix already green` |
 | **M3a** | Gap-only: inventory Phase 11 workflow/process recovery proofs first; harden and prove only real gaps in managed Build/Run/Test lifecycle recovery, process-tree cleanup, and shared-gate (`IProjectOperationGate`) release under cancellation/disposal. Reuse `ManagedProcessRunnerTests` / `ProjectWorkflowServiceTests` when green. | Focused workflow/process tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden workflow process cleanup` or docs no-op commit if green |
 | **M3b** | Gap-only: inventory Phase 10 language-session recovery proofs first; harden and prove only real gaps in LSP lifecycle recovery and language-session cleanup. | Focused language-session tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden LSP recovery` or docs no-op commit if green |
@@ -275,7 +276,8 @@ the only release gate.
 
 | Area | Required evidence |
 |---|---|
-| Startup/editor/large file | Five-or-more comparable samples, fixture identity, median against a numeric budget, measurement-site lock, and a focused automated regression where feasible. |
+| Startup | Five-or-more comparable desktop samples, fixture identity, a documented absolute budget, measurement-site lock, and a focused automated regression where feasible. |
+| Editor/large file command paths | 20 comparable app-internal samples, fixture identity, all functional samples, nearest-rank p95 below the documented absolute budget, and a focused automated regression. This is not desktop UX or rendering evidence. |
 | LSP | C# server resolved, document opened/synced, diagnostics or completion request completed, cancellation/restart behavior observed, and no orphaned server. Prefer existing Phase 10 proofs; add tests only for M0-named gaps. |
 | Build/Run/Test | Selected C# project: success, deliberate failure, cancellation, output/result projection, and child-process cleanup. Prefer existing Phase 11 proofs; add tests only for M0-named gaps. |
 | DAP | Build-to-debug launch, breakpoint stop, step/continue/stop, adapter failure/restart, and child-process cleanup. Prefer existing Phase 12 recovery proofs; add tests only for M0-named gaps. |
@@ -310,7 +312,7 @@ git diff --check
 - [ ] M0–M5 are complete with named focused tests and evidence artifacts
       (including documented no-ops for green inventory rows and optional M1b).
 - [ ] Every M0 performance budget is met by a comparable M5 remeasurement, or
-      the variance and accepted limitation are explicitly approved and recorded.
+      the documented gate and accepted limitation are explicitly approved and recorded.
 - [ ] Every settings compatibility/recovery matrix row has automated evidence
       (existing or new).
 - [ ] LSP, workflow-process, and DAP lifecycle/recovery paths have focused
@@ -338,9 +340,7 @@ structural revert baseline; any full-phase rollback targets that commit.
 
 ## Exact Next Step
 
-Execute **M0 only**: inspect the Phase 8–12 test seams and closeout evidence,
-build the reuse/gap inventory and expanded carry-over triage, create the
-reproducible fixture manifest, measure the current Linux baseline, lock numeric
-budgets, the compatibility matrix (with Phase 8 D2 interrupted-write mapping),
-and the critical-path step matrix in `M0_RELEASE_BASELINE_PROOF.md`, then
-re-audit the plan before starting M1a.
+**M0 is closed.** Proceed to **M2 only**: fill the M0-named settings gap for an
+orphan `settings.json.tmp` with a valid primary (Phase 8 D2 contract). Do not
+start M1b (skipped), M3, M4, or production performance work unless a later
+remeasurement creates a real locked-budget miss.

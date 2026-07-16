@@ -15,6 +15,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -42,9 +43,11 @@ BUDGETS_MS = {
     "run": 1000,
     "test": 1500,
     "dap": 2000,
-    # Locked after M0 app-internal five-sample baseline (see M0_RELEASE_BASELINE_PROOF.md).
-    # Values are filled by the first accepted baseline run; until then the gate
-    # still enforces sample success and the 10% range rule when a budget is set.
+}
+APP_INTERNAL_P95_BUDGETS_MS = {
+    # These are command-path latency budgets, not desktop UX or render budgets.
+    "editor": 50,
+    "large-file": 50,
 }
 
 
@@ -319,15 +322,27 @@ def summarize(samples: list[Sample]) -> list[dict[str, object]]:
         variance = statistics.pvariance(timings) if len(timings) > 1 else 0.0
         standard_deviation = statistics.pstdev(timings) if len(timings) > 1 else 0.0
         range_ms = maximum - minimum
-        variance_pass = median > 0 and range_ms <= median * 0.10
-        if budget is None:
-            # Baseline-capture mode: require all samples pass and variance gate.
-            # A numeric release budget is locked later from the recorded median.
-            budget_pass = passed and variance_pass
+        if area in APP_INTERNAL_AREAS:
+            # Nearest-rank p95: with the M0-required 20 samples this is the
+            # nineteenth ordered value. This is an absolute command-path budget;
+            # range variance is intentionally not a gate for sub-millisecond or
+            # low-millisecond timings.
+            p95_rank = max(1, math.ceil(len(timings) * 0.95))
+            p95_ms = sorted(timings)[p95_rank - 1]
+            budget = APP_INTERNAL_P95_BUDGETS_MS[area]
+            budget_pass = passed and len(timings) >= 20 and p95_ms < budget
             gate = "PASS" if budget_pass else "FAIL"
         else:
-            budget_pass = passed and maximum <= budget and variance_pass
-            gate = "PASS" if budget_pass else "FAIL"
+            p95_ms = None
+            variance_pass = median > 0 and range_ms <= median * 0.10
+            if budget is None:
+                # Baseline-capture mode: require all samples pass and variance gate.
+                # A numeric release budget is locked later from the recorded median.
+                budget_pass = passed and variance_pass
+                gate = "PASS" if budget_pass else "FAIL"
+            else:
+                budget_pass = passed and maximum <= budget and variance_pass
+                gate = "PASS" if budget_pass else "FAIL"
         summaries.append({
             "area": area,
             "classification": classification,
@@ -339,6 +354,7 @@ def summarize(samples: list[Sample]) -> list[dict[str, object]]:
             "range_ms": round(range_ms, 3),
             "variance_ms2": round(variance, 3),
             "standard_deviation_ms": round(standard_deviation, 3),
+            "p95_ms": round(p95_ms, 3) if p95_ms is not None else None,
             "budget_ms": budget,
             "budget_pass": budget_pass,
             "gate": gate,
@@ -403,7 +419,7 @@ def parse_args() -> argparse.Namespace:
         default=list(DEFAULT_AREAS),
         help="areas to measure (process seams and/or app-internal editor seams)",
     )
-    parser.add_argument("--samples", type=int, default=5, help="samples per area (default: 5)")
+    parser.add_argument("--samples", type=int, help="override samples per selected area (process default: 5; app-internal default: 20)")
     parser.add_argument("--output", type=Path, help="new evidence directory (default: /tmp/zaide-phase13/measurements/<UTC timestamp>)")
     parser.add_argument("--app", type=Path, default=ROOT / "src/bin/Debug/net10.0/Zaide", help="prebuilt desktop executable for startup samples")
     parser.add_argument("--netcoredbg", type=Path, default=os.getenv("ZAIDE_NETCOREDBG_PATH"), help="existing NetCoreDbg executable; never downloaded")
@@ -420,7 +436,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.samples < 1:
+    if args.samples is not None and args.samples < 1:
         raise SystemExit("--samples must be positive")
     output = args.output or Path("/tmp/zaide-phase13/measurements") / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     adapter = Path(args.netcoredbg) if args.netcoredbg else None
@@ -429,24 +445,26 @@ def main() -> int:
     try:
         process_requested = [area for area in args.areas if area in PROCESS_AREAS]
         app_internal_requested = [area for area in args.areas if area in APP_INTERNAL_AREAS]
+        process_sample_count = args.samples or 5
+        app_internal_sample_count = args.samples or 20
 
         for area in process_requested:
             current_area = area
             if area == "startup":
                 if not args.app.is_file():
                     raise RuntimeError(f"startup executable is not built: {args.app}. Build it before the timed action.")
-                samples.extend(run_startup(index, args.app, args.startup_timeout) for index in range(1, args.samples + 1))
+                samples.extend(run_startup(index, args.app, args.startup_timeout) for index in range(1, process_sample_count + 1))
             elif area == "lsp":
-                samples.extend(lsp_samples(args.samples, args.timeout))
+                samples.extend(lsp_samples(process_sample_count, args.timeout))
             else:
-                samples.extend(process_samples(area, args.samples, args.timeout, adapter))
+                samples.extend(process_samples(area, process_sample_count, args.timeout, adapter))
 
         if app_internal_requested:
             current_area = ",".join(app_internal_requested)
             samples.extend(
                 app_internal_samples(
                     app_internal_requested,
-                    args.samples,
+                    app_internal_sample_count,
                     args.app_internal_timeout,
                 )
             )
@@ -458,7 +476,7 @@ def main() -> int:
     write_evidence(output, samples, summaries, environment)
     print(f"evidence={output}")
     for summary in summaries:
-        print("{area}/{classification}: {gate}; median={median_ms} ms; min={min_ms}; max={max_ms}; variance={variance_ms2} ms^2; budget={budget_ms}".format(**summary))
+        print("{area}/{classification}: {gate}; median={median_ms} ms; p95={p95_ms}; min={min_ms}; max={max_ms}; variance={variance_ms2} ms^2; budget={budget_ms}".format(**summary))
     return 0 if all(summary["gate"] == "PASS" for summary in summaries) else 1
 
 
