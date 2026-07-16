@@ -112,4 +112,45 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
         _activePanel = panel;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
     }
+
+    /// <summary>
+    /// Removes the panel with the specified PanelId from the host collection.
+    /// UI-only: does not cancel, stop, or mutate agent lifecycle fields
+    /// (Status, IsBusy, OutputHistory, DraftInput). If the closed panel was
+    /// active, selects the neighbor at the same index (or the previous panel
+    /// when the closed panel was last). Closing the final panel yields the
+    /// empty host state (ActivePanel = null).
+    /// </summary>
+    public void ClosePanel(string panelId)
+    {
+        if (string.IsNullOrEmpty(panelId))
+            return;
+
+        var panel = _panels.FirstOrDefault(p => p.PanelId == panelId);
+        if (panel is null)
+            return;
+
+        var wasActive = panel == _activePanel;
+        int index = _panels.IndexOf(panel);
+
+        _panels.Remove(panel);
+
+        if (_panels.Count == 0)
+        {
+            if (wasActive)
+            {
+                _activePanel = null;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
+            }
+
+            return;
+        }
+
+        if (wasActive)
+        {
+            int fallbackIndex = index < _panels.Count ? index : _panels.Count - 1;
+            _activePanel = _panels[fallbackIndex];
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
+        }
+    }
 }

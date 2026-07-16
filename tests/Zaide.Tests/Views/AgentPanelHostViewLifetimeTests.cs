@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
@@ -307,5 +308,85 @@ public class AgentPanelHostViewLifetimeTests
                     $"AgentPanelHostView member references forbidden type: {name}");
             }
         }
+    }
+
+    private static Button? FindCloseButton(Border tabItem)
+    {
+        if (tabItem.Child is not Grid grid)
+            return null;
+
+        return grid.Children.OfType<Button>()
+            .FirstOrDefault(b => Equals(b.Tag, "AgentTabClose"));
+    }
+
+    [Fact]
+    public void TabItem_HasCloseButtonWithKeyboardAffordance()
+    {
+        var view = CreateBoundView(out var host);
+        var panel = host.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
+
+        Assert.True(view.TabItems.TryGetValue(panel, out var tabItem));
+        var close = FindCloseButton(tabItem!);
+        Assert.NotNull(close);
+        Assert.True(close!.Focusable);
+        Assert.Equal("Close agent tab", Avalonia.Automation.AutomationProperties.GetName(close));
+    }
+
+    [Fact]
+    public void CloseButton_RemovesOnlyThatTabFromView()
+    {
+        var view = CreateBoundView(out var host);
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "Icon.Avatar");
+        var panel3 = host.CreatePanel("agent-3", "Gamma", "Icon.Avatar");
+
+        var close = FindCloseButton(view.TabItems[panel2]);
+        Assert.NotNull(close);
+        close!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+
+        Assert.Equal(2, view.Panels.Count);
+        Assert.False(view.Panels.ContainsKey(panel2));
+        Assert.True(view.Panels.ContainsKey(panel1));
+        Assert.True(view.Panels.ContainsKey(panel3));
+        Assert.Equal(2, view.TabItems.Count);
+        Assert.DoesNotContain(panel2, host.Panels);
+    }
+
+    [Fact]
+    public void CloseButton_OnActiveTab_SelectsNeighborWithoutStoppingLifecycle()
+    {
+        var view = CreateBoundView(out var host);
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "Icon.Avatar");
+        // panel2 is active
+        panel2.Status = "Thinking";
+        panel2.IsBusy = true;
+        panel2.OutputHistory.Add("still running");
+
+        var close = FindCloseButton(view.TabItems[panel2]);
+        Assert.NotNull(close);
+        close!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+
+        Assert.Same(panel1, host.ActivePanel);
+        Assert.Single(view.Panels);
+        Assert.Equal("Thinking", panel2.Status);
+        Assert.True(panel2.IsBusy);
+        Assert.Equal(new[] { "still running" }, panel2.OutputHistory.ToArray());
+    }
+
+    [Fact]
+    public void CloseButton_FinalTab_YieldsEmptyViewState()
+    {
+        var view = CreateBoundView(out var host);
+        var panel = host.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
+
+        var close = FindCloseButton(view.TabItems[panel]);
+        Assert.NotNull(close);
+        close!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+
+        Assert.Empty(host.Panels);
+        Assert.Null(host.ActivePanel);
+        Assert.Empty(view.Panels);
+        Assert.Empty(view.TabItems);
     }
 }

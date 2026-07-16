@@ -319,4 +319,152 @@ public class AgentPanelHostTests
         Assert.Equal("Agent 1", p5.AgentName);
         Assert.Equal("Icon.Avatar", p5.AvatarResourceKey);
     }
+
+    [Fact]
+    public void ClosePanel_RemovesOnlyThatPanel()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var panel3 = host.CreatePanel("agent-3", "Gamma", "avatar_gamma");
+
+        host.ClosePanel(panel2.PanelId);
+
+        Assert.Equal(2, host.Panels.Count);
+        Assert.Contains(panel1, host.Panels);
+        Assert.DoesNotContain(panel2, host.Panels);
+        Assert.Contains(panel3, host.Panels);
+    }
+
+    [Fact]
+    public void ClosePanel_ActiveMiddle_SelectsNeighborAtSameIndex()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var panel3 = host.CreatePanel("agent-3", "Gamma", "avatar_gamma");
+        host.ActivatePanel(panel2.PanelId);
+
+        host.ClosePanel(panel2.PanelId);
+
+        // Index 1 after removal is former panel3.
+        Assert.Same(panel3, host.ActivePanel);
+        Assert.Equal(2, host.Panels.Count);
+    }
+
+    [Fact]
+    public void ClosePanel_ActiveLast_SelectsPreviousNeighbor()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        // panel2 is active (CreatePanel activates the new panel)
+        Assert.Same(panel2, host.ActivePanel);
+
+        host.ClosePanel(panel2.PanelId);
+
+        Assert.Same(panel1, host.ActivePanel);
+        Assert.Single(host.Panels);
+    }
+
+    [Fact]
+    public void ClosePanel_Inactive_DoesNotChangeActive()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        Assert.Same(panel2, host.ActivePanel);
+
+        host.ClosePanel(panel1.PanelId);
+
+        Assert.Same(panel2, host.ActivePanel);
+        Assert.Single(host.Panels);
+        Assert.DoesNotContain(panel1, host.Panels);
+    }
+
+    [Fact]
+    public void ClosePanel_FinalPanel_YieldsEmptyState()
+    {
+        var host = CreateHost();
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+
+        host.ClosePanel(panel.PanelId);
+
+        Assert.Empty(host.Panels);
+        Assert.Null(host.ActivePanel);
+    }
+
+    [Fact]
+    public void ClosePanel_RaisesActivePanelPropertyChanged_WhenActiveClosed()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var changed = new List<string?>();
+        ((INotifyPropertyChanged)host).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        host.ClosePanel(panel2.PanelId);
+
+        Assert.Same(panel1, host.ActivePanel);
+        Assert.Contains(nameof(IAgentPanelHost.ActivePanel), changed);
+    }
+
+    [Fact]
+    public void ClosePanel_DoesNotRaiseActivePanel_WhenInactiveClosed()
+    {
+        var host = CreateHost();
+        var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var changed = new List<string?>();
+        ((INotifyPropertyChanged)host).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        host.ClosePanel(panel1.PanelId);
+
+        Assert.DoesNotContain(nameof(IAgentPanelHost.ActivePanel), changed);
+    }
+
+    [Fact]
+    public void ClosePanel_DoesNotAlterLifecycleOrHistory()
+    {
+        var host = CreateHost();
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        panel.Status = "Thinking";
+        panel.IsBusy = true;
+        panel.OutputHistory.Add("User: still running");
+        panel.DraftInput = "partial draft";
+
+        host.ClosePanel(panel.PanelId);
+
+        // UI collection no longer contains the panel, but the model is
+        // untouched — close must not stop/cancel or wipe history/state.
+        Assert.Empty(host.Panels);
+        Assert.Equal("Thinking", panel.Status);
+        Assert.True(panel.IsBusy);
+        Assert.Equal(new[] { "User: still running" }, panel.OutputHistory.ToArray());
+        Assert.Equal("partial draft", panel.DraftInput);
+    }
+
+    [Fact]
+    public void ClosePanel_WithNonExistentId_IsNoOp()
+    {
+        var host = CreateHost();
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+
+        host.ClosePanel("missing-id");
+
+        Assert.Same(panel, host.ActivePanel);
+        Assert.Single(host.Panels);
+    }
+
+    [Fact]
+    public void ClosePanel_WithEmptyString_IsNoOp()
+    {
+        var host = CreateHost();
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+
+        host.ClosePanel(string.Empty);
+
+        Assert.Same(panel, host.ActivePanel);
+        Assert.Single(host.Panels);
+    }
 }

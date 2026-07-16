@@ -42,4 +42,13 @@ public interface IAgentPanelHost
     /// If the panel does not exist, this is a no-op.
     /// </summary>
     void ActivatePanel(string panelId);
+
+    /// <summary>
+    /// Remove the panel identified by <paramref name="panelId"/> from the
+    /// Agents UI collection only. Does not stop, cancel, terminate, or
+    /// otherwise alter the agent's running lifecycle; panel state (including
+    /// output history) is left intact on the removed model. If the closed
+    /// panel was active, a neighboring panel becomes active when any remain.
+    /// </summary>
+    void ClosePanel(string panelId);
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -312,6 +313,56 @@ public sealed class AgentPanelHostView : UserControl
                 FallbackValue = "Agent"
             });
 
+        // Close affordance (browser-tab style). Uses a real Button so keyboard
+        // (focus + Space/Enter) works. Click is handled and does not bubble to
+        // the tab border, so close cannot be confused with activate/stop.
+        var closeIcon = IconFactory.Create(
+            "Icon.X",
+            (IBrush?)Application.Current?.Resources["TextSecondaryBrush"],
+            12);
+        var closeButton = new Button
+        {
+            Content = closeIcon,
+            Width = 18,
+            Height = 18,
+            Padding = LayoutTokens.NoneThickness,
+            Background = Brushes.Transparent,
+            BorderThickness = LayoutTokens.NoneThickness,
+            Cursor = TryCreateHandCursor(),
+            Focusable = true,
+            // Tag used by tests to locate the close control without walking
+            // unbound visual trees.
+            Tag = "AgentTabClose"
+        };
+        ToolTip.SetTip(closeButton, "Close agent tab");
+        AutomationProperties.SetName(closeButton, "Close agent tab");
+        closeButton.Click += (_, e) =>
+        {
+            e.Handled = true;
+            if (_host is not null)
+                _host.ClosePanel(panel.PanelId);
+        };
+        // Mark press as handled so the parent tab border does not activate
+        // (or otherwise react) when the close control is pressed.
+        closeButton.PointerPressed += (_, e) =>
+        {
+            if (e.GetCurrentPoint(closeButton).Properties.IsLeftButtonPressed)
+                e.Handled = true;
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition { Width = GridLength.Auto }
+            }
+        };
+        Grid.SetColumn(label, 0);
+        Grid.SetColumn(closeButton, 1);
+        grid.Children.Add(label);
+        grid.Children.Add(closeButton);
+
         var border = new Border
         {
             Background = _inactiveBrush,
@@ -320,7 +371,7 @@ public sealed class AgentPanelHostView : UserControl
             CornerRadius = LayoutTokens.RadiusSm,
             Margin = LayoutTokens.Inset(0, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs),
             Cursor = TryCreateHandCursor(),
-            Child = label
+            Child = grid
         };
         border.PointerPressed += (_, e) =>
         {
