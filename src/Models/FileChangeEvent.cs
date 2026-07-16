@@ -5,7 +5,13 @@ public enum ChangeType
     Created,
     Deleted,
     Renamed,
-    Changed
+    Changed,
+    /// <summary>
+    /// Raised when the underlying FileSystemWatcher encounters an internal error
+    /// (e.g. buffer overflow). The consumer should restart observation and
+    /// re-enumerate to reconcile any missed events.
+    /// </summary>
+    WatcherError
 }
 
 /// <summary>

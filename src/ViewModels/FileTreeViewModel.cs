@@ -233,40 +233,68 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
             return true;
         }
 
-        // Open transition: validate/enumerate BEFORE tearing down old state
+        // Open transition: validate/enumerate BEFORE tearing down old state.
+        // Normalize so RootPath matches Path.GetDirectoryName of watcher
+        // FullPath values (folder pickers and Path.GetTempPath often keep a
+        // trailing separator; without this, root-level create/delete never match).
+        string normalized;
         try
         {
-            var nodes = _fileTreeService.EnumerateDirectory(path, ShowHiddenFiles);
+            normalized = NormalizeDirectoryPath(path);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            StatusText = $"Invalid Argument: Invalid file path format provided. Details: {ex.Message}";
+            return false;
+        }
+
+        try
+        {
+            var nodes = _fileTreeService.EnumerateDirectory(normalized, ShowHiddenFiles);
 
             // Validation succeeded — tear down old watcher and tree
             _watcherSubscription?.Dispose();
             _restartSubscription?.Dispose();
             _fileTreeService.StopWatching();
 
-            RootPath = path;
+            RootPath = normalized;
             RootNodes.Clear();
             foreach (var node in nodes)
                 RootNodes.Add(node);
 
-            var fileChanges = _fileTreeService.StartWatching(path, ShowHiddenFiles);
+            var fileChanges = _fileTreeService.StartWatching(normalized, ShowHiddenFiles);
             _watcherSubscription = fileChanges
                 .ObserveOn(_scheduler)
                 .Subscribe(HandleFileChange);
 
-            // Re-enumerate the tree if the watcher is restarted (e.g. after buffer overflow)
-            // so any events missed during the gap are reconciled.
+            // Re-enumerate and restart the watcher if the underlying
+            // FileSystemWatcher faults (e.g. buffer overflow). Without
+            // this, events are permanently lost after a single error.
             _restartSubscription = _fileTreeService.WhenWatcherRestarted
                 .ObserveOn(_scheduler)
-                .Subscribe(_ => Refresh());
+                .Subscribe(_ =>
+                {
+                    if (RootPath is null) return;
+
+                    // Restart the watcher BEFORE re-enumerating so there
+                    // is no observation gap while the tree is rebuilt.
+                    _watcherSubscription?.Dispose();
+                    var fresh = _fileTreeService.StartWatching(RootPath, ShowHiddenFiles);
+                    _watcherSubscription = fresh
+                        .ObserveOn(_scheduler)
+                        .Subscribe(HandleFileChange);
+
+                    Refresh();
+                });
             return true;
         }
         catch (DirectoryNotFoundException ex)
         {
-            StatusText = $"Error: Directory not found at '{path}'. Details: {ex.Message}";
+            StatusText = $"Error: Directory not found at '{normalized}'. Details: {ex.Message}";
         }
         catch (UnauthorizedAccessException ex)
         {
-            StatusText = $"Access Denied: Cannot access directory '{path}'. Details: {ex.Message}";
+            StatusText = $"Access Denied: Cannot access directory '{normalized}'. Details: {ex.Message}";
         }
         catch (NotSupportedException ex)
         {
@@ -278,6 +306,38 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Resolves <paramref name="path"/> to a full path and strips a trailing
+    /// directory separator (except for filesystem roots). Must match the shape
+    /// of <see cref="Path.GetDirectoryName"/> results used by live-sync handlers.
+    /// </summary>
+    internal static string NormalizeDirectoryPath(string path)
+        => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+
+    /// <summary>
+    /// True when <paramref name="directoryPath"/> is the open workspace root.
+    /// Tolerates trailing-separator differences on either side.
+    /// </summary>
+    private bool IsRootDirectory(string? directoryPath)
+    {
+        if (directoryPath is null || RootPath is null)
+            return false;
+
+        return PathsEqual(directoryPath, RootPath);
+    }
+
+    private static bool PathsEqual(string a, string b)
+    {
+        var left = Path.TrimEndingDirectorySeparator(a);
+        var right = Path.TrimEndingDirectorySeparator(b);
+        return string.Equals(
+            left,
+            right,
+            OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -330,6 +390,10 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
             case ChangeType.Changed:
                 HandleChanged(change.FullPath);
                 break;
+            case ChangeType.WatcherError:
+                // WatcherError is handled by the service via Do() and
+                // the restart subscription. This case is a safety net.
+                break;
         }
 
         // After any tree mutation, retry deferred Created events whose
@@ -342,13 +406,13 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
         var parentDir = Path.GetDirectoryName(fullPath);
 
         // Root-level files go directly into RootNodes
-        if (parentDir == RootPath)
+        if (IsRootDirectory(parentDir))
         {
             var name = Path.GetFileName(fullPath);
             var isDir = Directory.Exists(fullPath);
 
             // Duplicate guard: watcher may fire Created more than once for the same path
-            if (RootNodes.Any(n => n.FullPath == fullPath))
+            if (RootNodes.Any(n => PathsEqual(n.FullPath, fullPath)))
                 return;
 
             var node = new FileTreeNode
@@ -375,7 +439,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
         var nodeIsDir = Directory.Exists(fullPath);
 
         // Duplicate guard
-        if (parent.Children.Any(c => c.FullPath == fullPath))
+        if (parent.Children.Any(c => PathsEqual(c.FullPath, fullPath)))
             return;
 
         var newNode = new FileTreeNode
@@ -429,11 +493,11 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
         var parentDir = Path.GetDirectoryName(fullPath);
 
         // Root-level removal: scan RootNodes directly
-        if (parentDir == RootPath)
+        if (IsRootDirectory(parentDir))
         {
             for (var i = RootNodes.Count - 1; i >= 0; i--)
             {
-                if (RootNodes[i].FullPath == fullPath)
+                if (PathsEqual(RootNodes[i].FullPath, fullPath))
                 {
                     RootNodes.RemoveAt(i);
                     return;
@@ -447,7 +511,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
 
         for (var i = parent.Children.Count - 1; i >= 0; i--)
         {
-            if (parent.Children[i].FullPath == fullPath)
+            if (PathsEqual(parent.Children[i].FullPath, fullPath))
             {
                 parent.Children.RemoveAt(i);
                 return;
@@ -551,7 +615,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
             var parentDir = Path.GetDirectoryName(ev.FullPath);
 
             // Check if the parent is now available (either root level or found in tree)
-            if (parentDir is not null && (parentDir == RootPath || FindNodeByPath(parentDir) is not null))
+            if (parentDir is not null && (IsRootDirectory(parentDir) || FindNodeByPath(parentDir) is not null))
             {
                 _pendingEvents.RemoveAt(i);
                 HandleCreated(ev.FullPath);
@@ -608,7 +672,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     {
         foreach (var node in RootNodes)
         {
-            if (node.FullPath == path)
+            if (PathsEqual(node.FullPath, path))
                 return node;
 
             var found = FindInChildren(node, path);
@@ -623,7 +687,7 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     {
         foreach (var child in parent.Children)
         {
-            if (child.FullPath == path)
+            if (PathsEqual(child.FullPath, path))
                 return child;
 
             var found = FindInChildren(child, path);

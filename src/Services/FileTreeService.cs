@@ -174,37 +174,39 @@ public class FileTreeService : IFileTreeService
         // Capture the current flag so the closure matches the toggle state at watch time
         var currentIncludeHidden = includeHidden;
 
-        // On internal buffer overflow, restart the watcher and signal consumers
-        // so they can re-enumerate to reconcile any missed events.
-        errors
-            .Subscribe(e =>
-            {
-                try
-                {
-                    // Dispose the broken watcher, build a fresh one, and notify
-                    StopWatching();
-                    _watcher = null;
-                    _restartSubject.OnNext(Unit.Default);
-                }
-                catch
-                {
-                    // Best-effort recovery; don't let watcher errors crash the app
-                }
-            });
-
+        // Merge all event sources into a single pipeline.
+        // WatcherError events are handled immediately via Do (before the
+        // buffer) so the ViewModel can restart observation without delay.
+        // They are then filtered out so they don't reach the tree handlers.
         var observable = created
             .Select(e => new FileChangeEvent(ChangeType.Created, e.EventArgs.FullPath))
             .Merge(deleted.Select(e => new FileChangeEvent(ChangeType.Deleted, e.EventArgs.FullPath)))
             .Merge(changed.Select(e => new FileChangeEvent(ChangeType.Changed, e.EventArgs.FullPath)))
             .Merge(renamed.Select(e => new FileChangeEvent(ChangeType.Renamed, e.EventArgs.FullPath, e.EventArgs.OldFullPath)))
-            .Where(change => !ShouldSkip(Path.GetFileName(change.FullPath), currentIncludeHidden))
+            .Merge(errors.Select(_ => new FileChangeEvent(ChangeType.WatcherError, path)))
+            .Do(change =>
+            {
+                // Handle watcher errors immediately — stop the broken
+                // watcher and signal the ViewModel to restart, all before
+                // the 200 ms buffer window closes.
+                if (change.Type == ChangeType.WatcherError)
+                {
+                    try { StopWatching(); } catch { }
+                    _restartSubject.OnNext(Unit.Default);
+                }
+            })
+            .Where(change =>
+            {
+                // WatcherError events are handled above; filter them out
+                // so they don't reach the tree-mutation handlers.
+                if (change.Type == ChangeType.WatcherError) return false;
+                return !ShouldSkip(Path.GetFileName(change.FullPath), currentIncludeHidden);
+            })
             .Buffer(TimeSpan.FromMilliseconds(200))
             .Where(batch => batch.Count > 0)
             .SelectMany(batch =>
             {
                 // Deduplicate Changed events per path within the buffer window.
-                // A single file save can produce multiple Changed events
-                // (last-write then size), so we collapse them to one per path.
                 var seenChanged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 return batch.Where(e =>
                 {

@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Threading;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
@@ -737,13 +739,122 @@ public class FileTreeViewModelTests
         vm.SetRootPath("/fake/path");
         Assert.Single(vm.RootNodes);
 
-        // Before restart: EnumerateDirectory called once (during SetRootPath)
+        // Before restart: EnumerateDirectory called once, StartWatching called once
         mockService.Verify(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Once);
+        mockService.Verify(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Once);
 
         // Simulate a watcher restart
         restartSubject.OnNext(System.Reactive.Unit.Default);
 
-        // After restart: EnumerateDirectory called again (via Refresh)
+        // After restart: StartWatching called again (restarts observation),
+        // EnumerateDirectory called again (via Refresh to reconcile missed events)
+        mockService.Verify(s => s.StartWatching(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Exactly(2));
         mockService.Verify(s => s.EnumerateDirectory(It.IsAny<string>(), It.IsAny<bool>()), Moq.Times.Exactly(2));
     }
+
+    [Fact]
+    public void SetRootPath_NormalizesTrailingDirectorySeparator()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-norm-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(root);
+        try
+        {
+            var pathWithSlash = root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var expected = FileTreeViewModel.NormalizeDirectoryPath(pathWithSlash);
+            Assert.False(
+                expected.EndsWith(Path.DirectorySeparatorChar) || expected.EndsWith(Path.AltDirectorySeparatorChar),
+                "Normalized path should not end with a separator (except filesystem root)");
+
+            var vm = new FileTreeViewModel(_service, _scheduler);
+            Assert.True(vm.SetRootPath(pathWithSlash));
+            Assert.Equal(expected, vm.RootPath);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void HandleCreated_RootLevel_WithTrailingSlashInput_AddsNode()
+    {
+        // Regression: folder pickers yield trailing separators; FSW FullPath
+        // parents from Path.GetDirectoryName never do. Live sync must still match.
+        var root = Path.Combine(Path.GetTempPath(), "zaide-trail-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(root);
+        try
+        {
+            var vm = new FileTreeViewModel(_service, _scheduler);
+            var pathWithSlash = root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            Assert.True(vm.SetRootPath(pathWithSlash));
+
+            var filePath = Path.Combine(
+                root.TrimEnd(Path.DirectorySeparatorChar),
+                "new.txt");
+            File.WriteAllText(filePath, "x");
+            vm.HandleFileChange(new FileChangeEvent(ChangeType.Created, filePath));
+
+            Assert.Contains(vm.RootNodes, n => n.Name == "new.txt");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// End-to-end: SetRootPath → real FileSystemWatcher → Buffer → ObserveOn(scheduler)
+    /// → HandleFileChange → RootNodes. Uses CurrentThreadScheduler (prod uses AvaloniaScheduler).
+    /// Waits via CollectionChanged + ManualResetEventSlim so the test thread does not
+    /// need to pump a CurrentThreadScheduler trampoline for delivery (Buffer emits on
+    /// DefaultScheduler; ObserveOn(CurrentThread) runs HandleFileChange on that thread).
+    /// </summary>
+    [Fact]
+    public void SetRootPath_FullPipeline_WatcherCreated_UpdatesRootNodes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "zaide-e2e-watcher-" + Path.GetRandomFileName());
+        try
+        {
+            Directory.CreateDirectory(root);
+            using var service = new FileTreeService();
+            var vm = new FileTreeViewModel(service, CurrentThreadScheduler.Instance);
+
+            // Use trailing separator — the shape Avalonia folder pickers often return
+            var pathWithSlash = root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            Assert.True(vm.SetRootPath(pathWithSlash));
+            Assert.Empty(vm.RootNodes);
+
+            using var seen = new ManualResetEventSlim(false);
+            void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+            {
+                if (vm.RootNodes.Any(n => n.Name == "live-new.txt"))
+                    seen.Set();
+            }
+            vm.RootNodes.CollectionChanged += OnCollectionChanged;
+
+            // Settle period for the OS watcher (not for Rx delivery)
+            Thread.Sleep(300);
+
+            var filePath = Path.Combine(
+                root.TrimEnd(Path.DirectorySeparatorChar),
+                "live-new.txt");
+            File.WriteAllText(filePath, "hello");
+
+            Assert.True(
+                seen.Wait(TimeSpan.FromSeconds(8)),
+                "Expected RootNodes to update via SetRootPath → watcher → ObserveOn → HandleFileChange");
+            Assert.Contains(vm.RootNodes, n => n.Name == "live-new.txt");
+
+            vm.RootNodes.CollectionChanged -= OnCollectionChanged;
+            vm.Dispose();
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
 }
