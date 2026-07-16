@@ -22,9 +22,9 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     private readonly TextBlock _conflict;
 
     // Editor controls
-    private readonly TextBox _codeFontFamily;
+    private readonly SettingsFontPicker _codeFontFamily;
     private readonly TextBox _codeFontSize;
-    private readonly TextBox _proseFontFamily;
+    private readonly SettingsFontPicker _proseFontFamily;
     private readonly TextBox _tabSize;
     private readonly CheckBox _insertSpaces;
     private readonly CheckBox _showWhitespace;
@@ -33,7 +33,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     private readonly CheckBox _formatOnSave;
 
     // Terminal controls
-    private readonly TextBox _terminalFontFamily;
+    private readonly SettingsFontPicker _terminalFontFamily;
     private readonly TextBox _terminalFontSize;
 
     // LLM controls
@@ -53,21 +53,15 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         VerticalContentAlignment = VerticalAlignment.Stretch;
 
         // ── Editor controls ───────────────────────────────────────────
-        _codeFontFamily = new TextBox
-        {
-            Text = viewModel.Candidate.Editor.CodeFontFamily,
-            PlaceholderText = "e.g. Cascadia Code, Consolas, monospace"
-        };
+        _codeFontFamily = new SettingsFontPicker(viewModel.SetCodeFontFamily);
+        _codeFontFamily.SetSelectedFamily(viewModel.Candidate.Editor.CodeFontFamily);
         _codeFontSize = new TextBox
         {
             Text = viewModel.Candidate.Editor.CodeFontSize.ToString(),
             PlaceholderText = "14"
         };
-        _proseFontFamily = new TextBox
-        {
-            Text = viewModel.Candidate.Editor.ProseFontFamily,
-            PlaceholderText = "e.g. Georgia, serif"
-        };
+        _proseFontFamily = new SettingsFontPicker(viewModel.SetProseFontFamily);
+        _proseFontFamily.SetSelectedFamily(viewModel.Candidate.Editor.ProseFontFamily);
         _tabSize = new TextBox
         {
             Text = viewModel.Candidate.Editor.TabSize.ToString(),
@@ -100,11 +94,8 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         };
 
         // ── Terminal controls ──────────────────────────────────────────
-        _terminalFontFamily = new TextBox
-        {
-            Text = viewModel.Candidate.Editor.TerminalFontFamily,
-            PlaceholderText = "e.g. Cascadia Code, JetBrains Mono, monospace"
-        };
+        _terminalFontFamily = new SettingsFontPicker(viewModel.SetTerminalFontFamily);
+        _terminalFontFamily.SetSelectedFamily(viewModel.Candidate.Editor.TerminalFontFamily);
         _terminalFontSize = new TextBox
         {
             Text = viewModel.Candidate.Editor.TerminalFontSize.ToString(),
@@ -130,9 +121,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
 
         // ── Wire events ─────────────────────────────────────────────────
         // Editor text fields
-        _codeFontFamily.TextChanged += (_, _) => { if (!_syncing) viewModel.SetCodeFontFamily(_codeFontFamily.Text ?? ""); };
         _codeFontSize.TextChanged += (_, _) => { if (!_syncing && int.TryParse(_codeFontSize.Text, out var s)) viewModel.SetCodeFontSize(s); };
-        _proseFontFamily.TextChanged += (_, _) => { if (!_syncing) viewModel.SetProseFontFamily(_proseFontFamily.Text ?? ""); };
         _tabSize.TextChanged += (_, _) => { if (!_syncing && int.TryParse(_tabSize.Text, out var s)) viewModel.SetTabSize(s); };
         // Editor checkbox fields
         _insertSpaces.PropertyChanged += (_, e) =>
@@ -161,7 +150,6 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
                 viewModel.SetFormatOnSave(_formatOnSave.IsChecked ?? false);
         };
         // Terminal text fields
-        _terminalFontFamily.TextChanged += (_, _) => { if (!_syncing) viewModel.SetTerminalFontFamily(_terminalFontFamily.Text ?? ""); };
         _terminalFontSize.TextChanged += (_, _) => { if (!_syncing && int.TryParse(_terminalFontSize.Text, out var s)) viewModel.SetTerminalFontSize(s); };
         // LLM text fields
         _model.TextChanged += (_, _) => { if (!_syncing) viewModel.SetModel(_model.Text ?? ""); };
@@ -249,16 +237,16 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     {
         if (ViewModel is null || _syncing) return;
         _syncing = true;
-        _codeFontFamily.Text = ViewModel.Candidate.Editor.CodeFontFamily;
+        _codeFontFamily.SetSelectedFamily(ViewModel.Candidate.Editor.CodeFontFamily);
         _codeFontSize.Text = ViewModel.Candidate.Editor.CodeFontSize.ToString();
-        _proseFontFamily.Text = ViewModel.Candidate.Editor.ProseFontFamily;
+        _proseFontFamily.SetSelectedFamily(ViewModel.Candidate.Editor.ProseFontFamily);
         _tabSize.Text = ViewModel.Candidate.Editor.TabSize.ToString();
         _insertSpaces.IsChecked = ViewModel.Candidate.Editor.InsertSpaces;
         _showWhitespace.IsChecked = ViewModel.Candidate.Editor.ShowWhitespace;
         _showTabs.IsChecked = ViewModel.Candidate.Editor.ShowTabs;
         _showSpaces.IsChecked = ViewModel.Candidate.Editor.ShowSpaces;
         _formatOnSave.IsChecked = ViewModel.Candidate.Editor.FormatOnSave;
-        _terminalFontFamily.Text = ViewModel.Candidate.Editor.TerminalFontFamily;
+        _terminalFontFamily.SetSelectedFamily(ViewModel.Candidate.Editor.TerminalFontFamily);
         _terminalFontSize.Text = ViewModel.Candidate.Editor.TerminalFontSize.ToString();
         _model.Text = ViewModel.Candidate.Llm.Model;
         _baseUrl.Text = ViewModel.Candidate.Llm.BaseUrl;

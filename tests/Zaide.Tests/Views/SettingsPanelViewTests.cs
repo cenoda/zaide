@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
@@ -81,12 +82,70 @@ public sealed class SettingsPanelViewTests
         using var panel = new SettingsPanelView(vm);
 
         var textBoxes = GetAllDescendants(panel).OfType<TextBox>().ToList();
+        var fontPickers = GetAllDescendants(panel).OfType<SettingsFontPicker>().ToList();
         var checkBoxes = GetAllDescendants(panel).OfType<CheckBox>().ToList();
 
-        // Should have at least: codeFontFamily, codeFontSize, proseFontFamily,
-        // tabSize, terminalFontFamily, terminalFontSize, model, baseUrl, apiKey
-        Assert.True(textBoxes.Count >= 9, $"Expected >= 9 TextBox controls, found {textBoxes.Count}");
+        // Font families use pickers; sizes and LLM fields remain text boxes.
+        Assert.Equal(3, fontPickers.Count);
+        Assert.True(textBoxes.Count >= 6, $"Expected >= 6 TextBox controls, found {textBoxes.Count}");
         Assert.True(checkBoxes.Count >= 4, $"Expected >= 4 CheckBox controls, found {checkBoxes.Count}");
+    }
+
+    [Fact]
+    public void FontPickers_StartClosed_WithScrollableInstalledFontsInPopup()
+    {
+        using var settings = new TestSettingsService();
+        using var vm = new SettingsViewModel(settings, new TestSecretStore());
+        using var panel = new SettingsPanelView(vm);
+
+        var fontPickers = GetAllDescendants(panel).OfType<SettingsFontPicker>().ToList();
+        Assert.Equal(3, fontPickers.Count);
+
+        foreach (var picker in fontPickers)
+        {
+            Assert.False(picker.IsDropDownOpen);
+
+            var popup = GetAllDescendants(picker).OfType<Popup>().Single();
+            popup.IsOpen = true;
+
+            var listBox = GetAllDescendants(picker).OfType<ListBox>().Single();
+            var items = listBox.ItemsSource as System.Collections.IEnumerable;
+            Assert.NotNull(items);
+            Assert.True(items!.Cast<object>().Count() > 8);
+            Assert.Equal(SettingsFontPicker.DefaultMaxHeight, listBox.MaxHeight);
+        }
+    }
+
+    [Fact]
+    public void FontPickerSelection_UpdatesCandidateAndResyncsOnDiscard()
+    {
+        using var settings = new TestSettingsService();
+        using var vm = new SettingsViewModel(settings, new TestSecretStore());
+        using var panel = new SettingsPanelView(vm);
+
+        var codePicker = GetAllDescendants(panel).OfType<SettingsFontPicker>().First();
+        var listBox = GetAllDescendants(codePicker).OfType<ListBox>().Single();
+        var entries = InstalledFontCatalog.BuildEntries(vm.Candidate.Editor.CodeFontFamily);
+        var target = entries.First(entry =>
+            entry.IsAvailable
+            && !entry.Name.Equals(
+                InstalledFontCatalog.ExtractPrimaryFamilyName(vm.Candidate.Editor.CodeFontFamily),
+                System.StringComparison.OrdinalIgnoreCase));
+
+        listBox.SelectedItem = target;
+        listBox.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Source = listBox,
+            Key = Avalonia.Input.Key.Enter,
+        });
+
+        Assert.Equal(target.Name, vm.Candidate.Editor.CodeFontFamily);
+
+        vm.Discard();
+        var primary = InstalledFontCatalog.ExtractPrimaryFamilyName(vm.Candidate.Editor.CodeFontFamily);
+        var selected = Assert.IsType<FontPickerEntry>(listBox.SelectedItem);
+        Assert.Equal(primary, selected.Name);
     }
 
     [Fact]
@@ -217,6 +276,11 @@ public sealed class SettingsPanelViewTests
         else if (parent is ScrollViewer scrollViewer)
         {
             if (scrollViewer.Content is Control c)
+                yield return c;
+        }
+        else if (parent is Popup popup)
+        {
+            if (popup.Child is Control c)
                 yield return c;
         }
     }
