@@ -1,23 +1,23 @@
 # Phase 13 M4a: Bounded Automated V2 Critical-Path Evidence
 
-**Status: COMPLETE (2026-07-16)**  
+**Status: COMPLETE (2026-07-16)**
 **Composition type:** Named focused proofs + one minimal real-fixture open-project
 proof. Not a monolithic UI automation suite. Not a fake end-to-end test that
 calls unrelated test methods.
 
-**Fixture:** `tests/fixtures/workflow-console/`  
-- `WorkflowConsole.csproj` SHA-256 `cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b`  
-- `Program.cs` SHA-256 `617a20b62997f6cbed8a0658a011ac1de1b59d68f999381866ac7ca20bee7020`  
+**Fixture:** `tests/fixtures/workflow-console/`
+- `WorkflowConsole.csproj` SHA-256 `cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b`
+- `Program.cs` SHA-256 `617a20b62997f6cbed8a0658a011ac1de1b59d68f999381866ac7ca20bee7020`
 - Limitation: single thread, shallow frame (accepted for M4a; unchanged from M0).
 
 **Environment (this evidence pass):** Linux `7.1.3-arch1-1` x86_64; .NET SDK
-`10.0.109`; `csharp-ls` `0.25.0` at `/home/cenoda/.dotnet/tools/csharp-ls`.  
+`10.0.109`; `csharp-ls` `0.25.0` at `/home/cenoda/.dotnet/tools/csharp-ls`.
 **NetCoreDbg:** **absent** at
 `/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg` and
 `ZAIDE_NETCOREDBG_PATH` unset. Debug/stop rows are **not re-run** this session;
 they cite Phase 12 production proofs truthfully as environment-limited.
 
-**Production code:** no `src/` change.  
+**Production code:** no `src/` change.
 **New automated proof:** `Phase13M4aCriticalPathEvidenceTests` (open project +
 edit/save on the workflow-console fixture via production discovery and the M0
 editor command-path seam).
