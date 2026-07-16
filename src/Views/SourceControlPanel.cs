@@ -227,14 +227,17 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         // --- Reactive Bindings ---
         this.WhenActivated(d =>
         {
-            // Bind branch selector items
+            // Bind branch selector items once; the collection mutates in place on refresh.
             d.Add(this.WhenAnyValue(x => x.ViewModel)
                 .Where(vm => vm is not null)
-                .Subscribe(vm =>
-                {
-                    _branchSelector.ItemsSource = vm!.Branches;
-                    _branchSelector.SelectedItem = vm.SelectedBranch;
-                }));
+                .Subscribe(vm => _branchSelector.ItemsSource = vm!.Branches));
+
+            // Keep the ComboBox selection in sync whenever the ViewModel updates
+            // SelectedBranch (e.g. after snapshot refresh, commit, or stage). A
+            // one-time assignment on ViewModel attach leaves SelectedItem null once
+            // Branches.Clear() runs during refresh, which shows the placeholder.
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedBranch)
+                .Subscribe(branch => _branchSelector.SelectedItem = branch));
 
             // Explicit user refresh (reuses the orchestrator seam). Project the
             // event to Unit so it matches RefreshCommand's parameter type;

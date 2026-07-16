@@ -97,6 +97,41 @@ public class SourceControlPanelCommandWiringTests
     }
 
     [Fact]
+    public void SelectedBranchPipeline_ReappliesSelectionAfterRefresh()
+    {
+        // Mirrors the panel's WhenAnyValue(SelectedBranch) subscription: after
+        // Branches.Clear() the ComboBox must receive the refreshed SelectedBranch.
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>()))
+            .Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.Setup(g => g.ReadStatus(It.IsAny<string>()))
+            .Returns(new RepositoryStatusSnapshot
+            {
+                CurrentBranchName = "main",
+                Branches = new[] { new GitBranch("main", true), new GitBranch("dev") },
+                Changes = Array.Empty<FileChange>(),
+            });
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+        var workspace = new Workspace();
+        workspace.SetProjectFromPath("/ws");
+        var vm = new SourceControlViewModel(
+            orchestrator,
+            workspace,
+            Mock.Of<IGitMutationService>(),
+            git.Object);
+
+        GitBranch? selected = vm.SelectedBranch;
+        using var sub = vm.WhenAnyValue(x => x.SelectedBranch).Subscribe(b => selected = b);
+
+        Assert.Same(vm.Branches[0], selected);
+
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Same(vm.Branches[0], vm.SelectedBranch);
+        Assert.Same(vm.Branches[0], selected);
+    }
+
+    [Fact]
     public void StageAllButtonPipeline_WithUnitProjection_DoesNotThrowWhenCanExecuteFalse()
     {
         // With no unstaged changes StageAllCommand cannot execute; InvokeCommand

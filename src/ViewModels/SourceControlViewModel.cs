@@ -347,7 +347,10 @@ public class SourceControlViewModel : ReactiveObject
                 UnstagedChanges.Add(change);
         }
 
-        _selectedBranch = result.Snapshot.Branches.FirstOrDefault(b => b.IsCurrent);
+        // Resolve from the live Branches collection so the ComboBox can match
+        // SelectedItem by reference after each refresh repopulates the list.
+        _selectedBranch = Branches.FirstOrDefault(b => b.IsCurrent)
+            ?? Branches.FirstOrDefault(b => b.Name == result.Snapshot.CurrentBranchName);
         _currentBranchName = result.Snapshot.CurrentBranchName;
         AheadBy = result.Snapshot.AheadBy;
         HasUpstream = result.Snapshot.HasUpstream;

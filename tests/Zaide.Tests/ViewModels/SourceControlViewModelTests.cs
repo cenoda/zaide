@@ -80,6 +80,8 @@ public class SourceControlViewModelTests
 
         Assert.Equal(2, vm.Branches.Count);
         Assert.Equal("main", vm.CurrentBranchName);
+        Assert.Same(vm.Branches[0], vm.SelectedBranch);
+        Assert.Equal("main", vm.SelectedBranch!.Name);
     }
 
     [Fact]
@@ -622,6 +624,43 @@ public class SourceControlViewModelTests
 
         Assert.Equal(SnapshotRefreshStatus.Success, vm.LastRefreshStatus);
         Assert.Single(vm.Branches);
+        Assert.Same(vm.Branches[0], vm.SelectedBranch);
+        Assert.Equal("main", vm.SelectedBranch!.Name);
+    }
+
+    [Fact]
+    public void Refresh_Success_KeepsSelectedBranchInBranchesCollection()
+    {
+        var snapshot = Snapshot(branches: new[]
+        {
+            new GitBranch("main", true),
+            new GitBranch("feature/ui"),
+        });
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
+
+        vm.SelectBranchCommand.Execute(vm.Branches[1]).Wait();
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Equal("main", vm.CurrentBranchName);
+        Assert.Same(vm.Branches[0], vm.SelectedBranch);
+    }
+
+    [Fact]
+    public void Refresh_DetachedHead_ClearsSelectedBranchGracefully()
+    {
+        var sha = "abc123def456";
+        var snapshot = Snapshot(
+            currentBranch: sha,
+            branches: new[] { new GitBranch("main", isCurrent: false) });
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(sha, vm.CurrentBranchName);
+        Assert.Null(vm.SelectedBranch);
+
+        vm.RefreshCommand.Execute().Wait();
+
+        Assert.Null(vm.SelectedBranch);
+        Assert.Equal(sha, vm.CurrentBranchName);
     }
 
     [Fact]
