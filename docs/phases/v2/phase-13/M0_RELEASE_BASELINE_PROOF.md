@@ -2,7 +2,7 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); next is M3a.**
+**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); next is M3b.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
@@ -16,7 +16,12 @@ meaningful release criterion for low-latency command paths. The replacement is
 quiet-machine run (2026-07-16T05:16:38Z) locked both command-path budgets under
 that method. M0/M1a introduced no `src/` production behavior change (test-only
 seam + local runner extension only). M2 closed the orphan-temp matrix gap with a
-focused proof test only (no production behavior change).
+focused proof test only (no production behavior change). **M3a (2026-07-16)
+closed as evidence-only:** live audit of `ProjectWorkflowService`,
+`ManagedProcessRunner`, `IProjectOperationGate`, context-change / cancel /
+dispose / app-exit cleanup found **no real production gap**; all recovery rows
+are green via existing focused tests or accepted limitations (see §5 M3a
+inventory). No `src/` change and no new tests.
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -89,11 +94,48 @@ repeat the full gate and record any intermittent failure by test name/pattern.
 | `Phase8ProofOfConceptTests` | Defaults, corrupt and unsupported settings fallback, source-not-overwritten, LKG, temp-then-rename atomic write, synthetic migration | Reuse for settings rows. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Phase8ProofOfConceptTests'` |
 | `FormatOnSaveTests` | v1→v2→v3 migration, v3 round trip, future schema rejection, format-on-save behavior | Reuse for schema matrix. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~FormatOnSaveTests'` |
 | `SecretStoreTests` / `FileSecretStorePermissionTests` | API key absent from ordinary settings JSON; Linux secret-file mode and repair | Reuse for secret absence / permissions. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~SecretStoreTests|FullyQualifiedName~FileSecretStorePermissionTests'` |
-| `ManagedProcessRunnerTests` | Startup failure, cancellation/tree kill, explicit kill/dispose, concurrent-start rejection, final-line capture | Reuse for M3a. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ManagedProcessRunnerTests'` |
-| `ProjectWorkflowServiceTests` | Context/concurrency rejection, cancellation, generation safety, disposal and runner kill | Reuse for M3a. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowServiceTests'` |
-| `ProjectWorkflowProjectionShutdownTests` | Exit ordering, subscriptions, shared process-runner ownership | Reuse for M3a / shutdown. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowProjectionShutdownTests'` |
+| `ManagedProcessRunnerTests` | Startup failure, cancellation/tree kill, explicit kill/dispose, concurrent-start rejection, final-line capture | **M3a green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ManagedProcessRunnerTests'` |
+| `ProjectWorkflowServiceTests` | Context/concurrency rejection, cancellation, generation safety, disposal and runner kill | **M3a green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowServiceTests'` |
+| `ProjectWorkflowProjectionShutdownTests` | Exit ordering, subscriptions, shared process-runner ownership | **M3a green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowProjectionShutdownTests'` |
+| `ProjectOperationGateTests` | Shared-gate mutual exclusion, workflow vs debug handoff, lease release frees admission | **M3a green (supporting reuse)** for shared-gate release rows. Not required in the M3a focused filter; cited by name below. |
 | `LanguageSessionServiceTests` | Eligible-context start, restart/cancellation, process exit, stale events, dispose, missing-server recovery | Reuse for M3b. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~LanguageSessionServiceTests'` |
 | `DebugSessionServiceTests` / `M6DebugRecoveryProofTests` | DAP launch, lifecycle, failure/restart, stale-event safety, dispose, real-adapter stop/recover/restart and missing-adapter recovery | Reuse for M3c. `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~DebugSessionServiceTests|FullyQualifiedName~M6DebugRecoveryProofTests'` |
+
+### M3a Workflow / Process Recovery Inventory (2026-07-16)
+
+Live audit of `ProjectWorkflowService`, `ManagedProcessRunner`,
+`IProjectOperationGate` / `ProjectOperationGate`, project-context change,
+cancellation, disposal, `App.DisposeServicesOnExit`, and child-process cleanup.
+**Result: evidence-only closeout — no production gap, no production change, no
+new tests.** Focused gate (35 tests):
+
+```bash
+dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ManagedProcessRunnerTests|FullyQualifiedName~ProjectWorkflowServiceTests|FullyQualifiedName~ProjectWorkflowProjectionShutdownTests'
+```
+
+| Recovery contract | Owner / lifecycle seam | Exact evidence (reused) | Disposition |
+|---|---|---|---|
+| Startup failure: no orphan process; `StartupFailed` outcome | `ManagedProcessRunner.RunAsync`; `ProjectWorkflowService` maps result | `ManagedProcessRunnerTests.RunAsync_MissingExecutable_ReturnsStartupFailed`; `ProjectWorkflowServiceTests.StartupFailed_ReturnsStartupFailed`; `StartupFailed_SnapshotProcessIdRemainsNull` | **Green** |
+| Cancellation terminates process and reports `WasCancelled` / `Cancelled` | `ManagedProcessRunner` cancel registration + `Kill(entireProcessTree: true)`; `ProjectWorkflowService.CancelAsync` | `ManagedProcessRunnerTests.RunAsync_Cancellation_KillsProcessTree`; `ProjectWorkflowServiceTests.CancelAsync_ActiveOperation_ReturnsCancelled` | **Green** |
+| Explicit kill terminates active process | `ManagedProcessRunner.KillAsync` | `ManagedProcessRunnerTests.KillAsync_TerminatesActiveProcess` | **Green** |
+| Runner dispose kills active process | `ManagedProcessRunner.Dispose` | `ManagedProcessRunnerTests.Dispose_KillsActiveProcess` | **Green** |
+| Concurrent second `RunAsync` rejected while running | `ManagedProcessRunner` single-slot guard | `ManagedProcessRunnerTests.RunAsync_SecondStartWhileRunning_Throws` | **Green** |
+| Residual unterminated stream line flushed on cancel/EOF | `ManagedProcessRunner.PumpStreamAsync` finally | `RunAsync_UnterminatedFinalLineAfterCancel_EmitsResidualLine`; `RunAsync_ExitsWithoutTrailingNewline_CapturesFinalLine` | **Green** |
+| Operation-state returns to Idle after success / fail / cancel | `ProjectWorkflowService.CompleteOperationAsync` | `StartBuildAsync_EligibleContext_SucceedsAndCapturesOutput`; `NonZeroExit_ReturnsFailed`; `CancelAsync_ActiveOperation_ReturnsCancelled` | **Green** |
+| One-at-a-time workflow admission (`RejectedConcurrent`) | `IProjectOperationGate` + workflow busy check | `ProjectWorkflowServiceTests.StartBuildAsync_WhileBusy_ReturnsRejectedConcurrent`; `ProjectOperationGateTests` busy/handoff suite | **Green** |
+| Shared-gate lease released after operation completion (incl. cancel path) | `StartOperationAsync` `finally { admissionLease?.Dispose() }` → `ReleaseWorkflowOperation` | Composition: cancel/dispose tests await operation completion (lease finally runs); gate unit proofs free admission on lease dispose (`ProjectOperationGateTests`) | **Green** |
+| Context change same normalized target does not cancel | `HandleContextChangeAsync` path equality | `ContextChangeAwayFromTarget_WithNormalizedPath_DoesNotCancel` | **Green** |
+| Context change away from target / null selection cancels and cleans state | `HandleContextChangeAsync` cancel + `KillAsync` | `ContextChangeAwayFromTarget_WithDifferentPath_Cancels`; `ContextChangeAwayFromTarget_WithNullSelectedProject_Cancels` | **Green** |
+| Stale generation output ignored | generation checks in `AppendOutputLine` / completion | `StaleOutputFromOldGeneration_IsIgnoredBySnapshot` | **Green** |
+| Service dispose: kill runner, idle snapshot, in-flight → Cancelled; emit-during-dispose safe | `ProjectWorkflowService.Dispose` | `Dispose_KillsRunnerAndReturnsToIdle`; `Dispose_WhileFakeRunnerEmitting_DoesNotThrow` | **Green** |
+| App exit ordering: debug session → workflow (kill runner) → projections → language | `App.DisposeServicesOnExit` | `DisposeServicesOnExit_OrdersWorkflowBeforeProjectionsBeforeLanguage`; `DisposeServicesOnExit_KillsRunnerBeforeLanguageDispose`; projection complete/subscription-release tests | **Green** |
+| Single shared `IManagedProcessRunner` owned by workflow | DI registration | `ConfigureServices_WorkflowOwnsSingleManagedProcessRunner` | **Green** |
+| Process-tree kill uses `Kill(entireProcessTree: true)` | `ManagedProcessRunner.KillProcessTree` | Production code path; single-process Linux cancel/kill/dispose smoke above. Multi-descendant tree smoke not added — no demonstrated orphan-child gap | **Green** (no real gap; Linux multi-child smoke not required) |
+| No overall operation timeout / hung slot until user cancel | Phase 11 F3 product policy | Carry-over triage (this proof §6) | **Accepted limitation** |
+| Single owner of `IManagedProcessRunner` (no second disposer) | Phase 11 F10 | Carry-over triage; shutdown ownership tests | **Accepted limitation** |
+| `IProjectOperationGate` not disposed in `App.DisposeServicesOnExit` | App exit sequence | Live inspection: gate is a process-local `SemaphoreSlim` singleton; app process exit reclaims it; not a child-process orphan path | **Accepted limitation** |
+
+No Phase 13 `TOFIX.md` entry: no unresolved real finding.
 
 ### Settings Compatibility Matrix
 
@@ -427,7 +469,7 @@ nearest-rank p95 below 50 ms).
 | M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral. The M0 app-internal editor/large-file extension is implemented with accepted quiet-machine p95 evidence. |
 | M1b | **Skipped (zero slices).** Every locked M0 budget already passes; no production performance fix is authorized from M0. |
 | M2 | **Complete (evidence-only):** orphan `.tmp` with valid primary proven by `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`. Production already satisfied Phase 8 D2; no `src/` change. All other settings/secret rows remain green via named existing tests. |
-| M3a | Evidence-only unless focused workflow/process inventory identifies a regression. |
+| M3a | **Complete (evidence-only, 2026-07-16):** live inventory found no production gap; all recovery rows green via existing tests or accepted limitations (see §5 M3a inventory). No `src/` change; no new tests. Focused filter 35 passed. |
 | M3b | Evidence-only unless locked LSP measurements/recovery recheck expose a real gap. |
 | M3c | Evidence-only unless focused DAP recovery recheck exposes a real gap. |
 | M4a | Compose the bounded §7 path after M2/M3 gates or documented no-ops. |
@@ -447,7 +489,8 @@ nearest-rank p95 below 50 ms).
 - [x] Linux desktop smoke matrix and measurement method locked in §7; completion of desktop/keyboard/focus/status evidence is **M4b**, not an M0 blocker.
 
 **M0 is closed.** All locked performance budgets are met, so **M1b is skipped**.
-**M2 is closed** (evidence-only orphan-temp D2 proof). The exact next milestone
-is **M3a** (gap-only workflow/process recovery inventory). App-internal numeric
-evidence remains command-path only and is not interactive desktop, Avalonia
-render, keyboard-routing, or UX proof.
+**M2 is closed** (evidence-only orphan-temp D2 proof). **M3a is closed**
+(evidence-only workflow/process recovery inventory; no production gap). The
+exact next milestone is **M3b** (gap-only language-session / LSP recovery
+inventory). App-internal numeric evidence remains command-path only and is not
+interactive desktop, Avalonia render, keyboard-routing, or UX proof.
