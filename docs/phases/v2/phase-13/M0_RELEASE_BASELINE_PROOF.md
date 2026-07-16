@@ -2,20 +2,24 @@
 
 ## Gate Result
 
-**Status: NO-GO for M1b–M5; M1a runner evidence complete; desktop timing partial.**
+**Status: NO-GO for M1b–M5; M1a process seams complete; app-internal editor/large-file five-sample evidence recorded but variance gate FAIL.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
-operations, and real-adapter DAP. A follow-on manual desktop pass (2026-07-15)
-recorded five large-file-open samples and five editor **open-only** sub-samples,
-but **did not** complete the editor harmless-edit/save/restore substep under the
-locked no-key-injection constraint. Consequently, no production hardening may
-start.
+operations, and real-adapter DAP. The M0 app-internal measurement extension
+(2026-07-16) records five functional pass samples each for editor
+open/edit/save/restore and 8 MiB document load via the production
+`EditorTabViewModel.OpenFileCommand` / `EditorViewModel.TextContent` /
+`SaveCommand` paths, with post-save restore verification and fixture SHA-256.
+Both rows **fail the locked 10% range variance gate**, so numeric release
+budgets are **not locked** and M0/M1b remain blocked. No production hardening
+may start.
 
 This is a deliberate truthful M0 result, not a Phase 13 implementation failure.
-The remaining unblocked action is a mouse-only or operator-timed editor
-edit/save/restore recheck (or named approval of the documented limitation).
-M0/M1a introduced no `src/` or test-project production behavior change.
+The app-internal seam is implemented and runnable; the remaining gate is a
+comparable remeasurement that meets the variance rule (or named human approval
+of a documented limitation). M0/M1a introduced no `src/` production behavior
+change (test-only seam + local runner extension only).
 
 ## 1. Repository and Environment Baseline
 
@@ -183,9 +187,9 @@ suite. M4b owns the real desktop rows.
   Record every sample, median, max/min, variance, fixture hash, cold/warm
   classification, and concurrent-load observation. Never silently remove an
   outlier; retry only an explicitly invalid sample and retain its reason.
-- Use an external monotonic desktop timer for startup/editor interaction and an
-  in-process or test-host clock only when M1a adds a truthful, local-only hook.
-  No production telemetry or persistent collection is allowed.
+- Use an external monotonic desktop timer for startup desktop interaction. Use
+  the test-host `Stopwatch.GetTimestamp` clock for the app-internal editor and
+  large-file seams. No production telemetry or persistent collection is allowed.
 - Exclude fixture generation, build/restore, and adapter/server acquisition
   from the timed action. Include the LSP/server, adapter, and `dotnet` child
   startup required by the user action. Cap those external tools at the
@@ -252,15 +256,15 @@ quiet-machine rule before it can supersede the M0 baseline.
 
 #### Method amendment (2026-07-16)
 
-The recorded samples below remain historical evidence. They do not require a
-human to repeat stopwatch-driven interaction. The remaining editor
-open/edit/save and 8 MiB numeric rows are superseded by a planned local,
-test-only app-internal automation seam. That seam must exercise the same
-application command paths, use a monotonic in-process or test-host clock,
-record five raw samples plus fixture hashes and restoration verification, and
-must not use injected keyboard or pointer input. It is performance evidence
-only; M4b still owns real Linux desktop smoke and keyboard/focus/status
-evidence.
+The recorded desktop samples below remain historical evidence. They do not
+require a human to repeat stopwatch-driven interaction. Editor open/edit/save
+and 8 MiB document-load numeric rows are measured by the implemented
+test-only app-internal seam (see **App-Internal Measurement Evidence** below).
+That seam exercises the same application command paths, uses a monotonic
+test-host clock, records five raw samples plus fixture hashes and post-save
+restoration verification, and does not use injected keyboard or pointer
+input. It is performance evidence only; M4b still owns real Linux desktop
+smoke and keyboard/focus/status evidence.
 
 Truthful desktop samples on the recorded KDE Plasma Wayland session. No
 production code, test, or Phase 13 scope change. No `xdotool`, no synthetic
@@ -300,11 +304,10 @@ Fixture A bytes were restored to the committed SHA-256 after the pass.
 | Open to ready (5 / 5) | `574.469`, `583.535`, `567.640`, `563.177`, `542.222` | `567.640` | `542.222` | `583.535` | `41.313` | `191.009 ms²` | PASS open-only variance (41 ms ≤ 57 ms = 10% of median) |
 | Harmless edit / save / restore | — | — | — | — | — | — | **FAIL / blocked** |
 
-Edit/save was blocked: `wl-copy` + middle-click paste did not mark the Avalonia
-`TextEditor` dirty, while the no-synthetic-key-injection rule prevented an
-automated desktop save. This does not require human timing. The planned M0
-app-internal seam replaces this failed approach; until it records five complete
-samples, the row remains **0 / 5** and blocks M0 closure and M1b.
+Edit/save was blocked on the desktop path: `wl-copy` + middle-click paste did
+not mark the Avalonia `TextEditor` dirty, while the no-synthetic-key-injection
+rule prevented an automated desktop save. That desktop row is historical only.
+The app-internal seam (below) supersedes it for numeric evidence.
 
 #### Large file open (`large-file-8MiB.txt`)
 
@@ -324,13 +327,60 @@ named human approval before an accepted limitation can be recorded.
 Live completion invocation remains **not validated** (no real desktop invocation
 observed).
 
+### App-Internal Measurement Evidence (2026-07-16)
+
+Implemented test-only seam (no production behavior change):
+
+| Item | Value |
+|---|---|
+| Seam | `Zaide.Tests.Services.Phase13M0EditorMeasurementSeam` |
+| Focused tests | `Zaide.Tests.Services.Phase13M0EditorMeasurementTests` |
+| Runner command | `python3 tools/phase13-measure.py --areas editor large-file --output /tmp/zaide-phase13/measurements/m0-editor-<UTC>` |
+| Clock boundary | `Stopwatch.GetTimestamp` high-resolution monotonic test-host clock; starts immediately before the first app command and stops after the last timed command returns. Fixture copy, SHA-256, three untimed warm-up samples (JIT/path priming), and teardown are excluded. |
+| Command paths | `EditorTabViewModel.OpenFileCommand` → `EditorViewModel.TextContent` (dirty path) → `SaveCommand` → close → re-open restore check; large-file uses `OpenFileCommand` document load only |
+| Not claimed | Avalonia UI rendering, desktop keyboard/focus, or interactive Linux smoke (M4b) |
+
+Raw evidence (untracked, machine-local):
+`/tmp/zaide-phase13/measurements/m0-editor-20260716T-final/`
+(`raw-samples.tsv`, `raw-samples.json`, `summary.json`).
+
+#### Editor open/edit/save/restore (`Program.cs`)
+
+| Item | Value |
+|---|---|
+| Fixture | `tests/fixtures/workflow-console/Program.cs` |
+| SHA-256 | `617a20b62997f6cbed8a0658a011ac1de1b59d68f999381866ac7ca20bee7020` |
+| Samples (ms) | `0.318`, `0.299`, `0.261`, `0.297`, `0.261` |
+| Median / min / max / range | `0.297` / `0.261` / `0.318` / `0.057` |
+| Population variance | `0.001 ms²` |
+| Functional status | 5 / 5 pass; each sample re-opened saved content matches; source fixture SHA unchanged (work copy only) |
+| Variance gate | **FAIL** (0.057 ms range > 0.030 ms = 10% of median) |
+| Numeric budget | **not locked** (variance gate fail) |
+
+#### Large-file document load (`large-file-8MiB.txt`)
+
+| Item | Value |
+|---|---|
+| Fixture | `/tmp/zaide-phase13/large-file-8MiB.txt` (generated; not committed) |
+| SHA-256 | `0a014ac760b7eb31cd7b75b2aa1a897b7fe430571a5ac874a3c8706c54c9ffd9` |
+| Samples (ms) | `10.690`, `12.332`, `11.437`, `11.702`, `12.637` |
+| Median / min / max / range | `11.702` / `10.690` / `12.637` / `1.947` |
+| Population variance | `0.470 ms²` |
+| Functional status | 5 / 5 pass; each sample loaded 8,388,608 characters; fixture SHA unchanged |
+| Variance gate | **FAIL** (1.947 ms range > 1.170 ms = 10% of median) |
+| Numeric budget | **not locked** (variance gate fail) |
+
+These medians are app-internal service/VM path timings, not desktop render
+timings. They must not be compared like-for-like with the historical external
+desktop stopwatch samples above.
+
 ### Budget Matrix
 
 | Area | Measurement site / fixture | Samples | Median baseline | Numeric budget | Gate |
 |---|---|---:|---:|---:|---|
 | Startup to usable main window | External monotonic timer (`date +%s%N`) to a new XWayland `Zaide` window owned by the newly launched PID; normal settings | 5 / 5 | 620 ms (`621, 620, 620, 621, 620`) | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (62 ms) | PASS; measured 1 ms range |
-| Editor open/edit/save | Planned test-only app-internal seam; `Program.cs` / SHA | 0 / 5 complete (historical open-only sub-samples at 568 ms median) | full row **not locked** | Lock after five complete automated samples | **BLOCKED** — automation seam not implemented; blocks M0 and M1b |
-| Large file open | Planned test-only app-internal seam; `large-file-8MiB.txt` / SHA | historical 5 / 5 invalidated for the new method | full row **not locked** | Lock after five comparable automated samples | **BLOCKED** — automation seam not implemented; blocks M0 and M1b |
+| Editor open/edit/save/restore | Test-only app-internal seam (`Phase13M0EditorMeasurementSeam` via `phase13-measure.py --areas editor`); `Program.cs` SHA `617a20b6…bee7020` | 5 / 5 functional | 0.297 ms | **not locked** (requires variance PASS) | **FAIL** variance (0.057 ms range > 0.030 ms); blocks M0 and M1b |
+| Large file document load | Test-only app-internal seam (`phase13-measure.py --areas large-file`); `large-file-8MiB.txt` SHA `0a014ac7…c9ffd9` | 5 / 5 functional | 11.702 ms | **not locked** (requires variance PASS) | **FAIL** variance (1.947 ms range > 1.170 ms); blocks M0 and M1b |
 | LSP ready / first result | Real `csharp-ls`; temporary copy of the Phase 10 proof fixture; completion + hover + stale-result smoke | 5 / 5 | 5708 ms | ≤ 8,000 ms; maximum accepted sample variance ≤ 10% of median (571 ms) | PASS; measured 18 ms range |
 | Build | Real child `dotnet`; workflow-console fixture | 1 cold + 4 warm | 1905 ms cold; 413 ms warm | ≤ 2,500 ms cold; ≤ 600 ms warm; maximum accepted variance ≤ 10% of each median | PASS; cold/warm explicitly separated |
 | Run | Real child `dotnet`; workflow-console fixture | 5 / 5 | 537 ms | ≤ 1,000 ms; maximum accepted sample variance ≤ 10% of median (54 ms) | PASS; measured 12 ms range |
@@ -339,18 +389,17 @@ observed).
 
 The startup budget rounds the observed 620 ms median up to a 1,000 ms release
 envelope; a sample above it requires named human approval before an accepted
-limitation can be recorded. The full-suite `32 s` result in §4 is a regression
-baseline only; it is not a substitute for any UX budget. When five samples
-exist, lock a numeric release budget at the recorded median plus the approved
-maximum variance (rather than subjective responsiveness), then update this
-table before M1b or M0 closure.
+limitation can be recorded. The full-suite regression baseline is not a
+substitute for any UX budget. Editor and large-file numeric budgets lock only
+after a comparable five-sample run passes the 10% range variance rule (or a
+named human-approved limitation is recorded).
 
 ## 9. M1a–M5 Handoff
 
 | Slice | M0 handoff |
 |---|---|
-| M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral. A separate M0-only app-internal automation extension remains for editor and 8 MiB measurements. |
-| M1b | Potentially zero slices; decide only after M1a comparable remeasurement. |
+| M1a | Complete: the local runner and its five-sample executable evidence are recorded above. It is production-neutral. The M0 app-internal editor/large-file extension is implemented and has five functional samples; variance gate still FAIL. |
+| M1b | Blocked until editor and large-file variance gates pass (or named human approval). Potentially zero slices thereafter. |
 | M2 | One identified gap: orphan `.tmp` with valid primary. All other settings/secret rows name reusable tests. |
 | M3a | Evidence-only unless focused workflow/process inventory identifies a regression. |
 | M3b | Evidence-only unless locked LSP measurements/recovery recheck expose a real gap. |
@@ -365,11 +414,14 @@ table before M1b or M0 closure.
 - [x] Structural rollback baseline, environment, server, adapter, and fixture identity recorded.
 - [x] Reuse/gap inventory and settings compatibility matrix recorded.
 - [x] Carry-over triage and explicit platform/accessibility/critical-path matrices recorded.
-- [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped.
+- [x] Sequential automated baseline recorded: 2053 passed, 0 failed, 0 skipped (initial M0 baseline); remeasurement after the app-internal seam: 2169 passed, 0 failed, 0 skipped.
 - [x] Deterministic large-file fixture generator added and generated outside settings/repository data.
-- [ ] Five comparable performance samples and numeric budgets locked for every area (M1a has remeasured Startup, LSP, Build, Run, Test, and DAP; the remaining editor and 8 MiB rows require the planned test-only app-internal automation seam).
-- [ ] Linux desktop release/keyboard/focus measurements recorded.
+- [x] App-internal measurement seam implemented for editor open/edit/save/restore and 8 MiB document load (`Phase13M0EditorMeasurementSeam` + `phase13-measure.py --areas editor large-file`).
+- [ ] Five comparable performance samples and numeric budgets **locked** for every area (M1a process seams PASS; editor and large-file have five functional samples but **FAIL** the 10% variance gate, so budgets remain unlocked).
+- [ ] Linux desktop release/keyboard/focus measurements recorded (M4b).
 
-**M0 remains open and M1b is blocked until the two unchecked gate items are
-completed in this proof. M1a is complete only as the authorized local runner
-slice; it does not close the remaining desktop evidence.**
+**M0 remains open and M1b is blocked until the unchecked gate items are
+completed in this proof. The app-internal seam is implemented; variance PASS
+(or named approval) is still required before budgets lock. M1a is complete only
+as the authorized local process-runner slice. App-internal numeric evidence is
+not interactive desktop proof.**

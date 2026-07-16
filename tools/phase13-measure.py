@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Run the opt-in Phase 13 M1a release measurements.
+"""Run the opt-in Phase 13 release measurements.
 
 This is local evidence tooling, not application instrumentation.  It runs the
-already-defined executable Startup, LSP, Build, Run, Test, and DAP seams and
-writes every sample (including failed samples) to JSON and TSV.  Desktop
-editor and large-file interaction remain intentionally manual-smoke rows: this
-runner never injects editor input or claims that an X11 key event reached an
-Avalonia command on a Wayland desktop.
+already-defined executable Startup, LSP, Build, Run, Test, and DAP seams, plus
+the M0 test-only app-internal editor open/edit/save/restore and large-document
+load seams.  It never injects keyboard or pointer input, never claims that an
+X11 key event reached Avalonia command routing on a Wayland desktop, and does
+not replace M4b Linux desktop smoke or keyboard/focus/status evidence.
 """
 
 from __future__ import annotations
@@ -31,7 +31,9 @@ from typing import Callable
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_AREAS = ("startup", "lsp", "build", "run", "test", "dap")
+PROCESS_AREAS = ("startup", "lsp", "build", "run", "test", "dap")
+APP_INTERNAL_AREAS = ("editor", "large-file")
+DEFAULT_AREAS = PROCESS_AREAS + APP_INTERNAL_AREAS
 BUDGETS_MS = {
     "startup": 1000,
     "lsp": 8000,
@@ -40,6 +42,9 @@ BUDGETS_MS = {
     "run": 1000,
     "test": 1500,
     "dap": 2000,
+    # Locked after M0 app-internal five-sample baseline (see M0_RELEASE_BASELINE_PROOF.md).
+    # Values are filled by the first accepted baseline run; until then the gate
+    # still enforces sample success and the 10% range rule when a budget is set.
 }
 
 
@@ -186,6 +191,119 @@ def process_samples(area: str, count: int, timeout_seconds: float, adapter: Path
     raise ValueError(area)
 
 
+def ensure_large_file_fixture(path: Path) -> None:
+    """Generate the deterministic 8 MiB fixture outside the timed action when missing."""
+    expected = "0a014ac760b7eb31cd7b75b2aa1a897b7fe430571a5ac874a3c8706c54c9ffd9"
+    if path.is_file() and sha256(path) == expected:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    generator = ROOT / "tools/phase13-generate-large-file.py"
+    completed = subprocess.run(
+        ["python3", str(generator), str(path)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(f"large-file fixture generation failed: {completed.stderr or completed.stdout}")
+    if sha256(path) != expected:
+        raise RuntimeError(f"large-file fixture hash mismatch at {path}")
+
+
+def app_internal_samples(areas: list[str], count: int, timeout_seconds: float) -> list[Sample]:
+    """Drive the test-only EditorTabViewModel/OpenFile/Save seam via the test host.
+
+    Timing is performed inside the test host with Stopwatch.GetTimestamp (monotonic).
+    This function only orchestrates fixture prep and evidence collection; setup is
+    outside each sample's clock boundary.
+    """
+    editor_fixture = ROOT / "tests/fixtures/workflow-console/Program.cs"
+    large_fixture = Path("/tmp/zaide-phase13/large-file-8MiB.txt")
+    if "large-file" in areas:
+        ensure_large_file_fixture(large_fixture)
+
+    staging = Path(tempfile.mkdtemp(prefix="zaide-phase13-editor-measure-"))
+    environment = os.environ.copy()
+    environment["ZAIDE_PHASE13_EDITOR_MEASURE_OUTPUT"] = str(staging)
+    environment["ZAIDE_PHASE13_EDITOR_MEASURE_AREAS"] = ",".join(areas)
+    environment["ZAIDE_PHASE13_EDITOR_MEASURE_SAMPLES"] = str(count)
+
+    command = [
+        "dotnet",
+        "test",
+        "Zaide.slnx",
+        "--no-build",
+        "--filter",
+        "FullyQualifiedName=Zaide.Tests.Services.Phase13M0EditorMeasurementTests.MeasurementRunner_WritesEvidence_WhenOutputEnvSet",
+    ]
+    elapsed, exit_code, status, stdout, stderr = run_command(command, timeout_seconds, environment)
+    if status != "pass":
+        note = f"app-internal measurement host failed after {elapsed:.3f} ms (setup not timed per sample)"
+        hashes = fixture_hashes([editor_fixture] + ([large_fixture] if large_fixture.is_file() else []))
+        return [
+            Sample(
+                area=area,
+                classification="setup",
+                sample=0,
+                command=command,
+                elapsed_ms=0,
+                exit_code=exit_code,
+                status="fail",
+                note=f"{note}: {stderr or stdout}",
+                fixture_sha256=hashes,
+                stdout=stdout,
+                stderr=stderr,
+            )
+            for area in areas
+        ]
+
+    samples: list[Sample] = []
+    for area in areas:
+        raw_path = staging / area / "raw-samples.json"
+        if not raw_path.is_file():
+            samples.append(
+                Sample(
+                    area=area,
+                    classification="setup",
+                    sample=0,
+                    command=command,
+                    elapsed_ms=0,
+                    exit_code=exit_code,
+                    status="fail",
+                    note=f"missing in-process evidence file: {raw_path}",
+                    fixture_sha256={},
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+            )
+            continue
+
+        raw_samples = json.loads(raw_path.read_text())
+        for entry in raw_samples:
+            fixture_path = Path(entry["FixturePath"])
+            samples.append(
+                Sample(
+                    area=entry["Area"],
+                    classification=entry["Classification"],
+                    sample=int(entry["Sample"]),
+                    command=command
+                    + [
+                        f"in-process:{entry['Area']}",
+                        entry.get("ClockBoundary", ""),
+                    ],
+                    elapsed_ms=float(entry["ElapsedMs"]),
+                    exit_code=0 if entry["Status"] == "pass" else 1,
+                    status=entry["Status"],
+                    note=entry.get("Note", ""),
+                    fixture_sha256={str(fixture_path): entry["FixtureSha256"]},
+                    stdout=json.dumps(entry),
+                    stderr="",
+                )
+            )
+    return samples
+
+
 def summarize(samples: list[Sample]) -> list[dict[str, object]]:
     groups: dict[tuple[str, str], list[Sample]] = {}
     for sample in samples:
@@ -201,7 +319,15 @@ def summarize(samples: list[Sample]) -> list[dict[str, object]]:
         variance = statistics.pvariance(timings) if len(timings) > 1 else 0.0
         standard_deviation = statistics.pstdev(timings) if len(timings) > 1 else 0.0
         range_ms = maximum - minimum
-        budget_pass = budget is not None and maximum <= budget and range_ms <= median * 0.10
+        variance_pass = median > 0 and range_ms <= median * 0.10
+        if budget is None:
+            # Baseline-capture mode: require all samples pass and variance gate.
+            # A numeric release budget is locked later from the recorded median.
+            budget_pass = passed and variance_pass
+            gate = "PASS" if budget_pass else "FAIL"
+        else:
+            budget_pass = passed and maximum <= budget and variance_pass
+            gate = "PASS" if budget_pass else "FAIL"
         summaries.append({
             "area": area,
             "classification": classification,
@@ -214,8 +340,8 @@ def summarize(samples: list[Sample]) -> list[dict[str, object]]:
             "variance_ms2": round(variance, 3),
             "standard_deviation_ms": round(standard_deviation, 3),
             "budget_ms": budget,
-            "budget_pass": passed and budget_pass,
-            "gate": "PASS" if passed and budget_pass else "FAIL",
+            "budget_pass": budget_pass,
+            "gate": gate,
         })
     return summaries
 
@@ -270,12 +396,24 @@ def write_evidence(output: Path, samples: list[Sample], summaries: list[dict[str
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--areas", nargs="+", choices=DEFAULT_AREAS, default=list(DEFAULT_AREAS))
+    parser.add_argument(
+        "--areas",
+        nargs="+",
+        choices=list(DEFAULT_AREAS),
+        default=list(DEFAULT_AREAS),
+        help="areas to measure (process seams and/or app-internal editor seams)",
+    )
     parser.add_argument("--samples", type=int, default=5, help="samples per area (default: 5)")
     parser.add_argument("--output", type=Path, help="new evidence directory (default: /tmp/zaide-phase13/measurements/<UTC timestamp>)")
     parser.add_argument("--app", type=Path, default=ROOT / "src/bin/Debug/net10.0/Zaide", help="prebuilt desktop executable for startup samples")
     parser.add_argument("--netcoredbg", type=Path, default=os.getenv("ZAIDE_NETCOREDBG_PATH"), help="existing NetCoreDbg executable; never downloaded")
     parser.add_argument("--timeout", type=float, default=60, help="per process sample timeout in seconds")
+    parser.add_argument(
+        "--app-internal-timeout",
+        type=float,
+        default=120,
+        help="timeout for the combined in-process editor/large-file measurement host (seconds)",
+    )
     parser.add_argument("--startup-timeout", type=float, default=10, help="per startup sample timeout in seconds")
     return parser.parse_args()
 
@@ -289,7 +427,10 @@ def main() -> int:
     samples: list[Sample] = []
     current_area = "setup"
     try:
-        for area in args.areas:
+        process_requested = [area for area in args.areas if area in PROCESS_AREAS]
+        app_internal_requested = [area for area in args.areas if area in APP_INTERNAL_AREAS]
+
+        for area in process_requested:
             current_area = area
             if area == "startup":
                 if not args.app.is_file():
@@ -299,6 +440,16 @@ def main() -> int:
                 samples.extend(lsp_samples(args.samples, args.timeout))
             else:
                 samples.extend(process_samples(area, args.samples, args.timeout, adapter))
+
+        if app_internal_requested:
+            current_area = ",".join(app_internal_requested)
+            samples.extend(
+                app_internal_samples(
+                    app_internal_requested,
+                    args.samples,
+                    args.app_internal_timeout,
+                )
+            )
     except (OSError, RuntimeError, ValueError) as error:
         samples.append(Sample(current_area, "setup", 0, [], 0, None, "fail", str(error), {}, "", ""))
 
