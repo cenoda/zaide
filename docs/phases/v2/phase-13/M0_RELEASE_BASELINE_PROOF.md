@@ -2,7 +2,7 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); next is M3c.**
+**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); M3c complete (evidence-only); next is M4a.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
@@ -27,7 +27,14 @@ missing-server handling, cancel / restart / process-exit / dispose cleanup,
 project-context change, and stale generation / diagnostics / completion /
 hover / definition / close-reopen contracts found **no real production gap**;
 all recovery rows are green via existing Phase 10 proofs or accepted
-limitations (see §5 M3b inventory). No `src/` change and no new tests.
+limitations (see §5 M3b inventory). **M3c (2026-07-16) closed as evidence-only:**
+live audit of `DebugSessionService`, `DebugAdapterLocator`, adapter launch /
+initialize / start failure / missing-adapter / restart, stop / cancellation /
+debuggee-adapter process exit / disposal / child-process cleanup, stale session
+events and stack/variable/current-location projection, breakpoint session
+scoping, project-context change, and application-exit ordering found **no real
+production gap**; all recovery rows are green via existing Phase 12 proofs or
+accepted limitations (see §5 M3c inventory). No `src/` change and no new tests.
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -57,7 +64,7 @@ desktop/keyboard/focus/status evidence.
 | Settings load, migration, recovery | `SettingsService` constructs `SettingsMigrator`; `SettingsSerializer` accepts schema 1–3; `SettingsPathResolver` owns `settings.json`, `.tmp`, `.lastknowngood`, and `secrets.json` paths | Reuse Phase 8 / Phase 10 settings tests; no new recovery owner |
 | Build / Run / Test processes | `ProjectWorkflowService` owns operation state and uses the singleton `IManagedProcessRunner` / `ManagedProcessRunner` | Reuse Phase 11 workflow and runner proofs; M3a is gap-only |
 | C# language process | `LanguageSessionService` owns the LSP session; `LanguageDocumentBridge` owns ordered document sync | Reuse Phase 10 lifecycle proofs; M3b is gap-only |
-| DAP adapter / debuggee | `DebugSessionService` owns session lifecycle; `DebugAdapterLocator` resolves `ZAIDE_NETCOREDBG_PATH` before `PATH` | Reuse Phase 12 recovery proofs; M3c is gap-only |
+| DAP adapter / debuggee | `DebugSessionService` owns session lifecycle; `DebugAdapterLocator` resolves `ZAIDE_NETCOREDBG_PATH` before `PATH` | **M3c green (reused).** Phase 12 recovery proofs; no production gap |
 | Registration | `Program.ConfigureServices` registers the services above as UI-independent singletons | No DI ownership change authorized |
 | Exit order | `App.DisposeServicesOnExit`: debug session and projections → workflow → workflow projections → language services → project context → terminal | `ProjectWorkflowProjectionShutdownTests` already proves ordering; no new shutdown policy authorized |
 
@@ -110,7 +117,13 @@ repeat the full gate and record any intermittent failure by test name/pattern.
 | `LanguageCompletionTests` / `LanguageHoverTests` / `LanguageNavigationTests` | Stale version/generation discard; cancel; active-tab dismiss | **M3b green (supporting reuse)** for request-result recovery rows |
 | `LanguageSessionServiceDiTests` | DI singleton ownership of session + document bridge | **M3b green (supporting reuse)** |
 | `ProjectWorkflowProjectionShutdownTests` | App exit: language features after workflow kill; session dispose ordered after workflow | **M3b green (supporting reuse)** for app-exit language cleanup ordering |
-| `DebugSessionServiceTests` / `M6DebugRecoveryProofTests` | DAP launch, lifecycle, failure/restart, stale-event safety, dispose, real-adapter stop/recover/restart and missing-adapter recovery | Reuse for M3c. `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~DebugSessionServiceTests|FullyQualifiedName~M6DebugRecoveryProofTests'` |
+| `DebugSessionServiceTests` / `M6DebugRecoveryProofTests` | DAP launch, lifecycle, failure/restart, stale-event safety, dispose, real-adapter stop/recover/restart and missing-adapter recovery | **M3c green (reused).** `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~DebugSessionServiceTests|FullyQualifiedName~M6DebugRecoveryProofTests'` |
+| `M4DebugExecutionProofTests` | Real-adapter launch → breakpoint stop → step → stop | **M3c green (supporting reuse)** for real-adapter launch/stop path when adapter present |
+| `DebugAdapterLocatorTests` | `ZAIDE_NETCOREDBG_PATH` wins over PATH; missing path; actionable unavailable message | **M3c green (supporting reuse)** |
+| `DebugSessionServiceDiTests` | DI singleton `IDebugSessionService` + locator/factory | **M3c green (supporting reuse)** |
+| `ProjectDebugLaunchServiceTests` | Build→target→launch handoff; build/target/adapter failure releases gate | **M3c green (supporting reuse)** for pre-launch gate release |
+| `ProjectWorkflowProjectionShutdownTests` | App exit: debug session before debug projections before workflow | **M3c green (supporting reuse)** for app-exit debug cleanup ordering |
+| `DebugStackProjectionTests` / `DebugCurrentLocationViewModelTests` | Clear on non-Stopped; stale generation/frame replies ignored | **M3c green (supporting reuse)** for stale projection safety |
 
 ### M3a Workflow / Process Recovery Inventory (2026-07-16)
 
@@ -202,6 +215,75 @@ and language dispose-order rows in `ProjectWorkflowProjectionShutdownTests`.
 No Phase 13 `TOFIX.md` entry: no unresolved real finding. No real-server Linux
 child-process re-smoke required for M3b (no orphan-child or lifecycle gap
 demonstrated beyond existing Phase 10 real-server proofs and unit dispose).
+
+### M3c DAP / Debug-Session Recovery Inventory (2026-07-16)
+
+Live audit of `DebugSessionService`, `DebugAdapterLocator`,
+`NetCoreDbgAdapterSession` / `DebugAdapterSessionFactory`, adapter launch
+initialize / configurationDone, start failure and missing-adapter handling,
+restart after failure/stop, stop / cancellation / dispose, adapter and DAP
+terminated/exited/process-exit cleanup, stale generation events, stack /
+variable / current-location projection clear and stale-reply discard, breakpoint
+verification session scoping, project-context change while active, and
+`App.DisposeServicesOnExit` debug ordering.
+**Result: evidence-only closeout — no production gap, no production change, no
+new tests.** Focused gate (38 tests; real-adapter proofs no-op when the adapter
+binary is absent):
+
+```bash
+ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg \
+  dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~DebugSessionServiceTests|FullyQualifiedName~M6DebugRecoveryProofTests'
+```
+
+**Adapter environment:** real NetCoreDbg proofs require
+`ZAIDE_NETCOREDBG_PATH` pointing at an existing `netcoredbg` executable (M0
+records `/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg`). Phase 13 does
+not download or bundle the adapter. When the binary is absent,
+`M6DebugRecoveryProofTests.ProductionProof_StopRecoverAndRestart_*` and
+`M4DebugExecutionProofTests.ProductionProof_LaunchBreakpointStepAndStop` return
+early without failing; missing-adapter recovery still runs without a real binary
+(`ProductionProof_MissingAdapter_IsRecoverableFailedState`, unit
+`StartLaunchAsync_WhenAdapterMissing_*`). No new Linux real-adapter re-smoke
+was required for M3c (no orphan-child or lifecycle gap demonstrated beyond
+existing Phase 12 proofs and unit dispose).
+
+Supporting reuse (not required in the focused filter; cited by contract below):
+`M4DebugExecutionProofTests`, `DebugAdapterLocatorTests`,
+`DebugSessionServiceDiTests`, `ProjectDebugLaunchServiceTests`,
+`ProjectWorkflowProjectionShutdownTests` (debug dispose order),
+`DebugStackProjectionTests`, `DebugCurrentLocationViewModelTests`.
+
+| Recovery contract | Owner / lifecycle seam | Exact evidence (reused) | Disposition |
+|---|---|---|---|
+| Adapter discovery: env path wins; PATH fallback; null when missing; actionable message | `DebugAdapterLocator.Resolve` / `UnavailableMessage` | `DebugAdapterLocatorTests.Resolve_ConfiguredPathWins_WhenFileExists`; `Resolve_ConfiguredPathMissing_FallsThroughToPath`; `Resolve_ReturnsNull_WhenNoCandidateExists`; `UnavailableMessage_IsActionable` | **Green** |
+| DAP launch order: initialize → launch → setBreakpoints* → configurationDone → stopped | `DebugSessionService.StartLaunchAsync` | `DebugSessionServiceTests.StartLaunchAsync_RunsDapOrdering_InitializeLaunchBreakpointsConfigurationDone`; `StartLaunchAsync_PublishesStoppedState_WithThreadInfo` | **Green** |
+| Missing adapter → `AdapterUnavailable` Failed; no session start; recoverable | locator null + `ReportPreLaunchFailureAsync` | `StartLaunchAsync_WhenAdapterMissing_ReturnsAdapterUnavailable`; `M6DebugRecoveryProofTests.ProductionProof_MissingAdapter_IsRecoverableFailedState` | **Green** |
+| Ineligible / concurrent start rejected | eligibility + `IsStartAllowed` | `StartLaunchAsync_WhenContextIneligible_ReturnsRejectedContext`; `StartLaunchAsync_WhenAlreadyActive_ReturnsRejectedConcurrent`; `IneligibleContext_PublishesUnavailable` | **Green** |
+| Initialize timeout / stopped never arrives / launch exception → `StartupFailed`; session cleaned | timeout + catch paths | `StartLaunchAsync_WhenInitializeTimesOut_ReturnsStartupFailed`; `StartLaunchAsync_WhenStoppedNeverArrives_ReturnsStartupFailed`; `StartLaunchAsync_LaunchException_PublishesStartupFailedAndCleansSession` | **Green** |
+| Stop: Idle + `StoppedByUser`; idempotent disconnect/dispose | `StopAsync` + `TearDownActiveSessionAsync` | `StopAsync_FromRunning_RecordsStoppedByUserOutcome`; `StopAsync_FromStopped_RecordsStoppedByUserOutcome`; `StopAsync_IsIdempotent_AndDisconnectsAdapter` | **Green** |
+| Stop during startup abandons adapter; restart allowed | generation bump + `AbandonSessionAsync` | `StopDuringStartup_AbandonsAdapter_AllowsRestart` | **Green** |
+| Adapter process exit / terminated → Failed/`AdapterExited`; live data cleared; diagnostics retained; restart allowed | `HandleSessionEndedAsync` / `FailActiveSessionAsync` | `AdapterProcessExit_PublishesFailed_AndDisconnectsSession`; `TerminatedEvent_PublishesAdapterExitedFailure`; `AdapterExited_ClearsLiveData_RetainsDiagnostics_AllowsStart`; `StartAfterFailure_SucceedsWithNewGeneration` | **Green** |
+| DAP `exited` event uses same end path as terminated/process exit | `OnSessionExited` → `HandleSessionEndedAsync` | Shared path with terminated/process-exit proofs above; fake `SimulateExited` available; no separate production divergence | **Green** |
+| Protocol/request timeout or step error → Failed; restart allowed; diagnostics retained | `ExecuteSessionRequestAsync` / `FailActiveSessionAsync` | `ContinueAsync_RequestTimeout_FailsSessionAndAllowsRestart`; `StepOverAsync_ProtocolError_FailsSession_RetainsDiagnostics` | **Green** |
+| Pre-launch failure (build/target etc.) → Failed; start still allowed | `ReportPreLaunchFailureAsync`; handoff finally | `ReportPreLaunchFailure_PublishesFailedAndAllowsStart`; `ProjectDebugLaunchServiceTests.StartDebuggingAsync_BuildFailure_ReturnsBuildFailedAndReleasesHandoff`; `StartDebuggingAsync_TargetResolutionFailure_*`; `StartDebuggingAsync_AdapterFailure_ReleasesHandoff` | **Green** |
+| Project-context change while active tears down session and bumps generation | `ReconcileContextAsync` | `ContextChangeWhileActive_TearsDownSession_AndBumpsGeneration` | **Green** |
+| Stale session events after generation bump / recovery ignored | generation checks on stopped/output/end | `LateStoppedEvent_FromOldGeneration_IsIgnored`; `LateEventAfterRecovery_DoesNotMutateNewSession` | **Green** |
+| Breakpoint verification is session-scoped; cleared on stop/fail; idle replace no-ops | verifications list + `ReplaceBreakpointsBySourceAsync` | `SetBreakpoints_ProjectsVerifiedPendingRejectedOutcomes`; `ReplaceBreakpointsBySourceAsync_WhenIdle_NoOps`; stop/fail tests assert empty verifications | **Green** |
+| Stack/variable projection clears on non-Stopped; stale generation/frame replies ignored | `DebugStackProjectionViewModel` | `DebugStackProjectionTests.Running_ClearsProjection`; `StaleGenerationReply_IsIgnored`; `StaleFrameSelectionReply_IsIgnored` | **Green** |
+| Current-location marker clears when session leaves Stopped | `DebugCurrentLocationViewModel` | `DebugCurrentLocationViewModelTests.Continue_ClearsMarker` | **Green** |
+| Service dispose disconnects/kills active adapter session | `DebugSessionService.Dispose` → `TearDownActiveSessionAsync` | `Dispose_DisconnectsActiveSession` | **Green** |
+| Child-process cleanup: disconnect then `Kill(entireProcessTree: true)` | `NetCoreDbgAdapterSession.DisconnectAsync` / `ForceKillAsync` / `DisposeAsync`; service teardown | Unit dispose/stop/kill paths; `M6DebugRecoveryProofTests.ProductionProof_StopRecoverAndRestart_ClearsLiveStateAndAdapterProcess` asserts adapter PID gone when adapter present. No new multi-child Linux smoke — no demonstrated orphan-child gap | **Green** (no real gap; extra Linux smoke not required) |
+| Real-adapter launch → breakpoint → step → stop | production session + NetCoreDbg | `M4DebugExecutionProofTests.ProductionProof_LaunchBreakpointStepAndStop` (skips if adapter missing) | **Green** (conditional on `ZAIDE_NETCOREDBG_PATH`) |
+| DI: single shared `IDebugSessionService` + locator/factory | `Program.ConfigureServices` | `DebugSessionServiceDiTests.ConfigureServices_ResolvesDebugSessionService`; `ConfigureServices_ResolvesOneSharedDebugSessionServiceSingleton`; `ConfigureServices_ResolvesDebugAdapterLocatorAndFactory` | **Green** |
+| App exit: debug session → debug projections → workflow → language | `App.DisposeServicesOnExit` | `ProjectWorkflowProjectionShutdownTests.DisposeServicesOnExit_OrdersWorkflowBeforeProjectionsBeforeLanguage`; `DisposeServicesOnExit_KillsRunnerBeforeLanguageDispose` | **Green** |
+| Launch-only local C# debugging; no attach/remote/test debugging; no conditional/log/data breakpoints | Phase 12 product boundary | Carry-over triage (this proof §6); Phase 12 limitations | **Accepted limitation** |
+| Real-adapter production proofs skip (return) when binary absent | `AdapterAndFixtureAvailable()` | Documented environment requirement; unit missing-adapter and fake lifecycle proofs remain unconditional | **Accepted limitation** (not a recovery defect) |
+| Workflow-console DAP fixture is single-thread / shallow frame | M0 fixture inventory | Critical-path matrix accepts unless M4 exposes a real gap | **Accepted limitation** |
+
+No Phase 13 `TOFIX.md` entry: no unresolved real finding. No real-adapter Linux
+child-process re-smoke required for M3c beyond existing Phase 12 M4/M6 proofs
+and unit dispose (no orphan-child or lifecycle gap demonstrated).
 
 ### Settings Compatibility Matrix
 
@@ -537,7 +619,7 @@ nearest-rank p95 below 50 ms).
 | M2 | **Complete (evidence-only):** orphan `.tmp` with valid primary proven by `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`. Production already satisfied Phase 8 D2; no `src/` change. All other settings/secret rows remain green via named existing tests. |
 | M3a | **Complete (evidence-only, 2026-07-16):** live inventory found no production gap; all recovery rows green via existing tests or accepted limitations (see §5 M3a inventory). No `src/` change; no new tests. Focused filter 35 passed. |
 | M3b | **Complete (evidence-only, 2026-07-16):** live inventory of language-session / document-bridge / stale-request recovery found no production gap; all recovery rows green via existing Phase 10 tests or accepted limitations (see §5 M3b inventory). No `src/` change; no new tests. Focused filter 36 passed. |
-| M3c | Evidence-only unless focused DAP recovery recheck exposes a real gap. |
+| M3c | **Complete (evidence-only, 2026-07-16):** live inventory of DAP / debug-session recovery found no production gap; all recovery rows green via existing Phase 12 tests or accepted limitations (see §5 M3c inventory). No `src/` change; no new tests. Focused filter 38 passed. Real-adapter proofs require `ZAIDE_NETCOREDBG_PATH`; they skip when absent. |
 | M4a | Compose the bounded §7 path after M2/M3 gates or documented no-ops. |
 | M4b | Owns completing Linux desktop smoke, platform status, keyboard/focus/status, and all Phase 12 display rows. M0 only locks the empty/method matrices in §7; rows remain **not validated** until M4b. |
 | M5 | Re-run comparable budgets and the full sequential gate; truth-sync only after every matrix row has an explicit status. |
@@ -558,7 +640,8 @@ nearest-rank p95 below 50 ms).
 **M2 is closed** (evidence-only orphan-temp D2 proof). **M3a is closed**
 (evidence-only workflow/process recovery inventory; no production gap).
 **M3b is closed** (evidence-only language-session / LSP recovery inventory; no
-production gap). The exact next milestone is **M3c** (gap-only DAP /
-debug-session recovery inventory). App-internal numeric evidence remains
-command-path only and is not interactive desktop, Avalonia render,
+production gap). **M3c is closed** (evidence-only DAP / debug-session recovery
+inventory; no production gap). The exact next milestone is **M4a** (bounded
+critical-path regression per §7 step matrix). App-internal numeric evidence
+remains command-path only and is not interactive desktop, Avalonia render,
 keyboard-routing, or UX proof.
