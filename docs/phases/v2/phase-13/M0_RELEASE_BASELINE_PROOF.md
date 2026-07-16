@@ -2,7 +2,7 @@
 
 ## Gate Result
 
-**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); next is M3b.**
+**Status: M0 COMPLETE — GO for post-M0 work; M1b skipped (all locked budgets already met); M2 complete (evidence-only); M3a complete (evidence-only); M3b complete (evidence-only); next is M3c.**
 This M0 evidence pass verified the live baseline, ownership, reusable tests,
 fixtures, recovery coverage, and carry-over work. The M1a local runner records
 five comparable samples for startup, real-server LSP, real-child workflow
@@ -21,7 +21,13 @@ closed as evidence-only:** live audit of `ProjectWorkflowService`,
 `ManagedProcessRunner`, `IProjectOperationGate`, context-change / cancel /
 dispose / app-exit cleanup found **no real production gap**; all recovery rows
 are green via existing focused tests or accepted limitations (see §5 M3a
-inventory). No `src/` change and no new tests.
+inventory). **M3b (2026-07-16) closed as evidence-only:** live audit of
+`LanguageSessionService`, `LanguageDocumentBridge`, start eligibility /
+missing-server handling, cancel / restart / process-exit / dispose cleanup,
+project-context change, and stale generation / diagnostics / completion /
+hover / definition / close-reopen contracts found **no real production gap**;
+all recovery rows are green via existing Phase 10 proofs or accepted
+limitations (see §5 M3b inventory). No `src/` change and no new tests.
 
 **Explicit boundary:** app-internal editor/large-file evidence is command-path
 latency only. It does **not** prove Avalonia rendering, interactive UX, keyboard
@@ -98,7 +104,12 @@ repeat the full gate and record any intermittent failure by test name/pattern.
 | `ProjectWorkflowServiceTests` | Context/concurrency rejection, cancellation, generation safety, disposal and runner kill | **M3a green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowServiceTests'` |
 | `ProjectWorkflowProjectionShutdownTests` | Exit ordering, subscriptions, shared process-runner ownership | **M3a green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ProjectWorkflowProjectionShutdownTests'` |
 | `ProjectOperationGateTests` | Shared-gate mutual exclusion, workflow vs debug handoff, lease release frees admission | **M3a green (supporting reuse)** for shared-gate release rows. Not required in the M3a focused filter; cited by name below. |
-| `LanguageSessionServiceTests` | Eligible-context start, restart/cancellation, process exit, stale events, dispose, missing-server recovery | Reuse for M3b. `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~LanguageSessionServiceTests'` |
+| `LanguageSessionServiceTests` | Eligible-context start, restart/cancellation, process exit, stale events, dispose, missing-server recovery | **M3b green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~LanguageSessionServiceTests'` |
+| `LanguageDocumentSyncTests` | didOpen/didChange/didClose ordering, reconnect resync, generation cancel, stale snapshot ignore, close/reopen | **M3b green (reused).** `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~LanguageDocumentSyncTests'` |
+| `LanguageDiagnosticsServiceTests` | Publish/clear, stale generation/version ignore, close clear, session-not-ready clear | **M3b green (supporting reuse)** for stale-diagnostics rows |
+| `LanguageCompletionTests` / `LanguageHoverTests` / `LanguageNavigationTests` | Stale version/generation discard; cancel; active-tab dismiss | **M3b green (supporting reuse)** for request-result recovery rows |
+| `LanguageSessionServiceDiTests` | DI singleton ownership of session + document bridge | **M3b green (supporting reuse)** |
+| `ProjectWorkflowProjectionShutdownTests` | App exit: language features after workflow kill; session dispose ordered after workflow | **M3b green (supporting reuse)** for app-exit language cleanup ordering |
 | `DebugSessionServiceTests` / `M6DebugRecoveryProofTests` | DAP launch, lifecycle, failure/restart, stale-event safety, dispose, real-adapter stop/recover/restart and missing-adapter recovery | Reuse for M3c. `ZAIDE_NETCOREDBG_PATH=/tmp/zaide-phase12-m0-netcoredbg/netcoredbg/netcoredbg dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~DebugSessionServiceTests|FullyQualifiedName~M6DebugRecoveryProofTests'` |
 
 ### M3a Workflow / Process Recovery Inventory (2026-07-16)
@@ -136,6 +147,61 @@ dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~ManagedProcessRun
 | `IProjectOperationGate` not disposed in `App.DisposeServicesOnExit` | App exit sequence | Live inspection: gate is a process-local `SemaphoreSlim` singleton; app process exit reclaims it; not a child-process orphan path | **Accepted limitation** |
 
 No Phase 13 `TOFIX.md` entry: no unresolved real finding.
+
+### M3b Language-Session / LSP Recovery Inventory (2026-07-16)
+
+Live audit of `LanguageSessionService`, `LanguageDocumentBridge`, language-server
+start eligibility and missing-server handling, cancellation / restart / process
+exit / disposal / child-process cleanup, workspace/project-context changes, and
+stale generation / diagnostics / completion / hover / definition responses plus
+document close/reopen ordering.
+**Result: evidence-only closeout — no production gap, no production change, no
+new tests.** Focused gate (36 tests):
+
+```bash
+dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~LanguageSessionServiceTests|FullyQualifiedName~LanguageDocumentSyncTests'
+```
+
+Supporting reuse (not required in the focused filter; cited by contract below):
+`LanguageDiagnosticsServiceTests`, `LanguageCompletionTests`,
+`LanguageHoverTests`, `LanguageNavigationTests`, `LanguageSessionServiceDiTests`,
+and language dispose-order rows in `ProjectWorkflowProjectionShutdownTests`.
+
+| Recovery contract | Owner / lifecycle seam | Exact evidence (reused) | Disposition |
+|---|---|---|---|
+| Eligible context (`SingleProject` / `Selected`) starts session → Ready | `LanguageSessionService.ReconcileAsync` / `StartSessionAsync` / `IsEligible` | `LanguageSessionServiceTests.SingleProject_StartsSession_AndBecomesReady`; `Selected_StartsSession_AndBecomesReady` | **Green** |
+| Ineligible context never starts server (Unavailable / Loading mapping) | `IsEligible` + `BuildInterimSnapshot` | `IneligibleContext_NeverStartsServer` (theory over Unloaded/Loading/NoProject/Unsupported/Ambiguous/Failed) | **Green** |
+| Missing server binary → structured `MissingServerBinary` failure; no start | `StartSessionAsync` binary locator null path | `MissingServerBinary_PublishesStructuredFailure_WithoutCrashing` | **Green** |
+| Process start failure → `ProcessStartFailed` | `Win32Exception` catch in `StartSessionAsync` | `ProcessStartFailure_PublishesProcessStartFailed` | **Green** |
+| Initialize / start exception → `InitializeFailed` | general `Exception` catch in `StartSessionAsync` | `StartFailure_PublishesStructuredInitializeFailed` | **Green** |
+| Cancellation during restart does not publish Ready for the cancelled gen | `RestartAsync` + linked CTS / `OperationCanceledException` | `CancellationDuringRestart_ThrowsAndDoesNotPublishReady` | **Green** |
+| Explicit restart tears down and starts higher generation | `RestartAsync` + generation bump | `ExplicitRestart_StartsNewSession_WithHigherGeneration` | **Green** |
+| Project-context replacement tears down old session and starts new generation when eligible | `OnProjectContextChanged` → `ReconcileAsync` + `TearDownSessionLockedAsync` | `ContextReplacement_TearsDownOldSession_AndStartsNewGenerationWhenEligible` | **Green** |
+| Unexpected server process exit → Failed/`ServerExited`, generation increment | `OnSessionProcessExited` / `HandleProcessExitedAsync` | `ServerProcessExit_PublishesFailed_AndIncrementsGeneration` | **Green** |
+| Stale process-exit from prior generation ignored after context replacement | generation check in `HandleProcessExitedAsync` | `StaleProcessExit_IsIgnored_AfterContextReplacement` | **Green** |
+| Shutdown + force-kill both fail → `ShutdownFailed` structured failure | `TearDownSessionLockedAsync` nested catch | `ShutdownAndForceKillFailure_PublishesShutdownFailed` | **Green** |
+| Service dispose tears down active session (kill/dispose; no leaked fake handles) | `LanguageSessionService.Dispose` ForceKill + `DisposeAsync` | `Dispose_TearsDownActiveSession_WithoutLeakedHandles` | **Green** |
+| Child-process kill uses `Kill(entireProcessTree: true)` on real session type | `CsharpLsSession.ForceKillAsync` / `DisposeAsync` | Production path; unit dispose proof uses session fake. Phase 10 M0 real-server `restart-no-leak` smoke already recorded (no orphan PIDs across generations). No new Linux child-process smoke — no demonstrated orphan-child gap | **Green** (no real gap; extra Linux smoke not required) |
+| DI: single shared `ILanguageSessionService` + `ILanguageDocumentBridge` | `Program.ConfigureServices` | `LanguageSessionServiceDiTests.ConfigureServices_ResolvesOneSharedLanguageSessionServiceSingleton`; `ConfigureServices_ResolvesLanguageDocumentBridge` | **Green** |
+| App exit: language feature services → bridge → session after workflow kill | `App.DisposeServicesOnExit` | `ProjectWorkflowProjectionShutdownTests.DisposeServicesOnExit_OrdersWorkflowBeforeProjectionsBeforeLanguage`; `DisposeServicesOnExit_KillsRunnerBeforeLanguageDispose` | **Green** |
+| didOpen version 1; ordered didChange; didClose; close blocks further edits | `LanguageDocumentBridge` | `OpenEligibleCsWhileReady_SendsSingleDidOpenVersion1`; `EditContent_SendsOrderedDidChangeWithMonotonicVersions`; `Close_SendsDidCloseAndFurtherEditsDoNotSync` | **Green** |
+| Close then reopen starts new didOpen cycle at version 1 | bridge track/open | `Reopen_StartsNewDidOpenCycleAtVersion1` | **Green** |
+| Session not ready withholds sync until Ready resync | `TryOpenDocumentAsync` / `ResyncAllOpenDocumentsAsync` | `SessionNotReady_DoesNotSendUntilReady`; `SessionBecomesReadyWithOpenDocs_ResyncsDidOpen` | **Green** |
+| Generation bump resyncs and cancels in-flight sync; ignores stale callbacks | `_syncGeneration` + `_generationCts` | `GenerationBump_ResyncsAndIgnoresStaleCallbacks`; `InFlightSyncWork_CancelsOnGenerationChange` | **Green** |
+| Older-generation delayed snapshot ignored (no sync regression) | `ApplySessionSnapshotAsync` gen compare | `StaleOlderGenerationSnapshot_IsIgnoredAndKeepsNewerSync` | **Green** |
+| Failed session mid-open does not crash; further sends dropped | bridge open error path | `FailedSessionMidOpen_DoesNotCrashAndDropsFurtherSends` | **Green** |
+| Stale content after close ignored | `HandleContentChangedAsync` untracked path | `StaleContentAfterClose_IsIgnored` | **Green** |
+| Stale diagnostics (generation / version / closed / session not ready) ignored or cleared | `LanguageDiagnosticsService` | `StaleGeneration_IsIgnored`; `MismatchedVersion_IsIgnored`; `ClosedDocument_IsIgnoredAndClearsOnClose`; `SessionNotReady_ClearsDiagnosticsAndProjectsState`; `GenerationChange_ClearsPriorDiagnostics` | **Green** |
+| Stale completion / hover version responses discarded | completion / hover services | `LanguageCompletionTests.StaleVersionResponse_IsDiscarded`; `LanguageHoverTests.StaleVersionResponse_IsDiscarded` | **Green** |
+| Stale definition generation / document version not accepted | navigation service | `LanguageNavigationTests.StaleGeneration_DoesNotAcceptResult`; `StaleDocumentVersion_DoesNotAcceptResult`; `CancelledRequest_DoesNotUpdateSurfaceOrNavigate` | **Green** |
+| Document-sync gate held across async LSP I/O (serial ordering) | Phase 10 TOFIX F6 | Carry-over triage (this proof §6) | **Accepted limitation** |
+| `CsharpLsSession` monolith size | Phase 10 TOFIX F10 | Carry-over triage | **Accepted limitation** (defer maintainability) |
+| O(n) diagnostics document lookup | Phase 10 TOFIX F11 | Carry-over triage | **Accepted limitation** (defer) |
+| No automatic restart after unexpected `ServerExited` | `HandleProcessExitedAsync` publishes Failed only | Product policy: user/context-driven `RestartAsync` / new eligible context; exit does not auto-respawn | **Accepted limitation** |
+
+No Phase 13 `TOFIX.md` entry: no unresolved real finding. No real-server Linux
+child-process re-smoke required for M3b (no orphan-child or lifecycle gap
+demonstrated beyond existing Phase 10 real-server proofs and unit dispose).
 
 ### Settings Compatibility Matrix
 
@@ -470,7 +536,7 @@ nearest-rank p95 below 50 ms).
 | M1b | **Skipped (zero slices).** Every locked M0 budget already passes; no production performance fix is authorized from M0. |
 | M2 | **Complete (evidence-only):** orphan `.tmp` with valid primary proven by `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`. Production already satisfied Phase 8 D2; no `src/` change. All other settings/secret rows remain green via named existing tests. |
 | M3a | **Complete (evidence-only, 2026-07-16):** live inventory found no production gap; all recovery rows green via existing tests or accepted limitations (see §5 M3a inventory). No `src/` change; no new tests. Focused filter 35 passed. |
-| M3b | Evidence-only unless locked LSP measurements/recovery recheck expose a real gap. |
+| M3b | **Complete (evidence-only, 2026-07-16):** live inventory of language-session / document-bridge / stale-request recovery found no production gap; all recovery rows green via existing Phase 10 tests or accepted limitations (see §5 M3b inventory). No `src/` change; no new tests. Focused filter 36 passed. |
 | M3c | Evidence-only unless focused DAP recovery recheck exposes a real gap. |
 | M4a | Compose the bounded §7 path after M2/M3 gates or documented no-ops. |
 | M4b | Owns completing Linux desktop smoke, platform status, keyboard/focus/status, and all Phase 12 display rows. M0 only locks the empty/method matrices in §7; rows remain **not validated** until M4b. |
@@ -490,7 +556,9 @@ nearest-rank p95 below 50 ms).
 
 **M0 is closed.** All locked performance budgets are met, so **M1b is skipped**.
 **M2 is closed** (evidence-only orphan-temp D2 proof). **M3a is closed**
-(evidence-only workflow/process recovery inventory; no production gap). The
-exact next milestone is **M3b** (gap-only language-session / LSP recovery
-inventory). App-internal numeric evidence remains command-path only and is not
-interactive desktop, Avalonia render, keyboard-routing, or UX proof.
+(evidence-only workflow/process recovery inventory; no production gap).
+**M3b is closed** (evidence-only language-session / LSP recovery inventory; no
+production gap). The exact next milestone is **M3c** (gap-only DAP /
+debug-session recovery inventory). App-internal numeric evidence remains
+command-path only and is not interactive desktop, Avalonia render,
+keyboard-routing, or UX proof.

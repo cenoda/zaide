@@ -3,24 +3,29 @@
 ## Status
 
 **M0 complete (2026-07-16); M2 complete (2026-07-16, evidence-only); M3a
-complete (2026-07-16, evidence-only).** The M1a local, production-neutral
-measurement runner recorded five samples for Startup, LSP, Build, Run, Test,
-and DAP. The M0 test-only app-internal measurement seam
-(`Phase13M0EditorMeasurementSeam` + `tools/phase13-measure.py --areas editor
-large-file`) recorded 20 functional samples for editor open/edit/save/restore
-and 8 MiB document load under quiet-machine conditions, with post-save restore
-verification and fixture SHA-256. Nearest-rank p95 is locked below 50 ms
-(editor **0.289 ms**, large-file **15.705 ms**). These are command-path latency
-budgets, not UX, Avalonia render, keyboard-routing, or desktop-responsiveness
-budgets. M4b owns completing desktop/keyboard/focus/status evidence; M0 only
-locks the matrix and method. **M1b is skipped** (all locked budgets already
-met). **M2 is complete (evidence-only):** production already satisfied Phase 8
-D2 (load reads only the primary path); the focused proof is
+complete (2026-07-16, evidence-only); M3b complete (2026-07-16,
+evidence-only).** The M1a local, production-neutral measurement runner recorded
+five samples for Startup, LSP, Build, Run, Test, and DAP. The M0 test-only
+app-internal measurement seam (`Phase13M0EditorMeasurementSeam` +
+`tools/phase13-measure.py --areas editor large-file`) recorded 20 functional
+samples for editor open/edit/save/restore and 8 MiB document load under
+quiet-machine conditions, with post-save restore verification and fixture
+SHA-256. Nearest-rank p95 is locked below 50 ms (editor **0.289 ms**, large-file
+**15.705 ms**). These are command-path latency budgets, not UX, Avalonia render,
+keyboard-routing, or desktop-responsiveness budgets. M4b owns completing
+desktop/keyboard/focus/status evidence; M0 only locks the matrix and method.
+**M1b is skipped** (all locked budgets already met). **M2 is complete
+(evidence-only):** production already satisfied Phase 8 D2 (load reads only the
+primary path); the focused proof is
 `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`.
 **M3a is complete (evidence-only):** live audit of workflow/process recovery
 found no production gap; all recovery rows are green via existing focused tests
 or accepted limitations (see `M0_RELEASE_BASELINE_PROOF.md` §5 M3a inventory).
-No production behavior change; no new tests. Exact next milestone: **M3b**.
+**M3b is complete (evidence-only):** live audit of language-session / LSP
+recovery found no production gap; all recovery rows are green via existing
+Phase 10 focused tests or accepted limitations (see
+`M0_RELEASE_BASELINE_PROOF.md` §5 M3b inventory). No production behavior change;
+no new tests. Exact next milestone: **M3c**.
 
 **Out-of-band bugfix (not Phase 13 hardening):** ISSUE-006 fixed a production
 crash in Phase 9 M6 selection-status projection (`EditorView` called
@@ -254,7 +259,7 @@ and ready for release closeout on the supported Linux validation environment.
 | **M1b** | **Skipped (2026-07-16).** Optional performance fixes only for an M0-locked budget miss. Every locked budget already passes under M0/M1a evidence, so M1b is zero slices; M5 remeasurement remains the later recheck. | M0 proof records all budgets already met; no production change | omit (zero slices) |
 | **M2** | **Complete (2026-07-16, evidence-only).** M0 named one gap: orphan `settings.json.tmp` beside a valid primary. Live `SettingsService.TryLoadFrom` already reads only the primary path and never promotes/overwrites/deletes the primary from an orphan temp — Phase 8 D2 already held. Added focused proof `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative` (conflicting orphan content; primary values load; primary bytes unchanged; orphan not promoted). No production code change; no new recovery mode, migration policy, or user-facing recovery surface. All other matrix rows remain green via existing named tests. | Focused test + sequential build/test + `git diff --check` | `test(phase-13): prove orphan settings temp leaves primary authoritative` |
 | **M3a** | **Complete (2026-07-16, evidence-only).** Live inventory of `ProjectWorkflowService`, `ManagedProcessRunner`, `IProjectOperationGate`, context-change / cancel / dispose / app-exit cleanup found **no real production gap**. All recovery rows green via reused `ManagedProcessRunnerTests`, `ProjectWorkflowServiceTests`, `ProjectWorkflowProjectionShutdownTests` (plus supporting `ProjectOperationGateTests` for gate lease release), or accepted limitations (no op timeout, single runner owner, gate not disposed on app exit). No production code change; no new tests; no multi-child Linux smoke (no orphan-child gap). Focused filter: 35 passed. | Focused workflow/process tests (named existing); sequential build/test | `docs(phase-13): close M3a workflow process recovery inventory` |
-| **M3b** | Gap-only: inventory Phase 10 language-session recovery proofs first; harden and prove only real gaps in LSP lifecycle recovery and language-session cleanup. | Focused language-session tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden LSP recovery` or docs no-op commit if green |
+| **M3b** | **Complete (2026-07-16, evidence-only).** Live inventory of `LanguageSessionService`, `LanguageDocumentBridge`, start eligibility / missing-server, cancel / restart / process-exit / dispose, project-context change, and stale generation / diagnostics / completion / hover / definition / close-reopen found **no real production gap**. All recovery rows green via reused `LanguageSessionServiceTests`, `LanguageDocumentSyncTests` (plus supporting diagnostics/completion/hover/navigation/DI/shutdown proofs), or accepted limitations (Phase 10 F6/F10/F11; no auto-restart after `ServerExited`). No production code change; no new tests; no Linux child-process re-smoke (no orphan-child gap). Focused filter: 36 passed. | Focused language-session/document-bridge tests (named existing); sequential build/test | `docs(phase-13): close M3b language session recovery inventory` |
 | **M3c** | Gap-only: inventory Phase 12 DAP recovery proofs first (`M6DebugRecoveryProofTests`, `DebugSessionServiceTests`); harden and prove only real gaps in DAP lifecycle recovery and adapter/debuggee cleanup. | Focused debug-session tests (new or named existing); Linux child-process smoke only if a gap requires it; sequential build/test | `fix(phase-13): harden DAP recovery` or docs no-op commit if green |
 | **M4a** | Add only the M0-defined automated critical-path regression (prefer composing existing Phase 10–12 proofs). Respect the step matrix: headless vs real-child boundary, env requirements, and max duration. | Focused golden-path test/evidence; sequential build/test | `test(phase-13): cover V2 critical path` |
 | **M4b** | Record the Linux release, keyboard/focus/status, and adopted visual/gesture matrices on a real Linux desktop with a display. Fill in the platform matrix rows for Windows and macOS — default **not validated** unless prior evidence exists; M4b does **not** require running on those platforms, only recording their honest status. Display-dependent Phase 12 M7 rows are re-smoked on the Linux desktop or explicitly marked **not validated** with reason. | `M4_RELEASE_SMOKE_EVIDENCE.md`; every matrix row status recorded | `docs(phase-13): record release smoke evidence` |
@@ -347,12 +352,15 @@ structural revert baseline; any full-phase rollback targets that commit.
 
 ## Exact Next Step
 
-**M0, M2, and M3a are closed.** M2 was **evidence-only** (no production fix):
+**M0, M2, M3a, and M3b are closed.** M2 was **evidence-only** (no production
+fix):
 `Phase8ProofOfConceptTests.OrphanTemp_WithValidPrimary_PrimaryRemainsAuthoritative`
 proves Phase 8 D2 for orphan `.tmp` + valid primary. M3a was **evidence-only**
 (no production fix, no new tests): workflow/process recovery inventory is fully
 green via existing Phase 11/12 proofs; see `M0_RELEASE_BASELINE_PROOF.md` §5.
-Proceed to **M3b only**: gap-only language-session / LSP recovery inventory
-(reuse green Phase 10 proofs; harden only real gaps). Do not start M1b
-(skipped), M3c, M4, or production performance work unless a later remeasurement
-creates a real locked-budget miss.
+M3b was **evidence-only** (no production fix, no new tests): language-session /
+LSP recovery inventory is fully green via existing Phase 10 proofs; see
+`M0_RELEASE_BASELINE_PROOF.md` §5 M3b inventory. Proceed to **M3c only**:
+gap-only DAP / debug-session recovery inventory (reuse green Phase 12 proofs;
+harden only real gaps). Do not start M1b (skipped), M4, or production
+performance work unless a later remeasurement creates a real locked-budget miss.
