@@ -12,10 +12,10 @@ global across versions so historical references stay unambiguous.
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
-[Roadmap V3 discovery draft](../roadmap/V3.md) is direction-setting only; no V3
-phase plan exists and Phase 14 implementation is not active. The expected next
-implementation work, after explicit approval and independent M0 plans, is the
-pre-Phase-14 refactor sequence recorded in that draft.
+[Roadmap V3](../roadmap/V3.md) implementation order is accepted. No V3 phase
+plan exists and Phase 14 implementation is not active. Refactor 6.1 M0 planning
+is the next authorized task; production work still requires acceptance of its
+independent live-code-verified plan.
 
 ## Archive Policy
 

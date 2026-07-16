@@ -5,6 +5,11 @@
 **Created:** 2026-07-08  
 **Purpose:** Short pause-point report after Phase 5 completion, before Phase 6 routing work begins.
 
+**Historical disposition (2026-07-16):** Fulfilled by Phase 6 and Phase 6.1
+with later limitations preserved. See
+[`HISTORICAL_DISPOSITION.md`](HISTORICAL_DISPOSITION.md). This report remains
+the original pause-point record and is not an active refactor plan.
+
 This report captures the current direction check only. It is not an implementation plan and does not authorize code changes by itself.
 
 ## Current State
