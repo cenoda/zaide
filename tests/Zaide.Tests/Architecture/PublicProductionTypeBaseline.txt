@@ -24,6 +24,12 @@ Zaide.Features.Settings.Presentation.InstalledFontCatalog
 Zaide.Features.Settings.Presentation.SettingsFontPicker
 Zaide.Features.Settings.Presentation.SettingsPanelView
 Zaide.Features.Settings.Presentation.SettingsViewModel
+Zaide.Features.Workspace.Contracts.IFileTreeService
+Zaide.Features.Workspace.Domain.FileTreeNode
+Zaide.Features.Workspace.Domain.Workspace
+Zaide.Features.Workspace.Infrastructure.FileTreeService
+Zaide.Features.Workspace.Presentation.FileTreeView
+Zaide.Features.Workspace.Presentation.FileTreeViewModel
 Zaide.MainWindow
 Zaide.Models.AgentPanelState
 Zaide.Models.AgentStatus
@@ -32,7 +38,6 @@ Zaide.Models.Channel
 Zaide.Models.Document
 Zaide.Models.FileChange
 Zaide.Models.FileChangeEvent
-Zaide.Models.FileTreeNode
 Zaide.Models.FilterMode
 Zaide.Models.GitBranch
 Zaide.Models.GitChangeType
@@ -43,7 +48,6 @@ Zaide.Models.SourceControlState
 Zaide.Models.TownhallMessage
 Zaide.Models.TownhallMessageKind
 Zaide.Models.TownhallState
-Zaide.Models.Workspace
 Zaide.Models.WorkspaceAgent
 Zaide.Services.AgentExecutionOptions
 Zaide.Services.AgentExecutionResult
@@ -92,7 +96,6 @@ Zaide.Services.FileDiffResult
 Zaide.Services.FileDiffService
 Zaide.Services.FileService
 Zaide.Services.FileSystemProjectFileSystem
-Zaide.Services.FileTreeService
 Zaide.Services.GitMutationService
 Zaide.Services.GitRepositoryService
 Zaide.Services.IAgentExecutionService
@@ -105,7 +108,6 @@ Zaide.Services.IDebugAdapterSessionFactory
 Zaide.Services.IDebugSessionService
 Zaide.Services.IFileDiffService
 Zaide.Services.IFileService
-Zaide.Services.IFileTreeService
 Zaide.Services.IGitMutationService
 Zaide.Services.IGitRepositoryService
 Zaide.Services.ILanguageCompletionService
@@ -274,7 +276,6 @@ Zaide.ViewModels.EditorLanguageInputViewModel
 Zaide.ViewModels.EditorSearchViewModel
 Zaide.ViewModels.EditorTabViewModel
 Zaide.ViewModels.EditorViewModel
-Zaide.ViewModels.FileTreeViewModel
 Zaide.ViewModels.IAgentExecutionCoordinator
 Zaide.ViewModels.IAgentPanelHost
 Zaide.ViewModels.IAgentRouter
@@ -320,7 +321,6 @@ Zaide.Views.EditorHoverPopup
 Zaide.Views.EditorLanguagePickerPopup
 Zaide.Views.EditorTabBar
 Zaide.Views.EditorView
-Zaide.Views.FileTreeView
 Zaide.Views.FoldingOperations
 Zaide.Views.GridLayoutResizeHelper
 Zaide.Views.HorizontalDirection

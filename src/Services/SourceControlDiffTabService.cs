@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Services;
 

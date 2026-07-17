@@ -7,6 +7,7 @@ using Zaide;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Tests.DI;
 

@@ -21,6 +21,9 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Presentation;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 
@@ -63,11 +66,11 @@ public sealed class KeyBindingMaterializationTests
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new global::Zaide.Tests.Services.MockFileService())
             .AddTransient<EditorViewModel>()
-            .AddSingleton<Workspace>()
+            .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();
 
         _ = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance, _registry);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         _ = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,
@@ -78,13 +81,13 @@ public sealed class KeyBindingMaterializationTests
                 new Mock<IAgentExecutionCoordinator>().Object),
             new TownhallViewModel(new TownhallState()),
             CreateSourceControlViewModel(),
-            TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<Workspace>()),
+            TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>()),
             TestProjectWorkflowFactory.Create(registry: _registry),
             TestTestResultsFactory.Create(),
             TestDebugSessionFactory.Create(_registry),
             TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, _registry),
-            sp.GetRequiredService<Workspace>(),
+            sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
     }
 
@@ -95,7 +98,7 @@ public sealed class KeyBindingMaterializationTests
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
         var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
 
-        return new SourceControlViewModel(orchestrator, new Workspace(),
+        return new SourceControlViewModel(orchestrator, new global::Zaide.Features.Workspace.Domain.Workspace(),
             new Mock<IGitMutationService>().Object, git.Object, /* commandRegistry: */ null);
     }
 

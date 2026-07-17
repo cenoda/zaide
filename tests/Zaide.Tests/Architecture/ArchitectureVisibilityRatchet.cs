@@ -18,8 +18,9 @@ public static class ArchitectureVisibilityRatchet
     /// <summary>
     /// Top-level <c>src/</c> folders admitted for tracked production C#.
     /// Includes remaining technical-layer folders, Refactor 6.2 M1
-    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2
-    /// <c>Features</c> (only <c>src/Features/Settings/</c>; see
+    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2–M3
+    /// <c>Features</c> (only <c>src/Features/Settings/</c> and
+    /// <c>src/Features/Workspace/</c>; see
     /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
@@ -44,13 +45,15 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2: only Settings is admitted under <c>src/Features/</c>.
-    /// Other features remain deny-by-default until their migration slices.
+    /// Refactor 6.2 M2–M3: Settings and Workspace are admitted under
+    /// <c>src/Features/</c>. Other features remain deny-by-default until their
+    /// migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {
         var path = relativePath.Replace('\\', '/').Trim();
-        return path.StartsWith("src/Features/Settings/", StringComparison.Ordinal);
+        return path.StartsWith("src/Features/Settings/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/Workspace/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -201,7 +204,8 @@ public static class ArchitectureVisibilityRatchet
                         ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                         path,
                         "unauthorized path under src/Features/; only src/Features/Settings/ " +
-                        "is admitted (Refactor 6.2 M2). Other features require their slice."));
+                        "and src/Features/Workspace/ are admitted (Refactor 6.2 M2–M3). " +
+                        "Other features require their slice."));
                 }
 
                 continue;
@@ -214,7 +218,7 @@ public static class ArchitectureVisibilityRatchet
                     ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                     path,
                     $"unauthorized technical folder '{source.TechnicalFolder}'; " +
-                    "approved folders: Features (Settings only), Models, Services, " +
+                    "approved folders: Features (Settings + Workspace), Models, Services, " +
                     "UI (DesignSystem only), ViewModels, Views. Other feature-first " +
                     "folders require a Refactor 6.2 migration slice."));
             }

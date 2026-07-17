@@ -9,6 +9,9 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests;
 using Zaide.ViewModels;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.Services;
 

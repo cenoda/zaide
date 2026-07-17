@@ -5,15 +5,16 @@ using Moq;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Workspace.Domain;
 
-namespace Zaide.Tests.Models
+namespace Zaide.Tests.Features.Workspace.Domain
 {
     public class WorkspaceTests
     {
         [Fact]
         public void OpenDocument_ReturnsExistingDocumentOnRepeatCall()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var path = "/path/to/file.txt";
             var content = "test content";
 
@@ -26,7 +27,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void OpenDocument_CreatesNewDocumentOnFirstCall()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var path = "/path/to/file.txt";
             var content = "test content";
 
@@ -40,7 +41,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void CloseDocument_RemovesFromCache()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var path = "/path/to/file.txt";
             var content = "test content";
 
@@ -54,7 +55,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void CloseDocument_UpdatesActiveDocument()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var path1 = "/path/to/file1.txt";
             var path2 = "/path/to/file2.txt";
             var content = "test content";
@@ -70,7 +71,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void SetActiveDocument_UpdatesActiveDocument()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var path1 = "/path/to/file1.txt";
             var path2 = "/path/to/file2.txt";
             var content = "test content";
@@ -85,7 +86,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void WorkspaceFolderChanged_FiresOnOpen()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             var fired = false;
             workspace.WorkspaceFolderChanged += (_, _) => fired = true;
 
@@ -99,7 +100,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void WorkspaceFolderChanged_FiresOnClose()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             workspace.SetProjectFromPath("/some/path");
 
             var fired = false;
@@ -115,7 +116,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void WorkspaceFolderChanged_FiresWithNullWorkspacePath()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             string? capturedPath = "/initial";
             workspace.WorkspaceFolderChanged += (_, _) => capturedPath = workspace.WorkspacePath;
 
@@ -127,7 +128,7 @@ namespace Zaide.Tests.Models
         [Fact]
         public void CloseWorkspace_RetainsOpenDocuments()
         {
-            var workspace = new Workspace();
+            var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
             workspace.SetProjectFromPath("/some/path");
             var doc = workspace.OpenDocument("/some/path/file.txt", "content");
 

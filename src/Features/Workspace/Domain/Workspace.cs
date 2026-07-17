@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Zaide.Models
+using Zaide.Models;
+
+namespace Zaide.Features.Workspace.Domain
 {
     public class Workspace
     {

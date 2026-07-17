@@ -2,9 +2,9 @@
 
 ## Status and authorization
 
-**Current milestone:** M2 Settings **complete** (pending human review / commit).
-M0 accepted at `8fae71d`. M1 DesignSystem committed at `2259b81`. Do not start
-M3+ until M2 is accepted.
+**Current milestone:** M3 Workspace **complete** (pending human review / commit).
+M0 accepted at `8fae71d`. M1 DesignSystem committed at `2259b81`. M2 Settings
+committed at `a13be5a`. Do not start M4+ until M3 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -613,6 +613,57 @@ authorization.
 **Notes / non-goals:** FileIconKeyResolver parked here (R62-D04).
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+**M3 completion record (2026-07-17):**
+
+**Scope executed:** Mechanical rehome of Workspace only into
+`src/Features/Workspace/{Domain,Contracts,Infrastructure,Presentation}/` and
+matching `tests/Zaide.Tests/Features/Workspace/...`. Namespaces
+`Zaide.Models` / `Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` →
+`Zaide.Features.Workspace.*` for the 7 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `src/Models/FileTreeNode.cs` | `.../Domain/FileTreeNode.cs` | `Zaide.Features.Workspace.Domain` |
+| `src/Models/Workspace.cs` | `.../Domain/Workspace.cs` | `Zaide.Features.Workspace.Domain` |
+| `src/Services/IFileTreeService.cs` | `.../Contracts/IFileTreeService.cs` | `Zaide.Features.Workspace.Contracts` |
+| `src/Services/FileTreeService.cs` | `.../Infrastructure/FileTreeService.cs` | `Zaide.Features.Workspace.Infrastructure` |
+| `src/ViewModels/FileTreeViewModel.cs` | `.../Presentation/FileTreeViewModel.cs` | `Zaide.Features.Workspace.Presentation` |
+| `src/Views/FileIconKeyResolver.cs` | `.../Presentation/FileIconKeyResolver.cs` | `Zaide.Features.Workspace.Presentation` |
+| `src/Views/FileTreeView.cs` | `.../Presentation/FileTreeView.cs` | `Zaide.Features.Workspace.Presentation` |
+
+Matching tests rehomed (no durable renames required). `FileIconKeyResolver`
+remains Workspace-owned (R62-D04). Public full-name baseline rewrote Workspace
+type names (count still 348). Architecture admission admits
+`src/Features/Workspace/` C# under top-level `Features` (alongside Settings).
+Inventory tests updated for folder/namespace truth. CONVENTIONS + OVERVIEW
+truthful current-tree notes. No DI, visibility, shell-composition, or behavior
+changes. FindingId allowlist unchanged (9). No allowlist path rewrites required
+for this slice. Under `Zaide.*.Features.*` namespaces, short name `Workspace`
+binds to the sibling/parent namespace segment; affected test sites use
+`global::Zaide.Features.Workspace.Domain.Workspace` (mechanical reference fix
+only).
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M3; human review/commit of M3 only. Do not start M4 without
+authorization.
 
 ### M4 — Editor
 

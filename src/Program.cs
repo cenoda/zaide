@@ -11,6 +11,10 @@ using Zaide.ViewModels;
 using Zaide.Models;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide;
 
@@ -28,7 +32,7 @@ class Program
     /// </summary>
     public static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<Models.Workspace>();
+        services.AddSingleton<Workspace>();
 
         // Phase 8.1.1 M1: immutable settings core
         services.AddLogging(builder => builder.AddConsole());

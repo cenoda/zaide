@@ -10,6 +10,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.ViewModels;
 

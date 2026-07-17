@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Workspace.Presentation;
 
 internal static class FileIconKeyResolver
 {

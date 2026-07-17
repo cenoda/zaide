@@ -150,7 +150,7 @@ public sealed class ArchitectureVisibilityTests
             e => e.IsUnderRootInfrastructure || e.IsUnderUiShared);
 
         // Approved folders only (plus src root composition). UI admits
-        // DesignSystem only (M1); Features admits Settings only (M2).
+        // DesignSystem only (M1); Features admits Settings + Workspace (M2–M3).
         Assert.All(inventory.SourceFiles, f =>
         {
             var path = f.RelativePath.Replace('\\', '/');
@@ -182,7 +182,7 @@ public sealed class ArchitectureVisibilityTests
 
         Assert.Equal(3, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
-        Assert.Equal(24, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(31, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

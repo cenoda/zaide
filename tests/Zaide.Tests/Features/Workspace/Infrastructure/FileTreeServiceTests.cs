@@ -6,9 +6,10 @@ using System.Reactive.Linq;
 using System.Threading;
 using Xunit;
 using Zaide.Models;
-using Zaide.Services;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Workspace.Infrastructure;
 
 public class FileTreeServiceTests
 {

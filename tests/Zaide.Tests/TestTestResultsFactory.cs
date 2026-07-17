@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Tests;
 
@@ -24,11 +25,11 @@ internal static class TestTestResultsFactory
     private static EditorTabViewModel CreateMinimalEditorTabs()
     {
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-        services.AddSingleton(new Zaide.Models.Workspace());
+        services.AddSingleton(new Zaide.Features.Workspace.Domain.Workspace());
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
         var sp = services.BuildServiceProvider();
-        var workspace = sp.GetRequiredService<Zaide.Models.Workspace>();
+        var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
     }
 

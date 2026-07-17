@@ -19,10 +19,11 @@ using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
-using Zaide.ViewModels;
 using Zaide.UI.DesignSystem;
+using Zaide.Views;
+using Zaide.Features.Workspace.Domain;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Workspace.Presentation;
 
 /// <summary>
 /// File tree sidebar view. Builds a TreeView bound to FileTreeViewModel.RootNodes.

@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using Xunit;
 using Zaide.Services;
-using Zaide.Views;
+using Zaide.Features.Workspace.Presentation;
 
-namespace Zaide.Tests.Views;
+namespace Zaide.Tests.Features.Workspace.Presentation;
 
 /// <summary>
 /// Tests for the file-tree icon category resolver.

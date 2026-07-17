@@ -6,6 +6,7 @@ using System;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide;
 

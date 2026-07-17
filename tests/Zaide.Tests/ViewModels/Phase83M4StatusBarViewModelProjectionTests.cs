@@ -15,6 +15,9 @@ using Zaide.ViewModels;
 using Zaide.Tests;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.ViewModels;
 

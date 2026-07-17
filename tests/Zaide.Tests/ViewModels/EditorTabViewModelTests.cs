@@ -8,6 +8,7 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Tests.ViewModels;
 
@@ -18,9 +19,9 @@ public class EditorTabViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
     }
 
     [Fact]
@@ -85,9 +86,9 @@ public class EditorTabViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
 
         await vm.OpenFileCommand.Execute(@"C:\Temp\Readme.md");
         var firstTab = vm.OpenTabs[0];
@@ -220,9 +221,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
 
         // ConfirmClose returns true (user says "Save")
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
@@ -316,9 +317,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
 
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 
@@ -439,9 +440,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
 
         var tab = new EditorViewModel(new Document(""), mockFs);
         tab.FilePath = "/tmp/save-fail.txt";
@@ -504,9 +505,9 @@ public class EditorTabViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Models.Workspace>());
+        var vm = new EditorTabViewModel(sp, mockFs, sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
 
         var tab1 = new EditorViewModel(new Document(""), mockFs);
         tab1.FilePath = "/tmp/save-1.txt";

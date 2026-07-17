@@ -15,6 +15,7 @@ using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.UI.DesignSystem;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Views;
 

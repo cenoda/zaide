@@ -12,6 +12,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Views;
 

@@ -33,6 +33,9 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.Features.Settings.Presentation;
 
@@ -160,10 +163,10 @@ public sealed class SettingsUiTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Workspace>();
+        services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         using var provider = services.BuildServiceProvider();
         var fileTree = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(provider, provider.GetRequiredService<IFileService>(), provider.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(provider, provider.GetRequiredService<IFileService>(), provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalVm = new TerminalViewModel(terminalService.Object, action => action());
         var terminalFactory = new Mock<ITerminalSessionFactory>();
@@ -179,10 +182,10 @@ public sealed class SettingsUiTests
         var mutation = new Mock<IGitMutationService>();
         var sourceControl = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object),
-            new Workspace(), mutation.Object, git.Object);
+            new global::Zaide.Features.Workspace.Domain.Workspace(), mutation.Object, git.Object);
         var ctxMock = new Mock<IProjectContextService>(MockBehavior.Loose);
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
-        var workspace = provider.GetRequiredService<Workspace>();
+        var workspace = provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
             sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object);
         vm.Activate();

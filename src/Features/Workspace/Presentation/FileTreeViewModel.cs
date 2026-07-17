@@ -12,8 +12,10 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Contracts;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Workspace.Presentation;
 
 /// <summary>
 /// Reactive bridge between FileTreeService and the file tree view.

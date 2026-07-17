@@ -12,6 +12,7 @@ using ReactiveUI;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.ViewModels;
 

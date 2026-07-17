@@ -6,8 +6,10 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Zaide.Models;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Contracts;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Workspace.Infrastructure;
 
 /// <summary>
 /// Enumerates directories and files into a nested FileTreeNode tree.

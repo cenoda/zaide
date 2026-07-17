@@ -35,6 +35,8 @@ src/ViewModels/MainWindowViewModel.cs    →  namespace Zaide.ViewModels
 src/UI/DesignSystem/LayoutTokens.cs      →  namespace Zaide.UI.DesignSystem   (6.2 M1)
 src/Features/Settings/Domain/SettingsModel.cs
                                          →  namespace Zaide.Features.Settings.Domain  (6.2 M2)
+src/Features/Workspace/Domain/Workspace.cs
+                                         →  namespace Zaide.Features.Workspace.Domain  (6.2 M3)
 ```
 
 The **approved target** is full feature-first ownership. See
@@ -139,12 +141,15 @@ src/
 | Root `Infrastructure/` | Multi-feature file-system, process, or persistence only (admission rules below) |
 | `UI/DesignSystem` | Design tokens, icons, typography (`src/UI/DesignSystem`, moved in Refactor 6.2 M1) |
 | `Features/Settings` | Settings domain, contracts, infrastructure, presentation (moved in Refactor 6.2 M2) |
+| `Features/Workspace` | Workspace domain, file tree contracts/infrastructure/presentation (moved in Refactor 6.2 M3); `FileIconKeyResolver` parked here (R62-D04) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
 `Zaide.UI.DesignSystem`). Settings production and matching tests live under
 `src/Features/Settings/` and `tests/Zaide.Tests/Features/Settings/` (namespace
-`Zaide.Features.Settings.*`). Design tokens and icons are not `UI/Shared`.
+`Zaide.Features.Settings.*`). Workspace production and matching tests live under
+`src/Features/Workspace/` and `tests/Zaide.Tests/Features/Workspace/` (namespace
+`Zaide.Features.Workspace.*`). Design tokens and icons are not `UI/Shared`.
 Project workflow stays under Project System even when it consumes other
 features' projections. LSP is not root infrastructure; DAP is not root
 infrastructure.
@@ -303,7 +308,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 |----------|-----------|------|
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
 | **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | M3 + M4 + 6.2 M1/M2 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/` after Refactor 6.2 M2), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M3 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/` and `src/Features/Workspace/` after Refactor 6.2 M2–M3), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
 | **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
@@ -321,4 +326,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.2 M2 — Settings rehomed to Features/Settings)*
+*Last updated: 2026-07-17 (Refactor 6.2 M3 — Workspace rehomed to Features/Workspace)*

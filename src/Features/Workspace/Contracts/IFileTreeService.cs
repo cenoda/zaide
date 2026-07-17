@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
 using Zaide.Models;
+using Zaide.Features.Workspace.Domain;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Workspace.Contracts;
 
 /// <summary>
 /// Interface for file tree enumeration and file system watching.

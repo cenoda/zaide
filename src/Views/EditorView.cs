@@ -26,6 +26,7 @@ using Zaide.Models;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Views;
 

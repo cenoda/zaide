@@ -26,6 +26,9 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Presentation;
+using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 
@@ -68,11 +71,11 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new MockFileService())
             .AddTransient<EditorViewModel>()
-            .AddSingleton<Workspace>()
+            .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();
 
         _ = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance, _registry);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var vm = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,
@@ -83,13 +86,13 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
                 new Mock<IAgentExecutionCoordinator>().Object),
             new TownhallViewModel(new TownhallState()),
             CreateSourceControlViewModel(),
-            TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<Workspace>()),
+            TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>()),
             TestProjectWorkflowFactory.Create(registry: _registry),
             TestTestResultsFactory.Create(),
             TestDebugSessionFactory.Create(_registry),
             TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, _registry),
-            sp.GetRequiredService<Workspace>(),
+            sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(),
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
 
         return vm;
@@ -104,7 +107,7 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
         var mutation = new Mock<IGitMutationService>();
 
         return new SourceControlViewModel(
-            orchestrator, new Workspace(),
+            orchestrator, new global::Zaide.Features.Workspace.Domain.Workspace(),
             mutation.Object, git.Object, commandRegistry: _registry);
     }
 

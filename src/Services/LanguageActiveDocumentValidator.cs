@@ -1,4 +1,5 @@
 using Zaide.Models;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Services;
 

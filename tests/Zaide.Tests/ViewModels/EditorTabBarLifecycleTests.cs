@@ -13,6 +13,7 @@ using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Tests.ViewModels;
 
@@ -33,9 +34,9 @@ public class EditorTabBarLifecycleTests
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddTransient<EditorViewModel>();
-        services.AddSingleton<Zaide.Models.Workspace>();
+        services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Models.Workspace>());
+        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
     }
 
     [Fact]

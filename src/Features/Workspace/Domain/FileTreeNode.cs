@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Workspace.Domain;
 
 /// <summary>
 /// Represents a node in the file tree. Directories have Children; files are leaves.

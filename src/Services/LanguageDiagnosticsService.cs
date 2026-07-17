@@ -5,6 +5,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Zaide.Models;
+using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Services;
 
