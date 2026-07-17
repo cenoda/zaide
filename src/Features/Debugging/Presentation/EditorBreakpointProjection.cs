@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Debugging.Application;
 

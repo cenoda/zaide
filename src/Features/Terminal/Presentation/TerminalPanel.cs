@@ -17,7 +17,7 @@ using Zaide.UI.DesignSystem;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;
-using Zaide.Views;
+using Zaide.App.Shell;
 
 namespace Zaide.Features.Terminal.Presentation;
 

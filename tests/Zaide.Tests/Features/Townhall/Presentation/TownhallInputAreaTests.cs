@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Xunit;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.App.Composition;
 
 namespace Zaide.Tests.Features.Townhall.Presentation;
 
@@ -111,7 +112,7 @@ public class TownhallInputAreaTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is App app)
+        if (Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
             {
@@ -121,7 +122,7 @@ public class TownhallInputAreaTests
             return;
         }
 
-        var createdApp = new App();
+        var createdApp = new global::Zaide.App.Composition.App();
         createdApp.Initialize();
     }
 }

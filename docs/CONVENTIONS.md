@@ -8,7 +8,7 @@ Rules so all Zaide code reads like one person wrote it.
 
 | Thing | Case | Example |
 |-------|------|---------|
-| Namespaces | PascalCase | `Zaide.Services`, `Zaide.ViewModels` |
+| Namespaces | PascalCase | `Zaide.App.Composition`, `Zaide.Features.Editor.Domain` |
 | Classes / Structs | PascalCase | `AgentRouter`, `TownhallEntry` |
 | Interfaces | `I` + PascalCase | `IAgent`, `IPanel` |
 | Methods | PascalCase | `RouteMessage()`, `OpenDocument()` |
@@ -25,13 +25,12 @@ Rules so all Zaide code reads like one person wrote it.
 
 ## Namespaces
 
-Namespaces must match folder structure. Most of the production tree still uses
-technical-layer folders and namespaces. Refactor 6.2 moves slices feature-first
-as authorized:
+Namespaces must match folder structure. Refactor 6.2 M1–M12 completed the
+scheduled feature-first rehome inside the single `Zaide` assembly:
 
 ```
-src/Services/AgentRouter.cs              →  namespace Zaide.Services
-src/ViewModels/MainWindowViewModel.cs    →  namespace Zaide.ViewModels
+src/App/Composition/Program.cs           →  namespace Zaide.App.Composition   (6.2 M12)
+src/App/Shell/MainWindowViewModel.cs     →  namespace Zaide.App.Shell         (6.2 M12)
 src/UI/DesignSystem/LayoutTokens.cs      →  namespace Zaide.UI.DesignSystem   (6.2 M1)
 src/Features/Settings/Domain/SettingsModel.cs
                                          →  namespace Zaide.Features.Settings.Domain  (6.2 M2)
@@ -41,16 +40,6 @@ src/Features/Editor/Domain/Document.cs
                                          →  namespace Zaide.Features.Editor.Domain  (6.2 M4)
 src/Features/ProjectSystem/Domain/ProjectContext.cs
                                          →  namespace Zaide.Features.ProjectSystem.Domain  (6.2 M5a)
-src/Features/ProjectSystem/Domain/ProjectWorkflowSnapshot.cs
-                                         →  namespace Zaide.Features.ProjectSystem.Domain  (6.2 M5b)
-src/Features/ProjectSystem/Presentation/OutputPanel.cs
-                                         →  namespace Zaide.Features.ProjectSystem.Presentation  (6.2 M5b)
-src/Features/ProjectSystem/Domain/BuildDiagnostic.cs
-                                         →  namespace Zaide.Features.ProjectSystem.Domain  (6.2 M5c)
-src/Features/ProjectSystem/Presentation/ProblemsPanel.cs
-                                         →  namespace Zaide.Features.ProjectSystem.Presentation  (6.2 M5c)
-src/Features/Language/Contracts/ILanguageSessionService.cs
-                                         →  namespace Zaide.Features.Language.Contracts  (6.2 M6a)
 src/Features/Language/Application/LanguageSessionService.cs
                                          →  namespace Zaide.Features.Language.Application  (6.2 M6a)
 src/Features/Language/Infrastructure/Lsp/CsharpLsSession.cs
@@ -59,12 +48,14 @@ src/Features/Debugging/Infrastructure/Dap/NetCoreDbgAdapterSession.cs
                                          →  namespace Zaide.Features.Debugging.Infrastructure.Dap  (6.2 M7b)
 src/Features/Debugging/Presentation/DebugPanelViewModel.cs
                                          →  namespace Zaide.Features.Debugging.Presentation  (6.2 M7c)
+src/Features/Agents/Application/AgentRouter.cs
+                                         →  namespace Zaide.Features.Agents.Application  (6.2 M11)
 ```
 
-The **approved target** is full feature-first ownership. See
-[Architecture rules](#architecture-rules) below. Until Refactor 6.2 rehomes a
-type, keep its current namespace; do not invent empty feature folders or
-premature renames.
+Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
+root composition files are empty and no longer admitted. Optional M13
+(root `Infrastructure/` / `UI/Shared/`) remains unauthorized until separate
+admission review. See [Architecture rules](#architecture-rules) below.
 
 ## MVVM — ReactiveUI
 
@@ -365,7 +356,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 |----------|-----------|------|
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
 | **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M10 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/`, `src/Features/Workspace/`, `src/Features/Editor/`, `src/Features/ProjectSystem/`, `src/Features/Language/`, `src/Features/Debugging/`, `src/Features/SourceControl/`, `src/Features/Terminal/`, and `src/Features/Townhall/` after Refactor 6.2 M2–M10), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M12 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders after M12: `App` (**only** `src/App/Composition/` and `src/App/Shell/`), `Features` (Settings, Workspace, Editor, ProjectSystem, Language, Debugging, SourceControl, Terminal, Townhall, Agents), `UI` (**only** `src/UI/DesignSystem/`). Technical-layer folders and `src/` root composition C# are **not** admitted. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
 | **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
@@ -383,4 +374,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.2 M6a — Language application/contracts rehomed)*
+*Last updated: 2026-07-17 (Refactor 6.2 M12 — App Composition + Shell; scheduled migration complete)*

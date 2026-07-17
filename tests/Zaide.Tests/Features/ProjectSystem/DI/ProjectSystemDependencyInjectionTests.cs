@@ -4,8 +4,8 @@ using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.ProjectSystem.Contracts;
 

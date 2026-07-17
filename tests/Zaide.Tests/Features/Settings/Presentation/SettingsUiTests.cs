@@ -26,10 +26,9 @@ using ReactiveUI.Builder;
 using Splat;
 using Xunit;
 using Zaide;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.App.Shell;
 
 using Zaide.Tests;
 using Zaide.Features.Settings.Domain;
@@ -218,12 +217,12 @@ public sealed class SettingsUiTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is App app)
+        if (Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush")) app.Initialize();
             return;
         }
-        new App().Initialize();
+        new global::Zaide.App.Composition.App().Initialize();
     }
 
     private sealed class TestSecretStore : ISecretStore

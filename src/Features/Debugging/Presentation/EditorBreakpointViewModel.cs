@@ -7,7 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;

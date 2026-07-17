@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Domain;

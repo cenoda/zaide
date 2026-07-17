@@ -3,13 +3,14 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.Debugging.Presentation;
 

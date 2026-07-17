@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using AvaloniaEdit;
 using AvaloniaEdit.Folding;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
 

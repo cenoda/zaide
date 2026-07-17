@@ -6,12 +6,13 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 

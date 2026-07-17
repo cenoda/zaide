@@ -1,7 +1,7 @@
 using System;
 using System.Reactive.Subjects;
 using Moq;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Contracts;

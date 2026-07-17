@@ -5,7 +5,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;

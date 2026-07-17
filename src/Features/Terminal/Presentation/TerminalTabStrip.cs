@@ -8,7 +8,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.UI.DesignSystem;
-using Zaide.Views;
+using Zaide.App.Shell;
 
 namespace Zaide.Features.Terminal.Presentation;
 

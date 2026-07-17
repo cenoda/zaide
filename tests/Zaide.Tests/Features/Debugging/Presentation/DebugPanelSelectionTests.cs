@@ -12,7 +12,7 @@ using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Splat;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
@@ -115,13 +115,13 @@ public sealed class DebugPanelSelectionTests
 
     private static void EnsureApplication()
     {
-        if (Avalonia.Application.Current is App app)
+        if (Avalonia.Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
                 app.Initialize();
             return;
         }
 
-        new App().Initialize();
+        new global::Zaide.App.Composition.App().Initialize();
     }
 }

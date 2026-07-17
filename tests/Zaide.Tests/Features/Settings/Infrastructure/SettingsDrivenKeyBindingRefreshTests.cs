@@ -19,14 +19,13 @@ using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
-using Zaide.Services;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
 
 using Zaide.Tests;
-using Zaide.Tests.Services;
+using Zaide.Tests.App.Composition;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;

@@ -8,9 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
@@ -39,6 +39,7 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 

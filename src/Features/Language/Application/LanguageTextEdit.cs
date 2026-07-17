@@ -1,4 +1,4 @@
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
 
 namespace Zaide.Features.Language.Application;

@@ -4,7 +4,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
 

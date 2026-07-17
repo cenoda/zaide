@@ -129,13 +129,14 @@ public sealed class ArchitectureRatchetTests
 
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryLocatorSite);
 
-        Assert.Contains(live, v => v.RelativePath == "src/Program.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/App.axaml.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/App/Composition/Program.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/App/Composition/App.axaml.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Editor/Presentation/EditorTabViewModel.cs");
         Assert.Equal(4, live.Count);
 
-        // No View-layer locator site today; ratchet keeps it that way.
+        // No presentation-layer locator site outside allowlisted EditorTabViewModel;
+        // technical Views/ folder is gone after M12.
         Assert.DoesNotContain(
             live,
             v => v.RelativePath.StartsWith("src/Views/", StringComparison.Ordinal));

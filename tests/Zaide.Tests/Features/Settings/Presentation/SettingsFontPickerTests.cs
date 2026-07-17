@@ -6,11 +6,12 @@ using Avalonia.Input;
 using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.App.Composition;
 
 namespace Zaide.Tests.Features.Settings.Presentation;
 
@@ -184,13 +185,13 @@ public sealed class SettingsFontPickerTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is App app)
+        if (Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
                 app.Initialize();
             return;
         }
 
-        new App().Initialize();
+        new global::Zaide.App.Composition.App().Initialize();
     }
 }

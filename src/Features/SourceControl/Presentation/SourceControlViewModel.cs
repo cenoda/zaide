@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;

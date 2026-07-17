@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Language.Contracts;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
 
 namespace Zaide.Features.Language.Application;

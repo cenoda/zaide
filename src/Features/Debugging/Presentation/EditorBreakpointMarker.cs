@@ -1,4 +1,4 @@
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Features.Debugging.Presentation;

@@ -1,6 +1,6 @@
 using System;
 using Xunit;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests.Features.Editor.Presentation;

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.ProjectSystem.Domain;

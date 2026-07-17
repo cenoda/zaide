@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.Tests.Features.ProjectSystem.Domain;

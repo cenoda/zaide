@@ -2,15 +2,15 @@
 
 ## Status and authorization
 
-**Current milestone:** M11 Agents **complete**
+**Current milestone:** M12 App Composition + Shell **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
 `e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
 application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
-committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`. M8 SourceControl committed at `ccaeaa6`. M9 Terminal committed at `408ce84`. M10 Townhall committed at `dc935d3`.
-Do not start M12+ until M11 is accepted.
+committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`. M8 SourceControl committed at `ccaeaa6`. M9 Terminal committed at `408ce84`. M10 Townhall committed at `dc935d3`. M11 Agents committed at `b81a5db`.
+Scheduled M1–M12 migration complete. Do not start M13 / Refactor 6.3 / 7 / 8 without authorization.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1917,7 +1917,7 @@ git diff --check
 
 **FindingId allowlist:** unchanged (9 entries; one Agents MatchKey path-rewritten). **Public count:** 348.
 
-**Next:** stop after M11; do not start M12+ without authorization.
+**Next:** M12 authorized and executed separately (see M12 completion record).
 
 ### M12 — App Composition + Shell
 
@@ -1967,6 +1967,67 @@ git diff --check
 **Notes / non-goals:** No MainWindow extraction (V15); no App.Services removal (V09); no registration split (V10). Animations/IconFactory shell-owned (R62-D03). Empty technical folders cleanup allowed only when empty.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M12 completion record
+
+**Scope executed:** Mechanical rehome of App Composition + Shell only into
+`src/App/Composition/` and `src/App/Shell/` with namespaces
+`Zaide.App.Composition` / `Zaide.App.Shell` for the 22 production paths.
+Matching 11 tests rehomed under `tests/Zaide.Tests/App/{Composition,Shell}/`.
+Phase-named tests renamed durably only:
+
+| Former | Durable |
+|--------|---------|
+| `Phase9M1DiIntegrationTests` | `CompositionDiIntegrationTests` |
+| `Phase9CommandRegistrationTests` | `CommandRegistrationTests` |
+
+No assertion rewrites. Allowlist MatchKey path rewrites only (FindingId set
+unchanged at 9):
+
+| FindingId | Post-move MatchKey path |
+|-----------|-------------------------|
+| `R61-AL-LOC-Program` | `src/App/Composition/Program.cs` |
+| `R61-AL-LOC-App` | `src/App/Composition/App.axaml.cs` |
+
+Architecture admission updated for completed feature-first tree: top-level
+`App` (Composition + Shell only), `Features` (all migrated), `UI`
+(DesignSystem only). Empty technical folders `Models/`, `Services/`,
+`ViewModels/`, `Views/` removed with tracked `.gitkeep` placeholders.
+`ApprovedSrcRootCompositionFiles` is empty (root composition C# no longer
+admitted). Public baseline 348 full names path-rewritten for moved types.
+Non-goals preserved: no MainWindow extraction (R61-V15), no `App.Services`
+removal (R61-V09), no DI-registration split (R61-V10), no lifetime/constructor/
+behavior changes. `Animations` / `IconFactory` remain Shell-owned (R62-D03);
+no `UI/Shared`.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; **0 warnings** |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries; Program + App LocatorSite MatchKeys path-rewritten). **Public count:** 348.
+
+**Source/test classification after M12:** production **360** paths under
+feature-first tree (356 C# + 4 AXAML); product tests **169** + Architecture
+harness 17 + host plumbing 1 = **187**. Technical folders empty/removed
+(`Models/`, `Services/`, `ViewModels/`, `Views/` with tracked `.gitkeep`
+placeholders removed where present). `tools/check-animations.sh` helper path
+rewritten to `src/App/Shell/Animations.cs` and scan roots updated for the
+feature-first tree.
+
+**Next:** stop after M12; do **not** start M13, Refactor 6.3, 7, or 8 without
+explicit authorization.
 
 ---
 
@@ -2121,8 +2182,8 @@ Until then: **stop after M0**.
 | R61-AL-NS-TerminalSessionFactory | `src/Features/Terminal/Application/TerminalSessionFactory.cs` (rewritten in M9) | M9 |
 | R61-AL-NS-MentionParser | `src/Features/Agents/Application/MentionParser.cs` | M11 |
 | R61-AL-LOC-EditorTabViewModel | `src/Features/Editor/Presentation/EditorTabViewModel.cs` (rewritten in M4) | M4 |
-| R61-AL-LOC-Program | `src/Program.cs` | M12 |
-| R61-AL-LOC-App | `src/App.axaml.cs` | M12 |
+| R61-AL-LOC-Program | `src/App/Composition/Program.cs` (rewritten in M12) | M12 |
+| R61-AL-LOC-App | `src/App/Composition/App.axaml.cs` (rewritten in M12) | M12 |
 
 NamespaceDirection *folder* prefix in MatchKey (`Models`/`Services`) may need
 harmonization with inventory after technical folders empty—update inventory

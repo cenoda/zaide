@@ -171,7 +171,7 @@ public static class LegacyArchitectureAllowlist
             new(
                 findingId: "R61-AL-LOC-Program",
                 category: ArchitectureRatchet.CategoryLocatorSite,
-                matchKey: ArchitectureRatchet.BuildLocatorMatchKey("src/Program.cs"),
+                matchKey: ArchitectureRatchet.BuildLocatorMatchKey("src/App/Composition/Program.cs"),
                 m0FindingId: "R61-V09",
                 owner: "App/Composition",
                 disposition: DispositionDependencyInversion,
@@ -183,7 +183,7 @@ public static class LegacyArchitectureAllowlist
             new(
                 findingId: "R61-AL-LOC-App",
                 category: ArchitectureRatchet.CategoryLocatorSite,
-                matchKey: ArchitectureRatchet.BuildLocatorMatchKey("src/App.axaml.cs"),
+                matchKey: ArchitectureRatchet.BuildLocatorMatchKey("src/App/Composition/App.axaml.cs"),
                 m0FindingId: "R61-V09",
                 owner: "App/Composition",
                 disposition: DispositionDependencyInversion,

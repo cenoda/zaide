@@ -11,8 +11,8 @@ using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
@@ -50,7 +50,7 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         var order = new List<string>();
         var provider = BuildRecordingProvider(order);
 
-        App.DisposeServicesOnExit(provider);
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
 
         Assert.Contains("workflow", order);
         Assert.Contains("output", order);
@@ -65,7 +65,7 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         var runner = new RecordingManagedProcessRunner(order);
         var provider = BuildRecordingProvider(order, runner);
 
-        App.DisposeServicesOnExit(provider);
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
 
         var debugIndex = order.IndexOf("debugSession");
         var workflowIndex = order.IndexOf("workflow");
@@ -84,7 +84,7 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         var order = new List<string>();
         var provider = BuildRecordingProvider(order);
 
-        App.DisposeServicesOnExit(provider);
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
 
         static int IndexOf(List<string> items, string name)
         {
@@ -129,7 +129,7 @@ public sealed class ProjectWorkflowProjectionShutdownTests
             .WhenChanged
             .Subscribe(_ => { }, () => testCompleted = true);
 
-        App.DisposeServicesOnExit(provider);
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
 
         Assert.True(buildCompleted);
         Assert.True(testCompleted);

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
-using Zaide.Tests.Services;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 

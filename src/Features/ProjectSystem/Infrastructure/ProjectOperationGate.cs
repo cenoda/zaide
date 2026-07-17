@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 

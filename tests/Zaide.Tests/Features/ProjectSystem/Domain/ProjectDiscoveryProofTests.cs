@@ -14,7 +14,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Domain;
 /// <summary>
 /// Phase 8.3 M0 entry-gate proof. Tests a contract-equivalent discovery
 /// algorithm using only test-local types. No production
-/// <see cref="Zaide.Services"/> types are referenced — the proof validates
+/// <see cref="Zaide.App.Composition"/> types are referenced — the proof validates
 /// the algorithm contract before production types exist.
 ///
 /// The production design (recorded in M0_DISCOVERY_PROOF.md) wraps

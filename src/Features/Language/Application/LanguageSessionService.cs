@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Language.Contracts;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
 
 namespace Zaide.Features.Language.Application;

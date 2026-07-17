@@ -8,9 +8,9 @@ using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
@@ -228,16 +228,16 @@ public sealed class UnsavedDialogTests
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
     }
 
-    private static App EnsureApplication()
+    private static global::Zaide.App.Composition.App EnsureApplication()
     {
-        if (Application.Current is App current)
+        if (Application.Current is global::Zaide.App.Composition.App current)
         {
             if (!current.Resources.ContainsKey("SpacingXl"))
                 current.Initialize();
             return current;
         }
 
-        var app = new App();
+        var app = new global::Zaide.App.Composition.App();
         app.Initialize();
         return app;
     }

@@ -10,7 +10,7 @@ using ReactiveUI.Avalonia;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 

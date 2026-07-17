@@ -6,7 +6,7 @@ using Avalonia.Media;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Features.Debugging.Presentation;

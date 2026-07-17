@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;

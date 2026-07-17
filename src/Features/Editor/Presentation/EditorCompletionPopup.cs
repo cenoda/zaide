@@ -7,7 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.UI.DesignSystem;
 using Zaide.Features.Language.Application;
 

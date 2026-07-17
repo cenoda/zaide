@@ -1,4 +1,4 @@
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Contracts;

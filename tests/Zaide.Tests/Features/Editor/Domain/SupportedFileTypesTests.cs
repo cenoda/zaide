@@ -1,4 +1,4 @@
-using Zaide.Services;
+using Zaide.App.Composition;
 using Xunit;
 using Zaide.Features.Editor.Domain;
 

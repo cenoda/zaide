@@ -8,7 +8,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 
 namespace Zaide.Features.Editor.Presentation;
 

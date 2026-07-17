@@ -8,7 +8,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Presentation;

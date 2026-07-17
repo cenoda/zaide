@@ -19,7 +19,7 @@ using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.UI.DesignSystem;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Features.Workspace.Presentation;

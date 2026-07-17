@@ -1,4 +1,4 @@
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.ProjectSystem.Domain;

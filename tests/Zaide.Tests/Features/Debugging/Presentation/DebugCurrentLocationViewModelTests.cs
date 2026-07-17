@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;

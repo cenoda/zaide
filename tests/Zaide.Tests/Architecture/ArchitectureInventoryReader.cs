@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Zaide;
+using Zaide.App.Composition;
 
 namespace Zaide.Tests.Architecture;
 
@@ -106,7 +106,7 @@ public sealed class ArchitectureInventoryReader
     private readonly Assembly _productionAssembly;
 
     public ArchitectureInventoryReader()
-        : this(ResolveRepositoryRoot(), typeof(App).Assembly)
+        : this(ResolveRepositoryRoot(), typeof(global::Zaide.App.Composition.App).Assembly)
     {
     }
 

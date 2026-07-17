@@ -12,7 +12,7 @@ using Avalonia.Media;
 using Avalonia.Interactivity;
 using Zaide.Features.Agents.Domain;
 using Zaide.UI.DesignSystem;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Features.Agents.Presentation;

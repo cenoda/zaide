@@ -17,6 +17,7 @@ using Zaide;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Editor.Presentation;
+using Zaide.App.Composition;
 
 namespace Zaide.Tests.Features.Agents.Presentation;
 
@@ -48,7 +49,7 @@ public class AgentPanelHostViewLifetimeTests
 
     private static void EnsureApplication()
     {
-        if (Avalonia.Application.Current is App app)
+        if (Avalonia.Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
             {
@@ -58,7 +59,7 @@ public class AgentPanelHostViewLifetimeTests
             return;
         }
 
-        var createdApp = new App();
+        var createdApp = new global::Zaide.App.Composition.App();
         createdApp.Initialize();
     }
 

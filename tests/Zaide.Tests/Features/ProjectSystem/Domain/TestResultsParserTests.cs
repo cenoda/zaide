@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.Tests.Features.ProjectSystem.Domain;

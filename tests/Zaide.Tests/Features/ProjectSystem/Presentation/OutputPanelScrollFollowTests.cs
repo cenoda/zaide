@@ -9,9 +9,8 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Splat;
 using Xunit;
-using Zaide.Services;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Tests;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
@@ -125,7 +124,7 @@ public sealed class OutputPanelScrollFollowTests
         if (Application.Current is not null)
             return;
 
-        var app = new App();
+        var app = new global::Zaide.App.Composition.App();
         app.Initialize();
         SetupReactiveUi();
     }

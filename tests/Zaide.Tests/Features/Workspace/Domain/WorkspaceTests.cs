@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Moq;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Tests.Features.Workspace.Domain

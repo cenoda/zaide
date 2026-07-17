@@ -17,25 +17,17 @@ public static class ArchitectureVisibilityRatchet
 
     /// <summary>
     /// Top-level <c>src/</c> folders admitted for tracked production C#.
-    /// Includes remaining technical-layer folders, Refactor 6.2 M1
-    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2–M4
-    /// <c>Features</c> (only <c>src/Features/Settings/</c>,
-    /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>,
-    /// <c>src/Features/ProjectSystem/</c>, <c>src/Features/Language/</c>,
-    /// <c>src/Features/Debugging/</c>, <c>src/Features/SourceControl/</c>,
-    /// <c>src/Features/Terminal/</c>, <c>src/Features/Townhall/</c>, and
-    /// <c>src/Features/Agents/</c>; see
-    /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
-    /// deny-by-default until their migration slices update this set.
+    /// Refactor 6.2 M12 completed the feature-first tree: <c>App</c>
+    /// (Composition + Shell only; see <see cref="IsApprovedAppPath"/>),
+    /// <c>UI</c> (DesignSystem only), and <c>Features</c> (all migrated
+    /// features; see <see cref="IsApprovedFeaturesPath"/>). Technical-layer
+    /// folders and root composition files are no longer admitted.
     /// </summary>
     public static readonly IReadOnlyList<string> ApprovedCurrentTechnicalFolders = new[]
     {
+        "App",
         "Features",
-        "Models",
-        "Services",
         "UI",
-        "ViewModels",
-        "Views",
     };
 
     /// <summary>
@@ -71,16 +63,21 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Exact composition C# files permitted directly under <c>src/</c> (M0: three
-    /// root files). New root C# files fail admission unless the baseline is
-    /// intentionally updated in the same review.
+    /// Exact composition C# files permitted directly under <c>src/</c>.
+    /// Empty after Refactor 6.2 M12 rehomed Program/App/MainWindow under
+    /// <c>src/App/</c>. New root C# files fail admission.
     /// </summary>
-    public static readonly IReadOnlyList<string> ApprovedSrcRootCompositionFiles = new[]
+    public static readonly IReadOnlyList<string> ApprovedSrcRootCompositionFiles = Array.Empty<string>();
+
+    /// <summary>
+    /// Refactor 6.2 M12: only Composition and Shell under <c>src/App/</c>.
+    /// </summary>
+    public static bool IsApprovedAppPath(string relativePath)
     {
-        "src/App.axaml.cs",
-        "src/MainWindow.axaml.cs",
-        "src/Program.cs",
-    };
+        var path = relativePath.Replace('\\', '/').Trim();
+        return path.StartsWith("src/App/Composition/", StringComparison.Ordinal)
+            || path.StartsWith("src/App/Shell/", StringComparison.Ordinal);
+    }
 
     public static IReadOnlyList<string> GetLivePublicFullNames(ArchitectureInventory inventory)
     {
@@ -188,7 +185,7 @@ public static class ArchitectureVisibilityRatchet
                         ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                         path,
                         "unauthorized src/ root composition file; " +
-                        "approved set is Program.cs, App.axaml.cs, MainWindow.axaml.cs"));
+                        "no root composition C# is admitted after Refactor 6.2 M12"));
                 }
 
                 continue;
@@ -222,8 +219,23 @@ public static class ArchitectureVisibilityRatchet
                         "src/Features/ProjectSystem/, src/Features/Language/, " +
                         "src/Features/Debugging/, src/Features/SourceControl/, " +
                         "src/Features/Terminal/, src/Features/Townhall/, and src/Features/Agents/ are admitted " +
-                        "(Refactor 6.2 M2–M10). " +
+                        "(Refactor 6.2 M2–M11). " +
                         "Other features require their slice."));
+                }
+
+                continue;
+            }
+
+            if (source.TechnicalFolder == "App")
+            {
+                if (!IsApprovedAppPath(path))
+                {
+                    violations.Add(new ArchitectureViolation(
+                        ArchitectureRatchet.CategoryRootFolderAdmission,
+                        ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
+                        path,
+                        "unauthorized path under src/App/; only src/App/Composition/ and " +
+                        "src/App/Shell/ are admitted (Refactor 6.2 M12)."));
                 }
 
                 continue;
@@ -236,9 +248,9 @@ public static class ArchitectureVisibilityRatchet
                     ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                     path,
                     $"unauthorized technical folder '{source.TechnicalFolder}'; " +
-                    "approved folders: Features (Settings + Workspace), Models, Services, " +
-                    "UI (DesignSystem only), ViewModels, Views. Other feature-first " +
-                    "folders require a Refactor 6.2 migration slice."));
+                    "approved folders: App (Composition + Shell), Features (all migrated), " +
+                    "UI (DesignSystem only). Technical-layer folders are no longer admitted " +
+                    "after Refactor 6.2 M12."));
             }
         }
 

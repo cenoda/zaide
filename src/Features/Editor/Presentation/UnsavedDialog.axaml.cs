@@ -2,7 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 
 namespace Zaide.Features.Editor.Presentation;
 

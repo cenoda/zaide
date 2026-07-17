@@ -7,7 +7,7 @@ using Avalonia.Styling;
 using System;
 using System.Threading.Tasks;
 using Zaide.UI.DesignSystem;
-using Zaide.Views;
+using Zaide.App.Shell;
 
 namespace Zaide.Features.Townhall.Presentation;
 

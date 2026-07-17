@@ -2,24 +2,40 @@
 set -e
 
 bad=0
-helper="src/Views/Animations.cs"
+helper="src/App/Shell/Animations.cs"
+# Feature-first presentation + shell chrome (Refactor 6.2 M12); exclude Animations helper.
+scan_roots=(
+  "src/App/Shell"
+  "src/Features"
+)
 
-if grep -rnE 'new LinearEase\(' src/Views/ | grep -v "${helper}"; then
+scan_grep() {
+  local pattern="$1"
+  local hits
+  hits=$(grep -rnE "$pattern" "${scan_roots[@]}" 2>/dev/null | grep -v "${helper}" || true)
+  if [ -n "$hits" ]; then
+    printf '%s\n' "$hits"
+    return 0
+  fi
+  return 1
+}
+
+if scan_grep 'new LinearEase\('; then
   echo "ERROR: new LinearEase in view code (use CubicEaseOut/In)"
   bad=1
 fi
 
-if grep -rnE 'new Animation\s*\{' src/Views/ | grep -v "${helper}"; then
+if scan_grep 'new Animation\s*\{'; then
   echo "ERROR: inline new Animation in view code (use Animations helper)"
   bad=1
 fi
 
-if grep -rnE 'new (DoubleTransition|BrushTransition|TransformOperationsTransition|ThicknessTransition|IntegerTransition|VectorTransition)\s*\(' src/Views/ | grep -v "${helper}"; then
+if scan_grep 'new (DoubleTransition|BrushTransition|TransformOperationsTransition|ThicknessTransition|IntegerTransition|VectorTransition)\s*\('; then
   echo "ERROR: raw Avalonia transition type in view code (use Animations helper)"
   bad=1
 fi
 
-if grep -rnE 'new Transitions\s*\{' src/Views/ | grep -v "${helper}"; then
+if scan_grep 'new Transitions\s*\{'; then
   echo "ERROR: inline Transitions collection in view code (use Animations helper)"
   bad=1
 fi

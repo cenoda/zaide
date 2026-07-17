@@ -1,8 +1,8 @@
 using System;
 using System.Reactive.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;

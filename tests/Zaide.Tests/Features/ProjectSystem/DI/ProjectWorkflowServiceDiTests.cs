@@ -4,7 +4,7 @@ using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Infrastructure;
 

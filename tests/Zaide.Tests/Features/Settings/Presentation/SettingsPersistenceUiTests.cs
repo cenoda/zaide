@@ -9,9 +9,8 @@ using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using ReactiveUI;
 using Splat;
-using Zaide.Views;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
+using Zaide.App.Composition;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
@@ -300,14 +299,14 @@ public sealed class SettingsPersistenceUiTests
     private static void EnsureApplication()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        if (Application.Current is App app)
+        if (Application.Current is global::Zaide.App.Composition.App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
                 app.Initialize();
             return;
         }
 
-        var createdApp = new App();
+        var createdApp = new global::Zaide.App.Composition.App();
         createdApp.Initialize();
     }
 }

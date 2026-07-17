@@ -149,9 +149,8 @@ public sealed class ArchitectureVisibilityTests
             inventory.RootFolderAdmissionEvidence,
             e => e.IsUnderRootInfrastructure || e.IsUnderUiShared);
 
-        // Approved folders only (plus src root composition). UI admits
-        // DesignSystem only (M1); Features admits Settings + Workspace + Editor +
-        // ProjectSystem + Language + Debugging + SourceControl + Terminal + Townhall + Agents (M2–M11).
+        // Completed feature-first tree (M12): App Composition/Shell, UI DesignSystem,
+        // Features (all migrated). No technical-layer folders or src root composition.
         Assert.All(inventory.SourceFiles, f =>
         {
             var path = f.RelativePath.Replace('\\', '/');
@@ -160,6 +159,12 @@ public sealed class ArchitectureVisibilityTests
                 Assert.Contains(
                     path,
                     ArchitectureVisibilityRatchet.ApprovedSrcRootCompositionFiles);
+            }
+            else if (f.TechnicalFolder == "App")
+            {
+                Assert.True(
+                    ArchitectureVisibilityRatchet.IsApprovedAppPath(path),
+                    $"App path not admitted: {path}");
             }
             else if (f.TechnicalFolder == "UI")
             {
@@ -181,7 +186,8 @@ public sealed class ArchitectureVisibilityTests
             }
         });
 
-        Assert.Equal(3, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
+        Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
+        Assert.Equal(20, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         Assert.Equal(334, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }

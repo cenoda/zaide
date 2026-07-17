@@ -14,7 +14,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Features.SourceControl.Domain;
 using Zaide.UI.DesignSystem;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Features.SourceControl.Presentation;

@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
@@ -19,6 +19,7 @@ using Zaide.Features.Editor.Presentation;
 
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.App.Composition;
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
 /// <summary>

@@ -5,14 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.App.Composition;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 

@@ -1,0 +1,7 @@
+<!-- XAML kept minimal per DESIGN.md §1. Layout built in C#. -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Zaide.App.Shell"
+        x:Class="Zaide.App.Shell.MainWindow"
+        x:TypeArguments="vm:MainWindowViewModel">
+</Window>

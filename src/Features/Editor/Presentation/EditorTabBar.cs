@@ -11,8 +11,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.App.Shell;
 using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Features.Editor.Presentation;

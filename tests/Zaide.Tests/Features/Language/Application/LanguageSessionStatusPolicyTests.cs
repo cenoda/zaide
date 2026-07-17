@@ -1,6 +1,6 @@
 using System;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 

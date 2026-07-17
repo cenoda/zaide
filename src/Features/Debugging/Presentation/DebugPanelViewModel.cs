@@ -6,7 +6,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 

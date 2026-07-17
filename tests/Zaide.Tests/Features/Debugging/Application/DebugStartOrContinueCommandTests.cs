@@ -7,15 +7,16 @@ using System.Threading.Tasks;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.ViewModels;
+using Zaide.App.Shell;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Tests.App.Composition;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 

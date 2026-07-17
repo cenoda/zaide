@@ -6,7 +6,7 @@ using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Debugging.Contracts;

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Zaide.Services;
+using Zaide.App.Composition;
 using Zaide.Features.Editor.Contracts;
 
 namespace Zaide.Tests.Features.Editor.Infrastructure;
