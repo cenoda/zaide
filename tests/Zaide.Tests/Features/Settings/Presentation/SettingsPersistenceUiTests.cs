@@ -18,6 +18,10 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.Terminal.Contracts;
+using Zaide.Features.Terminal.Application;
+using Zaide.Features.Terminal.Infrastructure;
+using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide.Tests.Features.Settings.Presentation;
 

@@ -12,6 +12,10 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.Terminal.Contracts;
+using Zaide.Features.Terminal.Application;
+using Zaide.Features.Terminal.Infrastructure;
+using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide;
 

@@ -30,6 +30,10 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.SourceControl.Presentation;
+using Zaide.Features.Terminal.Contracts;
+using Zaide.Features.Terminal.Application;
+using Zaide.Features.Terminal.Infrastructure;
+using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide;
 

@@ -86,12 +86,12 @@ The live production tree is still mostly technical-layer folders and namespaces.
 Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace;
 M4 rehomed Editor; M5a–M5c rehomed ProjectSystem (discovery through diagnostics/Problems);
 M6a rehomed Language application/contracts; M6b rehomed Language LSP infrastructure;
-M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation; M8 rehomed SourceControl:
+M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation; M8 rehomed SourceControl; M9 rehomed Terminal:
 
 ```text
 src/
   Models/              # plain data / state bags (Settings/Workspace/Editor/SC models moved in M2–M4/M8)
-  Services/            # catch-all: remaining DTOs, agent/terminal infrastructure
+  Services/            # catch-all: remaining DTOs, agent infrastructure
   ViewModels/
   Views/
   UI/DesignSystem/     # tokens, icons, typography (was Styles/; Zaide.UI.DesignSystem)
@@ -102,18 +102,19 @@ src/
   Features/Language/   # Contracts + Application (6.2 M6a) + Infrastructure/Lsp (6.2 M6b)
   Features/Debugging/  # Contracts + Application (6.2 M7a) + Infrastructure/Dap (6.2 M7b) + Presentation (6.2 M7c)
   Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8)
+  Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; residual R61-V05 for 6.3)
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
 layering is not enforced by assemblies. Architecture tests under
 `tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2), ratchet
 known legacy debt (M3), and enforce the public full-name baseline plus expanded
-root-folder admission (M4, updated for 6.2 M1–M7c). Root-admission and related
+root-folder admission (M4, updated for 6.2 M1–M9). Root-admission and related
 source ratchets inventory **tracked production C# only** (`git ls-files` of
 `src/**/*.cs`): exact-file service-locator sites; technical-namespace forbidden
 edges (`Services → ViewModels`, `Models → Services`); deny-by-default tracked C#
 under `src/Infrastructure/` / `src/UI/Shared/`; admitted folders
-`Features` (Settings + Workspace + Editor + ProjectSystem + Language + Debugging), `Models`, `Services`,
+`Features` (Settings + Workspace + Editor + ProjectSystem + Language + Debugging + SourceControl + Terminal), `Models`, `Services`,
 `UI` (DesignSystem only), `ViewModels`, `Views` plus three `src/` root composition
 C# files; and the frozen 348 public type names (`PublicProductionTypeBaseline.txt`).
 Non-C# assets (`.axaml`, project files, manifests, etc.) are not governed by the

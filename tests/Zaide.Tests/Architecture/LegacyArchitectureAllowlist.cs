@@ -111,30 +111,30 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-NS-ITerminalSessionFactory",
                 category: ArchitectureRatchet.CategoryNamespaceDirection,
                 matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Services",
-                    "Zaide.ViewModels",
-                    "src/Services/ITerminalSessionFactory.cs"),
+                    "Features",
+                    "Zaide.Features.Terminal.Presentation",
+                    "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs"),
                 m0FindingId: "R61-V05",
                 owner: "Terminal",
                 disposition: DispositionDependencyInversion,
                 rationale:
                 "ITerminalSessionFactory public contract returns TerminalViewModel " +
-                "(Services -> ViewModels).",
+                "(Terminal Contracts -> Terminal Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             new(
                 findingId: "R61-AL-NS-TerminalSessionFactory",
                 category: ArchitectureRatchet.CategoryNamespaceDirection,
                 matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Services",
-                    "Zaide.ViewModels",
-                    "src/Services/TerminalSessionFactory.cs"),
+                    "Features",
+                    "Zaide.Features.Terminal.Presentation",
+                    "src/Features/Terminal/Application/TerminalSessionFactory.cs"),
                 m0FindingId: "R61-V05",
                 owner: "Terminal",
                 disposition: DispositionDependencyInversion,
                 rationale:
                 "TerminalSessionFactory constructs TerminalViewModel with the process owner " +
-                "as one unit (Services -> ViewModels).",
+                "as one unit (Terminal Application -> Terminal Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             new(

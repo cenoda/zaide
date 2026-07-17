@@ -21,8 +21,9 @@ public static class ArchitectureVisibilityRatchet
     /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2–M4
     /// <c>Features</c> (only <c>src/Features/Settings/</c>,
     /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>,
-    /// <c>src/Features/ProjectSystem/</c>, <c>src/Features/Language/</c>, and
-    /// <c>src/Features/Debugging/</c>; see
+    /// <c>src/Features/ProjectSystem/</c>, <c>src/Features/Language/</c>,
+    /// <c>src/Features/Debugging/</c>, <c>src/Features/SourceControl/</c>,
+    /// and <c>src/Features/Terminal/</c>; see
     /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
@@ -47,10 +48,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M8: Settings, Workspace, Editor, ProjectSystem,
+    /// Refactor 6.2 M2–M9: Settings, Workspace, Editor, ProjectSystem,
     /// Language (including Infrastructure/Lsp), Debugging (application/
-    /// contracts + Infrastructure/Dap + Presentation), and SourceControl are
-    /// admitted under <c>src/Features/</c>.
+    /// contracts + Infrastructure/Dap + Presentation), SourceControl, and
+    /// Terminal are admitted under <c>src/Features/</c>.
     /// Other features remain deny-by-default until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
@@ -62,7 +63,8 @@ public static class ArchitectureVisibilityRatchet
             || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Language/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Debugging/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/Terminal/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -214,9 +216,10 @@ public static class ArchitectureVisibilityRatchet
                         path,
                         "unauthorized path under src/Features/; only src/Features/Settings/, " +
                         "src/Features/Workspace/, src/Features/Editor/, " +
-                        "src/Features/ProjectSystem/, src/Features/Language/, and " +
-                        "src/Features/Debugging/ are admitted " +
-                        "(Refactor 6.2 M2–M7c). " +
+                        "src/Features/ProjectSystem/, src/Features/Language/, " +
+                        "src/Features/Debugging/, src/Features/SourceControl/, and " +
+                        "src/Features/Terminal/ are admitted " +
+                        "(Refactor 6.2 M2–M9). " +
                         "Other features require their slice."));
                 }
 

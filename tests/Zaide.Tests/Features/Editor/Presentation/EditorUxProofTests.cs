@@ -31,6 +31,10 @@ using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
+using Zaide.Features.Terminal.Contracts;
+using Zaide.Features.Terminal.Application;
+using Zaide.Features.Terminal.Infrastructure;
+using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 

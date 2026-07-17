@@ -71,11 +71,25 @@ public sealed class ArchitectureInventoryReader
         @"(?:using\s+Zaide\.Features\.Editor\.Presentation\b|Zaide\.Features\.Editor\.Presentation\.)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// Residual R61-V05 edge after Terminal move: session factory contract/impl
+    /// still depend on presentation session types (Refactor 6.3 inversion).
+    /// </summary>
+    private static readonly Regex TerminalFactoryToPresentationRegex = new(
+        @"(?:using\s+Zaide\.Features\.Terminal\.Presentation\b|Zaide\.Features\.Terminal\.Presentation\.)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private const string SourceControlStateRelativePath =
         "src/Features/SourceControl/Domain/SourceControlState.cs";
 
     private const string SourceControlDiffTabServiceRelativePath =
         "src/Features/SourceControl/Application/SourceControlDiffTabService.cs";
+
+    private const string TerminalSessionFactoryContractRelativePath =
+        "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs";
+
+    private const string TerminalSessionFactoryRelativePath =
+        "src/Features/Terminal/Application/TerminalSessionFactory.cs";
 
     private readonly string _repositoryRoot;
     private readonly Assembly _productionAssembly;
@@ -337,8 +351,8 @@ public sealed class ArchitectureInventoryReader
                 _ => null
             };
 
-            // Refactor 6.2 M8: residual SourceControl allowlist edges under Features.
-            // Path-scoped so other Features Domain→Application edges are not ratcheted.
+            // Refactor 6.2 M8–M9: residual allowlist edges under Features.
+            // Path-scoped so other Features layer edges are not ratcheted.
             if (normalizedPath.Equals(SourceControlStateRelativePath, StringComparison.Ordinal))
             {
                 technicalFolder = "Features";
@@ -350,6 +364,13 @@ public sealed class ArchitectureInventoryReader
                 technicalFolder = "Features";
                 targetRegex = SourceControlDiffTabToEditorPresentationRegex;
                 targetFragment = "Zaide.Features.Editor.Presentation";
+            }
+            else if (normalizedPath.Equals(TerminalSessionFactoryContractRelativePath, StringComparison.Ordinal)
+                || normalizedPath.Equals(TerminalSessionFactoryRelativePath, StringComparison.Ordinal))
+            {
+                technicalFolder = "Features";
+                targetRegex = TerminalFactoryToPresentationRegex;
+                targetFragment = "Zaide.Features.Terminal.Presentation";
             }
 
             if (targetRegex is null || targetFragment is null)
