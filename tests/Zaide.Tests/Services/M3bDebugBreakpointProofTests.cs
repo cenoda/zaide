@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests.Services;
 

@@ -28,7 +28,7 @@ overflow behavior and affected window sizes have not yet been measured.
 - Reproduction steps: Open the settings panel at a constrained window height
   and inspect whether all controls remain reachable
 - Output, screenshot, or log: None captured
-- Relevant code path: `src/Views/SettingsPanelView.cs` layout and container hierarchy
+- Relevant code path: `src/Features/Settings/Presentation/SettingsPanelView.cs` layout and container hierarchy
 
 ## Why deferred
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Settings.Domain;
 
 namespace Zaide.ViewModels;
 

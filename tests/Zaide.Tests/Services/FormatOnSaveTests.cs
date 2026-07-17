@@ -13,6 +13,9 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Tests.Services;
+using Zaide.Features.Settings.Domain;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests.Services;
 

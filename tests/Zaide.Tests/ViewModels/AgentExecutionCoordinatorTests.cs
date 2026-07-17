@@ -11,6 +11,10 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Settings.Domain;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
+using Zaide.Tests.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests.ViewModels;
 

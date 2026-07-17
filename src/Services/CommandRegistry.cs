@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using Avalonia.Input;
 using Microsoft.Extensions.Logging;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.Services;
 

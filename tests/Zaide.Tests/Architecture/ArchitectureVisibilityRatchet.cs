@@ -17,13 +17,15 @@ public static class ArchitectureVisibilityRatchet
 
     /// <summary>
     /// Top-level <c>src/</c> folders admitted for tracked production C#.
-    /// Includes remaining technical-layer folders and Refactor 6.2 M1
-    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c> C# is admitted; see
-    /// <see cref="IsApprovedUiPath"/>). Other feature-first roots remain
+    /// Includes remaining technical-layer folders, Refactor 6.2 M1
+    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2
+    /// <c>Features</c> (only <c>src/Features/Settings/</c>; see
+    /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
     public static readonly IReadOnlyList<string> ApprovedCurrentTechnicalFolders = new[]
     {
+        "Features",
         "Models",
         "Services",
         "UI",
@@ -39,6 +41,16 @@ public static class ArchitectureVisibilityRatchet
     {
         var path = relativePath.Replace('\\', '/').Trim();
         return path.StartsWith("src/UI/DesignSystem/", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Refactor 6.2 M2: only Settings is admitted under <c>src/Features/</c>.
+    /// Other features remain deny-by-default until their migration slices.
+    /// </summary>
+    public static bool IsApprovedFeaturesPath(string relativePath)
+    {
+        var path = relativePath.Replace('\\', '/').Trim();
+        return path.StartsWith("src/Features/Settings/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -180,6 +192,21 @@ public static class ArchitectureVisibilityRatchet
                 continue;
             }
 
+            if (source.TechnicalFolder == "Features")
+            {
+                if (!IsApprovedFeaturesPath(path))
+                {
+                    violations.Add(new ArchitectureViolation(
+                        ArchitectureRatchet.CategoryRootFolderAdmission,
+                        ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
+                        path,
+                        "unauthorized path under src/Features/; only src/Features/Settings/ " +
+                        "is admitted (Refactor 6.2 M2). Other features require their slice."));
+                }
+
+                continue;
+            }
+
             if (!allowedFolders.Contains(source.TechnicalFolder))
             {
                 violations.Add(new ArchitectureViolation(
@@ -187,9 +214,9 @@ public static class ArchitectureVisibilityRatchet
                     ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                     path,
                     $"unauthorized technical folder '{source.TechnicalFolder}'; " +
-                    "approved folders: Models, Services, UI (DesignSystem only), " +
-                    "ViewModels, Views. Other feature-first folders require a " +
-                    "Refactor 6.2 migration slice."));
+                    "approved folders: Features (Settings only), Models, Services, " +
+                    "UI (DesignSystem only), ViewModels, Views. Other feature-first " +
+                    "folders require a Refactor 6.2 migration slice."));
             }
         }
 

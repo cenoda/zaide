@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.Services;
 

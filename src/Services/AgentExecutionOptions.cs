@@ -1,3 +1,4 @@
+using Zaide.Features.Settings.Contracts;
 namespace Zaide.Services;
 
 /// <summary>

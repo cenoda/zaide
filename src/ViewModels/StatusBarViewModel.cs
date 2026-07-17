@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Services;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.ViewModels;
 

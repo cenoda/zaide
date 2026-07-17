@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Models;
 using Zaide.ViewModels;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.Services;
 

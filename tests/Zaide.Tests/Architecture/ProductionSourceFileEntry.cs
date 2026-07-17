@@ -22,8 +22,8 @@ public sealed class ProductionSourceFileEntry : IEquatable<ProductionSourceFileE
 
     /// <summary>
     /// Technical folder key: <c>src</c> for root composition files, otherwise
-    /// First path segment under <c>src/</c> (e.g. <c>Models</c>, <c>Services</c>,
-    /// <c>UI</c>, <c>ViewModels</c>, <c>Views</c>), or <c>src</c> for root composition files.
+    /// first path segment under <c>src/</c> (e.g. <c>Models</c>, <c>Services</c>,
+    /// <c>UI</c>, <c>Features</c>, <c>ViewModels</c>, <c>Views</c>).
     /// </summary>
     public string TechnicalFolder { get; }
 

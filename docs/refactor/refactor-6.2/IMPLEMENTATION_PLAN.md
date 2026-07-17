@@ -2,8 +2,9 @@
 
 ## Status and authorization
 
-**Current milestone:** M1 UI/DesignSystem **complete** (pending human review /
-commit). M0 accepted at `8fae71d`. Do not start M2+ until M1 is accepted.
+**Current milestone:** M2 Settings **complete** (pending human review / commit).
+M0 accepted at `8fae71d`. M1 DesignSystem committed at `2259b81`. Do not start
+M3+ until M2 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -543,6 +544,50 @@ authorization.
 **Notes / non-goals:** Settings still manually composed from shell (R61-V17) — do not change construction ownership.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M2 completion record
+
+**Scope executed:** Mechanical rehome of Settings only into
+`src/Features/Settings/{Domain,Contracts,Infrastructure,Presentation}/` and
+matching `tests/Zaide.Tests/Features/Settings/...`. Namespaces
+`Zaide.Models` / `Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` →
+`Zaide.Features.Settings.*` for the 24 production paths. Phase/milestone-named
+tests renamed durably without assertion changes:
+
+| Pre-move test | Durable name |
+|---------------|--------------|
+| `M9aKeyBindingMaterializationTests` | `KeyBindingMaterializationTests` |
+| `M9bSettingsDrivenRefreshTests` | `SettingsDrivenKeyBindingRefreshTests` |
+| `M5SettingsUiTests` | `SettingsUiTests` |
+| `Phase814SettingsTests` | `SettingsPersistenceUiTests` |
+
+Public full-name baseline rewrote Settings type names (count still 348).
+Architecture admission admits `src/Features/Settings/` C# only under top-level
+`Features`. Inventory tests updated for folder/namespace truth. CONVENTIONS +
+OVERVIEW truthful current-tree notes. No DI, visibility, shell-composition, or
+behavior changes. FindingId allowlist unchanged (9). No allowlist path rewrites
+required for this slice.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M2; human review/commit of M2 only. Do not start M3 without
+authorization.
 
 ### M3 — Workspace
 

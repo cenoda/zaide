@@ -9,6 +9,8 @@ using System.Reactive.Concurrency;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Models;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
 
 namespace Zaide;
 

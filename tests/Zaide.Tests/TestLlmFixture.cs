@@ -4,6 +4,9 @@ using System.IO;
 using System.Net.Http;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
+using Zaide.Tests.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests;
 

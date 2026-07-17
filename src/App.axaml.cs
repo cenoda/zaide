@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide;
 

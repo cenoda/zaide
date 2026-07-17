@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Settings.Domain;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests.Services;
 

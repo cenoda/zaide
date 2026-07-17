@@ -10,6 +10,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.ViewModels;
 using Zaide.Services;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.Views;
 

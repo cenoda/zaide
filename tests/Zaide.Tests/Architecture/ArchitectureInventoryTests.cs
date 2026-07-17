@@ -31,14 +31,18 @@ public sealed class ArchitectureInventoryTests
             ArchitectureInventoryReader.M0InternalTopLevelTypes,
             inventory.TotalTopLevelTypeCount);
 
-        // Namespace rollups from M0_ARCHITECTURE_BASELINE.md
+        // Namespace rollups after Refactor 6.2 M1 (DesignSystem) + M2 (Settings).
         var byNamespace = inventory.TypeCountByNamespace;
         Assert.Equal((3, 2, 1), byNamespace["Zaide"]);
-        Assert.Equal((31, 31, 0), byNamespace["Zaide.Models"]);
-        Assert.Equal((231, 214, 17), byNamespace["Zaide.Services"]);
+        Assert.Equal((20, 20, 0), byNamespace["Zaide.Models"]);
+        Assert.Equal((221, 205, 16), byNamespace["Zaide.Services"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
-        Assert.Equal((72, 58, 14), byNamespace["Zaide.ViewModels"]);
-        Assert.Equal((54, 41, 13), byNamespace["Zaide.Views"]);
+        Assert.Equal((71, 57, 14), byNamespace["Zaide.ViewModels"]);
+        Assert.Equal((48, 37, 11), byNamespace["Zaide.Views"]);
+        Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
+        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
+        Assert.Equal((7, 6, 1), byNamespace["Zaide.Features.Settings.Infrastructure"]);
+        Assert.Equal((7, 5, 2), byNamespace["Zaide.Features.Settings.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -71,15 +75,16 @@ public sealed class ArchitectureInventoryTests
 
         Assert.Equal(356, inventory.SourceFiles.Count);
         Assert.Equal(3, byFolder["src"]);
-        Assert.Equal(22, byFolder["Models"]);
-        Assert.Equal(224, byFolder["Services"]);
+        Assert.Equal(15, byFolder["Models"]);
+        Assert.Equal(214, byFolder["Services"]);
         Assert.Equal(2, byFolder["UI"]);
+        Assert.Equal(24, byFolder["Features"]);
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(53, byFolder["ViewModels"]);
-        Assert.Equal(52, byFolder["Views"]);
+        Assert.Equal(52, byFolder["ViewModels"]);
+        Assert.Equal(46, byFolder["Views"]);
 
         // Namespace declarations match folders for the current mixed tree
-        // (technical layers plus Refactor 6.2 M1 DesignSystem).
+        // (technical layers plus Refactor 6.2 M1 DesignSystem and M2 Settings).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "src"),
             s => Assert.Equal("Zaide", s.DeclaredNamespace));
@@ -95,6 +100,14 @@ public sealed class ArchitectureInventoryTests
             {
                 Assert.StartsWith("src/UI/DesignSystem/", s.RelativePath.Replace('\\', '/'), StringComparison.Ordinal);
                 Assert.Equal("Zaide.UI.DesignSystem", s.DeclaredNamespace);
+            });
+        Assert.All(
+            inventory.SourceFiles.Where(s => s.TechnicalFolder == "Features"),
+            s =>
+            {
+                var path = s.RelativePath.Replace('\\', '/');
+                Assert.StartsWith("src/Features/Settings/", path, StringComparison.Ordinal);
+                Assert.StartsWith("Zaide.Features.Settings.", s.DeclaredNamespace, StringComparison.Ordinal);
             });
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "ViewModels"),

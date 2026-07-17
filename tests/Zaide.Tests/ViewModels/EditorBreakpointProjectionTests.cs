@@ -3,6 +3,7 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Settings.Domain;
 
 namespace Zaide.Tests.ViewModels;
 
