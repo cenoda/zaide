@@ -7,13 +7,13 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Models;
-using Zaide.Services;
-using Zaide.Features.Settings.Domain;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Agents.Infrastructure;
 
 /// <summary>
 /// Phase 8.1.2 / M2 tests proving that <see cref="AgentExecutionService"/>

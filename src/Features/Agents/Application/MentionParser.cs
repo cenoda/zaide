@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using Zaide.Models;
-using Zaide.ViewModels;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Narrow deterministic mention parser for M2.

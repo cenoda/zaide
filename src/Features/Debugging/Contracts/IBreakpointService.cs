@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Models;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Debugging.Application;
 

@@ -7,8 +7,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Agents.Infrastructure;
 
 /// <summary>
 /// Built-in <c>HttpClient</c> implementation of <see cref="IAgentExecutionService"/>

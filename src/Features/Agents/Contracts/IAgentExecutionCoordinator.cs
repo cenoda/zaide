@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Contracts;
 
 /// <summary>
 /// Orchestration seam for panel send flow.

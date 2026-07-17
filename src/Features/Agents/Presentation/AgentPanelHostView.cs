@@ -10,12 +10,12 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Interactivity;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
+using Zaide.Views;
 using Zaide.Features.Editor.Presentation;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
 /// View-only host for the agent panel area. Retains one <see cref="AgentPanelView"/>
@@ -64,7 +64,7 @@ public sealed class AgentPanelHostView : UserControl
 
     public AgentPanelHostView()
     {
-        _activeBrush = Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
+        _activeBrush = Avalonia.Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
 
         // --- Tab strip ---
         _tabsPanel = new StackPanel
@@ -119,7 +119,7 @@ public sealed class AgentPanelHostView : UserControl
 
         var stripBorder = new Border
         {
-            Background = (IBrush?)Application.Current?.Resources["SurfaceBaseBrush"],
+            Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfaceBaseBrush"],
             Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXs, 0),
             Child = stripGrid
         };
@@ -319,7 +319,7 @@ public sealed class AgentPanelHostView : UserControl
         // the tab border, so close cannot be confused with activate/stop.
         var closeIcon = IconFactory.Create(
             "Icon.X",
-            (IBrush?)Application.Current?.Resources["TextSecondaryBrush"],
+            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
             12);
         var closeButton = new Button
         {
@@ -396,7 +396,7 @@ public sealed class AgentPanelHostView : UserControl
     {
         var plus = IconFactory.Create(
             "Icon.Plus",
-            (IBrush?)Application.Current?.Resources["TextSecondaryBrush"],
+            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
             14);
         return new Button
         {

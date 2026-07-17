@@ -14,7 +14,6 @@ using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;

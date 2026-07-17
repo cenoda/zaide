@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Zaide.Features.Editor.Domain;
 
-using Zaide.Models;
 
 namespace Zaide.Features.Workspace.Domain
 {

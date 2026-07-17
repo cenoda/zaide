@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
-using Zaide.Models;
-using Zaide.Services;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Tests.Features.Settings.Infrastructure;
 
-namespace Zaide.Tests;
+namespace Zaide.Tests.Features.Agents.Infrastructure;
 
 /// <summary>
 /// Shared test helper that creates an <see cref="ISettingsService"/> and

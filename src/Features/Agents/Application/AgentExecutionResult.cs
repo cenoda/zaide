@@ -1,6 +1,6 @@
 using System;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Narrow success/failure result for a single OpenAI-compatible execution.

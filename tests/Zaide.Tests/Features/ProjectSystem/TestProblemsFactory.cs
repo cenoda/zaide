@@ -2,7 +2,6 @@ using System;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.Extensions.DependencyInjection;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;

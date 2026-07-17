@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;

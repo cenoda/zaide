@@ -1,7 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Agents.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Agents.Contracts;
 
 /// <summary>
 /// Narrow service interface for one OpenAI-compatible non-streaming execution path.

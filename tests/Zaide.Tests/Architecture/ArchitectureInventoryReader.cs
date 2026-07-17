@@ -79,6 +79,14 @@ public sealed class ArchitectureInventoryReader
         @"(?:using\s+Zaide\.Features\.Terminal\.Presentation\b|Zaide\.Features\.Terminal\.Presentation\.)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// Residual R61-V06 edge after Agents move: MentionParser still depends on
+    /// panel-host presentation state (Refactor 6.3 inversion).
+    /// </summary>
+    private static readonly Regex MentionParserToPresentationRegex = new(
+        @"(?:using\s+Zaide\.Features\.Agents\.Presentation\b|Zaide\.Features\.Agents\.Presentation\.)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private const string SourceControlStateRelativePath =
         "src/Features/SourceControl/Domain/SourceControlState.cs";
 
@@ -90,6 +98,9 @@ public sealed class ArchitectureInventoryReader
 
     private const string TerminalSessionFactoryRelativePath =
         "src/Features/Terminal/Application/TerminalSessionFactory.cs";
+
+    private const string MentionParserRelativePath =
+        "src/Features/Agents/Application/MentionParser.cs";
 
     private readonly string _repositoryRoot;
     private readonly Assembly _productionAssembly;
@@ -371,6 +382,12 @@ public sealed class ArchitectureInventoryReader
                 technicalFolder = "Features";
                 targetRegex = TerminalFactoryToPresentationRegex;
                 targetFragment = "Zaide.Features.Terminal.Presentation";
+            }
+            else if (normalizedPath.Equals(MentionParserRelativePath, StringComparison.Ordinal))
+            {
+                technicalFolder = "Features";
+                targetRegex = MentionParserToPresentationRegex;
+                targetFragment = "Zaide.Features.Agents.Presentation";
             }
 
             if (targetRegex is null || targetFragment is null)

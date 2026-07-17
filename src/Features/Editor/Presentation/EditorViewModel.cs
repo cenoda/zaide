@@ -4,7 +4,6 @@ using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Editor.Domain;

@@ -2,9 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
 /// Concrete host for agent panel collection and active-panel selection.

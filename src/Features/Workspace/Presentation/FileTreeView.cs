@@ -18,7 +18,6 @@ using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Models;
 using Zaide.UI.DesignSystem;
 using Zaide.Views;
 using Zaide.Features.Workspace.Domain;

@@ -1,10 +1,10 @@
 using System.Linq;
 using Xunit;
-using Zaide.Models;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Agents.Application;
 
 public class MentionParserTests
 {

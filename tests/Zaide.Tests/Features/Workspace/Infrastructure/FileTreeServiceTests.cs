@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using Xunit;
-using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.SourceControl.Domain;

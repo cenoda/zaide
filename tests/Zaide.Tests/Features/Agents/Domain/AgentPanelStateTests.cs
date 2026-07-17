@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using Xunit;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 
-namespace Zaide.Tests.Models;
+namespace Zaide.Tests.Features.Agents.Domain;
 
 /// <summary>
 /// Tests for <see cref="AgentPanelState"/> — the minimal single-panel state shape.

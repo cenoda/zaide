@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Presentation;
@@ -30,6 +29,9 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.ViewModels;
 

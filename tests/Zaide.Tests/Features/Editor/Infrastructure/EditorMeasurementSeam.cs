@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;

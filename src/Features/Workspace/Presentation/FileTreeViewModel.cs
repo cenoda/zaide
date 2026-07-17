@@ -10,7 +10,6 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;

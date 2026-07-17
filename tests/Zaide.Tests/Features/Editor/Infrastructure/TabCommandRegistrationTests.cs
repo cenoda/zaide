@@ -3,7 +3,6 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;

@@ -1,4 +1,4 @@
-namespace Zaide.Models;
+namespace Zaide.Features.Agents.Domain;
 
 /// <summary>
 /// Narrow route result describing parse outcome and intent.

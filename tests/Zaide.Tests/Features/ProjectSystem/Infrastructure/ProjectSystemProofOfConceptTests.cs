@@ -4,7 +4,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;

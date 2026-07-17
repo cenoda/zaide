@@ -141,15 +141,15 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-NS-MentionParser",
                 category: ArchitectureRatchet.CategoryNamespaceDirection,
                 matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Services",
-                    "Zaide.ViewModels",
-                    "src/Services/MentionParser.cs"),
+                    "Features",
+                    "Zaide.Features.Agents.Presentation",
+                    "src/Features/Agents/Application/MentionParser.cs"),
                 m0FindingId: "R61-V06",
                 owner: "Agents",
                 disposition: DispositionDependencyInversion,
                 rationale:
                 "MentionParser depends on IAgentPanelHost presentation state " +
-                "(Services -> ViewModels).",
+                "(Agents Application -> Agents Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             new(

@@ -1,5 +1,6 @@
 using Zaide.Features.Settings.Contracts;
-namespace Zaide.Services;
+
+namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Immutable per-call effective LLM configuration. Built by

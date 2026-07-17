@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
@@ -27,6 +26,10 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.Tests.ViewModels;
 

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.SourceControl.Domain;

@@ -1,4 +1,4 @@
-namespace Zaide.Models;
+namespace Zaide.Features.Agents.Domain;
 
 /// <summary>
 /// Narrow route request describing parsed user input for direct or routed send.

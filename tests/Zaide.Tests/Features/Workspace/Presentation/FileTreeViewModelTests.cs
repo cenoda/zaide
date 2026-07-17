@@ -11,7 +11,6 @@ using System.Threading;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Infrastructure;

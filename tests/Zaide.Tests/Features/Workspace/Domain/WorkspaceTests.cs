@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Moq;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
 

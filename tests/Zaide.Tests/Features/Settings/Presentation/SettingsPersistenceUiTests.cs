@@ -10,7 +10,6 @@ using ReactiveUI.Builder;
 using ReactiveUI;
 using Splat;
 using Zaide.Views;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;

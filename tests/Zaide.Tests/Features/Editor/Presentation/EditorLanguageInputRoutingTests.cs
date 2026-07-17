@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Tests;

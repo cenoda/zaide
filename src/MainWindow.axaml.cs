@@ -17,7 +17,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.Views;
 using Zaide.UI.DesignSystem;
@@ -35,6 +34,7 @@ using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide;
 

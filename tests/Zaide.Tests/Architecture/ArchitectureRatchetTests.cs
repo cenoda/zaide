@@ -114,7 +114,7 @@ public sealed class ArchitectureRatchetTests
         Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Domain/SourceControlState.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Application/TerminalSessionFactory.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Services/MentionParser.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/Features/Agents/Application/MentionParser.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Equal(5, live.Count);
     }

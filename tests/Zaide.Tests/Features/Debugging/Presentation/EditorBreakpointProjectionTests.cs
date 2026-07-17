@@ -1,6 +1,5 @@
 using System;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Debugging.Application;

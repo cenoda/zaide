@@ -14,11 +14,11 @@ using ReactiveUI.Builder;
 using Splat;
 using Xunit;
 using Zaide;
-using Zaide.Models;
-using Zaide.ViewModels;
-using Zaide.Views;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Editor.Presentation;
 
-namespace Zaide.Tests.Views;
+namespace Zaide.Tests.Features.Agents.Presentation;
 
 /// <summary>
 /// M5 lifetime/cleanup tests for <see cref="AgentPanelHostView"/>.
@@ -48,7 +48,7 @@ public class AgentPanelHostViewLifetimeTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is App app)
+        if (Avalonia.Application.Current is App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
             {

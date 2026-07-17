@@ -2,11 +2,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Xunit;
-using Zaide.Models;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Agents.Application;
 
 /// <summary>
 /// Phase 6.1 M2: focused tests for the routing orchestration seam.

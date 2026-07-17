@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
 /// Host seam for agent panel collection and active-panel selection.

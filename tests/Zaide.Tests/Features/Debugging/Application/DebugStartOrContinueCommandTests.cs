@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.ViewModels;

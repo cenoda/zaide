@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Models;
-using Zaide.Services;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Orchestrates panel send flow by composing <see cref="IAgentPanelHost"/> and

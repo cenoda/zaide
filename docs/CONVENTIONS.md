@@ -171,6 +171,7 @@ src/
 | `Features/SourceControl` | Source Control domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M8); residual R61-V02/V07 edges kept allowlisted for 6.3 |
 | `Features/Terminal` | Terminal contracts, application, infrastructure, presentation (moved in Refactor 6.2 M9); residual R61-V05 factory→presentation edges kept allowlisted for 6.3 |
 | `Features/Townhall` | Townhall domain and presentation (moved in Refactor 6.2 M10); R61-V16 behavior preserved; conversation lifetime remains Refactor 7 |
+| `Features/Agents` | Agents domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M11); residual R61-V06 MentionParser→presentation edge kept allowlisted for 6.3; no agent-session/run types (LT02/LT03) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
@@ -201,7 +202,10 @@ and `tests/Zaide.Tests/Features/Terminal/` (namespace
 `Zaide.Features.Terminal.*`). Townhall (M10) lives under
 `src/Features/Townhall/{Domain,Presentation}/`
 and `tests/Zaide.Tests/Features/Townhall/` (namespace
-`Zaide.Features.Townhall.*`).
+`Zaide.Features.Townhall.*`). Agents (M11) lives under
+`src/Features/Agents/{Domain,Contracts,Application,Infrastructure,Presentation}/`
+and `tests/Zaide.Tests/Features/Agents/` (namespace
+`Zaide.Features.Agents.*`).
 Design tokens and icons are not `UI/Shared`.
 Project workflow stays under Project System even when it consumes other
 features' projections. LSP is not root infrastructure; DAP is not root

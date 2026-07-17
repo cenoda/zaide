@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;

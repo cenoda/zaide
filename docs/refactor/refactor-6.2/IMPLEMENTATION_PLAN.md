@@ -2,15 +2,15 @@
 
 ## Status and authorization
 
-**Current milestone:** M10 Townhall **complete**
+**Current milestone:** M11 Agents **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
 `e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
 application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
-committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`. M8 SourceControl committed at `ccaeaa6`. M9 Terminal committed at `408ce84`.
-Do not start M11+ until M10 is accepted.
+committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`. M8 SourceControl committed at `ccaeaa6`. M9 Terminal committed at `408ce84`. M10 Townhall committed at `dc935d3`.
+Do not start M12+ until M11 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -146,7 +146,7 @@ Allowlisted production paths (must be path-rewritten when those files move):
 - `src/Models/SourceControlState.cs`
 - `src/Features/Terminal/Contracts/ITerminalSessionFactory.cs` (rewritten in M9)
 - `src/Features/Terminal/Application/TerminalSessionFactory.cs` (rewritten in M9)
-- `src/Services/MentionParser.cs`
+- `src/Features/Agents/Application/MentionParser.cs` (rewritten in M11)
 - `src/Services/SourceControlDiffTabService.cs`
 - `src/Program.cs`
 - `src/App.axaml.cs`
@@ -1873,6 +1873,52 @@ git diff --check
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
 
+#### M11 completion record
+
+**Scope executed:** Mechanical rehome of Agents only into
+`src/Features/Agents/{Domain,Contracts,Application,Infrastructure,Presentation}/`
+and matching `tests/Zaide.Tests/Features/Agents/...`. Namespaces
+`Zaide.Models` / `Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` →
+`Zaide.Features.Agents.*` for the 16 production paths. Matching 9 tests
+rehomed (Domain, Application, Infrastructure, Presentation). No assertion
+rewrites; durable feature-oriented test namespaces only. Residual R61-V06
+MentionParser→presentation edge kept via inventory path-scoped detection under
+Features + allowlist MatchKey rewrite:
+
+| FindingId | Post-move MatchKey path |
+|-----------|-------------------------|
+| `R61-AL-NS-MentionParser` | `src/Features/Agents/Application/MentionParser.cs` |
+
+No DI registration/lifetime, visibility, constructor signature, protocol,
+agent-session/run types, or behavior changes. FindingId allowlist unchanged
+(9). Public count 348. M12+ App/Shell and later features remain.
+
+**Scope note (using cleanup):** M11 emptied `Zaide.Models` (last Models types
+were Agents). Stale `using Zaide.Models;` was removed **only** from (a) direct
+Agents consumers and (b) solution files that fail CS0234 because the namespace
+no longer exists. Phase 10 `tools/` smoke projects and any non-compiling
+cleanup-only edits outside that set were **not** bulk-touched.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries; one Agents MatchKey path-rewritten). **Public count:** 348.
+
+**Next:** stop after M11; do not start M12+ without authorization.
+
 ### M12 — App Composition + Shell
 
 **Target:** `src/App/Composition/, src/App/Shell/` · namespace `Zaide.App.Composition / Zaide.App.Shell`
@@ -2073,7 +2119,7 @@ Until then: **stop after M0**.
 | R61-AL-LOC-SourceControlDiffTabService | same | M8 |
 | R61-AL-NS-ITerminalSessionFactory | `src/Features/Terminal/Contracts/ITerminalSessionFactory.cs` (rewritten in M9) | M9 |
 | R61-AL-NS-TerminalSessionFactory | `src/Features/Terminal/Application/TerminalSessionFactory.cs` (rewritten in M9) | M9 |
-| R61-AL-NS-MentionParser | `src/Services/MentionParser.cs` | M11 |
+| R61-AL-NS-MentionParser | `src/Features/Agents/Application/MentionParser.cs` | M11 |
 | R61-AL-LOC-EditorTabViewModel | `src/Features/Editor/Presentation/EditorTabViewModel.cs` (rewritten in M4) | M4 |
 | R61-AL-LOC-Program | `src/Program.cs` | M12 |
 | R61-AL-LOC-App | `src/App.axaml.cs` | M12 |

@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using ReactiveUI;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Agents.Domain;
 
 /// <summary>
 /// Minimal state shape for a single agent panel.

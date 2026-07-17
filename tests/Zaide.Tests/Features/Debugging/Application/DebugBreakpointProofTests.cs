@@ -6,7 +6,6 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Settings.Contracts;

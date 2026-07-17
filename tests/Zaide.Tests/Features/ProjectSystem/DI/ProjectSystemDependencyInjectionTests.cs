@@ -4,7 +4,6 @@ using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;

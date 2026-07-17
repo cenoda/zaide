@@ -15,7 +15,6 @@ using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Tests.Services;
 using Zaide.ViewModels;
@@ -23,6 +22,7 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Tests.Features.Settings.Infrastructure;
+using Zaide.Tests.Features.Agents.Infrastructure;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
@@ -46,6 +46,11 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Infrastructure;
 
 namespace Zaide.Tests;
 

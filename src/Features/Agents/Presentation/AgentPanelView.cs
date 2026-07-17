@@ -9,10 +9,10 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 using Zaide.UI.DesignSystem;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
 /// Converts <see cref="AgentPanelState.IsBusy"/> (true = busy) to
@@ -177,7 +177,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
     {
         try
         {
-            if (Application.Current?.Resources[resourceKey] is IBrush brush)
+            if (Avalonia.Application.Current?.Resources[resourceKey] is IBrush brush)
                 return brush;
         }
         catch (InvalidOperationException)

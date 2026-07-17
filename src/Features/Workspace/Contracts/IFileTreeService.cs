@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
-using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.SourceControl.Domain;
 

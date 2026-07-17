@@ -1,7 +1,6 @@
 using System;
 using System.Reactive.Subjects;
 using Moq;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;

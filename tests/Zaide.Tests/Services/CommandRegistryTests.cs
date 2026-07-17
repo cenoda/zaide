@@ -5,7 +5,6 @@ using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;

@@ -14,7 +14,6 @@ using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Splat;
 using Xunit;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;

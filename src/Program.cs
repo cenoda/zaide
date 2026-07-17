@@ -10,7 +10,6 @@ using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.ViewModels;
-using Zaide.Models;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Workspace.Contracts;
@@ -40,6 +39,10 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Infrastructure;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide;
 

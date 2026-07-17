@@ -23,7 +23,8 @@ public static class ArchitectureVisibilityRatchet
     /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>,
     /// <c>src/Features/ProjectSystem/</c>, <c>src/Features/Language/</c>,
     /// <c>src/Features/Debugging/</c>, <c>src/Features/SourceControl/</c>,
-    /// <c>src/Features/Terminal/</c>, and <c>src/Features/Townhall/</c>; see
+    /// <c>src/Features/Terminal/</c>, <c>src/Features/Townhall/</c>, and
+    /// <c>src/Features/Agents/</c>; see
     /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
@@ -48,10 +49,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M10: Settings, Workspace, Editor, ProjectSystem,
+    /// Refactor 6.2 M2–M11: Settings, Workspace, Editor, ProjectSystem,
     /// Language (including Infrastructure/Lsp), Debugging (application/
     /// contracts + Infrastructure/Dap + Presentation), SourceControl,
-    /// Terminal, and Townhall are admitted under <c>src/Features/</c>.
+    /// Terminal, Townhall, and Agents are admitted under <c>src/Features/</c>.
     /// Other features remain deny-by-default until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
@@ -65,7 +66,8 @@ public static class ArchitectureVisibilityRatchet
             || path.StartsWith("src/Features/Debugging/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Terminal/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/Townhall/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/Townhall/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/Agents/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -219,7 +221,7 @@ public static class ArchitectureVisibilityRatchet
                         "src/Features/Workspace/, src/Features/Editor/, " +
                         "src/Features/ProjectSystem/, src/Features/Language/, " +
                         "src/Features/Debugging/, src/Features/SourceControl/, " +
-                        "src/Features/Terminal/, and src/Features/Townhall/ are admitted " +
+                        "src/Features/Terminal/, src/Features/Townhall/, and src/Features/Agents/ are admitted " +
                         "(Refactor 6.2 M2–M10). " +
                         "Other features require their slice."));
                 }

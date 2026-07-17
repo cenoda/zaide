@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Models;
-using Zaide.Services;
-using Zaide.ViewModels;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Application;
 /// <summary>
 /// M4 implementation of the narrow routing orchestration seam.
 /// Composes MentionParser + IAgentPanelHost (for resolution) + IAgentExecutionCoordinator.

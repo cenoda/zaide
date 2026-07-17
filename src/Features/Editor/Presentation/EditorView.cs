@@ -22,7 +22,6 @@ using TextMateSharp.Grammars;
 using Zaide.Views;
 using Zaide.UI.DesignSystem;
 using Zaide.Services;
-using Zaide.Models;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;

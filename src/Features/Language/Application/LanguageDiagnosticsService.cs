@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Language.Contracts;

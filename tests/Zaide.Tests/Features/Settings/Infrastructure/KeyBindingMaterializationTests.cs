@@ -14,7 +14,6 @@ using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
-using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
@@ -41,6 +40,10 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 

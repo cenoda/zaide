@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Xunit;
-using Zaide.Models;
-using Zaide.ViewModels;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Agents.Presentation;
 
 /// <summary>
 /// Focused tests for the agent-panel host seam.

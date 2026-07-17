@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Models;
+using Zaide.Features.Agents.Domain;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Agents.Contracts;
 
 /// <summary>
 /// Narrow Phase 6 M3 routing orchestration seam.

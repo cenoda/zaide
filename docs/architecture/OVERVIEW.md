@@ -86,14 +86,13 @@ The live production tree is still mostly technical-layer folders and namespaces.
 Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace;
 M4 rehomed Editor; M5a–M5c rehomed ProjectSystem (discovery through diagnostics/Problems);
 M6a rehomed Language application/contracts; M6b rehomed Language LSP infrastructure;
-M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation; M8 rehomed SourceControl; M9 rehomed Terminal; M10 rehomed Townhall:
+M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation; M8 rehomed SourceControl; M9 rehomed Terminal; M10 rehomed Townhall; M11 rehomed Agents:
 
 ```text
 src/
-  Models/              # remaining agent DTOs (Townhall models moved in M10; Settings/Workspace/Editor/SC earlier)
-  Services/            # catch-all: remaining DTOs, agent infrastructure
-  ViewModels/
-  Views/
+  Services/            # remaining shell command registry types (agents moved in M11)
+  ViewModels/          # remaining shell VMs (MainWindow/palette/status; agents moved in M11)
+  Views/               # remaining shell views (agents moved in M11)
   UI/DesignSystem/     # tokens, icons, typography (was Styles/; Zaide.UI.DesignSystem)
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
   Features/Workspace/  # Domain, Contracts, Infrastructure, Presentation (6.2 M3)
@@ -104,18 +103,19 @@ src/
   Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8)
   Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; residual R61-V05 for 6.3)
   Features/Townhall/   # Domain, Presentation (6.2 M10; R61-V16 preserved)
+  Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M11; residual R61-V06 for 6.3)
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
 layering is not enforced by assemblies. Architecture tests under
 `tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2), ratchet
 known legacy debt (M3), and enforce the public full-name baseline plus expanded
-root-folder admission (M4, updated for 6.2 M1–M10). Root-admission and related
+root-folder admission (M4, updated for 6.2 M1–M11). Root-admission and related
 source ratchets inventory **tracked production C# only** (`git ls-files` of
 `src/**/*.cs`): exact-file service-locator sites; technical-namespace forbidden
 edges (`Services → ViewModels`, `Models → Services`); deny-by-default tracked C#
 under `src/Infrastructure/` / `src/UI/Shared/`; admitted folders
-`Features` (Settings + Workspace + Editor + ProjectSystem + Language + Debugging + SourceControl + Terminal + Townhall), `Models`, `Services`,
+`Features` (Settings + Workspace + Editor + ProjectSystem + Language + Debugging + SourceControl + Terminal + Townhall + Agents), `Models`, `Services`,
 `UI` (DesignSystem only), `ViewModels`, `Views` plus three `src/` root composition
 C# files; and the frozen 348 public type names (`PublicProductionTypeBaseline.txt`).
 Non-C# assets (`.axaml`, project files, manifests, etc.) are not governed by the
