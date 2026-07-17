@@ -46,7 +46,7 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M5a: Settings, Workspace, Editor, and ProjectSystem are
+    /// Refactor 6.2 M2–M5b: Settings, Workspace, Editor, and ProjectSystem are
     /// admitted under <c>src/Features/</c>. Other features remain deny-by-default
     /// until their migration slices.
     /// </summary>
@@ -209,7 +209,7 @@ public static class ArchitectureVisibilityRatchet
                         "unauthorized path under src/Features/; only src/Features/Settings/, " +
                         "src/Features/Workspace/, src/Features/Editor/, and " +
                         "src/Features/ProjectSystem/ are admitted " +
-                        "(Refactor 6.2 M2–M5a). " +
+                        "(Refactor 6.2 M2–M5b). " +
                         "Other features require their slice."));
                 }
 

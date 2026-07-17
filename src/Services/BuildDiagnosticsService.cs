@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Subjects;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.Services;
 

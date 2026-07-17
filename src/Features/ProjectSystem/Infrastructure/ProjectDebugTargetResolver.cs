@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
-using Zaide.Services;
 
 namespace Zaide.Features.ProjectSystem.Infrastructure;
 

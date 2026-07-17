@@ -6,6 +6,7 @@ using Xunit;
 using Zaide.Services;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 

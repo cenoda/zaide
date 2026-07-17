@@ -20,6 +20,8 @@ using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.ProjectSystem.Presentation;
 
 namespace Zaide;
 

@@ -2,11 +2,12 @@
 
 ## Status and authorization
 
-**Current milestone:** M5a ProjectSystem discovery/context/gate/targets
+**Current milestone:** M5b ProjectSystem workflow/process/output
 **complete** (pending human review / commit). M0 accepted at `8fae71d`. M1
 DesignSystem committed at `2259b81`. M2 Settings committed at `a13be5a`. M3
-Workspace committed at `ac75fe5`. M4 Editor committed at `0015101`. Do not start
-M5b+ until M5a is accepted.
+Workspace committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a
+ProjectSystem discovery committed at `faa6e2f`. Do not start M5c+ until M5b is
+accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -970,6 +971,50 @@ authorization.
 **Notes / non-goals:** ManagedProcess* stays here (R62-D02). Mandatory independent milestone defined at M0.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M5b completion record
+
+**Scope executed:** Mechanical rehome of ProjectSystem workflow / managed process /
+output only into `src/Features/ProjectSystem/{Domain,Contracts,Infrastructure,Presentation}/`
+and matching `tests/Zaide.Tests/Features/ProjectSystem/...`. Namespaces
+`Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` → `Zaide.Features.ProjectSystem.*`
+for the 20 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `IManagedProcessRunner`, `IProjectOutputService`, `IProjectWorkflowService` | `.../Contracts/` | `Zaide.Features.ProjectSystem.Contracts` |
+| ManagedProcess models/enums, workflow models/enums/policy, output snapshot (11 files) | `.../Domain/` | `Zaide.Features.ProjectSystem.Domain` |
+| `ManagedProcessRunner`, `ProjectOutputService`, `ProjectWorkflowService` | `.../Infrastructure/` | `Zaide.Features.ProjectSystem.Infrastructure` |
+| `OutputLineViewModel`, `ProjectWorkflowViewModel`, `OutputPanel` | `.../Presentation/` | `Zaide.Features.ProjectSystem.Presentation` |
+
+Matching 12 tests rehomed (no durable renames required). `ManagedProcess*` remains
+ProjectSystem-owned (R62-D02). Public full-name baseline rewrote the 20 type names
+(count still 348). Architecture inventory updated for folder/namespace truth.
+CONVENTIONS + OVERVIEW truthful current-tree notes. No DI registration/lifetime,
+visibility, constructor signature, or behavior changes. FindingId allowlist
+unchanged (9). Diagnostics, test-results, Problems, and `BuildDiagnostic*` remain
+in technical layers for M5c.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M5b; human review/commit of M5b only. Do not start M5c+ without
+authorization.
 
 ### M5c — ProjectSystem — build diagnostics / test results / problems projections
 
