@@ -276,12 +276,30 @@ into a movement slice.
 
 | Refactor | Owns |
 |----------|------|
-| **6.1** | Rules, module map, executable architecture-test baseline (M2+) |
+| **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 visibility/admission ceiling) |
 | **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change |
 | **6.3** | Dependency inversion, composition, visibility, lifetime correction |
 | **7** | Agent/Conversation domain and R61-LT01–LT03 |
 | **8** | Townhall/shell view extraction and UI foundation |
 
+### Executable architecture ratchet (Refactor 6.1 M3)
+
+Tests under `tests/Zaide.Tests/Architecture/` enforce a frozen legacy allowlist
+for three inventory-backed categories only:
+
+| Category | Rule |
+|----------|------|
+| **NamespaceDirection** | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
+| **LocatorSite** | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
+| **RootFolderAdmission** | `src/Infrastructure/` and `src/UI/Shared/` are deny-by-default; empty allowlist today means any new file there fails |
+
+**Allowlist mutation rule:** add only when the entry maps to an existing M0
+`R61-V##` (or a plan-documented deferred exception), live inventory already
+shows the exact match key, and the same review unit updates allowlist + frozen
+FindingId baseline + plan rationale; remove only in the same change that
+clears the live evidence; never grow the allowlist silently to hide new debt.
+Public full-name baselines and target feature-layout enforcement remain M4.
+
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.1 M1 — architecture rule codification)*
+*Last updated: 2026-07-17 (Refactor 6.1 M3 — legacy allowlist ratchet)*

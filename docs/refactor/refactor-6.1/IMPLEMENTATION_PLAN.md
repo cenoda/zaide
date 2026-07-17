@@ -2,17 +2,20 @@
 
 ## Status and authorization
 
-**Current milestone:** M2 complete — architecture-test harness and
-deterministic hybrid inventory reader in `tests/Zaide.Tests/Architecture/`.
-Review is required before M3 (legacy allowlist and no-new-violation ratchet).
+**Current milestone:** M3 complete — legacy-violation allowlist and
+architecture-rule ratchet for locator sites, namespace-direction edges, and
+root-folder admissions (built on the M2 hybrid inventory). Review is required
+before M4 (public/internal visibility and expanded root-admission baselines).
 
 **Authorization boundary:** This plan,
 [`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1 doc
 updates authorize no production structural changes. M2 authorizes only the
 architecture-test harness and inventory reader inside the existing test
-project. They do not authorize source movement, namespace changes, dependency
-changes, DI or visibility changes, production behavior changes, Refactor 6.2,
-Refactor 6.3, or V3 feature implementation.
+project. M3 authorizes only the legacy allowlist and ratchet tests inside
+`tests/Zaide.Tests/Architecture/` plus truthful documentation updates. They do
+not authorize source movement, namespace changes, dependency changes, DI or
+visibility changes, production behavior changes, Refactor 6.2, Refactor 6.3,
+or V3 feature implementation.
 
 Refactor 6.1 defines the rules and future executable guardrails for structural
 work. Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
@@ -367,7 +370,7 @@ allows it.
 | M0 | Create this plan and the read-only live architecture baseline. | Only the two `refactor-6.1` docs may change. Run full build, full test, `git diff --check`, and status. Roll back by deleting the two uncommitted docs or reverting the documentation-only milestone commit. **Complete** (`94c734a`). |
 | M1 | Codify the accepted taxonomy, dependency, admission, visibility, lifetime, and assembly rules in `docs/CONVENTIONS.md` and `docs/architecture/OVERVIEW.md`; create no production movement. | Docs-only diff. Full build/test plus `git diff --check`. Revert the single M1 docs commit without touching M0 evidence. **Complete** (see M1 record below). |
 | M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. **Complete** (see M2 record below). |
-| M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. |
+| M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. **Complete** (see M3 record below). |
 | M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. |
 | M5 | Reconcile docs with executable rules, prove all M0 findings are represented, and close Refactor 6.1 without moving production files. | Full build/test, all architecture tests, diff check, clean milestone status, and human acceptance. Revert M5 documentation only; earlier executable milestones remain separately revertible. |
 
@@ -642,20 +645,153 @@ later milestone.
 Stop after M2 and request review. Do not begin M3, M4, M5, Refactor 6.2,
 Refactor 6.3, Refactor 7, or Refactor 8.
 
+## M3 completion record
+
+**Scope executed:** Legacy-violation allowlist and no-new-violation ratchet for
+three M2-supported categories only. No production code, AXAML, resources,
+namespaces, DI, visibility, lifetimes, or behavior changed. No M4 public-type
+full-name baseline or target feature-layout enforcement. No M5 closeout. No
+Refactor 6.2/6.3/7/8 work. No NuGet package, `.csproj`, or `docs/LIBRARIES.md`
+change.
+
+### Allowlist mutation rule (exact)
+
+1. **Add** only when: (a) the entry maps to an existing M0 `R61-V##` or a
+   plan-documented deferred exception; (b) the hybrid inventory already shows
+   live evidence for the exact `MatchKey`; (c) the same review/rollback unit
+   updates `LegacyArchitectureAllowlist`, the frozen `ApprovedFindingIds`
+   baseline in tests, and this plan’s rationale; (d) the addition is not used
+   to hide newly introduced debt without human review.
+2. **Remove** only in the same change that eliminates the live inventory
+   evidence for that `MatchKey`. Removed keys must not reappear without a new
+   reviewed Add.
+3. **Change** `MatchKey`, category, or M0 ID only as an explicit remove+add
+   pair. Rationale/owner/disposition text may be clarified without changing
+   `MatchKey` when the debt site is unchanged.
+4. Broad wildcards are forbidden. Locator and root-admission keys are exact
+   files; namespace edges are technical-folder direction plus exact source path.
+5. Allowlist growth without updating the frozen FindingId set fails the
+   ratchet tests.
+
+### Allowlisted finding categories and entries
+
+| Category | Count | Rule |
+|----------|------:|------|
+| **NamespaceDirection** | 5 | Exact-file `Services → ViewModels` / `Models → Services` edges |
+| **LocatorSite** | 4 | Exact production files with provider/locator inventory evidence |
+| **RootFolderAdmission** | 0 | Deny-by-default `src/Infrastructure/` and `src/UI/Shared/` |
+
+| FindingId | Category | MatchKey | M0 ID | Disposition / removal |
+|-----------|----------|----------|-------|------------------------|
+| R61-AL-NS-SourceControlState | NamespaceDirection | `namespace:Models->Zaide.Services:src/Models/SourceControlState.cs` | R61-V02 | DependencyInversion / 6.3 |
+| R61-AL-NS-ITerminalSessionFactory | NamespaceDirection | `namespace:Services->Zaide.ViewModels:src/Services/ITerminalSessionFactory.cs` | R61-V05 | DependencyInversion / 6.3 |
+| R61-AL-NS-TerminalSessionFactory | NamespaceDirection | `namespace:Services->Zaide.ViewModels:src/Services/TerminalSessionFactory.cs` | R61-V05 | DependencyInversion / 6.3 |
+| R61-AL-NS-MentionParser | NamespaceDirection | `namespace:Services->Zaide.ViewModels:src/Services/MentionParser.cs` | R61-V06 | DependencyInversion / 6.3 |
+| R61-AL-NS-SourceControlDiffTabService | NamespaceDirection | `namespace:Services->Zaide.ViewModels:src/Services/SourceControlDiffTabService.cs` | R61-V07 | DependencyInversion / 6.3 |
+| R61-AL-LOC-Program | LocatorSite | `locator:src/Program.cs` | R61-V09 | DependencyInversion / 6.3 |
+| R61-AL-LOC-App | LocatorSite | `locator:src/App.axaml.cs` | R61-V09 | DependencyInversion / 6.3 |
+| R61-AL-LOC-SourceControlDiffTabService | LocatorSite | `locator:src/Services/SourceControlDiffTabService.cs` | R61-V07 | DependencyInversion / 6.3 |
+| R61-AL-LOC-EditorTabViewModel | LocatorSite | `locator:src/ViewModels/EditorTabViewModel.cs` | R61-V08 | DependencyInversion / 6.3 |
+
+**Not allowlisted in M3 (by design):** public-type full names and the 348
+ceiling (M4); lifetime / composition size / deferred domain findings without
+M2 inventory edges (R61-V10–V20 / R61-LT01–03 remain documented only).
+
+### Failure mode distinction
+
+| Prefix | Meaning |
+|--------|---------|
+| `NEW_VIOLATION` | Live inventory evidence outside the allowlist |
+| `STALE_ALLOWLIST` | Allowlist entry with no live evidence (must remove when debt is cleared) |
+| `INVENTORY_FAILURE` | Hybrid reader/tooling could not produce inventory |
+| `ALLOWLIST_INTEGRITY` | Ill-formed / non-deterministic allowlist data |
+
+Known accepted legacy debt is asserted present and does not fail the suite.
+
+### Exact files changed in M3
+
+| File | Change |
+|------|--------|
+| `tests/Zaide.Tests/Architecture/ArchitectureAllowlistEntry.cs` | Allowlist entry model |
+| `tests/Zaide.Tests/Architecture/ArchitectureViolation.cs` | Live ratcheted violation model |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchet.cs` | Violation detection and allowlist comparison |
+| `tests/Zaide.Tests/Architecture/LegacyArchitectureAllowlist.cs` | Frozen allowlist + mutation rule |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchetTests.cs` | Ratchet / integrity tests |
+| `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` | This M3 completion record |
+| `docs/CONVENTIONS.md` | Executable M3 ratchet summary |
+| `docs/architecture/OVERVIEW.md` | Truthful M3 baseline status |
+
+### M3 exit conditions
+
+- [x] Exact legacy namespace-direction and locator-site allowlist seeded only
+      from M0 IDs with inventory support.
+- [x] Root-folder admission deny-by-default ratchet with empty approved set.
+- [x] Stable FindingIds, rationale, owner, disposition, and removal boundary on
+      every entry.
+- [x] New violations outside the allowlist fail; allowlist growth without frozen
+      FindingId update fails; every entry is exercised by live inventory.
+- [x] Failure modes distinguish known debt, new violations, and inventory
+      failures.
+- [x] No M4 public-type / target-layout enforcement added.
+- [x] Production code unchanged; no package or `.csproj` change.
+- [x] Verification contract commands pass (recorded below).
+- [x] M4 is not started.
+
+### M3 verification results
+
+Run sequentially after the final M3 edit:
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+Recorded results:
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded with 0 errors and 1
+  existing `CS0067` warning at
+  `tests/Zaide.Tests/Services/ProjectDebugTargetResolverTests.cs:34`
+  (`FakeManagedProcessRunner.ProcessStarted` unused); not introduced by M3.
+- Focused Architecture filter — 14 passed, 0 failed, 0 skipped
+  (6 M2 inventory + 8 M3 ratchet/allowlist tests).
+- `dotnet test Zaide.slnx --no-build` — 2,186 passed, 0 failed, 0 skipped;
+  total 2,186 (M2 baseline 2,178 + 8 new M3 tests).
+- `git diff --check` — clean.
+- `git status --short --branch` — `master...origin/master` with three modified
+  docs (`CONVENTIONS.md`, `architecture/OVERVIEW.md`, this plan) and five new
+  untracked Architecture test files (allowlist entry, violation, ratchet,
+  allowlist, ratchet tests).
+
+### M3 rollback boundary
+
+M3 changes only the Architecture allowlist/ratchet test files listed above and
+the three documentation files. Before commit, rollback is deletion/restore of
+those files. After an explicitly authorized M3 commit, rollback is one revert
+of that commit; it must not touch production files, M0 baseline content beyond
+this plan’s status fields, M2 inventory harness files except as needed for
+compilation of new types, or any later milestone.
+
+Stop after M3 and request review. Do not begin M4, M5, Refactor 6.2,
+Refactor 6.3, Refactor 7, or Refactor 8.
+
 ## Limitations
 
 - Source scans establish current file-level namespace edges but do not replace
-  a semantic dependency graph; M3+ executable allowlists close that gap using
-  the stable findings from M2.
+  a semantic dependency graph; M3 executable allowlists close that gap for the
+  two technical-namespace forbidden directions using M2 inventory evidence.
 - The visibility baseline counts compiled non-nested top-level types only; it
-  intentionally excludes nested and compiler-generated types.
+  intentionally excludes nested and compiler-generated types. Public-type
+  ratchets remain M4.
 - Line and constructor-parameter counts identify composition pressure, not an
   automatic requirement to split every large class.
 - Effective lifetime findings are based on registrations, construction, and
   disposal paths in source; no runtime lifetime tracing was added in M0.
 - The migration order above is guidance for Refactor 6.2 M0, not authorization
   or a substitute for its independent live-code plan.
-- M2 invents no allowlist enforcement; known violations are inventoried only.
+- M3 does not resolve allowlisted debt; it only freezes and ratchets it.
 
 ## Rollback
 

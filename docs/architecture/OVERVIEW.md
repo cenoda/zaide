@@ -18,10 +18,12 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 M0–M1 documentation is accepted
-(rules codified); no V3 production implementation or source migration is
-active. Executable architecture tests begin only in Refactor 6.1 M2 after
-explicit authorization.
+implementation-order roadmap**. Refactor 6.1 M0–M2 are accepted (rules + hybrid
+inventory). M3 is complete and pending human review/commit: it adds the
+legacy-violation allowlist and architecture-rule ratchet (inventory + no-new-
+violation enforcement for locator sites, namespace-direction edges, and root-
+folder admissions). No V3 production implementation or source migration is
+active. Public-type and target-layout ratchets remain M4.
 
 ---
 
@@ -91,15 +93,18 @@ src/
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
-layering is not yet enforced by assemblies or architecture tests. Known
-violations (Services → ViewModels, Models → Services, service-locator sites,
-broad public surface, mixed lifetimes) are allowlisted for later ratchets; see
-the Refactor 6.1 plan. Do not rehome, invert dependencies, or change DI in
-this document’s name.
+layering is not enforced by assemblies. Architecture tests under
+`tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2) and
+ratchet known legacy debt (M3): exact-file service-locator sites, technical-
+namespace forbidden edges (`Services → ViewModels`, `Models → Services`), and
+deny-by-default `src/Infrastructure/` / `src/UI/Shared/` admissions. Broad
+public surface and lifetime debt remain documented for M4/Refactor 6.3; they
+are not fully ratcheted yet. Do not rehome, invert dependencies, or change DI
+in this document’s name.
 
 | Later work | Owns |
 |------------|------|
-| Refactor 6.1 M2–M5 | Executable architecture tests and allowlist ratchets |
+| Refactor 6.1 M4–M5 | Public-type/visibility ceiling and closeout |
 | Refactor 6.2 | Mechanical feature-first source/test/resource migration |
 | Refactor 6.3 | Composition, visibility, lifetime, dependency inversion |
 | Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
@@ -311,4 +316,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M1 architecture rules codified)*
+*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M3 legacy allowlist ratchet)*
