@@ -6,7 +6,9 @@ namespace Zaide.Tests.Architecture;
 
 /// <summary>
 /// Derives M3-ratcheted violations from the hybrid inventory and compares them
-/// to the legacy allowlist. Does not enforce M4 public-type or target-layout rules.
+/// to the legacy allowlist. Public full-name and expanded root-folder rules live
+/// in <see cref="ArchitectureVisibilityRatchet"/> (M4). Target feature-layout
+/// enforcement remains Refactor 6.2.
 /// </summary>
 public static class ArchitectureRatchet
 {
@@ -71,8 +73,12 @@ public static class ArchitectureRatchet
     }
 
     /// <summary>
-    /// Tracked production files under deny-by-default root folders
-    /// <c>src/Infrastructure/</c> or <c>src/UI/Shared/</c>.
+    /// Tracked production <b>C#</b> files under deny-by-default root folders
+    /// <c>src/Infrastructure/</c> or <c>src/UI/Shared/</c> (M3 baseline).
+    /// Inventory is <c>git ls-files</c> of <c>src/**/*.cs</c> only; non-C# assets
+    /// are out of scope. Expanded technical-folder and src-root composition
+    /// admissions are in
+    /// <see cref="ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations"/>.
     /// </summary>
     public static IReadOnlyList<ArchitectureViolation> DetectRootFolderAdmissionViolations(
         ArchitectureInventory inventory)

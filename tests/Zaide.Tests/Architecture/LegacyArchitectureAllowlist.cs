@@ -45,7 +45,10 @@ namespace Zaide.Tests.Architecture;
 /// </list>
 /// <para>
 /// M3 scopes: NamespaceDirection, LocatorSite, RootFolderAdmission only.
-/// Public-type full-name baselines and target feature-layout enforcement are M4+.
+/// Public-type full-name baselines and expanded technical-folder admissions are
+/// M4 (<see cref="PublicProductionTypeBaseline"/>,
+/// <see cref="ArchitectureVisibilityRatchet"/>). Target feature-layout
+/// enforcement remains Refactor 6.2.
 /// </para>
 /// </summary>
 public static class LegacyArchitectureAllowlist
@@ -214,9 +217,10 @@ public static class LegacyArchitectureAllowlist
                 "opening a tab. No new View/ViewModel locator site is permitted.",
                 removalBoundary: "Refactor 6.3"),
 
-            // RootFolderAdmission: empty by design. Deny-by-default for
-            // src/Infrastructure/ and src/UI/Shared/ — any live admission without
-            // a reviewed entry is a NEW_VIOLATION.
+            // RootFolderAdmission: empty by design. Deny-by-default for tracked
+            // production C# under src/Infrastructure/ and src/UI/Shared/ — any
+            // live C# admission without a reviewed entry is a NEW_VIOLATION.
+            // Non-C# assets are outside this inventory/ratchet.
         };
 
         return entries

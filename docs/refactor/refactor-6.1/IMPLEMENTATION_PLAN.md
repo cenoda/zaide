@@ -2,20 +2,22 @@
 
 ## Status and authorization
 
-**Current milestone:** M3 complete — legacy-violation allowlist and
-architecture-rule ratchet for locator sites, namespace-direction edges, and
-root-folder admissions (built on the M2 hybrid inventory). Review is required
-before M4 (public/internal visibility and expanded root-admission baselines).
+**Current milestone:** M4 complete — public/internal visibility baseline
+(393/348/45 + explicit 348 public full names) and expanded root-folder
+admission ratchets (built on M2 inventory and M3 legacy allowlist). Review is
+required before M5 (documentation closeout).
 
 **Authorization boundary:** This plan,
 [`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1 doc
 updates authorize no production structural changes. M2 authorizes only the
 architecture-test harness and inventory reader inside the existing test
 project. M3 authorizes only the legacy allowlist and ratchet tests inside
-`tests/Zaide.Tests/Architecture/` plus truthful documentation updates. They do
-not authorize source movement, namespace changes, dependency changes, DI or
-visibility changes, production behavior changes, Refactor 6.2, Refactor 6.3,
-or V3 feature implementation.
+`tests/Zaide.Tests/Architecture/` plus truthful documentation updates. M4
+authorizes only visibility/admission test baselines and truthful documentation
+updates under the same Architecture test folder. They do not authorize source
+movement, namespace changes, dependency changes, DI or visibility changes,
+production behavior changes, Refactor 6.2, Refactor 6.3, or V3 feature
+implementation.
 
 Refactor 6.1 defines the rules and future executable guardrails for structural
 work. Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
@@ -371,7 +373,7 @@ allows it.
 | M1 | Codify the accepted taxonomy, dependency, admission, visibility, lifetime, and assembly rules in `docs/CONVENTIONS.md` and `docs/architecture/OVERVIEW.md`; create no production movement. | Docs-only diff. Full build/test plus `git diff --check`. Revert the single M1 docs commit without touching M0 evidence. **Complete** (see M1 record below). |
 | M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. **Complete** (see M2 record below). |
 | M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. **Complete** (see M3 record below). |
-| M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. |
+| M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. **Complete** (see M4 record below). |
 | M5 | Reconcile docs with executable rules, prove all M0 findings are represented, and close Refactor 6.1 without moving production files. | Full build/test, all architecture tests, diff check, clean milestone status, and human acceptance. Revert M5 documentation only; earlier executable milestones remain separately revertible. |
 
 Prefer one commit per authorized milestone. If M2–M4 evidence makes a milestone
@@ -679,7 +681,7 @@ change.
 |----------|------:|------|
 | **NamespaceDirection** | 5 | Exact-file `Services → ViewModels` / `Models → Services` edges |
 | **LocatorSite** | 4 | Exact production files with provider/locator inventory evidence |
-| **RootFolderAdmission** | 0 | Deny-by-default `src/Infrastructure/` and `src/UI/Shared/` |
+| **RootFolderAdmission** | 0 | Deny-by-default tracked production C# under `src/Infrastructure/` and `src/UI/Shared/` (inventory is `git ls-files` of `src/**/*.cs` only; non-C# assets are out of scope) |
 
 | FindingId | Category | MatchKey | M0 ID | Disposition / removal |
 |-----------|----------|----------|-------|------------------------|
@@ -725,7 +727,8 @@ Known accepted legacy debt is asserted present and does not fail the suite.
 
 - [x] Exact legacy namespace-direction and locator-site allowlist seeded only
       from M0 IDs with inventory support.
-- [x] Root-folder admission deny-by-default ratchet with empty approved set.
+- [x] Root-folder admission deny-by-default ratchet for tracked production C#
+      under Infrastructure/UI.Shared, with empty approved set.
 - [x] Stable FindingIds, rationale, owner, disposition, and removal boundary on
       every entry.
 - [x] New violations outside the allowlist fail; allowlist growth without frozen
@@ -777,14 +780,162 @@ compilation of new types, or any later milestone.
 Stop after M3 and request review. Do not begin M4, M5, Refactor 6.2,
 Refactor 6.3, Refactor 7, or Refactor 8.
 
+## M4 completion record
+
+**Scope executed:** Public/internal visibility baseline (exact full-name set +
+count ceiling) and expanded root-folder admission ratchets only. No production
+code, AXAML, resources, namespaces, DI, visibility, lifetimes, or behavior
+changed. No M5 closeout. No Refactor 6.2/6.3/7/8 work. No NuGet package,
+`.csproj`, or `docs/LIBRARIES.md` change. M3 legacy allowlist entries and
+FindingId set left unchanged.
+
+### Exact baseline definition
+
+| Metric | Value | Counting rule |
+|--------|------:|---------------|
+| Total top-level production types | **393** | Non-nested, non-`CompilerGenerated`, namespace `Zaide` or `Zaide.*`; `IsPublic` or `IsNotPublic` |
+| Public | **348** | `Type.IsPublic` |
+| Internal | **45** | `Type.IsNotPublic` |
+
+**Public full-name baseline storage:**
+`tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt`
+
+- One full type name per line (348 lines), ordinal-sorted, no blanks, no comments.
+- Source-controlled plain text; reviewable in diffs; no helper library.
+- Loaded by `PublicProductionTypeBaseline.LoadApprovedPublicFullNames`; tests
+  **never** regenerate or overwrite the file during normal execution.
+
+**Public baseline mutation rule:**
+
+1. **Add** a full name only when a production type is intentionally public in
+   the same reviewed change that updates the baseline file (and plan rationale
+   if the ceiling changes). Prefer `internal`.
+2. **Remove** a full name only in the same change that removes the type or
+   makes it non-public.
+3. Count-only compliance is insufficient; the explicit set must match live
+   public types.
+4. Silent growth or auto-generation during test runs is forbidden.
+
+### Failure mode distinction (M4)
+
+| Prefix | Meaning |
+|--------|---------|
+| `NEW_PUBLIC_TYPE` | Live public production type not in the approved full-name baseline |
+| `STALE_PUBLIC_BASELINE` | Baseline name with no matching live public type |
+| `VISIBILITY_BASELINE_INTEGRITY` | Baseline file missing, wrong count, duplicates, unsorted, blank/comment lines, or count-constant mismatch |
+| `NEW_VIOLATION` / `STALE_ALLOWLIST` / `INVENTORY_FAILURE` / `ALLOWLIST_INTEGRITY` | Existing M3 prefixes; preserved and not weakened |
+
+### Root-folder admissions enforced by M4
+
+**Scope (explicit):** M3 and M4 root-admission ratchets govern **tracked
+production C# source files only**. The hybrid inventory lists production paths
+via `git ls-files -- src/*.cs src/**/*.cs`. Non-C# production assets (for
+example `App.axaml`, `MainWindow.axaml`, `Styles/Icons.axaml`, `Zaide.csproj`,
+`app.manifest`) are **not** detected or admitted by this ratchet. Expanding
+coverage to all assets would need a separate, deliberate admission policy and
+is out of M4 scope.
+
+| Rule (tracked `.cs` only) | Enforcement |
+|---------------------------|-------------|
+| Tracked C# under `src/Infrastructure/` | Deny-by-default (M3 detector + M4 expanded detector) |
+| Tracked C# under `src/UI/Shared/` | Deny-by-default (M3 detector + M4 expanded detector) |
+| Current technical folders only | Admit tracked C# in `Models`, `Services`, `Styles`, `ViewModels`, `Views` only |
+| `src/` root composition C# | Admit only `src/Program.cs`, `src/App.axaml.cs`, `src/MainWindow.axaml.cs` |
+| Feature-first layout (`Features/`, `App/`, …) | **Not** enforced as migration requirement; new unauthorized top-level folders’ tracked C# fails admission until a reviewed allowlist/plan update (Refactor 6.2 owns mechanical moves) |
+| Non-C# assets under any of the above | **Not covered** by M3/M4 detectors |
+
+### Exact files changed in M4
+
+| File | Change |
+|------|--------|
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` | Frozen 348 public full names |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | Baseline loader, constants, mutation rule |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityRatchet.cs` | Visibility compare + expanded root admission |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | M4 ratchet tests |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchet.cs` | Doc comments only (M4 cross-refs) |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchetTests.cs` | Doc comments only (M4 cross-refs) |
+| `tests/Zaide.Tests/Architecture/LegacyArchitectureAllowlist.cs` | Doc comments only (M4 cross-refs); **entries unchanged** |
+| `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` | This M4 completion record |
+| `docs/CONVENTIONS.md` | Executable M4 baseline summary |
+| `docs/architecture/OVERVIEW.md` | Truthful M4 baseline status |
+
+### M4 exit conditions
+
+- [x] Compiled visibility baseline 393/348/45 executable and asserted.
+- [x] Explicit deterministic frozen baseline of all 348 public full type names.
+- [x] Public-by-exception: new public type fails (`NEW_PUBLIC_TYPE`); stale
+      baseline name fails (`STALE_PUBLIC_BASELINE`); integrity failures use
+      `VISIBILITY_BASELINE_INTEGRITY`.
+- [x] M3 Infrastructure / UI.Shared deny-by-default preserved for tracked
+      production C#.
+- [x] Expanded root admission limited to M0/M1 current technical tree + three
+      src root composition C# files; no feature-layout migration enforcement;
+      non-C# assets explicitly out of detector scope.
+- [x] M3 legacy allowlist entries and FindingId set unchanged.
+- [x] No production-code changes; no packages or `.csproj` changes.
+- [x] Verification contract commands pass (recorded below).
+- [x] M5 is not started.
+
+### M4 verification results
+
+Run sequentially after the final M4 edit:
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+Recorded results (post docs-scope correction re-verify):
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded with 0 errors and 1
+  existing `CS0067` warning at
+  `tests/Zaide.Tests/Services/ProjectDebugTargetResolverTests.cs:34`
+  (`FakeManagedProcessRunner.ProcessStarted` unused); not introduced by M4.
+- Focused Architecture filter — 21 passed, 0 failed, 0 skipped
+  (6 M2 inventory + 8 M3 ratchet + 7 M4 visibility/admission tests).
+- `dotnet test Zaide.slnx --no-build` — 2,193 passed, 0 failed, 0 skipped;
+  total 2,193 (M3 baseline 2,186 + 7 new M4 tests).
+- `git diff --check` — clean.
+- `git status --short --branch` — `master...origin/master` with three modified
+  docs, comment-only Architecture edits for C#-only admission scope, and four
+  new untracked Architecture files (baseline txt/cs, visibility ratchet,
+  visibility tests).
+
+**Doc-scope correction (pre-commit):** M3/M4 root-admission text now states
+explicitly that detectors cover tracked production C# only; non-C# assets are
+out of scope. Detector behavior was not expanded.
+
+### M4 rollback boundary
+
+M4 changes only the Architecture visibility/admission files listed above and
+the three documentation files. Before commit, rollback is deletion/restore of
+those files. After an explicitly authorized M4 commit, rollback is one revert
+of that commit; it must not touch production files, M3 allowlist entries, M2
+inventory harness except as needed for compilation of new types, or any later
+milestone.
+
+### Remaining M5 work
+
+- Reconcile docs with the full executable rule set (M0–M4).
+- Prove every M0 finding is represented (executable ratchet, documented debt, or
+  explicit deferral).
+- Close Refactor 6.1 without moving production files.
+- Human acceptance of M5; no production structural work.
+
+Stop after M4 and request review. Do not begin M5, Refactor 6.2, Refactor 6.3,
+Refactor 7, or Refactor 8.
+
 ## Limitations
 
 - Source scans establish current file-level namespace edges but do not replace
   a semantic dependency graph; M3 executable allowlists close that gap for the
   two technical-namespace forbidden directions using M2 inventory evidence.
 - The visibility baseline counts compiled non-nested top-level types only; it
-  intentionally excludes nested and compiler-generated types. Public-type
-  ratchets remain M4.
+  intentionally excludes nested and compiler-generated types. M4 freezes the
+  public full-name set; Refactor 6.3 owns internalization work.
 - Line and constructor-parameter counts identify composition pressure, not an
   automatic requirement to split every large class.
 - Effective lifetime findings are based on registrations, construction, and
@@ -792,6 +943,9 @@ Refactor 6.3, Refactor 7, or Refactor 8.
 - The migration order above is guidance for Refactor 6.2 M0, not authorization
   or a substitute for its independent live-code plan.
 - M3 does not resolve allowlisted debt; it only freezes and ratchets it.
+- M4 expanded root admission freezes the **current** technical tree roots for
+  **tracked production C# only**; it does not require or perform feature-first
+  folder migration and does not admit or reject non-C# assets.
 
 ## Rollback
 

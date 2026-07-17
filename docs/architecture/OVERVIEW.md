@@ -18,12 +18,14 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 M0–M2 are accepted (rules + hybrid
-inventory). M3 is complete and pending human review/commit: it adds the
-legacy-violation allowlist and architecture-rule ratchet (inventory + no-new-
-violation enforcement for locator sites, namespace-direction edges, and root-
-folder admissions). No V3 production implementation or source migration is
-active. Public-type and target-layout ratchets remain M4.
+implementation-order roadmap**. Refactor 6.1 M0–M3 are accepted (rules, hybrid
+inventory, legacy allowlist ratchet). M4 is complete and pending human
+review/commit: it freezes the public production-type full-name baseline
+(393/348/45) and expands **tracked production C#** root-folder admission beyond
+deny-by-default `Infrastructure/` and `UI/Shared/` C# paths to the current
+technical-folder C# set. Non-C# assets are outside that ratchet. No V3
+production implementation or source migration is active. Feature-layout
+migration remains Refactor 6.2; M5 is documentation closeout only.
 
 ---
 
@@ -69,7 +71,7 @@ Key target rules (detail in CONVENTIONS):
 - Root `Infrastructure/` and `UI/Shared/` are deny-by-default multi-consumer
   admissions; LSP stays under Language, DAP under Debugging.
 - Visibility is internal-by-default / public-by-exception (348 public-type
-  ceiling baseline).
+  full-name baseline + 393/348/45 compiled ceiling; executable in M4).
 - Current lifetimes: application, workspace, process, projection, editor
   session, terminal session. Conversation, agent session, and run (R61-LT01–
   LT03) are deferred to Refactor 7.
@@ -94,19 +96,25 @@ src/
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
 layering is not enforced by assemblies. Architecture tests under
-`tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2) and
-ratchet known legacy debt (M3): exact-file service-locator sites, technical-
-namespace forbidden edges (`Services → ViewModels`, `Models → Services`), and
-deny-by-default `src/Infrastructure/` / `src/UI/Shared/` admissions. Broad
-public surface and lifetime debt remain documented for M4/Refactor 6.3; they
-are not fully ratcheted yet. Do not rehome, invert dependencies, or change DI
-in this document’s name.
+`tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2), ratchet
+known legacy debt (M3), and enforce the public full-name baseline plus expanded
+root-folder admission (M4). Root-admission and related source ratchets inventory
+**tracked production C# only** (`git ls-files` of `src/**/*.cs`): exact-file
+service-locator sites; technical-namespace forbidden edges
+(`Services → ViewModels`, `Models → Services`); deny-by-default tracked C# under
+`src/Infrastructure/` / `src/UI/Shared/`; current technical folders only for
+tracked C# (`Models`, `Services`, `Styles`, `ViewModels`, `Views`) plus three
+`src/` root composition C# files; and the frozen 348 public type names
+(`PublicProductionTypeBaseline.txt`). Non-C# assets (`.axaml`, project files,
+manifests, etc.) are not governed by the M3/M4 root-admission detectors.
+Lifetime/composition debt remains documented for Refactor 6.3. Do not rehome,
+invert dependencies, or change DI in this document’s name.
 
 | Later work | Owns |
 |------------|------|
-| Refactor 6.1 M4–M5 | Public-type/visibility ceiling and closeout |
+| Refactor 6.1 M5 | Documentation closeout and M0-finding representation proof |
 | Refactor 6.2 | Mechanical feature-first source/test/resource migration |
-| Refactor 6.3 | Composition, visibility, lifetime, dependency inversion |
+| Refactor 6.3 | Composition, visibility reduction, lifetime, dependency inversion |
 | Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
 
 ---
@@ -316,4 +324,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M3 legacy allowlist ratchet)*
+*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M4 public visibility + expanded root admission)*

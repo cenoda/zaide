@@ -7,8 +7,9 @@ namespace Zaide.Tests.Architecture;
 /// <summary>
 /// Refactor 6.1 M3: legacy-violation allowlist and no-new-violation ratchet.
 /// Distinguishes known accepted debt, newly introduced violations, and inventory
-/// / allowlist integrity failures. Does not enforce M4 public-type or target
-/// feature-layout rules.
+/// / allowlist integrity failures. Public full-name and expanded root-folder
+/// admissions are covered by <see cref="ArchitectureVisibilityTests"/> (M4).
+/// Target feature-layout enforcement remains Refactor 6.2.
 /// </summary>
 public sealed class ArchitectureRatchetTests
 {
@@ -149,7 +150,8 @@ public sealed class ArchitectureRatchetTests
 
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryRootFolderAdmission);
 
-        // M0/M2 baseline: no root Infrastructure or UI/Shared production files.
+        // M0/M2 baseline: no tracked production C# under Infrastructure or UI/Shared.
+        // Non-C# assets are outside this inventory/ratchet.
         Assert.Empty(live);
         Assert.Empty(allowlist);
         Assert.DoesNotContain(

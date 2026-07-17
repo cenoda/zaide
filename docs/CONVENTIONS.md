@@ -237,8 +237,12 @@ admits them.
 - Do not widen visibility for tests; use existing
   `InternalsVisibleTo="Zaide.Tests"`.
 - Refactor 6.1 baselines a ceiling of **348** public top-level production types
-  (compiled non-nested count). No new public type without an explicit
-  allowlist entry; Refactor 6.3 reduces the explicit list.
+  (compiled non-nested count: **393** total / **348** public / **45** internal).
+  The explicit public full-name set is frozen in
+  `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` and enforced
+  by architecture tests (public-by-exception). No new public type without an
+  intentional baseline update in the same reviewed change; Refactor 6.3 reduces
+  the explicit list.
 
 ### Lifetime vocabulary (current)
 
@@ -276,30 +280,36 @@ into a movement slice.
 
 | Refactor | Owns |
 |----------|------|
-| **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 visibility/admission ceiling) |
+| **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 public full-name + expanded root admission) |
 | **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change |
 | **6.3** | Dependency inversion, composition, visibility, lifetime correction |
 | **7** | Agent/Conversation domain and R61-LT01–LT03 |
 | **8** | Townhall/shell view extraction and UI foundation |
 
-### Executable architecture ratchet (Refactor 6.1 M3)
+### Executable architecture ratchet (Refactor 6.1 M3–M4)
 
-Tests under `tests/Zaide.Tests/Architecture/` enforce a frozen legacy allowlist
-for three inventory-backed categories only:
+Tests under `tests/Zaide.Tests/Architecture/` enforce:
 
-| Category | Rule |
-|----------|------|
-| **NamespaceDirection** | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
-| **LocatorSite** | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | `src/Infrastructure/` and `src/UI/Shared/` are deny-by-default; empty allowlist today means any new file there fails |
+| Category | Milestone | Rule |
+|----------|-----------|------|
+| **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
+| **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
+| **RootFolderAdmission** | M3 + M4 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). M4 expansion: only current technical folders `Models`, `Services`, `Styles`, `ViewModels`, `Views` plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`) are admitted for tracked C#; any other top-level folder’s tracked C# or unauthorized root C# file fails unless allowlisted. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
-**Allowlist mutation rule:** add only when the entry maps to an existing M0
+**Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
 `R61-V##` (or a plan-documented deferred exception), live inventory already
 shows the exact match key, and the same review unit updates allowlist + frozen
 FindingId baseline + plan rationale; remove only in the same change that
 clears the live evidence; never grow the allowlist silently to hide new debt.
-Public full-name baselines and target feature-layout enforcement remain M4.
+
+**Public baseline mutation rule (M4):** update
+`PublicProductionTypeBaseline.txt` only in the same reviewed change that
+intentionally adds/removes/changes public production surface; tests never
+auto-regenerate the file. Target feature-layout enforcement remains
+Refactor 6.2. Non-C# root-asset admission policy is a separate future decision;
+M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.1 M3 — legacy allowlist ratchet)*
+*Last updated: 2026-07-17 (Refactor 6.1 M4 — public visibility + expanded root admission)*
