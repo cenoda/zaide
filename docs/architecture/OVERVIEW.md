@@ -84,7 +84,7 @@ and [M0 architecture baseline](../refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE
 
 The live production tree is still mostly technical-layer folders and namespaces.
 Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace;
-M4 rehomed Editor; M5a–M5b rehomed ProjectSystem core + workflow/process/output:
+M4 rehomed Editor; M5a–M5c rehomed ProjectSystem (discovery through diagnostics/Problems):
 
 ```text
 src/
@@ -96,14 +96,14 @@ src/
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
   Features/Workspace/  # Domain, Contracts, Infrastructure, Presentation (6.2 M3)
   Features/Editor/     # Domain, Contracts, Infrastructure, Presentation (6.2 M4; FileService parked R62-D01)
-  Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation (6.2 M5a–M5b; diagnostics/problems still in Services)
+  Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation (6.2 M5a–M5c complete for ProjectSystem)
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
 layering is not enforced by assemblies. Architecture tests under
 `tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2), ratchet
 known legacy debt (M3), and enforce the public full-name baseline plus expanded
-root-folder admission (M4, updated for 6.2 M1–M5b). Root-admission and related
+root-folder admission (M4, updated for 6.2 M1–M5c). Root-admission and related
 source ratchets inventory **tracked production C# only** (`git ls-files` of
 `src/**/*.cs`): exact-file service-locator sites; technical-namespace forbidden
 edges (`Services → ViewModels`, `Models → Services`); deny-by-default tracked C#
@@ -118,7 +118,7 @@ Refactor 6.3.
 | Later work | Owns |
 |------------|------|
 | Refactor 6.1 | Closed; rules and executable ratchets |
-| Refactor 6.2 | Mechanical feature-first migration (M0 accepted; M1–M5b DesignSystem/Settings/Workspace/Editor/ProjectSystem workflow done or in flight) |
+| Refactor 6.2 | Mechanical feature-first migration (M0 accepted; M1–M5c DesignSystem/Settings/Workspace/Editor/ProjectSystem done or in flight) |
 | Refactor 6.3 | Composition, visibility reduction, lifetime, dependency inversion |
 | Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
 

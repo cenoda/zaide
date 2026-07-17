@@ -69,7 +69,7 @@ public sealed class ProjectSystemDependencyInjectionTests
     {
         using var provider = BuildProvider();
 
-        // The service depends on the single shared Workspace instance.
+        // The service depends on the single shared global::Zaide.Features.Workspace.Domain.Workspace instance.
         var workspace = provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var ctx = provider.GetRequiredService<IProjectContextService>();
 

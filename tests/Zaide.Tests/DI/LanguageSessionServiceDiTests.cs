@@ -6,6 +6,7 @@ using Xunit;
 using Zaide;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.ProjectSystem.Presentation;
 
 namespace Zaide.Tests.DI;
 

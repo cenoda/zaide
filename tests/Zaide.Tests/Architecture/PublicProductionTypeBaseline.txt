@@ -22,6 +22,7 @@ Zaide.Features.Editor.Presentation.EditorViewModel
 Zaide.Features.Editor.Presentation.FoldingOperations
 Zaide.Features.Editor.Presentation.SearchBar
 Zaide.Features.Editor.Presentation.UnsavedDialog
+Zaide.Features.ProjectSystem.Contracts.IBuildDiagnosticsService
 Zaide.Features.ProjectSystem.Contracts.IManagedProcessRunner
 Zaide.Features.ProjectSystem.Contracts.IProjectContextService
 Zaide.Features.ProjectSystem.Contracts.IProjectDebugLaunchService
@@ -33,7 +34,12 @@ Zaide.Features.ProjectSystem.Contracts.IProjectOperationHandoffLease
 Zaide.Features.ProjectSystem.Contracts.IProjectOperationLease
 Zaide.Features.ProjectSystem.Contracts.IProjectOutputService
 Zaide.Features.ProjectSystem.Contracts.IProjectWorkflowService
+Zaide.Features.ProjectSystem.Contracts.ITestResultsService
 Zaide.Features.ProjectSystem.Contracts.ProjectOperationAcquireResult
+Zaide.Features.ProjectSystem.Domain.BuildDiagnostic
+Zaide.Features.ProjectSystem.Domain.BuildDiagnosticParser
+Zaide.Features.ProjectSystem.Domain.BuildDiagnosticSources
+Zaide.Features.ProjectSystem.Domain.BuildDiagnosticsSnapshot
 Zaide.Features.ProjectSystem.Domain.ManagedProcessOutputLine
 Zaide.Features.ProjectSystem.Domain.ManagedProcessRunResult
 Zaide.Features.ProjectSystem.Domain.ManagedProcessStartRequest
@@ -60,6 +66,12 @@ Zaide.Features.ProjectSystem.Domain.ProjectWorkflowOutcomeKind
 Zaide.Features.ProjectSystem.Domain.ProjectWorkflowSnapshot
 Zaide.Features.ProjectSystem.Domain.ProjectWorkflowStatusPolicy
 Zaide.Features.ProjectSystem.Domain.ResolvedProjectTarget
+Zaide.Features.ProjectSystem.Domain.TestCaseOutcome
+Zaide.Features.ProjectSystem.Domain.TestCaseResult
+Zaide.Features.ProjectSystem.Domain.TestResultsParser
+Zaide.Features.ProjectSystem.Domain.TestResultsSnapshot
+Zaide.Features.ProjectSystem.Domain.TestResultsSummary
+Zaide.Features.ProjectSystem.Infrastructure.BuildDiagnosticsService
 Zaide.Features.ProjectSystem.Infrastructure.FileSystemProjectFileSystem
 Zaide.Features.ProjectSystem.Infrastructure.ManagedProcessRunner
 Zaide.Features.ProjectSystem.Infrastructure.ProjectContextService
@@ -71,9 +83,17 @@ Zaide.Features.ProjectSystem.Infrastructure.ProjectOperationGate
 Zaide.Features.ProjectSystem.Infrastructure.ProjectOutputService
 Zaide.Features.ProjectSystem.Infrastructure.ProjectTargetResolver
 Zaide.Features.ProjectSystem.Infrastructure.ProjectWorkflowService
+Zaide.Features.ProjectSystem.Infrastructure.TestResultsService
 Zaide.Features.ProjectSystem.Presentation.OutputLineViewModel
 Zaide.Features.ProjectSystem.Presentation.OutputPanel
+Zaide.Features.ProjectSystem.Presentation.ProblemItemViewModel
+Zaide.Features.ProjectSystem.Presentation.ProblemKind
+Zaide.Features.ProjectSystem.Presentation.ProblemsPanel
+Zaide.Features.ProjectSystem.Presentation.ProblemsViewModel
 Zaide.Features.ProjectSystem.Presentation.ProjectWorkflowViewModel
+Zaide.Features.ProjectSystem.Presentation.TestCaseItemViewModel
+Zaide.Features.ProjectSystem.Presentation.TestResultsPanel
+Zaide.Features.ProjectSystem.Presentation.TestResultsViewModel
 Zaide.Features.Settings.Contracts.ISecretStore
 Zaide.Features.Settings.Contracts.ISettingsMigration
 Zaide.Features.Settings.Contracts.ISettingsService
@@ -129,11 +149,6 @@ Zaide.Services.AgentExecutionService
 Zaide.Services.BreakpointOperationResult
 Zaide.Services.BreakpointOutcomeKind
 Zaide.Services.BreakpointService
-Zaide.Services.BuildDiagnostic
-Zaide.Services.BuildDiagnosticParser
-Zaide.Services.BuildDiagnosticSources
-Zaide.Services.BuildDiagnosticsService
-Zaide.Services.BuildDiagnosticsSnapshot
 Zaide.Services.CommandDescriptor
 Zaide.Services.CommandRegistry
 Zaide.Services.CommitResult
@@ -170,7 +185,6 @@ Zaide.Services.GitMutationService
 Zaide.Services.GitRepositoryService
 Zaide.Services.IAgentExecutionService
 Zaide.Services.IBreakpointService
-Zaide.Services.IBuildDiagnosticsService
 Zaide.Services.ICommandRegistry
 Zaide.Services.IDebugAdapterLocator
 Zaide.Services.IDebugAdapterSession
@@ -194,7 +208,6 @@ Zaide.Services.ISourceControlDiffTabService
 Zaide.Services.ISourceControlSnapshotOrchestrator
 Zaide.Services.ITerminalService
 Zaide.Services.ITerminalSessionFactory
-Zaide.Services.ITestResultsService
 Zaide.Services.LanguageCommandAvailability
 Zaide.Services.LanguageCompletionCommit
 Zaide.Services.LanguageCompletionItem
@@ -266,12 +279,6 @@ Zaide.Services.SourceControlDiffTabService
 Zaide.Services.SourceControlSnapshotOrchestrator
 Zaide.Services.StageResult
 Zaide.Services.TerminalSessionFactory
-Zaide.Services.TestCaseOutcome
-Zaide.Services.TestCaseResult
-Zaide.Services.TestResultsParser
-Zaide.Services.TestResultsService
-Zaide.Services.TestResultsSnapshot
-Zaide.Services.TestResultsSummary
 Zaide.UI.DesignSystem.LayoutTokens
 Zaide.UI.DesignSystem.TextStyles
 Zaide.ViewModels.AgentExecutionCoordinator
@@ -302,9 +309,6 @@ Zaide.ViewModels.LogCategory
 Zaide.ViewModels.LogEntry
 Zaide.ViewModels.MainWindowViewModel
 Zaide.ViewModels.PaletteEntry
-Zaide.ViewModels.ProblemItemViewModel
-Zaide.ViewModels.ProblemKind
-Zaide.ViewModels.ProblemsViewModel
 Zaide.ViewModels.SourceControlViewModel
 Zaide.ViewModels.StatusBarViewModel
 Zaide.ViewModels.TerminalCell
@@ -316,8 +320,6 @@ Zaide.ViewModels.TerminalSnapshotSearch
 Zaide.ViewModels.TerminalState
 Zaide.ViewModels.TerminalTabViewModel
 Zaide.ViewModels.TerminalViewModel
-Zaide.ViewModels.TestCaseItemViewModel
-Zaide.ViewModels.TestResultsViewModel
 Zaide.ViewModels.TownhallViewModel
 Zaide.Views.AgentPanelHostView
 Zaide.Views.AgentPanelView
@@ -330,7 +332,6 @@ Zaide.Views.HorizontalDirection
 Zaide.Views.IconFactory
 Zaide.Views.InstructionPointerOperations
 Zaide.Views.NavBar
-Zaide.Views.ProblemsPanel
 Zaide.Views.SourceControlPanel
 Zaide.Views.StatusBar
 Zaide.Views.TerminalGeometry
@@ -339,7 +340,6 @@ Zaide.Views.TerminalPanel
 Zaide.Views.TerminalRenderControl
 Zaide.Views.TerminalTabHost
 Zaide.Views.TerminalTabStrip
-Zaide.Views.TestResultsPanel
 Zaide.Views.TownhallAvatarFactory
 Zaide.Views.TownhallChannelPanel
 Zaide.Views.TownhallChatPanel

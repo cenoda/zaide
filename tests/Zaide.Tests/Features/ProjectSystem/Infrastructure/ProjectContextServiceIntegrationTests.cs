@@ -16,7 +16,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
 /// <summary>
 /// Phase 8.3 M3 integration tests for <see cref="ProjectContextService"/> wiring
-/// to <see cref="global::Zaide.Features.Workspace.Domain.Workspace.WorkspaceFolderChanged"/>, startup reconciliation,
+/// to <see cref="global::Zaide.Features.Workspace.Domain.WorkspaceFolderChanged"/>, startup reconciliation,
 /// deterministic disposal/unsubscription, and logger-event behavior.
 ///
 /// Uses a deterministic fake <see cref="IProjectDiscovery"/> (no real filesystem,
