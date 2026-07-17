@@ -2,11 +2,13 @@
 
 ## Status and authorization
 
-**Closeout status (2026-07-17):** **GO** — scheduled mechanical migration
-**M1–M12 complete** on `master` at `72102da`
+**Closeout status (2026-07-17):** **GO, accepted closed** — scheduled mechanical
+migration **M1–M12 complete** on `master` at `72102da`
 (`refactor-6.2: migrate app composition and shell`). Working tree clean;
-`HEAD == origin/master`. Do **not** start M13, Refactor 6.3, 7, or 8 without
-explicit authorization.
+`HEAD == origin/master`. Optional M13 is **declined**: leave its candidates
+parked and do not create `Infrastructure/` or `UI/Shared` roots. Refactor 6.3
+M0 is the next eligible planning gate; do not start its production work,
+Refactor 7, or Refactor 8 without explicit authorization.
 
 **Milestone commits (M0–M12):** M0 accepted at `8fae71d`. M1 DesignSystem
 `2259b81`. M2 Settings `a13be5a`. M3 Workspace `ac75fe5`. M4 Editor `0015101`.
@@ -2118,14 +2120,19 @@ git status --short --branch
 
 ### Decision
 
-**GO** for Refactor 6.2 scheduled closeout. M13 and Refactors 6.3 / 7 / 8 remain
-unauthorized.
+**GO, accepted closed** for Refactor 6.2 scheduled closeout. The separate human
+admission decision declines M13: R62-D01, R62-D03, and R62-D04 remain parked;
+do not create `Infrastructure/` or `UI/Shared`. Refactor 6.3 M0 is next
+eligible, but neither it nor Refactors 7 / 8 has production authorization.
 
 ---
 
 ### M13 — Optional root admission (not scheduled)
 
-Only if human review approves after M12:
+**Decision (2026-07-17): declined.** Reopen only if a later refactor proves a
+real need for the root or shared boundary; this is not a cleanup opportunity.
+
+If a future human review reopens it after M12:
 
 - Rehome `IFileService`/`FileService` to `Infrastructure/FileSystem` (R62-D01)
   with allowlist admission entries naming Editor + SourceControl consumers.

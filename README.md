@@ -20,8 +20,10 @@ direct agent panels, `@mention` routing, and local Git
 status/diff/stage/commit workflows delivered by V1, plus the V2 IDE core.
 Completed plans are archived under [`docs/phases/`](docs/phases/).
 [Roadmap V3 — AI-Native Orchestration](docs/roadmap/V3.md) is now a
-**user-accepted implementation-order roadmap**. Refactor 6.1 M0 planning is
-authorized; no V3 production implementation is active yet.
+**user-accepted implementation-order roadmap**. Refactor 6.1 is closed and
+Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
+Optional M13 root admissions are declined; Refactor 6.3 M0 is the next eligible
+planning gate. No V3 production implementation is active yet.
 
 ## Philosophy
 

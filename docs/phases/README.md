@@ -13,9 +13,10 @@ global across versions so historical references stay unambiguous.
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
 [Roadmap V3](../roadmap/V3.md) implementation order is accepted. No V3 phase
-plan exists and Phase 14 implementation is not active. Refactor 6.1 M0 planning
-is the next authorized task; production work still requires acceptance of its
-independent live-code-verified plan.
+plan exists and Phase 14 implementation is not active. Refactor 6.1 is closed,
+and Refactor 6.2 M1–M12 is accepted closed; optional M13 root admissions are
+declined. Refactor 6.3 M0 is the next eligible planning gate. Production work
+still requires the independent refactor's live-code-verified M0 acceptance.
 
 ## Archive Policy
 
