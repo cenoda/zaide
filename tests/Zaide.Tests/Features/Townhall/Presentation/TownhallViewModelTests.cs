@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using Xunit;
-using Zaide.Models;
-using Zaide.ViewModels;
+using Zaide.Features.Townhall.Domain;
+using Zaide.Features.Townhall.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallViewModelTests
 {

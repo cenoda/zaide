@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Townhall.Domain;
 
 /// <summary>
 /// Represents a single entry in the Townhall activity log: a chat message,

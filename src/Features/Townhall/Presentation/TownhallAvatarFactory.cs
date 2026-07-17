@@ -4,7 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.UI.DesignSystem;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Builds the shared Townhall avatar treatment used by the people and chat panels.

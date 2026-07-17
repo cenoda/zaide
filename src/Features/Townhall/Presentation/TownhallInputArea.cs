@@ -7,8 +7,9 @@ using Avalonia.Styling;
 using System;
 using System.Threading.Tasks;
 using Zaide.UI.DesignSystem;
+using Zaide.Views;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Input area for the Townhall chat panel.

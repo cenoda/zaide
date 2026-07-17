@@ -4,10 +4,10 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Xunit;
-using Zaide.Models;
-using Zaide.Views;
+using Zaide.Features.Townhall.Domain;
+using Zaide.Features.Townhall.Presentation;
 
-namespace Zaide.Tests.Views;
+namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallChatPanelGroupingTests
 {

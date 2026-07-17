@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Townhall.Domain;
 
 /// <summary>
 /// Represents a channel in the Townhall workspace.

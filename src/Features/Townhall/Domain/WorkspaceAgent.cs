@@ -1,6 +1,6 @@
 using System;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Townhall.Domain;
 
 /// <summary>
 /// Represents a person or agent in the Workspace.

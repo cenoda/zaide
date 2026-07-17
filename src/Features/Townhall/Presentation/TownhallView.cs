@@ -11,11 +11,11 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
-using Zaide.Models;
+using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
+using Zaide.Views;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Composite Townhall view: the center column of the main window.

@@ -6,9 +6,9 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using ReactiveUI;
-using Zaide.Models;
+using Zaide.Features.Townhall.Domain;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// ViewModel for the Townhall workspace.

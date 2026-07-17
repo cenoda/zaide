@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;
-using Zaide.Models;
+using Zaide.Features.Townhall.Domain;
 
-namespace Zaide.Tests.Models;
+namespace Zaide.Tests.Features.Townhall.Domain;
 
 public class TownhallMessageTests
 {

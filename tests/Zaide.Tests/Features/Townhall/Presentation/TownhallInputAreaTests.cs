@@ -6,9 +6,9 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Xunit;
-using Zaide.Views;
+using Zaide.Features.Townhall.Presentation;
 
-namespace Zaide.Tests.Views;
+namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallInputAreaTests
 {

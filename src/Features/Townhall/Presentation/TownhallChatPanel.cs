@@ -5,10 +5,11 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
-using Zaide.Models;
+using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
+using Zaide.Views;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Chat message panel for the Townhall.

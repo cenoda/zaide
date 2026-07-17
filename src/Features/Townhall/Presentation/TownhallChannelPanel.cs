@@ -7,10 +7,11 @@ using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
-using Zaide.Models;
+using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
+using Zaide.Views;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Channels panel for the Townhall sidebar.

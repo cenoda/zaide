@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
-namespace Zaide.Models;
+namespace Zaide.Features.Townhall.Domain;
 
 /// <summary>
 /// Holds the current session state for the Townhall workspace.
