@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Production factory that launches NetCoreDbg and starts the DAP transport.

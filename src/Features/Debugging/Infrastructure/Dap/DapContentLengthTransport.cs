@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Content-Length framed VS Code DAP transport over redirected stdio streams.

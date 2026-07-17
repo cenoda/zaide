@@ -6,12 +6,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 M1 production DAP transport lifecycle proof against NetCoreDbg.

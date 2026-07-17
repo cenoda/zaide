@@ -10,9 +10,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 F1 unit tests for thread-safe DAP pending-request ownership.

@@ -10,6 +10,7 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;

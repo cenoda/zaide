@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Immutable stopped-thread details from the most recent <c>stopped</c> DAP event.

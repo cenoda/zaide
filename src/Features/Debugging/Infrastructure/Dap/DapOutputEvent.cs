@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Adapter <c>output</c> DAP event payload projected for session consumers.

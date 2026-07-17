@@ -6,6 +6,7 @@ using Moq;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.ViewModels;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;

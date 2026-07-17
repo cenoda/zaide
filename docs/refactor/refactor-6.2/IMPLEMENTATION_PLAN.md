@@ -2,14 +2,15 @@
 
 ## Status and authorization
 
-**Current milestone:** M7a Debugging application **complete**
+**Current milestone:** M7b Debugging DAP infrastructure **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
 `e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
 application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
-committed at `518979b`. Do not start M7b+ until M7a is accepted.
+committed at `518979b`. M7a Debugging application committed at `298cdc9`.
+Do not start M7c+ until M7b is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1448,6 +1449,47 @@ authorization.
 **Notes / non-goals:** R61-V03 DAP portion.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M7b completion record
+
+**Scope executed:** Mechanical rehome of Debugging DAP infrastructure only into
+`src/Features/Debugging/Infrastructure/Dap/` and matching
+`tests/Zaide.Tests/Features/Debugging/Infrastructure/Dap/`. Namespace
+`Zaide.Services` → `Zaide.Features.Debugging.Infrastructure.Dap` for the 19
+production paths (adapter locator/session/factory/options, DAP events/info
+records, transport, parsers, NetCoreDbg session). Matching 6 tests rehomed
+(including `TestDebugAdapterSession`). No renames beyond path/namespace.
+
+Debugging presentation (panels, margins, editor breakpoint/IP types) remains
+under technical ViewModels/Views for M7c.
+
+Public full-name baseline rewrote 16 type names (count still 348). Architecture
+inventory updated for folder/namespace truth (Services 35 files / 36 types;
+Features 237 files; Dap namespace 19/16/3). CONVENTIONS + OVERVIEW truthful
+current-tree notes. No DI registration/lifetime, visibility, constructor
+signature, or behavior changes. FindingId allowlist unchanged (9). M7c+
+Debugging presentation and later features remain.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M7b; human review/commit of M7b only. Do not start M7c+ without
+authorization.
 
 ### M7c — Debugging — presentation
 

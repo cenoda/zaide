@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using Xunit;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 M1 tests for <see cref="DebugAdapterLocator"/> precedence and failure behavior.

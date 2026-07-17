@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Controllable fake <see cref="IDebugAdapterSession"/> for Phase 12 M1 lifecycle tests.

@@ -47,10 +47,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M7a: Settings, Workspace, Editor, ProjectSystem,
-    /// Language (including Infrastructure/Lsp), and Debugging application/
-    /// contracts are admitted under <c>src/Features/</c>. Other features remain
-    /// deny-by-default until their migration slices.
+    /// Refactor 6.2 M2–M7b: Settings, Workspace, Editor, ProjectSystem,
+    /// Language (including Infrastructure/Lsp), and Debugging (application/
+    /// contracts + Infrastructure/Dap) are admitted under <c>src/Features/</c>.
+    /// Other features remain deny-by-default until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {
@@ -214,7 +214,7 @@ public static class ArchitectureVisibilityRatchet
                         "src/Features/Workspace/, src/Features/Editor/, " +
                         "src/Features/ProjectSystem/, src/Features/Language/, and " +
                         "src/Features/Debugging/ are admitted " +
-                        "(Refactor 6.2 M2–M7a). " +
+                        "(Refactor 6.2 M2–M7b). " +
                         "Other features require their slice."));
                 }
 

@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Maps DAP <c>setBreakpoints</c> reply bodies to session-only verification rows.

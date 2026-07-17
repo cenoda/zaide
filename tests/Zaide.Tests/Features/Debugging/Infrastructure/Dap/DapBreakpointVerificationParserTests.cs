@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Xunit;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 M6 unit tests for DAP breakpoint verification mapping.

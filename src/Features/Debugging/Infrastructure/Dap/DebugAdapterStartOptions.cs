@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Options used when launching one NetCoreDbg adapter child process.

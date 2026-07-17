@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 
 namespace Zaide.Features.Debugging.Application;
 

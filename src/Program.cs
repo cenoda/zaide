@@ -7,6 +7,7 @@ using System;
 using System.Net.Http;
 using System.Reactive.Concurrency;
 using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.ViewModels;
 using Zaide.Models;

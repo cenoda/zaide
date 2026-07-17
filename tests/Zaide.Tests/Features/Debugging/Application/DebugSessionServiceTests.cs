@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
-using Zaide.Tests.Services;
+using Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 

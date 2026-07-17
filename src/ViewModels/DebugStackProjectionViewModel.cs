@@ -8,7 +8,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 

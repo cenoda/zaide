@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Discovers NetCoreDbg from <c>ZAIDE_NETCOREDBG_PATH</c> or <c>netcoredbg</c> on PATH.

@@ -3,9 +3,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 
-namespace Zaide.Tests.Services;
+namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Direct adapter-session diagnostics for production transport debugging.

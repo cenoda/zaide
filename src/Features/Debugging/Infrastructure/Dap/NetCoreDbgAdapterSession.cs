@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Owns one NetCoreDbg child process and a Content-Length DAP transport.

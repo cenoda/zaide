@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Resolves the NetCoreDbg adapter executable for a debug session.

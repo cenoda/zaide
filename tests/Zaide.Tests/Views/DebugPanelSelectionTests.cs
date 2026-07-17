@@ -13,6 +13,7 @@ using ReactiveUI.Builder;
 using Splat;
 using Xunit;
 using Zaide.Services;
+using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.ViewModels;
 using Zaide.Views;
 using Zaide.Features.Debugging.Contracts;

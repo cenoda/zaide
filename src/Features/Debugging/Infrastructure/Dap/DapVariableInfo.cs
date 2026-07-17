@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Parsed first-level DAP variable entry.
