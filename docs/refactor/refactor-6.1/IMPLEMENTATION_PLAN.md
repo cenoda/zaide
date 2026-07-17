@@ -2,14 +2,15 @@
 
 ## Status and authorization
 
-**Current milestone:** M0 complete as a documentation-only planning gate;
-review is required before M1.
+**Current milestone:** M1 complete as documentation-only architecture rule
+codification. Review is required before M2 (architecture-test harness).
 
-**Authorization boundary:** This plan and
-[`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md) authorize no
-production or test-code changes. They do not authorize source movement,
-namespace changes, dependency changes, DI or visibility changes, architecture
-tests, Refactor 6.2, Refactor 6.3, or V3 feature implementation.
+**Authorization boundary:** This plan,
+[`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1 doc
+updates authorize no production or test-code changes. They do not authorize
+source movement, namespace changes, dependency changes, DI or visibility
+changes, architecture tests, Refactor 6.2, Refactor 6.3, or V3 feature
+implementation.
 
 Refactor 6.1 defines the rules and future executable guardrails for structural
 work. Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
@@ -356,13 +357,13 @@ M0 records the policy only. It does not create the allowlist or tests.
 
 ## Future milestones
 
-No milestone after M0 is authorized by this plan until review explicitly
+No milestone after M1 is authorized by this plan until review explicitly
 allows it.
 
 | Milestone | Session-sized scope | Verification and rollback boundary |
 |-----------|---------------------|------------------------------------|
-| M0 | Create this plan and the read-only live architecture baseline. | Only the two `refactor-6.1` docs may change. Run full build, full test, `git diff --check`, and status. Roll back by deleting the two uncommitted docs or reverting the documentation-only milestone commit. |
-| M1 | Codify the accepted taxonomy, dependency, admission, visibility, lifetime, and assembly rules in `docs/CONVENTIONS.md` and `docs/architecture/OVERVIEW.md`; create no production movement. | Docs-only diff. Full build/test plus `git diff --check`. Revert the single M1 docs commit without touching M0 evidence. |
+| M0 | Create this plan and the read-only live architecture baseline. | Only the two `refactor-6.1` docs may change. Run full build, full test, `git diff --check`, and status. Roll back by deleting the two uncommitted docs or reverting the documentation-only milestone commit. **Complete** (`94c734a`). |
+| M1 | Codify the accepted taxonomy, dependency, admission, visibility, lifetime, and assembly rules in `docs/CONVENTIONS.md` and `docs/architecture/OVERVIEW.md`; create no production movement. | Docs-only diff. Full build/test plus `git diff --check`. Revert the single M1 docs commit without touching M0 evidence. **Complete** (see M1 record below). |
 | M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. |
 | M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. |
 | M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. |
@@ -407,19 +408,103 @@ production behavior, or crosses another refactor's boundary.
       rollback, and verification boundaries are planned but not started.
 - [x] Human review accepts M0 and authorizes the next milestone.
 
-## Unresolved decisions requiring review
+## M1 completion record
 
-1. Whether M1 should also create a separate architecture rules document or
+**Scope executed:** Architecture rule codification only. No production/test
+files moved, renamed, created, or deleted. No architecture-test code, allowlist
+files, packages, DI changes, visibility changes, or behavior changes.
+
+### Documentation placement decision (M1 decision #1 — resolved)
+
+**Decision: do not create a separate architecture-rules document.**
+
+| Surface | Role after M1 |
+|---------|----------------|
+| [`docs/CONVENTIONS.md`](../../CONVENTIONS.md) | Canonical **detailed** enforceability rules (taxonomy, layers, dependencies, admission, visibility, lifetimes, deferrals) |
+| [`docs/architecture/OVERVIEW.md`](../../architecture/OVERVIEW.md) | Concise architecture summary that distinguishes approved target rules from the still-current technical-layer tree; links here |
+| This plan + [`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md) | Evidence, violation dispositions, migration order, and milestone record |
+
+Rules are non-duplicative: CONVENTIONS holds the enforceable detail; OVERVIEW
+holds the short target-vs-current summary; the refactor docs hold evidence and
+history.
+
+### Exact docs changed in M1
+
+| File | Change |
+|------|--------|
+| `docs/CONVENTIONS.md` | Added Architecture rules section with accepted M0 target rules; clarified namespaces current-vs-target |
+| `docs/architecture/OVERVIEW.md` | Added Source architecture (target vs current); updated V3/Refactor 6.1 status; link to this plan and baseline |
+| `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` | This M1 completion record, exit conditions, and residual decisions |
+
+No other files may change for M1.
+
+### M1 exit conditions
+
+- [x] Accepted taxonomy, optional layers, snapshot/view-state ownership,
+      dependency directions, root admission, LSP/DAP ownership, visibility,
+      current lifetime vocabulary, and R61-LT01–LT03 deferrals are codified in
+      `docs/CONVENTIONS.md`.
+- [x] `docs/architecture/OVERVIEW.md` states a concise truthful target-vs-current
+      summary and links to this plan.
+- [x] M1 decision #1 is resolved: no separate architecture-rules document.
+- [x] Diff is documentation-only (the three files above).
+- [x] Verification contract commands pass (recorded below).
+- [x] M2 is not started.
+
+### M1 verification results
+
+Run sequentially after the final documentation edit:
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+Recorded results:
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded with 0 errors. Emitted 1
+  existing `CS0067` warning at
+  `tests/Zaide.Tests/Services/ProjectDebugTargetResolverTests.cs:34`
+  (`FakeManagedProcessRunner.ProcessStarted` unused); not introduced by M1.
+- `dotnet test Zaide.slnx --no-build` — 2,172 passed, 0 failed, 0 skipped;
+  total 2,172.
+- `git diff --check` — clean.
+- `git status --short --branch` — `master...origin/master` with only the three
+  M1 documentation files modified:
+  `docs/CONVENTIONS.md`, `docs/architecture/OVERVIEW.md`,
+  `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md`.
+
+### M1 rollback boundary
+
+M1 changes only the three documentation files listed above. Before commit,
+rollback is `git checkout --` / restore of those files. After an explicitly
+authorized M1 commit, rollback is one revert of that documentation-only
+commit; it must not touch production/test files, M0 evidence content beyond
+this plan's status fields, or any later milestone.
+
+**M1 commit hash:** Not recorded in this commit — filled by the follow-up hash-record commit after M1 lands (same pattern as M0).
+
+Stop after M1 and request review. Do not begin M2, M3, M4, M5, Refactor 6.2,
+Refactor 6.3, Refactor 7, or Refactor 8.
+
+## Unresolved decisions requiring review (M2 gate and later)
+
+1. ~~Whether M1 should also create a separate architecture rules document or
    keep the accepted rules only in `CONVENTIONS.md`, `OVERVIEW.md`, and this
-   plan.
+   plan.~~ **Resolved in M1:** no separate document; CONVENTIONS is detailed
+   rules, OVERVIEW is summary, this plan/baseline are evidence and migration
+   record.
 2. Whether the future executable inventory should be source-based, compiled-
    metadata-based, or hybrid. M0 uses compiled metadata for visibility and
-   source scans for dependency/location evidence.
+   source scans for dependency/location evidence. **M2 gate.**
 3. Whether architecture tests may use only existing xUnit/BCL capabilities or
    should propose a library through the normal dependency checkpoint.
+   **M2 gate.**
 4. The exact sequence of Refactor 6.2 feature slices after Refactor 6.1 closes;
    Refactor 6.1 supplies default migration-order guidance but does not create
-   or authorize the Refactor 6.2 plan.
+   or authorize the Refactor 6.2 plan. **Post–Refactor 6.1 / Refactor 6.2 M0.**
 
 ## Limitations
 

@@ -25,11 +25,18 @@ Rules so all Zaide code reads like one person wrote it.
 
 ## Namespaces
 
-Must match folder structure:
+Namespaces must match folder structure. The **current** production tree still
+uses technical-layer folders and namespaces:
+
 ```
 src/Services/AgentRouter.cs  →  namespace Zaide.Services
 src/ViewModels/MainWindowViewModel.cs → namespace Zaide.ViewModels
 ```
+
+The **approved target** (Refactor 6.2 mechanical migration) is feature-first
+ownership. See [Architecture rules](#architecture-rules) below. Until Refactor
+6.2 rehomes a type, keep its current namespace; do not invent empty feature
+folders or premature renames.
 
 ## MVVM — ReactiveUI
 
@@ -70,4 +77,211 @@ Examples: `layout: add 3-panel grid`, `agents: implement townhall logger`, `docs
 
 ---
 
-*Last updated: 2025-06-25*
+## Architecture rules
+
+**Status:** Accepted target rules from Refactor 6.1 M0 (2026-07-16). Codified
+in M1. These rules govern new design decisions and later structural work. They
+do **not** authorize source movement, dependency inversion, DI cleanup, or
+architecture-test code by themselves.
+
+| Surface | Role |
+|---------|------|
+| This file | Canonical **detailed** enforceability rules |
+| [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md) | Concise architecture summary (target vs current tree) |
+| [`refactor/refactor-6.1/IMPLEMENTATION_PLAN.md`](refactor/refactor-6.1/IMPLEMENTATION_PLAN.md) and [`M0_ARCHITECTURE_BASELINE.md`](refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE.md) | Evidence, violation dispositions, migration record |
+
+Do not create a separate architecture-rules document. Product-level “IDE
+layer” / “Agent layer” language is not a code dependency boundary.
+
+### Feature-first ownership taxonomy
+
+Target source ownership (create folders only when moving currently owned types):
+
+```text
+src/
+  App/
+    Composition/
+    Shell/
+  Features/
+    Editor/
+    Workspace/
+    Townhall/
+    Agents/
+    Settings/
+    SourceControl/
+    ProjectSystem/
+    Language/
+      Infrastructure/
+        Lsp/
+    Debugging/
+      Infrastructure/
+        Dap/
+    Terminal/
+  Infrastructure/
+    FileSystem/
+    Processes/
+    Persistence/
+  UI/
+    DesignSystem/
+    Shared/
+```
+
+| Module | Ownership note |
+|--------|----------------|
+| App / Shell | Composition root, startup, shutdown, shell layout |
+| Feature folders | One truthful product owner per feature |
+| `Language/Infrastructure/Lsp` | LSP transport, session, protocol, and parser types |
+| `Debugging/Infrastructure/Dap` | DAP transport, adapter, session, and parser types |
+| Root `Infrastructure/` | Multi-feature file-system, process, or persistence only (admission rules below) |
+| `UI/DesignSystem` | Design tokens, icons, typography (current `src/Styles`) |
+| `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
+
+Current `src/Styles` maps to `UI/DesignSystem`, not `UI/Shared`. Project
+workflow stays under Project System even when it consumes other features'
+projections. LSP is not root infrastructure; DAP is not root infrastructure.
+
+### Optional layers (per feature)
+
+A feature may use a flat root or any subset of these layers. Do not create
+every layer ceremonially.
+
+| Layer | Owns |
+|-------|------|
+| **Domain** | Feature truth, invariants, identities, and behavior that does not require UI, storage, transport, process, or DI frameworks |
+| **Application** | Use-case coordination and lifecycle-independent policies through explicit contracts |
+| **Infrastructure** | Contract implementations using file systems, processes, protocols, persistence, OS APIs, or external libraries |
+| **Presentation** | Views, ViewModels, reactive commands, bindings, selection, focus, drafts, filters, and other UI state |
+| **Contracts** | Smallest interfaces and boundary values needed by another layer or feature — not a DTO dump |
+
+#### Snapshots and view state
+
+- **Snapshots** are immutable observations owned by the producing feature's
+  contract or application boundary. Consumers may project them; they must not
+  become the snapshot's source of truth.
+- **View state** is mutable/reactive presentation state. Domain, Application,
+  Infrastructure, and another feature's contracts must not consume it.
+
+### Dependency directions
+
+#### Allowed (within a feature)
+
+```text
+Presentation -> Application / Contracts / Domain
+Infrastructure -> Application contracts / Contracts / Domain
+Application -> Contracts / Domain
+Contracts -> BCL and stable Domain value types only when necessary
+Domain -> BCL and its own Domain only
+```
+
+#### Allowed (across features)
+
+- A consumer may depend on the owning feature's `Contracts` or a deliberately
+  exposed Application façade.
+- App composition may reference concrete Infrastructure and Presentation types
+  only to register, construct, activate, and shut them down.
+- Shared UI may depend on feature-neutral contracts, never feature
+  Infrastructure.
+
+#### Forbidden
+
+- Domain → Application, Infrastructure, Presentation, DI, Avalonia, ReactiveUI,
+  process, protocol, or persistence implementation
+- Application → Presentation or concrete Infrastructure
+- Infrastructure → Presentation or ViewModels
+- Models/Domain/view state consuming another technical-layer implementation
+  merely to reuse a snapshot or DTO
+- Any feature consuming another feature's Presentation or Infrastructure
+  namespace
+- Views or ViewModels resolving dependencies through `IServiceProvider`
+- Production code outside App composition reading static `App.Services`
+- Root shared folders accepting feature-owned types
+- A dependency justified only by shared product “IDE” or “Agent” grouping
+
+### Root-folder admission
+
+#### `Infrastructure/`
+
+Admit a type only when all of the following are true:
+
+1. At least two current feature owners consume the implementation.
+2. No one feature is its truthful owner.
+3. The type implements a feature-neutral contract.
+4. Name and dependencies describe one infrastructure capability (not generic
+   helpers or “services”).
+5. The architecture allowlist records consumers and approving milestone.
+
+Feature-specific LSP and DAP code fails this test and stays under Language and
+Debugging respectively.
+
+#### `UI/Shared/`
+
+Admit a type only when at least two current presentation owners consume it, it
+owns no feature workflow or state, and it has no feature Infrastructure
+dependency. `Common`, `Helpers`, `Utils`, and `Services` are not ownership
+arguments. Design tokens and icons belong in `UI/DesignSystem`.
+
+New files in either root are deny-by-default until a reviewed ownership entry
+admits them.
+
+### Visibility (public-by-exception)
+
+- Default every production type to `internal`.
+- `public` only for a proven cross-module contract, a type required by
+  Avalonia/XAML activation, or an externally consumed entry point.
+- Cross-feature use alone does not require `public` while features share one
+  assembly; prefer `internal` plus explicit module contracts.
+- Public interfaces and boundary values must be minimal and owned by
+  `Contracts` or an approved application façade.
+- Infrastructure implementations, parsers, policies, mappers, ViewModels, and
+  Views are internal unless a framework constraint is documented.
+- Do not widen visibility for tests; use existing
+  `InternalsVisibleTo="Zaide.Tests"`.
+- Refactor 6.1 baselines a ceiling of **348** public top-level production types
+  (compiled non-nested count). No new public type without an explicit
+  allowlist entry; Refactor 6.3 reduces the explicit list.
+
+### Lifetime vocabulary (current)
+
+DI registration lifetime and semantic lifetime are not synonyms. Only these
+current lifetimes are approved for Refactor 6.x work:
+
+| Lifetime | Meaning | Examples |
+|----------|---------|----------|
+| **Application** | Root application container / window lifetime | Settings, command registry, shell composition |
+| **Workspace** | Reset or replaced when the open workspace changes | `Workspace`, project context, breakpoint/repository projections |
+| **Process** | One OS process or bounded process tree from start through termination/disposal | Workflow runner, LSP server process, debug adapter/debuggee |
+| **Projection** | Subscribes to a source while the projection is needed | Problems, Output, Test Results, debug/status projections |
+| **Editor session** | One open editor/document presentation until its tab closes | `EditorViewModel` for an opened `Document` |
+| **Terminal session** | One PTY, shell process, screen, ViewModel, and tab until the tab closes | `LinuxTerminalService` + `TerminalViewModel` |
+
+#### Explicit Refactor 7 deferrals
+
+These V3 terms are **not** current Refactor 6.1 lifetimes. Do not introduce
+them as implementation types, scopes, factories, or DI registrations in
+Refactor 6.1–6.3:
+
+| ID | Term | Gate |
+|----|------|------|
+| **R61-LT01** | Conversation | Refactor 7 M0 defines the owner/boundary or records a named later deferral |
+| **R61-LT02** | Agent session | Refactor 7 M0 proves a concrete consumer and ownership rule first |
+| **R61-LT03** | Run | Refactor 7 M0 defines the minimum existing-behavior representation or defers explicitly |
+
+### Assembly boundary (Refactor 6.2)
+
+Keep mechanical feature-first migration inside the existing `Zaide` assembly.
+Any later assembly split needs separate evidence and approval; do not fold it
+into a movement slice.
+
+### What later refactors own
+
+| Refactor | Owns |
+|----------|------|
+| **6.1** | Rules, module map, executable architecture-test baseline (M2+) |
+| **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change |
+| **6.3** | Dependency inversion, composition, visibility, lifetime correction |
+| **7** | Agent/Conversation domain and R61-LT01–LT03 |
+| **8** | Townhall/shell view extraction and UI foundation |
+
+---
+
+*Last updated: 2026-07-17 (Refactor 6.1 M1 — architecture rule codification)*

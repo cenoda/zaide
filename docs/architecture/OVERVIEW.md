@@ -18,8 +18,91 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 M0 planning is authorized, but no
-V3 production implementation is active.
+implementation-order roadmap**. Refactor 6.1 M0–M1 documentation is accepted
+(rules codified); no V3 production implementation or source migration is
+active. Executable architecture tests begin only in Refactor 6.1 M2 after
+explicit authorization.
+
+---
+
+## Source architecture (target vs current)
+
+Zaide has **two distinct descriptions** that must not be collapsed:
+
+1. **Product layers** (this document historically) — IDE shell vs agent
+   workspace as a user-facing product story.
+2. **Code module rules** (approved target) — feature-first ownership with
+   optional Domain / Application / Infrastructure / Presentation / Contracts
+   layers, enforced later by architecture tests.
+
+Product “IDE layer” and “Agent layer” language is **not** a code dependency
+boundary. Dependency direction is governed by the feature/module rules in
+[`docs/CONVENTIONS.md`](../CONVENTIONS.md) (canonical detailed rules).
+
+### Approved target (Refactor 6.1)
+
+Feature-first ownership under one production assembly (`Zaide`):
+
+```text
+src/
+  App/Composition, App/Shell
+  Features/{Editor,Workspace,Townhall,Agents,Settings,SourceControl,
+            ProjectSystem,Language/Infrastructure/Lsp,
+            Debugging/Infrastructure/Dap,Terminal}
+  Infrastructure/{FileSystem,Processes,Persistence}   # multi-feature only
+  UI/{DesignSystem,Shared}                              # DesignSystem = current Styles
+```
+
+Key target rules (detail in CONVENTIONS):
+
+- Features use only the optional layers they need; empty ceremonial layers are
+  forbidden.
+- Snapshots are owned by the producing feature; view state stays in
+  Presentation and is not consumed as domain truth.
+- Allowed dependency directions: Presentation/Infrastructure → Application
+  contracts/Domain; Application → Contracts/Domain; Domain → Domain/BCL only.
+- Forbidden: Application → Presentation or concrete Infrastructure;
+  Infrastructure → Presentation; cross-feature Presentation/Infrastructure
+  consumption; non-composition `IServiceProvider` / static `App.Services` use.
+- Root `Infrastructure/` and `UI/Shared/` are deny-by-default multi-consumer
+  admissions; LSP stays under Language, DAP under Debugging.
+- Visibility is internal-by-default / public-by-exception (348 public-type
+  ceiling baseline).
+- Current lifetimes: application, workspace, process, projection, editor
+  session, terminal session. Conversation, agent session, and run (R61-LT01–
+  LT03) are deferred to Refactor 7.
+
+Evidence, violation dispositions, and migration order:
+[Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
+and [M0 architecture baseline](../refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE.md).
+
+### Still-current technical-layer tree
+
+Until Refactor 6.2 moves code, the live production tree remains technical-layer
+folders and namespaces:
+
+```text
+src/
+  Models/       # plain data / state bags
+  Services/     # catch-all: protocols, DTOs, application, infrastructure
+  ViewModels/
+  Views/
+  Styles/       # target UI/DesignSystem
+```
+
+One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
+layering is not yet enforced by assemblies or architecture tests. Known
+violations (Services → ViewModels, Models → Services, service-locator sites,
+broad public surface, mixed lifetimes) are allowlisted for later ratchets; see
+the Refactor 6.1 plan. Do not rehome, invert dependencies, or change DI in
+this document’s name.
+
+| Later work | Owns |
+|------------|------|
+| Refactor 6.1 M2–M5 | Executable architecture tests and allowlist ratchets |
+| Refactor 6.2 | Mechanical feature-first source/test/resource migration |
+| Refactor 6.3 | Composition, visibility, lifetime, dependency inversion |
+| Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
 
 ---
 
@@ -228,4 +311,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-16 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M0 planning authorized)*
+*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M1 architecture rules codified)*
