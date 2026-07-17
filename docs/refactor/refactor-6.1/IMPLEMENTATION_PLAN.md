@@ -2,15 +2,17 @@
 
 ## Status and authorization
 
-**Current milestone:** M1 complete as documentation-only architecture rule
-codification. Review is required before M2 (architecture-test harness).
+**Current milestone:** M2 complete — architecture-test harness and
+deterministic hybrid inventory reader in `tests/Zaide.Tests/Architecture/`.
+Review is required before M3 (legacy allowlist and no-new-violation ratchet).
 
 **Authorization boundary:** This plan,
 [`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1 doc
-updates authorize no production or test-code changes. They do not authorize
-source movement, namespace changes, dependency changes, DI or visibility
-changes, architecture tests, Refactor 6.2, Refactor 6.3, or V3 feature
-implementation.
+updates authorize no production structural changes. M2 authorizes only the
+architecture-test harness and inventory reader inside the existing test
+project. They do not authorize source movement, namespace changes, dependency
+changes, DI or visibility changes, production behavior changes, Refactor 6.2,
+Refactor 6.3, or V3 feature implementation.
 
 Refactor 6.1 defines the rules and future executable guardrails for structural
 work. Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
@@ -364,7 +366,7 @@ allows it.
 |-----------|---------------------|------------------------------------|
 | M0 | Create this plan and the read-only live architecture baseline. | Only the two `refactor-6.1` docs may change. Run full build, full test, `git diff --check`, and status. Roll back by deleting the two uncommitted docs or reverting the documentation-only milestone commit. **Complete** (`94c734a`). |
 | M1 | Codify the accepted taxonomy, dependency, admission, visibility, lifetime, and assembly rules in `docs/CONVENTIONS.md` and `docs/architecture/OVERVIEW.md`; create no production movement. | Docs-only diff. Full build/test plus `git diff --check`. Revert the single M1 docs commit without touching M0 evidence. **Complete** (see M1 record below). |
-| M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. |
+| M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. **Complete** (see M2 record below). |
 | M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. |
 | M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. |
 | M5 | Reconcile docs with executable rules, prove all M0 findings are represented, and close Refactor 6.1 without moving production files. | Full build/test, all architecture tests, diff check, clean milestone status, and human acceptance. Revert M5 documentation only; earlier executable milestones remain separately revertible. |
@@ -496,21 +498,155 @@ Refactor 6.3, Refactor 7, or Refactor 8.
    plan.~~ **Resolved in M1:** no separate document; CONVENTIONS is detailed
    rules, OVERVIEW is summary, this plan/baseline are evidence and migration
    record.
-2. Whether the future executable inventory should be source-based, compiled-
-   metadata-based, or hybrid. M0 uses compiled metadata for visibility and
-   source scans for dependency/location evidence. **M2 gate.**
-3. Whether architecture tests may use only existing xUnit/BCL capabilities or
-   should propose a library through the normal dependency checkpoint.
-   **M2 gate.**
+2. ~~Whether the future executable inventory should be source-based, compiled-
+   metadata-based, or hybrid.~~ **Resolved in M2:** hybrid inventory (see M2
+   completion record).
+3. ~~Whether architecture tests may use only existing xUnit/BCL capabilities or
+   should propose a library through the normal dependency checkpoint.~~
+   **Resolved in M2:** no package added; xUnit + BCL only (see M2 library
+   evaluation).
 4. The exact sequence of Refactor 6.2 feature slices after Refactor 6.1 closes;
    Refactor 6.1 supplies default migration-order guidance but does not create
    or authorize the Refactor 6.2 plan. **Post–Refactor 6.1 / Refactor 6.2 M0.**
 
+## M2 completion record
+
+**Scope executed:** Architecture-test harness and deterministic hybrid
+inventory reader only. No production code, AXAML, resources, namespaces, DI,
+visibility, lifetimes, or behavior changed. No M3 allowlist/ratchet, no M4
+visibility/admission enforcement, no M5 closeout, and no Refactor 6.2/6.3/7/8
+work. No NuGet package, `Directory.Packages.props`, `.csproj`, or
+`docs/LIBRARIES.md` change.
+
+### M2 gate decision #2 — hybrid inventory (resolved)
+
+**Decision: use a hybrid inventory.**
+
+| Channel | What it reads | Why |
+|---------|---------------|-----|
+| Source scans | Tracked production paths (`git ls-files`), technical-folder and declared-namespace placement, `IServiceProvider` / `App.Services` / resolution-call sites, technical-namespace dependency locations (`Services -> ViewModels`, `Models -> Services`), root-folder admission evidence | File organization, locator debt, and admission evidence are source-truth concerns |
+| Compiled metadata | Non-nested, non-compiler-generated top-level `Zaide*` types from the loaded `Zaide` assembly; `IsPublic` / `IsNotPublic` | Visibility must match C# semantics (partials, records, default accessibility), same rule as M0 |
+
+Stable `ArchitectureFinding` entries (sorted by `StableKey`) are produced so
+M3 can attach exact allowlists without re-deriving keys.
+
+### M2 gate decision #3 — architecture library evaluation (resolved)
+
+Candidates evaluated at the start of M2 against the current .NET 10 / xUnit
+2.9.3 environment:
+
+| Candidate | Latest considered | License | .NET fit | M2 coverage |
+|-----------|-------------------|---------|----------|-------------|
+| `TngTech.ArchUnitNET` + `TngTech.ArchUnitNET.xUnit` | Core draft line through 2.1.0-draft; xUnit adapter **0.13.3** | Apache-2.0 | netstandard2.0 / usable on net10.0 with xUnit 2 | Compiled type/dependency fluent rules only |
+| `NetArchTest.Rules` | **1.3.2** (last release 2021; effectively unmaintained) | Project MIT-style (see upstream) | netstandard2.0 | Compiled type/dependency fluent rules only |
+| `NetArchTest.eNhancedEdition` | **1.4.5** | MIT | netstandard2.0 | Same surface as NetArchTest with fixes; still assembly-only |
+
+**Decision: no candidate qualifies for addition in M2.**
+
+Reasons (concise):
+
+1. M2’s required work is a **hybrid inventory reader** and determinism proof of
+   the M0 baseline, not fluent layer-rule assertions.
+2. All candidates operate on compiled assemblies (typically Mono.Cecil). They
+   do **not** replace source scans for tracked paths, folder/namespace
+   placement, provider/service-locator sites, or root-folder admission
+   evidence.
+3. Remaining source-scan work after adopting any candidate would still be
+   essentially the full M2 inventory. Benefits over xUnit/BCL for M2 are not
+   material.
+4. Per gate rules, even a later-useful M3 dependency library must not be added
+   without explicit approval and `docs/LIBRARIES.md` update. None was required
+   to complete M2.
+
+**Outcome:** complete M2 with existing **xUnit + BCL** only
+(`System.Reflection`, `System.IO`, `System.Text.RegularExpressions`,
+`System.Diagnostics.Process` for `git ls-files`). No package pending approval.
+
+### Exact files changed in M2
+
+| File | Change |
+|------|--------|
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | Hybrid inventory reader |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventory.cs` | Aggregate inventory model |
+| `tests/Zaide.Tests/Architecture/ArchitectureFinding.cs` | Stable finding/entry for later allowlists |
+| `tests/Zaide.Tests/Architecture/ProductionSourceFileEntry.cs` | Source placement entry |
+| `tests/Zaide.Tests/Architecture/ProductionTypeEntry.cs` | Compiled visibility entry |
+| `tests/Zaide.Tests/Architecture/ProviderEvidenceEntry.cs` | Provider/locator evidence entry |
+| `tests/Zaide.Tests/Architecture/NamespaceDependencyEvidenceEntry.cs` | Technical-namespace dependency evidence |
+| `tests/Zaide.Tests/Architecture/RootFolderAdmissionEvidenceEntry.cs` | Root-folder admission evidence |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | Determinism + M0 baseline tests (no violation failures) |
+| `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` | This M2 completion record |
+
+### Inventory type counts reproduced
+
+| Metric | M0 baseline | M2 reader |
+|--------|------------:|----------:|
+| Total top-level types | 393 | 393 |
+| Public | 348 | 348 |
+| Internal | 45 | 45 |
+
+Tracked production source files remain 356 (3 root / 22 Models / 224 Services /
+2 Styles / 53 ViewModels / 52 Views).
+
+### M2 exit conditions
+
+- [x] Architecture tests live under a clearly separated
+      `tests/Zaide.Tests/Architecture/` location.
+- [x] Hybrid inventory strategy is locked and implemented.
+- [x] Library candidates evaluated; none sufficient for M2; xUnit/BCL only; no
+      unapproved dependency added.
+- [x] Reader deterministically reproduces M0 visibility baseline 393/348/45.
+- [x] Reader produces source placement, provider evidence, dependency-location
+      evidence, root-admission evidence, and stable findings for M3.
+- [x] Tests do not fail on existing known violations and do not implement M3
+      allowlists/ratchets or M4 enforcement.
+- [x] Production code unchanged; no `.csproj` / packages / LIBRARIES.md change.
+- [x] Verification contract commands pass (recorded below).
+- [x] M3 is not started.
+
+### M2 verification results
+
+Run sequentially after the final M2 edit:
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+Recorded results:
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded with 0 warnings and 0
+  errors on the final incremental verification run. An earlier compiling run in
+  this M2 session emitted 1 existing `CS0067` warning at
+  `tests/Zaide.Tests/Services/ProjectDebugTargetResolverTests.cs:34`
+  (`FakeManagedProcessRunner.ProcessStarted` unused); not introduced by M2.
+- Focused Architecture filter — 6 passed, 0 failed, 0 skipped.
+- `dotnet test Zaide.slnx --no-build` — 2,178 passed, 0 failed, 0 skipped;
+  total 2,178 (M1 baseline 2,172 + 6 new Architecture tests).
+- `git diff --check` — clean.
+- `git status --short --branch` — `master...origin/master` with
+  `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` modified and
+  `tests/Zaide.Tests/Architecture/` untracked.
+
+### M2 rollback boundary
+
+M2 changes only the Architecture test files and this plan’s M2 record. Before
+commit, rollback is deletion/restore of those files. After an explicitly
+authorized M2 commit, rollback is one revert of that commit; it must not touch
+production files, M0 baseline content beyond this plan’s status fields, or any
+later milestone.
+
+Stop after M2 and request review. Do not begin M3, M4, M5, Refactor 6.2,
+Refactor 6.3, Refactor 7, or Refactor 8.
+
 ## Limitations
 
 - Source scans establish current file-level namespace edges but do not replace
-  a semantic dependency graph; the future executable baseline must close that
-  gap.
+  a semantic dependency graph; M3+ executable allowlists close that gap using
+  the stable findings from M2.
 - The visibility baseline counts compiled non-nested top-level types only; it
   intentionally excludes nested and compiler-generated types.
 - Line and constructor-parameter counts identify composition pressure, not an
@@ -519,7 +655,7 @@ Refactor 6.3, Refactor 7, or Refactor 8.
   disposal paths in source; no runtime lifetime tracing was added in M0.
 - The migration order above is guidance for Refactor 6.2 M0, not authorization
   or a substitute for its independent live-code plan.
-- No architecture-test code or machine-readable allowlist exists yet.
+- M2 invents no allowlist enforcement; known violations are inventoried only.
 
 ## Rollback
 
