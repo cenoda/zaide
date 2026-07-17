@@ -414,5 +414,4 @@ rollback is deletion of the two untracked files and their empty directory.
 After an explicitly authorized commit, revert that single documentation-only
 commit.
 
-**M0 commit hash:** Not recorded — no commit was requested or created. Add the
-hash only after explicit user authorization to commit M0.
+**M0 commit hash:** `94c734a745ce081d1e831d0dbc735f630586be7b`

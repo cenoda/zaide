@@ -448,7 +448,6 @@ directory. After an explicitly authorized M0 commit, rollback is one revert of
 that documentation-only commit; it must not touch production/test files or any
 later milestone.
 
-**M0 commit hash:** Not recorded — M0 is intentionally uncommitted. Record the
-hash here only when the user explicitly authorizes and completes the M0 commit.
+**M0 commit hash:** `94c734a745ce081d1e831d0dbc735f630586be7b`
 
 Stop after M0 and request review. Do not begin M1 or any structural migration.
