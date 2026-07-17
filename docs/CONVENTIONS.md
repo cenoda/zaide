@@ -280,7 +280,7 @@ into a movement slice.
 
 | Refactor | Owns |
 |----------|------|
-| **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 public full-name + expanded root admission) |
+| **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 public full-name + expanded root admission; M5 documentation closeout + M0 representation matrix). Complete pending final human acceptance; next is 6.2 M0 only after acceptance. |
 | **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change |
 | **6.3** | Dependency inversion, composition, visibility, lifetime correction |
 | **7** | Agent/Conversation domain and R61-LT01–LT03 |
@@ -312,4 +312,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.1 M4 — public visibility + expanded root admission)*
+*Last updated: 2026-07-17 (Refactor 6.1 M5 — documentation closeout; M0–M4 executable baseline unchanged)*

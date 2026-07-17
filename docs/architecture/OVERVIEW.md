@@ -18,14 +18,14 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 M0–M3 are accepted (rules, hybrid
-inventory, legacy allowlist ratchet). M4 is complete and pending human
-review/commit: it freezes the public production-type full-name baseline
-(393/348/45) and expands **tracked production C#** root-folder admission beyond
-deny-by-default `Infrastructure/` and `UI/Shared/` C# paths to the current
-technical-folder C# set. Non-C# assets are outside that ratchet. No V3
+implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete** in the
+repository (rules, hybrid inventory, legacy allowlist ratchet, public
+full-name baseline 393/348/45, expanded tracked production **C#** root
+admission, documentation closeout and M0 representation proof). **Final human
+acceptance of Refactor 6.1 is still required** before Refactor 6.2 M0 may
+start. Non-C# assets remain outside the root-admission ratchet. No V3
 production implementation or source migration is active. Feature-layout
-migration remains Refactor 6.2; M5 is documentation closeout only.
+migration remains Refactor 6.2.
 
 ---
 
@@ -112,8 +112,8 @@ invert dependencies, or change DI in this document’s name.
 
 | Later work | Owns |
 |------------|------|
-| Refactor 6.1 M5 | Documentation closeout and M0-finding representation proof |
-| Refactor 6.2 | Mechanical feature-first source/test/resource migration |
+| Refactor 6.1 | Complete M0–M5 pending final human acceptance; no further 6.1 milestones |
+| Refactor 6.2 | Mechanical feature-first source/test/resource migration (starts at M0 after 6.1 acceptance) |
 | Refactor 6.3 | Composition, visibility reduction, lifetime, dependency inversion |
 | Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
 
@@ -324,4 +324,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M4 public visibility + expanded root admission)*
+*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M0–M5 complete, final human acceptance pending)*

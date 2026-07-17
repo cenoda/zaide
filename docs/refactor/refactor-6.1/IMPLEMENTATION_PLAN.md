@@ -2,25 +2,25 @@
 
 ## Status and authorization
 
-**Current milestone:** M4 complete — public/internal visibility baseline
-(393/348/45 + explicit 348 public full names) and expanded root-folder
-admission ratchets (built on M2 inventory and M3 legacy allowlist). Review is
-required before M5 (documentation closeout).
+**Current milestone:** M5 complete — documentation closeout and exhaustive M0
+finding representation proof. **Ready for final human acceptance of Refactor
+6.1.** Do not treat this as accepted until human review says so.
 
 **Authorization boundary:** This plan,
-[`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1 doc
-updates authorize no production structural changes. M2 authorizes only the
-architecture-test harness and inventory reader inside the existing test
-project. M3 authorizes only the legacy allowlist and ratchet tests inside
-`tests/Zaide.Tests/Architecture/` plus truthful documentation updates. M4
-authorizes only visibility/admission test baselines and truthful documentation
-updates under the same Architecture test folder. They do not authorize source
-movement, namespace changes, dependency changes, DI or visibility changes,
-production behavior changes, Refactor 6.2, Refactor 6.3, or V3 feature
-implementation.
+[`M0_ARCHITECTURE_BASELINE.md`](M0_ARCHITECTURE_BASELINE.md), and the M1–M5 doc
+updates authorize no production structural changes. M2–M4 authorize only the
+architecture-test harness, legacy allowlist/ratchet, and visibility/admission
+baselines under `tests/Zaide.Tests/Architecture/` plus truthful documentation.
+They do not authorize source movement, namespace changes, dependency changes,
+DI or visibility changes, production behavior changes, Refactor 6.2, Refactor
+6.3, or V3 feature implementation.
 
-Refactor 6.1 defines the rules and future executable guardrails for structural
-work. Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
+**Next authorized work after human acceptance of Refactor 6.1:** Refactor 6.2
+**M0 only** (independent plan and live re-verification). Do not start 6.2
+implementation, 6.3, 7, 8, or V3 production work from this closeout.
+
+Refactor 6.1 defines the rules and executable guardrails for structural work.
+Refactor 6.2 will own approved mechanical movement. Refactor 6.3 will own
 dependency inversion, composition, visibility, and lifetime correction.
 
 ## Goal
@@ -374,7 +374,7 @@ allows it.
 | M2 | Add the minimal architecture-test harness in the existing test project and a deterministic inventory reader; do not change production code. | Full build, focused `dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture`, full test, and diff check. Revert only architecture-test files and test-project changes from M2. **Complete** (see M2 record below). |
 | M3 | Materialize the exact legacy dependency/service-locator allowlist and no-new-violation ratchet, seeded only from M0 IDs. | Focused architecture tests must pass with every allowlist entry exercised; full build/test and diff check. Revert the M3 allowlist/tests as one unit. **Complete** (see M3 record below). |
 | M4 | Add executable public/internal visibility and root-folder admission ratchets, including the explicit public full-name baseline and 348 ceiling. | Focused architecture tests, exact type-count output, full build/test, and diff check. Revert M4 tests/baselines only. **Complete** (see M4 record below). |
-| M5 | Reconcile docs with executable rules, prove all M0 findings are represented, and close Refactor 6.1 without moving production files. | Full build/test, all architecture tests, diff check, clean milestone status, and human acceptance. Revert M5 documentation only; earlier executable milestones remain separately revertible. |
+| M5 | Reconcile docs with executable rules, prove all M0 findings are represented, and close Refactor 6.1 without moving production files. | Full build/test, all architecture tests, diff check, clean milestone status, and human acceptance. Revert M5 documentation only; earlier executable milestones remain separately revertible. **Complete** (see M5 record below); final human acceptance pending. |
 
 Prefer one commit per authorized milestone. If M2–M4 evidence makes a milestone
 too large, split it into `M2a`/`M2b`-style slices before implementation rather
@@ -919,46 +919,221 @@ milestone.
 
 ### Remaining M5 work
 
-- Reconcile docs with the full executable rule set (M0–M4).
-- Prove every M0 finding is represented (executable ratchet, documented debt, or
-  explicit deferral).
-- Close Refactor 6.1 without moving production files.
-- Human acceptance of M5; no production structural work.
+~~Reconcile docs; prove every M0 finding; close without production moves.~~
+**Done in M5** (see below). Final human acceptance of Refactor 6.1 is still
+required before any later refactor may start.
 
-Stop after M4 and request review. Do not begin M5, Refactor 6.2, Refactor 6.3,
-Refactor 7, or Refactor 8.
+## M5 completion record
 
-## Limitations
+**Scope executed:** Documentation closeout and M0-finding representation proof
+only. No production code, tests, architecture-test code, baseline artifacts,
+packages, project files, DI, namespaces, visibility, lifetimes, or behavior
+changed. M2/M3/M4 baselines were not weakened or regenerated. No Refactor
+6.2/6.3 plans created. No 6.2, 6.3, 7, 8, or V3 implementation started.
 
-- Source scans establish current file-level namespace edges but do not replace
-  a semantic dependency graph; M3 executable allowlists close that gap for the
-  two technical-namespace forbidden directions using M2 inventory evidence.
-- The visibility baseline counts compiled non-nested top-level types only; it
-  intentionally excludes nested and compiler-generated types. M4 freezes the
-  public full-name set; Refactor 6.3 owns internalization work.
-- Line and constructor-parameter counts identify composition pressure, not an
-  automatic requirement to split every large class.
-- Effective lifetime findings are based on registrations, construction, and
-  disposal paths in source; no runtime lifetime tracing was added in M0.
-- The migration order above is guidance for Refactor 6.2 M0, not authorization
-  or a substitute for its independent live-code plan.
-- M3 does not resolve allowlisted debt; it only freezes and ratchets it.
-- M4 expanded root admission freezes the **current** technical tree roots for
-  **tracked production C# only**; it does not require or perform feature-first
-  folder migration and does not admit or reject non-C# assets.
+**Prerequisite (satisfied before M5 began):** Refactor 6.1 M4 committed and
+pushed to `origin/master` at `1c7fa94966e233fb7725d057d64aba9ad62b4e1c`
+(`test: add refactor 6.1 visibility baseline`); working tree clean;
+`HEAD == origin/master`.
 
-## Rollback
+### Representation vocabulary (M5)
 
-M0 changes only:
+Every M0 finding ID is assigned one or more **current representation** classes.
+None may be silently omitted:
+
+| Class | Meaning |
+|-------|---------|
+| **Executable M3 rule** | Exact legacy allowlist entry + no-new-violation ratchet (`NamespaceDirection` and/or `LocatorSite`) |
+| **Executable M4 rule** | Public full-name baseline / count ceiling and/or expanded root-folder C# admission |
+| **Documented legacy allowlist** | Same debt is frozen in `LegacyArchitectureAllowlist` (M3) with M0 ID linkage |
+| **Refactor 6.2 movement ownership** | Mechanical rehome/namespace/test/resource work only; debt may still need 6.3 after move |
+| **Refactor 6.3 dependency/lifetime ownership** | Dependency inversion, composition, DI, visibility reduction, lifetime correction |
+| **Refactor 7 deferral** | Agent/conversation/run domain or R61-LT01–LT03; not structural movement |
+| **Explicit deferred exception** | Named later owner (often Refactor 7 or 8) with no 6.1 executable edge required |
+
+M2 hybrid inventory underpins executable M3/M4 rules but is not itself a
+finding disposition.
+
+### Exhaustive M0 representation matrix
+
+Coverage proof: **R61-V01–R61-V20** (20) plus **R61-LT01–R61-LT03** (3). LT IDs
+are the lifetime decision faces of V18–V20 and are listed once under both
+surfaces so neither ID space can be dropped. **No silent omission.**
+
+| M0 ID | Live evidence summary | Current representation | Removal / next-owner boundary |
+|-------|----------------------|------------------------|-------------------------------|
+| **R61-V01** | Production C# lives in technical folders (`Models`, `Services`, `ViewModels`, `Views`, `Styles`); 224/356 files in `Services`. M2 inventory: 3 root / 22 / 224 / 2 / 53 / 52. | **Executable M4 rule** (expanded root admission freezes current technical C# tree + three root composition files; deny-by-default elsewhere for tracked C#). **Refactor 6.2 movement ownership** (feature-first rehome). Not an M3 allowlist edge. | Remove structural debt by completing 6.2 slices; admission rules then follow approved target folders per 6.2 plan. 6.1 does not move files. |
+| **R61-V02** | `src/Models/SourceControlState.cs` → `Zaide.Services` (`RepositoryStatusSnapshot`). | **Executable M3 rule** + **documented legacy allowlist** `R61-AL-NS-SourceControlState`. **Refactor 6.3 dependency/lifetime ownership**. 6.2 may move the file but must keep the allowlist edge until 6.3. | Refactor 6.3: snapshot as SC contract/application output; reclassify or remove state bag. Remove allowlist entry in same change that clears live evidence. |
+| **R61-V03** | LSP/DAP protocol and process types live under root `Services`. | **Refactor 6.2 movement ownership** only (`Language/Infrastructure/Lsp`, `Debugging/Infrastructure/Dap`). No M3/M4 edge keyed to this ID (folder layout is V01/M4; protocol ownership is movement). | Refactor 6.2 Language then Debugging slices; behavior and assembly unchanged. |
+| **R61-V04** | Tests mirror technical layers; 23/170 tracked test C# files use phase/milestone names. | **Refactor 6.2 movement ownership** only (rehome/rename with feature slices). No production M3/M4 edge. | Refactor 6.2 per-feature test moves; assertions unchanged. |
+| **R61-V05** | `ITerminalSessionFactory` / `TerminalSessionFactory` create/expose `TerminalViewModel` from Services. | **Executable M3** + **documented allowlist** `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory`. **Refactor 6.3 dependency/lifetime ownership**. | Refactor 6.3: presentation-owned terminal-session composition; preserve disposal. Clear both NS keys when debt is gone. |
+| **R61-V06** | `MentionParser` → `IAgentPanelHost` (ViewModels). | **Executable M3** + **documented allowlist** `R61-AL-NS-MentionParser`. **Refactor 6.3**. | Refactor 6.3: agent lookup contract/value, not presentation state. |
+| **R61-V07** | `SourceControlDiffTabService` → editor ViewModels + 3 provider resolutions. | **Executable M3** + **documented allowlist** `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService`. **Refactor 6.3**. | Refactor 6.3: explicit editor-session/open-diff contract or factory. Clear NS + LOC together. |
+| **R61-V08** | `EditorTabViewModel` stores `IServiceProvider` and resolves on open. | **Executable M3** + **documented allowlist** `R61-AL-LOC-EditorTabViewModel`. **Refactor 6.3**. | Refactor 6.3: inject editor-session factory; testable tab-close ownership. |
+| **R61-V09** | Static mutable `App.Services` assigned in `Program`, read in `App` startup/shutdown; composition locator sites. | **Executable M3** + **documented allowlist** `R61-AL-LOC-Program`, `R61-AL-LOC-App`. **Refactor 6.3**. | Refactor 6.3: owned composition root; remove hidden global resolution. |
+| **R61-V10** | `ConfigureServices`: 64 `AddSingleton`, 1 `AddTransient`, 0 `AddScoped`; all features in one method. | **Documented only** in this plan + M0 baseline (no M2 MatchKey for registration shape). **Refactor 6.3 dependency/lifetime ownership**. Not silently omitted: explicit non-executable class. | Refactor 6.3: split registration by feature; semantic lifetimes without behavior change. |
+| **R61-V11** | Singletons carry workspace/process/projection/session semantics; terminal/editor sessions constructed outside container tracking. | **Documented only** + **Refactor 6.3**. | Refactor 6.3: align owners/factories with approved lifetime vocabulary. |
+| **R61-V12** | `App.DisposeServicesOnExit` manual sync dispose order; root provider not true shutdown owner. | **Documented only** for shutdown semantics; **partial executable** via `R61-AL-LOC-App` (same file; rationale cross-refs V12). **Refactor 6.3**. | Refactor 6.3: ordered shutdown ownership; prove process-tree termination. Locator allowlist alone does not close V12. |
+| **R61-V13** | `MainWindowViewModel` ~608 lines, 18 ctor params; cross-feature composition. | **Documented only** + **Refactor 6.3**. Composition-pressure metric only; no line-count ratchet. | Refactor 6.3: feature coordinators/contracts; no product redesign. |
+| **R61-V14** | Compiled top-level surface 393 types: **348 public** / **45 internal**. | **Executable M4 rule**: `PublicProductionTypeBaseline.txt` (348 full names) + 393/348/45 ceiling; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY`. **Refactor 6.3** owns internalization (reduce list after contracts exist). | Refactor 6.3: internalize implementations; update baseline in same change as visibility edits. Do not mix into 6.2 moves. |
+| **R61-V15** | `MainWindow.axaml.cs` ~983-line imperative shell/view composition. | **Explicit deferred exception** — **Refactor 8** owns view extraction / UI foundation. 6.3 may narrow injected composition only. No M3/M4 edge required for line count. | Refactor 8 extraction; 6.3 must not perform visual extraction. |
+| **R61-V16** | Agent-panel/Townhall flow interprets output/status strings; active channel targeting. | **Explicit deferred exception** — **Refactor 7** behavior/domain. 6.2 movement must preserve current behavior and tests. | Refactor 7; structural slices must not redesign protocol. |
+| **R61-V17** | `MainWindow` manually creates/disposes Settings VM/view; constructs most feature views in shell. | **Documented only** + **Refactor 6.3** for ownership/factories; **visible UI extraction deferred to Refactor 8** (with V15). | Refactor 6.3 shell factories/ownership; Refactor 8 for extraction. |
+| **R61-V18** | No authoritative conversation lifetime owner; Townhall selected-channel state bags. | **Explicit deferred exception** + **Refactor 7 deferral**; decision ID **R61-LT01**. Codified in CONVENTIONS lifetime section. | Refactor 7 M0: define owner/boundary or named later deferral. No 6.x type authorized. |
+| **R61-V19** | No agent-session lifetime owner; panel identity + in-flight send ≠ session. | **Explicit deferred exception** + **Refactor 7 deferral**; **R61-LT02**. | Refactor 7 M0: prove consumer/owner before any type/scope. |
+| **R61-V20** | No run lifetime owner/correlation for one agent execution attempt. | **Explicit deferred exception** + **Refactor 7 deferral**; **R61-LT03**. | Refactor 7 M0: minimum existing-behavior representation or explicit deferral. |
+| **R61-LT01** | Same live gap as V18 (conversation lifetime). | **Refactor 7 deferral** (alias surface of V18). | Same as V18. |
+| **R61-LT02** | Same live gap as V19 (agent session). | **Refactor 7 deferral** (alias surface of V19). | Same as V19. |
+| **R61-LT03** | Same live gap as V20 (run). | **Refactor 7 deferral** (alias surface of V20). | Same as V20. |
+
+#### Representation coverage checksum
+
+| Bucket | M0 IDs | Count |
+|--------|--------|------:|
+| At least one executable M3 allowlist entry | V02, V05, V06, V07, V08, V09 | 6 (9 allowlist rows) |
+| Executable M4 (visibility and/or root admission) | V01 (admission), V14 (public baseline) | 2 |
+| Documented-only 6.3 (no dedicated MatchKey) | V10, V11, V12*, V13, V17 | 5 (*V12 partially tied to LOC-App) |
+| 6.2 movement-only ownership | V01, V03, V04 | 3 (V01 also M4) |
+| Explicit deferred (7/8) | V15, V16, V18–V20, LT01–LT03 | 8 ID rows (5 V + 3 LT; 5 unique debt themes) |
+| **Total distinct V + LT IDs represented** | V01–V20 + LT01–LT03 | **23** |
+
+M3 allowlist M0 IDs frozen in tests: `R61-V02`, `V05`, `V06`, `V07`, `V08`,
+`V09` only — matching the executable subset above. Findings without inventory
+edges (V10–V20 family beyond locator cross-ref) remain documented dispositions,
+not silent drops.
+
+### M5 docs reconciliation (M0–M4 executable baseline)
+
+| Surface | M5 truth after reconciliation |
+|---------|-------------------------------|
+| This plan | Status M5 complete; matrix; final limitations; next work = 6.2 M0 after acceptance |
+| `M0_ARCHITECTURE_BASELINE.md` | Unchanged historical evidence (still valid counts/edges) |
+| `docs/CONVENTIONS.md` | Detailed rules + M3–M4 ratchet summary; status notes M5 closeout |
+| `docs/architecture/OVERVIEW.md` | Target vs current; M0–M5 complete pending human acceptance of 6.1 |
+| Architecture tests | Unchanged by M5; remain the executable source of truth for M2–M4 |
+
+No separate architecture-rules document was created (M1 decision preserved).
+
+### Exact files changed in M5
+
+| File | Change |
+|------|--------|
+| `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md` | M5 completion record, matrix, limitations, verification, next work |
+| `docs/architecture/OVERVIEW.md` | Remove M4-pending contradictions; state M5 closeout / acceptance pending |
+| `docs/CONVENTIONS.md` | Last-updated / status line only as needed for M5 truth |
+
+### M5 exit conditions
+
+- [x] Docs reconciled with committed M0–M4 executable baseline.
+- [x] Exhaustive reviewable representation matrix for every M0 finding ID
+      (V01–V20 and LT01–LT03) with no silent omission.
+- [x] Final Refactor 6.1 limitations recorded (hybrid inventory; C#-only root
+      admission; no semantic graph; no production migration/DI/lifetime work;
+      non-C# admission undecided).
+- [x] Plan status shows M5 complete and Refactor 6.1 ready for final human
+      acceptance without claiming acceptance.
+- [x] No production/test/architecture-test/baseline regeneration.
+- [x] Verification contract commands pass (recorded below).
+- [x] Next authorized work stated: Refactor 6.2 M0 only, after human acceptance.
+
+### M5 verification results
+
+Run sequentially after the final documentation edit:
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+Recorded results:
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded with 0 errors and 1
+  existing `CS0067` warning at
+  `tests/Zaide.Tests/Services/ProjectDebugTargetResolverTests.cs:34`
+  (`FakeManagedProcessRunner.ProcessStarted` unused); not introduced by M5.
+- Focused Architecture filter — 21 passed, 0 failed, 0 skipped
+  (6 M2 inventory + 8 M3 ratchet + 7 M4 visibility/admission; unchanged by M5).
+- `dotnet test Zaide.slnx --no-build` — 2,193 passed, 0 failed, 0 skipped;
+  total 2,193 (same as M4 baseline; no new tests).
+- `git diff --check` — clean.
+- `git status --short --branch` — `master...origin/master` with only the three
+  M5 documentation files modified:
+  `docs/CONVENTIONS.md`, `docs/architecture/OVERVIEW.md`,
+  `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md`.
+
+### M5 rollback boundary
+
+M5 changes only the documentation files listed under “Exact files changed in
+M5”. Before commit, rollback is restore of those files. After an explicitly
+authorized M5 commit, rollback is one revert of that documentation-only
+commit. It must not touch production code, Architecture tests, M2 inventory,
+M3 allowlist, M4 public baseline, or any later refactor plan.
+
+Earlier milestones remain separately revertible:
+
+| Milestone | Commit (master) | Rollback unit |
+|-----------|-----------------|---------------|
+| M0 | `94c734a` | plan + baseline docs |
+| M1 | `201e85c` (+ `db11ff1` hash note) | CONVENTIONS + OVERVIEW + plan |
+| M2 | `9d3ad6b` | Architecture inventory harness |
+| M3 | `f7e2158` | allowlist/ratchet tests + docs |
+| M4 | `1c7fa94` | visibility/admission baselines + docs |
+| M5 | _(pending human acceptance + authorized commit)_ | docs only |
+
+### Next authorized work
+
+After **human acceptance** of Refactor 6.1 (this M5 closeout):
+
+1. **Only** create and execute **Refactor 6.2 M0** (independent
+   `docs/refactor/refactor-6.2/IMPLEMENTATION_PLAN.md`, live re-verification).
+2. Do **not** begin 6.2 implementation slices, 6.3, 7, 8, or V3 production
+   from this plan alone.
+
+Stop after M5 and request final review. Do not commit or push unless
+explicitly requested. Do not start Refactor 6.2 without acceptance.
+
+## Final Refactor 6.1 limitations
+
+These close the refactor’s design envelope (not bugs to fix in 6.1):
+
+1. **Source/compiled hybrid inventory boundaries** — Source scans cover tracked
+   production paths, technical-folder/namespace placement, locator sites, and
+   two technical-namespace edge directions. Compiled metadata covers non-nested
+   non-compiler-generated top-level `Zaide*` types for visibility only. The
+   two channels are not a unified semantic model.
+2. **C#-only root-admission coverage** — M3/M4 root-admission detectors use
+   `git ls-files` of `src/**/*.cs` only. Non-C# assets (`.axaml`, `.csproj`,
+   `app.manifest`, etc.) are neither admitted nor rejected by the ratchet.
+3. **No semantic dependency graph** — File-level namespace and string/source
+   evidence do not replace a full semantic graph (Roslyn/assembly references
+   beyond the frozen technical edges). M3 ratchets only the two forbidden
+   technical-namespace directions with inventory support.
+4. **No production migration or composition work** — Refactor 6.1 did not move
+   source, invert dependencies, change DI, lifetimes, visibility of production
+   types, or reduce public surface beyond freezing it. Those belong to 6.2/6.3.
+5. **Non-C# admission policy undecided** — Whether AXAML/resources/project
+   files need a parallel admission ratchet is a future decision; M4/M5 do not
+   invent one.
+6. **Composition pressure is documented, not automated** — Line/ctor-parameter
+   findings (V13, V15) identify pressure; 6.1 has no size ratchet.
+7. **Allowlisted debt is frozen, not fixed** — M3/M4 prevent new debt and
+   silent public growth; they do not clear V02–V09 or reduce the 348 public set.
+8. **Migration order is guidance only** — Default 6.2 slice order in this plan
+   is not a 6.2 plan or authorization.
+9. **Lifetime vocabulary is current-only** — Conversation / agent session /
+   run remain R61-LT01–LT03 for Refactor 7; not current 6.x lifetimes.
+10. **Single assembly retained** — 6.2 stays in `Zaide`; no assembly split.
+
+## Rollback (historical M0 note)
+
+M0 originally changed only:
 
 - `docs/refactor/refactor-6.1/IMPLEMENTATION_PLAN.md`
 - `docs/refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE.md`
 
-Before commit, rollback is deletion of those two untracked files and the empty
-directory. After an explicitly authorized M0 commit, rollback is one revert of
-that documentation-only commit; it must not touch production/test files or any
-later milestone.
-
 **M0 commit hash:** `94c734a745ce081d1e831d0dbc735f630586be7b`
 
-Stop after M0 and request review. Do not begin M1 or any structural migration.
+See the M5 rollback table above for the full milestone commit map.
