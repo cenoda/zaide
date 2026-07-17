@@ -1,5 +1,6 @@
 using System;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Language.Contracts;
 
 namespace Zaide.Features.ProjectSystem.Contracts;
 

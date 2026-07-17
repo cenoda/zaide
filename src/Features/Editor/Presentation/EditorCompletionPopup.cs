@@ -9,6 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.Services;
 using Zaide.UI.DesignSystem;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.Editor.Presentation;
 

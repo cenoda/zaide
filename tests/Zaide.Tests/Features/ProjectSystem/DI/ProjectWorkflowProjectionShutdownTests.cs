@@ -16,6 +16,7 @@ using Zaide.ViewModels;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Features.Language.Contracts;
 
 namespace Zaide.Tests.Features.ProjectSystem.DI;
 

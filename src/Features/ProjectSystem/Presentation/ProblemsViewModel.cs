@@ -14,6 +14,8 @@ using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.ProjectSystem.Presentation;
 

@@ -2,12 +2,13 @@
 
 ## Status and authorization
 
-**Current milestone:** M5c ProjectSystem diagnostics/test results/problems
-**complete** (pending human review / commit). M0 accepted at `8fae71d`. M1
-DesignSystem committed at `2259b81`. M2 Settings committed at `a13be5a`. M3
-Workspace committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a
-ProjectSystem discovery committed at `faa6e2f`. M5b ProjectSystem workflow
-committed at `e2928a5`. Do not start M6+ until M5c is accepted.
+**Current milestone:** M6a Language application/contracts **complete**
+(pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
+committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
+committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
+discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
+`e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. Do not start
+M6b+ until M6a is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1190,6 +1191,52 @@ authorization.
 **Notes / non-goals:** Authoritative explicit list only; no glob/except classification at implementation time. TestLanguageServerSession is the session-service test double and stays with M6a.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M6a completion record
+
+**Scope executed:** Mechanical rehome of Language application/contracts only
+into `src/Features/Language/{Contracts,Application}/` and matching
+`tests/Zaide.Tests/Features/Language/...`. Namespaces `Zaide.Services` →
+`Zaide.Features.Language.*` for the 53 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `ILanguage*Service`, `ILanguageDocumentBridge` (8 files) | `.../Contracts/` | `Zaide.Features.Language.Contracts` |
+| Non-LSP language application types, snapshots, policies, mappers, document bridge, session service/status types (45 files) | `.../Application/` | `Zaide.Features.Language.Application` |
+
+Matching 12 tests rehomed (including `TestLanguageServerSession`). No
+phase/milestone test renames required in the authoritative list. LSP
+transport/parser/session types (`CsharpLsSession`, `LanguageServer*`,
+`LspRange`, `LspUtf16PositionMapper`, etc.) remain under `src/Services/` for
+M6b.
+
+Public full-name baseline rewrote the 50 type names (count still 348).
+Architecture inventory updated for folder/namespace truth; Features admission
+includes `src/Features/Language/`. CONVENTIONS + OVERVIEW truthful current-tree
+notes. No DI registration/lifetime, visibility, constructor signature, or
+behavior changes. FindingId allowlist unchanged (9). M6b+ Language LSP and
+later features remain.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M6a; human review/commit of M6a only. Do not start M6b+ without
+authorization.
 
 ### M6b — Language — Lsp infrastructure
 

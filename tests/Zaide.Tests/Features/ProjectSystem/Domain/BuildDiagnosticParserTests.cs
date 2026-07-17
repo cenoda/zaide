@@ -3,6 +3,7 @@ using System.IO;
 using Xunit;
 using Zaide.Services;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Tests.Features.ProjectSystem.Domain;
 

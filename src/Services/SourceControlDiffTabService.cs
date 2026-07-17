@@ -7,6 +7,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.Language.Contracts;
 
 namespace Zaide.Services;
 

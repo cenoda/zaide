@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using StreamJsonRpc;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Services;
 

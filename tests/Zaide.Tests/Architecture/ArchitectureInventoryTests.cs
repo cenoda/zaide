@@ -32,11 +32,12 @@ public sealed class ArchitectureInventoryTests
             ArchitectureInventoryReader.M0InternalTopLevelTypes,
             inventory.TotalTopLevelTypeCount);
 
-        // Namespace rollups after Refactor 6.2 M1–M5c (DesignSystem, Settings, Workspace, Editor, ProjectSystem).
+        // Namespace rollups after Refactor 6.2 M1–M6a (DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts).
         var byNamespace = inventory.TypeCountByNamespace;
         Assert.Equal((3, 2, 1), byNamespace["Zaide"]);
         Assert.Equal((17, 17, 0), byNamespace["Zaide.Models"]);
-        Assert.Equal((152, 136, 16), byNamespace["Zaide.Services"]);
+        Assert.Equal((97, 86, 11), byNamespace["Zaide.Services"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((54, 40, 14), byNamespace["Zaide.ViewModels"]);
         Assert.Equal((33, 25, 8), byNamespace["Zaide.Views"]);
@@ -56,6 +57,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
         Assert.Equal((13, 13, 0), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
         Assert.Equal((10, 10, 0), byNamespace["Zaide.Features.ProjectSystem.Presentation"]);
+        Assert.Equal((8, 8, 0), byNamespace["Zaide.Features.Language.Contracts"]);
+        Assert.Equal((47, 42, 5), byNamespace["Zaide.Features.Language.Application"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -89,15 +92,16 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(356, inventory.SourceFiles.Count);
         Assert.Equal(3, byFolder["src"]);
         Assert.Equal(12, byFolder["Models"]);
-        Assert.Equal(147, byFolder["Services"]);
+        Assert.Equal(94, byFolder["Services"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(125, byFolder["Features"]);
+        Assert.Equal(178, byFolder["Features"]);
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(36, byFolder["ViewModels"]);
         Assert.Equal(31, byFolder["Views"]);
 
         // Namespace declarations match folders for the current mixed tree
-        // (technical layers plus Refactor 6.2 M1–M5c DesignSystem, Settings, Workspace, Editor, ProjectSystem).
+        // (technical layers plus Refactor 6.2 M1–M6a DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "src"),
             s => Assert.Equal("Zaide", s.DeclaredNamespace));
@@ -123,13 +127,15 @@ public sealed class ArchitectureInventoryTests
                     path.StartsWith("src/Features/Settings/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Workspace/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal)
-                    || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal),
+                    || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal)
+                    || path.StartsWith("src/Features/Language/", StringComparison.Ordinal),
                     $"Unexpected Features path: {path}");
                 Assert.True(
                     s.DeclaredNamespace.StartsWith("Zaide.Features.Settings.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Workspace.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Editor.", StringComparison.Ordinal)
-                    || s.DeclaredNamespace.StartsWith("Zaide.Features.ProjectSystem.", StringComparison.Ordinal),
+                    || s.DeclaredNamespace.StartsWith("Zaide.Features.ProjectSystem.", StringComparison.Ordinal)
+                    || s.DeclaredNamespace.StartsWith("Zaide.Features.Language.", StringComparison.Ordinal),
                     $"Unexpected Features namespace: {s.DeclaredNamespace}");
             });
         Assert.All(

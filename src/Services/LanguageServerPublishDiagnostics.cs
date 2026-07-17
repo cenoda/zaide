@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Zaide.Features.Editor.Domain;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Services;
 

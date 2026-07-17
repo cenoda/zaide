@@ -8,6 +8,8 @@ using Zaide.Services;
 using Unit = System.Reactive.Unit;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.Editor.Presentation;
 

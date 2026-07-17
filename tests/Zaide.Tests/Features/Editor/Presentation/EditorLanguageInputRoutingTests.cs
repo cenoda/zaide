@@ -20,6 +20,9 @@ using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
+using Zaide.Tests.Features.Language.Application;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 

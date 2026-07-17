@@ -30,6 +30,7 @@ using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.Features.Editor.Presentation;
 

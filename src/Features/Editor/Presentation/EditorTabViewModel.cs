@@ -15,6 +15,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Language.Contracts;
 
 namespace Zaide.Features.Editor.Presentation;
 

@@ -11,6 +11,8 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
 if (args.Length < 1)
 {
     Console.Error.WriteLine("Usage: Phase10M5NavigationSymbolsSmoke <fixture-dir>");

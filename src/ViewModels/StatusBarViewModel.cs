@@ -7,6 +7,8 @@ using ReactiveUI.Avalonia;
 using Zaide.Services;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
 
 namespace Zaide.ViewModels;
 

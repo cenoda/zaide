@@ -43,6 +43,8 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Tests.Features.ProjectSystem;
 
+using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Application;
 namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class SettingsUiTests

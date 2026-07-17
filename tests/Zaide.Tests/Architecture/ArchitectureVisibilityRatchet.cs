@@ -20,8 +20,8 @@ public static class ArchitectureVisibilityRatchet
     /// Includes remaining technical-layer folders, Refactor 6.2 M1
     /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2–M4
     /// <c>Features</c> (only <c>src/Features/Settings/</c>,
-    /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>, and
-    /// <c>src/Features/ProjectSystem/</c>; see
+    /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>,
+    /// <c>src/Features/ProjectSystem/</c>, and <c>src/Features/Language/</c>; see
     /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
@@ -46,9 +46,9 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M5c: Settings, Workspace, Editor, and ProjectSystem are
-    /// admitted under <c>src/Features/</c>. Other features remain deny-by-default
-    /// until their migration slices.
+    /// Refactor 6.2 M2–M6a: Settings, Workspace, Editor, ProjectSystem, and
+    /// Language are admitted under <c>src/Features/</c>. Other features remain
+    /// deny-by-default until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {
@@ -56,7 +56,8 @@ public static class ArchitectureVisibilityRatchet
         return path.StartsWith("src/Features/Settings/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Workspace/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/Language/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -207,9 +208,9 @@ public static class ArchitectureVisibilityRatchet
                         ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                         path,
                         "unauthorized path under src/Features/; only src/Features/Settings/, " +
-                        "src/Features/Workspace/, src/Features/Editor/, and " +
-                        "src/Features/ProjectSystem/ are admitted " +
-                        "(Refactor 6.2 M2–M5c). " +
+                        "src/Features/Workspace/, src/Features/Editor/, " +
+                        "src/Features/ProjectSystem/, and src/Features/Language/ are admitted " +
+                        "(Refactor 6.2 M2–M6a). " +
                         "Other features require their slice."));
                 }
 
