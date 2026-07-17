@@ -5,6 +5,8 @@ using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Services;
 

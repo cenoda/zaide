@@ -11,6 +11,7 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Domain;
 
 namespace Zaide.Tests.Services;
 

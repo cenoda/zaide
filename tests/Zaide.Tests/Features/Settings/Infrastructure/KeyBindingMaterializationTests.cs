@@ -14,6 +14,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Presentation;
 
 using Zaide.Tests;
 using Zaide.Tests.Services;
@@ -24,6 +26,7 @@ using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Tests.Features.Editor.Infrastructure;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 
@@ -64,7 +67,7 @@ public sealed class KeyBindingMaterializationTests
     private void RegisterAllViewModels()
     {
         var sp = new ServiceCollection()
-            .AddSingleton<IFileService>(new global::Zaide.Tests.Services.MockFileService())
+            .AddSingleton<IFileService>(new global::Zaide.Tests.Features.Editor.Infrastructure.MockFileService())
             .AddTransient<EditorViewModel>()
             .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();

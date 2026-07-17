@@ -8,6 +8,9 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Infrastructure;
+using Zaide.Features.Editor.Presentation;
 
 using Zaide.Tests;
 using Zaide.Features.Workspace.Domain;

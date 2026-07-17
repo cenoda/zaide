@@ -19,6 +19,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Views;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Presentation;
 
 using Zaide.Tests;
 using Zaide.Tests.Services;
@@ -29,6 +31,7 @@ using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Tests.Features.Editor.Infrastructure;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 

@@ -26,6 +26,11 @@ using Zaide.Tests.Features.Settings.Infrastructure;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Domain;
+using Zaide.Features.Editor.Infrastructure;
+using Zaide.Features.Editor.Presentation;
+using Zaide.Tests.Features.Editor.Infrastructure;
 
 namespace Zaide.Tests;
 

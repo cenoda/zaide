@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Services;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.ViewModels;
 

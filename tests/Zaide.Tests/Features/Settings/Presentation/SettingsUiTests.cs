@@ -14,6 +14,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Infrastructure;
+using Zaide.Features.Editor.Presentation;
 
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

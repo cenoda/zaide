@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests.Architecture;
 
@@ -131,7 +132,7 @@ public sealed class ArchitectureRatchetTests
         Assert.Contains(live, v => v.RelativePath == "src/Program.cs");
         Assert.Contains(live, v => v.RelativePath == "src/App.axaml.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Services/SourceControlDiffTabService.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/ViewModels/EditorTabViewModel.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/Features/Editor/Presentation/EditorTabViewModel.cs");
         Assert.Equal(4, live.Count);
 
         // No View-layer locator site today; ratchet keeps it that way.

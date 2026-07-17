@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests.Architecture;
 
@@ -208,7 +209,7 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-LOC-EditorTabViewModel",
                 category: ArchitectureRatchet.CategoryLocatorSite,
                 matchKey: ArchitectureRatchet.BuildLocatorMatchKey(
-                    "src/ViewModels/EditorTabViewModel.cs"),
+                    "src/Features/Editor/Presentation/EditorTabViewModel.cs"),
                 m0FindingId: "R61-V08",
                 owner: "Editor",
                 disposition: DispositionDependencyInversion,

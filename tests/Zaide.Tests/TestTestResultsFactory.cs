@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Infrastructure;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests;
 

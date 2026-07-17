@@ -7,6 +7,7 @@ using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide;
 

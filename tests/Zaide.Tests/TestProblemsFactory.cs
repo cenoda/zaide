@@ -6,6 +6,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests;
 
@@ -21,7 +23,7 @@ internal static class TestProblemsFactory
     {
         var services = new ServiceCollection();
         services.AddSingleton(workspace);
-        services.AddSingleton<IFileService>(new global::Zaide.Services.FileService());
+        services.AddSingleton<IFileService>(new global::Zaide.Features.Editor.Infrastructure.FileService());
         var sp = services.BuildServiceProvider();
         var tabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
         return Create(workspace, tabs);

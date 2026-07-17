@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Domain;
 
 namespace Zaide.Services;
 

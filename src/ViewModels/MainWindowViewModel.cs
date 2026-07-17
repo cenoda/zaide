@@ -13,6 +13,8 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Editor.Domain;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.ViewModels;
 

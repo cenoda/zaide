@@ -1,5 +1,6 @@
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests;
 

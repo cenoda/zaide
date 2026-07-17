@@ -2,9 +2,10 @@
 
 ## Status and authorization
 
-**Current milestone:** M3 Workspace **complete** (pending human review / commit).
+**Current milestone:** M4 Editor **complete** (pending human review / commit).
 M0 accepted at `8fae71d`. M1 DesignSystem committed at `2259b81`. M2 Settings
-committed at `a13be5a`. Do not start M4+ until M3 is accepted.
+committed at `a13be5a`. M3 Workspace committed at `ac75fe5`. Do not start M5+
+until M4 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -729,6 +730,85 @@ authorization.
 **Notes / non-goals:** Editor breakpoint/IP types are Debugging (M7c), not Editor. FileService primary owner (R62-D01).
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+**M4 completion record (2026-07-17):**
+
+**Scope executed:** Mechanical rehome of Editor only into
+`src/Features/Editor/{Domain,Contracts,Infrastructure,Presentation}/` and
+matching `tests/Zaide.Tests/Features/Editor/...`. Namespaces
+`Zaide.Models` / `Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` →
+`Zaide.Features.Editor.*` for the 24 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `src/Models/Document.cs` | `.../Domain/Document.cs` | `Zaide.Features.Editor.Domain` |
+| `src/Services/BraceFoldingStrategy.cs` | `.../Domain/BraceFoldingStrategy.cs` | `Zaide.Features.Editor.Domain` |
+| `src/Services/SupportedFileTypes.cs` | `.../Domain/SupportedFileTypes.cs` | `Zaide.Features.Editor.Domain` |
+| `src/ViewModels/SearchEngine.cs` | `.../Domain/SearchEngine.cs` | `Zaide.Features.Editor.Domain` |
+| `src/Services/IFileService.cs` | `.../Contracts/IFileService.cs` | `Zaide.Features.Editor.Contracts` |
+| `src/ViewModels/IEditorLanguageOperations.cs` | `.../Contracts/IEditorLanguageOperations.cs` | `Zaide.Features.Editor.Contracts` |
+| `src/ViewModels/IEditorTextOperations.cs` | `.../Contracts/IEditorTextOperations.cs` | `Zaide.Features.Editor.Contracts` |
+| `src/ViewModels/IFoldingOperations.cs` | `.../Contracts/IFoldingOperations.cs` | `Zaide.Features.Editor.Contracts` |
+| `src/Services/FileService.cs` | `.../Infrastructure/FileService.cs` | `Zaide.Features.Editor.Infrastructure` |
+| `src/ViewModels/EditorLanguageInputViewModel.cs` | `.../Presentation/EditorLanguageInputViewModel.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/ViewModels/EditorSearchViewModel.cs` | `.../Presentation/EditorSearchViewModel.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/ViewModels/EditorTabViewModel.cs` | `.../Presentation/EditorTabViewModel.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/ViewModels/EditorViewModel.cs` | `.../Presentation/EditorViewModel.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/EditorCompletionPopup.cs` | `.../Presentation/EditorCompletionPopup.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/EditorHoverPopup.cs` | `.../Presentation/EditorHoverPopup.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/EditorLanguagePickerPopup.cs` | `.../Presentation/EditorLanguagePickerPopup.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/EditorTabBar.cs` | `.../Presentation/EditorTabBar.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/EditorView.cs` | `.../Presentation/EditorView.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/FoldingOperations.cs` | `.../Presentation/FoldingOperations.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/IndentGuideMetrics.cs` | `.../Presentation/IndentGuideMetrics.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/IndentGuideRenderer.cs` | `.../Presentation/IndentGuideRenderer.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/SearchBar.cs` | `.../Presentation/SearchBar.cs` | `Zaide.Features.Editor.Presentation` |
+| `src/Views/UnsavedDialog.axaml` | `.../Presentation/UnsavedDialog.axaml` | (x:Class Presentation) |
+| `src/Views/UnsavedDialog.axaml.cs` | `.../Presentation/UnsavedDialog.axaml.cs` | `Zaide.Features.Editor.Presentation` |
+
+Matching tests rehomed (25). Phase/milestone-named tests renamed durably without
+assertion changes:
+
+| Pre-move test | Durable name |
+|---------------|--------------|
+| `Phase9M0EditorUxProofTests` | `EditorUxProofTests` |
+| `Phase13M0EditorMeasurementSeam` | `EditorMeasurementSeam` |
+| `Phase13M0EditorMeasurementTests` | `EditorMeasurementTests` |
+| `Phase13M4aCriticalPathEvidenceTests` | `EditorCriticalPathEvidenceTests` |
+
+`IFileService`/`FileService` remain Editor-owned (R62-D01). Editor breakpoint/IP
+types remain in technical ViewModels (Debugging M7c). Allowlist path rewrite only:
+`R61-AL-LOC-EditorTabViewModel` → `src/Features/Editor/Presentation/EditorTabViewModel.cs`
+(FindingId set still 9). Public full-name baseline rewrote Editor type names
+including nested `BraceRegion`/`SearchMatch` (count still 348). Architecture
+admission admits `src/Features/Editor/` C# under top-level `Features` (alongside
+Settings and Workspace). Inventory tests updated for folder/namespace truth.
+CONVENTIONS + OVERVIEW truthful current-tree notes. No DI, visibility,
+constructor signature, or behavior changes. Under `Zaide.*.Features.*`
+namespaces, short name `Workspace` binds to the sibling/parent namespace
+segment; affected sites use `global::Zaide.Features.Workspace.Domain.Workspace`
+(mechanical reference fix only).
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries; EditorTabViewModel MatchKey path rewritten). **Public count:** 348.
+
+**Next:** stop after M4; human review/commit of M4 only. Do not start M5+ without
+authorization.
 
 ### M5a — ProjectSystem — discovery / context / operation gate / targets / project debug launch
 
@@ -1497,7 +1577,7 @@ Until then: **stop after M0**.
 | R61-AL-NS-ITerminalSessionFactory | `src/Services/ITerminalSessionFactory.cs` | M9 |
 | R61-AL-NS-TerminalSessionFactory | `src/Services/TerminalSessionFactory.cs` | M9 |
 | R61-AL-NS-MentionParser | `src/Services/MentionParser.cs` | M11 |
-| R61-AL-LOC-EditorTabViewModel | `src/ViewModels/EditorTabViewModel.cs` | M4 |
+| R61-AL-LOC-EditorTabViewModel | `src/Features/Editor/Presentation/EditorTabViewModel.cs` (rewritten in M4) | M4 |
 | R61-AL-LOC-Program | `src/Program.cs` | M12 |
 | R61-AL-LOC-App | `src/App.axaml.cs` | M12 |
 

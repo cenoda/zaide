@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.ViewModels;
 

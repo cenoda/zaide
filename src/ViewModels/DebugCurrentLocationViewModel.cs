@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.ViewModels;
 

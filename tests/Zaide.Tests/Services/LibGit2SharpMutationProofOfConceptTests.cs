@@ -4,6 +4,7 @@ using System.Linq;
 using LibGit2Sharp;
 using Xunit;
 using Zaide.Models;
+using Zaide.Features.Editor.Domain;
 
 namespace Zaide.Tests.Services;
 

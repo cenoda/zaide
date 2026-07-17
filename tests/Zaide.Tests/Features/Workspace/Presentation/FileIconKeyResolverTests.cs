@@ -4,6 +4,7 @@ using System.Linq;
 using Xunit;
 using Zaide.Services;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Editor.Domain;
 
 namespace Zaide.Tests.Features.Workspace.Presentation;
 

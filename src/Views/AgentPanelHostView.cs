@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Zaide.Models;
 using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Views;
 

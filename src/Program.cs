@@ -15,6 +15,9 @@ using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Editor.Contracts;
+using Zaide.Features.Editor.Infrastructure;
+using Zaide.Features.Editor.Presentation;
 
 namespace Zaide;
 
@@ -146,7 +149,7 @@ class Program
 
         services.AddTransient<EditorViewModel>(sp =>
             new EditorViewModel(
-                new Models.Document(""),
+                new Features.Editor.Domain.Document(""),
                 sp.GetRequiredService<IFileService>(),
                 sp.GetService<ISettingsService>(),
                 sp.GetService<ILanguageFormattingService>()));
