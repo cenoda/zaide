@@ -20,6 +20,10 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.SourceControl.Presentation;
+using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Domain;
+using Zaide.Features.SourceControl.Contracts;
 
 namespace Zaide.ViewModels;
 

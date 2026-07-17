@@ -111,11 +111,11 @@ public sealed class ArchitectureRatchetTests
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryNamespaceDirection);
 
         // Known accepted debt sites remain visible (not silently dropped).
-        Assert.Contains(live, v => v.RelativePath == "src/Models/SourceControlState.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Domain/SourceControlState.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Services/ITerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Services/TerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Services/MentionParser.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Services/SourceControlDiffTabService.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Equal(5, live.Count);
     }
 
@@ -131,7 +131,7 @@ public sealed class ArchitectureRatchetTests
 
         Assert.Contains(live, v => v.RelativePath == "src/Program.cs");
         Assert.Contains(live, v => v.RelativePath == "src/App.axaml.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Services/SourceControlDiffTabService.cs");
+        Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Editor/Presentation/EditorTabViewModel.cs");
         Assert.Equal(4, live.Count);
 

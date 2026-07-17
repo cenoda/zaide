@@ -55,6 +55,28 @@ public sealed class ArchitectureInventoryReader
         @"(?:using\s+Zaide\.Services\b|Zaide\.Services\.)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// Residual R61-V02 edge after SourceControl move: Domain session bag still
+    /// depends on Application snapshot types (Refactor 6.3 inversion target).
+    /// </summary>
+    private static readonly Regex SourceControlStateToApplicationRegex = new(
+        @"(?:using\s+Zaide\.Features\.SourceControl\.Application\b|Zaide\.Features\.SourceControl\.Application\.)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Residual R61-V07 edge after SourceControl move: application diff-tab
+    /// service still depends on editor presentation types (Refactor 6.3).
+    /// </summary>
+    private static readonly Regex SourceControlDiffTabToEditorPresentationRegex = new(
+        @"(?:using\s+Zaide\.Features\.Editor\.Presentation\b|Zaide\.Features\.Editor\.Presentation\.)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private const string SourceControlStateRelativePath =
+        "src/Features/SourceControl/Domain/SourceControlState.cs";
+
+    private const string SourceControlDiffTabServiceRelativePath =
+        "src/Features/SourceControl/Application/SourceControlDiffTabService.cs";
+
     private readonly string _repositoryRoot;
     private readonly Assembly _productionAssembly;
 
@@ -299,7 +321,8 @@ public sealed class ArchitectureInventoryReader
         var entries = new List<NamespaceDependencyEvidenceEntry>();
         foreach (var relativePath in relativePaths)
         {
-            var technicalFolder = GetTechnicalFolder(relativePath);
+            var normalizedPath = NormalizeRelativePath(relativePath);
+            var technicalFolder = GetTechnicalFolder(normalizedPath);
             Regex? targetRegex = technicalFolder switch
             {
                 "Services" => ServicesToViewModelsRegex,
@@ -307,23 +330,41 @@ public sealed class ArchitectureInventoryReader
                 _ => null
             };
 
-            if (targetRegex is null)
+            string? targetFragment = technicalFolder switch
+            {
+                "Services" => "Zaide.ViewModels",
+                "Models" => "Zaide.Services",
+                _ => null
+            };
+
+            // Refactor 6.2 M8: residual SourceControl allowlist edges under Features.
+            // Path-scoped so other Features Domain→Application edges are not ratcheted.
+            if (normalizedPath.Equals(SourceControlStateRelativePath, StringComparison.Ordinal))
+            {
+                technicalFolder = "Features";
+                targetRegex = SourceControlStateToApplicationRegex;
+                targetFragment = "Zaide.Features.SourceControl.Application";
+            }
+            else if (normalizedPath.Equals(SourceControlDiffTabServiceRelativePath, StringComparison.Ordinal))
+            {
+                technicalFolder = "Features";
+                targetRegex = SourceControlDiffTabToEditorPresentationRegex;
+                targetFragment = "Zaide.Features.Editor.Presentation";
+            }
+
+            if (targetRegex is null || targetFragment is null)
             {
                 continue;
             }
 
-            var targetFragment = technicalFolder == "Services"
-                ? "Zaide.ViewModels"
-                : "Zaide.Services";
-
-            var fullPath = Path.Combine(_repositoryRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var fullPath = Path.Combine(_repositoryRoot, normalizedPath.Replace('/', Path.DirectorySeparatorChar));
             var lines = File.ReadAllLines(fullPath);
             for (var i = 0; i < lines.Length; i++)
             {
                 foreach (Match match in targetRegex.Matches(lines[i]))
                 {
                     entries.Add(new NamespaceDependencyEvidenceEntry(
-                        relativePath,
+                        normalizedPath,
                         i + 1,
                         technicalFolder,
                         targetFragment,

@@ -16,6 +16,7 @@ using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.SourceControl.Domain;
 
 namespace Zaide.Tests.Features.Workspace.Presentation;
 

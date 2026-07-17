@@ -14,6 +14,7 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.SourceControl.Domain;
 
 namespace Zaide.Features.Workspace.Presentation;
 

@@ -8,6 +8,7 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.SourceControl.Domain;
 
 namespace Zaide.Tests.Features.Workspace.Infrastructure;
 

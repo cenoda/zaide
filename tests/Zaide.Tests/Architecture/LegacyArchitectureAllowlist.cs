@@ -96,15 +96,15 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-NS-SourceControlState",
                 category: ArchitectureRatchet.CategoryNamespaceDirection,
                 matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Models",
-                    "Zaide.Services",
-                    "src/Models/SourceControlState.cs"),
+                    "Features",
+                    "Zaide.Features.SourceControl.Application",
+                    "src/Features/SourceControl/Domain/SourceControlState.cs"),
                 m0FindingId: "R61-V02",
                 owner: "SourceControl",
                 disposition: DispositionDependencyInversion,
                 rationale:
-                "Models/SourceControlState consumes Services/RepositoryStatusSnapshot. " +
-                "Movement alone preserves the invalid technical-layer edge.",
+                "Domain/SourceControlState consumes Application/RepositoryStatusSnapshot. " +
+                "Movement alone preserves the residual layer edge (Refactor 6.3 inversion).",
                 removalBoundary: "Refactor 6.3"),
 
             new(
@@ -156,15 +156,15 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-NS-SourceControlDiffTabService",
                 category: ArchitectureRatchet.CategoryNamespaceDirection,
                 matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Services",
-                    "Zaide.ViewModels",
-                    "src/Services/SourceControlDiffTabService.cs"),
+                    "Features",
+                    "Zaide.Features.Editor.Presentation",
+                    "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"),
                 m0FindingId: "R61-V07",
                 owner: "SourceControl",
                 disposition: DispositionDependencyInversion,
                 rationale:
                 "SourceControlDiffTabService opens and updates editor presentation types " +
-                "(Services -> ViewModels).",
+                "(SourceControl Application -> Editor Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             // --- LocatorSite (exact production files with provider evidence) ---
@@ -196,7 +196,7 @@ public static class LegacyArchitectureAllowlist
                 findingId: "R61-AL-LOC-SourceControlDiffTabService",
                 category: ArchitectureRatchet.CategoryLocatorSite,
                 matchKey: ArchitectureRatchet.BuildLocatorMatchKey(
-                    "src/Services/SourceControlDiffTabService.cs"),
+                    "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"),
                 m0FindingId: "R61-V07",
                 owner: "SourceControl",
                 disposition: DispositionDependencyInversion,

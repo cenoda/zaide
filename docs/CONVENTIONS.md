@@ -168,6 +168,7 @@ src/
 | `Features/ProjectSystem` | Project discovery, context, gate, targets, debug launch (M5a); workflow/managed process/output (M5b); build diagnostics, test results, Problems projections (M5c) |
 | `Features/Language` | Language application/contracts (M6a) and LSP transport/session/parsers (M6b: `Infrastructure/Lsp`) |
 | `Features/Debugging` | Debugging application/contracts (M7a) + DAP infrastructure (M7b: `Infrastructure/Dap`) + presentation (M7c) |
+| `Features/SourceControl` | Source Control domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M8); residual R61-V02/V07 edges kept allowlisted for 6.3 |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
@@ -189,7 +190,10 @@ application/contracts (M7a), DAP infrastructure (M7b), and presentation (M7c) li
 `src/Features/Debugging/{Contracts,Application,Infrastructure/Dap,Presentation}/` and
 `tests/Zaide.Tests/Features/Debugging/` (namespace `Zaide.Features.Debugging.*`;
 DAP types use `Zaide.Features.Debugging.Infrastructure.Dap`; presentation types use
-`Zaide.Features.Debugging.Presentation`).
+`Zaide.Features.Debugging.Presentation`). Source Control (M8) lives under
+`src/Features/SourceControl/{Domain,Contracts,Application,Infrastructure,Presentation}/`
+and `tests/Zaide.Tests/Features/SourceControl/` (namespace
+`Zaide.Features.SourceControl.*`).
 Design tokens and icons are not `UI/Shared`.
 Project workflow stays under Project System even when it consumes other
 features' projections. LSP is not root infrastructure; DAP is not root
@@ -349,7 +353,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 |----------|-----------|------|
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
 | **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M7c | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/`, `src/Features/Workspace/`, `src/Features/Editor/`, `src/Features/ProjectSystem/`, `src/Features/Language/`, and `src/Features/Debugging/` after Refactor 6.2 M2–M7c), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M8 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/`, `src/Features/Workspace/`, `src/Features/Editor/`, `src/Features/ProjectSystem/`, `src/Features/Language/`, `src/Features/Debugging/`, and `src/Features/SourceControl/` after Refactor 6.2 M2–M8), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
 | **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0

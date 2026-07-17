@@ -48,6 +48,10 @@ using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.Features.Debugging.Application;
 using Zaide.Tests.Features.Debugging.Presentation;
+using Zaide.Features.SourceControl.Domain;
+using Zaide.Features.SourceControl.Contracts;
+using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Presentation;
 namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class SettingsUiTests

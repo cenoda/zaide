@@ -86,12 +86,12 @@ The live production tree is still mostly technical-layer folders and namespaces.
 Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace;
 M4 rehomed Editor; M5a–M5c rehomed ProjectSystem (discovery through diagnostics/Problems);
 M6a rehomed Language application/contracts; M6b rehomed Language LSP infrastructure;
-M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation:
+M7a rehomed Debugging application/contracts; M7b rehomed Debugging DAP infrastructure; M7c rehomed Debugging presentation; M8 rehomed SourceControl:
 
 ```text
 src/
-  Models/              # plain data / state bags (Settings/Workspace/Editor models moved in M2–M4)
-  Services/            # catch-all: remaining DTOs, agent/terminal/source-control infrastructure
+  Models/              # plain data / state bags (Settings/Workspace/Editor/SC models moved in M2–M4/M8)
+  Services/            # catch-all: remaining DTOs, agent/terminal infrastructure
   ViewModels/
   Views/
   UI/DesignSystem/     # tokens, icons, typography (was Styles/; Zaide.UI.DesignSystem)
@@ -101,6 +101,7 @@ src/
   Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation (6.2 M5a–M5c complete for ProjectSystem)
   Features/Language/   # Contracts + Application (6.2 M6a) + Infrastructure/Lsp (6.2 M6b)
   Features/Debugging/  # Contracts + Application (6.2 M7a) + Infrastructure/Dap (6.2 M7b) + Presentation (6.2 M7c)
+  Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8)
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented

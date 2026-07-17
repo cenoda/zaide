@@ -1,0 +1,51 @@
+using System.Collections.Generic;
+using Zaide.Features.SourceControl.Application;
+
+namespace Zaide.Features.SourceControl.Contracts;
+
+/// <summary>
+/// Narrow mutation seam for git stage, unstage, and commit operations.
+/// Separate from the read-only <see cref="IGitRepositoryService"/> and the
+/// refresh-only <see cref="ISourceControlSnapshotOrchestrator"/>. Uses
+/// LibGit2Sharp directly. Returns result types instead of throwing across
+/// the seam boundary.
+/// </summary>
+public interface IGitMutationService
+{
+    /// <summary>
+    /// Stages <paramref name="filePath"/> (relative to <paramref name="repositoryRoot"/>)
+    /// in the repository index. A true no-op (returns success) when the file is
+    /// already staged.
+    /// </summary>
+    StageResult Stage(string repositoryRoot, string filePath);
+
+    /// <summary>
+    /// Stages every path in <paramref name="filePaths"/> (relative to
+    /// <paramref name="repositoryRoot"/>) in a single repository open. A true
+    /// no-op (returns success) when the list is empty. On failure some paths
+    /// may already be staged — callers must refresh from repository truth.
+    /// </summary>
+    StageResult StageAll(string repositoryRoot, IReadOnlyList<string> filePaths);
+
+    /// <summary>
+    /// Unstages <paramref name="filePath"/> (relative to <paramref name="repositoryRoot"/>)
+    /// from the repository index. A true no-op (returns success) when the file is
+    /// already unstaged.
+    /// </summary>
+    StageResult Unstage(string repositoryRoot, string filePath);
+
+    /// <summary>
+    /// Creates a local commit in the repository at <paramref name="repositoryRoot"/>
+    /// with the given <paramref name="message"/>. Validates the message is non-empty,
+    /// that at least one change is staged, and that a git identity is configured
+    /// before attempting the commit.
+    /// </summary>
+    CommitResult Commit(string repositoryRoot, string message);
+
+    /// <summary>
+    /// Pushes the current branch to its configured upstream remote when the
+    /// working tree is clean and local commits are ahead of the remote.
+    /// Uses the system <c>git</c> CLI so SSH and credential-helper remotes work.
+    /// </summary>
+    PushResult Push(string repositoryRoot);
+}

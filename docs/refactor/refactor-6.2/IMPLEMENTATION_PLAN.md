@@ -2,15 +2,15 @@
 
 ## Status and authorization
 
-**Current milestone:** M7c Debugging presentation **complete**
+**Current milestone:** M8 SourceControl **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
 `e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
 application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
-committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`.
-Do not start M8+ until M7c is accepted.
+committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`.
+Do not start M9+ until M8 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1628,6 +1628,50 @@ git diff --check
 **Notes / non-goals:** Do not invert SourceControlState→snapshot (6.3); do not replace diff-tab locator (6.3).
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M8 completion record
+
+**Scope executed:** Mechanical rehome of SourceControl only into
+`src/Features/SourceControl/{Domain,Contracts,Application,Infrastructure,Presentation}/`
+and matching `tests/Zaide.Tests/Features/SourceControl/...`. Namespaces
+`Zaide.Models` / `Zaide.Services` / `Zaide.ViewModels` / `Zaide.Views` →
+`Zaide.Features.SourceControl.*` for the 28 production paths. Matching 13 tests
+rehomed (Integration, Domain, Application, Infrastructure, Presentation,
+`SourceControlTestFactory`). No assertion rewrites; durable feature-oriented
+test namespaces only. Residual R61-V02/V07 edges kept via inventory path-scoped
+detection under Features + allowlist MatchKey rewrites:
+
+| FindingId | Post-move MatchKey path |
+|-----------|-------------------------|
+| `R61-AL-NS-SourceControlState` | `src/Features/SourceControl/Domain/SourceControlState.cs` |
+| `R61-AL-NS-SourceControlDiffTabService` | `src/Features/SourceControl/Application/SourceControlDiffTabService.cs` |
+| `R61-AL-LOC-SourceControlDiffTabService` | same |
+
+Mechanical collision fixes only: `global::Zaide.Features.Workspace.Domain.Workspace`,
+`Avalonia.Application.Current`, and `AppPushResult` alias for LibGit2Sharp
+`PushResult` ambiguity. No DI registration/lifetime, visibility, constructor
+signature, or behavior changes. FindingId allowlist unchanged (9). Public count
+348. M9+ Terminal and later features remain.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries; three SourceControl MatchKeys path-rewritten). **Public count:** 348.
+
+**Next:** stop after M8; do not start M9+ without authorization.
 
 ### M9 — Terminal
 

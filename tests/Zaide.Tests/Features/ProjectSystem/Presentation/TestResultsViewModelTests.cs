@@ -22,6 +22,9 @@ using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.Features.Debugging.Application;
 using Zaide.Tests.Features.Debugging.Presentation;
+using Zaide.Features.SourceControl.Contracts;
+using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Presentation;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 

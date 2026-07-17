@@ -26,6 +26,10 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.Features.Debugging.Application;
 using Zaide.Tests.Features.Debugging.Presentation;
+using Zaide.Features.SourceControl.Domain;
+using Zaide.Features.SourceControl.Contracts;
+using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Presentation;
 
 namespace Zaide.Tests.Services;
 

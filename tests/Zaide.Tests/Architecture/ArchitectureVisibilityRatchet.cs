@@ -47,9 +47,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M7c: Settings, Workspace, Editor, ProjectSystem,
-    /// Language (including Infrastructure/Lsp), and Debugging (application/
-    /// contracts + Infrastructure/Dap + Presentation) are admitted under <c>src/Features/</c>.
+    /// Refactor 6.2 M2–M8: Settings, Workspace, Editor, ProjectSystem,
+    /// Language (including Infrastructure/Lsp), Debugging (application/
+    /// contracts + Infrastructure/Dap + Presentation), and SourceControl are
+    /// admitted under <c>src/Features/</c>.
     /// Other features remain deny-by-default until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
@@ -60,7 +61,8 @@ public static class ArchitectureVisibilityRatchet
             || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Language/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/Debugging/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/Debugging/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal);
     }
 
     /// <summary>
