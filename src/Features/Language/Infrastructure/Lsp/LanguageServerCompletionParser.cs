@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>Parses <c>textDocument/completion</c> JSON into structured items.</summary>
 internal static class LanguageServerCompletionParser

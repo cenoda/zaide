@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Zaide.Features.Language.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>Parses <c>textDocument/formatting</c> JSON into structured edits.</summary>
 internal static class LanguageServerFormattingParser

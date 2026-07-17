@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 
 if (args.Length < 1)
 {

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Production factory that launches csharp-ls and completes initialize/initialized.

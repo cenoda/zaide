@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Zero-based LSP range in the locked utf-16 position encoding.

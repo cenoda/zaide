@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Server capabilities negotiated at LSP <c>initialize</c> for Phase 10 features.

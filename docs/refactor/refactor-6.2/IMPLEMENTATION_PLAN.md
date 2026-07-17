@@ -2,13 +2,14 @@
 
 ## Status and authorization
 
-**Current milestone:** M6a Language application/contracts **complete**
+**Current milestone:** M6b Language LSP infrastructure **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
-`e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. Do not start
-M6b+ until M6a is accepted.
+`e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
+application/contracts committed at `ffbec92`. Do not start M7+ until M6b is
+accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1274,6 +1275,44 @@ _None. This slice is production-only. Matching exclusive product tests do not ex
 **Notes / non-goals:** R61-V03 LSP portion. Exclusive product tests: none (production-only slice). Full suite remains the test gate.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M6b completion record
+
+**Scope executed:** Mechanical rehome of Language LSP infrastructure only into
+`src/Features/Language/Infrastructure/Lsp/`. Namespace `Zaide.Services` →
+`Zaide.Features.Language.Infrastructure.Lsp` for the 22 production paths
+(session, factory, binary locator, capabilities, parsers/results, diagnostics
+payload, start options, `LspRange`, `LspUtf16PositionMapper`). No product tests
+moved (production-only slice; exclusive matching product tests do not exist).
+
+Public full-name baseline rewrote 17 type names (count still 348). Architecture
+inventory folder counts: Services 94→72, Features 178→200. Features admission
+already covered `src/Features/Language/` (M6a). CONVENTIONS + OVERVIEW truthful
+current-tree notes. No DI registration/lifetime, visibility, constructor
+signature, protocol/session behavior, or public API redesign. FindingId
+allowlist unchanged (9). Completes the LSP portion of R61-V03 via rehome only.
+M7+ Debugging and later features remain.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M6b; human review/commit of M6b only. Do not start M7+ without
+authorization.
 
 ### M7a — Debugging — application
 

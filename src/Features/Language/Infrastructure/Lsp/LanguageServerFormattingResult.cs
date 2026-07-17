@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Zaide.Features.Language.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Parsed result of <c>textDocument/formatting</c>.

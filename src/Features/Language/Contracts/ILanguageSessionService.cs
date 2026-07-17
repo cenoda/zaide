@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 
 namespace Zaide.Features.Language.Contracts;
 

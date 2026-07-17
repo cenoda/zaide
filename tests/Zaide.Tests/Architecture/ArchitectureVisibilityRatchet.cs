@@ -46,9 +46,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M6a: Settings, Workspace, Editor, ProjectSystem, and
-    /// Language are admitted under <c>src/Features/</c>. Other features remain
-    /// deny-by-default until their migration slices.
+    /// Refactor 6.2 M2–M6b: Settings, Workspace, Editor, ProjectSystem, and
+    /// Language (including Infrastructure/Lsp) are admitted under
+    /// <c>src/Features/</c>. Other features remain deny-by-default until their
+    /// migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {

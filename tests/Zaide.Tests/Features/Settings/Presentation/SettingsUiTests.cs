@@ -28,6 +28,7 @@ using Xunit;
 using Zaide;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.ViewModels;
 using Zaide.Views;
 

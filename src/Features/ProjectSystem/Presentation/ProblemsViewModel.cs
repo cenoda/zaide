@@ -10,6 +10,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;

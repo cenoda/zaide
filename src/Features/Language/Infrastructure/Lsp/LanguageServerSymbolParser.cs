@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using Zaide.Features.Language.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>Parses document/workspace symbol JSON into structured symbols.</summary>
 internal static class LanguageServerSymbolParser

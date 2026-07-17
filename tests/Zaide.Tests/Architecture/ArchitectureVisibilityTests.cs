@@ -183,7 +183,7 @@ public sealed class ArchitectureVisibilityTests
 
         Assert.Equal(3, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
-        Assert.Equal(178, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(200, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;

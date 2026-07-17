@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Language.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Raw <c>textDocument/publishDiagnostics</c> payload from a live session.

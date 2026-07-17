@@ -1,6 +1,6 @@
 using System;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Converts between zero-based LSP utf-16 positions and document offsets.

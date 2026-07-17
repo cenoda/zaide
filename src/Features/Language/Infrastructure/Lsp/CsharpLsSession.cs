@@ -9,7 +9,7 @@ using StreamJsonRpc;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Language.Application;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Owns one csharp-ls child process and a Content-Length StreamJsonRpc transport.

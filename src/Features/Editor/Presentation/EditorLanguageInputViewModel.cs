@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Unit = System.Reactive.Unit;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;

@@ -1,4 +1,4 @@
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Resolves the csharp-ls server binary from PATH or an optional configured path.

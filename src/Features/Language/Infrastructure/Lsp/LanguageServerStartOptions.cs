@@ -1,6 +1,6 @@
 using Zaide.Features.ProjectSystem.Domain;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>
 /// Inputs required to start one csharp-ls session for a single eligible project context.

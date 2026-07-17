@@ -32,12 +32,12 @@ public sealed class ArchitectureInventoryTests
             ArchitectureInventoryReader.M0InternalTopLevelTypes,
             inventory.TotalTopLevelTypeCount);
 
-        // Namespace rollups after Refactor 6.2 M1–M6a (DesignSystem, Settings, Workspace,
-        // Editor, ProjectSystem, Language application/contracts).
+        // Namespace rollups after Refactor 6.2 M1–M6b (DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts + Lsp).
         var byNamespace = inventory.TypeCountByNamespace;
         Assert.Equal((3, 2, 1), byNamespace["Zaide"]);
         Assert.Equal((17, 17, 0), byNamespace["Zaide.Models"]);
-        Assert.Equal((97, 86, 11), byNamespace["Zaide.Services"]);
+        Assert.Equal((73, 69, 4), byNamespace["Zaide.Services"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((54, 40, 14), byNamespace["Zaide.ViewModels"]);
         Assert.Equal((33, 25, 8), byNamespace["Zaide.Views"]);
@@ -59,6 +59,7 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((10, 10, 0), byNamespace["Zaide.Features.ProjectSystem.Presentation"]);
         Assert.Equal((8, 8, 0), byNamespace["Zaide.Features.Language.Contracts"]);
         Assert.Equal((47, 42, 5), byNamespace["Zaide.Features.Language.Application"]);
+        Assert.Equal((24, 17, 7), byNamespace["Zaide.Features.Language.Infrastructure.Lsp"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -92,16 +93,16 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(356, inventory.SourceFiles.Count);
         Assert.Equal(3, byFolder["src"]);
         Assert.Equal(12, byFolder["Models"]);
-        Assert.Equal(94, byFolder["Services"]);
+        Assert.Equal(72, byFolder["Services"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(178, byFolder["Features"]);
+        Assert.Equal(200, byFolder["Features"]);
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(36, byFolder["ViewModels"]);
         Assert.Equal(31, byFolder["Views"]);
 
         // Namespace declarations match folders for the current mixed tree
-        // (technical layers plus Refactor 6.2 M1–M6a DesignSystem, Settings, Workspace,
-        // Editor, ProjectSystem, Language application/contracts).
+        // (technical layers plus Refactor 6.2 M1–M6b DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts + Lsp).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "src"),
             s => Assert.Equal("Zaide", s.DeclaredNamespace));

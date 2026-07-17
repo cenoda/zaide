@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>Raw completion items returned from <c>textDocument/completion</c>.</summary>
 public sealed record LanguageServerCompletionResult(

@@ -9,6 +9,7 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;

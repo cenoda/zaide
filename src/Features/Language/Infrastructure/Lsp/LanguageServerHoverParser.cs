@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 
-namespace Zaide.Services;
+namespace Zaide.Features.Language.Infrastructure.Lsp;
 
 /// <summary>Parses <c>textDocument/hover</c> JSON into displayable content.</summary>
 internal static class LanguageServerHoverParser
