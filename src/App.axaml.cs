@@ -10,6 +10,7 @@ using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Language.Contracts;
+using Zaide.Features.Debugging.Contracts;
 
 namespace Zaide;
 

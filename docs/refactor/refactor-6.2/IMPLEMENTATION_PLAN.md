@@ -2,14 +2,14 @@
 
 ## Status and authorization
 
-**Current milestone:** M6b Language LSP infrastructure **complete**
+**Current milestone:** M7a Debugging application **complete**
 (pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
 committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
 committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
 discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
 `e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
-application/contracts committed at `ffbec92`. Do not start M7+ until M6b is
-accepted.
+application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
+committed at `518979b`. Do not start M7b+ until M7a is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -1355,6 +1355,60 @@ authorization.
 - `tests/Zaide.Tests/TestDebugSessionFactory.cs`
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M7a completion record
+
+**Scope executed:** Mechanical rehome of Debugging application/contracts only
+into `src/Features/Debugging/{Contracts,Application}/` and matching
+`tests/Zaide.Tests/Features/Debugging/...`. Namespaces `Zaide.Services` →
+`Zaide.Features.Debugging.*` for the 18 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `IBreakpointService`, `IDebugSessionService` (2 files) | `.../Contracts/` | `Zaide.Features.Debugging.Contracts` |
+| Breakpoint/session application types, snapshots, timeouts, request/result records (16 files) | `.../Application/` | `Zaide.Features.Debugging.Application` |
+
+Matching 12 tests rehomed (including DI and `TestDebugSessionFactory`). Durable
+feature-oriented renames (assertions unchanged):
+
+| Pre-move name | Post-move name |
+|---------------|----------------|
+| `M3aDebugLaunchProofTests` | `DebugLaunchProofTests` |
+| `M3bDebugBreakpointProofTests` | `DebugBreakpointProofTests` |
+| `M4DebugExecutionProofTests` | `DebugExecutionProofTests` |
+| `M5DebugStackProofTests` | `DebugStackProofTests` |
+| `M6DebugRecoveryProofTests` | `DebugRecoveryProofTests` |
+
+DAP adapter/transport/parser types remain under `src/Services/` for M7b.
+Debugger panels/margins/instruction-pointer presentation remain for M7c.
+
+Public full-name baseline rewrote 18 type names (count still 348). Architecture
+inventory updated for folder/namespace truth; Features admission includes
+`src/Features/Debugging/`. CONVENTIONS + OVERVIEW truthful current-tree notes.
+No DI registration/lifetime, visibility, constructor signature, or behavior
+changes. FindingId allowlist unchanged (9). M7b+ Debugging Dap/presentation and
+later features remain.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M7a; human review/commit of M7a only. Do not start M7b+ without
+authorization.
 
 ### M7b — Debugging — Dap infrastructure
 

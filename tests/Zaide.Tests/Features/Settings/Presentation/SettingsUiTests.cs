@@ -46,6 +46,7 @@ using Zaide.Tests.Features.ProjectSystem;
 
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Features.Debugging.Application;
 namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class SettingsUiTests

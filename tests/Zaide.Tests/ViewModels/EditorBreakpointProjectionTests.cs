@@ -4,6 +4,7 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Tests.ViewModels;
 

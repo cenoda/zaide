@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Services;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Features.ProjectSystem.Contracts;
 

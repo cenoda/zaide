@@ -7,6 +7,8 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.ViewModels;
 

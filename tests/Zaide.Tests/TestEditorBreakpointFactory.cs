@@ -10,6 +10,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Features.Debugging.Contracts;
 
 namespace Zaide.Tests;
 

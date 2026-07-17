@@ -24,6 +24,7 @@ using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Tests.Features.Debugging.Application;
 
 namespace Zaide.Tests.Services;
 

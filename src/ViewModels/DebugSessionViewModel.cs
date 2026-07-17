@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
 using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.ViewModels;
 

@@ -32,12 +32,13 @@ public sealed class ArchitectureInventoryTests
             ArchitectureInventoryReader.M0InternalTopLevelTypes,
             inventory.TotalTopLevelTypeCount);
 
-        // Namespace rollups after Refactor 6.2 M1–M6b (DesignSystem, Settings, Workspace,
-        // Editor, ProjectSystem, Language application/contracts + Lsp).
+        // Namespace rollups after Refactor 6.2 M1–M7a (DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts + Lsp, Debugging
+        // application/contracts).
         var byNamespace = inventory.TypeCountByNamespace;
         Assert.Equal((3, 2, 1), byNamespace["Zaide"]);
         Assert.Equal((17, 17, 0), byNamespace["Zaide.Models"]);
-        Assert.Equal((73, 69, 4), byNamespace["Zaide.Services"]);
+        Assert.Equal((55, 51, 4), byNamespace["Zaide.Services"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((54, 40, 14), byNamespace["Zaide.ViewModels"]);
         Assert.Equal((33, 25, 8), byNamespace["Zaide.Views"]);
@@ -60,6 +61,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((8, 8, 0), byNamespace["Zaide.Features.Language.Contracts"]);
         Assert.Equal((47, 42, 5), byNamespace["Zaide.Features.Language.Application"]);
         Assert.Equal((24, 17, 7), byNamespace["Zaide.Features.Language.Infrastructure.Lsp"]);
+        Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Debugging.Contracts"]);
+        Assert.Equal((16, 16, 0), byNamespace["Zaide.Features.Debugging.Application"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -93,16 +96,17 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(356, inventory.SourceFiles.Count);
         Assert.Equal(3, byFolder["src"]);
         Assert.Equal(12, byFolder["Models"]);
-        Assert.Equal(72, byFolder["Services"]);
+        Assert.Equal(54, byFolder["Services"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(200, byFolder["Features"]);
+        Assert.Equal(218, byFolder["Features"]);
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(36, byFolder["ViewModels"]);
         Assert.Equal(31, byFolder["Views"]);
 
         // Namespace declarations match folders for the current mixed tree
-        // (technical layers plus Refactor 6.2 M1–M6b DesignSystem, Settings, Workspace,
-        // Editor, ProjectSystem, Language application/contracts + Lsp).
+        // (technical layers plus Refactor 6.2 M1–M7a DesignSystem, Settings, Workspace,
+        // Editor, ProjectSystem, Language application/contracts + Lsp, Debugging
+        // application/contracts).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "src"),
             s => Assert.Equal("Zaide", s.DeclaredNamespace));
@@ -129,14 +133,16 @@ public sealed class ArchitectureInventoryTests
                     || path.StartsWith("src/Features/Workspace/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal)
-                    || path.StartsWith("src/Features/Language/", StringComparison.Ordinal),
+                    || path.StartsWith("src/Features/Language/", StringComparison.Ordinal)
+                    || path.StartsWith("src/Features/Debugging/", StringComparison.Ordinal),
                     $"Unexpected Features path: {path}");
                 Assert.True(
                     s.DeclaredNamespace.StartsWith("Zaide.Features.Settings.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Workspace.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Editor.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.ProjectSystem.", StringComparison.Ordinal)
-                    || s.DeclaredNamespace.StartsWith("Zaide.Features.Language.", StringComparison.Ordinal),
+                    || s.DeclaredNamespace.StartsWith("Zaide.Features.Language.", StringComparison.Ordinal)
+                    || s.DeclaredNamespace.StartsWith("Zaide.Features.Debugging.", StringComparison.Ordinal),
                     $"Unexpected Features namespace: {s.DeclaredNamespace}");
             });
         Assert.All(

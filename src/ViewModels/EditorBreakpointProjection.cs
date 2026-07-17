@@ -5,6 +5,7 @@ using System.Linq;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Domain;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.ViewModels;
 

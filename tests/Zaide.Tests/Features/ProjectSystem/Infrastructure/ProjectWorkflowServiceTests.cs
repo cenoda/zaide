@@ -10,6 +10,8 @@ using Zaide.Services;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 

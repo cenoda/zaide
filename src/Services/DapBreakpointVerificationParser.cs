@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Services;
 

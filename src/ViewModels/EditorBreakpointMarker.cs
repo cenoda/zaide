@@ -1,4 +1,5 @@
 using Zaide.Services;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.ViewModels;
 

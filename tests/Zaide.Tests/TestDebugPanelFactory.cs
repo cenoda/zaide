@@ -2,6 +2,7 @@ using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Features.Debugging.Contracts;
 
 namespace Zaide.Tests;
 

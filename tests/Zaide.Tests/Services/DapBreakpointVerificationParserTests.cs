@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Xunit;
 using Zaide.Services;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Tests.Services;
 

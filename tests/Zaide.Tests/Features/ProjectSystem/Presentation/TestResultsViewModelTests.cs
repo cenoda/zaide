@@ -20,6 +20,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Tests.Features.Debugging.Application;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 

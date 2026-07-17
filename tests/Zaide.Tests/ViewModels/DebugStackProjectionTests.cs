@@ -10,6 +10,8 @@ using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Tests.Features.ProjectSystem;
+using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Tests.ViewModels;
 

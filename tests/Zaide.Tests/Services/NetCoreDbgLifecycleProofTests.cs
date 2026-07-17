@@ -9,6 +9,7 @@ using Xunit;
 using Zaide.Services;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Tests.Services;
 

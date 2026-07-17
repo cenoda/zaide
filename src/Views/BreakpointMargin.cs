@@ -8,6 +8,7 @@ using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Views;
 

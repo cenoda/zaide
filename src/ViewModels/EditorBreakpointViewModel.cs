@@ -12,6 +12,8 @@ using Zaide.Services;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.ViewModels;
 

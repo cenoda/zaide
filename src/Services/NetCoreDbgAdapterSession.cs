@@ -5,6 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Debugging.Application;
 
 namespace Zaide.Services;
 
