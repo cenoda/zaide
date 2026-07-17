@@ -2,20 +2,27 @@
 
 ## Status and authorization
 
-**Current milestone:** M12 App Composition + Shell **complete**
-(pending human review / commit). M0 accepted at `8fae71d`. M1 DesignSystem
-committed at `2259b81`. M2 Settings committed at `a13be5a`. M3 Workspace
-committed at `ac75fe5`. M4 Editor committed at `0015101`. M5a ProjectSystem
-discovery committed at `faa6e2f`. M5b ProjectSystem workflow committed at
-`e2928a5`. M5c ProjectSystem diagnostics committed at `5e22020`. M6a Language
-application/contracts committed at `ffbec92`. M6b Language LSP infrastructure
-committed at `518979b`. M7a Debugging application committed at `298cdc9`. M7b Debugging DAP infrastructure committed at `9b40e4a`. M7c Debugging presentation committed at `083a88d`. M8 SourceControl committed at `ccaeaa6`. M9 Terminal committed at `408ce84`. M10 Townhall committed at `dc935d3`. M11 Agents committed at `b81a5db`.
-Scheduled M1–M12 migration complete. Do not start M13 / Refactor 6.3 / 7 / 8 without authorization.
+**Closeout status (2026-07-17):** **GO** — scheduled mechanical migration
+**M1–M12 complete** on `master` at `72102da`
+(`refactor-6.2: migrate app composition and shell`). Working tree clean;
+`HEAD == origin/master`. Do **not** start M13, Refactor 6.3, 7, or 8 without
+explicit authorization.
+
+**Milestone commits (M0–M12):** M0 accepted at `8fae71d`. M1 DesignSystem
+`2259b81`. M2 Settings `a13be5a`. M3 Workspace `ac75fe5`. M4 Editor `0015101`.
+M5a ProjectSystem discovery `faa6e2f`. M5b ProjectSystem workflow `e2928a5`.
+M5c ProjectSystem diagnostics `5e22020`. M6a Language application/contracts
+`ffbec92`. M6b Language LSP infrastructure `518979b`. M7a Debugging application
+`298cdc9`. M7b Debugging DAP infrastructure `9b40e4a`. M7c Debugging
+presentation `083a88d`. M8 SourceControl `ccaeaa6`. M9 Terminal `408ce84`.
+M10 Townhall `dc935d3`. M11 Agents `b81a5db`. M12 App Composition + Shell
+`72102da`.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
 blockers with mandatory **M5a / M5b / M5c** and authoritative full-path lists.
-Accepting M0 authorizes **M1 DesignSystem only**, not later slices.
+Accepting M0 authorized **M1 DesignSystem only** at the time; subsequent
+slices were executed under per-milestone authorization.
 
 **Authorization boundary:** This document may be the only change for M0 (plus
 an optional read-only evidence note if added later). M0 does **not** authorize:
@@ -2031,6 +2038,91 @@ explicit authorization.
 
 ---
 
+## Closeout audit (2026-07-17, docs only)
+
+Read-only reconciliation of the accepted M0 plan against checkout `72102da`
+(no production or product-test source changes in this closeout unit).
+
+### Exact counts
+
+| Bucket | Expected (M0 / M12) | Live at `72102da` |
+|--------|--------------------:|------------------:|
+| Production paths (C# + AXAML) | 360 | **360** |
+| Production C# | 356 | **356** |
+| Production AXAML | 4 | **4** |
+| Product test C# | 169 | **169** |
+| Architecture harness C# (R62-D05) | 17 | **17** |
+| Test host `XunitSettings.cs` (R62-D06) | 1 | **1** |
+| Tracked test total | 187 | **187** |
+| Public production types (baseline file) | 348 | **348** (unique lines) |
+| FindingId allowlist | 9 | **9** |
+
+### Final roots only
+
+Live `src/` top-level production trees: `App/{Composition,Shell}`,
+`Features/*` (Settings, Workspace, Editor, ProjectSystem, Language, Debugging,
+SourceControl, Terminal, Townhall, Agents), `UI/DesignSystem`. Inventory C#
+folder counts: App **20**, Features **334**, UI **2** (sum **356**). No
+tracked files under technical roots `Models/`, `Services/`, `ViewModels/`,
+`Views/`. No `src/Infrastructure/` or `src/UI/Shared/` directories.
+
+### Allowlist MatchKeys (all live)
+
+| FindingId | MatchKey path |
+|-----------|---------------|
+| R61-AL-NS-SourceControlState | `src/Features/SourceControl/Domain/SourceControlState.cs` |
+| R61-AL-NS-ITerminalSessionFactory | `src/Features/Terminal/Contracts/ITerminalSessionFactory.cs` |
+| R61-AL-NS-TerminalSessionFactory | `src/Features/Terminal/Application/TerminalSessionFactory.cs` |
+| R61-AL-NS-MentionParser | `src/Features/Agents/Application/MentionParser.cs` |
+| R61-AL-NS-SourceControlDiffTabService | `src/Features/SourceControl/Application/SourceControlDiffTabService.cs` |
+| R61-AL-LOC-Program | `src/App/Composition/Program.cs` |
+| R61-AL-LOC-App | `src/App/Composition/App.axaml.cs` |
+| R61-AL-LOC-SourceControlDiffTabService | `src/Features/SourceControl/Application/SourceControlDiffTabService.cs` |
+| R61-AL-LOC-EditorTabViewModel | `src/Features/Editor/Presentation/EditorTabViewModel.cs` |
+
+RootFolderAdmission allowlist remains **empty**. `ApprovedSrcRootCompositionFiles`
+is empty (no root composition C# admitted).
+
+### Deferrals R62-D01–D10 (parked / deferred; no unapproved admission)
+
+| ID | Status at closeout |
+|----|--------------------|
+| R62-D01 | Parked: `IFileService`/`FileService` under Editor |
+| R62-D02 | Parked: `ManagedProcess*` under ProjectSystem |
+| R62-D03 | Parked: `Animations`/`IconFactory` under Shell; no `UI/Shared` |
+| R62-D04 | Parked: `FileIconKeyResolver` under Workspace |
+| R62-D05 | Deferred: Architecture harness stays `tests/Zaide.Tests/Architecture/` |
+| R62-D06 | Deferred: `XunitSettings.cs` at test root |
+| R62-D07 | Resolved by migration: technical folders and placeholders gone |
+| R62-D08 | Deferred to 6.3 / 7 / 8 (non-movement debt) |
+| R62-D09 | Deferred: non-C# root-admission expansion |
+| R62-D10 | Rejected for 6.2: no assembly split |
+
+### Sequential verification (closeout)
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+git status --short --branch
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; **1 warning** (test-only CS0067 unused event in `ProjectDebugTargetResolverTests` fake — pre-existing, not production) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+| `git status` | clean `master...origin/master` at `72102da` |
+
+### Decision
+
+**GO** for Refactor 6.2 scheduled closeout. M13 and Refactors 6.3 / 7 / 8 remain
+unauthorized.
+
+---
+
 ### M13 — Optional root admission (not scheduled)
 
 Only if human review approves after M12:
@@ -2192,4 +2284,6 @@ reader and ratchet together; **do not add FindingIds**.
 ---
 
 *M0 evidence date: 2026-07-17. Amended same day for M5a/b/c and explicit
-path lists. Stop after M0. Do not commit or push unless explicitly requested.*
+path lists. M1–M12 complete at `72102da`. Closeout audit 2026-07-17: **GO**.
+Do not start M13 / 6.3 / 7 / 8 without authorization. Do not commit or push
+closeout docs unless explicitly requested.*

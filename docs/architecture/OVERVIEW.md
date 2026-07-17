@@ -18,14 +18,15 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete** in the
-repository (rules, hybrid inventory, legacy allowlist ratchet, public
-full-name baseline 393/348/45, expanded tracked production **C#** root
-admission, documentation closeout and M0 representation proof). **Final human
-acceptance of Refactor 6.1 is still required** before Refactor 6.2 M0 may
-start. Non-C# assets remain outside the root-admission ratchet. No V3
-production implementation or source migration is active. Feature-layout
-migration remains Refactor 6.2.
+implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete and closed**
+(rules, hybrid inventory, legacy allowlist ratchet, public full-name baseline
+393/348/45, expanded tracked production **C#** root admission, documentation
+closeout and M0 representation proof). Refactor 6.2 **M1–M12 scheduled
+mechanical migration is complete** on `master` at `72102da` (feature-first
+tree under `App`, `Features`, and `UI/DesignSystem`). Optional M13 root
+admissions and Refactors 6.3 / 7 / 8 are **not** authorized. Non-C# assets
+remain outside the root-admission ratchet. No V3 production implementation is
+active.
 
 ---
 
@@ -330,4 +331,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 M0–M5 complete, final human acceptance pending)*
+*Last updated: 2026-07-17 (V1 and V2 complete; V3 order accepted; Refactor 6.1 closed; Refactor 6.2 M1–M12 complete at `72102da`; M13 / 6.3 / 7 / 8 unauthorized)*
