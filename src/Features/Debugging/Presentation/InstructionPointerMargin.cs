@@ -3,9 +3,8 @@ using Avalonia.Media;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
-using Zaide.ViewModels;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Left margin marker for the current debug execution line, distinct from breakpoints.

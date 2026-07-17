@@ -7,14 +7,14 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.ViewModels;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 M4/M5 tests for Debug Console history, isolation, error projection,

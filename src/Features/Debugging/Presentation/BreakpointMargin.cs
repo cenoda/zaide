@@ -7,10 +7,9 @@ using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Left margin that projects persisted breakpoints for the active on-disk document.

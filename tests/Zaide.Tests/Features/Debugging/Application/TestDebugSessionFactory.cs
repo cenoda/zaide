@@ -6,6 +6,7 @@ using Zaide.ViewModels;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 

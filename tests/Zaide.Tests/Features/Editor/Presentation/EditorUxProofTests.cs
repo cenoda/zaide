@@ -26,6 +26,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.Features.Debugging.Application;
+using Zaide.Tests.Features.Debugging.Presentation;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 

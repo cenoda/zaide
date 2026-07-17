@@ -19,6 +19,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide.ViewModels;
 

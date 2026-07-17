@@ -1,4 +1,4 @@
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Instruction-pointer marker for one source line in the active debug frame.

@@ -11,6 +11,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide;
 

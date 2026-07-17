@@ -13,10 +13,9 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Services;
 using Zaide.UI.DesignSystem;
-using Zaide.ViewModels;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Debug bottom panel with Debug Console, Call Stack, and Variables sections.
@@ -35,7 +34,7 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
 
     public DebugPanel()
     {
-        Background = (IBrush?)Application.Current?.Resources["SurfacePanelBrush"]
+        Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfacePanelBrush"]
             ?? Brushes.Transparent;
 
         _statusText = TextStyles.Caption(string.Empty);
@@ -63,7 +62,7 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                     TextWrapping = TextWrapping.Wrap,
                     FontFamily = new FontFamily("monospace"),
                     FontSize = 12,
-                    Foreground = (IBrush?)Application.Current?.Resources[brushKey]
+                    Foreground = (IBrush?)Avalonia.Application.Current?.Resources[brushKey]
                         ?? Brushes.White,
                 };
                 return new Border

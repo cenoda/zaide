@@ -24,6 +24,8 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
+using Zaide.Tests.Features.Debugging.Presentation;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 

@@ -15,7 +15,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Owns editor breakpoint commands, margin projection, and active-session DAP

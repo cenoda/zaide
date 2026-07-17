@@ -12,7 +12,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Projects the selected stopped stack frame into editor navigation and a

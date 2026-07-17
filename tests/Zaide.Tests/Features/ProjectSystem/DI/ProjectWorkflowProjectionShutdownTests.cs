@@ -18,6 +18,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide.Tests.Features.ProjectSystem.DI;
 

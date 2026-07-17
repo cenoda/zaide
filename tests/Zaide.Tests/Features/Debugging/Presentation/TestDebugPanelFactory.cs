@@ -1,10 +1,10 @@
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Shared factory for idle debug-panel projections in composition tests.

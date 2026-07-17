@@ -10,7 +10,7 @@ using Zaide.Services;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Projects debug-session diagnostics, call stack, and variables into the Debug

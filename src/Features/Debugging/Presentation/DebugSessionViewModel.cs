@@ -9,7 +9,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Registers debug execution commands and dispatches start/continue/pause/stop/step

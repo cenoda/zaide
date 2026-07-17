@@ -5,14 +5,14 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 M3b regression tests proving breakpoint projection does not break
@@ -31,9 +31,9 @@ public sealed class EditorBreakpointRegressionTests
         var registry = CommandRegistryFactory.Create();
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
-            .AddSingleton(new Workspace())
+            .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
         breakpointVm.Dispose();
@@ -49,9 +49,9 @@ public sealed class EditorBreakpointRegressionTests
         var registry = CommandRegistryFactory.Create();
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
-            .AddSingleton(new Workspace())
+            .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
 
@@ -77,9 +77,9 @@ public sealed class EditorBreakpointRegressionTests
         var search = new EditorSearchViewModel(registry);
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
-            .AddSingleton(new Workspace())
+            .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
 

@@ -7,7 +7,7 @@ using Zaide.Services;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Pure projection helpers for editor breakpoint margin state.

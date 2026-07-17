@@ -14,12 +14,11 @@ using Splat;
 using Xunit;
 using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.ViewModels;
-using Zaide.Views;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.Views;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 post-closeout F2 regression: DebugPanel VM→UI selection sync must not
@@ -116,7 +115,7 @@ public sealed class DebugPanelSelectionTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is App app)
+        if (Avalonia.Application.Current is App app)
         {
             if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
                 app.Initialize();

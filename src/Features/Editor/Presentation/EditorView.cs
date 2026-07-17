@@ -19,7 +19,6 @@ using AvaloniaEdit.TextMate;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using TextMateSharp.Grammars;
-using Zaide.ViewModels;
 using Zaide.Views;
 using Zaide.UI.DesignSystem;
 using Zaide.Services;
@@ -31,6 +30,7 @@ using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide.Features.Editor.Presentation;
 

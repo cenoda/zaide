@@ -28,6 +28,7 @@ using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide;
 

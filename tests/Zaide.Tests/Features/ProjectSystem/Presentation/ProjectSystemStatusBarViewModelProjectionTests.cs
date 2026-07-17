@@ -30,6 +30,7 @@ using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.Features.Debugging.Application;
+using Zaide.Tests.Features.Debugging.Presentation;
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 
 /// <summary>

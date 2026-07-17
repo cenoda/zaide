@@ -8,15 +8,15 @@ using Xunit;
 using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.ViewModels;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 M5 tests for selected-frame current execution location projection.
@@ -106,7 +106,7 @@ public sealed class DebugCurrentLocationViewModelTests
         subject.Subscribe(snapshot => current = snapshot);
 
         var services = new ServiceCollection();
-        var workspace = new Workspace();
+        var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService>(new FileService());
         var sp = services.BuildServiceProvider();

@@ -2,11 +2,11 @@ using System;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Pure projection tests for editor breakpoint margin state.

@@ -1,7 +1,6 @@
 using AvaloniaEdit;
-using Zaide.ViewModels;
 
-namespace Zaide.Views;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// View-layer instruction-pointer margin host for the shared <see cref="TextEditor"/>.

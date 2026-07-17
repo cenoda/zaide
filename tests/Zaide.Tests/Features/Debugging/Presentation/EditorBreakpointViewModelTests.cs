@@ -12,7 +12,6 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Models;
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
@@ -24,8 +23,9 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests.ViewModels;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 M3b tests for editor breakpoint projection and DAP replacement sync.
@@ -236,7 +236,7 @@ public sealed class EditorBreakpointViewModelTests
 
     private static Harness CreateHarness(DebugSessionState debugState = DebugSessionState.Idle)
     {
-        var workspace = new Workspace();
+        var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         var sp = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
             .AddSingleton(workspace)

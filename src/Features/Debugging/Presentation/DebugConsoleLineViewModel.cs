@@ -1,4 +1,4 @@
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// One structured line in the Debug Console surface.

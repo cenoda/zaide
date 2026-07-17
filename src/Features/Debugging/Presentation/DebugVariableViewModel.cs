@@ -1,6 +1,6 @@
 using ReactiveUI;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// One first-level variable projected from a stopped-state DAP response.

@@ -3,7 +3,6 @@ using System.Reactive.Subjects;
 using Moq;
 using Zaide.Models;
 using Zaide.Services;
-using Zaide.ViewModels;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Editor.Presentation;
@@ -11,8 +10,9 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Features.Debugging.Contracts;
+using Zaide.Features.Debugging.Presentation;
 
-namespace Zaide.Tests;
+namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Shared factory for editor breakpoint projection in composition tests.

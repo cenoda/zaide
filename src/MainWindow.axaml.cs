@@ -28,6 +28,7 @@ using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Presentation;
+using Zaide.Features.Debugging.Presentation;
 
 namespace Zaide;
 

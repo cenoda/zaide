@@ -21,6 +21,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.Features.Debugging.Application;
+using Zaide.Tests.Features.Debugging.Presentation;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 

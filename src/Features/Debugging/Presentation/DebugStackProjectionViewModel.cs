@@ -12,7 +12,7 @@ using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// Projects stopped-state threads, call stack, scopes, and first-level variables

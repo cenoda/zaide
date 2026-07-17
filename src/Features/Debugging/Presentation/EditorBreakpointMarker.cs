@@ -1,7 +1,7 @@
 using Zaide.Services;
 using Zaide.Features.Debugging.Application;
 
-namespace Zaide.ViewModels;
+namespace Zaide.Features.Debugging.Presentation;
 
 /// <summary>
 /// One persisted breakpoint marker projected into the active editor margin,
