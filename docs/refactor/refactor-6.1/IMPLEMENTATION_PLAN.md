@@ -484,7 +484,7 @@ authorized M1 commit, rollback is one revert of that documentation-only
 commit; it must not touch production/test files, M0 evidence content beyond
 this plan's status fields, or any later milestone.
 
-**M1 commit hash:** Not recorded in this commit — filled by the follow-up hash-record commit after M1 lands (same pattern as M0).
+**M1 commit hash:** `201e85c8c492603ad845b2fea5292710642be719`
 
 Stop after M1 and request review. Do not begin M2, M3, M4, M5, Refactor 6.2,
 Refactor 6.3, Refactor 7, or Refactor 8.
