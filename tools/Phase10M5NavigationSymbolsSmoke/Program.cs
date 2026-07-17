@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zaide.Models;
 using Zaide.Services;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.ProjectSystem.Infrastructure;
 
 if (args.Length < 1)
 {

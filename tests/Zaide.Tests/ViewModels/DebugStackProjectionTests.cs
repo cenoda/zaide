@@ -9,6 +9,7 @@ using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Tests.Features.ProjectSystem;
 
 namespace Zaide.Tests.ViewModels;
 

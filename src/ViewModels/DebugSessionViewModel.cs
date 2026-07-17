@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 using Zaide.Services;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.ViewModels;
 

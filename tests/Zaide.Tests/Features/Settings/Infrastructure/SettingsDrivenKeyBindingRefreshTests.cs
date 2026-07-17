@@ -32,6 +32,7 @@ using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Tests.Features.Editor.Infrastructure;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 

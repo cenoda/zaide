@@ -13,6 +13,7 @@ using Xunit;
 using Zaide;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.DI;
 

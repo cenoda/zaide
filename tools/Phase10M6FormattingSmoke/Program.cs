@@ -27,6 +27,9 @@ if (projectPath is null)
 var samplePath = Path.Combine(fixtureDir, "Unformatted.cs");
 const string unformatted = """
 using System;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.ProjectSystem.Infrastructure;
 namespace Demo{
 public class Unformatted{
 public static void Main(){

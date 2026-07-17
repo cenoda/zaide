@@ -31,6 +31,8 @@ using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Tests.Features.Editor.Infrastructure;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.Tests;
 

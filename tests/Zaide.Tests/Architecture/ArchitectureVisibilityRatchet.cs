@@ -20,7 +20,8 @@ public static class ArchitectureVisibilityRatchet
     /// Includes remaining technical-layer folders, Refactor 6.2 M1
     /// <c>UI</c> (only <c>src/UI/DesignSystem/</c>), and Refactor 6.2 M2–M4
     /// <c>Features</c> (only <c>src/Features/Settings/</c>,
-    /// <c>src/Features/Workspace/</c>, and <c>src/Features/Editor/</c>; see
+    /// <c>src/Features/Workspace/</c>, <c>src/Features/Editor/</c>, and
+    /// <c>src/Features/ProjectSystem/</c>; see
     /// <see cref="IsApprovedFeaturesPath"/>). Other feature-first roots remain
     /// deny-by-default until their migration slices update this set.
     /// </summary>
@@ -45,16 +46,17 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M4: Settings, Workspace, and Editor are admitted under
-    /// <c>src/Features/</c>. Other features remain deny-by-default until their
-    /// migration slices.
+    /// Refactor 6.2 M2–M5a: Settings, Workspace, Editor, and ProjectSystem are
+    /// admitted under <c>src/Features/</c>. Other features remain deny-by-default
+    /// until their migration slices.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {
         var path = relativePath.Replace('\\', '/').Trim();
         return path.StartsWith("src/Features/Settings/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Workspace/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/Editor/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/ProjectSystem/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -205,8 +207,9 @@ public static class ArchitectureVisibilityRatchet
                         ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                         path,
                         "unauthorized path under src/Features/; only src/Features/Settings/, " +
-                        "src/Features/Workspace/, and src/Features/Editor/ are admitted " +
-                        "(Refactor 6.2 M2–M4). " +
+                        "src/Features/Workspace/, src/Features/Editor/, and " +
+                        "src/Features/ProjectSystem/ are admitted " +
+                        "(Refactor 6.2 M2–M5a). " +
                         "Other features require their slice."));
                 }
 

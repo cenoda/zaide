@@ -27,7 +27,7 @@ public sealed class Phase9M1DiIntegrationTests
     /// <summary>
     /// Builds the production container, substituting only the Avalonia scheduler
     /// with a test-safe one so resolution does not require a running UI host.
-    /// Mirrors the pattern from <see cref="Phase83M3DependencyInjectionTests"/>.
+    /// Mirrors the pattern from <see cref="Zaide.Tests.Features.ProjectSystem.DI.ProjectSystemDependencyInjectionTests"/>.
     /// </summary>
     private static ServiceProvider BuildProvider()
     {

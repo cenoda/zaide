@@ -3,6 +3,8 @@ using System.Reactive.Subjects;
 using Moq;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Tests.Features.ProjectSystem;
 
 namespace Zaide.Tests;
 

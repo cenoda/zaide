@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Zaide.Services;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.Services;
 

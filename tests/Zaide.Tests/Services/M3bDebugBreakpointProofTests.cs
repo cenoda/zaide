@@ -10,6 +10,9 @@ using Zaide.Models;
 using Zaide.Services;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.ProjectSystem.Infrastructure;
 
 namespace Zaide.Tests.Services;
 

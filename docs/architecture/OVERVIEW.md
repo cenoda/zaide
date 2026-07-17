@@ -83,39 +83,42 @@ and [M0 architecture baseline](../refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE
 ### Still-current technical-layer tree
 
 The live production tree is still mostly technical-layer folders and namespaces.
-Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace; M4 rehomed Editor:
+Refactor 6.2 M1 rehomed design tokens; M2 rehomed Settings; M3 rehomed Workspace;
+M4 rehomed Editor; M5a rehomed ProjectSystem discovery/context/gate/targets:
 
 ```text
 src/
   Models/              # plain data / state bags (Settings/Workspace/Editor models moved in M2–M4)
-  Services/            # catch-all: protocols, DTOs, application, infrastructure
+  Services/            # catch-all: remaining protocols, DTOs, application, infrastructure
   ViewModels/
   Views/
   UI/DesignSystem/     # tokens, icons, typography (was Styles/; Zaide.UI.DesignSystem)
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
   Features/Workspace/  # Domain, Contracts, Infrastructure, Presentation (6.2 M3)
   Features/Editor/     # Domain, Contracts, Infrastructure, Presentation (6.2 M4; FileService parked R62-D01)
+  Features/ProjectSystem/  # Domain, Contracts, Infrastructure (6.2 M5a; workflow/diagnostics still in Services)
 ```
 
 One production project (`src/Zaide.csproj`), one assembly (`Zaide`). Documented
 layering is not enforced by assemblies. Architecture tests under
 `tests/Zaide.Tests/Architecture/` inventory the hybrid baseline (M2), ratchet
 known legacy debt (M3), and enforce the public full-name baseline plus expanded
-root-folder admission (M4, updated for 6.2 M1–M4). Root-admission and related
+root-folder admission (M4, updated for 6.2 M1–M5a). Root-admission and related
 source ratchets inventory **tracked production C# only** (`git ls-files` of
 `src/**/*.cs`): exact-file service-locator sites; technical-namespace forbidden
 edges (`Services → ViewModels`, `Models → Services`); deny-by-default tracked C#
 under `src/Infrastructure/` / `src/UI/Shared/`; admitted folders
-`Features` (Settings + Workspace + Editor), `Models`, `Services`, `UI` (DesignSystem only),
-`ViewModels`, `Views` plus three `src/` root composition C# files; and the frozen
-348 public type names (`PublicProductionTypeBaseline.txt`). Non-C# assets
-(`.axaml`, project files, manifests, etc.) are not governed by the root-admission
-detectors. Lifetime/composition debt remains documented for Refactor 6.3.
+`Features` (Settings + Workspace + Editor + ProjectSystem), `Models`, `Services`,
+`UI` (DesignSystem only), `ViewModels`, `Views` plus three `src/` root composition
+C# files; and the frozen 348 public type names (`PublicProductionTypeBaseline.txt`).
+Non-C# assets (`.axaml`, project files, manifests, etc.) are not governed by the
+root-admission detectors. Lifetime/composition debt remains documented for
+Refactor 6.3.
 
 | Later work | Owns |
 |------------|------|
 | Refactor 6.1 | Closed; rules and executable ratchets |
-| Refactor 6.2 | Mechanical feature-first migration (M0 accepted; M1–M4 DesignSystem/Settings/Workspace/Editor done or in flight) |
+| Refactor 6.2 | Mechanical feature-first migration (M0 accepted; M1–M5a DesignSystem/Settings/Workspace/Editor/ProjectSystem-core done or in flight) |
 | Refactor 6.3 | Composition, visibility reduction, lifetime, dependency inversion |
 | Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
 

@@ -15,6 +15,8 @@ using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.ViewModels;
 

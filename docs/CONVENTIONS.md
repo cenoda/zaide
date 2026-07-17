@@ -39,6 +39,8 @@ src/Features/Workspace/Domain/Workspace.cs
                                          →  namespace Zaide.Features.Workspace.Domain  (6.2 M3)
 src/Features/Editor/Domain/Document.cs
                                          →  namespace Zaide.Features.Editor.Domain  (6.2 M4)
+src/Features/ProjectSystem/Domain/ProjectContext.cs
+                                         →  namespace Zaide.Features.ProjectSystem.Domain  (6.2 M5a)
 ```
 
 The **approved target** is full feature-first ownership. See
@@ -145,6 +147,7 @@ src/
 | `Features/Settings` | Settings domain, contracts, infrastructure, presentation (moved in Refactor 6.2 M2) |
 | `Features/Workspace` | Workspace domain, file tree contracts/infrastructure/presentation (moved in Refactor 6.2 M3); `FileIconKeyResolver` parked here (R62-D04) |
 | `Features/Editor` | Editor domain, contracts, infrastructure, presentation (moved in Refactor 6.2 M4); `IFileService`/`FileService` parked here (R62-D01) |
+| `Features/ProjectSystem` | Project discovery, context, operation gate, targets, and project debug launch (moved in Refactor 6.2 M5a); workflow/process/output and diagnostics remain for M5b/M5c |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
@@ -155,7 +158,9 @@ src/
 `Zaide.Features.Workspace.*`). Editor production and matching tests live under
 `src/Features/Editor/` and `tests/Zaide.Tests/Features/Editor/` (namespace
 `Zaide.Features.Editor.*`); `IFileService`/`FileService` remain Editor-owned
-(R62-D01). Design tokens and icons are not `UI/Shared`.
+(R62-D01). ProjectSystem M5a types live under `src/Features/ProjectSystem/` and
+`tests/Zaide.Tests/Features/ProjectSystem/` (namespace
+`Zaide.Features.ProjectSystem.*`). Design tokens and icons are not `UI/Shared`.
 Project workflow stays under Project System even when it consumes other
 features' projections. LSP is not root infrastructure; DAP is not root
 infrastructure.
@@ -314,7 +319,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 |----------|-----------|------|
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
 | **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M4 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/`, `src/Features/Workspace/`, and `src/Features/Editor/` after Refactor 6.2 M2–M4), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **RootFolderAdmission** | M3 + M4 + 6.2 M1–M5a | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Features` (**only** `src/Features/Settings/`, `src/Features/Workspace/`, `src/Features/Editor/`, and `src/Features/ProjectSystem/` after Refactor 6.2 M2–M5a), `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
 | **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
@@ -332,4 +337,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.2 M4 — Editor rehomed to Features/Editor)*
+*Last updated: 2026-07-17 (Refactor 6.2 M5a — ProjectSystem discovery/context/gate/targets rehomed)*

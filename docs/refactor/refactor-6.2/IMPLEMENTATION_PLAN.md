@@ -2,10 +2,11 @@
 
 ## Status and authorization
 
-**Current milestone:** M4 Editor **complete** (pending human review / commit).
-M0 accepted at `8fae71d`. M1 DesignSystem committed at `2259b81`. M2 Settings
-committed at `a13be5a`. M3 Workspace committed at `ac75fe5`. Do not start M5+
-until M4 is accepted.
+**Current milestone:** M5a ProjectSystem discovery/context/gate/targets
+**complete** (pending human review / commit). M0 accepted at `8fae71d`. M1
+DesignSystem committed at `2259b81`. M2 Settings committed at `a13be5a`. M3
+Workspace committed at `ac75fe5`. M4 Editor committed at `0015101`. Do not start
+M5b+ until M5a is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -865,6 +866,64 @@ authorization.
 **Notes / non-goals:** Mandatory independent milestone defined at M0. Do not merge with M5b/M5c.
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M5a completion record
+
+**Scope executed:** Mechanical rehome of ProjectSystem discovery / context /
+operation gate / targets / project debug launch only into
+`src/Features/ProjectSystem/{Domain,Contracts,Infrastructure}/` and matching
+`tests/Zaide.Tests/Features/ProjectSystem/...`. Namespaces `Zaide.Services` →
+`Zaide.Features.ProjectSystem.*` for the 31 production paths:
+
+| Pre-move path | Post-move path | Namespace |
+|---------------|----------------|-----------|
+| `src/Services/IProject*.cs` (8 interfaces) + `ProjectOperationAcquireResult.cs` | `.../Contracts/` | `Zaide.Features.ProjectSystem.Contracts` |
+| Pure models/enums/results (14 files) | `.../Domain/` | `Zaide.Features.ProjectSystem.Domain` |
+| Implementations + resolvers (8 files) | `.../Infrastructure/` | `Zaide.Features.ProjectSystem.Infrastructure` |
+
+Phase/milestone-named tests renamed durably without assertion changes:
+
+| Pre-move test | Durable name |
+|---------------|--------------|
+| `Phase83M3DependencyInjectionTests` | `ProjectSystemDependencyInjectionTests` |
+| `Phase83M0DiscoveryProofTests` | `ProjectDiscoveryProofTests` |
+| `Phase83M1ProjectDiscoveryTests` | `ProjectDiscoveryTests` |
+| `Phase83M2ProjectContextServiceTests` | `ProjectContextServiceTests` |
+| `Phase83M3ProjectContextServiceIntegrationTests` | `ProjectContextServiceIntegrationTests` |
+| `Phase8ProofOfConceptTests` | `ProjectSystemProofOfConceptTests` |
+
+Public full-name baseline rewrote ProjectSystem type names (count still 348).
+Architecture admission admits `src/Features/ProjectSystem/` C# under top-level
+`Features` (alongside Settings, Workspace, and Editor). Inventory tests updated
+for folder/namespace truth. CONVENTIONS + OVERVIEW truthful current-tree notes.
+No DI registration/lifetime, visibility, constructor signature, or behavior
+changes. FindingId allowlist unchanged (9). No allowlist path rewrites required
+for this slice. Under `Zaide.*.Features.*` namespaces, short name `Workspace`
+binds to the sibling/parent namespace segment; affected sites use
+`global::Zaide.Features.Workspace.Domain.Workspace` (mechanical reference fix
+only). Workflow, managed-process, output, diagnostics, test-results, and
+Problems remain in technical layers for M5b/M5c.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests when tests recompile (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M5a; human review/commit of M5a only. Do not start M5b+ without
+authorization.
 
 ### M5b — ProjectSystem — workflow / managed process / output
 

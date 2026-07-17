@@ -40,6 +40,9 @@ public static class M7Broken
 """;
 const string fixedSource = """
 using System;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.ProjectSystem.Infrastructure;
 public static class M7Broken
 {
     public static int Broken() => 1;

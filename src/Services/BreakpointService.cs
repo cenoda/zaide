@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Zaide.Models;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Services;
 

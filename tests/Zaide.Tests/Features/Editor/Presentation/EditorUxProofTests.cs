@@ -23,6 +23,7 @@ using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 

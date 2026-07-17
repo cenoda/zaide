@@ -1,6 +1,7 @@
 using Zaide.Services;
 using Zaide.ViewModels;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Tests.Features.ProjectSystem;
 
 namespace Zaide.Tests;
 

@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Xunit;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
 
 namespace Zaide.Tests.Services;
 

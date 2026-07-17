@@ -22,6 +22,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.ProjectSystem.Contracts;
 
 namespace Zaide.Tests.Services;
 

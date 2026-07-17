@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using Moq;
 using Zaide.Services;
 using Zaide.ViewModels;
+using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Tests.Features.ProjectSystem;
 
 namespace Zaide.Tests;
 

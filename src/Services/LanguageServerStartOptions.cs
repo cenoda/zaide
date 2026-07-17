@@ -1,3 +1,5 @@
+using Zaide.Features.ProjectSystem.Domain;
+
 namespace Zaide.Services;
 
 /// <summary>
