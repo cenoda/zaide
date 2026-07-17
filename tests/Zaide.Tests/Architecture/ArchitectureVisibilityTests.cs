@@ -149,14 +149,22 @@ public sealed class ArchitectureVisibilityTests
             inventory.RootFolderAdmissionEvidence,
             e => e.IsUnderRootInfrastructure || e.IsUnderUiShared);
 
-        // Approved technical folders only (plus src root composition).
+        // Approved folders only (plus src root composition). UI admits
+        // DesignSystem paths only (Refactor 6.2 M1).
         Assert.All(inventory.SourceFiles, f =>
         {
+            var path = f.RelativePath.Replace('\\', '/');
             if (f.TechnicalFolder == "src")
             {
                 Assert.Contains(
-                    f.RelativePath.Replace('\\', '/'),
+                    path,
                     ArchitectureVisibilityRatchet.ApprovedSrcRootCompositionFiles);
+            }
+            else if (f.TechnicalFolder == "UI")
+            {
+                Assert.True(
+                    ArchitectureVisibilityRatchet.IsApprovedUiPath(path),
+                    $"UI path not admitted: {path}");
             }
             else
             {
@@ -167,6 +175,7 @@ public sealed class ArchitectureVisibilityTests
         });
 
         Assert.Equal(3, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
+        Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
     }
 
     [Fact]

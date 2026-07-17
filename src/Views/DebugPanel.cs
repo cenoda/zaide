@@ -12,7 +12,7 @@ using Avalonia.VisualTree;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Services;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;

@@ -1,11 +1,11 @@
 using Xunit;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Avalonia;
 using System;
 
-namespace Zaide.Tests.Views
+namespace Zaide.Tests.UI.DesignSystem
 {
     public class TextStylesTests
     {

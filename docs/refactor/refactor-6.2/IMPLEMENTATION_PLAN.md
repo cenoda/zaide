@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-**Current milestone:** M0 **accepted**. Next authorized work: **M1 UI/DesignSystem
-only**. Do not start M2+ until M1 is complete and reviewed.
+**Current milestone:** M1 UI/DesignSystem **complete** (pending human review /
+commit). M0 accepted at `8fae71d`. Do not start M2+ until M1 is accepted.
 
 **M0 acceptance status:** **GO** (human acceptance 2026-07-17). First draft was
 NO-GO (underspecified M5 and pattern-defined M6a); the amendment closed those
@@ -448,15 +448,50 @@ and match live `git ls-files` / test output.
 
 **Authoritative production scope (3 paths — complete, no globs):**
 
-- `src/Styles/Icons.axaml`
-- `src/Styles/LayoutTokens.cs`
-- `src/Styles/TextStyles.cs`
+| Pre-move path | Post-move path |
+|---------------|----------------|
+| `src/Styles/Icons.axaml` | `src/UI/DesignSystem/Icons.axaml` |
+| `src/Styles/LayoutTokens.cs` | `src/UI/DesignSystem/LayoutTokens.cs` |
+| `src/Styles/TextStyles.cs` | `src/UI/DesignSystem/TextStyles.cs` |
 
-**Authoritative test scope (1 paths — complete, no globs):**
+**Authoritative test scope (1 path — complete, no globs):**
 
-- `tests/Zaide.Tests/Views/TextStylesTests.cs`
+| Pre-move path | Post-move path |
+|---------------|----------------|
+| `tests/Zaide.Tests/Views/TextStylesTests.cs` | `tests/Zaide.Tests/UI/DesignSystem/TextStylesTests.cs` |
 
 **Rollback gate:** one commit containing only this slice’s production moves, test moves/renames, required namespace/using/AXAML/resource/admission/allowlist-path updates, and this plan status if needed. Revert that single commit. Must pass the per-slice verification contract before commit.
+
+#### M1 completion record
+
+**Scope executed:** Mechanical rehome of DesignSystem only. Namespace
+`Zaide.Styles` → `Zaide.UI.DesignSystem`. `App.axaml` Icons include updated.
+All production/test `using Zaide.Styles` updated. Public full-name baseline
+rewrote the two type names (count still 348). Architecture admission admits
+`src/UI/DesignSystem/` C# only under top-level `UI` (not `UI/Shared`).
+Inventory tests updated for folder/namespace truth. CONVENTIONS + OVERVIEW
+truthful current tree notes. No DI, visibility, or behavior changes.
+
+**Verification (2026-07-17):**
+
+```bash
+dotnet build Zaide.slnx --no-restore
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter FullyQualifiedName~Architecture
+dotnet test Zaide.slnx --no-build
+git diff --check
+```
+
+| Command | Result |
+|---------|--------|
+| build | Succeeded; 0 errors; 1 existing CS0067 in ProjectDebugTargetResolverTests (pre-existing) |
+| Architecture | 21 passed, 0 failed |
+| full suite | 2,193 passed, 0 failed, 0 skipped |
+| `git diff --check` | clean |
+
+**FindingId allowlist:** unchanged (9 entries). **Public count:** 348.
+
+**Next:** stop after M1; human review/commit of M1 only. Do not start M2 without
+authorization.
 
 ### M2 — Settings
 

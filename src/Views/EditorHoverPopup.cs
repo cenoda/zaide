@@ -4,7 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

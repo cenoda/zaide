@@ -12,7 +12,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
 using Zaide.Models;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;

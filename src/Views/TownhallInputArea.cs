@@ -6,7 +6,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using System;
 using System.Threading.Tasks;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

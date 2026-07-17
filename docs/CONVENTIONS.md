@@ -25,18 +25,20 @@ Rules so all Zaide code reads like one person wrote it.
 
 ## Namespaces
 
-Namespaces must match folder structure. The **current** production tree still
-uses technical-layer folders and namespaces:
+Namespaces must match folder structure. Most of the production tree still uses
+technical-layer folders and namespaces. Refactor 6.2 moves slices feature-first
+as authorized:
 
 ```
-src/Services/AgentRouter.cs  →  namespace Zaide.Services
-src/ViewModels/MainWindowViewModel.cs → namespace Zaide.ViewModels
+src/Services/AgentRouter.cs              →  namespace Zaide.Services
+src/ViewModels/MainWindowViewModel.cs    →  namespace Zaide.ViewModels
+src/UI/DesignSystem/LayoutTokens.cs      →  namespace Zaide.UI.DesignSystem   (6.2 M1)
 ```
 
-The **approved target** (Refactor 6.2 mechanical migration) is feature-first
-ownership. See [Architecture rules](#architecture-rules) below. Until Refactor
-6.2 rehomes a type, keep its current namespace; do not invent empty feature
-folders or premature renames.
+The **approved target** is full feature-first ownership. See
+[Architecture rules](#architecture-rules) below. Until Refactor 6.2 rehomes a
+type, keep its current namespace; do not invent empty feature folders or
+premature renames.
 
 ## MVVM — ReactiveUI
 
@@ -133,10 +135,11 @@ src/
 | `Language/Infrastructure/Lsp` | LSP transport, session, protocol, and parser types |
 | `Debugging/Infrastructure/Dap` | DAP transport, adapter, session, and parser types |
 | Root `Infrastructure/` | Multi-feature file-system, process, or persistence only (admission rules below) |
-| `UI/DesignSystem` | Design tokens, icons, typography (current `src/Styles`) |
+| `UI/DesignSystem` | Design tokens, icons, typography (`src/UI/DesignSystem`, moved in Refactor 6.2 M1) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
-Current `src/Styles` maps to `UI/DesignSystem`, not `UI/Shared`. Project
+`src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
+`Zaide.UI.DesignSystem`). Design tokens and icons are not `UI/Shared`. Project
 workflow stays under Project System even when it consumes other features'
 projections. LSP is not root infrastructure; DAP is not root infrastructure.
 
@@ -294,7 +297,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 |----------|-----------|------|
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted |
 | **LocatorSite** | M3 | Exact production files with `IServiceProvider` / `App.Services` / resolution-call evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted |
-| **RootFolderAdmission** | M3 + M4 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). M4 expansion: only current technical folders `Models`, `Services`, `Styles`, `ViewModels`, `Views` plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`) are admitted for tracked C#; any other top-level folder’s tracked C# or unauthorized root C# file fails unless allowlisted. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
+| **RootFolderAdmission** | M3 + M4 + 6.2 M1 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders: `Models`, `Services`, `UI` (**only** `src/UI/DesignSystem/` after Refactor 6.2 M1), `ViewModels`, `Views`, plus the three approved `src/` root composition **C#** files (`Program.cs`, `App.axaml.cs`, `MainWindow.axaml.cs`). Other feature-first folders remain deny-by-default until their 6.2 slice. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
 | **Public visibility** | M4 | Exact full-name baseline of 348 public types + count ceiling 393/348/45; `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
@@ -312,4 +315,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.1 M5 — documentation closeout; M0–M4 executable baseline unchanged)*
+*Last updated: 2026-07-17 (Refactor 6.2 M1 — Styles rehomed to UI/DesignSystem)*

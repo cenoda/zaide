@@ -7,7 +7,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://Zaide/Styles/Icons.axaml" />
+                <ResourceInclude Source="avares://Zaide/UI/DesignSystem/Icons.axaml" />
             </ResourceDictionary.MergedDictionaries>
 
         <!-- Navy IDE Palette per DESIGN.md §7 -->

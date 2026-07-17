@@ -36,9 +36,10 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 2, 1), byNamespace["Zaide"]);
         Assert.Equal((31, 31, 0), byNamespace["Zaide.Models"]);
         Assert.Equal((231, 214, 17), byNamespace["Zaide.Services"]);
-        Assert.Equal((2, 2, 0), byNamespace["Zaide.Styles"]);
+        Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((72, 58, 14), byNamespace["Zaide.ViewModels"]);
         Assert.Equal((54, 41, 13), byNamespace["Zaide.Views"]);
+        Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
     [Fact]
@@ -72,11 +73,13 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(3, byFolder["src"]);
         Assert.Equal(22, byFolder["Models"]);
         Assert.Equal(224, byFolder["Services"]);
-        Assert.Equal(2, byFolder["Styles"]);
+        Assert.Equal(2, byFolder["UI"]);
+        Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(53, byFolder["ViewModels"]);
         Assert.Equal(52, byFolder["Views"]);
 
-        // Namespace declarations match technical folders for current tree.
+        // Namespace declarations match folders for the current mixed tree
+        // (technical layers plus Refactor 6.2 M1 DesignSystem).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "src"),
             s => Assert.Equal("Zaide", s.DeclaredNamespace));
@@ -87,8 +90,12 @@ public sealed class ArchitectureInventoryTests
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "Services"),
             s => Assert.Equal("Zaide.Services", s.DeclaredNamespace));
         Assert.All(
-            inventory.SourceFiles.Where(s => s.TechnicalFolder == "Styles"),
-            s => Assert.Equal("Zaide.Styles", s.DeclaredNamespace));
+            inventory.SourceFiles.Where(s => s.TechnicalFolder == "UI"),
+            s =>
+            {
+                Assert.StartsWith("src/UI/DesignSystem/", s.RelativePath.Replace('\\', '/'), StringComparison.Ordinal);
+                Assert.Equal("Zaide.UI.DesignSystem", s.DeclaredNamespace);
+            });
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "ViewModels"),
             s => Assert.Equal("Zaide.ViewModels", s.DeclaredNamespace));

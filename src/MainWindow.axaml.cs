@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using Zaide.Models;
 using Zaide.ViewModels;
 using Zaide.Views;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.Services;
 
 namespace Zaide;

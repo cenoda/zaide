@@ -8,7 +8,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using Zaide.Models;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

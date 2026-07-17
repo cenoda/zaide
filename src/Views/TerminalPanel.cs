@@ -14,7 +14,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.ViewModels;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.Services;
 using Zaide.Models;
 

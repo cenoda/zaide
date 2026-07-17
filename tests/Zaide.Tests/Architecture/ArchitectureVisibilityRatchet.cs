@@ -16,18 +16,30 @@ public static class ArchitectureVisibilityRatchet
     public const string FailureVisibilityBaselineIntegrity = "VISIBILITY_BASELINE_INTEGRITY";
 
     /// <summary>
-    /// Technical folders allowed by the still-current tree (M0 inventory / M1
-    /// conventions). Any other top-level folder under <c>src/</c> is deny-by-default.
-    /// Feature-first layout enforcement is Refactor 6.2, not M4.
+    /// Top-level <c>src/</c> folders admitted for tracked production C#.
+    /// Includes remaining technical-layer folders and Refactor 6.2 M1
+    /// <c>UI</c> (only <c>src/UI/DesignSystem/</c> C# is admitted; see
+    /// <see cref="IsApprovedUiPath"/>). Other feature-first roots remain
+    /// deny-by-default until their migration slices update this set.
     /// </summary>
     public static readonly IReadOnlyList<string> ApprovedCurrentTechnicalFolders = new[]
     {
         "Models",
         "Services",
-        "Styles",
+        "UI",
         "ViewModels",
         "Views",
     };
+
+    /// <summary>
+    /// Refactor 6.2 M1: only DesignSystem is admitted under <c>src/UI/</c>.
+    /// <c>src/UI/Shared/</c> remains deny-by-default (also checked above).
+    /// </summary>
+    public static bool IsApprovedUiPath(string relativePath)
+    {
+        var path = relativePath.Replace('\\', '/').Trim();
+        return path.StartsWith("src/UI/DesignSystem/", StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// Exact composition C# files permitted directly under <c>src/</c> (M0: three
@@ -153,6 +165,21 @@ public static class ArchitectureVisibilityRatchet
                 continue;
             }
 
+            if (source.TechnicalFolder == "UI")
+            {
+                if (!IsApprovedUiPath(path))
+                {
+                    violations.Add(new ArchitectureViolation(
+                        ArchitectureRatchet.CategoryRootFolderAdmission,
+                        ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
+                        path,
+                        "unauthorized path under src/UI/; only src/UI/DesignSystem/ " +
+                        "is admitted (Refactor 6.2 M1). UI/Shared remains deny-by-default."));
+                }
+
+                continue;
+            }
+
             if (!allowedFolders.Contains(source.TechnicalFolder))
             {
                 violations.Add(new ArchitectureViolation(
@@ -160,8 +187,9 @@ public static class ArchitectureVisibilityRatchet
                     ArchitectureRatchet.BuildRootAdmissionMatchKey(path),
                     path,
                     $"unauthorized technical folder '{source.TechnicalFolder}'; " +
-                    "approved current tree folders: Models, Services, Styles, ViewModels, Views. " +
-                    "Feature-first folders are Refactor 6.2 movement, not silent admission."));
+                    "approved folders: Models, Services, UI (DesignSystem only), " +
+                    "ViewModels, Views. Other feature-first folders require a " +
+                    "Refactor 6.2 migration slice."));
             }
         }
 

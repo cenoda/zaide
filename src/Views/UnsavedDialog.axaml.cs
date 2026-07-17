@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;

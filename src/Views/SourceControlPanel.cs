@@ -14,7 +14,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
 using Zaide.ViewModels;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

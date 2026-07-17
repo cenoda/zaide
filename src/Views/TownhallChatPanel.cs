@@ -6,7 +6,7 @@ using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
 using Zaide.Models;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

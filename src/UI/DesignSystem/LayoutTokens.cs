@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace Zaide.Styles;
+namespace Zaide.UI.DesignSystem;
 
 /// <summary>
 /// Resolves shared spacing and corner-radius tokens from <c>App.axaml</c>.

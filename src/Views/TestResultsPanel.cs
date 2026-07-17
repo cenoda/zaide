@@ -9,7 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.ViewModels;
 
 namespace Zaide.Views;

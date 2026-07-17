@@ -10,7 +10,7 @@ using Avalonia.Media;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using Zaide.Models;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Views;
 

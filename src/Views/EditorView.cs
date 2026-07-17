@@ -20,7 +20,7 @@ using ReactiveUI;
 using ReactiveUI.Avalonia;
 using TextMateSharp.Grammars;
 using Zaide.ViewModels;
-using Zaide.Styles;
+using Zaide.UI.DesignSystem;
 using Zaide.Services;
 using Zaide.Models;
 

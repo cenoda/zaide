@@ -245,8 +245,8 @@ Zaide.Services.TestResultsParser
 Zaide.Services.TestResultsService
 Zaide.Services.TestResultsSnapshot
 Zaide.Services.TestResultsSummary
-Zaide.Styles.LayoutTokens
-Zaide.Styles.TextStyles
+Zaide.UI.DesignSystem.LayoutTokens
+Zaide.UI.DesignSystem.TextStyles
 Zaide.ViewModels.AgentExecutionCoordinator
 Zaide.ViewModels.AgentPanelHost
 Zaide.ViewModels.AgentRouter

@@ -3,7 +3,7 @@ using Avalonia.Media;
 using System;
 using Avalonia;
 
-namespace Zaide.Styles
+namespace Zaide.UI.DesignSystem
 {
     public static class TextStyles
     {
