@@ -1459,9 +1459,9 @@ complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
 at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 (activation host extraction), completing the M9 series. **M10 is complete** at
 `843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`, and
-**M11b is complete** at `a69fc66`. **M11c implementation is complete**
-(staged, not yet committed): SourceControl + Terminal five-type visibility
-internalization; M11d remains unauthorized.
+**M11b is complete** at `a69fc66`. **M11c is complete** at `3d03285`:
+SourceControl + Terminal five-type visibility internalization; M11d remains
+unauthorized.
 
 ---
 
@@ -1973,8 +1973,9 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   services and calling the static deriver) through the existing
   `InternalsVisibleTo="Zaide.Tests"`.
 
-**Status:** **implementation complete (staged, not committed)** — five
-SourceControl + Terminal types public→internal; baseline 323; inventory
+**Status:** **complete** at `3d03285`
+(`refactor-6.3: M11c internalize SourceControl and Terminal implementations`) —
+five SourceControl + Terminal types public→internal; baseline 323; inventory
 public 323 / internal 92 / total 415.
 Verification: forced build 4 pre-existing warnings / 0 errors; focused 521/521;
 Architecture 21/21; full suite 2320/2320; `git diff --check` /
@@ -2229,11 +2230,12 @@ dotnet test Zaide.slnx --no-build
    is complete at `a69fc66`: exactly 8 types public→internal;
    public baseline 328; internal 87; total 415; DI 67; FindingIds 2 unchanged.
 8. **M11c** (SourceControl + Terminal implementation visibility internalization)
-   implementation is complete (staged, not yet committed): exactly 5 types
+   is complete at `3d03285`: exactly 5 types
    public→internal; public baseline 323; internal 92; total 415; DI 67;
-   FindingIds 2 unchanged. M11d remains unauthorized. Do not start M11d+,
+   FindingIds 2 unchanged.
+9. **M11d** is next eligible and remains unauthorized. Do not start M11d+,
    Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M11c implementation complete, staged: SourceControl+Terminal 5 types internalized; public 323 / internal 92 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 521/521; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11d next eligible and unauthorized)*
+*Last updated: 2026-07-18 (M11c complete at `3d03285`: SourceControl+Terminal 5 types internalized; public 323 / internal 92 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 521/521; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11d next eligible and unauthorized)*

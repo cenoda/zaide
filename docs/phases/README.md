@@ -39,8 +39,10 @@ complete at `bcb1e97` (activation host extraction), completing the M9 series.
 **M10** is complete at `843eebf` (Settings panel factory), **M11a** is complete
 at `b6228c3` (ten Language implementations internalized), and **M11b** is
 complete at `a69fc66` (eight Debugging + ProjectSystem implementations
-internalized). Production work still requires separate authorization for each
-implementation milestone; **M11c** is next eligible and has not started.
+internalized). **M11c** is complete at `3d03285` (five SourceControl + Terminal
+implementations internalized). Production work still requires separate
+authorization for each implementation milestone; **M11d** is next eligible and
+has not started.
 
 ## Archive Policy
 
