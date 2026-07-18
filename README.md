@@ -24,10 +24,11 @@ Completed plans are archived under [`docs/phases/`](docs/phases/).
 Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
 Optional M13 root admissions are declined. Refactor 6.3 M0 is accepted; **M1**
 is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e` (manual
-terminal smoke not run), and **M4** at `698b094` with automated verification
-green (manual agent-panel routing smoke not run). **M5** (SourceControlState
-deletion) is the next eligible milestone and still requires an explicit start;
-M5 production implementation has not started.
+terminal smoke not run), **M4** at `698b094` (manual agent-panel routing smoke
+not run), and **M5** at `273cc56` with automated verification green (manual
+verification not required). **Refactor 6.3 M1–M5 are complete.** **M6a**
+(AppCore registration module) is the next eligible milestone slice and still
+requires an explicit start; M6a production implementation has not started.
 
 ## Philosophy
 
@@ -207,11 +208,11 @@ while preserving the completed V2 IDE core. Its direction is:
 - begin with bounded architecture refactors (`6.1`–`6.3`, then Refactors 7
   and 8) before Phase 14.
 
-The implementation order is accepted. Refactor 6.3 **M4** is complete at
-`698b094`. **M5** (SourceControlState deletion) is the next eligible milestone
-and still requires an explicit start. Phase 14 and every preceding refactor
-still require their own live-code-verified M0 acceptance before production
-implementation.
+The implementation order is accepted. Refactor 6.3 **M5** is complete at
+`273cc56`. **M6a** (AppCore registration module) is the next eligible milestone
+slice and still requires an explicit start. Phase 14 and every preceding
+refactor still require their own live-code-verified M0 acceptance before
+production implementation.
 
 ## Why "Zaide"
 

@@ -27,10 +27,11 @@ tree under `App`, `Features`, and `UI/DesignSystem`). Optional M13 root
 admissions are **declined**. Refactor 6.3 M0 is **accepted** at
 [`docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
 **M1** complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e`
-(manual terminal smoke not run), and **M4** at `698b094` (automated
-verification green; manual agent-panel routing smoke not run). **M5**
-(SourceControlState deletion) is the next eligible milestone and still
-requires an explicit start; M5 production implementation is not active.
+(manual terminal smoke not run), **M4** at `698b094` (manual agent-panel
+routing smoke not run), and **M5** at `273cc56` (automated verification
+green; manual verification not required). **Refactor 6.3 M1–M5 are complete.**
+**M6a** (AppCore registration module) is the next eligible milestone slice and
+still requires an explicit start; M6a production implementation is not active.
 Refactors 7 / 8 have no production authorization until their own M0
 acceptances.
 Non-C# assets remain outside the root-admission ratchet. No V3 production
@@ -105,7 +106,7 @@ src/
   Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation (6.2 M5a–M5c)
   Features/Language/   # Contracts + Application (6.2 M6a) + Infrastructure/Lsp (6.2 M6b)
   Features/Debugging/  # Contracts + Application (6.2 M7a) + Infrastructure/Dap (6.2 M7b) + Presentation (6.2 M7c)
-  Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8)
+  Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8; R61-V02 SourceControlState cleared in 6.3 M5)
   Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; R61-V05 cleared in 6.3 M3)
   Features/Townhall/   # Domain, Presentation (6.2 M10; R61-V16 preserved)
   Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M11; R61-V06 cleared in 6.3 M4)
@@ -116,14 +117,15 @@ root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 inventory the baseline (M2), ratchet known legacy debt (M3), and enforce the
 public full-name baseline plus expanded root-folder admission (M4, updated for
-6.2 M1–M12). Root-admission inventories **tracked production C# only**
-(`git ls-files` of `src/**/*.cs`): exact-file service-locator sites; residual
-path-scoped NamespaceDirection edges (allowlisted); deny-by-default tracked C#
-under `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App`
-(Composition + Shell), `Features` (all migrated features), `UI` (DesignSystem
-only); and the frozen 348 public type names
-(`PublicProductionTypeBaseline.txt`). Non-C# assets are not governed by the
-root-admission detectors. Lifetime/composition debt remains for Refactor 6.3.
+6.2 M1–M12 and 6.3 M1–M5). Root-admission inventories **tracked production C#
+only** (`git ls-files` of `src/**/*.cs`): exact-file service-locator sites;
+NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
+`src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
+Shell), `Features` (all migrated features), `UI` (DesignSystem only); and the
+current **346** public type names (`PublicProductionTypeBaseline.txt`; M5 net
+−1). FindingIds remaining: **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`).
+Non-C# assets are not governed by the root-admission detectors.
+Lifetime/composition debt remains for Refactor 6.3 (M6a next).
 
 | Later work | Owns |
 |------------|------|
@@ -339,4 +341,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` complete; automated verification green; manual agent-panel routing smoke not run; M5 next eligible, not started)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` + M5 `273cc56` complete; automated verification green; manual verification not required for M5; M6a next eligible, not started)*

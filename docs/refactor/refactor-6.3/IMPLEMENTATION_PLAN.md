@@ -11,11 +11,14 @@ eighth-revision planning gate.
 `22b869e` (`refactor-6.3: M3 terminal service factory` / V05) — automated
 verification green; manual terminal smoke **not run**. **M4 complete** at
 `698b094` (`refactor-6.3: M4 mention parser purity` / V06) — automated
-verification green (build, focused 39/39, Architecture 21/21, full suite
-2204/2204, `git diff --check`); manual agent-panel routing smoke **not run**.
-**M5** (SourceControlState deletion) is the next eligible independent
-milestone and has **not** started; it requires a separate explicit
-authorization.
+verification green; manual agent-panel routing smoke **not run**. **M5
+complete** at `273cc56` (`refactor-6.3: M5 delete unused source control state`
+/ V02) — automated verification green (build, focused Architecture+SourceControl
+150/150, Architecture 21/21, full suite 2204/2204, `git diff --check`);
+manual verification **not required** (deleted type had no production consumer).
+**Refactor 6.3 M1–M5 are complete.** **M6a** (AppCore registration module) is
+the next eligible milestone slice and has **not** started; it requires a
+separate explicit authorization.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -118,17 +121,16 @@ R61-AL-NS-MentionParser
 R61-AL-NS-SourceControlState
 ```
 
-**Live set after M4 (3 FindingIds):**
+**Live set after M5 (2 FindingIds):**
 ```
 R61-AL-LOC-App
 R61-AL-LOC-Program
-R61-AL-NS-SourceControlState
 ```
-`R61-AL-NS-MentionParser` was **removed** in M4 (V06 debt cleared), not
-re-keyed. Earlier removals remain cleared: M1
-`R61-AL-LOC-EditorTabViewModel`; M2 both V07 FindingIds; M3 Terminal NS
-FindingIds `R61-AL-NS-ITerminalSessionFactory` and
-`R61-AL-NS-TerminalSessionFactory`.
+`R61-AL-NS-SourceControlState` was **removed** in M5 (V02 debt cleared), not
+re-keyed. No NamespaceDirection residual remains. Earlier removals remain
+cleared: M1 `R61-AL-LOC-EditorTabViewModel`; M2 both V07 FindingIds; M3
+Terminal NS FindingIds `R61-AL-NS-ITerminalSessionFactory` and
+`R61-AL-NS-TerminalSessionFactory`; M4 `R61-AL-NS-MentionParser`.
 
 ---
 
@@ -188,9 +190,11 @@ Full membership is listed under **M6** slices below (exact service list).
 
 ### SourceControlState (V02)
 
-`src/Features/SourceControl/Domain/SourceControlState.cs` is referenced only by
-architecture inventory/allowlist tests. **No production constructor, field, or
-DI registration** uses it (re-verified 2026-07-18). M5 deletes it.
+**Cleared in M5** at `273cc56`. `src/Features/SourceControl/Domain/SourceControlState.cs`
+is deleted. No production `SourceControlState` reference remains.
+`RepositoryStatusSnapshot` remains under SourceControl Application.
+`R61-AL-NS-SourceControlState` was removed without replacement; NamespaceDirection
+residuals are empty.
 
 ### Architecture gate
 
@@ -220,7 +224,7 @@ intended milestone files.
 
 | ID | Live site | FindingId(s) | Clearing milestone |
 |----|-----------|--------------|--------------------|
-| V02 | `SourceControlState` Domain → Application | `R61-AL-NS-SourceControlState` | **M5** |
+| V02 | `SourceControlState` Domain → Application | `R61-AL-NS-SourceControlState` | **M5** (cleared) |
 | V05 | Terminal factory Contracts/Application → Presentation | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` | **M3** (cleared) |
 | V06 | `MentionParser` → `IAgentPanelHost` | `R61-AL-NS-MentionParser` | **M4** (cleared) |
 | V07 | Diff tab service → Editor Presentation + provider | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` | **M2** |
@@ -603,12 +607,12 @@ mirror behavior unchanged; unknown `@Nope` still surfaces routing failure.
 
 | | |
 |--|--|
-| **Status** | **Implemented — staged for review** (not committed). Production deletion + allowlist/inventory/baseline/residual assertion updates complete; awaiting human commit review |
+| **Status** | **Complete** — commit `273cc56` (`refactor-6.3: M5 delete unused source control state`); `SourceControlState` deleted; `R61-AL-NS-SourceControlState` removed without replacement |
 | **Design** | § D5 |
 | **Preflight** | `rg -n SourceControlState src --glob '*.cs'` showed only `src/Features/SourceControl/Domain/SourceControlState.cs` (no other production hits) |
-| **Completion condition** | (1) file deleted; (2) `R61-AL-NS-SourceControlState` removed; (3) inventory special-case removed; (4) shared gate green — **all met** (pending commit) |
-| **Live counts after M5** | FindingIds **2** (3 → 2: `R61-AL-NS-SourceControlState` removed, not re-keyed); NS live violations **0**; locator sites **2** (Program, App); public production types **347 → 346**; total top-level types **398 → 397**; Architecture **21/21** |
-| **Verification** | build 0 errors; focused Architecture+SourceControl **150** passed; Architecture **21/21** passed; full suite **2204/2204** passed; `git diff --check` clean; manual verification **none required** (deleted type had no production consumer) |
+| **Completion condition** | (1) file deleted; (2) `R61-AL-NS-SourceControlState` removed; (3) inventory special-case removed; (4) shared gate green — **all met** |
+| **Live counts after M5** | FindingIds **2** (3 → 2: exactly `R61-AL-LOC-App`, `R61-AL-LOC-Program`); NS live violations **0** (no NamespaceDirection residual); locator sites **2** (Program, App); public production types **347 → 346**; total top-level types **398 → 397**; internal production types **51** (unchanged); production C# files **360 → 359**; Features C# files **338 → 337**; Architecture **21/21** |
+| **Verification** | build 0 errors; focused Architecture+SourceControl **150/150** passed; Architecture **21/21** passed; full suite **2204/2204** passed; `git diff --check` clean; manual verification **none required** (deleted type had no production consumer) |
 
 **Focused tests:**
 
@@ -1451,12 +1455,16 @@ dotnet test Zaide.slnx --no-build
 1. **M1** complete at `e590a79`. **M2** complete at `d9799ad`. **M3** complete
    at `22b869e` (automated verification green; manual terminal smoke not run).
    **M4** complete at `698b094` (automated verification green; manual
-   agent-panel routing smoke not run).
-2. Authorize **M5 only** (§ D5 — SourceControlState deletion).
-3. Do not start M6+ until M5 completion conditions are met and committed.
-4. M5 production implementation has **not** started and still requires an
+   agent-panel routing smoke not run). **M5** complete at `273cc56`
+   (automated verification green; manual verification not required).
+   **Refactor 6.3 M1–M5 are complete.**
+2. Authorize **M6a only** (§ M6a — AppCore registration module:
+   `AppCoreServiceCollectionExtensions.cs` / `AddZaideAppCore`).
+3. Do not start M6b–M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. The whole M6 series is **not** authorized by M5 closeout.
+4. M6a production implementation has **not** started and still requires an
    explicit separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` complete; automated verification green; manual agent-panel routing smoke not run; M5 next eligible, not started)*
+*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` + M5 `273cc56` complete; automated verification green; manual verification not required for M5; M6a next eligible, not started)*
