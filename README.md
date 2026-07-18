@@ -27,13 +27,15 @@ is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e` (manual
 terminal smoke not run), **M4** at `698b094` (manual agent-panel routing smoke
 not run), **M5** at `273cc56` (manual verification not required), **M6a**
 at `c59ad7b` (AppCore DI registration module; first completed M6 slice;
-automated verification green; manual verification not required), and **M6b**
+automated verification green; manual verification not required), **M6b**
 at `43b8e85` (Settings DI registration module; second completed M6 slice;
+automated verification green; manual verification not required), and **M6c**
+at `1ad3625` (Workspace DI registration module; third completed M6 slice;
 automated verification green; manual verification not required). **Refactor
-6.3 M1–M5, M6a, and M6b are complete.** **M6c** (Workspace registration
-module) is the next eligible milestone slice and still requires an explicit
-start; M6c production implementation has not started. **M6d–M6k** remain
-unauthorized.
+6.3 M1–M5 and M6a–M6c are complete** as individually completed slices. **M6d**
+(Editor registration module) is the next eligible milestone slice and still
+requires an explicit start; M6d production implementation has not started.
+**M6d–M6k** remain unauthorized.
 
 ## Philosophy
 
@@ -216,10 +218,11 @@ while preserving the completed V2 IDE core. Its direction is:
 The implementation order is accepted. Refactor 6.3 **M6a** is complete at
 `c59ad7b` (AppCore DI registration module — first completed M6 slice). **M6b**
 is complete at `43b8e85` (Settings DI registration module — second completed
-M6 slice). **M6c** (Workspace registration module) is the next eligible
-milestone slice and still requires an explicit start. Completing M6b does not
-authorize M6d–M6k. Phase 14 and every preceding refactor still require their
-own live-code-verified M0 acceptance before production implementation.
+M6 slice). **M6c** is complete at `1ad3625` (Workspace DI registration module —
+third completed M6 slice). **M6d** (Editor registration module) is the next
+eligible milestone slice and still requires an explicit start. Completing M6c
+does not authorize M6d–M6k. Phase 14 and every preceding refactor still require
+their own live-code-verified M0 acceptance before production implementation.
 
 ## Why "Zaide"
 
