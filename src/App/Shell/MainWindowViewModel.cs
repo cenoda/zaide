@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -26,9 +25,7 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
-using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
-using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
 
@@ -72,6 +69,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
+    private readonly AgentTownhallMirrorCoordinator _agentTownhallMirror;
 
     /// <summary>
     /// Scheduler for the <see cref="IProjectContextService.WhenChanged"/>
@@ -195,8 +193,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public EditorTabViewModel EditorTabs { get; }
     public ITerminalHost TerminalHost { get; }
     public IAgentPanelHost AgentPanelHost { get; }
-    public IAgentExecutionCoordinator AgentExecutionCoordinator { get; }
-    public IAgentRouter AgentRouter { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
     public ProblemsViewModel ProblemsViewModel { get; }
@@ -236,7 +232,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 EditorTabViewModel editorTabViewModel,
                                 ITerminalHost terminalHost,
                                 IAgentPanelHost agentPanelHost,
-                                IAgentExecutionCoordinator agentExecutionCoordinator,
                                 IAgentRouter agentRouter,
                                 TownhallViewModel townhallViewModel,
                                 SourceControlViewModel sourceControlViewModel,
@@ -255,9 +250,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         EditorTabs = editorTabViewModel;
         TerminalHost = terminalHost;
         AgentPanelHost = agentPanelHost;
-        AgentExecutionCoordinator = agentExecutionCoordinator;
-        AgentRouter = agentRouter;
         TownhallViewModel = townhallViewModel;
+        _agentTownhallMirror = new AgentTownhallMirrorCoordinator(
+            agentRouter,
+            agentPanelHost,
+            townhallViewModel);
         SourceControlViewModel = sourceControlViewModel;
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         ProjectWorkflowViewModel = projectWorkflowViewModel
@@ -504,85 +501,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     /// <summary>
     /// Thin delegating seam for the agent panel send flow.
-    /// Delegates routing decisions and orchestration to <see cref="IAgentRouter"/>.
-    /// Router owns mention parsing, resolution, direct-vs-routed decision, and
-    /// coordination. MainWindowViewModel remains composition/delegation only.
+    /// Forwards to <see cref="AgentTownhallMirrorCoordinator"/>; routing and
+    /// Townhall mirroring live there. Public name/signature unchanged for the view.
     /// </summary>
-    public async Task SendAgentMessageAsync(string panelId, string userMessage, CancellationToken ct = default)
-    {
-        // Mirror the user request into Townhall before routing (preserves current truthful behavior).
-        TownhallViewModel.AddMirroredActivity(
-            kind: TownhallMessageKind.Chat,
-            content: userMessage,
-            senderId: "user-1",
-            senderName: "User");
-
-        // Delegate entirely to the routing orchestration seam (M3).
-        // NOTE: Do NOT use ConfigureAwait(false) here. The continuation reads
-        // AgentPanelState (OutputHistory, Status) and calls
-        // TownhallViewModel.AddMirroredActivity() which modifies
-        // ObservableCollection<TownhallMessage> — both require the Avalonia UI
-        // thread. AgentRouter and AgentExecutionCoordinator also preserve the
-        // captured SynchronizationContext internally.
-        var routeResult = await AgentRouter.RouteAndExecuteAsync(panelId, userMessage, ct);
-
-        // M1: consume the routing outcome so routed flows and routing failures
-        // become visible in Townhall (previously the result was captured but unread).
-        var sourcePanel = AgentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
-
-        // Case A: parse/routing failure. Surface as an AgentError under the source
-        // panel identity. If the source panel is gone, there is nothing to attribute to.
-        if (!routeResult.Success)
-        {
-            if (sourcePanel is null)
-                return;
-
-            TownhallViewModel.AddMirroredActivity(
-                kind: TownhallMessageKind.AgentError,
-                content: $"Routing failed: {routeResult.FailureReason}",
-                senderId: sourcePanel.AgentId,
-                senderName: sourcePanel.AgentName);
-            return;
-        }
-
-        // Choose which panel's output to mirror:
-        //   Case B (routed): the resolved target panel.
-        //   Case C (direct send): the source panel (unchanged existing behavior).
-        var request = routeResult.Request;
-        var panel = request is not null && !request.IsDirectSend
-            ? AgentPanelHost.Panels.FirstOrDefault(p => p.AgentName == request.TargetAgentName)
-            : sourcePanel;
-
-        if (panel is null)
-            return;
-
-        if (panel.Status == "Error")
-        {
-            var lastOutput = panel.OutputHistory.Count > 0 ? panel.OutputHistory[^1] : null;
-            if (lastOutput is not null && lastOutput.StartsWith("Error: "))
-            {
-                TownhallViewModel.AddMirroredActivity(
-                    kind: TownhallMessageKind.AgentError,
-                    content: lastOutput,
-                    senderId: panel.AgentId,
-                    senderName: panel.AgentName);
-            }
-        }
-        else
-        {
-            var lastOutput = panel.OutputHistory.Count > 0
-                ? panel.OutputHistory[^1]
-                : null;
-            if (lastOutput is not null && lastOutput.StartsWith("Assistant: "))
-            {
-                TownhallViewModel.AddMirroredActivity(
-                    kind: TownhallMessageKind.Chat,
-                    content: lastOutput,
-                    senderId: panel.AgentId,
-                    senderName: panel.AgentName);
-            }
-        }
-    }
+    public Task SendAgentMessageAsync(
+        string panelId,
+        string userMessage,
+        CancellationToken ct = default) =>
+        _agentTownhallMirror.SendAsync(panelId, userMessage, ct);
 
     public void Dispose()
     {

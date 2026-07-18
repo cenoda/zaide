@@ -486,7 +486,7 @@ public sealed class CommandResolutionAcceptanceTests
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         _ = new MainWindowViewModel(
-            fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
+            fileTreeViewModel, editorTabs, terminalHost, panelHost,
             router, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);

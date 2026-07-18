@@ -94,7 +94,6 @@ public sealed class KeyBindingMaterializationTests
             editorTabs,
             new TerminalHost(CreateTerminalServiceFactory().Object),
             new AgentPanelHost(),
-            new Mock<IAgentExecutionCoordinator>().Object,
             new AgentRouter(new MentionParser(), new AgentPanelHost(),
                 new Mock<IAgentExecutionCoordinator>().Object),
             new TownhallViewModel(new TownhallState()),

@@ -205,7 +205,6 @@ public sealed class TestResultsViewModelTests
             editorTabs,
             terminalHost,
             panelHost,
-            coordinator,
             router,
             new TownhallViewModel(new TownhallState()),
             new SourceControlViewModel(

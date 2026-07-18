@@ -158,7 +158,7 @@ public sealed class CommandRegistrationTests
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         return new MainWindowViewModel(
-            fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
+            fileTreeViewModel, editorTabs, terminalHost, panelHost,
             router, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs, registry), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object,

@@ -43,7 +43,8 @@ public sealed class ArchitectureInventoryTests
         // M8: +1 internal ApplicationShutdown (was 7 total / 5 public / 2 internal).
         Assert.Equal((8, 5, 3), byNamespace["Zaide.App.Composition"]);
         Assert.Equal((11, 0, 11), byNamespace["Zaide.App.Composition.Registration"]);
-        Assert.Equal((16, 14, 2), byNamespace["Zaide.App.Shell"]);
+        // M9a: +1 internal AgentTownhallMirrorCoordinator (was 16 total / 14 public / 2 internal).
+        Assert.Equal((17, 14, 3), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
@@ -114,15 +115,15 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown.
-        Assert.Equal(372, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown; M9a AgentTownhallMirrorCoordinator.
+        Assert.Equal(373, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(33, byFolder["App"]);
+        Assert.Equal(34, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
         Assert.Equal(337, byFolder["Features"]);
 

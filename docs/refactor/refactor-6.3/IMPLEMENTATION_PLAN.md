@@ -1455,7 +1455,8 @@ M6k implementation is complete at `df262ac`.
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
 store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a** is
-next and remains unauthorized.
+implemented and staged pending review (agent Townhall mirror extraction);
+**M9b/M9c remain unauthorized**.
 
 ---
 
@@ -1572,6 +1573,11 @@ private fields). They are **never** exposed as public properties/parameters on
 surface (`SendAgentMessageAsync`, panel mode properties/commands, `Activate`).
 
 #### M9a — Agent send / Townhall mirror extraction
+
+| | |
+|--|--|
+| **Status** | **Implemented (staged, not committed)** — Agent Townhall mirror extraction; public MWVM send API preserved as expression-bodied forwarder; `IAgentExecutionCoordinator` registration unchanged for `AgentRouter` |
+| **Measurable (live)** | MWVM **553** lines (≤ 560); ctor **15 required + 2 optional = 17 total**; `SendAgentMessageAsync` expression-bodied ≤ 3 lines; inventory public **346** / internal **65** / total **411** / prod C# **373** / App C# **34**; FindingIds **2** unchanged |
 
 | Item | Locked decision |
 |------|-----------------|
@@ -2099,22 +2105,20 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M7 complete** as previously recorded; **M7** is complete at `554552f`
-   (composition root store / remove public `App.Services`) under Option A locator
-   policy. Public `App.Services` is gone; residual static store is
-   `CompositionRoot.Services` with FindingIds `R61-AL-LOC-Program` and
-   `R61-AL-LOC-App` only.
-2. **M8** (ordered shutdown owner / V12) is complete at `874aa79`:
-   `ApplicationShutdown.Run` owns ordered teardown;
-   `DisposeServicesOnExit` is a thin forwarder. FindingIds remain 2; inventory
-   internal/total/prod/App file counts bump by one for the new type/file.
-3. **M9a** is next eligible and remains unauthorized. Do not start M9a+,
-   Refactor 7/8, or Phase 14 without separate authorization. Completing M8
-   does **not** authorize M9a or whole-refactor closeout.
-4. Do **not** mark Refactor 6.3 complete from M8 alone (V09 residual remains;
-   M9–M13 still planned). Do not perform the five-document closeout in this
-   slice.
+1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
+   closeout `3e465e1`.
+2. **M9a** (agent send / Townhall mirror extraction) is **implemented and
+   staged** (not committed in the implementing session):
+   `AgentTownhallMirrorCoordinator` owns send + mirror; MWVM expression-bodied
+   forwarder; constructor drops required `IAgentExecutionCoordinator` and public
+   `AgentRouter` / `AgentExecutionCoordinator` properties. FindingIds remain 2;
+   inventory internal/total/prod/App file counts bump by one for the new type/file.
+3. **M9b** is next eligible and remains unauthorized. Do not start M9b/M9c,
+   Refactor 7/8, or Phase 14 without separate authorization. Completing M9a
+   does **not** authorize M9b or whole-refactor closeout.
+4. Do **not** mark Refactor 6.3 or the M9 series complete from M9a alone.
+   Do not perform the five-document closeout in this slice.
 
 ---
 
-*Last updated: 2026-07-18 (M8 complete at `874aa79`: ApplicationShutdown ordered owner; DisposeServicesOnExit thin forwarder; inventory public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; FindingIds 2 unchanged; LocatorSite exclusion for ApplicationShutdown; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 40/40, Architecture 21/21, full suite 2267/2267, git diff checks clean; manual verification not run; M9a unauthorized)*
+*Last updated: 2026-07-18 (M9a implemented staged: AgentTownhallMirrorCoordinator; MWVM 553 lines / ctor 15+2; inventory public 346 / internal 65 / total 411 / prod C# 373 / App C# 34; Shell namespace (17,14,3); FindingIds 2 unchanged; build 4 pre-existing warnings / 0 errors; focused 269/269; Architecture 21/21; full suite 2273/2273; manual not run; M9b unauthorized)*

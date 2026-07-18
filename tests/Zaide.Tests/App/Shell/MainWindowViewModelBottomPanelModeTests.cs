@@ -96,7 +96,6 @@ public sealed class MainWindowViewModelBottomPanelModeTests
             editorTabs,
             terminalHost,
             panelHost,
-            coordinator,
             router,
             new TownhallViewModel(new TownhallState()),
             new SourceControlViewModel(

@@ -240,7 +240,7 @@ public sealed class CanonicalCommandRegistrationTests
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         return new MainWindowViewModel(
-            fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator,
+            fileTreeViewModel, editorTabs, terminalHost, panelHost,
             router, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),

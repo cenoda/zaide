@@ -207,7 +207,7 @@ public sealed class SettingsUiTests
         var ctxMock = new Mock<IProjectContextService>(MockBehavior.Loose);
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         var workspace = provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
-        var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, coordinator, router, townhall,
+        var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, router, townhall,
             sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object);
         vm.Activate();
         return vm;

@@ -146,7 +146,7 @@ public sealed class ProjectSystemStatusBarViewModelProjectionTests
 
         var workspace = sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var vm = new MainWindowViewModel(
-            fileTree, editorTabs, terminalHost, panelHost, coordinator, router,
+            fileTree, editorTabs, terminalHost, panelHost, router,
             townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
             svc);
         // Use ImmediateScheduler so scheduled work executes synchronously
