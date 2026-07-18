@@ -36,9 +36,10 @@ at `234a38f` (Editor DI registration module; fourth completed M6 slice;
 automated verification green; manual verification not required). **Refactor
 6.3 M1–M5 and M6a–M6k are complete** as individually completed slices. **M6k**
 (Debugging registration module) is complete at `df262ac`
-(`AddZaideDebugging`), completing the M6 registration-module series. **M7** is
-the next eligible milestone and requires separate explicit authorization; M7
-has not started. Completing M6 does not authorize M7.
+(`AddZaideDebugging`), completing the M6 registration-module series. **M7**
+(composition-root store / removal of public `App.Services`) is complete at
+`554552f`. **M8** is next eligible, has not started, and requires separate
+explicit authorization. Completing M7 does not authorize M8.
 
 ## Philosophy
 
@@ -233,7 +234,9 @@ DI registration module — eighth completed M6 slice). **M6i** is complete at
 **M6j** is complete at `e7785b4` (Language DI registration module — tenth
 completed M6 slice). **M6k** is complete at `df262ac` (Debugging DI
 registration module — eleventh and final M6 slice). The M6 series is complete.
-**M7** is next eligible and requires separate explicit authorization. Phase 14 and
+**M7** is complete at `554552f`; public `App.Services` is removed and the
+internal `CompositionRoot.Services` residual remains. **M8** is next eligible
+and requires separate explicit authorization. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 

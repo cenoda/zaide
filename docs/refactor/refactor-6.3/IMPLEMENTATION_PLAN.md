@@ -1462,7 +1462,7 @@ store). The next planned milestone is **M8**, which remains **unauthorized**.
 
 | | |
 |--|--|
-| **Status** | **Complete** (implementation staged for review; not committed in this session) |
+| **Status** | **Complete** at `554552f` (`refactor-6.3: M7 composition root store`) |
 | **Scope** | Remove public static `App.Services`. Introduce a single internal composition-root **store** for the ReactiveUI bootstrap provider assignment. |
 | **Locked approach (no alternatives)** | Create `internal static class CompositionRoot` in `src/App/Composition/CompositionRoot.cs` with **only** `internal static IServiceProvider Services { get; set; }` (no `Start` method, **no** `GetRequiredService` / `GetService` calls inside `CompositionRoot`). `Program.BuildAvaloniaApp` `withResolver` assigns `CompositionRoot.Services = sp` (not `App.Services`). **Delete** public static `App.Services`. All existing eager resolves and `DisposeServicesOnExit` **remain** in `App.axaml.cs`, rewritten to use `CompositionRoot.Services` wherever `App.Services` was read (including `OnFrameworkInitializationCompleted` and Exit). |
 | **Why not move resolves into CompositionRoot in M7** | Moving `GetRequiredService` into a new file would either grow the FindingId set or require MatchKey games mid-refactor. Keeping provider **call sites** on the already-allowlisted `App.axaml.cs` / `Program.cs` files preserves the frozen allowlist set size. |
@@ -2085,8 +2085,8 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M7 complete** as previously recorded for M1–M6; **M7** (composition root
-   store / remove public `App.Services`) is implemented under Option A locator
+1. **M1–M7 complete** as previously recorded for M1–M6; **M7** is complete at
+   `554552f` (composition root store / remove public `App.Services`) under Option A locator
    policy. Public `App.Services` is gone; residual static store is
    `CompositionRoot.Services` with FindingIds `R61-AL-LOC-Program` and
    `R61-AL-LOC-App` only.
@@ -2099,4 +2099,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M7 complete: CompositionRoot store; public App.Services removed; locator evidence Program+App only via CompositionRoot.Services consumer access; FindingIds 2 unchanged; inventory public 346 / internal 63 / total 409 / prod C# 371 / App C# 32; M8 unauthorized)*
+*Last updated: 2026-07-18 (M7 complete at `554552f`: CompositionRoot store; public App.Services removed; locator evidence Program+App only via CompositionRoot.Services consumer access; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 95/95, Architecture 21/21, full suite 2263/2263, git diff checks clean; manual smoke not run; inventory public 346 / internal 63 / total 409 / prod C# 371 / App C# 32; M8 unauthorized)*

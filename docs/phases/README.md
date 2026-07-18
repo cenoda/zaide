@@ -30,8 +30,10 @@ required), and **M6d** at `234a38f` (Editor DI registration module; fourth
 completed M6 slice; automated verification green; manual verification not
 required). **Refactor 6.3 M1–M5 and M6a–M6k are complete** as individually
 completed slices; M6k is complete at `df262ac` (`AddZaideDebugging`), and the
-M6 series is complete. Production work still requires separate authorization
-for each implementation milestone; **M7** is next eligible and has not started.
+M6 series is complete. **M7** is complete at `554552f` (composition-root store;
+public `App.Services` removed; internal `CompositionRoot.Services` residual
+retained). Production work still requires separate authorization for each
+implementation milestone; **M8** is next eligible and has not started.
 
 ## Archive Policy
 
