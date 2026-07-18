@@ -17,10 +17,12 @@ plan exists and Phase 14 implementation is not active. Refactor 6.1 is closed,
 and Refactor 6.2 M1–M12 is accepted closed; optional M13 root admissions are
 declined. Refactor 6.3 M0 is **accepted** at
 [`../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
-**M1** is complete at `e590a79`, **M2** at `d9799ad`, and **M3** at `22b869e`
-with automated verification green (manual terminal smoke not run). Production
+**M1** is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e`
+(manual terminal smoke not run), and **M4** at `698b094` with automated
+verification green (manual agent-panel routing smoke not run). Production
 work still requires a separate authorization for each implementation milestone;
-**M4** (mention parser purity) is the next eligible slice and is not started.
+**M5** (SourceControlState deletion) is the next eligible slice and is not
+started.
 
 ## Archive Policy
 

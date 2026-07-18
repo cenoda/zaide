@@ -9,10 +9,13 @@ eighth-revision planning gate.
 (`refactor-6.3: M1 editor session factory`). **M2 complete** at `d9799ad`
 (`refactor-6.3: M2 editor read-only tab gateway`). **M3 complete** at
 `22b869e` (`refactor-6.3: M3 terminal service factory` / V05) — automated
-verification green (build, Architecture 21/21, full suite 2201/2201,
-`git diff --check`); manual terminal smoke **not run**. **M4** (mention
-parser purity) is the next eligible independent milestone and has **not**
-started; it requires a separate explicit authorization.
+verification green; manual terminal smoke **not run**. **M4 complete** at
+`698b094` (`refactor-6.3: M4 mention parser purity` / V06) — automated
+verification green (build, focused 39/39, Architecture 21/21, full suite
+2204/2204, `git diff --check`); manual agent-panel routing smoke **not run**.
+**M5** (SourceControlState deletion) is the next eligible independent
+milestone and has **not** started; it requires a separate explicit
+authorization.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -115,12 +118,17 @@ R61-AL-NS-MentionParser
 R61-AL-NS-SourceControlState
 ```
 
-**Live set after M3 (4 FindingIds):** Terminal NS FindingIds
-`R61-AL-NS-ITerminalSessionFactory` and `R61-AL-NS-TerminalSessionFactory`
-were **removed** (V05 debt cleared), not re-keyed. Replacement
-`ITerminalServiceFactory` returns Contracts-only types and does not reintroduce
-Presentation edges. Earlier M1/M2 removals
-(`R61-AL-LOC-EditorTabViewModel`, both V07 FindingIds) remain cleared.
+**Live set after M4 (3 FindingIds):**
+```
+R61-AL-LOC-App
+R61-AL-LOC-Program
+R61-AL-NS-SourceControlState
+```
+`R61-AL-NS-MentionParser` was **removed** in M4 (V06 debt cleared), not
+re-keyed. Earlier removals remain cleared: M1
+`R61-AL-LOC-EditorTabViewModel`; M2 both V07 FindingIds; M3 Terminal NS
+FindingIds `R61-AL-NS-ITerminalSessionFactory` and
+`R61-AL-NS-TerminalSessionFactory`.
 
 ---
 
@@ -214,7 +222,7 @@ intended milestone files.
 |----|-----------|--------------|--------------------|
 | V02 | `SourceControlState` Domain → Application | `R61-AL-NS-SourceControlState` | **M5** |
 | V05 | Terminal factory Contracts/Application → Presentation | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` | **M3** (cleared) |
-| V06 | `MentionParser` → `IAgentPanelHost` | `R61-AL-NS-MentionParser` | **M4** |
+| V06 | `MentionParser` → `IAgentPanelHost` | `R61-AL-NS-MentionParser` | **M4** (cleared) |
 | V07 | Diff tab service → Editor Presentation + provider | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` | **M2** |
 | V08 | `EditorTabViewModel` + `IServiceProvider` | `R61-AL-LOC-EditorTabViewModel` | **M1** |
 | V09 | Public static `App.Services` + composition locators | `R61-AL-LOC-Program`, `R61-AL-LOC-App` | **M7** removes public `App.Services` and centralizes the store on `CompositionRoot.Services`. **Deliberate residual** (not full V09 clearance): static mutable composition-root provider + the two composition LOC FindingIds **remain** with updated rationale — see M7. M13 permits only these composition residuals. |
@@ -234,9 +242,9 @@ intended milestone files.
 
 **Residual note (not allowlisted today):** `AgentRouter` and
 `AgentExecutionCoordinator` (Application) still reference `IAgentPanelHost`
-(Presentation). Inventory special-cases only `MentionParser` for V06. M4 clears
-the allowlisted edge only. A later plan amendment may invert AgentRouter; do
-not expand M4 without amendment.
+(Presentation). M4 cleared the allowlisted `MentionParser` edge only
+(`R61-AL-NS-MentionParser` removed). A later plan amendment may invert
+AgentRouter; do not expand that residual without amendment.
 
 ---
 
@@ -568,9 +576,9 @@ M3 verification environment (no interactive desktop session claimed).
 
 | | |
 |--|--|
-| **Status** | **Implemented — staged for review** (not committed). Production + tests + allowlist/inventory updates complete; awaiting human commit review |
+| **Status** | **Complete** — commit `698b094` (`refactor-6.3: M4 mention parser purity`); `MentionParser` pure Application with caller-supplied names; `R61-AL-NS-MentionParser` removed |
 | **Design** | § D4 |
-| **Completion condition** | (1) `MentionParser.cs` has no `using`/`field` of Presentation types; (2) `R61-AL-NS-MentionParser` removed; (3) parser tests updated; (4) shared gate green — **all met** (pending commit) |
+| **Completion condition** | (1) `MentionParser.cs` has no `using`/`field` of Presentation types; (2) `R61-AL-NS-MentionParser` removed; (3) parser tests updated; (4) shared gate green — **all met** |
 | **Live counts after M4** | FindingIds **3** (4 → 3: `R61-AL-NS-MentionParser` removed, not re-keyed); NS live violations **1** (SourceControlState only); locator sites **2** (Program, App); Architecture **21/21** |
 | **Verification** | build 0 errors; focused MentionParser+AgentRouter+Architecture **39** passed; Architecture **21/21** passed; full suite **2204/2204** passed (prior 2201 + 3 strengthened M4 cases); `git diff --check` clean; manual agent-panel routing smoke **not run** |
 
@@ -595,6 +603,7 @@ mirror behavior unchanged; unknown `@Nope` still surfaces routing failure.
 
 | | |
 |--|--|
+| **Status** | **Not started** — next eligible milestone; requires a separate explicit authorization |
 | **Design** | § D5 |
 | **Preflight** | `rg -n SourceControlState src --glob '*.cs'` shows only the file being deleted (no other production hits) |
 | **Completion condition** | (1) file deleted; (2) `R61-AL-NS-SourceControlState` removed; (3) inventory special-case removed; (4) shared gate green |
@@ -1439,11 +1448,13 @@ dotnet test Zaide.slnx --no-build
 
 1. **M1** complete at `e590a79`. **M2** complete at `d9799ad`. **M3** complete
    at `22b869e` (automated verification green; manual terminal smoke not run).
-2. Authorize **M4 only** (§ D4 — mention parser purity).
-3. Do not start M5+ until M4 completion conditions are met and committed.
-4. M4 production implementation has **not** started and still requires an
+   **M4** complete at `698b094` (automated verification green; manual
+   agent-panel routing smoke not run).
+2. Authorize **M5 only** (§ D5 — SourceControlState deletion).
+3. Do not start M6+ until M5 completion conditions are met and committed.
+4. M5 production implementation has **not** started and still requires an
    explicit separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` complete; automated verification green; manual terminal smoke not run; M4 next eligible, not started)*
+*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` complete; automated verification green; manual agent-panel routing smoke not run; M5 next eligible, not started)*
