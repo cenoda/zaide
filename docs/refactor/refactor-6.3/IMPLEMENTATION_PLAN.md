@@ -165,8 +165,8 @@ xUnit2013 warnings in ArchitectureRatchetTests — focused
 registration+DI+Architecture 89/89, Architecture 21/21, full suite 2251/2251,
 `git diff --check` clean; `git diff --cached --check` clean before the
 implementation commit). Manual verification **not required**.
-**M6j implemented and staged pending review** (`refactor-6.3: M6j Language DI
-module` — not yet committed): tenth M6 registration slice: internal
+**M6j complete at `e7785b4`** (`refactor-6.3: M6j Language DI module`): tenth
+M6 registration slice: internal
 `LanguageServiceCollectionExtensions.AddZaideLanguage` owns the ten Language
 singleton registrations
 (`ILanguageServerBinaryLocator` → `LanguageServerBinaryLocator`;
@@ -208,10 +208,10 @@ ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two
 xUnit2013 in ArchitectureRatchetTests — focused
 registration+DI+LanguageSessionServiceDi+Architecture **82/82**, Architecture
 **21/21**, full suite **2257/2257**, `git diff --check` clean;
-`git diff --cached --check` clean; staged pending review, not committed).
+`git diff --cached --check` clean before the implementation commit).
 Manual verification **not required**. **M6k** (Debugging) is next eligible and
 requires separate authorization; M6k remains unauthorized. M6a–M6j are
-individually completed or staged slices; the whole M6 series is not complete.
+individually completed slices; the whole M6 series is not complete.
 Completing M6j does **not** authorize M6k.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
@@ -1211,8 +1211,8 @@ Architecture bookkeeping only for the new internal type/file
 `ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
 public baseline text and public type count unchanged; FindingIds and
 architecture allowlists unchanged.
-**M6j** (Language) is next eligible and requires separate authorization.
-Completing M6i does **not** authorize later M6 slices.
+**M6j** (Language) required and received separate explicit authorization and is
+complete at `e7785b4`. Completing M6i did **not** authorize later M6 slices.
 
 #### M6j — Language (10)
 
@@ -1232,7 +1232,7 @@ Completing M6i does **not** authorize later M6 slices.
 File: `src/App/Composition/Registration/LanguageServiceCollectionExtensions.cs`
 Method: `AddZaideLanguage`.
 
-**Status:** **implemented and staged pending review** (not yet committed).
+**Status:** **complete** at `e7785b4` (`refactor-6.3: M6j Language DI module`).
 
 All ten registrations remain **Singleton**. All ten interface-to-implementation
 mappings are unchanged (table above). Milestone comments preserved in the
@@ -1291,7 +1291,7 @@ composition/DI suite — automated verification green (forced
 ArchitectureVisibilityTests; two xUnit2013 warnings in ArchitectureRatchetTests —
 focused registration+DI+LanguageSessionServiceDi+Architecture **82/82**,
 Architecture **21/21**, full suite **2257/2257**, `git diff --check` clean;
-`git diff --cached --check` clean; staged pending review, not committed);
+`git diff --cached --check` clean before the implementation commit);
 manual verification **not required**. Architecture bookkeeping only for the new
 internal type/file (`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
 `ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
@@ -1960,22 +1960,18 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 complete** as previously recorded. **M6a–M6i complete** as
-   previously recorded. **M6j implemented and staged pending review**
-   (Language DI registration module / `AddZaideLanguage` — not yet committed).
-   M6a–M6j are individually completed or staged slices; the whole M6 series is
-   **not** complete.
+1. **M1–M5 and M6a–M6j complete** as previously recorded. **M6j complete** at
+   `e7785b4` (Language DI registration module / `AddZaideLanguage`). M6a–M6j
+   are individually completed slices; the whole M6 series is **not** complete.
 2. **Next eligible slice:** authorize **M6k only** (§ M6k — Debugging
    registration module: `DebuggingServiceCollectionExtensions.cs` /
    `AddZaideDebugging`) when ready. M6k production implementation has
    **not** started and requires a separate explicit authorization.
 3. Do not start M6k, M7+, Refactor 7/8, or Phase 14 without separate
    authorization. Completing M6j does **not** authorize M6k.
-4. **M6k** remains unauthorized. Completing M6j does not authorize later M6
-   slices; each slice requires its own explicit authorization. Do not commit or
-   push M6j until separate closeout authorization; do not update README or other
-   status surfaces until the separate closeout step.
+4. **M6k** remains unauthorized. Completing M6j does not authorize M6k; it
+   requires its own explicit authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6i complete; M6j Language implemented and staged pending review; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 82/82, Architecture 21/21, full suite 2257/2257, git diff checks clean; manual verification not required; public 346 / internal 61 / total 407 / prod C# 369 / App C# 30; ten internal Registration modules; M6k Debugging next eligible and unauthorized; whole M6 series not complete)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6j complete; M6j Language complete at `e7785b4`; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 82/82, Architecture 21/21, full suite 2257/2257, git diff checks clean; manual verification not required; public 346 / internal 61 / total 407 / prod C# 369 / App C# 30; ten internal Registration modules; M6k Debugging next eligible and unauthorized; whole M6 series not complete)*
