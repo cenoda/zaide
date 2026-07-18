@@ -48,6 +48,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly ISettingsService _settings;
     private readonly ISecretStore _secrets;
+    private readonly ISettingsPanelFactory _settingsPanelFactory;
     private readonly ICommandRegistry _registry;
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly CommandPaletteViewModel _paletteViewModel;
@@ -97,10 +98,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         EditorSearchViewModel searchViewModel,
         EditorLanguageInputViewModel languageInputViewModel,
         EditorBreakpointViewModel editorBreakpointViewModel,
-        DebugCurrentLocationViewModel debugCurrentLocationViewModel)
+        DebugCurrentLocationViewModel debugCurrentLocationViewModel,
+        ISettingsPanelFactory settingsPanelFactory)
     {
         _settings = settings;
         _secrets = secrets;
+        _settingsPanelFactory = settingsPanelFactory;
         _registry = registry;
         _statusBarViewModel = statusBarViewModel;
         _paletteViewModel = paletteViewModel;
@@ -875,8 +878,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _settingsReturnLeftPanelMode = vm.LeftPanelMode;
         if (_settingsPanel is null)
         {
-            var viewModel = new SettingsViewModel(_settings, _secrets);
-            var panel = new SettingsPanelView(viewModel);
+            var (viewModel, panel) =
+                _settingsPanelFactory.Create(_settings, _secrets);
             _settingsPanelViewModel = viewModel;
             _settingsPanel = panel;
             Grid.SetColumn(panel, 0);

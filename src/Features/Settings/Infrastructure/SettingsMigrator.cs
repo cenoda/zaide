@@ -9,7 +9,7 @@ namespace Zaide.Features.Settings.Infrastructure;
 /// The production instance uses an empty migration list; test code supplies
 /// one or more synthetic migrations to verify the infrastructure.
 /// </summary>
-public sealed class SettingsMigrator
+internal sealed class SettingsMigrator
 {
     private readonly IReadOnlyList<ISettingsMigration> _migrations;
 

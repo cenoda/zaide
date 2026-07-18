@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using Zaide.App.Shell;
 using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
@@ -27,6 +28,8 @@ public partial class App : Application
             var secrets = CompositionRoot.Services.GetRequiredService<ISecretStore>();
             var registry = CompositionRoot.Services.GetRequiredService<ICommandRegistry>();
             var statusBar = CompositionRoot.Services.GetRequiredService<StatusBarViewModel>();
+            var settingsPanelFactory =
+                CompositionRoot.Services.GetRequiredService<ISettingsPanelFactory>();
 
             // Phase 9 M1: eagerly resolve the palette VM so it registers
             // palette.open in the ICommandRegistry singleton before
@@ -63,7 +66,8 @@ public partial class App : Application
                 searchVm,
                 languageInputVm,
                 editorBreakpointVm,
-                debugCurrentLocationVm)
+                debugCurrentLocationVm,
+                settingsPanelFactory)
             {
                 ViewModel = vm,
             };

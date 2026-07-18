@@ -1751,6 +1751,11 @@ closed (do not mark complete in this implementation slice alone).
 
 ### M10 — Settings panel factory (V17)
 
+**Status:** **implemented and staged pending review** (not committed). Live audit at
+M10 start confirmed master / `f23286a` / clean tree / M9c commits present.
+Only production `new MainWindow(...)` site is `App.axaml.cs`. Settings UI tests
+use uninitialized MainWindow + field injection (must set `_settingsPanelFactory`).
+
 **Prerequisite state (mandatory):** M6b and M7 are complete. Registrations live
 under `src/App/Composition/Registration/`. Bootstrap reads
 `CompositionRoot.Services` from `App.axaml.cs` (no `App.Services`).
@@ -1767,37 +1772,50 @@ under `src/App/Composition/Registration/`. Bootstrap reads
 | Bootstrap resolve (exact site after M7) | In `App.axaml.cs` desktop bootstrap (same method that currently builds `new MainWindow(...)`): `var settingsPanelFactory = CompositionRoot.Services.GetRequiredService<ISettingsPanelFactory>();` pass into `new MainWindow(..., settingsPanelFactory)`. |
 | MainWindow | Ctor gains `ISettingsPanelFactory settingsPanelFactory`; field `_settingsPanelFactory`; `ShowSettingsPanel` uses factory only |
 
-**Files (exact inventory for M10):**
+**Files (exact inventory for M10 — amended from live audit):**
 
 | Path | Action |
 |------|--------|
 | `src/Features/Settings/Presentation/ISettingsPanelFactory.cs` | **Create** (`public`) |
 | `src/Features/Settings/Presentation/SettingsPanelFactory.cs` | **Create** (`internal`) |
 | `src/Features/Settings/Infrastructure/SettingsMigrator.cs` | **Edit** — `public` → `internal` |
-| `src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs` | **Edit** — register factory in `AddZaideSettings` |
+| `src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs` | **Edit** — register factory in `AddZaideSettings` (3 singletons) |
 | `src/App/Composition/App.axaml.cs` | **Edit** — resolve via `CompositionRoot.Services`; pass into `MainWindow` |
 | `src/App/Shell/MainWindow.axaml.cs` | **Edit** — ctor + factory usage; zero `new SettingsViewModel` / `new SettingsPanelView` |
+| `tests/Zaide.Tests/Features/Settings/Presentation/SettingsPanelFactoryTests.cs` | **Create** — pair, DataContext, fresh instances, settings/secrets |
+| `tests/Zaide.Tests/App/Composition/SettingsRegistrationModuleTests.cs` | **Edit** — exactly three singletons; factory mapping; return identity; production singleton resolve |
+| `tests/Zaide.Tests/Features/Settings/Presentation/SettingsUiTests.cs` | **Edit** — inject `SettingsPanelFactory` into uninitialized MainWindow |
 | `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` | **Edit** — +`ISettingsPanelFactory`, −`SettingsMigrator` |
-| `tests/Zaide.Tests/Features/Settings/Infrastructure/SettingsCoreTests.cs` | **Edit** — `SettingsMigrator` is internal; keep compiling via `InternalsVisibleTo` (same assembly access already) |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | **Edit** — total 415, internal 69 (public 346 unchanged) |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | **Edit** — M0 ceilings match 415/346/69 |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | **Edit** — Settings ns rollups; source files 377; Features 339 |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | **Edit** — Features file count 339 |
+| `tests/Zaide.Tests/Features/Settings/Infrastructure/SettingsCoreTests.cs` | **No change** — `SettingsMigrator` remains reachable via `InternalsVisibleTo` |
 
-**Test files with no production-surface change required (do not list conditionals):**
+**Test files with no production-surface change required:**
 
 | Path | Action |
 |------|--------|
 | `tests/Zaide.Tests/Features/Settings/Presentation/SettingsViewModelTests.cs` | **No change** |
 | `tests/Zaide.Tests/Features/Settings/Presentation/SettingsPanelViewTests.cs` | **No change** |
-| `tests/Zaide.Tests/Features/Settings/Presentation/SettingsUiTests.cs` | **No change** |
 | `tests/Zaide.Tests/Features/Settings/Presentation/SettingsPersistenceUiTests.cs` | **No change** |
+
+**Inventory after M10 (live):** public **346**; internal **69** (+2); total **415**;
+prod C# **377** (+2); Features **339**; App **36** unchanged; Composition.Registration
+modules **11** unchanged; explicit DI registrations **67** (+1); FindingIds **2**.
 
 **Focused tests:**
 
 ```bash
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
-  --filter "FullyQualifiedName~SettingsViewModelTests\
+  --filter "FullyQualifiedName~SettingsPanelFactoryTests\
+|FullyQualifiedName~SettingsRegistrationModuleTests\
+|FullyQualifiedName~SettingsViewModelTests\
 |FullyQualifiedName~SettingsPanelViewTests\
 |FullyQualifiedName~SettingsUiTests\
 |FullyQualifiedName~SettingsPersistenceUiTests\
 |FullyQualifiedName~SettingsCoreTests\
+|FullyQualifiedName~CompositionDiIntegrationTests\
 |FullyQualifiedName~Architecture"
 ```
 
@@ -1809,7 +1827,7 @@ close → reopen shows expected persistence.
 (3) factory resolved only via `CompositionRoot.Services` in `App.axaml.cs`;
 (4) baseline net 0; (5) shared gate green.
 
-**Not in M10:** layout extraction (Refactor 8).
+**Not in M10:** layout extraction (Refactor 8); five-document closeout; M11+.
 
 ---
 
@@ -2138,9 +2156,14 @@ dotnet test Zaide.slnx --no-build
    is preserved through `Func<IScheduler>`. FindingIds remain 2; inventory is
    public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell
    namespace (19, 14, 5).
-5. The M9 series is complete. M10 is next planned but remains unauthorized.
-   Do not start M10+, Refactor 7/8, or Phase 14 without separate authorization.
+5. **M10** (settings panel factory) is implemented and staged pending review:
+   `ISettingsPanelFactory` / `SettingsPanelFactory`; `SettingsMigrator` internal;
+   `AddZaideSettings` has exactly three singletons; public baseline net 0 at 346;
+   inventory public 346 / internal 69 / total 415 / prod C# 377 / Features 339 /
+   App 36; DI registrations 67; FindingIds 2.
+6. Do not start M11+, Refactor 7/8, or Phase 14 without separate authorization.
+   Do not perform the five-document closeout in this slice.
 
 ---
 
-*Last updated: 2026-07-18 (M9c complete at `bcb1e97`: MainWindowActivationHost; M9 series complete; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines / Activate thin entrypoint; inventory public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell namespace (19,14,5); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 97/97, Architecture 21/21, full suite 2317/2317, git diff checks clean; manual activation verification not run; M10 unauthorized)*
+*Last updated: 2026-07-18 (M10 implemented and staged pending review: Settings panel factory V17; public baseline +ISettingsPanelFactory −SettingsMigrator net 0 = 346; internal 69 / total 415 / prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 99/99, Architecture 21/21, full suite 2320/2320 after one unrelated flaky terminal FD-leak rerun, git diff checks clean; manual Settings verification not run; M11 unauthorized; no five-document closeout)*

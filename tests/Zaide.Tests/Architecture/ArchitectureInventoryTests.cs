@@ -48,8 +48,10 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
-        Assert.Equal((7, 6, 1), byNamespace["Zaide.Features.Settings.Infrastructure"]);
-        Assert.Equal((7, 5, 2), byNamespace["Zaide.Features.Settings.Presentation"]);
+        // M10: SettingsMigrator public→internal (6p/1i → 5p/2i).
+        Assert.Equal((7, 5, 2), byNamespace["Zaide.Features.Settings.Infrastructure"]);
+        // M10: +ISettingsPanelFactory (public) + SettingsPanelFactory (internal).
+        Assert.Equal((9, 6, 3), byNamespace["Zaide.Features.Settings.Presentation"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Workspace.Domain"]);
         Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Workspace.Contracts"]);
         Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Workspace.Infrastructure"]);
@@ -115,8 +117,8 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown; M9a–M9c shell helpers.
-        Assert.Equal(375, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown; M9a–M9c shell helpers; M10 +2 factory files.
+        Assert.Equal(377, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -125,7 +127,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(36, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(337, byFolder["Features"]);
+        Assert.Equal(339, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

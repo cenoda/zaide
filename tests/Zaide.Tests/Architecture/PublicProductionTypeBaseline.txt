@@ -264,10 +264,10 @@ Zaide.Features.Settings.Domain.SettingsValidator
 Zaide.Features.Settings.Infrastructure.FileSecretStore
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV1ToV2
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV2ToV3
-Zaide.Features.Settings.Infrastructure.SettingsMigrator
 Zaide.Features.Settings.Infrastructure.SettingsPathResolver
 Zaide.Features.Settings.Infrastructure.SettingsService
 Zaide.Features.Settings.Presentation.FontPickerEntry
+Zaide.Features.Settings.Presentation.ISettingsPanelFactory
 Zaide.Features.Settings.Presentation.InstalledFontCatalog
 Zaide.Features.Settings.Presentation.SettingsFontPicker
 Zaide.Features.Settings.Presentation.SettingsPanelView

@@ -169,6 +169,7 @@ public sealed class SettingsUiTests
         var window = (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
         SetField(window, "_settings", settings);
         SetField(window, "_secrets", secrets);
+        SetField(window, "_settingsPanelFactory", new SettingsPanelFactory());
         SetField(window, "_layoutRoot", new Grid());
         SetField(window, "_settingsLifecycleViewModel", vm);
         var handler = typeof(MainWindow).GetMethod("HandleShowSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;

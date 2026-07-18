@@ -13,14 +13,14 @@ using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.Features.Settings.Presentation;
 
 namespace Zaide.Tests.App.Composition;
 
 /// <summary>
-/// Refactor 6.3 M6b: proves Settings DI membership moved into
-/// <see cref="SettingsServiceCollectionExtensions.AddZaideSettings"/> without
-/// changing service types, lifetimes, secret-path factory, or total registration
-/// membership.
+/// Refactor 6.3 M6b / M10: proves Settings DI membership in
+/// <see cref="SettingsServiceCollectionExtensions.AddZaideSettings"/> —
+/// service types, lifetimes, secret-path factory, and the M10 panel factory.
 /// </summary>
 public sealed class SettingsRegistrationModuleTests
 {
@@ -28,6 +28,7 @@ public sealed class SettingsRegistrationModuleTests
     {
         typeof(ISettingsService).FullName!,
         typeof(ISecretStore).FullName!,
+        typeof(ISettingsPanelFactory).FullName!,
     };
 
 
@@ -68,12 +69,13 @@ public sealed class SettingsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideSettings_RegistersExactlyTwoPlannedServices()
+    public void AddZaideSettings_RegistersExactlyThreePlannedServices()
     {
         var services = new ServiceCollection();
-        services.AddZaideSettings();
+        var returned = services.AddZaideSettings();
 
-        Assert.Equal(2, services.Count);
+        Assert.Same(services, returned);
+        Assert.Equal(3, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -94,6 +96,10 @@ public sealed class SettingsRegistrationModuleTests
             d => d.ServiceType == typeof(ISecretStore)
                 && d.ImplementationFactory is not null
                 && d.ImplementationType is null);
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(ISettingsPanelFactory)
+                && d.ImplementationType == typeof(SettingsPanelFactory));
     }
 
     [Fact]
@@ -131,6 +137,11 @@ public sealed class SettingsRegistrationModuleTests
         var secrets2 = provider.GetRequiredService<ISecretStore>();
         Assert.Same(secrets1, secrets2);
         Assert.IsType<FileSecretStore>(secrets1);
+
+        var factory1 = provider.GetRequiredService<ISettingsPanelFactory>();
+        var factory2 = provider.GetRequiredService<ISettingsPanelFactory>();
+        Assert.Same(factory1, factory2);
+        Assert.IsType<SettingsPanelFactory>(factory1);
     }
 
     [Fact]
@@ -161,7 +172,7 @@ public sealed class SettingsRegistrationModuleTests
     }
 
     [Fact]
-    public void SettingsModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void SettingsModuleSource_ContainsExactlyTheThreePlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs");
@@ -179,12 +190,12 @@ public sealed class SettingsRegistrationModuleTests
         Assert.Contains(
             "new FileSecretStore(SettingsPathResolver.GetSecretsPath())",
             moduleSource);
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<ISettingsPanelFactory,\s*SettingsPanelFactory>\(\)"));
 
-        Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
-
-        // M10 reservation: panel factory is not registered in M6b.
-        Assert.DoesNotContain("ISettingsPanelFactory", moduleSource);
-        Assert.DoesNotContain("SettingsPanelFactory", moduleSource);
+        Assert.Equal(3, Regex.Matches(moduleSource, @"AddSingleton<").Count);
     }
 
 
