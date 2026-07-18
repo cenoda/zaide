@@ -38,8 +38,10 @@ automated verification green; manual verification not required). **Refactor
 (Debugging registration module) is complete at `df262ac`
 (`AddZaideDebugging`), completing the M6 registration-module series. **M7**
 (composition-root store / removal of public `App.Services`) is complete at
-`554552f`. **M8** is next eligible, has not started, and requires separate
-explicit authorization. Completing M7 does not authorize M8.
+`554552f`. **M8** (ordered shutdown owner) is complete at `874aa79`;
+`ApplicationShutdown.Run` now owns exactly-once ordered teardown. **M9a** is
+next eligible, has not started, and requires separate explicit authorization.
+Completing M8 does not authorize M9a.
 
 ## Philosophy
 
@@ -235,8 +237,9 @@ DI registration module — eighth completed M6 slice). **M6i** is complete at
 completed M6 slice). **M6k** is complete at `df262ac` (Debugging DI
 registration module — eleventh and final M6 slice). The M6 series is complete.
 **M7** is complete at `554552f`; public `App.Services` is removed and the
-internal `CompositionRoot.Services` residual remains. **M8** is next eligible
-and requires separate explicit authorization. Phase 14 and
+internal `CompositionRoot.Services` residual remains. **M8** is complete at
+`874aa79` (ordered shutdown owner). **M9a** is next eligible and requires
+separate explicit authorization. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 

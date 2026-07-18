@@ -1454,7 +1454,8 @@ M6k implementation is complete at `df262ac`.
 
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
-store). **M8** is the current authorized ordered-shutdown slice.
+store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a** is
+next and remains unauthorized.
 
 ---
 
@@ -1515,7 +1516,7 @@ registers → open folder.
 
 | | |
 |--|--|
-| **Status** | **Implemented and staged pending review** (not committed) |
+| **Status** | **Complete** at `874aa79` (`refactor-6.3: M8 ordered shutdown owner`) |
 | **Type (locked)** | `internal static class ApplicationShutdown` in `src/App/Composition/ApplicationShutdown.cs` |
 | **API (locked)** | `internal static void Run(IServiceProvider services)` — **not** registered in DI; **not** an instance service |
 | **Call sites** | Desktop Exit handler invokes `ApplicationShutdown.Run(CompositionRoot.Services)`; `App.DisposeServicesOnExit` becomes a **one-line** forwarder `ApplicationShutdown.Run(services)` so existing tests that call `App.DisposeServicesOnExit` keep compiling without a mass rename |
@@ -2103,16 +2104,17 @@ dotnet test Zaide.slnx --no-build
    policy. Public `App.Services` is gone; residual static store is
    `CompositionRoot.Services` with FindingIds `R61-AL-LOC-Program` and
    `R61-AL-LOC-App` only.
-2. **M8** (ordered shutdown owner / V12) is implemented and staged pending
-   review: `ApplicationShutdown.Run` owns ordered teardown;
+2. **M8** (ordered shutdown owner / V12) is complete at `874aa79`:
+   `ApplicationShutdown.Run` owns ordered teardown;
    `DisposeServicesOnExit` is a thin forwarder. FindingIds remain 2; inventory
    internal/total/prod/App file counts bump by one for the new type/file.
-3. Do not start M9+, Refactor 7/8, or Phase 14 without separate authorization.
-   Completing M8 does **not** authorize M9 or whole-refactor closeout.
+3. **M9a** is next eligible and remains unauthorized. Do not start M9a+,
+   Refactor 7/8, or Phase 14 without separate authorization. Completing M8
+   does **not** authorize M9a or whole-refactor closeout.
 4. Do **not** mark Refactor 6.3 complete from M8 alone (V09 residual remains;
    M9–M13 still planned). Do not perform the five-document closeout in this
    slice.
 
 ---
 
-*Last updated: 2026-07-18 (M8 implemented and staged pending review: ApplicationShutdown ordered owner; DisposeServicesOnExit thin forwarder; inventory public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; FindingIds 2 unchanged; LocatorSite exclusion for ApplicationShutdown; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 40/40, Architecture 21/21, full suite 2267/2267, git diff checks clean; manual verification not run; no five-document closeout)*
+*Last updated: 2026-07-18 (M8 complete at `874aa79`: ApplicationShutdown ordered owner; DisposeServicesOnExit thin forwarder; inventory public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; FindingIds 2 unchanged; LocatorSite exclusion for ApplicationShutdown; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 40/40, Architecture 21/21, full suite 2267/2267, git diff checks clean; manual verification not run; M9a unauthorized)*

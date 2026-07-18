@@ -32,8 +32,9 @@ required). **Refactor 6.3 M1–M5 and M6a–M6k are complete** as individually
 completed slices; M6k is complete at `df262ac` (`AddZaideDebugging`), and the
 M6 series is complete. **M7** is complete at `554552f` (composition-root store;
 public `App.Services` removed; internal `CompositionRoot.Services` residual
-retained). Production work still requires separate authorization for each
-implementation milestone; **M8** is next eligible and has not started.
+retained). **M8** is complete at `874aa79` (ordered shutdown owner / V12).
+Production work still requires separate authorization for each implementation
+milestone; **M9a** is next eligible and has not started.
 
 ## Archive Policy
 

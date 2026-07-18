@@ -42,7 +42,9 @@ completed slices. **M6k** (Debugging registration module) is complete at
 `df262ac` (`AddZaideDebugging`), completing the M6 series. **M7** is complete
 at `554552f`: public `App.Services` is removed; the internal
 `CompositionRoot.Services` store and two composition locator residuals remain.
-**M8** is next eligible, has not started, and requires separate authorization.
+**M8** is complete at `874aa79`: `ApplicationShutdown.Run` owns ordered,
+exactly-once teardown while the App exit path remains synchronous. **M9a** is
+next eligible, has not started, and requires separate authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
 root-admission ratchet. No V3 production feature implementation is active.
@@ -133,14 +135,15 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M7 internal-only). Live
-inventory after M7: total top-level **409**, public **346**, internal **63**,
-production C# **371**, App C# **32**. Composition.Registration contains eleven
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M8 internal-only). Live
+inventory after M8: total top-level **410**, public **346**, internal **64**,
+production C# **372**, App C# **33**. Composition.Registration contains eleven
 internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M8** ordered shutdown owner next and separately unauthorized).
+Refactor 6.3 (**M9a** Agent send / Townhall mirror extraction next and
+separately unauthorized).
 
 | Later work | Owns |
 |------------|------|
@@ -356,4 +359,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M7 complete; M7 at `554552f`; public App.Services removed; CompositionRoot.Services residual retained; FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 95/95; Architecture 21/21; full suite 2263/2263), manual smoke not run; public 346 / internal 63 / total 409 / prod C# 371 / App C# 32; eleven internal Registration modules; M8 next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M8 complete; M8 at `874aa79`; ApplicationShutdown owns exactly-once ordered teardown; FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 40/40; Architecture 21/21; full suite 2267/2267), manual verification not run; public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; eleven internal Registration modules; M9a next eligible and separately unauthorized)*
