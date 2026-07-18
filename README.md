@@ -25,10 +25,12 @@ Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
 Optional M13 root admissions are declined. Refactor 6.3 M0 is accepted; **M1**
 is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e` (manual
 terminal smoke not run), **M4** at `698b094` (manual agent-panel routing smoke
-not run), and **M5** at `273cc56` with automated verification green (manual
-verification not required). **Refactor 6.3 M1–M5 are complete.** **M6a**
-(AppCore registration module) is the next eligible milestone slice and still
-requires an explicit start; M6a production implementation has not started.
+not run), **M5** at `273cc56` (manual verification not required), and **M6a**
+at `c59ad7b` (AppCore DI registration module; first completed M6 slice;
+automated verification green; manual verification not required). **Refactor
+6.3 M1–M5 and M6a are complete.** **M6b** (Settings registration module) is
+the next eligible milestone slice and still requires an explicit start; M6b
+production implementation has not started. **M6c–M6k** remain unauthorized.
 
 ## Philosophy
 
@@ -208,11 +210,12 @@ while preserving the completed V2 IDE core. Its direction is:
 - begin with bounded architecture refactors (`6.1`–`6.3`, then Refactors 7
   and 8) before Phase 14.
 
-The implementation order is accepted. Refactor 6.3 **M5** is complete at
-`273cc56`. **M6a** (AppCore registration module) is the next eligible milestone
-slice and still requires an explicit start. Phase 14 and every preceding
-refactor still require their own live-code-verified M0 acceptance before
-production implementation.
+The implementation order is accepted. Refactor 6.3 **M6a** is complete at
+`c59ad7b` (AppCore DI registration module — first completed M6 slice). **M6b**
+(Settings registration module) is the next eligible milestone slice and still
+requires an explicit start. Completing M6a does not authorize M6c–M6k. Phase
+14 and every preceding refactor still require their own live-code-verified M0
+acceptance before production implementation.
 
 ## Why "Zaide"
 

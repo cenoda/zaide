@@ -16,12 +16,16 @@ complete** at `273cc56` (`refactor-6.3: M5 delete unused source control state`
 / V02) — automated verification green (build, focused Architecture+SourceControl
 150/150, Architecture 21/21, full suite 2204/2204, `git diff --check`);
 manual verification **not required** (deleted type had no production consumer).
-**M6a complete** (staged for review; commit pending) —
-`AppCoreServiceCollectionExtensions.AddZaideAppCore` moves the six AppCore
-registrations; automated verification green (build, focused DI+Architecture
-47/47, Architecture 21/21, full suite 2209/2209, `git diff --check`);
-manual verification **not required**. **M6b–M6k** remain unauthorized and
-unstarted.
+**M6a complete** at `c59ad7b` (`refactor-6.3: M6a AppCore DI module`) —
+first M6 registration slice: internal
+`AppCoreServiceCollectionExtensions.AddZaideAppCore` owns the six AppCore
+singletons; `Program.ConfigureServices` calls it once; public baseline **346**
+unchanged; internal **51 → 52**; total top-level **397 → 398**; production C#
+**359 → 360**; App C# **20 → 21**. Automated verification green (build,
+focused DI+Architecture 47/47, Architecture 21/21, full suite 2209/2209,
+`git diff --check`); manual verification **not required**. **M6b** (Settings
+registration module) is the next eligible slice and has **not** started; it
+requires a separate explicit authorization. **M6c–M6k** remain unauthorized.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -680,13 +684,18 @@ services.AddZaideSettings();
 
 File: `src/App/Composition/Registration/AppCoreServiceCollectionExtensions.cs`
 
-**Status:** **complete** (staged for review; commit pending). Production:
-`Program.ConfigureServices` calls `services.AddZaideAppCore()` once; the six
-registrations live only in the internal module (all `AddSingleton`, scheduler
-factory unchanged). Public production baseline unchanged (346). Inventory
-internal count +1 for the extension class. Tests: `AppCoreRegistrationModuleTests`
-plus existing composition/DI suite. M6b+ registrations remain direct in
-`Program`.
+**Status:** **complete** at `c59ad7b` (`refactor-6.3: M6a AppCore DI module`).
+Production: `Program.ConfigureServices` calls `services.AddZaideAppCore()`
+exactly once; the six registrations live only in the internal module (all
+`AddSingleton`; scheduler factory remains
+`_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance`). `AddLogging` remains
+in `Program`. Public production types **346** (unchanged); internal **52**
+(+1 extension class); total top-level **398**; production C# files **360**;
+App C# files **21**. Tests: `AppCoreRegistrationModuleTests` plus existing
+composition/DI suite — automated verification green (focused 47/47,
+Architecture 21/21, full suite 2209/2209); manual verification **not
+required**. M6b–M6k registrations remain direct in `Program` (no other
+registration modules yet).
 
 #### M6b — Settings (2 at M6 time; M10 adds a third)
 
@@ -1463,12 +1472,11 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 complete** as previously recorded. **M6a complete** (staged for
-   review; commit pending) — AppCore DI registration module
-   (`AddZaideAppCore`); automated verification green; manual verification not
-   required.
-2. After M6a commit, authorize **M6b only** (§ M6b — Settings registration
-   module: `SettingsServiceCollectionExtensions.cs` / `AddZaideSettings`).
+1. **M1–M5 complete** as previously recorded. **M6a complete** at `c59ad7b`
+   (AppCore DI registration module / `AddZaideAppCore`); automated
+   verification green; manual verification not required.
+2. Authorize **M6b only** (§ M6b — Settings registration module:
+   `SettingsServiceCollectionExtensions.cs` / `AddZaideSettings`).
 3. Do not start M6c–M6k, M7+, Refactor 7/8, or Phase 14 without separate
    authorization. Completing M6a does **not** authorize the rest of M6.
 4. M6b production implementation has **not** started and still requires an
@@ -1476,4 +1484,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 complete; M6a complete staged for review — build green, focused 47/47, Architecture 21/21, full suite 2209/2209; M6b next eligible, not started)*
+*Last updated: 2026-07-18 (M1–M5 complete; M6a complete at `c59ad7b` — automated verification green, manual verification not required; public 346 / internal 52 / total 398 / prod C# 360; M6b next eligible, not started)*
