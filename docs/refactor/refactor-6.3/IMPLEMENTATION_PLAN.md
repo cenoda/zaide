@@ -72,8 +72,8 @@ public baseline **346** unchanged; internal **55 → 56**; total top-level
 Composition.Registration modules **5**. Automated verification green (build,
 focused registration+DI+Architecture 51/51, Architecture 21/21, full suite
 2231/2231, `git diff --check`); manual verification **not required**.
-**M6f implemented and staged pending review** (`refactor-6.3: M6f Agents DI
-module`) — sixth M6 registration slice: internal
+**M6f complete at `cd809d2`** (`refactor-6.3: M6f Agents DI module`) — sixth
+M6 registration slice: internal
 `AgentsServiceCollectionExtensions.AddZaideAgents` owns the six Agents
 singletons (`IAgentPanelHost` → `AgentPanelHost`;
 `IAgentExecutionService` → `AgentExecutionService`;
@@ -87,10 +87,10 @@ public baseline **346** unchanged; internal **56 → 57**; total top-level
 **402 → 403**; production C# **364 → 365**; App C# **25 → 26**; internal
 Composition.Registration modules **6**. Automated verification green (build,
 focused registration+DI+Architecture 56/56, Architecture 21/21, full suite
-2236/2236, `git diff --check` / cached check clean; staged, not committed);
-manual verification **not required**. M6g–M6k remain unauthorized. M6a–M6e
-are individually completed slices; M6f is staged pending review; the whole M6
-series is not complete.
+2236/2236, `git diff --check`); manual verification **not required**. **M6g**
+is next eligible and requires separate authorization; M6g has not started,
+M6h–M6k remain unauthorized. M6a–M6f are individually completed slices; the
+whole M6 series is not complete.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -884,27 +884,30 @@ registration+DI+Architecture 51/51, Architecture 21/21, full suite 2231/2231,
 File: `src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs`
 (`AddZaideAgents`).
 
-**Status:** **implemented and staged pending review** (Refactor 6.3 M6f Agents
-DI module). Production: `Program.ConfigureServices` calls
+**Status:** **complete** at `cd809d2` (`refactor-6.3: M6f Agents DI module`).
+Production: `Program.ConfigureServices` calls
 `services.AddZaideAgents()` exactly once immediately after `AddZaideTerminal()`;
 module order is `AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
 `AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents`; the six registrations
 live only in the internal module (all `AddSingleton`; five type/self mappings
 plus `HttpClient` factory with `TimeSpan.FromSeconds(120)`; factory creates a
-new `HttpClient` only — no network activity during registration).
-`AddLogging` remains in `Program`. M6g–M6k registrations remain direct in
-`Program` (no later M6 modules). Public production types **346** (unchanged);
-internal **57** (+1 extension class); total top-level **403**; production C#
-files **365**; App C# files **26**. Composition.Registration contains six
-internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents).
-Tests: `AgentsRegistrationModuleTests` plus M6a–M6e ratchet advancement
-(M6fPlus → M6gPlus; Agents markers removed; allow one `AddZaideAgents`) and
-existing composition/DI suite — automated verification green (build, focused
-registration+DI+Architecture 56/56, Architecture 21/21, full suite 2236/2236,
-`git diff --check` / `git diff --cached --check` clean; staged pending review,
-not committed); manual verification **not required**. **M6g** (Townhall) is the
-next eligible slice and requires separate explicit authorization; M6g has not
-started. M6h–M6k remain unauthorized.
+new `HttpClient` only — no network activity during registration). Lifetimes and
+service-to-implementation mappings are unchanged from the pre-M6f
+`Program` registrations. `AddLogging` remains in `Program`. M6g–M6k
+registrations remain direct in `Program` (no later M6 modules). Public
+production types **346** (unchanged); internal **57** (+1 extension class);
+total top-level **403**; production C# files **365**; App C# files **26**.
+Composition.Registration contains six internal modules (AppCore, Settings,
+Workspace, Editor, Terminal, Agents). Tests: `AgentsRegistrationModuleTests`
+plus M6a–M6e ratchet advancement (M6fPlus → M6gPlus; Agents markers removed;
+allow one `AddZaideAgents`) and existing composition/DI suite — automated
+verification green (build, focused registration+DI+Architecture 56/56,
+Architecture 21/21, full suite 2236/2236, `git diff --check` clean;
+`git diff --cached --check` was clean before the implementation commit);
+manual verification **not required**. **M6g** (Townhall) is the next eligible
+slice and requires separate explicit authorization; M6g has not started.
+M6h–M6k remain unauthorized. Completing M6f does **not** authorize later M6
+slices.
 
 #### M6g — Townhall (2)
 
@@ -1633,18 +1636,17 @@ dotnet test Zaide.slnx --no-build
    `AddZaideWorkspace`). **M6d complete** at `234a38f` (Editor DI registration
    module / `AddZaideEditor`). **M6e complete at `8ab50c0`** (Terminal DI
    registration module / `AddZaideTerminal`; closeout `d85a83b`). **M6f
-   implemented and staged pending review** (Agents DI registration module /
-   `AddZaideAgents` — not committed). M6a–M6e are individually completed
-   slices; M6f is staged; the whole M6 series is **not** complete or authorized.
+   complete at `cd809d2`** (Agents DI registration module / `AddZaideAgents`).
+   M6a–M6f are individually completed slices; the whole M6 series is **not**
+   complete or authorized.
 2. **Next eligible slice:** authorize **M6g only** (§ M6g — Townhall registration
    module: `TownhallServiceCollectionExtensions.cs` / `AddZaideTownhall`) when
    ready. M6g production implementation has **not** started and requires a
-   separate explicit authorization. Do **not** start M6g until M6f is reviewed
-   and committed/closed out.
+   separate explicit authorization.
 3. Do not start M6g–M6k, M7+, Refactor 7/8, or Phase 14 without separate
    authorization. Completing M6f does **not** authorize the rest of M6.
 4. **M6g–M6k** remain unauthorized.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6e complete; M6f Agents DI module implemented and staged pending review; automated verification green: build clean, focused 56/56, Architecture 21/21, full suite 2236/2236, git diff checks clean; manual verification not required; public 346 / internal 57 / total 403 / prod C# 365 / App C# 26; six internal Registration modules; M6g Townhall next eligible and unauthorized; M6h–M6k unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6f complete; M6f at `cd809d2`; automated verification green: build clean, focused 56/56, Architecture 21/21, full suite 2236/2236, git diff checks clean; manual verification not required; public 346 / internal 57 / total 403 / prod C# 365 / App C# 26; six internal Registration modules; M6g Townhall next eligible and awaiting separate authorization; M6h–M6k unauthorized)*

@@ -37,11 +37,11 @@ required), **M6c** at `1ad3625` (Workspace DI registration module —
 third completed M6 slice; automated verification green; manual verification
 not required), and **M6d** at `234a38f` (Editor DI registration module —
 fourth completed M6 slice; automated verification green; manual verification
-not required). **Refactor 6.3 M1–M5 and M6a–M6e are complete** as individually
-completed slices. **M6e** (Terminal registration module) is complete at
-`8ab50c0` (`AddZaideTerminal`). **M6f** is the
-next eligible slice and requires separate explicit authorization; M6f has not
-started. M6g–M6k remain unauthorized, and the whole M6 series is not complete.
+not required). **Refactor 6.3 M1–M5 and M6a–M6f are complete** as individually
+completed slices. **M6f** (Agents registration module) is complete at
+`cd809d2` (`AddZaideAgents`). **M6g** is the
+next eligible slice and requires separate explicit authorization; M6g has not
+started. M6h–M6k remain unauthorized, and the whole M6 series is not complete.
 Refactors 7 / 8 have no production authorization until their own M0
 acceptances. Non-C# assets remain outside the root-admission ratchet. No V3
 production feature implementation is active.
@@ -106,7 +106,7 @@ feature-first layout (optional M13 root admissions remain unauthorized):
 
 ```text
 src/
-  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b) + Workspace (6.3 M6c) + Editor (6.3 M6d)
+  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b) + Workspace (6.3 M6c) + Editor (6.3 M6d) + Terminal (6.3 M6e) + Agents (6.3 M6f)
   App/Shell/           # MainWindow, shell VMs/views, chrome (6.2 M12; Animations/IconFactory shell-owned R62-D03)
   UI/DesignSystem/     # tokens, icons, typography (6.2 M1)
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
@@ -132,14 +132,14 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M6d internal-only). Live
-inventory after M6e: total top-level **402**, public **346**, internal **56**,
-production C# **364**, App C# **25**. Composition.Registration contains five
-internal modules (AppCore, Settings, Workspace, Editor, Terminal). FindingIds remaining:
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M6f internal-only). Live
+inventory after M6f: total top-level **403**, public **346**, internal **57**,
+production C# **365**, App C# **26**. Composition.Registration contains six
+internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M6f** Agents registration module next; M6f separately
-unauthorized; M6g–M6k unauthorized).
+Refactor 6.3 (**M6g** Townhall registration module next; M6g separately
+unauthorized; M6h–M6k unauthorized).
 
 | Later work | Owns |
 |------------|------|
@@ -355,4 +355,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 and M6a–M6e complete; M6e at `8ab50c0`; automated verification green, manual verification not required; public 346 / internal 56 / total 402 / prod C# 364 / App C# 25; five internal Registration modules; M6f next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 and M6a–M6f complete; M6f at `cd809d2`; automated verification green, manual verification not required; public 346 / internal 57 / total 403 / prod C# 365 / App C# 26; six internal Registration modules; M6g next eligible and separately unauthorized)*

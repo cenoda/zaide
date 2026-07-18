@@ -28,10 +28,10 @@ required), **M6c** at `1ad3625` (Workspace DI registration module; third
 completed M6 slice; automated verification green; manual verification not
 required), and **M6d** at `234a38f` (Editor DI registration module; fourth
 completed M6 slice; automated verification green; manual verification not
-required). **Refactor 6.3 M1–M5 and M6a–M6e are complete** as individually
-completed slices; M6e is complete at `8ab50c0` (`AddZaideTerminal`). Production
+required). **Refactor 6.3 M1–M5 and M6a–M6f are complete** as individually
+completed slices; M6f is complete at `cd809d2` (`AddZaideAgents`). Production
 work still requires separate authorization for each implementation milestone;
-**M6f** is the next eligible slice and has not started. **M6g–M6k** remain
+**M6g** is the next eligible slice and has not started. **M6h–M6k** remain
 unauthorized, and the whole M6 series is not complete.
 
 ## Archive Policy
