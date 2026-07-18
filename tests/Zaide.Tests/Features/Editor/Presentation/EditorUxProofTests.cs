@@ -371,7 +371,7 @@ public sealed class EditorUxProofTests
         var terminalHost = new TerminalHost(factory.Object);
         var panelHost = new AgentPanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +29,11 @@ public sealed class AgentRouter : IAgentRouter
 
     public async Task<RouteResult> RouteAndExecuteAsync(string sourcePanelId, string rawInput, CancellationToken ct = default)
     {
-        var result = _parser.Parse(sourcePanelId, rawInput);
+        IReadOnlyList<string> visibleAgentNames = _panelHost.Panels
+            .Select(static p => p.AgentName)
+            .ToList();
+
+        var result = _parser.Parse(sourcePanelId, rawInput, visibleAgentNames);
 
         if (!result.Success || result.Request is null)
         {

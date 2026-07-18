@@ -215,11 +215,11 @@ public sealed class ArchitectureVisibilityTests
     public void M3LegacyAllowlist_IsUnchangedByM4()
     {
         // Hard boundary: later visibility work must not alter legacy allowlist to pass.
-        // M3 residual: 4 FindingIds (2 NS + 2 LOC) after Terminal NS clearance.
-        Assert.Equal(4, LegacyArchitectureAllowlist.Entries.Count);
-        Assert.Equal(4, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
+        // M4 residual: 3 FindingIds (1 NS + 2 LOC) after MentionParser NS clearance.
+        Assert.Equal(3, LegacyArchitectureAllowlist.Entries.Count);
+        Assert.Equal(3, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
         Assert.Equal(
-            2,
+            1,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(

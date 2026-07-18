@@ -568,9 +568,11 @@ M3 verification environment (no interactive desktop session claimed).
 
 | | |
 |--|--|
-| **Status** | **Not started** — next eligible milestone; requires a separate explicit authorization |
+| **Status** | **Implemented — staged for review** (not committed). Production + tests + allowlist/inventory updates complete; awaiting human commit review |
 | **Design** | § D4 |
-| **Completion condition** | (1) `MentionParser.cs` has no `using`/`field` of Presentation types; (2) `R61-AL-NS-MentionParser` removed; (3) parser tests updated; (4) shared gate green |
+| **Completion condition** | (1) `MentionParser.cs` has no `using`/`field` of Presentation types; (2) `R61-AL-NS-MentionParser` removed; (3) parser tests updated; (4) shared gate green — **all met** (pending commit) |
+| **Live counts after M4** | FindingIds **3** (4 → 3: `R61-AL-NS-MentionParser` removed, not re-keyed); NS live violations **1** (SourceControlState only); locator sites **2** (Program, App); Architecture **21/21** |
+| **Verification** | build 0 errors; focused MentionParser+AgentRouter+Architecture **39** passed; Architecture **21/21** passed; full suite **2204/2204** passed (prior 2201 + 3 strengthened M4 cases); `git diff --check` clean; manual agent-panel routing smoke **not run** |
 
 **Focused tests:**
 
@@ -583,6 +585,7 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 
 **Manual:** Two agent panels → `@Beta hello` from Alpha → routed send + Townhall
 mirror behavior unchanged; unknown `@Nope` still surfaces routing failure.
+**Not exercised** in this verification environment (no interactive app session claimed).
 
 **Rollback:** single commit.
 

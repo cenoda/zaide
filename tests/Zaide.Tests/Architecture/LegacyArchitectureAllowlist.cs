@@ -66,7 +66,6 @@ public static class LegacyArchitectureAllowlist
     {
         "R61-AL-LOC-App",
         "R61-AL-LOC-Program",
-        "R61-AL-NS-MentionParser",
         "R61-AL-NS-SourceControlState",
     };
 
@@ -100,21 +99,6 @@ public static class LegacyArchitectureAllowlist
                 rationale:
                 "Domain/SourceControlState consumes Application/RepositoryStatusSnapshot. " +
                 "Movement alone preserves the residual layer edge (Refactor 6.3 inversion).",
-                removalBoundary: "Refactor 6.3"),
-
-            new(
-                findingId: "R61-AL-NS-MentionParser",
-                category: ArchitectureRatchet.CategoryNamespaceDirection,
-                matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Features",
-                    "Zaide.Features.Agents.Presentation",
-                    "src/Features/Agents/Application/MentionParser.cs"),
-                m0FindingId: "R61-V06",
-                owner: "Agents",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "MentionParser depends on IAgentPanelHost presentation state " +
-                "(Agents Application -> Agents Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             // --- LocatorSite (exact production files with provider evidence) ---

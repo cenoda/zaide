@@ -86,7 +86,7 @@ public sealed class MainWindowViewModelBottomPanelModeTests
         var terminalHost = new TerminalHost(factory.Object);
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
         var projectContext = new Mock<IProjectContextService>(MockBehavior.Loose);
         projectContext.Setup(s => s.WhenChanged).Returns(System.Reactive.Linq.Observable.Never<ProjectContext>());

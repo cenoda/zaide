@@ -134,7 +134,7 @@ public sealed class ProjectSystemStatusBarViewModelProjectionTests
         var terminalHost = new TerminalHost(factory.Object);
         var panelHost = new AgentPanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var router = new AgentRouter(new MentionParser(panelHost), panelHost, coordinator);
+        var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
         var townhall = new TownhallViewModel(new TownhallState());
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));

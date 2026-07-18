@@ -194,7 +194,7 @@ public sealed class TestResultsViewModelTests
         var terminalHost = new TerminalHost(factory.Object);
         var coordinator = new Moq.Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         var projectContext = new Moq.Mock<IProjectContextService>(Moq.MockBehavior.Loose);

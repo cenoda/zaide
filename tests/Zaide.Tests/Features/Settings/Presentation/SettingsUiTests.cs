@@ -195,7 +195,7 @@ public sealed class SettingsUiTests
         var terminalHost = new TerminalHost(terminalFactory.Object);
         var panelHost = new AgentPanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var router = new AgentRouter(new MentionParser(panelHost), panelHost, coordinator);
+        var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
         var townhall = new TownhallViewModel(new TownhallState());
         var git = new Mock<IGitRepositoryService>();
         git.Setup(service => service.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));

@@ -598,7 +598,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         {
             choices = new[] { new { message = new { content = "Router reply" }, finish_reason = "stop" } }
         }));
-        var parser = new MentionParser(host);
+        var parser = new MentionParser();
         var coordinator = new AgentExecutionCoordinator(host, service);
         var router = new AgentRouter(parser, host, coordinator);
 
@@ -619,7 +619,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     {
         var host = CreateHostWithPanel(out var panel);
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
-        var parser = new MentionParser(host);
+        var parser = new MentionParser();
         var coordinator = new AgentExecutionCoordinator(host, service);
         var router = new AgentRouter(parser, host, coordinator);
 
@@ -646,7 +646,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         };
         var (settings, secrets) = CreateSettingsAndSecrets(options);
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var parser = new MentionParser(host);
+        var parser = new MentionParser();
         var coordinator = new AgentExecutionCoordinator(host, service);
         var router = new AgentRouter(parser, host, coordinator);
 
@@ -672,7 +672,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         {
             choices = new[] { new { message = new { content = "Target reply" }, finish_reason = "stop" } }
         }));
-        var parser = new MentionParser(host);
+        var parser = new MentionParser();
         var coordinator = new AgentExecutionCoordinator(host, service);
         var router = new AgentRouter(parser, host, coordinator);
 

@@ -266,7 +266,7 @@ public sealed class DebugExecutionControlsCommandTests
         var terminalHost = new TerminalHost(factory.Object);
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         _ = new MainWindowViewModel(

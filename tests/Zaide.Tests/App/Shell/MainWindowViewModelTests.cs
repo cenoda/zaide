@@ -103,7 +103,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
@@ -127,7 +127,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, coordinator, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
         vm.Activate();
@@ -187,7 +187,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         var git = new Mock<IGitRepositoryService>();
@@ -258,7 +258,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         var git = new Mock<IGitRepositoryService>();
@@ -437,7 +437,7 @@ public class MainWindowViewModelTests
         var workspace2 = sp.GetRequiredService<Workspace>();
         var coordinator2 = CreateMockCoordinator().Object;
         var panelHost2 = new AgentPanelHost();
-        var parser2 = new MentionParser(panelHost2);
+        var parser2 = new MentionParser();
         var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, coordinator2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock());
         vm.Activate();
@@ -516,7 +516,7 @@ public class MainWindowViewModelTests
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
-        var parser = new MentionParser(agentHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
@@ -755,7 +755,7 @@ public class MainWindowViewModelTests
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
-        var parser = new MentionParser(agentHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
@@ -882,7 +882,7 @@ public class MainWindowViewModelTests
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
-        var parser = new MentionParser(agentHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
@@ -1073,7 +1073,7 @@ public class MainWindowViewModelTests
         var workspace = sp.GetRequiredService<Workspace>();
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         var git = new Mock<IGitRepositoryService>();
@@ -1236,7 +1236,7 @@ public class MainWindowViewModelTests
         var agentHost = new AgentPanelHost();
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
-        var parser = new MentionParser(agentHost);
+        var parser = new MentionParser();
         var coordinator = new AgentExecutionCoordinator(agentHost, executionService);
         var router = new AgentRouter(parser, agentHost, coordinator);
 

@@ -1,27 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Zaide.Features.Agents.Domain;
-using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Narrow deterministic mention parser for M2.
 /// Supports zero or one explicit @AgentName target only.
-/// Case-insensitive exact match on visible AgentName.
+/// Case-insensitive exact match on visible agent names supplied by the caller.
 /// Strips matched mention token; returns explicit failure for all error cases.
 /// No mention present → direct-send intent (IsDirectSend = true).
 /// </summary>
 public sealed class MentionParser
 {
-    private readonly IAgentPanelHost _host;
-
-    public MentionParser(IAgentPanelHost host)
-    {
-        _host = host ?? throw new ArgumentNullException(nameof(host));
-    }
-
-    public RouteResult Parse(string sourcePanelId, string rawInput)
+    public RouteResult Parse(
+        string sourcePanelId,
+        string rawInput,
+        IReadOnlyList<string> visibleAgentNames)
     {
         if (string.IsNullOrWhiteSpace(rawInput))
         {
@@ -49,21 +45,21 @@ public sealed class MentionParser
             return new RouteResult(false, null, "Empty mention target");
         }
 
-        var matchingPanels = _host.Panels
-            .Where(p => string.Equals(p.AgentName, name, StringComparison.OrdinalIgnoreCase))
+        var matchingNames = visibleAgentNames
+            .Where(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        if (matchingPanels.Count == 0)
+        if (matchingNames.Count == 0)
         {
             return new RouteResult(false, null, "Unknown target");
         }
 
-        if (matchingPanels.Count > 1)
+        if (matchingNames.Count > 1)
         {
             return new RouteResult(false, null, "Ambiguous target");
         }
 
-        var target = matchingPanels[0];
+        var targetName = matchingNames[0];
         var stripped = System.Text.RegularExpressions.Regex.Replace(
             rawInput.Replace(mention, " "), @"\s+", " ").Trim();
         if (string.IsNullOrWhiteSpace(stripped))
@@ -71,7 +67,7 @@ public sealed class MentionParser
             return new RouteResult(false, null, "Empty content after stripping");
         }
 
-        var request = new RouteRequest(sourcePanelId, target.AgentName, stripped, false);
+        var request = new RouteRequest(sourcePanelId, targetName, stripped, false);
         return new RouteResult(true, request, null);
     }
 }

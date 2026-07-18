@@ -25,7 +25,7 @@ public sealed class AgentRouterTests
         coordinator
             .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var parser = new MentionParser(host);
+        var parser = new MentionParser();
         return new AgentRouter(parser, host, coordinator.Object);
     }
 
@@ -73,6 +73,25 @@ public sealed class AgentRouterTests
         coordinator.Verify(
             c => c.SendAsync(source.PanelId, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task RouteAndExecuteAsync_SuppliesLiveVisiblePanelNamesToParser()
+    {
+        // Parser has no host dependency; success of a post-construction panel
+        // proves the router collects current visible names at route time.
+        var host = new AgentPanelHost();
+        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var router = CreateRouter(host, out var coordinator);
+
+        var target = host.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
+
+        Assert.True(result.Success);
+        Assert.Equal("Beta", result.Request!.TargetAgentName);
+        coordinator.Verify(
+            c => c.SendAsync(target.PanelId, "hello", It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     // ── Failure cases: no dispatch ───────────────────────────────────────────

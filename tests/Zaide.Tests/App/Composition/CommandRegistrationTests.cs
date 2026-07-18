@@ -154,7 +154,7 @@ public sealed class CommandRegistrationTests
         var workspace = sp.GetRequiredService<Workspace>();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = new AgentPanelHost();
-        var parser = new MentionParser(panelHost);
+        var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
         return new MainWindowViewModel(

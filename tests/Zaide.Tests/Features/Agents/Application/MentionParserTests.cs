@@ -1,29 +1,20 @@
-using System.Linq;
+using System.Collections.Generic;
 using Xunit;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
-using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
 public class MentionParserTests
 {
-    private static AgentPanelHost CreateHostWithPanels()
-    {
-        var host = new AgentPanelHost();
-        host.CreatePanel(); // alpha/Alpha
-        host.CreatePanel(); // beta/Beta
-        host.CreatePanel(); // gamma/Gamma
-        host.CreatePanel(); // delta/Delta
-        return host;
-    }
+    private static readonly IReadOnlyList<string> DefaultVisibleNames =
+        new[] { "Alpha", "Beta", "Gamma", "Delta" };
 
     [Fact]
     public void Parse_NoMention_ReturnsDirectSend()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "hello world");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "hello world", DefaultVisibleNames);
         Assert.True(result.Success);
         Assert.NotNull(result.Request);
         Assert.True(result.Request!.IsDirectSend);
@@ -34,9 +25,8 @@ public class MentionParserTests
     [Fact]
     public void Parse_RecognizedMention_ResolvesTargetCorrectly()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@Beta please review");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "@Beta please review", DefaultVisibleNames);
         Assert.True(result.Success);
         Assert.NotNull(result.Request);
         Assert.False(result.Request!.IsDirectSend);
@@ -47,9 +37,8 @@ public class MentionParserTests
     [Fact]
     public void Parse_MentionMatch_IsCaseInsensitiveExact()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@gAmMa check this");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "@gAmMa check this", DefaultVisibleNames);
         Assert.True(result.Success);
         Assert.Equal("Gamma", result.Request!.TargetAgentName);
         Assert.Equal("check this", result.Request.ContentAfterStrip);
@@ -58,9 +47,8 @@ public class MentionParserTests
     [Fact]
     public void Parse_UnknownMention_ReturnsExplicitFailure()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@Epsilon unknown");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "@Epsilon unknown", DefaultVisibleNames);
         Assert.False(result.Success);
         Assert.Equal("Unknown target", result.FailureReason);
     }
@@ -68,11 +56,9 @@ public class MentionParserTests
     [Fact]
     public void Parse_DuplicateAmbiguousNames_ReturnsExplicitFailure()
     {
-        var host = new AgentPanelHost();
-        host.CreatePanel("a1", "Alpha", "Icon.Avatar");
-        host.CreatePanel("a2", "Alpha", "Icon.Avatar"); // duplicate name
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@Alpha ambiguous");
+        var parser = new MentionParser();
+        IReadOnlyList<string> ambiguousNames = new[] { "Alpha", "Alpha" };
+        var result = parser.Parse("p1", "@Alpha ambiguous", ambiguousNames);
         Assert.False(result.Success);
         Assert.Equal("Ambiguous target", result.FailureReason);
     }
@@ -80,9 +66,8 @@ public class MentionParserTests
     [Fact]
     public void Parse_MultipleMentions_ReturnsExplicitFailure()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@Alpha @Beta both");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "@Alpha @Beta both", DefaultVisibleNames);
         Assert.False(result.Success);
         Assert.Equal("Multiple mentions", result.FailureReason);
     }
@@ -90,9 +75,8 @@ public class MentionParserTests
     [Fact]
     public void Parse_MentionStripping_LeavesCorrectContent()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "task for @Delta please");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "task for @Delta please", DefaultVisibleNames);
         Assert.True(result.Success);
         Assert.Equal("task for please", result.Request!.ContentAfterStrip);
     }
@@ -100,10 +84,33 @@ public class MentionParserTests
     [Fact]
     public void Parse_EmptyContentAfterStripping_ReturnsExplicitFailure()
     {
-        var host = CreateHostWithPanels();
-        var parser = new MentionParser(host);
-        var result = parser.Parse("p1", "@Alpha");
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "@Alpha", DefaultVisibleNames);
         Assert.False(result.Success);
         Assert.Equal("Empty content after stripping", result.FailureReason);
+    }
+
+    [Fact]
+    public void Parse_EmptyInput_ReturnsExplicitFailure()
+    {
+        var parser = new MentionParser();
+        var result = parser.Parse("p1", "   ", DefaultVisibleNames);
+        Assert.False(result.Success);
+        Assert.Equal("Empty input", result.FailureReason);
+    }
+
+    [Fact]
+    public void Parse_UsesCallerSuppliedVisibleNamesOnly()
+    {
+        var parser = new MentionParser();
+        // Name exists only when the caller supplies it — no host lookup.
+        IReadOnlyList<string> names = new[] { "OnlyOne" };
+        var known = parser.Parse("p1", "@OnlyOne go", names);
+        Assert.True(known.Success);
+        Assert.Equal("OnlyOne", known.Request!.TargetAgentName);
+
+        var unknown = parser.Parse("p1", "@Beta go", names);
+        Assert.False(unknown.Success);
+        Assert.Equal("Unknown target", unknown.FailureReason);
     }
 }

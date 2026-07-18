@@ -100,7 +100,7 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
             new TerminalHost(CreateTerminalServiceFactory().Object),
             new AgentPanelHost(),
             new Mock<IAgentExecutionCoordinator>().Object,
-            new AgentRouter(new MentionParser(new AgentPanelHost()), new AgentPanelHost(),
+            new AgentRouter(new MentionParser(), new AgentPanelHost(),
                 new Mock<IAgentExecutionCoordinator>().Object),
             new TownhallViewModel(new TownhallState()),
             CreateSourceControlViewModel(),
