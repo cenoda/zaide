@@ -18,14 +18,14 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M6k: +1 Debugging DI module).</summary>
-    public const int M0TotalTopLevelTypes = 408;
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M7: +1 CompositionRoot).</summary>
+    public const int M0TotalTopLevelTypes = 409;
 
     /// <summary>M0 baseline public top-level type count (M5: net −1 — SourceControlState deleted).</summary>
     public const int M0PublicTopLevelTypes = 346;
 
-    /// <summary>M0 baseline internal top-level type count (M6k: +1 Debugging registration extension).</summary>
-    public const int M0InternalTopLevelTypes = 62;
+    /// <summary>M0 baseline internal top-level type count (M7: +1 CompositionRoot store).</summary>
+    public const int M0InternalTopLevelTypes = 63;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",
@@ -46,6 +46,18 @@ public sealed class ArchitectureInventoryReader
     private static readonly Regex AppServicesRegex = new(
         @"\bApp\.Services\b",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex CompositionRootServicesRegex = new(
+        @"\bCompositionRoot\.Services\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Sole composition-root store declaration file. Provider inventory skips this path:
+    /// the static <c>IServiceProvider Services</c> property is storage, not a consumer
+    /// locator site (Refactor 6.3 M7). Consumers use <c>CompositionRoot.Services</c>.
+    /// </summary>
+    private const string CompositionRootStoreRelativePath =
+        "src/App/Composition/CompositionRoot.cs";
 
     private static readonly Regex ServicesToViewModelsRegex = new(
         @"(?:using\s+Zaide\.ViewModels\b|Zaide\.ViewModels\.)",
@@ -229,6 +241,18 @@ public sealed class ArchitectureInventoryReader
         var entries = new List<ProviderEvidenceEntry>();
         foreach (var relativePath in relativePaths)
         {
+            var normalizedPath = NormalizeRelativePath(relativePath);
+            // M7: CompositionRoot.cs is composition-root storage only — not a
+            // consumer locator site. Do not invent a third LocatorSite from the
+            // property declaration's IServiceProvider type mention.
+            if (string.Equals(
+                    normalizedPath,
+                    CompositionRootStoreRelativePath,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var fullPath = Path.Combine(_repositoryRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
             var lines = File.ReadAllLines(fullPath);
             for (var i = 0; i < lines.Length; i++)
@@ -264,6 +288,13 @@ public sealed class ArchitectureInventoryReader
                     line,
                     AppServicesRegex,
                     ProviderEvidenceEntry.KindAppServices);
+                AddProviderMatches(
+                    entries,
+                    relativePath,
+                    lineNumber,
+                    line,
+                    CompositionRootServicesRegex,
+                    ProviderEvidenceEntry.KindCompositionRootServices);
             }
         }
 

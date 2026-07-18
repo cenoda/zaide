@@ -40,7 +40,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.Services"));
         Assert.False(byNamespace.ContainsKey("Zaide.ViewModels"));
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
-        Assert.Equal((6, 5, 1), byNamespace["Zaide.App.Composition"]);
+        Assert.Equal((7, 5, 2), byNamespace["Zaide.App.Composition"]);
         Assert.Equal((11, 0, 11), byNamespace["Zaide.App.Composition.Registration"]);
         Assert.Equal((16, 14, 2), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
@@ -114,14 +114,14 @@ public sealed class ArchitectureInventoryTests
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
         // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a +1; M6b +1; M6c +1; M6d +1; M6e +1; M6f +1; M6g +1; M6h +1; M6i +1; M6j +1; M6k +1 Debugging module.
-        Assert.Equal(370, inventory.SourceFiles.Count);
+        Assert.Equal(371, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(31, byFolder["App"]);
+        Assert.Equal(32, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
         Assert.Equal(337, byFolder["Features"]);
 
@@ -187,16 +187,28 @@ public sealed class ArchitectureInventoryTests
     {
         var inventory = new ArchitectureInventoryReader().Read();
 
-        // Presence inventory only — known M0 locator debt must remain visible,
-        // not turn red under M2.
+        // Presence inventory only — known composition-boundary locator residual
+        // must remain visible (M7: CompositionRoot.Services, not App.Services).
         Assert.Contains(
             inventory.ProviderEvidence,
             e => e.RelativePath == "src/App/Composition/Program.cs"
-                && e.Kind == ProviderEvidenceEntry.KindAppServices);
+                && e.Kind == ProviderEvidenceEntry.KindCompositionRootServices);
         Assert.Contains(
             inventory.ProviderEvidence,
             e => e.RelativePath == "src/App/Composition/App.axaml.cs"
                 && e.Kind == ProviderEvidenceEntry.KindGetRequiredService);
+        Assert.Contains(
+            inventory.ProviderEvidence,
+            e => e.RelativePath == "src/App/Composition/App.axaml.cs"
+                && e.Kind == ProviderEvidenceEntry.KindCompositionRootServices);
+        // M7: store declaration is not consumer locator evidence.
+        Assert.DoesNotContain(
+            inventory.ProviderEvidence,
+            e => e.RelativePath == "src/App/Composition/CompositionRoot.cs");
+        // Public App.Services removed in M7.
+        Assert.DoesNotContain(
+            inventory.ProviderEvidence,
+            e => e.Kind == ProviderEvidenceEntry.KindAppServices);
         // M2 cleared SourceControlDiffTabService IServiceProvider evidence.
         Assert.DoesNotContain(
             inventory.ProviderEvidence,

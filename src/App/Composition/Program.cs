@@ -43,7 +43,7 @@ class Program
                 containerConfig: ConfigureServices,
                 withResolver: sp =>
                 {
-                    App.Services = sp!;
+                    CompositionRoot.Services = sp!;
                 })
 #if DEBUG
             .WithDeveloperTools()

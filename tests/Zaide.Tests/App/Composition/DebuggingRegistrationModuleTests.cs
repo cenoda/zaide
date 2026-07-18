@@ -346,8 +346,10 @@ public sealed class DebuggingRegistrationModuleTests
         // AddLogging remains in Program (not an M6k registration).
         Assert.Contains("AddLogging(", programSource);
 
-        // No M7 CompositionRoot work.
-        Assert.DoesNotContain("CompositionRoot", programSource);
+        // M7: CompositionRoot store assigned in Program; no fictitious registration module.
+        Assert.Contains("CompositionRoot.Services = sp!", programSource);
+        Assert.DoesNotContain("App.Services", programSource);
+        Assert.DoesNotContain("AddZaideCompositionRoot", programSource);
         Assert.DoesNotContain("AddZaideComposition", programSource);
     }
 
@@ -400,19 +402,25 @@ public sealed class DebuggingRegistrationModuleTests
         Assert.DoesNotContain("StartAsync", moduleSource);
         Assert.DoesNotContain("StartLaunchAsync", moduleSource);
 
-        // No M7 CompositionRoot work in this module.
+        // Debugging registration module remains free of composition-root store access.
         Assert.DoesNotContain("CompositionRoot", moduleSource);
     }
 
     [Fact]
-    public void ProgramSource_AppServicesAssignmentUnchanged_AndNoCompositionRoot()
+    public void ProgramAndAppSource_UseCompositionRootServices_AndPublicAppServicesRemoved()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
         var appSource = ReadRepoFile("src/App/Composition/App.axaml.cs");
+        var compositionRootSource = ReadRepoFile("src/App/Composition/CompositionRoot.cs");
 
-        Assert.Contains("App.Services = sp!", programSource);
-        Assert.Contains("public static IServiceProvider Services", appSource);
-        Assert.DoesNotContain("CompositionRoot", programSource);
-        Assert.DoesNotContain("CompositionRoot", appSource);
+        Assert.Contains("CompositionRoot.Services = sp!", programSource);
+        Assert.DoesNotContain("App.Services", programSource);
+        Assert.DoesNotContain("public static IServiceProvider Services", appSource);
+        Assert.Contains("CompositionRoot.Services", appSource);
+        Assert.Contains("DisposeServicesOnExit", appSource);
+        Assert.Contains("internal static class CompositionRoot", compositionRootSource);
+        Assert.Contains("internal static IServiceProvider Services { get; set; }", compositionRootSource);
+        Assert.DoesNotContain("GetRequiredService", compositionRootSource);
+        Assert.DoesNotContain("GetService", compositionRootSource);
     }
 }

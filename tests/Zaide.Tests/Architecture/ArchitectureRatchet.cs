@@ -50,7 +50,9 @@ public static class ArchitectureRatchet
 
     /// <summary>
     /// Exact production files that contain any provider/locator evidence kinds
-    /// inventoried by M2 (IServiceProvider, App.Services, GetRequiredService, GetService).
+    /// inventoried by M2/M7 (IServiceProvider, App.Services, CompositionRoot.Services,
+    /// GetRequiredService, GetService). CompositionRoot.cs property declaration is
+    /// excluded from inventory (store-only; consumers use CompositionRoot.Services).
     /// </summary>
     public static IReadOnlyList<ArchitectureViolation> DetectLocatorSiteViolations(
         ArchitectureInventory inventory)

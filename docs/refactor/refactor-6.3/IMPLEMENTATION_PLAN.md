@@ -1453,8 +1453,8 @@ M6k implementation is complete at `df262ac`.
 **Manual:** none if DI tests green.
 
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
-complete. Refactor 6.3 is not complete. M7 is the next planned milestone after
-M6 closeout, but remains **unauthorized**.
+complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
+store). The next planned milestone is **M8**, which remains **unauthorized**.
 
 ---
 
@@ -1462,20 +1462,22 @@ M6 closeout, but remains **unauthorized**.
 
 | | |
 |--|--|
+| **Status** | **Complete** (implementation staged for review; not committed in this session) |
 | **Scope** | Remove public static `App.Services`. Introduce a single internal composition-root **store** for the ReactiveUI bootstrap provider assignment. |
 | **Locked approach (no alternatives)** | Create `internal static class CompositionRoot` in `src/App/Composition/CompositionRoot.cs` with **only** `internal static IServiceProvider Services { get; set; }` (no `Start` method, **no** `GetRequiredService` / `GetService` calls inside `CompositionRoot`). `Program.BuildAvaloniaApp` `withResolver` assigns `CompositionRoot.Services = sp` (not `App.Services`). **Delete** public static `App.Services`. All existing eager resolves and `DisposeServicesOnExit` **remain** in `App.axaml.cs`, rewritten to use `CompositionRoot.Services` wherever `App.Services` was read (including `OnFrameworkInitializationCompleted` and Exit). |
 | **Why not move resolves into CompositionRoot in M7** | Moving `GetRequiredService` into a new file would either grow the FindingId set or require MatchKey games mid-refactor. Keeping provider **call sites** on the already-allowlisted `App.axaml.cs` / `Program.cs` files preserves the frozen allowlist set size. |
 | **V09 residual (deliberate limitation — not full clearance)** | Static mutable composition-root provider **remains** as `CompositionRoot.Services`. FindingIds **`R61-AL-LOC-Program`** and **`R61-AL-LOC-App` remain** after M7. MatchKeys stay exactly: `src/App/Composition/Program.cs` and `src/App/Composition/App.axaml.cs`. Rationale text on both entries is updated to: “composition-boundary residual after public `App.Services` removal; ReactiveUI `UseReactiveUIWithMicrosoftDependencyResolver` requires a root store; non-composition locator debt cleared in M1–M2.” M13 may only retain these two LOC residuals among composition files. Full removal of static provider storage requires a **future plan amendment**, not silent M7 expansion. |
+| **Locator policy amendment (Option A)** | Inventory treats **consumer** access `CompositionRoot.Services` as provider evidence (new kind `CompositionRoot.Services`). `Program.cs` remains a LocatorSite via assignment; `App.axaml.cs` remains a LocatorSite via reads + `GetRequiredService` / `GetService`. The **sole property declaration** in `CompositionRoot.cs` is composition-root **storage**, not a consumer locator site: provider inventory **skips** that path so no third LocatorSite / FindingId is created. Do not add `R61-AL-LOC-CompositionRoot`. |
 
 **Completion condition:**
 
 1. Zero occurrences of identifier `App.Services` in production (tests may only mention it in comments if any remain — prefer zero).
 2. `CompositionRoot.Services` is the sole static `IServiceProvider` store.
 3. `CompositionRoot.cs` contains **no** `GetRequiredService` / `GetService` / `IServiceProvider` field storage other than the static `Services` property.
-4. Locator production files with provider **call** evidence remain exactly `{Program.cs, App.axaml.cs}`; FindingId set size still 9 or less only by removals from other milestones — M7 does **not** remove LOC-Program/LOC-App.
+4. Locator production files with provider **consumer** evidence remain exactly `{Program.cs, App.axaml.cs}`; FindingIds remain exactly `R61-AL-LOC-Program`, `R61-AL-LOC-App` — M7 does **not** remove either LOC FindingId and does **not** add a CompositionRoot FindingId.
 5. Shared gate green.
 
-**Files (exact inventory for M7):**
+**Files (exact inventory for M7, Option A expanded bookkeeping):**
 
 | Path | Action |
 |------|--------|
@@ -1483,6 +1485,16 @@ M6 closeout, but remains **unauthorized**.
 | `src/App/Composition/Program.cs` | **Edit** — assign `CompositionRoot.Services = sp` |
 | `src/App/Composition/App.axaml.cs` | **Edit** — delete `App.Services`; all former `Services` / `App.Services` reads become `CompositionRoot.Services` |
 | `tests/Zaide.Tests/Architecture/LegacyArchitectureAllowlist.cs` | **Edit** — update rationale text for `R61-AL-LOC-Program` and `R61-AL-LOC-App` only; **MatchKeys unchanged** |
+| `tests/Zaide.Tests/Architecture/ProviderEvidenceEntry.cs` | **Edit** — add `KindCompositionRootServices` |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | **Edit** — inventory `CompositionRoot.Services`; skip store file; type baselines **409** / **63** |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchet.cs` | **Edit** — locator evidence kinds comment (M7) |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | **Edit** — M7 presence assertions + source-file counts |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | **Edit** — App C# count **32** |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | **Edit** — total **409**, internal **63** |
+| `tests/Zaide.Tests/App/Composition/*RegistrationModuleTests.cs` (11) | **Edit** — advance M6 residual guards to M7 contract; preserve module ratchets |
+| `docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md` | **Edit** — in-slice status / inventory / locator amendment |
+
+**Live counts after M7:** public **346** (unchanged); internal **62 → 63**; total top-level **408 → 409**; production C# **370 → 371**; App C# **31 → 32**; Composition.Registration modules **11** (unchanged); FindingIds **2** (unchanged).
 
 **Focused tests:**
 
@@ -1490,6 +1502,7 @@ M6 closeout, but remains **unauthorized**.
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   --filter "FullyQualifiedName~CompositionDiIntegrationTests\
 |FullyQualifiedName~ProjectWorkflowProjectionShutdownTests\
+|FullyQualifiedName~RegistrationModuleTests\
 |FullyQualifiedName~Architecture"
 ```
 
@@ -2072,16 +2085,18 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 and M6a–M6k complete** as previously recorded. **M6k is complete
-   at `df262ac`** (Debugging DI registration module / `AddZaideDebugging`).
-   M6a–M6k are individually completed slices, and the M6 series is complete.
-2. The next planned milestone is **M7** (Composition root store / remove public
-   `App.Services`), which remains **unauthorized** until separate explicit
-   authorization.
-3. Do not start M7+, Refactor 7/8, or Phase 14 without separate authorization.
-   Completing M6k does **not** authorize M7 or whole-refactor closeout.
-4. Do **not** mark Refactor 6.3 complete from M6 closeout alone.
+1. **M1–M7 complete** as previously recorded for M1–M6; **M7** (composition root
+   store / remove public `App.Services`) is implemented under Option A locator
+   policy. Public `App.Services` is gone; residual static store is
+   `CompositionRoot.Services` with FindingIds `R61-AL-LOC-Program` and
+   `R61-AL-LOC-App` only.
+2. The next planned milestone is **M8** (ordered shutdown owner / V12), which
+   remains **unauthorized** until separate explicit authorization.
+3. Do not start M8+, Refactor 7/8, or Phase 14 without separate authorization.
+   Completing M7 does **not** authorize M8 or whole-refactor closeout.
+4. Do **not** mark Refactor 6.3 complete from M7 alone (V09 residual remains;
+   M8–M13 still planned).
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6k complete; M6k Debugging at `df262ac`; M6 series complete; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors, focused 86/86, Architecture 21/21, full suite 2263/2263, git diff checks clean; public 346 / internal 62 / total 408 / prod C# 370 / App C# 31; eleven internal Registration modules; Program has no direct production AddSingleton; AddLogging remains in Program; M7 unauthorized)*
+*Last updated: 2026-07-18 (M7 complete: CompositionRoot store; public App.Services removed; locator evidence Program+App only via CompositionRoot.Services consumer access; FindingIds 2 unchanged; inventory public 346 / internal 63 / total 409 / prod C# 371 / App C# 32; M8 unauthorized)*

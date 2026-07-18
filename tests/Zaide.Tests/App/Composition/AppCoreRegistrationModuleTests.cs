@@ -219,8 +219,9 @@ public sealed class AppCoreRegistrationModuleTests
         // AddLogging remains in Program.
         Assert.Contains("AddLogging(", programSource);
 
-        // No M7 CompositionRoot and no fictitious later registration module.
-        Assert.DoesNotContain("CompositionRoot", programSource);
+        // M7: CompositionRoot store assigned in Program; no fictitious registration module.
+        Assert.Contains("CompositionRoot.Services = sp!", programSource);
+        Assert.DoesNotContain("App.Services", programSource);
         Assert.DoesNotContain("AddZaideCompositionRoot", programSource);
     }
 }

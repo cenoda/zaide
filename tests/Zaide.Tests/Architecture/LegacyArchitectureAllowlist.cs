@@ -97,8 +97,9 @@ public static class LegacyArchitectureAllowlist
                 owner: "App/Composition",
                 disposition: DispositionDependencyInversion,
                 rationale:
-                "Program assigns static App.Services and uses the provider inside the " +
-                "composition-root editor factory. Global locator debt for Refactor 6.3.",
+                "composition-boundary residual after public App.Services removal; ReactiveUI " +
+                "UseReactiveUIWithMicrosoftDependencyResolver requires a root store; " +
+                "non-composition locator debt cleared in M1–M2.",
                 removalBoundary: "Refactor 6.3"),
 
             new(
@@ -109,8 +110,9 @@ public static class LegacyArchitectureAllowlist
                 owner: "App/Composition",
                 disposition: DispositionDependencyInversion,
                 rationale:
-                "App owns static Services, startup resolution, and DisposeServicesOnExit " +
-                "provider lookups (R61-V09 / R61-V12 composition and shutdown debt).",
+                "composition-boundary residual after public App.Services removal; ReactiveUI " +
+                "UseReactiveUIWithMicrosoftDependencyResolver requires a root store; " +
+                "non-composition locator debt cleared in M1–M2.",
                 removalBoundary: "Refactor 6.3"),
 
             // RootFolderAdmission: empty by design. Deny-by-default for tracked

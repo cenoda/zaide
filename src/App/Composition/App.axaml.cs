@@ -18,8 +18,6 @@ using Zaide.Features.Terminal.Presentation;
 namespace Zaide.App.Composition;
 public partial class App : Application
 {
-    public static IServiceProvider Services { get; set; } = null!;
-
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -29,37 +27,37 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var vm = Services.GetRequiredService<MainWindowViewModel>();
-            var settings = Services.GetRequiredService<ISettingsService>();
-            var secrets = Services.GetRequiredService<ISecretStore>();
-            var registry = Services.GetRequiredService<ICommandRegistry>();
-            var statusBar = Services.GetRequiredService<StatusBarViewModel>();
+            var vm = CompositionRoot.Services.GetRequiredService<MainWindowViewModel>();
+            var settings = CompositionRoot.Services.GetRequiredService<ISettingsService>();
+            var secrets = CompositionRoot.Services.GetRequiredService<ISecretStore>();
+            var registry = CompositionRoot.Services.GetRequiredService<ICommandRegistry>();
+            var statusBar = CompositionRoot.Services.GetRequiredService<StatusBarViewModel>();
 
             // Phase 9 M1: eagerly resolve the palette VM so it registers
             // palette.open in the ICommandRegistry singleton before
             // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
-            var paletteVm = Services.GetRequiredService<CommandPaletteViewModel>();
-            var searchVm = Services.GetRequiredService<EditorSearchViewModel>();
-            var languageInputVm = Services.GetRequiredService<EditorLanguageInputViewModel>();
+            var paletteVm = CompositionRoot.Services.GetRequiredService<CommandPaletteViewModel>();
+            var searchVm = CompositionRoot.Services.GetRequiredService<EditorSearchViewModel>();
+            var languageInputVm = CompositionRoot.Services.GetRequiredService<EditorLanguageInputViewModel>();
 
             // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
-            _ = Services.GetRequiredService<DebugSessionViewModel>();
-            var editorBreakpointVm = Services.GetRequiredService<EditorBreakpointViewModel>();
-            var debugCurrentLocationVm = Services.GetRequiredService<DebugCurrentLocationViewModel>();
+            _ = CompositionRoot.Services.GetRequiredService<DebugSessionViewModel>();
+            var editorBreakpointVm = CompositionRoot.Services.GetRequiredService<EditorBreakpointViewModel>();
+            var debugCurrentLocationVm = CompositionRoot.Services.GetRequiredService<DebugCurrentLocationViewModel>();
 
             // Phase 10 M2: eagerly resolve the document bridge so Workspace/session
             // subscriptions start before editors open files.
-            _ = Services.GetRequiredService<ILanguageDocumentBridge>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageDocumentBridge>();
             // Phase 10 M3: resolve diagnostics ownership after the document bridge.
-            _ = Services.GetRequiredService<ILanguageDiagnosticsService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageDiagnosticsService>();
             // Phase 10 M4: completion/hover services before editors open.
-            _ = Services.GetRequiredService<ILanguageCompletionService>();
-            _ = Services.GetRequiredService<ILanguageHoverService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageCompletionService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageHoverService>();
             // Phase 10 M5: definition/symbol services before editors open.
-            _ = Services.GetRequiredService<ILanguageNavigationService>();
-            _ = Services.GetRequiredService<ILanguageSymbolService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageNavigationService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageSymbolService>();
             // Phase 10 M6: formatting service before editors open.
-            _ = Services.GetRequiredService<ILanguageFormattingService>();
+            _ = CompositionRoot.Services.GetRequiredService<ILanguageFormattingService>();
 
             desktop.MainWindow = new MainWindow(
                 settings,
@@ -77,7 +75,7 @@ public partial class App : Application
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.
-            desktop.Exit += (_, _) => DisposeServicesOnExit(Services);
+            desktop.Exit += (_, _) => DisposeServicesOnExit(CompositionRoot.Services);
         }
 
         base.OnFrameworkInitializationCompleted();

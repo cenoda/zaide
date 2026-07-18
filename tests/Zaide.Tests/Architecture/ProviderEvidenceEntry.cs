@@ -10,6 +10,7 @@ public sealed class ProviderEvidenceEntry : IEquatable<ProviderEvidenceEntry>
 {
     public const string KindIServiceProvider = "IServiceProvider";
     public const string KindAppServices = "App.Services";
+    public const string KindCompositionRootServices = "CompositionRoot.Services";
     public const string KindGetRequiredService = "GetRequiredService";
     public const string KindGetService = "GetService";
 
