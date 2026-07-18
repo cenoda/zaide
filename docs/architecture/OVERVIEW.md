@@ -29,15 +29,17 @@ admissions are **declined**. Refactor 6.3 M0 is **accepted** at
 **M1** complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e`
 (manual terminal smoke not run), **M4** at `698b094` (manual agent-panel
 routing smoke not run), **M5** at `273cc56` (manual verification not
-required), and **M6a** at `c59ad7b` (AppCore DI registration module — first
+required), **M6a** at `c59ad7b` (AppCore DI registration module — first
 completed M6 slice; automated verification green; manual verification not
-required). **Refactor 6.3 M1–M5 and M6a are complete.** **M6b** (Settings
-registration module) is the next eligible milestone slice and still requires
-an explicit start; M6b production implementation is not active. Completing
-M6a does not authorize M6c–M6k or the rest of the M6 series. Refactors 7 / 8
-have no production authorization until their own M0 acceptances.
-Non-C# assets remain outside the root-admission ratchet. No V3 production
-feature implementation is active.
+required), and **M6b** at `43b8e85` (Settings DI registration module —
+second completed M6 slice; automated verification green; manual verification
+not required). **Refactor 6.3 M1–M5, M6a, and M6b are complete.** **M6c**
+(Workspace registration module) is the next eligible milestone slice and still
+requires an explicit start; M6c production implementation is not active.
+Completing M6b does not authorize M6d–M6k or the rest of the M6 series.
+Refactors 7 / 8 have no production authorization until their own M0
+acceptances. Non-C# assets remain outside the root-admission ratchet. No V3
+production feature implementation is active.
 
 ---
 
@@ -99,7 +101,7 @@ feature-first layout (optional M13 root admissions remain unauthorized):
 
 ```text
 src/
-  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a)
+  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b)
   App/Shell/           # MainWindow, shell VMs/views, chrome (6.2 M12; Animations/IconFactory shell-owned R62-D03)
   UI/DesignSystem/     # tokens, icons, typography (6.2 M1)
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
@@ -119,18 +121,18 @@ root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 inventory the baseline (M2), ratchet known legacy debt (M3), and enforce the
 public full-name baseline plus expanded root-folder admission (M4, updated for
-6.2 M1–M12 and 6.3 M1–M6a). Root-admission inventories **tracked production C#
+6.2 M1–M12 and 6.3 M1–M6b). Root-admission inventories **tracked production C#
 only** (`git ls-files` of `src/**/*.cs`): exact-file service-locator sites;
 NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a internal-only). Live
-inventory after M6a: total top-level **398**, public **346**, internal **52**,
-production C# **360**, App C# **21**. FindingIds remaining: **2**
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a/M6b internal-only). Live
+inventory after M6b: total top-level **399**, public **346**, internal **53**,
+production C# **361**, App C# **22**. FindingIds remaining: **2**
 (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed by the
 root-admission detectors. Lifetime/composition debt remains for Refactor 6.3
-(**M6b** Settings registration module next; M6 series otherwise unauthorized).
+(**M6c** Workspace registration module next; M6d–M6k unauthorized).
 
 | Later work | Owns |
 |------------|------|
@@ -346,4 +348,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 complete; M6a complete at `c59ad7b` — first M6 registration slice; automated verification green, manual verification not required; M6b next eligible, not started)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 complete; M6a complete at `c59ad7b`; M6b complete at `43b8e85` — second M6 registration slice; automated verification green, manual verification not required; M6c next eligible, not started)*

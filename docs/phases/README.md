@@ -20,12 +20,14 @@ declined. Refactor 6.3 M0 is **accepted** at
 **M1** is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e`
 (manual terminal smoke not run), **M4** at `698b094` (manual agent-panel
 routing smoke not run), **M5** at `273cc56` (manual verification not
-required), and **M6a** at `c59ad7b` (AppCore DI registration module; first
+required), **M6a** at `c59ad7b` (AppCore DI registration module; first
 completed M6 slice; automated verification green; manual verification not
-required). **Refactor 6.3 M1–M5 and M6a are complete.** Production work still
-requires a separate authorization for each implementation milestone; **M6b**
-(Settings registration module) is the next eligible slice and is not started.
-**M6c–M6k** remain unauthorized.
+required), and **M6b** at `43b8e85` (Settings DI registration module; second
+completed M6 slice; automated verification green; manual verification not
+required). **Refactor 6.3 M1–M5, M6a, and M6b are complete.** Production work
+still requires a separate authorization for each implementation milestone;
+**M6c** (Workspace registration module) is the next eligible slice and is not
+started. **M6d–M6k** remain unauthorized.
 
 ## Archive Policy
 

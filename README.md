@@ -25,12 +25,15 @@ Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
 Optional M13 root admissions are declined. Refactor 6.3 M0 is accepted; **M1**
 is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e` (manual
 terminal smoke not run), **M4** at `698b094` (manual agent-panel routing smoke
-not run), **M5** at `273cc56` (manual verification not required), and **M6a**
+not run), **M5** at `273cc56` (manual verification not required), **M6a**
 at `c59ad7b` (AppCore DI registration module; first completed M6 slice;
+automated verification green; manual verification not required), and **M6b**
+at `43b8e85` (Settings DI registration module; second completed M6 slice;
 automated verification green; manual verification not required). **Refactor
-6.3 M1–M5 and M6a are complete.** **M6b** (Settings registration module) is
-the next eligible milestone slice and still requires an explicit start; M6b
-production implementation has not started. **M6c–M6k** remain unauthorized.
+6.3 M1–M5, M6a, and M6b are complete.** **M6c** (Workspace registration
+module) is the next eligible milestone slice and still requires an explicit
+start; M6c production implementation has not started. **M6d–M6k** remain
+unauthorized.
 
 ## Philosophy
 
@@ -212,10 +215,11 @@ while preserving the completed V2 IDE core. Its direction is:
 
 The implementation order is accepted. Refactor 6.3 **M6a** is complete at
 `c59ad7b` (AppCore DI registration module — first completed M6 slice). **M6b**
-(Settings registration module) is the next eligible milestone slice and still
-requires an explicit start. Completing M6a does not authorize M6c–M6k. Phase
-14 and every preceding refactor still require their own live-code-verified M0
-acceptance before production implementation.
+is complete at `43b8e85` (Settings DI registration module — second completed
+M6 slice). **M6c** (Workspace registration module) is the next eligible
+milestone slice and still requires an explicit start. Completing M6b does not
+authorize M6d–M6k. Phase 14 and every preceding refactor still require their
+own live-code-verified M0 acceptance before production implementation.
 
 ## Why "Zaide"
 

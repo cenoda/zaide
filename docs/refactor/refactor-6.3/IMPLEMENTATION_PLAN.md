@@ -24,7 +24,8 @@ unchanged; internal **51 → 52**; total top-level **397 → 398**; production C
 **359 → 360**; App C# **20 → 21**. Automated verification green (build,
 focused DI+Architecture 47/47, Architecture 21/21, full suite 2209/2209,
 `git diff --check`); manual verification **not required**. **M6b complete**
-(staged, pre-commit): internal
+at `43b8e85` (`refactor-6.3: M6b Settings DI module`) — second completed M6
+slice: internal
 `SettingsServiceCollectionExtensions.AddZaideSettings` owns the two Settings
 singletons (`ISettingsService` → `SettingsService`; `ISecretStore` factory →
 `FileSecretStore(SettingsPathResolver.GetSecretsPath())`);
@@ -32,8 +33,10 @@ singletons (`ISettingsService` → `SettingsService`; `ISecretStore` factory →
 `AddZaideAppCore()`; public baseline **346** unchanged; internal **52 → 53**;
 total top-level **398 → 399**; production C# **360 → 361**; App C# **21 → 22**.
 Automated verification green (build, focused DI+Architecture 53/53,
-Architecture 21/21, full suite 2215/2215, `git diff --cached --check`);
-manual verification **not required**. **M6c–M6k** remain unauthorized.
+Architecture 21/21, full suite 2215/2215, `git diff --check`);
+manual verification **not required**. **M6c** (Workspace registration module)
+is the next eligible slice and has **not** started; it requires separate
+explicit authorization. **M6d–M6k** remain unauthorized.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -716,20 +719,20 @@ File: `src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs`
 (`AddZaideSettings`). **M10** later adds `ISettingsPanelFactory` →
 `SettingsPanelFactory` to this same method only.
 
-**Status:** **complete** (staged, pre-commit). Production:
-`Program.ConfigureServices` calls `services.AddZaideSettings()` exactly once
-immediately after `AddZaideAppCore()`; the two registrations live only in the
-internal module (both `AddSingleton`; secret-store factory remains
+**Status:** **complete** at `43b8e85` (`refactor-6.3: M6b Settings DI module`).
+Production: `Program.ConfigureServices` calls `services.AddZaideSettings()`
+exactly once immediately after `AddZaideAppCore()`; the two registrations live
+only in the internal module (both `AddSingleton`; secret-store factory remains
 `_ => new FileSecretStore(SettingsPathResolver.GetSecretsPath())`).
 `AddLogging` remains in `Program`. No `ISettingsPanelFactory` /
 `SettingsPanelFactory` (M10 reserved). Public production types **346**
 (unchanged); internal **53** (+1 extension class); total top-level **399**;
 production C# files **361**; App C# files **22**. Tests:
 `SettingsRegistrationModuleTests` plus M6a ratchet advancement and existing
-composition/DI suite — automated verification green (focused 53/53,
-Architecture 21/21, full suite 2215/2215); manual verification **not
-required**. M6c–M6k registrations remain direct in `Program` (no later M6
-modules yet).
+composition/DI suite — automated verification green (build, focused 53/53,
+Architecture 21/21, full suite 2215/2215, `git diff --check`); manual
+verification **not required**. M6c–M6k registrations remain direct in
+`Program` (no later M6 modules yet).
 
 #### M6c — Workspace (2)
 
@@ -1496,8 +1499,8 @@ dotnet test Zaide.slnx --no-build
 ## Exact next step
 
 1. **M1–M5 complete** as previously recorded. **M6a complete** at `c59ad7b`
-   (AppCore DI registration module / `AddZaideAppCore`). **M6b complete**
-   (Settings DI registration module / `AddZaideSettings`; staged pre-commit).
+   (AppCore DI registration module / `AddZaideAppCore`). **M6b complete** at
+   `43b8e85` (Settings DI registration module / `AddZaideSettings`).
 2. Authorize **M6c only** (§ M6c — Workspace registration module:
    `WorkspaceServiceCollectionExtensions.cs` / `AddZaideWorkspace`) when ready.
 3. Do not start M6d–M6k, M7+, Refactor 7/8, or Phase 14 without separate
@@ -1507,4 +1510,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 complete; M6a complete at `c59ad7b`; M6b complete staged — automated verification green: focused 53/53, Architecture 21/21, full suite 2215/2215; public 346 / internal 53 / total 399 / prod C# 361 / App C# 22; M6c next eligible, not started)*
+*Last updated: 2026-07-18 (M1–M5 complete; M6a complete at `c59ad7b`; M6b complete at `43b8e85` — automated verification green: focused 53/53, Architecture 21/21, full suite 2215/2215; manual verification not required; public 346 / internal 53 / total 399 / prod C# 361 / App C# 22; M6c next eligible, not started; M6d–M6k unauthorized)*
