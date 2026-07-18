@@ -8,9 +8,6 @@ using System.Net.Http;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.Features.Editor.Contracts;
-using Zaide.Features.Editor.Infrastructure;
-using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.ProjectSystem.Domain;
@@ -53,18 +50,14 @@ class Program
         services.AddZaideAppCore();
         services.AddZaideSettings();
         services.AddZaideWorkspace();
+        services.AddZaideEditor();
 
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<IFileService, FileService>();
-        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
-        services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
         services.AddSingleton<ITerminalServiceFactory, LinuxTerminalServiceFactory>();
         services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
-        services.AddSingleton<EditorSearchViewModel>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();
-        services.AddSingleton<EditorTabViewModel>();
         services.AddSingleton<SourceControlViewModel>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
         services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
@@ -144,7 +137,6 @@ class Program
 
         // Phase 10 M6: whole-document formatting + Format on Save coordination.
         services.AddSingleton<ILanguageFormattingService, LanguageFormattingService>();
-        services.AddSingleton<EditorLanguageInputViewModel>();
 
         services.AddSingleton(_ =>
         {
