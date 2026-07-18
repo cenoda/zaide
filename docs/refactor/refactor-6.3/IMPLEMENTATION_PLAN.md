@@ -1458,8 +1458,8 @@ store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
 complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
 at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 (activation host extraction), completing the M9 series. **M10 is complete** at
-`843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`; M11b
-remains unauthorized.
+`843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`, and
+**M11b is complete** at `a69fc66`; M11c remains unauthorized.
 
 ---
 
@@ -1922,8 +1922,10 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   construction already covered by `InternalsVisibleTo Zaide.Tests`). No DI,
   constructor, lifetime, or registration changes.
 
-**Status:** **implemented (staged, uncommitted)** — eight Debugging + ProjectSystem
-types public→internal; baseline 328; inventory public 328 / internal 87 / total 415.
+**Status:** **complete** at `a69fc66`
+(`refactor-6.3: M11b internalize Debugging and ProjectSystem implementations`) —
+eight Debugging + ProjectSystem types public→internal; baseline 328; inventory
+public 328 / internal 87 / total 415.
 Verification: forced build 4 pre-existing warnings / 0 errors; focused 543/543;
 Architecture 21/21; full suite 2320/2320; `git diff --check` / `--cached --check` clean.
 
@@ -2200,11 +2202,11 @@ dotnet test Zaide.slnx --no-build
    at `b6228c3`: exactly 10 Language types public→internal;
    public baseline 336; internal 79; total 415; DI 67; FindingIds 2 unchanged.
 7. **M11b** (Debugging + ProjectSystem implementation visibility internalization)
-   is **implemented (staged, uncommitted)**: exactly 8 types public→internal;
+   is complete at `a69fc66`: exactly 8 types public→internal;
    public baseline 328; internal 87; total 415; DI 67; FindingIds 2 unchanged.
-   Do not start M11c+, Refactor 7/8, or Phase 14 without separate authorization.
-   Five-document closeout is not part of this slice.
+8. **M11c** is next eligible and remains unauthorized. Do not start M11c+,
+   Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M11b implemented staged: Debugging+ProjectSystem 8 types internalized; public 328 / internal 87 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; DynamicProxyGenAssembly2 IVT for Moq ILogger&lt;T&gt;; forced build 4 warn/0 err; focused 543/543; Architecture 21/21; full 2320/2320; M11c unauthorized; no five-document closeout)*
+*Last updated: 2026-07-18 (M11b complete at `a69fc66`: Debugging+ProjectSystem 8 types internalized; public 328 / internal 87 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; DynamicProxyGenAssembly2 IVT for Moq ILogger&lt;T&gt;; forced build 4 warn/0 err; focused 543/543; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11c next eligible and unauthorized)*

@@ -46,8 +46,10 @@ host extraction) is complete at `bcb1e97`, completing the M9 series. **M10**
 (Settings panel factory) is complete at `843eebf`; the public baseline remains
 net zero. **M11a** (Language implementation visibility internalization) is
 complete at `b6228c3`, shrinking the public baseline from 346 to 336. **M11b**
-is next eligible, has not started, and requires separate explicit authorization.
-Completing M11a does not authorize M11b.
+(Debugging + ProjectSystem implementation visibility internalization) is
+complete at `a69fc66`, shrinking it from 336 to 328. **M11c** is next eligible,
+has not started, and requires separate explicit authorization. Completing M11b
+does not authorize M11c.
 
 ## Philosophy
 
@@ -249,8 +251,9 @@ send / Townhall mirror extraction). **M9b** is complete at `33a1806` (panel
 navigation extraction). **M9c** is complete at `bcb1e97` (activation host
 extraction), completing the M9 series. **M10** is complete at `843eebf`
 (Settings panel factory). **M11a** is complete at `b6228c3` (ten Language
-implementations internalized). **M11b** is next eligible and requires separate
-explicit authorization. Phase 14 and
+implementations internalized), and **M11b** is complete at `a69fc66` (eight
+Debugging + ProjectSystem implementations internalized). **M11c** is next
+eligible and requires separate explicit authorization. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 
