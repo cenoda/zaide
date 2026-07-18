@@ -164,10 +164,55 @@ ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two
 xUnit2013 warnings in ArchitectureRatchetTests — focused
 registration+DI+Architecture 89/89, Architecture 21/21, full suite 2251/2251,
 `git diff --check` clean; `git diff --cached --check` clean before the
-implementation commit). Manual verification **not required**. **M6j**
-(Language) is next eligible and requires separate authorization; M6j–M6k remain
-unauthorized. M6a–M6i are individually completed slices; the whole M6 series is
-not complete. Completing M6i does **not** authorize later M6 slices.
+implementation commit). Manual verification **not required**.
+**M6j implemented and staged pending review** (`refactor-6.3: M6j Language DI
+module` — not yet committed): tenth M6 registration slice: internal
+`LanguageServiceCollectionExtensions.AddZaideLanguage` owns the ten Language
+singleton registrations
+(`ILanguageServerBinaryLocator` → `LanguageServerBinaryLocator`;
+`ILanguageServerSessionFactory` → `CsharpLsSessionFactory`;
+`ILanguageSessionService` → `LanguageSessionService`;
+`ILanguageDocumentBridge` → `LanguageDocumentBridge`;
+`ILanguageDiagnosticsService` → `LanguageDiagnosticsService`;
+`ILanguageCompletionService` → `LanguageCompletionService`;
+`ILanguageHoverService` → `LanguageHoverService`;
+`ILanguageNavigationService` → `LanguageNavigationService`;
+`ILanguageSymbolService` → `LanguageSymbolService`;
+`ILanguageFormattingService` → `LanguageFormattingService`);
+`Program.ConfigureServices` calls `AddZaideLanguage()` exactly once after
+`AddZaideProjectSystem()`; module order is `AddZaideAppCore` →
+`AddZaideSettings` → `AddZaideWorkspace` → `AddZaideEditor` →
+`AddZaideTerminal` → `AddZaideAgents` → `AddZaideTownhall` →
+`AddZaideSourceControl` → `AddZaideProjectSystem` → `AddZaideLanguage`;
+`AddLogging` remains in `Program`; all ten M6k Debugging registrations remain
+direct in `Program` (no `AddZaideDebugging` call or module); public baseline
+**346** unchanged; internal **60 → 61**; total top-level **406 → 407**;
+production C# **368 → 369**; App C# **29 → 30**; internal
+Composition.Registration modules **10**. All ten remain Singleton with
+unchanged mappings, constructors, and dependencies. Phase 10 milestone comments
+(M1/M3/M4/M5/M6) preserved in the Language module. Strict exclusions:
+`ProblemsViewModel` remains owned by `AddZaideProjectSystem` (M6i); no
+Debugging registration moved. Resolution proof: all ten services are
+resolution-tested under the empty production project context (constructor audit
+proves no csharp-ls start, transport open, network, or external I/O on
+construction when `SelectedProject` is null; binary locator I/O only on
+`Resolve()`; factory process start only on `StartAsync`). Descriptor-only
+services: **none**. Tests do not start csharp-ls, spawn a process, open
+transport, access the network, or depend on a locally installed language
+server. M6a–M6i ratchets advanced (M6jPlus → M6kPlus; Language markers removed
+from later-direct sets; exactly one `AddZaideLanguage` allowed; Debugging
+markers remain direct; `AddZaideDebugging` still rejected). Automated
+verification green (forced `dotnet build Zaide.slnx --no-incremental`
+succeeded, 4 pre-existing warnings / 0 errors — CS0067 in
+ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two
+xUnit2013 in ArchitectureRatchetTests — focused
+registration+DI+LanguageSessionServiceDi+Architecture **82/82**, Architecture
+**21/21**, full suite **2257/2257**, `git diff --check` clean;
+`git diff --cached --check` clean; staged pending review, not committed).
+Manual verification **not required**. **M6k** (Debugging) is next eligible and
+requires separate authorization; M6k remains unauthorized. M6a–M6j are
+individually completed or staged slices; the whole M6 series is not complete.
+Completing M6j does **not** authorize M6k.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -1184,7 +1229,76 @@ Completing M6i does **not** authorize later M6 slices.
 | `ILanguageSymbolService` → `LanguageSymbolService` |
 | `ILanguageFormattingService` → `LanguageFormattingService` |
 
-File: `…/LanguageServiceCollectionExtensions.cs`
+File: `src/App/Composition/Registration/LanguageServiceCollectionExtensions.cs`
+Method: `AddZaideLanguage`.
+
+**Status:** **implemented and staged pending review** (not yet committed).
+
+All ten registrations remain **Singleton**. All ten interface-to-implementation
+mappings are unchanged (table above). Milestone comments preserved in the
+module: Phase 10 M1 (binary locator, session factory/service, document bridge);
+Phase 10 M3 (diagnostics); Phase 10 M4 (completion and hover); Phase 10 M5
+(navigation and symbols); Phase 10 M6 (formatting). No lifetime, type,
+constructor, or dependency changes. No language-server startup, process,
+transport, document, diagnostics, completion, hover, navigation, symbol, or
+formatting behavior changes.
+
+Strict exclusions confirmed: `ProblemsViewModel` is **not** registered by the
+Language module and remains owned by `AddZaideProjectSystem` (M6i). No
+Debugging registration moved; all ten M6k Debugging registrations remain direct
+in `Program`. No `DebuggingServiceCollectionExtensions` /
+`AddZaideDebugging`.
+
+**Resolution vs descriptor proof:**
+
+| Service | Proof | Rationale |
+|---------|-------|-----------|
+| `ILanguageServerBinaryLocator` | **resolution-tested** | Constructor stores optional path only; PATH/file I/O only on `Resolve()` |
+| `ILanguageServerSessionFactory` | **resolution-tested** | Empty constructor; process/transport only on `StartAsync` |
+| `ILanguageSessionService` | **resolution-tested** | Constructor schedules `ReconcileAsync`; csharp-ls start only when project context is eligible (`SelectedProject` non-null). Empty production DI context is not eligible |
+| `ILanguageDocumentBridge` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageDiagnosticsService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageCompletionService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageHoverService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageNavigationService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageSymbolService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+| `ILanguageFormattingService` | **resolution-tested** | Constructor stores deps + subscribes; no process start |
+
+Descriptor-only services: **none**. Tests never start csharp-ls, spawn a
+process, open transport, access the network, or depend on a locally installed
+language server.
+
+Production: `Program.ConfigureServices` calls `services.AddZaideLanguage()`
+exactly once immediately after `AddZaideProjectSystem()`; module order is
+`AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents` →
+`AddZaideTownhall` → `AddZaideSourceControl` → `AddZaideProjectSystem` →
+`AddZaideLanguage`; the ten registrations live only in the internal module;
+`AddLogging` remains in `Program`; M6k Debugging registrations remain direct in
+`Program` (no `AddZaideDebugging` call).
+
+Inventory after M6j: public **346** unchanged; internal **60 → 61**; total
+top-level **406 → 407**; production C# **368 → 369**; App C# **29 → 30**;
+internal Composition.Registration modules **10**.
+
+Tests: `LanguageRegistrationModuleTests` plus M6a–M6i ratchet advancement
+(M6jPlus → M6kPlus; Language markers removed from later-direct sets; allow
+exactly one `AddZaideLanguage`; continue proving all ten Debugging registrations
+remain direct; continue rejecting `AddZaideDebugging`) and existing
+composition/DI suite — automated verification green (forced
+`dotnet build Zaide.slnx --no-incremental` succeeded, 4 pre-existing warnings /
+0 errors — CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
+ArchitectureVisibilityTests; two xUnit2013 warnings in ArchitectureRatchetTests —
+focused registration+DI+LanguageSessionServiceDi+Architecture **82/82**,
+Architecture **21/21**, full suite **2257/2257**, `git diff --check` clean;
+`git diff --cached --check` clean; staged pending review, not committed);
+manual verification **not required**. Architecture bookkeeping only for the new
+internal type/file (`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
+`ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
+public baseline text and public type count unchanged; FindingIds and
+architecture allowlists unchanged.
+**M6k** (Debugging) is next eligible and requires separate authorization.
+Completing M6j does **not** authorize M6k.
 
 #### M6k — Debugging (10)
 
@@ -1846,31 +1960,22 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 complete** as previously recorded. **M6a complete** at `c59ad7b`
-   (AppCore DI registration module / `AddZaideAppCore`). **M6b complete** at
-   `43b8e85` (Settings DI registration module / `AddZaideSettings`). **M6c
-   complete** at `1ad3625` (Workspace DI registration module /
-   `AddZaideWorkspace`). **M6d complete** at `234a38f` (Editor DI registration
-   module / `AddZaideEditor`). **M6e complete at `8ab50c0`** (Terminal DI
-   registration module / `AddZaideTerminal`; closeout `d85a83b`). **M6f
-   complete at `cd809d2`** (Agents DI registration module / `AddZaideAgents`;
-   closeout `8144aba`). **M6g complete at `1f18e49`** (Townhall DI registration
-   module / `AddZaideTownhall`; closeout `8624ab2`). **M6h complete at
-   `9f514cd`** (SourceControl DI registration module /
-   `AddZaideSourceControl`; closeout `082726c`). **M6i complete at
-   `e6f9fb8`** (ProjectSystem DI registration module /
-   `AddZaideProjectSystem`). M6a–M6i are individually completed slices; the
-   whole M6 series is **not** complete.
-2. **Next eligible slice:** authorize **M6j only** (§ M6j — Language
-   registration module: `LanguageServiceCollectionExtensions.cs` /
-   `AddZaideLanguage`) when ready. M6j production implementation has
+1. **M1–M5 complete** as previously recorded. **M6a–M6i complete** as
+   previously recorded. **M6j implemented and staged pending review**
+   (Language DI registration module / `AddZaideLanguage` — not yet committed).
+   M6a–M6j are individually completed or staged slices; the whole M6 series is
+   **not** complete.
+2. **Next eligible slice:** authorize **M6k only** (§ M6k — Debugging
+   registration module: `DebuggingServiceCollectionExtensions.cs` /
+   `AddZaideDebugging`) when ready. M6k production implementation has
    **not** started and requires a separate explicit authorization.
-3. Do not start M6j–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6i does **not** authorize the rest of M6.
-4. **M6j–M6k** remain unauthorized. Completing M6i does not authorize later M6
-   slices; each slice requires its own explicit authorization. **M6k** remains
-   unauthorized.
+3. Do not start M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. Completing M6j does **not** authorize M6k.
+4. **M6k** remains unauthorized. Completing M6j does not authorize later M6
+   slices; each slice requires its own explicit authorization. Do not commit or
+   push M6j until separate closeout authorization; do not update README or other
+   status surfaces until the separate closeout step.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6i complete; M6i ProjectSystem complete at `e6f9fb8`; automated verification green: build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 89/89, Architecture 21/21, full suite 2251/2251, git diff checks clean; manual verification not required; public 346 / internal 60 / total 406 / prod C# 368 / App C# 29; nine internal Registration modules; M6j Language next eligible and awaiting separate authorization; M6j–M6k unauthorized; whole M6 series not complete)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6i complete; M6j Language implemented and staged pending review; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 82/82, Architecture 21/21, full suite 2257/2257, git diff checks clean; manual verification not required; public 346 / internal 61 / total 407 / prod C# 369 / App C# 30; ten internal Registration modules; M6k Debugging next eligible and unauthorized; whole M6 series not complete)*

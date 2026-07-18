@@ -30,9 +30,8 @@ public sealed class SettingsRegistrationModuleTests
         typeof(ISecretStore).FullName!,
     };
 
-    private static readonly string[] M6jPlusDirectMarkers =
+    private static readonly string[] M6kPlusDirectMarkers =
     {
-        "AddSingleton<ILanguageSessionService, LanguageSessionService>()",
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
@@ -193,16 +192,16 @@ public sealed class SettingsRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6jPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6kPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6jPlusDirectMarkers)
+        foreach (var marker in M6kPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6c–M6i modules are present; M6j–M6k do not exist yet.
+        // M6c–M6j modules are present; M6k does not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
@@ -210,7 +209,7 @@ public sealed class SettingsRegistrationModuleTests
         Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSourceControl\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideProjectSystem\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideLanguage", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideLanguage\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideDebugging", programSource);
     }
 }

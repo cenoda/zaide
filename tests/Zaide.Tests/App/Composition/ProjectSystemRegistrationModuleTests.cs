@@ -41,9 +41,8 @@ public sealed class ProjectSystemRegistrationModuleTests
         typeof(ProblemsViewModel).FullName!,
     };
 
-    private static readonly string[] M6jPlusDirectMarkers =
+    private static readonly string[] M6kPlusDirectMarkers =
     {
-        "AddSingleton<ILanguageSessionService, LanguageSessionService>()",
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
@@ -250,6 +249,7 @@ public sealed class ProjectSystemRegistrationModuleTests
         Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSourceControl\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideProjectSystem\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideLanguage\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
@@ -260,6 +260,7 @@ public sealed class ProjectSystemRegistrationModuleTests
         var townhallIndex = programSource.IndexOf("AddZaideTownhall()", StringComparison.Ordinal);
         var sourceControlIndex = programSource.IndexOf("AddZaideSourceControl()", StringComparison.Ordinal);
         var projectSystemIndex = programSource.IndexOf("AddZaideProjectSystem()", StringComparison.Ordinal);
+        var languageIndex = programSource.IndexOf("AddZaideLanguage()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
         Assert.True(settingsIndex > appCoreIndex);
         Assert.True(workspaceIndex > settingsIndex);
@@ -269,6 +270,7 @@ public sealed class ProjectSystemRegistrationModuleTests
         Assert.True(townhallIndex > agentsIndex);
         Assert.True(sourceControlIndex > townhallIndex);
         Assert.True(projectSystemIndex > sourceControlIndex);
+        Assert.True(languageIndex > projectSystemIndex);
 
         Assert.DoesNotContain(
             "AddSingleton<IProjectFileSystem, FileSystemProjectFileSystem>()",
@@ -307,11 +309,8 @@ public sealed class ProjectSystemRegistrationModuleTests
         Assert.DoesNotContain("AddSingleton<TestResultsViewModel>()", programSource);
         Assert.DoesNotContain("AddSingleton<ProblemsViewModel>()", programSource);
 
-        // Debugging-owned and Language-owned neighbors remain direct in Program.
+        // Debugging-owned neighbors remain direct in Program for M6k.
         Assert.Contains("AddSingleton<IDebugSessionService, DebugSessionService>()", programSource);
-        Assert.Contains(
-            "AddSingleton<ILanguageDiagnosticsService, LanguageDiagnosticsService>()",
-            programSource);
         Assert.Contains("AddSingleton<DebugSessionViewModel>()", programSource);
 
         // AddLogging remains in Program (not an M6i registration).
@@ -389,17 +388,17 @@ public sealed class ProjectSystemRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6jPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6kPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6jPlusDirectMarkers)
+        foreach (var marker in M6kPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6j–M6k modules do not exist yet.
-        Assert.DoesNotContain("AddZaideLanguage", programSource);
+        // M6j Language module is present; M6k does not exist yet.
+        Assert.Single(Regex.Matches(programSource, @"AddZaideLanguage\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideDebugging", programSource);
     }
 }

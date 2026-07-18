@@ -6,9 +6,6 @@ using ReactiveUI.Avalonia.Splat;
 using System;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
-using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.Features.Language.Contracts;
-using Zaide.Features.Language.Application;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Debugging.Presentation;
@@ -37,6 +34,7 @@ class Program
         services.AddZaideTownhall();
         services.AddZaideSourceControl();
         services.AddZaideProjectSystem();
+        services.AddZaideLanguage();
 
         services.AddLogging(builder => builder.AddConsole());
 
@@ -55,26 +53,6 @@ class Program
         services.AddSingleton<DebugCurrentLocationViewModel>();
         services.AddSingleton<DebugPanelViewModel>();
         services.AddSingleton<EditorBreakpointViewModel>();
-
-        // Phase 10 M1: C# language session (process + StreamJsonRpc transport).
-        services.AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>();
-        services.AddSingleton<ILanguageServerSessionFactory, CsharpLsSessionFactory>();
-        services.AddSingleton<ILanguageSessionService, LanguageSessionService>();
-        services.AddSingleton<ILanguageDocumentBridge, LanguageDocumentBridge>();
-
-        // Phase 10 M3: structured diagnostics + Problems projection.
-        services.AddSingleton<ILanguageDiagnosticsService, LanguageDiagnosticsService>();
-
-        // Phase 10 M4: active-document completion and hover.
-        services.AddSingleton<ILanguageCompletionService, LanguageCompletionService>();
-        services.AddSingleton<ILanguageHoverService, LanguageHoverService>();
-
-        // Phase 10 M5: Go to Definition + document/workspace symbols.
-        services.AddSingleton<ILanguageNavigationService, LanguageNavigationService>();
-        services.AddSingleton<ILanguageSymbolService, LanguageSymbolService>();
-
-        // Phase 10 M6: whole-document formatting + Format on Save coordination.
-        services.AddSingleton<ILanguageFormattingService, LanguageFormattingService>();
     }
 
     public static AppBuilder BuildAvaloniaApp()
