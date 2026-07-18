@@ -34,10 +34,10 @@ at `1ad3625` (Workspace DI registration module; third completed M6 slice;
 automated verification green; manual verification not required), and **M6d**
 at `234a38f` (Editor DI registration module; fourth completed M6 slice;
 automated verification green; manual verification not required). **Refactor
-6.3 M1–M5 and M6a–M6f are complete** as individually completed slices. **M6f**
-(Agents registration module) is complete at `cd809d2` (`AddZaideAgents`).
-**M6g** is the next eligible slice and requires separate explicit authorization;
-M6g has not started. **M6h–M6k** remain unauthorized, and the whole M6 series
+6.3 M1–M5 and M6a–M6g are complete** as individually completed slices. **M6g**
+(Townhall registration module) is complete at `1f18e49` (`AddZaideTownhall`).
+**M6h** is the next eligible slice and requires separate explicit authorization;
+M6h has not started. **M6i–M6k** remain unauthorized, and the whole M6 series
 is not complete.
 
 ## Philosophy
@@ -226,11 +226,13 @@ third completed M6 slice). **M6d** is complete at `234a38f` (Editor DI
 registration module — fourth completed M6 slice). **M6e** is complete at
 `8ab50c0` (Terminal DI registration module — fifth completed M6 slice). **M6f**
 is complete at `cd809d2` (Agents DI registration module — sixth completed M6
-slice). **M6g** (Townhall registration module) is the next eligible milestone
-slice and still requires separate explicit authorization. M6g has not started;
-M6h–M6k remain unauthorized. Completing M6f does not authorize later M6
-slices. Phase 14 and every preceding refactor still require their own
-live-code-verified M0 acceptance before production implementation.
+slice). **M6g** is complete at `1f18e49` (Townhall DI registration module —
+seventh completed M6 slice). **M6h** (SourceControl registration module) is the
+next eligible milestone slice and still requires separate explicit
+authorization. M6h has not started; M6i–M6k remain unauthorized. Completing
+M6g does not authorize later M6 slices. Phase 14 and every preceding refactor
+still require their own live-code-verified M0 acceptance before production
+implementation.
 
 ## Why "Zaide"
 
