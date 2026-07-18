@@ -70,16 +70,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
     private readonly AgentTownhallMirrorCoordinator _agentTownhallMirror;
+    private readonly ShellPanelNavigation _panelNavigation;
 
     /// <summary>
-    /// Scheduler for the <see cref="IProjectContextService.WhenChanged"/>
-    /// subscription. Exposed as internal so tests can substitute a deterministic
-    /// scheduler without injecting a new constructor parameter.
-    /// Defaults to <see cref="AvaloniaScheduler.Instance"/>.
+    /// Scheduler for project-context <c>WhenChanged</c>. Internal so tests can
+    /// substitute a deterministic scheduler without a new ctor parameter.
     /// </summary>
     internal System.Reactive.Concurrency.IScheduler ProjectContextScheduler { get; set; }
         = AvaloniaScheduler.Instance;
-
 
     public bool IsBottomPanelVisible
     {
@@ -109,7 +107,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         get => _isExplorerMode;
         private set => this.RaiseAndSetIfChanged(ref _isExplorerMode, value);
     }
-
     public bool IsSourceControlMode
     {
         get => _isSourceControlMode;
@@ -135,34 +132,28 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         get => _isTerminalBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isTerminalBottomMode, value);
     }
-
     public bool IsProblemsBottomMode
     {
         get => _isProblemsBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isProblemsBottomMode, value);
     }
-
     public bool IsOutputBottomMode
     {
         get => _isOutputBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isOutputBottomMode, value);
     }
-
     public bool IsTestResultsBottomMode
     {
         get => _isTestResultsBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isTestResultsBottomMode, value);
     }
-
     public bool IsDebugBottomMode
     {
         get => _isDebugBottomMode;
         private set => this.RaiseAndSetIfChanged(ref _isDebugBottomMode, value);
     }
 
-    /// <summary>
-    /// True while the full-window settings overlay is visible.
-    /// </summary>
+    /// <summary>True while the full-window settings overlay is visible.</summary>
     public bool IsSettingsOpen
     {
         get => _isSettingsOpen;
@@ -200,9 +191,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public TestResultsViewModel TestResultsViewModel { get; }
     public DebugSessionViewModel DebugSessionViewModel { get; }
     public DebugPanelViewModel DebugPanelViewModel { get; }
-
     public EditorBreakpointViewModel EditorBreakpointViewModel { get; }
-
     public DebugCurrentLocationViewModel? DebugCurrentLocationViewModel { get; }
 
     /// <summary>
@@ -218,8 +207,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     /// <summary>
     /// Project name for the status bar. Derived from Workspace.
-    /// Legacy consumers may continue using this; new consumers should prefer
-    /// <see cref="CurrentProjectContext"/>.
+    /// Prefer <see cref="CurrentProjectContext"/> for new consumers.
     /// </summary>
     private string? _workspaceProjectName;
     public string? WorkspaceProjectName
@@ -257,76 +245,50 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             townhallViewModel);
         SourceControlViewModel = sourceControlViewModel;
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
-        ProjectWorkflowViewModel = projectWorkflowViewModel
-            ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
-        TestResultsViewModel = testResultsViewModel
-            ?? throw new ArgumentNullException(nameof(testResultsViewModel));
-        DebugSessionViewModel = debugSessionViewModel
-            ?? throw new ArgumentNullException(nameof(debugSessionViewModel));
-        DebugPanelViewModel = debugPanelViewModel
-            ?? throw new ArgumentNullException(nameof(debugPanelViewModel));
-        EditorBreakpointViewModel = editorBreakpointViewModel
-            ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
+        ProjectWorkflowViewModel = projectWorkflowViewModel ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
+        TestResultsViewModel = testResultsViewModel ?? throw new ArgumentNullException(nameof(testResultsViewModel));
+        DebugSessionViewModel = debugSessionViewModel ?? throw new ArgumentNullException(nameof(debugSessionViewModel));
+        DebugPanelViewModel = debugPanelViewModel ?? throw new ArgumentNullException(nameof(debugPanelViewModel));
+        EditorBreakpointViewModel = editorBreakpointViewModel ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
         DebugCurrentLocationViewModel = debugCurrentLocationViewModel;
 
         // Phase 11 F9: save all dirty editor tabs before Build / Run / Test.
-        ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () =>
-            editorTabViewModel.SaveAllDirtyTabsAsync();
-        DebugSessionViewModel.SaveAllDirtyTabsAsync = () =>
-            editorTabViewModel.SaveAllDirtyTabsAsync();
+        ProjectWorkflowViewModel.SaveAllDirtyTabsAsync = () => editorTabViewModel.SaveAllDirtyTabsAsync();
+        DebugSessionViewModel.SaveAllDirtyTabsAsync = () => editorTabViewModel.SaveAllDirtyTabsAsync();
         _workspace = workspace;
         _projectContextService = projectContextService;
         CurrentProjectContext = projectContextService.Current;
         WorkspaceProjectName = workspace.ProjectName;
-        ToggleBottomPanelCommand = ReactiveCommand.Create(ToggleBottomPanel);
-        HideBottomPanelCommand = ReactiveCommand.Create(HideBottomPanel);
+        _panelNavigation = new ShellPanelNavigation(
+            setLeft: mode => LeftPanelMode = mode,
+            setBottom: mode => BottomPanelMode = mode,
+            setBottomVisible: visible => IsBottomPanelVisible = visible,
+            getBottomVisible: () => IsBottomPanelVisible);
+        SwitchToExplorerCommand = _panelNavigation.SwitchToExplorerCommand;
+        SwitchToSourceControlCommand = _panelNavigation.SwitchToSourceControlCommand;
+        SwitchToTerminalBottomCommand = _panelNavigation.SwitchToTerminalBottomCommand;
+        SwitchToProblemsBottomCommand = _panelNavigation.SwitchToProblemsBottomCommand;
+        SwitchToOutputBottomCommand = _panelNavigation.SwitchToOutputBottomCommand;
+        SwitchToTestResultsBottomCommand = _panelNavigation.SwitchToTestResultsBottomCommand;
+        SwitchToDebugBottomCommand = _panelNavigation.SwitchToDebugBottomCommand;
+        ToggleBottomPanelCommand = _panelNavigation.ToggleBottomPanelCommand;
+        HideBottomPanelCommand = _panelNavigation.HideBottomPanelCommand;
         SaveActiveTabCommand = ReactiveCommand.CreateFromTask(SaveActiveTabAsync);
         PickFolder = new Interaction<Unit, string?>();
         ShowSettings = new Interaction<Unit, bool>();
+        // Open-folder: delegate to the file tree. Workspace/SC sync is driven by
+        // FileTreeViewModel.RootPath in Activate() for every open-folder entry point.
         OpenFolderCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var path = await PickFolder.Handle(Unit.Default);
             if (path is not null)
             {
-                // Delegate to the file tree. Syncing the shared workspace and
-                // Source Control is driven by the FileTreeViewModel.RootPath
-                // subscription in Activate() so every open-folder entry point
-                // (Ctrl+O here and the file-tree "Open Folder..." header) stays
-                // consistent and truthful.
                 await FileTreeViewModel.OpenFolderCommand.Execute(path);
             }
         });
-        SwitchToExplorerCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.Explorer; });
-        SwitchToSourceControlCommand = ReactiveCommand.Create(() => { LeftPanelMode = LeftPanelMode.SourceControl; });
-        SwitchToTerminalBottomCommand = ReactiveCommand.Create(() =>
-        {
-            BottomPanelMode = BottomPanelMode.Terminal;
-            IsBottomPanelVisible = true;
-        });
-        SwitchToProblemsBottomCommand = ReactiveCommand.Create(() =>
-        {
-            BottomPanelMode = BottomPanelMode.Problems;
-            IsBottomPanelVisible = true;
-        });
-        SwitchToOutputBottomCommand = ReactiveCommand.Create(() =>
-        {
-            BottomPanelMode = BottomPanelMode.Output;
-            IsBottomPanelVisible = true;
-        });
-        SwitchToTestResultsBottomCommand = ReactiveCommand.Create(() =>
-        {
-            BottomPanelMode = BottomPanelMode.TestResults;
-            IsBottomPanelVisible = true;
-        });
-        SwitchToDebugBottomCommand = ReactiveCommand.Create(() =>
-        {
-            BottomPanelMode = BottomPanelMode.Debug;
-            IsBottomPanelVisible = true;
-        });
 
-        // M3 (Phase 8.1.3): Close-folder command. Enabled only while a folder is open.
-        // Calls SetRootPath(null) directly. The CloseFolderRequested interaction
-        // (bridged in Activate()) is the view→ViewModel entry point that invokes this command.
+        // M3 (Phase 8.1.3): enabled only while a folder is open; bridged from
+        // CloseFolderRequested in Activate().
         var canCloseFolder = this.WhenAnyValue(x => x.FileTreeViewModel.RootPath)
             .Select(path => path is not null);
         CloseFolderCommand = ReactiveCommand.Create(() =>
@@ -334,10 +296,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             FileTreeViewModel.SetRootPath(null);
         }, canCloseFolder);
 
-        // Phase 8.2 M8a: register the canonical window commands with stable IDs
-        // (D6a). Registration happens after every ReactiveCommand property above
-        // is initialized. Production DI always supplies the singleton registry;
-        // the optional parameter lets tests opt in without a second path.
+        // Phase 8.2 M8a: register canonical window commands (D6a) after all
+        // ReactiveCommand properties are initialized. Tests may omit the registry.
         commandRegistry?.Register(new CommandDescriptor(
             "file.save", "Save", "File", new[] { "Ctrl+S" }, SaveActiveTabCommand));
         commandRegistry?.Register(new CommandDescriptor(
@@ -346,8 +306,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             "workspace.closeFolder", "Close Folder", "Workspace", Array.Empty<string>(), CloseFolderCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "view.toggleBottomPanel", "Toggle Bottom Panel", "View", new[] { "Ctrl+Oem3", "Ctrl+J" }, ToggleBottomPanelCommand));
-        // Phase 10 M3: Problems is reached from the bottom-panel mode strip.
-        // Command-registry registration is deferred until a deliberate palette/keybinding milestone.
     }
 
     /// <summary>
@@ -500,9 +458,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
-    /// Thin delegating seam for the agent panel send flow.
-    /// Forwards to <see cref="AgentTownhallMirrorCoordinator"/>; routing and
-    /// Townhall mirroring live there. Public name/signature unchanged for the view.
+    /// Forwards agent send to <see cref="AgentTownhallMirrorCoordinator"/>.
+    /// Public name/signature unchanged for the view.
     /// </summary>
     public Task SendAgentMessageAsync(
         string panelId,
@@ -514,16 +471,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     {
         _disposables?.Dispose();
         _disposables = null;
-    }
-
-    private void ToggleBottomPanel()
-    {
-        IsBottomPanelVisible = !IsBottomPanelVisible;
-    }
-
-    private void HideBottomPanel()
-    {
-        IsBottomPanelVisible = false;
     }
 
     private async Task SaveActiveTabAsync()

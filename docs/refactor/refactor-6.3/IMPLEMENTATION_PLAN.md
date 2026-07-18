@@ -1455,7 +1455,8 @@ M6k implementation is complete at `df262ac`.
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
 store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
-complete** at `172f2a3` (agent Townhall mirror extraction); **M9b/M9c remain
+complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is implemented
+in-tree (staged, not committed)** — panel navigation extraction; **M9c remains
 unauthorized**.
 
 ---
@@ -1642,6 +1643,11 @@ mirror unchanged.
 
 #### M9b — Panel navigation extraction
 
+| | |
+|--|--|
+| **Status** | **Implemented in-tree (staged, not committed)** — `internal sealed class ShellPanelNavigation`; MWVM retains `RaiseAndSetIfChanged` ownership; nine public commands assigned from helper; no DI registration |
+| **Measurable (live)** | MWVM **500** lines (≤ 500); inventory public **346** / internal **66** / total **412** / prod C# **374** / App C# **35**; Shell namespace **(18, 14, 4)**; FindingIds **2** unchanged |
+
 | Item | Locked decision |
 |------|-----------------|
 | Type | `internal sealed class ShellPanelNavigation` |
@@ -1662,12 +1668,17 @@ mirror unchanged.
 | `src/App/Shell/MainWindowViewModel.cs` | **Edit** — keep property notify ownership; wire navigation delegates/commands |
 | `src/App/Shell/MainWindow.axaml.cs` | **No change** (subscriptions stay on MWVM properties) |
 
-**Test files (exact):**
+**Test files (exact — amended live):**
 
 | Path | Action |
 |------|--------|
 | `tests/Zaide.Tests/App/Shell/MainWindowViewModelTests.cs` | **No change** (public panel API names unchanged) |
 | `tests/Zaide.Tests/App/Shell/MainWindowViewModelBottomPanelModeTests.cs` | **No change** |
+| `tests/Zaide.Tests/App/Shell/ShellPanelNavigationTests.cs` | **Create** — nine command decisions; MWVM `WhenAnyValue` notification proofs |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | **Edit** — internal/total ceilings 65→66 / 411→412 |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | **Edit** — M0 internal/total floors match post-M9b inventory |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | **Edit** — Shell namespace (18,14,4); prod C# 374; App C# 35 |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | **Edit** — App C# 35 |
 
 **Focused tests:**
 
@@ -1675,6 +1686,7 @@ mirror unchanged.
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   --filter "FullyQualifiedName~MainWindowViewModelTests\
 |FullyQualifiedName~MainWindowViewModelBottomPanelModeTests\
+|FullyQualifiedName~ShellPanelNavigationTests\
 |FullyQualifiedName~Architecture"
 ```
 
@@ -2107,18 +2119,17 @@ dotnet test Zaide.slnx --no-build
 
 1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
    closeout `3e465e1`.
-2. **M9a** (agent send / Townhall mirror extraction) is **complete at
-   `172f2a3`**:
-   `AgentTownhallMirrorCoordinator` owns send + mirror; MWVM expression-bodied
-   forwarder; constructor drops required `IAgentExecutionCoordinator` and public
-   `AgentRouter` / `AgentExecutionCoordinator` properties. FindingIds remain 2;
-   inventory internal/total/prod/App file counts bump by one for the new type/file.
-3. **M9b** is next eligible and remains unauthorized. Do not start M9b/M9c,
-   Refactor 7/8, or Phase 14 without separate authorization. Completing M9a
-   does **not** authorize M9b or whole-refactor closeout.
-4. Do **not** mark Refactor 6.3 or the M9 series complete from M9a alone.
-   Do not perform the five-document closeout in this slice.
+2. **M9a** complete at `172f2a3`; **M9a closeout** at `35df46b`.
+3. **M9b** (panel navigation extraction) is **implemented in-tree (staged, not
+   committed)**: `ShellPanelNavigation` owns nine commands + decision actions;
+   MWVM retains mode storage/`RaiseAndSetIfChanged`; public command names
+   unchanged. FindingIds remain 2; inventory internal/total/prod/App file counts
+   bump by one for the new type/file. Shell namespace (18, 14, 4).
+4. **M9c** is next eligible and remains unauthorized. Do not start M9c,
+   Refactor 7/8, or Phase 14 without separate authorization. Completing M9b
+   does **not** authorize M9c, the M9 series closeout, or whole-refactor
+   closeout. Do not perform the five-document closeout in this slice.
 
 ---
 
-*Last updated: 2026-07-18 (M9a complete at `172f2a3`: AgentTownhallMirrorCoordinator; MWVM 553 lines / ctor 15+2; inventory public 346 / internal 65 / total 411 / prod C# 373 / App C# 34; Shell namespace (17,14,3); FindingIds 2 unchanged; build 4 pre-existing warnings / 0 errors; focused 269/269; Architecture 21/21; full suite 2273/2273; manual agent-panel send not run; M9b unauthorized)*
+*Last updated: 2026-07-18 (M9b implemented in-tree and staged: ShellPanelNavigation; MWVM 500 lines; inventory public 346 / internal 66 / total 412 / prod C# 374 / App C# 35; Shell namespace (18,14,4); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 70/70, Architecture 21/21, full suite 2284/2284, git diff checks clean; manual panel-navigation verification not run; M9c unauthorized; no five-document closeout)*
