@@ -44,7 +44,9 @@ at `554552f`: public `App.Services` is removed; the internal
 `CompositionRoot.Services` store and two composition locator residuals remain.
 **M8** is complete at `874aa79`: `ApplicationShutdown.Run` owns ordered,
 exactly-once teardown while the App exit path remains synchronous. **M9a** is
-next eligible, has not started, and requires separate authorization.
+complete at `172f2a3`: internal `AgentTownhallMirrorCoordinator` owns agent
+send and Townhall mirroring. **M9b** is next eligible, has not started, and
+requires separate authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
 root-admission ratchet. No V3 production feature implementation is active.
@@ -135,14 +137,14 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M8 internal-only). Live
-inventory after M8: total top-level **410**, public **346**, internal **64**,
-production C# **372**, App C# **33**. Composition.Registration contains eleven
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M9a internal-only). Live
+inventory after M9a: total top-level **411**, public **346**, internal **65**,
+production C# **373**, App C# **34**. Composition.Registration contains eleven
 internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M9a** Agent send / Townhall mirror extraction next and
+Refactor 6.3 (**M9b** panel navigation extraction next and
 separately unauthorized).
 
 | Later work | Owns |
@@ -359,4 +361,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M8 complete; M8 at `874aa79`; ApplicationShutdown owns exactly-once ordered teardown; FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 40/40; Architecture 21/21; full suite 2267/2267), manual verification not run; public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; eleven internal Registration modules; M9a next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M9a complete; M9a at `172f2a3`; AgentTownhallMirrorCoordinator owns send/mirror flow; MWVM 553 lines and ctor 15 required + 2 optional; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 269/269; Architecture 21/21; full suite 2273/2273), manual agent-panel send not run; public 346 / internal 65 / total 411 / prod C# 373 / App C# 34; FindingIds 2 unchanged; M9b next eligible and separately unauthorized)*

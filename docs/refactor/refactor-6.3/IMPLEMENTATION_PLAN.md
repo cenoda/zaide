@@ -1454,9 +1454,9 @@ M6k implementation is complete at `df262ac`.
 
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
-store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a** is
-implemented and staged pending review (agent Townhall mirror extraction);
-**M9b/M9c remain unauthorized**.
+store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
+complete** at `172f2a3` (agent Townhall mirror extraction); **M9b/M9c remain
+unauthorized**.
 
 ---
 
@@ -1576,7 +1576,7 @@ surface (`SendAgentMessageAsync`, panel mode properties/commands, `Activate`).
 
 | | |
 |--|--|
-| **Status** | **Implemented (staged, not committed)** — Agent Townhall mirror extraction; public MWVM send API preserved as expression-bodied forwarder; `IAgentExecutionCoordinator` registration unchanged for `AgentRouter` |
+| **Status** | **Complete** at `172f2a3` (`refactor-6.3: M9a agent townhall mirror extraction`) — public MWVM send API preserved as expression-bodied forwarder; `IAgentExecutionCoordinator` registration unchanged for `AgentRouter` |
 | **Measurable (live)** | MWVM **553** lines (≤ 560); ctor **15 required + 2 optional = 17 total**; `SendAgentMessageAsync` expression-bodied ≤ 3 lines; inventory public **346** / internal **65** / total **411** / prod C# **373** / App C# **34**; FindingIds **2** unchanged |
 
 | Item | Locked decision |
@@ -2107,8 +2107,8 @@ dotnet test Zaide.slnx --no-build
 
 1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
    closeout `3e465e1`.
-2. **M9a** (agent send / Townhall mirror extraction) is **implemented and
-   staged** (not committed in the implementing session):
+2. **M9a** (agent send / Townhall mirror extraction) is **complete at
+   `172f2a3`**:
    `AgentTownhallMirrorCoordinator` owns send + mirror; MWVM expression-bodied
    forwarder; constructor drops required `IAgentExecutionCoordinator` and public
    `AgentRouter` / `AgentExecutionCoordinator` properties. FindingIds remain 2;
@@ -2121,4 +2121,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M9a implemented staged: AgentTownhallMirrorCoordinator; MWVM 553 lines / ctor 15+2; inventory public 346 / internal 65 / total 411 / prod C# 373 / App C# 34; Shell namespace (17,14,3); FindingIds 2 unchanged; build 4 pre-existing warnings / 0 errors; focused 269/269; Architecture 21/21; full suite 2273/2273; manual not run; M9b unauthorized)*
+*Last updated: 2026-07-18 (M9a complete at `172f2a3`: AgentTownhallMirrorCoordinator; MWVM 553 lines / ctor 15+2; inventory public 346 / internal 65 / total 411 / prod C# 373 / App C# 34; Shell namespace (17,14,3); FindingIds 2 unchanged; build 4 pre-existing warnings / 0 errors; focused 269/269; Architecture 21/21; full suite 2273/2273; manual agent-panel send not run; M9b unauthorized)*
