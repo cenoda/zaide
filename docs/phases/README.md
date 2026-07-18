@@ -24,12 +24,14 @@ required), **M6a** at `c59ad7b` (AppCore DI registration module; first
 completed M6 slice; automated verification green; manual verification not
 required), **M6b** at `43b8e85` (Settings DI registration module; second
 completed M6 slice; automated verification green; manual verification not
-required), and **M6c** at `1ad3625` (Workspace DI registration module; third
+required), **M6c** at `1ad3625` (Workspace DI registration module; third
 completed M6 slice; automated verification green; manual verification not
-required). **Refactor 6.3 M1–M5 and M6a–M6c are complete** as individually
+required), and **M6d** at `234a38f` (Editor DI registration module; fourth
+completed M6 slice; automated verification green; manual verification not
+required). **Refactor 6.3 M1–M5 and M6a–M6d are complete** as individually
 completed slices. Production work still requires a separate authorization for
-each implementation milestone; **M6d** (Editor registration module) is the
-next eligible slice and is not started. **M6d–M6k** remain unauthorized.
+each implementation milestone; **M6e** (Terminal registration module) is the
+next eligible slice and is not started. **M6e–M6k** remain unauthorized.
 
 ## Archive Policy
 
