@@ -209,10 +209,44 @@ xUnit2013 in ArchitectureRatchetTests — focused
 registration+DI+LanguageSessionServiceDi+Architecture **82/82**, Architecture
 **21/21**, full suite **2257/2257**, `git diff --check` clean;
 `git diff --cached --check` clean before the implementation commit).
-Manual verification **not required**. **M6k** (Debugging) is next eligible and
-requires separate authorization; M6k remains unauthorized. M6a–M6j are
-individually completed slices; the whole M6 series is not complete.
-Completing M6j does **not** authorize M6k.
+Manual verification **not required**.
+**M6k implemented and staged pending review** — eleventh M6 registration
+slice: internal `DebuggingServiceCollectionExtensions.AddZaideDebugging` owns
+the ten Debugging singleton registrations
+(`IDebugAdapterLocator` factory → `DebugAdapterLocator(ZAIDE_NETCOREDBG_PATH)`;
+`IDebugAdapterSessionFactory` → `DebugAdapterSessionFactory`;
+`DebugSessionTimeoutPolicy` self-registration;
+`IDebugSessionService` → `DebugSessionService`;
+`IBreakpointService` → `BreakpointService`;
+`DebugSessionViewModel`, `DebugStackProjectionViewModel`,
+`DebugCurrentLocationViewModel`, `DebugPanelViewModel`,
+`EditorBreakpointViewModel` self-registrations);
+`Program.ConfigureServices` calls `AddZaideDebugging()` exactly once after
+`AddZaideLanguage()`; module order is `AddZaideAppCore` → `AddZaideSettings` →
+`AddZaideWorkspace` → `AddZaideEditor` → `AddZaideTerminal` →
+`AddZaideAgents` → `AddZaideTownhall` → `AddZaideSourceControl` →
+`AddZaideProjectSystem` → `AddZaideLanguage` → `AddZaideDebugging`;
+`AddLogging` remains in `Program`; after M6k, `Program` contains **no** direct
+production `AddSingleton` registrations. Public baseline **346** unchanged;
+internal **61 → 62**; total top-level **407 → 408**; production C#
+**369 → 370**; App C# **30 → 31**; internal Composition.Registration modules
+**11**. Locator factory preserves env-var capture at factory invocation, Singleton
+lifetime, no `Resolve()` during registration. Phase 12 M1/M2 milestone comments
+preserved. All ten resolution-tested under empty production project context;
+descriptor-only: **none**. Tests do not call `Resolve()`, `StartAsync`,
+`StartLaunchAsync`, or breakpoint mutations; no netcoredbg/process/DAP/network
+dependency. M6a–M6j ratchets advanced (allow exactly one `AddZaideDebugging`;
+remove Debugging direct-registration markers; eleven-module order; no direct
+production `AddSingleton` in `Program`; preserve `AddLogging`). M6a–M6k are
+individually implemented slices; the whole M6 series is **not** complete until
+M6k implementation commit and separate documentation closeout. M7 remains
+unauthorized. Automated verification green while staged (forced
+`dotnet build Zaide.slnx --no-incremental` succeeded, 4 pre-existing warnings /
+0 errors — CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
+ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests —
+focused registration+DI+DebugSessionServiceDi+Architecture **86/86**,
+Architecture **21/21**, full suite **2263/2263**, `git diff --check` clean;
+`git diff --cached --check` clean). Manual verification **not required**.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -1297,25 +1331,100 @@ internal type/file (`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
 `ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
 public baseline text and public type count unchanged; FindingIds and
 architecture allowlists unchanged.
-**M6k** (Debugging) is next eligible and requires separate authorization.
-Completing M6j does **not** authorize M6k.
-
 #### M6k — Debugging (10)
 
 | Registration |
 |--------------|
-| `IDebugAdapterLocator` → `DebugAdapterLocator` |
+| `IDebugAdapterLocator` → factory-created `DebugAdapterLocator` |
 | `IDebugAdapterSessionFactory` → `DebugAdapterSessionFactory` |
-| `DebugSessionTimeoutPolicy` |
+| `DebugSessionTimeoutPolicy` (self) |
 | `IDebugSessionService` → `DebugSessionService` |
 | `IBreakpointService` → `BreakpointService` |
-| `DebugSessionViewModel` |
-| `DebugStackProjectionViewModel` |
-| `DebugCurrentLocationViewModel` |
-| `DebugPanelViewModel` |
-| `EditorBreakpointViewModel` |
+| `DebugSessionViewModel` (self) |
+| `DebugStackProjectionViewModel` (self) |
+| `DebugCurrentLocationViewModel` (self) |
+| `DebugPanelViewModel` (self) |
+| `EditorBreakpointViewModel` (self) |
 
-File: `…/DebuggingServiceCollectionExtensions.cs`
+File: `src/App/Composition/Registration/DebuggingServiceCollectionExtensions.cs`
+Method: `AddZaideDebugging`.
+
+**Status:** **implemented and staged pending review** (implementation commit
+and separate documentation closeout not yet performed).
+
+All ten registrations remain **Singleton**. Mappings, self-registrations,
+constructors, and dependencies are unchanged. Locator factory behavior is
+preserved exactly:
+
+- reads `Environment.GetEnvironmentVariable("ZAIDE_NETCOREDBG_PATH")`
+- passes the resulting string to `new DebugAdapterLocator(...)`
+- Singleton lifetime
+- does **not** call `Resolve()` during registration
+- does **not** search PATH, inspect files, or start netcoredbg during registration
+
+Milestone comments preserved in the module: Phase 12 M1 (adapter locator /
+session factory / session lifecycle); Phase 12 M2 (breakpoint persistence);
+truthful ownership comment for the five Debugging projections.
+
+Strict exclusions confirmed: `AddLogging` remains in `Program` (not moved).
+No changes to `DebugAdapterLocator`, `DebugAdapterSessionFactory`,
+`DebugSessionService`, `BreakpointService`, timeout policy, or ViewModel
+behavior. No environment-variable handling changes. No constructor, dependency,
+mapping, or lifetime changes. No `CompositionRoot` / M7 work. `App.Services`
+assignment unchanged.
+
+**Resolution vs descriptor proof:**
+
+| Service | Proof | Rationale |
+|---------|-------|-----------|
+| `IDebugAdapterLocator` | **resolution-tested** | Constructor stores optional path only; PATH/file I/O only on `Resolve()`. Factory capture of `ZAIDE_NETCOREDBG_PATH` proven by invoking the descriptor factory and reflecting `_configuredPath` without calling `Resolve()` |
+| `IDebugAdapterSessionFactory` | **resolution-tested** | Empty constructor; process/DAP transport only on `StartAsync` |
+| `DebugSessionTimeoutPolicy` | **resolution-tested** | Parameterless constructor assigns timeout constants only |
+| `IDebugSessionService` | **resolution-tested** | Constructor stores deps, subscribes to project context, publishes initial Unavailable snapshot under empty production context; process/DAP only on `StartLaunchAsync` |
+| `IBreakpointService` | **resolution-tested** | Constructor stores deps only; settings mutation only on explicit mutation APIs |
+| `DebugSessionViewModel` | **resolution-tested** | Constructor stores deps + wires ReactiveUI commands; no session start |
+| `DebugStackProjectionViewModel` | **resolution-tested** | Constructor stores deps + creates commands; no DAP activity |
+| `DebugCurrentLocationViewModel` | **resolution-tested** | Constructor stores deps only |
+| `DebugPanelViewModel` | **resolution-tested** | Constructor stores deps only |
+| `EditorBreakpointViewModel` | **resolution-tested** | Constructor stores deps + wires commands; no breakpoint mutation on construction |
+
+Descriptor-only services: **none**. Tests never call `DebugAdapterLocator.Resolve()`,
+`DebugAdapterSessionFactory.StartAsync`, `DebugSessionService.StartLaunchAsync`,
+or breakpoint mutation methods; do not spawn a process, open DAP transport,
+access the network, or depend on local debug tooling. Environment-variable
+factory test saves/restores `ZAIDE_NETCOREDBG_PATH` in a `finally` block.
+
+Production: `Program.ConfigureServices` calls `services.AddZaideDebugging()`
+exactly once immediately after `AddZaideLanguage()`; module order is
+`AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents` →
+`AddZaideTownhall` → `AddZaideSourceControl` → `AddZaideProjectSystem` →
+`AddZaideLanguage` → `AddZaideDebugging`; the ten registrations live only in
+the internal module; `AddLogging` remains in `Program`; **no** direct
+production `AddSingleton` registrations remain in `Program`.
+
+Inventory after M6k: public **346** unchanged; internal **61 → 62**; total
+top-level **407 → 408**; production C# **369 → 370**; App C# **30 → 31**;
+internal Composition.Registration modules **11**.
+
+Tests: `DebuggingRegistrationModuleTests` plus M6a–M6j ratchet advancement
+(allow exactly one `AddZaideDebugging`; remove all ten Debugging
+direct-registration markers; prove complete eleven-module call order; prove no
+direct production `AddSingleton` remains in `Program`; preserve
+`AddLogging`-in-`Program` proof; no fictitious M6l module) and existing
+composition/DI suite. Architecture bookkeeping only for the new internal
+type/file (`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
+`ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
+public baseline text and public type count unchanged; FindingIds and
+architecture allowlists unchanged.
+
+Automated verification green while staged (forced
+`dotnet build Zaide.slnx --no-incremental` succeeded, 4 pre-existing warnings /
+0 errors — CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
+ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests —
+focused registration+DI+DebugSessionServiceDi+Architecture **86/86**,
+Architecture **21/21**, full suite **2263/2263**, `git diff --check` clean;
+`git diff --cached --check` clean). Manual verification **not required**.
 
 **Checksum at M6 time (after M1–M5, before M10):**  
 AppCore 6 + Settings 2 + Workspace 2 + Editor 6 + Terminal 2 + Agents 6 +
@@ -1341,8 +1450,15 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 **Commit boundary (locked):** exactly **one commit per slice** `M6a` through
 `M6k` (eleven commits). Do **not** batch slices. Each commit message names
 its slice id (e.g. `refactor-6.3: M6b settings DI module`).
+M6k implementation is **staged pending review** — do not commit from this
+implementation session without separate review gate.
 
 **Manual:** none if DI tests green.
+
+**M6 series status boundary:** M6a–M6k may be described as implemented slices.
+Do **not** mark the whole M6 series or Refactor 6.3 complete before M6k review,
+implementation commit, and separate documentation closeout. M7 is the next
+planned milestone after M6 closeout, but remains **unauthorized**.
 
 ---
 
@@ -1960,18 +2076,19 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 and M6a–M6j complete** as previously recorded. **M6j complete** at
-   `e7785b4` (Language DI registration module / `AddZaideLanguage`). M6a–M6j
-   are individually completed slices; the whole M6 series is **not** complete.
-2. **Next eligible slice:** authorize **M6k only** (§ M6k — Debugging
-   registration module: `DebuggingServiceCollectionExtensions.cs` /
-   `AddZaideDebugging`) when ready. M6k production implementation has
-   **not** started and requires a separate explicit authorization.
-3. Do not start M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6j does **not** authorize M6k.
-4. **M6k** remains unauthorized. Completing M6j does not authorize M6k; it
-   requires its own explicit authorization.
+1. **M1–M5 and M6a–M6j complete** as previously recorded. **M6k implemented
+   and staged pending review** (Debugging DI registration module /
+   `AddZaideDebugging`). M6a–M6k are individually implemented slices; the
+   whole M6 series is **not** complete until M6k implementation commit and
+   separate documentation closeout.
+2. **After M6k review + implementation commit + closeout:** next planned
+   milestone is **M7** (Composition root store / remove public `App.Services`),
+   which remains **unauthorized** until separate explicit authorization.
+3. Do not start M7+, Refactor 7/8, or Phase 14 without separate authorization.
+   Completing M6k does **not** authorize M7 or whole-refactor closeout.
+4. Do **not** mark Refactor 6.3 or the whole M6 series complete from the M6k
+   implementation slice alone.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6j complete; M6j Language complete at `e7785b4`; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 82/82, Architecture 21/21, full suite 2257/2257, git diff checks clean; manual verification not required; public 346 / internal 61 / total 407 / prod C# 369 / App C# 30; ten internal Registration modules; M6k Debugging next eligible and unauthorized; whole M6 series not complete)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6j complete; M6k Debugging implemented and staged pending review; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors, focused 86/86, Architecture 21/21, full suite 2263/2263, git diff checks clean; public 346 / internal 62 / total 408 / prod C# 370 / App C# 31; eleven internal Registration modules; Program has no direct production AddSingleton; AddLogging remains in Program; whole M6 series not complete until M6k commit+closeout; M7 unauthorized)*

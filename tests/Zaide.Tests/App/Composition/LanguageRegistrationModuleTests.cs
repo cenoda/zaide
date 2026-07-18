@@ -70,19 +70,6 @@ public sealed class LanguageRegistrationModuleTests
         typeof(ILanguageFormattingService).FullName!,
     };
 
-    private static readonly string[] M6kPlusDirectMarkers =
-    {
-        "AddSingleton<IDebugSessionService, DebugSessionService>()",
-        "AddSingleton<IDebugAdapterLocator>",
-        "AddSingleton<IDebugAdapterSessionFactory, DebugAdapterSessionFactory>()",
-        "AddSingleton<DebugSessionTimeoutPolicy>()",
-        "AddSingleton<IBreakpointService, BreakpointService>()",
-        "AddSingleton<DebugSessionViewModel>()",
-        "AddSingleton<DebugStackProjectionViewModel>()",
-        "AddSingleton<DebugCurrentLocationViewModel>()",
-        "AddSingleton<DebugPanelViewModel>()",
-        "AddSingleton<EditorBreakpointViewModel>()",
-    };
 
     static LanguageRegistrationModuleTests()
     {
@@ -263,6 +250,7 @@ public sealed class LanguageRegistrationModuleTests
         Assert.Single(Regex.Matches(programSource, @"AddZaideSourceControl\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideProjectSystem\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideLanguage\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideDebugging\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
@@ -274,6 +262,7 @@ public sealed class LanguageRegistrationModuleTests
         var sourceControlIndex = programSource.IndexOf("AddZaideSourceControl()", StringComparison.Ordinal);
         var projectSystemIndex = programSource.IndexOf("AddZaideProjectSystem()", StringComparison.Ordinal);
         var languageIndex = programSource.IndexOf("AddZaideLanguage()", StringComparison.Ordinal);
+        var debuggingIndex = programSource.IndexOf("AddZaideDebugging()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
         Assert.True(settingsIndex > appCoreIndex);
         Assert.True(workspaceIndex > settingsIndex);
@@ -284,6 +273,7 @@ public sealed class LanguageRegistrationModuleTests
         Assert.True(sourceControlIndex > townhallIndex);
         Assert.True(projectSystemIndex > sourceControlIndex);
         Assert.True(languageIndex > projectSystemIndex);
+        Assert.True(debuggingIndex > languageIndex);
 
         Assert.DoesNotContain(
             "AddSingleton<ILanguageServerBinaryLocator, LanguageServerBinaryLocator>()",
@@ -316,17 +306,15 @@ public sealed class LanguageRegistrationModuleTests
             "AddSingleton<ILanguageFormattingService, LanguageFormattingService>()",
             programSource);
 
-        // All ten M6k Debugging registrations remain direct in Program.
-        foreach (var marker in M6kPlusDirectMarkers)
-        {
-            Assert.Contains(marker, programSource);
-        }
+        // M6k moved Debugging registrations out of Program.
+        Assert.DoesNotContain(
+            "AddSingleton<IDebugSessionService, DebugSessionService>()",
+            programSource);
+        Assert.DoesNotContain("AddSingleton<DebugSessionViewModel>()", programSource);
+        Assert.DoesNotContain("AddSingleton<", programSource);
 
         // AddLogging remains in Program (not an M6j registration).
         Assert.Contains("AddLogging(", programSource);
-
-        // M6k Debugging module does not exist yet.
-        Assert.DoesNotContain("AddZaideDebugging", programSource);
     }
 
     [Fact]
@@ -399,19 +387,57 @@ public sealed class LanguageRegistrationModuleTests
         Assert.DoesNotContain("IBreakpointService", moduleSource);
     }
 
+
     [Fact]
-    public void ProgramSource_StillDeclaresM6kPlusRegistrationsDirectly()
+    public void ProgramSource_CallsAllElevenModules_AndHasNoDirectProductionAddSingleton()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6kPlusDirectMarkers)
-        {
-            Assert.Contains(marker, programSource);
-        }
-
-        // M6j Language module is present; M6k Debugging module does not exist yet.
+        Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideSourceControl\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideProjectSystem\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideLanguage\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideDebugging", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideDebugging\s*\(\s*\)"));
+
+        var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
+        var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
+        var workspaceIndex = programSource.IndexOf("AddZaideWorkspace()", StringComparison.Ordinal);
+        var editorIndex = programSource.IndexOf("AddZaideEditor()", StringComparison.Ordinal);
+        var terminalIndex = programSource.IndexOf("AddZaideTerminal()", StringComparison.Ordinal);
+        var agentsIndex = programSource.IndexOf("AddZaideAgents()", StringComparison.Ordinal);
+        var townhallIndex = programSource.IndexOf("AddZaideTownhall()", StringComparison.Ordinal);
+        var sourceControlIndex = programSource.IndexOf("AddZaideSourceControl()", StringComparison.Ordinal);
+        var projectSystemIndex = programSource.IndexOf("AddZaideProjectSystem()", StringComparison.Ordinal);
+        var languageIndex = programSource.IndexOf("AddZaideLanguage()", StringComparison.Ordinal);
+        var debuggingIndex = programSource.IndexOf("AddZaideDebugging()", StringComparison.Ordinal);
+        Assert.True(appCoreIndex >= 0);
+        Assert.True(settingsIndex > appCoreIndex);
+        Assert.True(workspaceIndex > settingsIndex);
+        Assert.True(editorIndex > workspaceIndex);
+        Assert.True(terminalIndex > editorIndex);
+        Assert.True(agentsIndex > terminalIndex);
+        Assert.True(townhallIndex > agentsIndex);
+        Assert.True(sourceControlIndex > townhallIndex);
+        Assert.True(projectSystemIndex > sourceControlIndex);
+        Assert.True(languageIndex > projectSystemIndex);
+        Assert.True(debuggingIndex > languageIndex);
+
+        // M6k moved all Debugging registrations; no direct production AddSingleton remains.
+        Assert.DoesNotContain("AddSingleton<", programSource);
+        Assert.DoesNotContain("AddSingleton(", programSource);
+
+        // AddLogging remains in Program.
+        Assert.Contains("AddLogging(", programSource);
+
+        // No M7 CompositionRoot and no fictitious later registration module.
+        Assert.DoesNotContain("CompositionRoot", programSource);
+        Assert.DoesNotContain("AddZaideCompositionRoot", programSource);
     }
 
     [Fact]
