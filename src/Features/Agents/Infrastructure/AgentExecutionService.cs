@@ -22,7 +22,7 @@ namespace Zaide.Features.Agents.Infrastructure;
 /// <see cref="ISecretStore"/>, and environment variables. Precedence:
 /// environment variable → secret store → saved settings → empty.</para>
 /// </summary>
-public sealed class AgentExecutionService : IAgentExecutionService
+internal sealed class AgentExecutionService : IAgentExecutionService
 {
     private readonly HttpClient _httpClient;
     private readonly ISettingsService _settings;

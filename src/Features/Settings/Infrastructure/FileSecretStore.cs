@@ -19,7 +19,7 @@ namespace Zaide.Features.Settings.Infrastructure;
 ///
 /// <para>Windows and macOS retain platform-default ACL behavior.</para>
 /// </summary>
-public sealed class FileSecretStore : ISecretStore, IDisposable
+internal sealed class FileSecretStore : ISecretStore, IDisposable
 {
     private readonly string _secretsPath;
     private readonly string _tempPath;

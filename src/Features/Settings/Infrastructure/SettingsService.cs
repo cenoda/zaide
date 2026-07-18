@@ -35,7 +35,7 @@ namespace Zaide.Features.Settings.Infrastructure;
 /// mutation gate is acquired or before a save is enqueued. Once committed,
 /// caller cancellation is ignored.
 /// </summary>
-public sealed class SettingsService : ISettingsService, IDisposable
+internal sealed class SettingsService : ISettingsService, IDisposable
 {
     // ── Volatile backing for lock-free Current reads ──────────────────────
     private volatile SettingsModel _current;

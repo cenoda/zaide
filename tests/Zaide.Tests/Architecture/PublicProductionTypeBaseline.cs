@@ -34,7 +34,7 @@ namespace Zaide.Tests.Architecture;
 /// <item>
 /// Count-only compliance is insufficient: the explicit full-name set must match
 /// live compiled public types. Ceiling remains
-/// <see cref="PublicTopLevelTypes"/> (323 after Refactor 6.3 M11c SourceControl+Terminal internalization).
+/// <see cref="PublicTopLevelTypes"/> (320 after Refactor 6.3 M11d Agents+Settings infrastructure internalization).
 /// </item>
 /// </list>
 /// </summary>
@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (unchanged by M11c visibility-only transfer).</summary>
+    /// <summary>Total non-nested, non-compiler-generated production types (unchanged by M11d visibility-only transfer).</summary>
     public const int TotalTopLevelTypes = 415;
 
-    /// <summary>Public top-level production type ceiling and baseline count (M11c −5 SourceControl+Terminal implementations).</summary>
-    public const int PublicTopLevelTypes = 323;
+    /// <summary>Public top-level production type ceiling and baseline count (M11d −3 Agents+Settings infrastructure implementations).</summary>
+    public const int PublicTopLevelTypes = 320;
 
-    /// <summary>Internal top-level production type count (M11c +5 SourceControl+Terminal implementations).</summary>
-    public const int InternalTopLevelTypes = 92;
+    /// <summary>Internal top-level production type count (M11d +3 Agents+Settings infrastructure implementations).</summary>
+    public const int InternalTopLevelTypes = 95;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

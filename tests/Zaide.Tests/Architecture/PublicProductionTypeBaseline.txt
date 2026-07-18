@@ -28,7 +28,6 @@ Zaide.Features.Agents.Contracts.IAgentRouter
 Zaide.Features.Agents.Domain.AgentPanelState
 Zaide.Features.Agents.Domain.RouteRequest
 Zaide.Features.Agents.Domain.RouteResult
-Zaide.Features.Agents.Infrastructure.AgentExecutionService
 Zaide.Features.Agents.Presentation.AgentPanelHost
 Zaide.Features.Agents.Presentation.AgentPanelHostView
 Zaide.Features.Agents.Presentation.AgentPanelView
@@ -243,11 +242,9 @@ Zaide.Features.Settings.Domain.SettingsSaveError
 Zaide.Features.Settings.Domain.SettingsSaveResult
 Zaide.Features.Settings.Domain.SettingsValidationError
 Zaide.Features.Settings.Domain.SettingsValidator
-Zaide.Features.Settings.Infrastructure.FileSecretStore
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV1ToV2
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV2ToV3
 Zaide.Features.Settings.Infrastructure.SettingsPathResolver
-Zaide.Features.Settings.Infrastructure.SettingsService
 Zaide.Features.Settings.Presentation.FontPickerEntry
 Zaide.Features.Settings.Presentation.ISettingsPanelFactory
 Zaide.Features.Settings.Presentation.InstalledFontCatalog

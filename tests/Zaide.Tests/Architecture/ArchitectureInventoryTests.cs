@@ -48,8 +48,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
-        // M10: SettingsMigrator public→internal (6p/1i → 5p/2i).
-        Assert.Equal((7, 5, 2), byNamespace["Zaide.Features.Settings.Infrastructure"]);
+        // M11d: SettingsService + FileSecretStore public→internal (5p/2i → 3p/4i).
+        Assert.Equal((7, 3, 4), byNamespace["Zaide.Features.Settings.Infrastructure"]);
         // M10: +ISettingsPanelFactory (public) + SettingsPanelFactory (internal).
         Assert.Equal((9, 6, 3), byNamespace["Zaide.Features.Settings.Presentation"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Workspace.Domain"]);
@@ -93,7 +93,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Contracts"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.Agents.Application"]);
-        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
+        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         Assert.Equal((5, 4, 1), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
