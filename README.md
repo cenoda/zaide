@@ -51,9 +51,10 @@ complete at `a69fc66`, shrinking it from 336 to 328. **M11c** (SourceControl +
 Terminal implementation visibility internalization) is complete at `3d03285`,
 shrinking it from 328 to 323. **M11d** (Agents + Settings infrastructure
 visibility internalization) is complete at `133a3c1`, shrinking it from 323 to
-320 and completing the M11 series. **M12** is next eligible, has not started,
-and requires separate explicit authorization. Completing M11 does not
-authorize M12.
+320 and completing the M11 series. **M12** (lifetime ownership map) is complete
+at `d4d1470`, documenting exactly 67 production DI registrations. **M13** is
+next eligible, has not started, and requires separate explicit authorization.
+Completing M12 does not authorize M13.
 
 ## Philosophy
 
@@ -259,8 +260,9 @@ implementations internalized), and **M11b** is complete at `a69fc66` (eight
 Debugging + ProjectSystem implementations internalized). **M11c** is complete
 at `3d03285` (five SourceControl + Terminal implementations internalized).
 **M11d** is complete at `133a3c1` (three Agents + Settings infrastructure
-implementations internalized), completing the M11 series. **M12** is next
-eligible and requires separate explicit authorization. Phase
+implementations internalized), completing the M11 series. **M12** is complete
+at `d4d1470` (67-row lifetime ownership map). **M13** is next eligible and
+requires separate explicit authorization. Phase
 14 and every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 

@@ -1462,7 +1462,8 @@ at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 **M11b is complete** at `a69fc66`. **M11c is complete** at `3d03285`:
 SourceControl + Terminal five-type visibility internalization; **M11d is
 complete** at `133a3c1` — Agents + Settings three-type visibility
-internalization. The M11 series is complete; M12 remains unauthorized.
+internalization. The M11 series is complete; **M12 is complete** at `d4d1470`
+(67-row lifetime ownership map). M13 remains unauthorized.
 
 ---
 
@@ -2143,7 +2144,8 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 dotnet test Zaide.slnx --no-build
 ```
 
-**Status:** **complete** (docs-only at `93d8626` working tree; commit pending) —
+**Status:** **complete** at `d4d1470`
+(`docs: add refactor 6.3 lifetime ownership map`) —
 `LIFETIME_MAP.md` created with **67** fully populated rows; live registration
 audit confirms **67** `AddSingleton` registrations across 11 `AddZaide*` modules
 matching the locked post-M10 inventory exactly (service keys, implementation
@@ -2154,8 +2156,7 @@ session and Terminal session are documented as non-DI session types. No
 production/test/ratchet/baseline/allowlist/DI edits. Verification:
 Architecture **21/21**; full suite **2320/2320**; `git diff --check` /
 `git diff --cached --check` clean after staging. Manual verification **not
-required** and **not run**. M13 **not started** (five-document closeout
-deferred).
+required** and **not run**. M13 **not started**.
 
 ---
 
@@ -2271,7 +2272,7 @@ deferred).
    complete at `133a3c1`: exactly 3 types public→internal;
    public baseline 320; internal 95; total 415; DI 67; FindingIds 2 unchanged.
    The M11 series is complete with an exact cumulative public reduction of 26.
-10. **M12** (lifetime ownership map / V11) is **complete** (docs-only):
+10. **M12** (lifetime ownership map / V11) is complete at `d4d1470` (docs-only):
     `docs/refactor/refactor-6.3/LIFETIME_MAP.md` with **67** filled rows;
     live DI count **67**; Architecture **21/21**; full **2320/2320**.
 11. **M13** is next eligible and remains **unauthorized**. Do not start M13,
@@ -2280,4 +2281,4 @@ deferred).
 
 ---
 
-*Last updated: 2026-07-19 (M12 complete docs-only: LIFETIME_MAP.md 67 rows; live DI 67 verified; semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; EditorViewModel not registered; Architecture 21/21; full 2320/2320; no production/test/ratchet changes; M13 next eligible and unauthorized)*
+*Last updated: 2026-07-19 (M12 complete at `d4d1470` docs-only: LIFETIME_MAP.md 67 rows; live DI 67 verified; semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; EditorViewModel not registered; Architecture 21/21; full 2320/2320; no production/test/ratchet changes; M13 next eligible and unauthorized)*

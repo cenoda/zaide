@@ -43,7 +43,8 @@ internalized). **M11c** is complete at `3d03285` (five SourceControl + Terminal
 implementations internalized), and **M11d** is complete at `133a3c1` (three
 Agents + Settings infrastructure implementations internalized), completing the
 M11 series. Production work still requires separate authorization for each
-implementation milestone; **M12** is next eligible and has not started.
+implementation milestone. **M12** is complete at `d4d1470` (67-row lifetime
+ownership map); **M13** is next eligible and has not started.
 
 ## Archive Policy
 

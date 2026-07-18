@@ -56,8 +56,9 @@ direct Settings construction from MainWindow with a net-zero public baseline.
 implementations are internal. **M11c** is complete at `3d03285`: five
 SourceControl + Terminal implementations are internal. **M11d** is complete at
 `133a3c1`: three Agents + Settings infrastructure implementations are internal,
-completing the M11 series. **M12** is next eligible, has not started, and
-requires separate authorization.
+completing the M11 series. **M12** is complete at `d4d1470`: the lifetime map
+documents exactly 67 production DI registrations and their semantic ownership.
+**M13** is next eligible, has not started, and requires separate authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
 root-admission ratchet. No V3 production feature implementation is active.
@@ -156,7 +157,7 @@ internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M12** lifetime ownership map next and
+Refactor 6.3 (**M13** closeout next and
 separately unauthorized).
 
 | Later work | Owns |
@@ -373,4 +374,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M11d complete and M11 series complete; M11d at `133a3c1`; three Agents + Settings infrastructure implementations internalized; cumulative M11 public reduction 26; public 320 / internal 95 / total 415 / prod C# 377 / Features 339 / App 36; DI registrations 67 and FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 109/109; Architecture 21/21; full suite 2320/2320), manual verification not required and not run; M12 next eligible and separately unauthorized)*
+*Last updated: 2026-07-19 (Refactor 6.3 M1–M12 complete; M12 at `d4d1470`; LIFETIME_MAP.md documents exactly 67 DI singletons with semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; Editor/Terminal sessions documented as non-DI ownership; public 320 / internal 95 / total 415 / prod C# 377 / Features 339 / App 36; FindingIds 2 unchanged; Architecture 21/21; full suite 2320/2320; no production/test/ratchet changes; M13 next eligible and separately unauthorized)*
