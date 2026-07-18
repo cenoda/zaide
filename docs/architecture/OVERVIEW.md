@@ -37,14 +37,14 @@ required), **M6c** at `1ad3625` (Workspace DI registration module —
 third completed M6 slice; automated verification green; manual verification
 not required), and **M6d** at `234a38f` (Editor DI registration module —
 fourth completed M6 slice; automated verification green; manual verification
-not required). **Refactor 6.3 M1–M5 and M6a–M6g are complete** as individually
-completed slices. **M6g** (Townhall registration module) is complete at
-`1f18e49` (`AddZaideTownhall`). **M6h** is the
-next eligible slice and requires separate explicit authorization; M6h has not
-started. M6i–M6k remain unauthorized, and the whole M6 series is not complete.
-Refactors 7 / 8 have no production authorization until their own M0
-acceptances. Non-C# assets remain outside the root-admission ratchet. No V3
-production feature implementation is active.
+not required). **Refactor 6.3 M1–M5 and M6a–M6h are complete** as individually
+completed slices. **M6h** (SourceControl registration module) is complete at
+`9f514cd` (`AddZaideSourceControl`). **M6i** is the next eligible slice and
+requires separate explicit authorization; M6i has not started. M6j–M6k remain
+unauthorized, and the whole M6 series is not complete. Completing M6h does not
+authorize later M6 slices. Refactors 7 / 8 have no production authorization
+until their own M0 acceptances. Non-C# assets remain outside the
+root-admission ratchet. No V3 production feature implementation is active.
 
 ---
 
@@ -106,7 +106,7 @@ feature-first layout (optional M13 root admissions remain unauthorized):
 
 ```text
 src/
-  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b) + Workspace (6.3 M6c) + Editor (6.3 M6d) + Terminal (6.3 M6e) + Agents (6.3 M6f) + Townhall (6.3 M6g)
+  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b) + Workspace (6.3 M6c) + Editor (6.3 M6d) + Terminal (6.3 M6e) + Agents (6.3 M6f) + Townhall (6.3 M6g) + SourceControl (6.3 M6h)
   App/Shell/           # MainWindow, shell VMs/views, chrome (6.2 M12; Animations/IconFactory shell-owned R62-D03)
   UI/DesignSystem/     # tokens, icons, typography (6.2 M1)
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
@@ -132,14 +132,15 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M6g internal-only). Live
-inventory after M6g: total top-level **404**, public **346**, internal **58**,
-production C# **366**, App C# **27**. Composition.Registration contains seven
-internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents, Townhall). FindingIds remaining:
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M6h internal-only). Live
+inventory after M6h: total top-level **405**, public **346**, internal **59**,
+production C# **367**, App C# **28**. Composition.Registration contains eight
+internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
+Townhall, SourceControl). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M6h** SourceControl registration module next; M6h separately
-unauthorized; M6i–M6k unauthorized).
+Refactor 6.3 (**M6i** ProjectSystem registration module next; M6i separately
+unauthorized; M6j–M6k unauthorized).
 
 | Later work | Owns |
 |------------|------|
@@ -355,4 +356,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 and M6a–M6g complete; M6g at `1f18e49`; automated verification green, manual verification not required; public 346 / internal 58 / total 404 / prod C# 366 / App C# 27; seven internal Registration modules; M6h next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 and M6a–M6h complete; M6h at `9f514cd`; automated verification green, manual verification not required; public 346 / internal 59 / total 405 / prod C# 367 / App C# 28; eight internal Registration modules; M6i next eligible and separately unauthorized)*

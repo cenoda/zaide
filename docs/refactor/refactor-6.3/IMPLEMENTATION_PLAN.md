@@ -96,15 +96,16 @@ singleton self-registrations (`TownhallState`; `TownhallViewModel`);
 `AddZaideAgents()`; module order is `AddZaideAppCore` → `AddZaideSettings` →
 `AddZaideWorkspace` → `AddZaideEditor` → `AddZaideTerminal` →
 `AddZaideAgents` → `AddZaideTownhall`; `AddLogging` remains in `Program`;
-M6h–M6k registrations remain direct in `Program`; public baseline **346**
-unchanged; internal **57 → 58**; total top-level **403 → 404**; production C#
-**365 → 366**; App C# **26 → 27**; internal Composition.Registration modules
-**7**. Automated verification green (build clean 0 warnings / 0 errors, focused
-registration+DI+Architecture 61/61, Architecture 21/21, full suite 2241/2241,
-`git diff --check` clean; `git diff --cached --check` clean before the
-implementation commit). Manual verification **not required**.
-**M6h implemented and staged pending review** (`refactor-6.3: M6h SourceControl
-DI module`) — eighth M6 registration slice: internal
+at M6g completion M6h–M6k registrations remained direct in `Program`; public
+baseline **346** unchanged; internal **57 → 58**; total top-level **403 → 404**;
+production C# **365 → 366**; App C# **26 → 27**; internal
+Composition.Registration modules **7**. Automated verification green (build
+clean 0 warnings / 0 errors, focused registration+DI+Architecture 61/61,
+Architecture 21/21, full suite 2241/2241, `git diff --check` clean;
+`git diff --cached --check` clean before the implementation commit). Manual
+verification **not required**.
+**M6h complete at `9f514cd`** (`refactor-6.3: M6h SourceControl DI module`) —
+eighth M6 registration slice: internal
 `SourceControlServiceCollectionExtensions.AddZaideSourceControl` owns the six
 SourceControl singleton registrations (`SourceControlViewModel` self-registration;
 `IGitRepositoryService` → `GitRepositoryService`;
@@ -122,10 +123,11 @@ production C# **366 → 367**; App C# **27 → 28**; internal
 Composition.Registration modules **8**. Automated verification green (build
 clean 0 warnings / 0 errors, focused registration+DI+Architecture
 66/66, Architecture 21/21, full suite 2246/2246, `git diff --check` clean;
-`git diff --cached --check` clean while staged pending review). Manual
+`git diff --cached --check` clean before the implementation commit). Manual
 verification **not required**. **M6i** (ProjectSystem) is next eligible and
-requires separate authorization; M6i–M6k remain unauthorized. M6a–M6h are
-individually completed slices; the whole M6 series is not complete.
+requires separate authorization; M6i has not started; M6j–M6k remain
+unauthorized. M6a–M6h are individually completed slices; the whole M6 series
+is not complete. Completing M6h does **not** authorize later M6 slices.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -966,9 +968,9 @@ exactly once immediately after `AddZaideAgents()`; module order is
 `AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
 `AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents` →
 `AddZaideTownhall`; the two registrations live only in the internal module;
-`AddLogging` remains in `Program`; M6h–M6k registrations remain direct in
-`Program` (no `AddZaideSourceControl` / `AddZaideProjectSystem` /
-`AddZaideLanguage` / `AddZaideDebugging` calls).
+`AddLogging` remains in `Program`; at M6g completion M6h–M6k registrations
+remained direct in `Program` (no `AddZaideSourceControl` /
+`AddZaideProjectSystem` / `AddZaideLanguage` / `AddZaideDebugging` calls).
 
 Inventory after M6g: public **346** unchanged; internal **57 → 58**; total
 top-level **403 → 404**; production C# **365 → 366**; App C# **26 → 27**;
@@ -985,8 +987,9 @@ new internal type/file (`ArchitectureInventoryReader`,
 `ArchitectureInventoryTests`, `ArchitectureVisibilityTests`,
 `PublicProductionTypeBaseline.cs` constants); public baseline text and public
 type count unchanged; FindingIds and architecture allowlists unchanged.
-**M6h** (SourceControl) is next eligible and requires separate authorization.
-Completing M6g does **not** authorize later M6 slices.
+**M6h** (SourceControl) required and received separate explicit authorization
+and is now complete (see below). Completing M6g did **not** authorize later
+M6 slices.
 
 #### M6h — SourceControl (6)
 
@@ -1002,8 +1005,7 @@ Completing M6g does **not** authorize later M6 slices.
 File: `src/App/Composition/Registration/SourceControlServiceCollectionExtensions.cs`
 Method: `AddZaideSourceControl`.
 
-**Status:** **implemented and staged pending review** (proposed message
-`refactor-6.3: M6h SourceControl DI module`). Not committed.
+**Status:** **complete** at `9f514cd` (`refactor-6.3: M6h SourceControl DI module`).
 
 All six registrations remain **Singleton**. `SourceControlViewModel` remains a
 self-registration (`AddSingleton<SourceControlViewModel>()`). The five
@@ -1033,14 +1035,16 @@ Tests: `SourceControlRegistrationModuleTests` plus M6a–M6g ratchet advancement
 one `AddZaideSourceControl`) and existing composition/DI suite — automated
 verification green (build clean 0 warnings / 0 errors, focused
 registration+DI+Architecture **66/66**, Architecture **21/21**, full suite
-**2246/2246**, `git diff --check` clean; `git diff --cached --check` clean
-before proposed commit); manual verification **not required**. Architecture
-bookkeeping only for the new internal type/file (`ArchitectureInventoryReader`,
-`ArchitectureInventoryTests`, `ArchitectureVisibilityTests`,
-`PublicProductionTypeBaseline.cs` constants); public baseline text and public
-type count unchanged; FindingIds and architecture allowlists unchanged.
+**2246/2246**, `git diff --check` clean; `git diff --cached --check` was clean
+before the implementation commit); manual verification **not required**.
+Architecture bookkeeping only for the new internal type/file
+(`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
+`ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
+public baseline text and public type count unchanged; FindingIds and
+architecture allowlists unchanged.
 **M6i** (ProjectSystem) is next eligible and requires separate authorization.
-Completing M6h does **not** authorize later M6 slices.
+M6i has not started; M6j–M6k remain unauthorized. Completing M6h does **not**
+authorize later M6 slices.
 
 #### M6i — ProjectSystem (14)
 
@@ -1749,20 +1753,20 @@ dotnet test Zaide.slnx --no-build
    registration module / `AddZaideTerminal`; closeout `d85a83b`). **M6f
    complete at `cd809d2`** (Agents DI registration module / `AddZaideAgents`;
    closeout `8144aba`). **M6g complete at `1f18e49`** (Townhall DI registration
-   module / `AddZaideTownhall`; closeout `8624ab2`). **M6h implemented and
-   staged pending review** (SourceControl DI registration module /
-   `AddZaideSourceControl`; proposed message
-   `refactor-6.3: M6h SourceControl DI module`). M6a–M6h are individually
-   completed slices; the whole M6 series is **not** complete.
+   module / `AddZaideTownhall`; closeout `8624ab2`). **M6h complete at
+   `9f514cd`** (SourceControl DI registration module /
+   `AddZaideSourceControl`). M6a–M6h are individually completed slices; the
+   whole M6 series is **not** complete.
 2. **Next eligible slice:** authorize **M6i only** (§ M6i — ProjectSystem
    registration module: `ProjectSystemServiceCollectionExtensions.cs` /
    `AddZaideProjectSystem`) when ready. M6i production implementation has
    **not** started and requires a separate explicit authorization.
 3. Do not start M6i–M6k, M7+, Refactor 7/8, or Phase 14 without separate
    authorization. Completing M6h does **not** authorize the rest of M6.
-4. **M6i–M6k** remain unauthorized. Completing M6h does not authorize later M6
-   slices; each slice requires its own explicit authorization.
+4. **M6i** has not started and requires separate explicit authorization;
+   **M6j–M6k** remain unauthorized. Completing M6h does not authorize later
+   M6 slices; each slice requires its own explicit authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6g complete; M6h SourceControl implemented and staged pending review; automated verification green: build clean 0 warnings / 0 errors, focused 66/66, Architecture 21/21, full suite 2246/2246, git diff checks clean; manual verification not required; public 346 / internal 59 / total 405 / prod C# 367 / App C# 28; eight internal Registration modules; M6i ProjectSystem next eligible and awaiting separate authorization; M6i–M6k unauthorized; whole M6 series not complete)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6h complete; M6h SourceControl at `9f514cd`; automated verification green: build clean 0 warnings / 0 errors, focused 66/66, Architecture 21/21, full suite 2246/2246, git diff checks clean; manual verification not required; public 346 / internal 59 / total 405 / prod C# 367 / App C# 28; eight internal Registration modules; M6i ProjectSystem next eligible and awaiting separate authorization; M6j–M6k unauthorized; whole M6 series not complete)*
