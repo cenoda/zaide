@@ -36,9 +36,10 @@ retained). **M8** is complete at `874aa79` (ordered shutdown owner / V12), and
 **M9a** is complete at `172f2a3` (Agent send / Townhall mirror extraction), and
 **M9b** is complete at `33a1806` (panel navigation extraction), and **M9c** is
 complete at `bcb1e97` (activation host extraction), completing the M9 series.
-**M10** is complete at `843eebf` (Settings panel factory). Production work
-still requires separate authorization for each implementation milestone;
-**M11a** is next eligible and has not started.
+**M10** is complete at `843eebf` (Settings panel factory), and **M11a** is
+complete at `b6228c3` (ten Language implementations internalized). Production
+work still requires separate authorization for each implementation milestone;
+**M11b** is next eligible and has not started.
 
 ## Archive Policy
 

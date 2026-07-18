@@ -44,8 +44,10 @@ automated verification green; manual verification not required). **Refactor
 (panel navigation extraction) is complete at `33a1806`. **M9c** (activation
 host extraction) is complete at `bcb1e97`, completing the M9 series. **M10**
 (Settings panel factory) is complete at `843eebf`; the public baseline remains
-net zero. **M11a** is next eligible, has not started, and requires separate
-explicit authorization. Completing M10 does not authorize M11a.
+net zero. **M11a** (Language implementation visibility internalization) is
+complete at `b6228c3`, shrinking the public baseline from 346 to 336. **M11b**
+is next eligible, has not started, and requires separate explicit authorization.
+Completing M11a does not authorize M11b.
 
 ## Philosophy
 
@@ -246,7 +248,8 @@ internal `CompositionRoot.Services` residual remains. **M8** is complete at
 send / Townhall mirror extraction). **M9b** is complete at `33a1806` (panel
 navigation extraction). **M9c** is complete at `bcb1e97` (activation host
 extraction), completing the M9 series. **M10** is complete at `843eebf`
-(Settings panel factory). **M11a** is next eligible and requires separate
+(Settings panel factory). **M11a** is complete at `b6228c3` (ten Language
+implementations internalized). **M11b** is next eligible and requires separate
 explicit authorization. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.

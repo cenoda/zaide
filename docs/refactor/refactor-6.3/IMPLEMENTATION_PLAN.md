@@ -1458,7 +1458,8 @@ store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
 complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
 at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 (activation host extraction), completing the M9 series. **M10 is complete** at
-`843eebf` (Settings panel factory); M11a remains unauthorized.
+`843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`; M11b
+remains unauthorized.
 
 ---
 
@@ -1880,7 +1881,7 @@ Each slice updates `PublicProductionTypeBaseline.txt` in the **same** commit
   they still import removed legacy `Zaide.Models` / `Zaide.Services` namespaces;
   they are outside the M11a green gate and are not production assemblies.
 
-**Status:** implemented and staged pending review (not committed).
+**Status:** **complete** at `b6228c3` (`refactor-6.3: M11a internalize Language implementations`).
 
 **Focused tests:**
 
@@ -2175,11 +2176,12 @@ dotnet test Zaide.slnx --no-build
    `AddZaideSettings` has exactly three singletons; public baseline net 0 at 346;
    inventory public 346 / internal 69 / total 415 / prod C# 377 / Features 339 /
    App 36; DI registrations 67; FindingIds 2.
-6. **M11a** (Language implementation visibility internalization) is implemented
-   and staged pending review: exactly 10 Language types public→internal;
+6. **M11a** (Language implementation visibility internalization) is complete
+   at `b6228c3`: exactly 10 Language types public→internal;
    public baseline 336; internal 79; total 415; DI 67; FindingIds 2 unchanged.
-   Do not start M11b+, Refactor 7/8, or Phase 14 without separate authorization.
+7. **M11b** is next eligible and remains unauthorized. Do not start M11b+,
+   Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M11a implemented and staged pending review: Language 10 types internalized; public 336 / internal 79 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 180/180, Architecture 21/21, full suite 2320/2320, git diff checks clean; manual verification not required and not run; M11b unauthorized; no five-document closeout)*
+*Last updated: 2026-07-18 (M11a complete at `b6228c3`: Language 10 types internalized; public 336 / internal 79 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 180/180, Architecture 21/21, full suite 2320/2320, git diff checks clean; manual verification not required and not run; M11b unauthorized)*
