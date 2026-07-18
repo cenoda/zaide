@@ -40,9 +40,10 @@ automated verification green; manual verification not required). **Refactor
 (composition-root store / removal of public `App.Services`) is complete at
 `554552f`. **M8** (ordered shutdown owner) is complete at `874aa79`;
 `ApplicationShutdown.Run` now owns exactly-once ordered teardown. **M9a**
-(Agent send / Townhall mirror extraction) is complete at `172f2a3`. **M9b** is
-next eligible, has not started, and requires separate explicit authorization.
-Completing M9a does not authorize M9b.
+(Agent send / Townhall mirror extraction) is complete at `172f2a3`. **M9b**
+(panel navigation extraction) is complete at `33a1806`. **M9c** is next
+eligible, has not started, and requires separate explicit authorization.
+Completing M9b does not authorize M9c.
 
 ## Philosophy
 
@@ -240,8 +241,9 @@ registration module — eleventh and final M6 slice). The M6 series is complete.
 **M7** is complete at `554552f`; public `App.Services` is removed and the
 internal `CompositionRoot.Services` residual remains. **M8** is complete at
 `874aa79` (ordered shutdown owner). **M9a** is complete at `172f2a3` (Agent
-send / Townhall mirror extraction). **M9b** is next eligible and requires
-separate explicit authorization. Phase 14 and
+send / Townhall mirror extraction). **M9b** is complete at `33a1806` (panel
+navigation extraction). **M9c** is next eligible and requires separate explicit
+authorization. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 

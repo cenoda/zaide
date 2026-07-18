@@ -1455,9 +1455,8 @@ M6k implementation is complete at `df262ac`.
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
 store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
-complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is implemented
-in-tree (staged, not committed)** — panel navigation extraction; **M9c remains
-unauthorized**.
+complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
+at `33a1806` (panel navigation extraction); **M9c remains unauthorized**.
 
 ---
 
@@ -1645,7 +1644,7 @@ mirror unchanged.
 
 | | |
 |--|--|
-| **Status** | **Implemented in-tree (staged, not committed)** — `internal sealed class ShellPanelNavigation`; MWVM retains `RaiseAndSetIfChanged` ownership; nine public commands assigned from helper; no DI registration |
+| **Status** | **Complete** at `33a1806` (`refactor-6.3: M9b panel navigation extraction`) — `internal sealed class ShellPanelNavigation`; MWVM retains `RaiseAndSetIfChanged` ownership; nine public commands assigned from helper; no DI registration |
 | **Measurable (live)** | MWVM **500** lines (≤ 500); inventory public **346** / internal **66** / total **412** / prod C# **374** / App C# **35**; Shell namespace **(18, 14, 4)**; FindingIds **2** unchanged |
 
 | Item | Locked decision |
@@ -2120,8 +2119,8 @@ dotnet test Zaide.slnx --no-build
 1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
    closeout `3e465e1`.
 2. **M9a** complete at `172f2a3`; **M9a closeout** at `35df46b`.
-3. **M9b** (panel navigation extraction) is **implemented in-tree (staged, not
-   committed)**: `ShellPanelNavigation` owns nine commands + decision actions;
+3. **M9b** (panel navigation extraction) is **complete at `33a1806`**:
+   `ShellPanelNavigation` owns nine commands + decision actions;
    MWVM retains mode storage/`RaiseAndSetIfChanged`; public command names
    unchanged. FindingIds remain 2; inventory internal/total/prod/App file counts
    bump by one for the new type/file. Shell namespace (18, 14, 4).
@@ -2132,4 +2131,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M9b implemented in-tree and staged: ShellPanelNavigation; MWVM 500 lines; inventory public 346 / internal 66 / total 412 / prod C# 374 / App C# 35; Shell namespace (18,14,4); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 70/70, Architecture 21/21, full suite 2284/2284, git diff checks clean; manual panel-navigation verification not run; M9c unauthorized; no five-document closeout)*
+*Last updated: 2026-07-18 (M9b complete at `33a1806`: ShellPanelNavigation; MWVM 500 lines; inventory public 346 / internal 66 / total 412 / prod C# 374 / App C# 35; Shell namespace (18,14,4); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 70/70, Architecture 21/21, full suite 2284/2284, git diff checks clean; manual panel-navigation verification not run; M9c unauthorized)*
