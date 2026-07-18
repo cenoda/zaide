@@ -458,7 +458,7 @@ intended milestone files.
 | V08 | `EditorTabViewModel` + `IServiceProvider` | `R61-AL-LOC-EditorTabViewModel` | **M1** |
 | V09 | Public static `App.Services` + composition locators | `R61-AL-LOC-Program`, `R61-AL-LOC-App` | **M7** removes public `App.Services` and centralizes the store on `CompositionRoot.Services`. **Deliberate residual** (not full V09 clearance): static mutable composition-root provider + the two composition LOC FindingIds **remain** with updated rationale — see M7. M13 permits only these composition residuals. |
 | V10 | Monolithic 65 registrations | documented | **M6a–M6k** |
-| V11 | Semantic lifetime vs DI singleton | documented | **M12** |
+| V11 | Semantic lifetime vs DI singleton | documented | **M12** (cleared) |
 | V12 | Manual sync shutdown | partial LOC-App | **M8** |
 | V13 | `MainWindowViewModel` hub | documented | **M9a–M9c** |
 | V14 | 348 public baseline | executable baseline | **M11a–M11d** |
@@ -2143,6 +2143,20 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 dotnet test Zaide.slnx --no-build
 ```
 
+**Status:** **complete** (docs-only at `93d8626` working tree; commit pending) —
+`LIFETIME_MAP.md` created with **67** fully populated rows; live registration
+audit confirms **67** `AddSingleton` registrations across 11 `AddZaide*` modules
+matching the locked post-M10 inventory exactly (service keys, implementation
+mappings, DI lifetimes). `EditorViewModel` is not registered; constructed only
+via `IEditorSessionFactory` / `EditorTabViewModel` ownership. Semantic lifetime
+distribution: Application 48, Workspace 4, Process 1, Projection 14; Editor
+session and Terminal session are documented as non-DI session types. No
+production/test/ratchet/baseline/allowlist/DI edits. Verification:
+Architecture **21/21**; full suite **2320/2320**; `git diff --check` /
+`git diff --cached --check` clean after staging. Manual verification **not
+required** and **not run**. M13 **not started** (five-document closeout
+deferred).
+
 ---
 
 ### M13 — Refactor 6.3 closeout
@@ -2257,9 +2271,13 @@ dotnet test Zaide.slnx --no-build
    complete at `133a3c1`: exactly 3 types public→internal;
    public baseline 320; internal 95; total 415; DI 67; FindingIds 2 unchanged.
    The M11 series is complete with an exact cumulative public reduction of 26.
-10. **M12** is next eligible and remains unauthorized. Do not start M12+,
-    Refactor 7/8, or Phase 14 without separate authorization.
+10. **M12** (lifetime ownership map / V11) is **complete** (docs-only):
+    `docs/refactor/refactor-6.3/LIFETIME_MAP.md` with **67** filled rows;
+    live DI count **67**; Architecture **21/21**; full **2320/2320**.
+11. **M13** is next eligible and remains **unauthorized**. Do not start M13,
+    Refactor 7/8, or Phase 14 without separate authorization. Do not perform
+    the five-document closeout until M13 is explicitly authorized.
 
 ---
 
-*Last updated: 2026-07-18 (M11d complete at `133a3c1`: Agents+Settings 3 types internalized; M11 series complete with cumulative public reduction 26; public 320 / internal 95 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 109/109; Architecture 21/21; full 2320/2320; manual verification not required and not run; M12 next eligible and unauthorized)*
+*Last updated: 2026-07-19 (M12 complete docs-only: LIFETIME_MAP.md 67 rows; live DI 67 verified; semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; EditorViewModel not registered; Architecture 21/21; full 2320/2320; no production/test/ratchet changes; M13 next eligible and unauthorized)*
