@@ -1460,10 +1460,9 @@ at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 (activation host extraction), completing the M9 series. **M10 is complete** at
 `843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`, and
 **M11b is complete** at `a69fc66`. **M11c is complete** at `3d03285`:
-SourceControl + Terminal five-type visibility internalization; **M11d is complete**
-(staged, not committed) — Agents + Settings three-type visibility internalization;
-M11 series implementation complete; post-commit documentation closeout remains
-unauthorized.
+SourceControl + Terminal five-type visibility internalization; **M11d is
+complete** at `133a3c1` — Agents + Settings three-type visibility
+internalization. The M11 series is complete; M12 remains unauthorized.
 
 ---
 
@@ -2028,9 +2027,10 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 - Tests access the three internalized types through the existing
   `InternalsVisibleTo="Zaide.Tests"`; no `InternalsVisibleTo` expansion required.
 
-**Status:** **complete (staged, not committed)** — three Agents + Settings
-infrastructure types public→internal; baseline 320; inventory public 320 /
-internal 95 / total 415.
+**Status:** **complete** at `133a3c1`
+(`refactor-6.3: M11d internalize Agents and Settings implementations`) — three
+Agents + Settings infrastructure types public→internal; baseline 320; inventory
+public 320 / internal 95 / total 415.
 Verification: forced build 4 pre-existing warnings / 0 errors; focused 109/109;
 Architecture 21/21; full 2320/2320; `git diff --check` clean;
 `git diff --cached --check` clean (after staging). Manual verification **not
@@ -2254,12 +2254,12 @@ dotnet test Zaide.slnx --no-build
    public→internal; public baseline 323; internal 92; total 415; DI 67;
    FindingIds 2 unchanged.
 9. **M11d** (Agents + Settings infrastructure visibility internalization) is
-   complete (staged, not committed): exactly 3 types public→internal;
+   complete at `133a3c1`: exactly 3 types public→internal;
    public baseline 320; internal 95; total 415; DI 67; FindingIds 2 unchanged.
-   M11 series implementation is complete; post-commit documentation closeout
-   remains unauthorized. Do not start M12+, Refactor 7/8, or Phase 14 without
-   separate authorization.
+   The M11 series is complete with an exact cumulative public reduction of 26.
+10. **M12** is next eligible and remains unauthorized. Do not start M12+,
+    Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M11d complete staged: Agents+Settings 3 types internalized; public 320 / internal 95 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 109/109; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11 implementation complete; post-commit closeout unauthorized; M12+ unauthorized)*
+*Last updated: 2026-07-18 (M11d complete at `133a3c1`: Agents+Settings 3 types internalized; M11 series complete with cumulative public reduction 26; public 320 / internal 95 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 109/109; Architecture 21/21; full 2320/2320; manual verification not required and not run; M12 next eligible and unauthorized)*

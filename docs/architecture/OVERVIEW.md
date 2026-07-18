@@ -54,8 +54,10 @@ direct Settings construction from MainWindow with a net-zero public baseline.
 **M11a** is complete at `b6228c3`: ten Language implementations are internal.
 **M11b** is complete at `a69fc66`: eight Debugging + ProjectSystem
 implementations are internal. **M11c** is complete at `3d03285`: five
-SourceControl + Terminal implementations are internal. **M11d** is next
-eligible, has not started, and requires separate authorization.
+SourceControl + Terminal implementations are internal. **M11d** is complete at
+`133a3c1`: three Agents + Settings infrastructure implementations are internal,
+completing the M11 series. **M12** is next eligible, has not started, and
+requires separate authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
 root-admission ratchet. No V3 production feature implementation is active.
@@ -145,16 +147,16 @@ only** (`git ls-files` of `src/**/*.cs`): exact-file service-locator sites;
 NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
-(DesignSystem only); and the current **323** public type names
-(`PublicProductionTypeBaseline.txt`; M11a −10; M11b −8; M11c −5). Live
-inventory after M11c: total top-level **415**, public **323**, internal **92**,
+(DesignSystem only); and the current **320** public type names
+(`PublicProductionTypeBaseline.txt`; M11a −10; M11b −8; M11c −5; M11d −3).
+Live inventory after M11d: total top-level **415**, public **320**, internal **95**,
 production C# **377**, Features C# **339**, App C# **36**.
 Composition.Registration contains eleven
 internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M11d** Agents + Settings visibility internalization next and
+Refactor 6.3 (**M12** lifetime ownership map next and
 separately unauthorized).
 
 | Later work | Owns |
@@ -371,4 +373,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M11c complete; M11c at `3d03285`; five SourceControl + Terminal implementations internalized; public 323 / internal 92 / total 415 / prod C# 377 / Features 339 / App 36; DI registrations 67 and FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 521/521; Architecture 21/21; full suite 2320/2320), manual verification not required and not run; M11d next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M11d complete and M11 series complete; M11d at `133a3c1`; three Agents + Settings infrastructure implementations internalized; cumulative M11 public reduction 26; public 320 / internal 95 / total 415 / prod C# 377 / Features 339 / App 36; DI registrations 67 and FindingIds 2 unchanged; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 109/109; Architecture 21/21; full suite 2320/2320), manual verification not required and not run; M12 next eligible and separately unauthorized)*
