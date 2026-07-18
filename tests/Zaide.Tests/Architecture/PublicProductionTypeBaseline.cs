@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (M6h +1 internal DI module).</summary>
-    public const int TotalTopLevelTypes = 405;
+    /// <summary>Total non-nested, non-compiler-generated production types (M6i +1 internal DI module).</summary>
+    public const int TotalTopLevelTypes = 406;
 
     /// <summary>Public top-level production type ceiling and baseline count (M5 net −1).</summary>
     public const int PublicTopLevelTypes = 346;
 
-    /// <summary>Internal top-level production type count (M6h +1 SourceControl registration extension).</summary>
-    public const int InternalTopLevelTypes = 59;
+    /// <summary>Internal top-level production type count (M6i +1 ProjectSystem registration extension).</summary>
+    public const int InternalTopLevelTypes = 60;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

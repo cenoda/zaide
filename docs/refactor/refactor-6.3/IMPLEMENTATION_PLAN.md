@@ -124,10 +124,42 @@ Composition.Registration modules **8**. Automated verification green (build
 clean 0 warnings / 0 errors, focused registration+DI+Architecture
 66/66, Architecture 21/21, full suite 2246/2246, `git diff --check` clean;
 `git diff --cached --check` clean before the implementation commit). Manual
-verification **not required**. **M6i** (ProjectSystem) is next eligible and
-requires separate authorization; M6i has not started; M6j–M6k remain
-unauthorized. M6a–M6h are individually completed slices; the whole M6 series
-is not complete. Completing M6h does **not** authorize later M6 slices.
+verification **not required**.
+**M6i implemented and staged pending review** (`refactor-6.3: M6i ProjectSystem
+DI module`) — ninth M6 registration slice: internal
+`ProjectSystemServiceCollectionExtensions.AddZaideProjectSystem` owns the fourteen
+ProjectSystem singleton registrations
+(`IProjectFileSystem` → `FileSystemProjectFileSystem`;
+`IProjectDiscovery` → `ProjectDiscovery`;
+`IProjectContextService` → `ProjectContextService`;
+`IProjectOperationGate` → `ProjectOperationGate`;
+`IProjectDebugTargetResolver` → `ProjectDebugTargetResolver`;
+`IProjectDebugLaunchService` → `ProjectDebugLaunchService`;
+`IManagedProcessRunner` → `ManagedProcessRunner`;
+`IProjectWorkflowService` → `ProjectWorkflowService`;
+`IProjectOutputService` → `ProjectOutputService`;
+`ProjectWorkflowViewModel` self-registration;
+`IBuildDiagnosticsService` → `BuildDiagnosticsService`;
+`ITestResultsService` → `TestResultsService`;
+`TestResultsViewModel` self-registration;
+`ProblemsViewModel` self-registration);
+`Program.ConfigureServices` calls `AddZaideProjectSystem()` exactly once after
+`AddZaideSourceControl()`; module order is `AddZaideAppCore` → `AddZaideSettings` →
+`AddZaideWorkspace` → `AddZaideEditor` → `AddZaideTerminal` →
+`AddZaideAgents` → `AddZaideTownhall` → `AddZaideSourceControl` →
+`AddZaideProjectSystem`; `AddLogging` remains in `Program`; M6j–M6k
+registrations remain direct in `Program`; public baseline **346** unchanged;
+internal **59 → 60**; total top-level **405 → 406**; production C#
+**367 → 368**; App C# **28 → 29**; internal Composition.Registration modules
+**9**. Automated verification green (build succeeded, 4 pre-existing warnings /
+0 errors — CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
+ArchitectureVisibilityTests; two xUnit2013 warnings in ArchitectureRatchetTests —
+focused registration+DI+Architecture 89/89, Architecture 21/21, full suite
+2251/2251, `git diff --check` clean; `git diff --cached --check` clean while
+staged pending review). Manual verification **not required**. **M6j**
+(Language) is next eligible and requires separate authorization; M6j–M6k remain
+unauthorized. M6a–M6i are individually completed slices; the whole M6 series is
+not complete. Completing M6i does **not** authorize later M6 slices.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -1042,8 +1074,8 @@ Architecture bookkeeping only for the new internal type/file
 `ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
 public baseline text and public type count unchanged; FindingIds and
 architecture allowlists unchanged.
-**M6i** (ProjectSystem) is next eligible and requires separate authorization.
-M6i has not started; M6j–M6k remain unauthorized. Completing M6h does **not**
+**M6i** (ProjectSystem) required and received separate explicit authorization
+and is now implemented pending review (see below). Completing M6h did **not**
 authorize later M6 slices.
 
 #### M6i — ProjectSystem (14)
@@ -1065,7 +1097,67 @@ authorize later M6 slices.
 | `TestResultsViewModel` |
 | `ProblemsViewModel` |
 
-File: `…/ProjectSystemServiceCollectionExtensions.cs`
+File: `src/App/Composition/Registration/ProjectSystemServiceCollectionExtensions.cs`
+Method: `AddZaideProjectSystem`.
+
+**Status:** **implemented and staged pending review** (proposed message
+`refactor-6.3: M6i ProjectSystem DI module`). Not committed.
+
+All fourteen registrations remain **Singleton**. Three self-registrations remain
+(`AddSingleton<ProjectWorkflowViewModel>()`,
+`AddSingleton<TestResultsViewModel>()`,
+`AddSingleton<ProblemsViewModel>()`). The eleven interface-to-implementation
+mappings are unchanged:
+`IProjectFileSystem` → `FileSystemProjectFileSystem`;
+`IProjectDiscovery` → `ProjectDiscovery`;
+`IProjectContextService` → `ProjectContextService`;
+`IProjectOperationGate` → `ProjectOperationGate`;
+`IProjectDebugTargetResolver` → `ProjectDebugTargetResolver`;
+`IProjectDebugLaunchService` → `ProjectDebugLaunchService`;
+`IManagedProcessRunner` → `ManagedProcessRunner`;
+`IProjectWorkflowService` → `ProjectWorkflowService`;
+`IProjectOutputService` → `ProjectOutputService`;
+`IBuildDiagnosticsService` → `BuildDiagnosticsService`;
+`ITestResultsService` → `TestResultsService`. Milestone comments preserved in
+the module. No lifetime, type, constructor, or dependency changes.
+
+Boundary notes preserved: project/debug handoff services
+(`IProjectOperationGate`, `IProjectDebugTargetResolver`,
+`IProjectDebugLaunchService`) moved with ProjectSystem; Debugging-owned
+session/panel types remain direct in `Program` for M6k.
+`ProblemsViewModel` moved with ProjectSystem; `ILanguageDiagnosticsService`
+remains direct in `Program` for M6j. Adjacent Program registrations that belong
+to other M6 modules were not moved.
+
+Production: `Program.ConfigureServices` calls `services.AddZaideProjectSystem()`
+exactly once immediately after `AddZaideSourceControl()`; module order is
+`AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents` →
+`AddZaideTownhall` → `AddZaideSourceControl` → `AddZaideProjectSystem`; the
+fourteen registrations live only in the internal module; `AddLogging` remains
+in `Program`; M6j–M6k registrations remain direct in `Program` (no
+`AddZaideLanguage` / `AddZaideDebugging` calls).
+
+Inventory after M6i: public **346** unchanged; internal **59 → 60**; total
+top-level **405 → 406**; production C# **367 → 368**; App C# **28 → 29**;
+internal Composition.Registration modules **9**.
+
+Tests: `ProjectSystemRegistrationModuleTests` plus M6a–M6h ratchet advancement
+(M6iPlus → M6jPlus; ProjectSystem markers removed from later-direct sets; allow
+one `AddZaideProjectSystem`) and existing composition/DI suite — automated
+verification green (build succeeded, 4 pre-existing warnings / 0 errors —
+CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
+ArchitectureVisibilityTests; two xUnit2013 warnings in ArchitectureRatchetTests —
+focused registration+DI+Architecture **89/89**, Architecture **21/21**, full
+suite **2251/2251**, `git diff --check` clean; `git diff --cached --check`
+clean before proposed commit); manual verification **not required**.
+Architecture bookkeeping only for the new internal type/file
+(`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
+`ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
+public baseline text and public type count unchanged; FindingIds and
+architecture allowlists unchanged.
+**M6j** (Language) is next eligible and requires separate authorization.
+Completing M6i does **not** authorize later M6 slices.
 
 #### M6j — Language (10)
 
@@ -1755,18 +1847,20 @@ dotnet test Zaide.slnx --no-build
    closeout `8144aba`). **M6g complete at `1f18e49`** (Townhall DI registration
    module / `AddZaideTownhall`; closeout `8624ab2`). **M6h complete at
    `9f514cd`** (SourceControl DI registration module /
-   `AddZaideSourceControl`). M6a–M6h are individually completed slices; the
-   whole M6 series is **not** complete.
-2. **Next eligible slice:** authorize **M6i only** (§ M6i — ProjectSystem
-   registration module: `ProjectSystemServiceCollectionExtensions.cs` /
-   `AddZaideProjectSystem`) when ready. M6i production implementation has
+   `AddZaideSourceControl`; closeout `082726c`). **M6i implemented and
+   staged pending review** (ProjectSystem DI registration module /
+   `AddZaideProjectSystem`; proposed message
+   `refactor-6.3: M6i ProjectSystem DI module`). M6a–M6i are individually
+   completed slices; the whole M6 series is **not** complete.
+2. **Next eligible slice:** authorize **M6j only** (§ M6j — Language
+   registration module: `LanguageServiceCollectionExtensions.cs` /
+   `AddZaideLanguage`) when ready. M6j production implementation has
    **not** started and requires a separate explicit authorization.
-3. Do not start M6i–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6h does **not** authorize the rest of M6.
-4. **M6i** has not started and requires separate explicit authorization;
-   **M6j–M6k** remain unauthorized. Completing M6h does not authorize later
-   M6 slices; each slice requires its own explicit authorization.
+3. Do not start M6j–M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. Completing M6i does **not** authorize the rest of M6.
+4. **M6j–M6k** remain unauthorized. Completing M6i does not authorize later M6
+   slices; each slice requires its own explicit authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6h complete; M6h SourceControl at `9f514cd`; automated verification green: build clean 0 warnings / 0 errors, focused 66/66, Architecture 21/21, full suite 2246/2246, git diff checks clean; manual verification not required; public 346 / internal 59 / total 405 / prod C# 367 / App C# 28; eight internal Registration modules; M6i ProjectSystem next eligible and awaiting separate authorization; M6j–M6k unauthorized; whole M6 series not complete)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6h complete; M6i ProjectSystem implemented and staged pending review; automated verification green: build succeeded, 4 pre-existing warnings / 0 errors (CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests), focused 89/89, Architecture 21/21, full suite 2251/2251, git diff checks clean; manual verification not required; public 346 / internal 60 / total 406 / prod C# 368 / App C# 29; nine internal Registration modules; M6j Language next eligible and awaiting separate authorization; M6j–M6k unauthorized; whole M6 series not complete)*

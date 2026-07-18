@@ -34,9 +34,8 @@ public sealed class SourceControlRegistrationModuleTests
         typeof(IGitMutationService).FullName!,
     };
 
-    private static readonly string[] M6iPlusDirectMarkers =
+    private static readonly string[] M6jPlusDirectMarkers =
     {
-        "AddSingleton<IProjectContextService, ProjectContextService>()",
         "AddSingleton<ILanguageSessionService, LanguageSessionService>()",
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
@@ -251,17 +250,17 @@ public sealed class SourceControlRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6iPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6jPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6iPlusDirectMarkers)
+        foreach (var marker in M6jPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6i–M6k modules do not exist yet.
-        Assert.DoesNotContain("AddZaideProjectSystem", programSource);
+        // M6i ProjectSystem module is present; M6j–M6k modules do not exist yet.
+        Assert.Single(Regex.Matches(programSource, @"AddZaideProjectSystem\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideLanguage", programSource);
         Assert.DoesNotContain("AddZaideDebugging", programSource);
     }
