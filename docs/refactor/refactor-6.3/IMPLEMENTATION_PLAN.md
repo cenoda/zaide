@@ -1456,8 +1456,8 @@ M6k implementation is complete at `df262ac`.
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
 store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
 complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
-at `33a1806` (panel navigation extraction). **M9c is implemented and staged
-pending review** (activation host extraction); M10 remains unauthorized.
+at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
+(activation host extraction), completing the M9 series; M10 remains unauthorized.
 
 ---
 
@@ -1697,7 +1697,7 @@ Ctrl+J toggle.
 
 | Item | Locked decision |
 |------|-----------------|
-| Status | **Implemented and staged pending review** (not committed); M9 series remains open until implementation commit and separate closeout |
+| Status | **Complete** at `bcb1e97` (`refactor-6.3: M9c activation host extraction`); M9 series complete after separate closeout |
 | Type | `internal sealed class MainWindowActivationHost` |
 | Path | `src/App/Shell/MainWindowActivationHost.cs` |
 | DI | **Not** registered — constructed only inside `MainWindowViewModel` ctor |
@@ -2132,16 +2132,15 @@ dotnet test Zaide.slnx --no-build
    closeout `3e465e1`.
 2. **M9a** complete at `172f2a3`; **M9a closeout** at `35df46b`.
 3. **M9b** complete at `33a1806`; **M9b closeout** at `b6bfd8f`.
-4. **M9c** (activation host extraction) is implemented and staged pending
-   review: `MainWindowActivationHost` owns activation side effects; MWVM is 390
+4. **M9c** (activation host extraction) is complete at `bcb1e97`:
+   `MainWindowActivationHost` owns activation side effects; MWVM is 390
    lines and `Activate()` is the locked thin entrypoint; scheduler substitution
    is preserved through `Func<IScheduler>`. FindingIds remain 2; inventory is
    public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell
    namespace (19, 14, 5).
-5. M10 is next planned but remains unauthorized. Do not start M10+, Refactor
-   7/8, or Phase 14. Do not mark M9 complete until M9c implementation commit
-   and separate five-document closeout.
+5. The M9 series is complete. M10 is next planned but remains unauthorized.
+   Do not start M10+, Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M9c implemented and staged pending review: MainWindowActivationHost; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines / Activate thin entrypoint; inventory public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell namespace (19,14,5); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 97/97, Architecture 21/21, full suite 2317/2317, git diff checks clean; manual activation verification not run; M9 series not closed; M10 unauthorized)*
+*Last updated: 2026-07-18 (M9c complete at `bcb1e97`: MainWindowActivationHost; M9 series complete; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines / Activate thin entrypoint; inventory public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell namespace (19,14,5); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 97/97, Architecture 21/21, full suite 2317/2317, git diff checks clean; manual activation verification not run; M10 unauthorized)*

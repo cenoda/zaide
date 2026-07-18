@@ -34,9 +34,10 @@ M6 series is complete. **M7** is complete at `554552f` (composition-root store;
 public `App.Services` removed; internal `CompositionRoot.Services` residual
 retained). **M8** is complete at `874aa79` (ordered shutdown owner / V12), and
 **M9a** is complete at `172f2a3` (Agent send / Townhall mirror extraction), and
-**M9b** is complete at `33a1806` (panel navigation extraction). Production work
-still requires separate authorization for each implementation milestone;
-**M9c** is next eligible and has not started.
+**M9b** is complete at `33a1806` (panel navigation extraction), and **M9c** is
+complete at `bcb1e97` (activation host extraction), completing the M9 series.
+Production work still requires separate authorization for each implementation
+milestone; **M10** is next eligible and has not started.
 
 ## Archive Policy
 

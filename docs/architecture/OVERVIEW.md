@@ -47,7 +47,9 @@ exactly-once teardown while the App exit path remains synchronous. **M9a** is
 complete at `172f2a3`: internal `AgentTownhallMirrorCoordinator` owns agent
 send and Townhall mirroring. **M9b** is complete at `33a1806`: internal
 `ShellPanelNavigation` owns nine panel commands while MWVM retains notifying
-mode state. **M9c** is next eligible, has not started, and requires separate
+mode state. **M9c** is complete at `bcb1e97`: internal
+`MainWindowActivationHost` owns activation side effects, completing the M9
+series. **M10** is next eligible, has not started, and requires separate
 authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
@@ -139,14 +141,14 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M9b internal-only). Live
-inventory after M9b: total top-level **412**, public **346**, internal **66**,
-production C# **374**, App C# **35**. Composition.Registration contains eleven
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M9c internal-only). Live
+inventory after M9c: total top-level **413**, public **346**, internal **67**,
+production C# **375**, App C# **36**. Composition.Registration contains eleven
 internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M9c** activation host extraction next and
+Refactor 6.3 (**M10** Settings panel factory next and
 separately unauthorized).
 
 | Later work | Owns |
@@ -363,4 +365,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M9b complete; M9b at `33a1806`; ShellPanelNavigation owns nine commands while MWVM retains notifying mode state; MWVM 500 lines; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 70/70; Architecture 21/21; full suite 2284/2284), manual panel-navigation verification not run; public 346 / internal 66 / total 412 / prod C# 374 / App C# 35; FindingIds 2 unchanged; M9c next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M9c complete; M9c at `bcb1e97`; M9 series complete; MainWindowActivationHost owns activation side effects; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 97/97; Architecture 21/21; full suite 2317/2317), manual activation verification not run; public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; FindingIds 2 unchanged; M10 next eligible and separately unauthorized)*
