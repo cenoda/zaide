@@ -78,12 +78,15 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
-        Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.SourceControl.Application"]);
-        Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
+        // M11c: SourceControlSnapshotOrchestrator + SourceControlActionDeriver + SourceControlDiffTabService public→internal (14p/0i → 11p/3i).
+        Assert.Equal((14, 11, 3), byNamespace["Zaide.Features.SourceControl.Application"]);
+        // M11c: GitMutationService public→internal (1p/2i → 0p/3i).
+        Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Terminal.Contracts"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Features.Terminal.Application"));
-        Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
+        // M11c: LinuxTerminalService public→internal (1p/2i → 0p/3i).
+        Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Presentation"]);

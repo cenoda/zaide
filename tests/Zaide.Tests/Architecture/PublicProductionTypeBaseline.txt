@@ -262,11 +262,8 @@ Zaide.Features.SourceControl.Application.RepositoryDiscoveryResult
 Zaide.Features.SourceControl.Application.RepositoryStatusSnapshot
 Zaide.Features.SourceControl.Application.SnapshotRefreshResult
 Zaide.Features.SourceControl.Application.SnapshotRefreshStatus
-Zaide.Features.SourceControl.Application.SourceControlActionDeriver
 Zaide.Features.SourceControl.Application.SourceControlDiffContent
 Zaide.Features.SourceControl.Application.SourceControlDiffTabKey
-Zaide.Features.SourceControl.Application.SourceControlDiffTabService
-Zaide.Features.SourceControl.Application.SourceControlSnapshotOrchestrator
 Zaide.Features.SourceControl.Application.StageResult
 Zaide.Features.SourceControl.Contracts.IFileDiffService
 Zaide.Features.SourceControl.Contracts.IGitMutationService
@@ -279,12 +276,10 @@ Zaide.Features.SourceControl.Domain.FileChangeEvent
 Zaide.Features.SourceControl.Domain.GitBranch
 Zaide.Features.SourceControl.Domain.GitChangeType
 Zaide.Features.SourceControl.Domain.SourceControlPrimaryAction
-Zaide.Features.SourceControl.Infrastructure.GitMutationService
 Zaide.Features.SourceControl.Presentation.SourceControlPanel
 Zaide.Features.SourceControl.Presentation.SourceControlViewModel
 Zaide.Features.Terminal.Contracts.ITerminalService
 Zaide.Features.Terminal.Contracts.ITerminalServiceFactory
-Zaide.Features.Terminal.Infrastructure.LinuxTerminalService
 Zaide.Features.Terminal.Presentation.ITerminalHost
 Zaide.Features.Terminal.Presentation.LogCategorizer
 Zaide.Features.Terminal.Presentation.LogCategory

@@ -10,7 +10,7 @@ namespace Zaide.Features.SourceControl.Application;
 /// repository-relative path and refreshes content from <see cref="IFileDiffService"/>.
 /// Tab mutation is delegated to <see cref="IEditorReadOnlyTabService"/>.
 /// </summary>
-public sealed class SourceControlDiffTabService : ISourceControlDiffTabService
+internal sealed class SourceControlDiffTabService : ISourceControlDiffTabService
 {
     private readonly IEditorReadOnlyTabService _readOnlyTabs;
     private readonly IFileDiffService _fileDiffService;

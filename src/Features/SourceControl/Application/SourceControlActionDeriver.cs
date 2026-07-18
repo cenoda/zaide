@@ -7,7 +7,7 @@ namespace Zaide.Features.SourceControl.Application;
 /// projection state. Push is only offered when the working tree is clean,
 /// an upstream exists, and local commits are ahead of the remote.
 /// </summary>
-public static class SourceControlActionDeriver
+internal static class SourceControlActionDeriver
 {
     /// <summary>
     /// Returns <see cref="SourceControlPrimaryAction.Push"/> only when

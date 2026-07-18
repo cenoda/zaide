@@ -18,7 +18,7 @@ namespace Zaide.Features.SourceControl.Infrastructure;
 /// call <c>Refresh()</c> or update any ViewModel state — it is a pure
 /// operation seam, not an orchestration seam.
 /// </summary>
-public sealed class GitMutationService : IGitMutationService
+internal sealed class GitMutationService : IGitMutationService
 {
     /// <inheritdoc/>
     public StageResult Stage(string repositoryRoot, string filePath)

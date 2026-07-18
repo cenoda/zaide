@@ -9,7 +9,7 @@ namespace Zaide.Features.SourceControl.Application;
 /// for Source Control: discover the repository root, read its status, and project success,
 /// non-repo, or failure truthfully. No mutation or UI behavior is introduced here.
 /// </summary>
-public sealed class SourceControlSnapshotOrchestrator : ISourceControlSnapshotOrchestrator
+internal sealed class SourceControlSnapshotOrchestrator : ISourceControlSnapshotOrchestrator
 {
     private readonly IGitRepositoryService _git;
 

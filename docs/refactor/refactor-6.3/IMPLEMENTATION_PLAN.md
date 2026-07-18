@@ -1459,7 +1459,9 @@ complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
 at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 (activation host extraction), completing the M9 series. **M10 is complete** at
 `843eebf` (Settings panel factory). **M11a is complete** at `b6228c3`, and
-**M11b is complete** at `a69fc66`; M11c remains unauthorized.
+**M11b is complete** at `a69fc66`. **M11c implementation is complete**
+(staged, not yet committed): SourceControl + Terminal five-type visibility
+internalization; M11d remains unauthorized.
 
 ---
 
@@ -1956,6 +1958,28 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 
 **Shrink:** exactly **−5**.
 
+**Also edit:** `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt`
+(remove the five full names).
+
+**Architecture bookkeeping (live M11c):**
+- `PublicProductionTypeBaseline.cs` / `ArchitectureInventoryReader.cs` constants:
+  public 328→323, internal 87→92, total 415 unchanged.
+- Namespace rollups: `SourceControl.Application` (14, 14, 0)→(14, 11, 3);
+  `SourceControl.Infrastructure` (3, 1, 2)→(3, 0, 3);
+  `Terminal.Infrastructure` (3, 1, 2)→(3, 0, 3).
+- File/DI/FindingId counts unchanged (prod C# 377, Features 339, App 36, DI 67, FindingIds 2).
+- No DI mapping/lifetime/order changes; contracts and presentation remain public.
+- Tests access the five internalized types (constructing the four concrete
+  services and calling the static deriver) through the existing
+  `InternalsVisibleTo="Zaide.Tests"`.
+
+**Status:** **implementation complete (staged, not committed)** — five
+SourceControl + Terminal types public→internal; baseline 323; inventory
+public 323 / internal 92 / total 415.
+Verification: forced build 4 pre-existing warnings / 0 errors; focused 521/521;
+Architecture 21/21; full suite 2320/2320; `git diff --check` /
+`--cached --check` clean. Manual verification **not required**.
+
 **Focused tests:**
 
 ```bash
@@ -2204,9 +2228,12 @@ dotnet test Zaide.slnx --no-build
 7. **M11b** (Debugging + ProjectSystem implementation visibility internalization)
    is complete at `a69fc66`: exactly 8 types public→internal;
    public baseline 328; internal 87; total 415; DI 67; FindingIds 2 unchanged.
-8. **M11c** is next eligible and remains unauthorized. Do not start M11c+,
+8. **M11c** (SourceControl + Terminal implementation visibility internalization)
+   implementation is complete (staged, not yet committed): exactly 5 types
+   public→internal; public baseline 323; internal 92; total 415; DI 67;
+   FindingIds 2 unchanged. M11d remains unauthorized. Do not start M11d+,
    Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M11b complete at `a69fc66`: Debugging+ProjectSystem 8 types internalized; public 328 / internal 87 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; DynamicProxyGenAssembly2 IVT for Moq ILogger&lt;T&gt;; forced build 4 warn/0 err; focused 543/543; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11c next eligible and unauthorized)*
+*Last updated: 2026-07-18 (M11c implementation complete, staged: SourceControl+Terminal 5 types internalized; public 323 / internal 92 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; forced build 4 warn/0 err; focused 521/521; Architecture 21/21; full 2320/2320; manual verification not required and not run; M11d next eligible and unauthorized)*

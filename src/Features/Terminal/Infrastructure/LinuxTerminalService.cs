@@ -17,7 +17,7 @@ namespace Zaide.Features.Terminal.Infrastructure;
 /// <see cref="ProcessExited"/> are raised on a background reader thread —
 /// callers must marshal to the UI thread themselves.</para>
 /// </summary>
-public sealed class LinuxTerminalService : ITerminalService
+internal sealed class LinuxTerminalService : ITerminalService
 {
     private int _master = -1;
     private int _pid = -1;
