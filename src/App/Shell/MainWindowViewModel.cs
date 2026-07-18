@@ -71,6 +71,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private readonly IProjectContextService _projectContextService;
     private readonly AgentTownhallMirrorCoordinator _agentTownhallMirror;
     private readonly ShellPanelNavigation _panelNavigation;
+    private readonly MainWindowActivationHost _activationHost;
 
     /// <summary>
     /// Scheduler for project-context <c>WhenChanged</c>. Internal so tests can
@@ -306,6 +307,31 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             "workspace.closeFolder", "Close Folder", "Workspace", Array.Empty<string>(), CloseFolderCommand));
         commandRegistry?.Register(new CommandDescriptor(
             "view.toggleBottomPanel", "Toggle Bottom Panel", "View", new[] { "Ctrl+Oem3", "Ctrl+J" }, ToggleBottomPanelCommand));
+
+        // Construct after CloseFolderCommand and all Activate dependencies exist.
+        // Scheduler is resolved via getter at Activate time so tests can substitute
+        // ProjectContextScheduler after construction without a stale capture.
+        _activationHost = new MainWindowActivationHost(
+            ProblemsViewModel,
+            ProjectWorkflowViewModel,
+            DebugSessionViewModel,
+            DebugPanelViewModel,
+            EditorBreakpointViewModel,
+            DebugCurrentLocationViewModel,
+            TestResultsViewModel,
+            FileTreeViewModel,
+            SourceControlViewModel,
+            EditorTabs,
+            TerminalHost,
+            workspace,
+            projectContextService,
+            () => ProjectContextScheduler,
+            CloseFolderCommand,
+            mode => BottomPanelMode = mode,
+            visible => IsBottomPanelVisible = visible,
+            text => StatusText = text,
+            ctx => CurrentProjectContext = ctx,
+            name => WorkspaceProjectName = name);
     }
 
     /// <summary>
@@ -314,147 +340,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     /// </summary>
     public void Activate()
     {
-        if (_disposables is not null) return;
+        if (_disposables is not null)
+            return;
 
         _disposables = new CompositeDisposable();
-
-        // Phase 10 M3: start Problems projection once the window is active.
-        ProblemsViewModel.Activate();
-        _disposables.Add(ProblemsViewModel);
-
-        // Phase 11 M2: structured output projection and show-on-build affordance.
-        ProjectWorkflowViewModel.Activate();
-        _disposables.Add(ProjectWorkflowViewModel);
-
-        // Phase 12 M3a: debug session command projection. Singleton dispose is owned
-        // by App.DisposeServicesOnExit after IDebugSessionService (Contract 3).
-        DebugSessionViewModel.Activate();
-
-        // Phase 12 M4: debug console and call-stack shell projection.
-        DebugPanelViewModel.Activate();
-        _disposables.Add(
-            DebugPanelViewModel.WhenShowDebugRequested
-                .Subscribe(_ =>
-                {
-                    BottomPanelMode = BottomPanelMode.Debug;
-                    IsBottomPanelVisible = true;
-                }));
-
-        // Phase 12 M3b: editor breakpoint projection and F9 command.
-        EditorBreakpointViewModel.Activate();
-
-        // Phase 12 M5: selected-frame current execution location projection.
-        if (DebugCurrentLocationViewModel is not null)
-            DebugCurrentLocationViewModel.Activate();
-        _disposables.Add(
-            ProjectWorkflowViewModel.WhenShowOutputRequested
-                .Subscribe(_ =>
-                {
-                    BottomPanelMode = BottomPanelMode.Output;
-                    IsBottomPanelVisible = true;
-                }));
-
-        // Phase 11 M5: test-results projection and show-on-test affordance.
-        TestResultsViewModel.Activate();
-        _disposables.Add(TestResultsViewModel);
-        _disposables.Add(
-            ProjectWorkflowViewModel.WhenShowTestResultsRequested
-                .Subscribe(_ =>
-                {
-                    BottomPanelMode = BottomPanelMode.TestResults;
-                    IsBottomPanelVisible = true;
-                }));
-
-        // Keep the shared workspace + Source Control in sync with whichever
-        // folder is loaded in the file tree, regardless of the open-folder entry
-        // point (Ctrl+O via OpenFolderCommand or the file-tree "Open Folder..."
-        // header, which invokes FileTreeViewModel.OpenFolderCommand directly).
-        // RootPath is the single post-validation truth for the loaded folder, so
-        // reacting to it prevents "No repository" when a repo is opened from the
-        // file-tree header. M3: the null filter is removed so close transitions
-        // also flow through SetProjectFromPath(null) and Source Control refresh.
-        _disposables.Add(
-            this.WhenAnyValue(x => x.FileTreeViewModel.RootPath)
-                .Subscribe(path =>
-                {
-                    _workspace.SetProjectFromPath(path);
-                    WorkspaceProjectName = _workspace.ProjectName;
-                    SourceControlViewModel.RefreshCommand.Execute(Unit.Default).Subscribe();
-                }));
-
-        // M3 (Phase 8.1.3): Bridge CloseFolderRequested interaction.
-        // Executes CloseFolderCommand only when it can execute (folder is open).
-        // Always completes the interaction output, including no-folder cases.
-        // The handler is synchronous (not async void) so the interaction output
-        // is set after the command body completes — callers that subscribe to
-        // Handle() observe the post-command state immediately.
-        _disposables.Add(
-            FileTreeViewModel.CloseFolderRequested.RegisterHandler(interaction =>
-            {
-                if (FileTreeViewModel.RootPath is not null)
-                {
-                    CloseFolderCommand.Execute().GetAwaiter().GetResult();
-                }
-                interaction.SetOutput(Unit.Default);
-            }));
-
-        // M4: Subscribe to authoritative project-context snapshots on the UI thread.
-        _disposables.Add(
-            _projectContextService.WhenChanged
-                .ObserveOn(ProjectContextScheduler)
-                .Subscribe(ctx => CurrentProjectContext = ctx));
-
-        // Phase 9 M6: Clear status text on tab switch to prevent stale messages
-        // from old tabs leaking into the current view. Each new event from the
-        // active tab will set its own fresh status.
-        _disposables.Add(
-            this.WhenAnyValue(x => x.EditorTabs.ActiveTab)
-                .Subscribe(_ => StatusText = null));
-
-        // Phase 9 M6: Route fold status messages from the tab manager to the
-        // status bar. Cleared on tab switch via the ActiveTab subscription above.
-        _disposables.Add(
-            this.WhenAnyValue(x => x.EditorTabs.FoldStatusMessage)
-                .Where(msg => msg is not null)
-                .Subscribe(msg => StatusText = msg));
-
-        // Surface save errors from the tab manager
-        _disposables.Add(
-            this.WhenAnyValue(x => x.EditorTabs.LastSaveError)
-                .Where(msg => msg is not null)
-                .Subscribe(msg => StatusText = $"Save failed: {msg}"));
-
-        _disposables.Add(
-            this.WhenAnyValue(x => x.EditorTabs.LastOpenError)
-                .Where(msg => msg is not null)
-                .Subscribe(msg => StatusText = $"Open failed: {msg}"));
-
-        _disposables.Add(
-            TerminalHost.StartupError
-                .Where(err => err is not null)
-                .Subscribe(err => StatusText = $"Terminal: {err}"));
-
-        // Subscribe to OpenFileRequested (published by RequestOpenFileCommand).
-        // Uses the FileTreeNode payload directly — no dependency on SelectedFile.
-        _disposables.Add(
-            FileTreeViewModel.OpenFileRequested.Subscribe(node =>
-            {
-                var path = node.FullPath;
-                var unsupported = SupportedFileTypes.GetUnsupportedMessage(path);
-
-                if (unsupported is null)
-                {
-                    EditorTabs.OpenFileCommand.Execute(path).Subscribe(result =>
-                    {
-                        if (result)
-                            StatusText = $"Opened: {node.Name}";
-                    });
-                }
-                else
-                {
-                    StatusText = unsupported;
-                }
-            }));
+        _activationHost.Activate(_disposables);
     }
 
     /// <summary>

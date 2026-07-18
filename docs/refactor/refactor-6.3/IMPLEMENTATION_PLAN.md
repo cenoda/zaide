@@ -1456,7 +1456,8 @@ M6k implementation is complete at `df262ac`.
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
 store). **M8 is complete** at `874aa79` (ordered shutdown owner). **M9a is
 complete** at `172f2a3` (agent Townhall mirror extraction). **M9b is complete**
-at `33a1806` (panel navigation extraction); **M9c remains unauthorized**.
+at `33a1806` (panel navigation extraction). **M9c is implemented and staged
+pending review** (activation host extraction); M10 remains unauthorized.
 
 ---
 
@@ -1696,16 +1697,19 @@ Ctrl+J toggle.
 
 | Item | Locked decision |
 |------|-----------------|
+| Status | **Implemented and staged pending review** (not committed); M9 series remains open until implementation commit and separate closeout |
 | Type | `internal sealed class MainWindowActivationHost` |
 | Path | `src/App/Shell/MainWindowActivationHost.cs` |
 | DI | **Not** registered — constructed only inside `MainWindowViewModel` ctor |
-| Exact constructor | ```csharp public MainWindowActivationHost( ProblemsViewModel problemsViewModel, ProjectWorkflowViewModel projectWorkflowViewModel, DebugSessionViewModel debugSessionViewModel, DebugPanelViewModel debugPanelViewModel, EditorBreakpointViewModel editorBreakpointViewModel, DebugCurrentLocationViewModel? debugCurrentLocationViewModel, TestResultsViewModel testResultsViewModel, FileTreeViewModel fileTreeViewModel, SourceControlViewModel sourceControlViewModel, EditorTabViewModel editorTabs, ITerminalHost terminalHost, Workspace workspace, IProjectContextService projectContextService, IScheduler projectContextScheduler, ReactiveCommand<Unit, Unit> closeFolderCommand, Action<BottomPanelMode> setBottomPanelMode, Action<bool> setIsBottomPanelVisible, Action<string?> setStatusText, Action<ProjectContext> setCurrentProjectContext, Action<string?> setWorkspaceProjectName) ``` |
-| Nullability | `debugCurrentLocationViewModel` is **`DebugCurrentLocationViewModel?`** (matches live optional MWVM property). All other constructor parameters are **non-null**; host ctor throws `ArgumentNullException` for every non-nullable parameter that is null. |
-| MWVM construction site (exact) | In `MainWindowViewModel` ctor after commands that `Activate` needs exist (`CloseFolderCommand` initialized): ```csharp _activationHost = new MainWindowActivationHost( ProblemsViewModel, ProjectWorkflowViewModel, DebugSessionViewModel, DebugPanelViewModel, EditorBreakpointViewModel, DebugCurrentLocationViewModel, TestResultsViewModel, FileTreeViewModel, SourceControlViewModel, EditorTabs, TerminalHost, workspace, projectContextService, ProjectContextScheduler, CloseFolderCommand, mode => BottomPanelMode = mode, visible => IsBottomPanelVisible = visible, text => StatusText = text, ctx => CurrentProjectContext = ctx, name => WorkspaceProjectName = name); ``` |
-| Owns | Entire current `Activate()` body (live L367–503): feature `Activate()` calls, show-panel subscriptions, RootPath→workspace/SC sync, CloseFolderRequested handler, project-context `WhenChanged`, status text routing, OpenFileRequested handling — using constructor fields/delegates only (no capture of outer MWVM except via the five `Action`s and injected services/VMs) |
+| Exact constructor | ```csharp public MainWindowActivationHost( ProblemsViewModel problemsViewModel, ProjectWorkflowViewModel projectWorkflowViewModel, DebugSessionViewModel debugSessionViewModel, DebugPanelViewModel debugPanelViewModel, EditorBreakpointViewModel editorBreakpointViewModel, DebugCurrentLocationViewModel? debugCurrentLocationViewModel, TestResultsViewModel testResultsViewModel, FileTreeViewModel fileTreeViewModel, SourceControlViewModel sourceControlViewModel, EditorTabViewModel editorTabs, ITerminalHost terminalHost, Workspace workspace, IProjectContextService projectContextService, Func<IScheduler> getProjectContextScheduler, ReactiveCommand<Unit, Unit> closeFolderCommand, Action<BottomPanelMode> setBottomPanelMode, Action<bool> setIsBottomPanelVisible, Action<string?> setStatusText, Action<ProjectContext> setCurrentProjectContext, Action<string?> setWorkspaceProjectName) ``` |
+| Scheduler amendment (live evidence) | **Amended from `IScheduler` value capture → `Func<IScheduler> getProjectContextScheduler`.** Live `MainWindowViewModel.ProjectContextScheduler` is a mutable internal property (default `AvaloniaScheduler.Instance`). Tests substitute **after** MWVM construction and **before** `Activate()` (`ProjectSystemMainWindowViewModelProjectionTests`, `ProjectSystemStatusBarViewModelProjectionTests` set `ImmediateScheduler.Instance`). Capturing `IScheduler` in the host ctor would freeze the default Avalonia scheduler and break deterministic projection tests. Host calls `getProjectContextScheduler()` at `Activate` subscription time (inside `ObserveOn(...)`), preserving substitution. MWVM passes `() => ProjectContextScheduler`. |
+| Nullability | `debugCurrentLocationViewModel` is **`DebugCurrentLocationViewModel?`** (matches live optional MWVM property). All other constructor parameters are **non-null**; host ctor throws `ArgumentNullException` for every non-nullable parameter that is null (including `getProjectContextScheduler` and all five `Action`s). |
+| MWVM construction site (exact) | In `MainWindowViewModel` ctor after commands that `Activate` needs exist (`CloseFolderCommand` initialized): ```csharp _activationHost = new MainWindowActivationHost( ProblemsViewModel, ProjectWorkflowViewModel, DebugSessionViewModel, DebugPanelViewModel, EditorBreakpointViewModel, DebugCurrentLocationViewModel, TestResultsViewModel, FileTreeViewModel, SourceControlViewModel, EditorTabs, TerminalHost, workspace, projectContextService, () => ProjectContextScheduler, CloseFolderCommand, mode => BottomPanelMode = mode, visible => IsBottomPanelVisible = visible, text => StatusText = text, ctx => CurrentProjectContext = ctx, name => WorkspaceProjectName = name); ``` |
+| Owns | Entire current `Activate()` body: feature `Activate()` calls, show-panel subscriptions, RootPath→workspace/SC sync, CloseFolderRequested handler, project-context `WhenChanged`, status text routing, OpenFileRequested handling — using constructor fields/delegates only (no capture of outer MWVM except via the five `Action`s, `Func<IScheduler>`, and injected services/VMs) |
 | Public method on host | `public void Activate(CompositeDisposable disposables)` |
 | Public MWVM `Activate()` | Exact body only: ```csharp if (_disposables is not null) return; _disposables = new CompositeDisposable(); _activationHost.Activate(_disposables); ``` |
 | Measurable | MWVM **≤ 420** lines after M9a–M9c; `Activate()` ≤ 6 lines |
+| Inventory delta | +1 internal production type/file (`MainWindowActivationHost`); public 346 unchanged; internal 66→67; total 412→413; prod C# 374→375; App C# 35→36; Shell namespace (19,14,5); FindingIds 2 unchanged |
 
 **Production files (exact):**
 
@@ -1719,8 +1723,13 @@ Ctrl+J toggle.
 
 | Path | Action |
 |------|--------|
+| `tests/Zaide.Tests/App/Shell/MainWindowActivationHostTests.cs` | **Create** — focused host/MWVM activation proofs |
 | `tests/Zaide.Tests/App/Shell/MainWindowViewModelTests.cs` | **No change** (`Activate()` public entrypoint unchanged) |
 | `tests/Zaide.Tests/App/Shell/MainWindowViewModelBottomPanelModeTests.cs` | **No change** |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | **Edit** — M0 floors 413 / 346 / 67 |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | **Edit** — total/internal ceilings |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | **Edit** — Shell namespace (19,14,5); App folder 36; source files 375 |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | **Edit** — App technical-folder source file count 35→36 |
 
 **Focused tests:**
 
@@ -1728,12 +1737,15 @@ Ctrl+J toggle.
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   --filter "FullyQualifiedName~MainWindowViewModelTests\
 |FullyQualifiedName~MainWindowViewModelBottomPanelModeTests\
+|FullyQualifiedName~MainWindowActivationHostTests\
 |FullyQualifiedName~ProjectSystemMainWindowViewModelProjectionTests\
 |FullyQualifiedName~Architecture"
 ```
 
 **M9 series completion:** all measurables met; shared sequential gate green; no
-UX change for agent send, panel modes, or activation side-effects.
+UX change for agent send, panel modes, or activation side-effects. Separate
+implementation review + docs closeout still required before claiming the series
+closed (do not mark complete in this implementation slice alone).
 
 ---
 
@@ -2119,16 +2131,17 @@ dotnet test Zaide.slnx --no-build
 1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
    closeout `3e465e1`.
 2. **M9a** complete at `172f2a3`; **M9a closeout** at `35df46b`.
-3. **M9b** (panel navigation extraction) is **complete at `33a1806`**:
-   `ShellPanelNavigation` owns nine commands + decision actions;
-   MWVM retains mode storage/`RaiseAndSetIfChanged`; public command names
-   unchanged. FindingIds remain 2; inventory internal/total/prod/App file counts
-   bump by one for the new type/file. Shell namespace (18, 14, 4).
-4. **M9c** is next eligible and remains unauthorized. Do not start M9c,
-   Refactor 7/8, or Phase 14 without separate authorization. Completing M9b
-   does **not** authorize M9c, the M9 series closeout, or whole-refactor
-   closeout. Do not perform the five-document closeout in this slice.
+3. **M9b** complete at `33a1806`; **M9b closeout** at `b6bfd8f`.
+4. **M9c** (activation host extraction) is implemented and staged pending
+   review: `MainWindowActivationHost` owns activation side effects; MWVM is 390
+   lines and `Activate()` is the locked thin entrypoint; scheduler substitution
+   is preserved through `Func<IScheduler>`. FindingIds remain 2; inventory is
+   public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell
+   namespace (19, 14, 5).
+5. M10 is next planned but remains unauthorized. Do not start M10+, Refactor
+   7/8, or Phase 14. Do not mark M9 complete until M9c implementation commit
+   and separate five-document closeout.
 
 ---
 
-*Last updated: 2026-07-18 (M9b complete at `33a1806`: ShellPanelNavigation; MWVM 500 lines; inventory public 346 / internal 66 / total 412 / prod C# 374 / App C# 35; Shell namespace (18,14,4); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 70/70, Architecture 21/21, full suite 2284/2284, git diff checks clean; manual panel-navigation verification not run; M9c unauthorized)*
+*Last updated: 2026-07-18 (M9c implemented and staged pending review: MainWindowActivationHost; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines / Activate thin entrypoint; inventory public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell namespace (19,14,5); FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 97/97, Architecture 21/21, full suite 2317/2317, git diff checks clean; manual activation verification not run; M9 series not closed; M10 unauthorized)*
