@@ -13,7 +13,7 @@ namespace Zaide.Features.Language.Application;
 /// Observes <see cref="global::Zaide.Features.Workspace.Domain.Workspace"/> document lifecycle and content, sending ordered
 /// LSP document notifications through the current ready language session.
 /// </summary>
-public sealed class LanguageDocumentBridge : ILanguageDocumentBridge
+internal sealed class LanguageDocumentBridge : ILanguageDocumentBridge
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

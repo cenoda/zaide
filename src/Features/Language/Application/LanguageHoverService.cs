@@ -14,7 +14,7 @@ namespace Zaide.Features.Language.Application;
 /// <summary>
 /// Owns cancellable active-document hover requests with bounded dwell scheduling.
 /// </summary>
-public sealed class LanguageHoverService : ILanguageHoverService
+internal sealed class LanguageHoverService : ILanguageHoverService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

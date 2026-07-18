@@ -16,7 +16,7 @@ namespace Zaide.Features.Language.Application;
 /// Owns structured per-document diagnostics from the live language session.
 /// Validates generation, open-document tracking, version, and utf-16 ranges.
 /// </summary>
-public sealed class LanguageDiagnosticsService : ILanguageDiagnosticsService
+internal sealed class LanguageDiagnosticsService : ILanguageDiagnosticsService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

@@ -6,7 +6,7 @@ namespace Zaide.Features.Language.Infrastructure.Lsp;
 /// <summary>
 /// Production factory that launches csharp-ls and completes initialize/initialized.
 /// </summary>
-public sealed class CsharpLsSessionFactory : ILanguageServerSessionFactory
+internal sealed class CsharpLsSessionFactory : ILanguageServerSessionFactory
 {
     /// <inheritdoc />
     public async Task<ILanguageServerSession> StartAsync(

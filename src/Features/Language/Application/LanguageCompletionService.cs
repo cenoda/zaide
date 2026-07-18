@@ -15,7 +15,7 @@ namespace Zaide.Features.Language.Application;
 /// <summary>
 /// Owns cancellable active-document completion requests and deterministic selection/commit state.
 /// </summary>
-public sealed class LanguageCompletionService : ILanguageCompletionService
+internal sealed class LanguageCompletionService : ILanguageCompletionService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

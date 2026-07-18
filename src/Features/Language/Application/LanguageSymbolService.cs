@@ -15,7 +15,7 @@ namespace Zaide.Features.Language.Application;
 /// <summary>
 /// Owns cancellable document and workspace symbol requests with stale-result protection.
 /// </summary>
-public sealed class LanguageSymbolService : ILanguageSymbolService
+internal sealed class LanguageSymbolService : ILanguageSymbolService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

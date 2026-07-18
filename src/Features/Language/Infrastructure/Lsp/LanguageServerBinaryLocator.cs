@@ -8,7 +8,7 @@ namespace Zaide.Features.Language.Infrastructure.Lsp;
 /// Discovers the csharp-ls global tool on PATH or at the conventional
 /// <c>~/.dotnet/tools/csharp-ls</c> location. Does not package the server into the app.
 /// </summary>
-public sealed class LanguageServerBinaryLocator : ILanguageServerBinaryLocator
+internal sealed class LanguageServerBinaryLocator : ILanguageServerBinaryLocator
 {
     private readonly string? _configuredPath;
 

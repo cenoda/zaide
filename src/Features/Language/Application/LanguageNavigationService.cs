@@ -15,7 +15,7 @@ namespace Zaide.Features.Language.Application;
 /// Owns cancellable Go to Definition requests with generation/version/active-document checks.
 /// Never opens tabs or mutates selection — callers navigate only after accepting a live result.
 /// </summary>
-public sealed class LanguageNavigationService : ILanguageNavigationService
+internal sealed class LanguageNavigationService : ILanguageNavigationService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

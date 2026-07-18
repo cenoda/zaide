@@ -65,8 +65,10 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((13, 13, 0), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
         Assert.Equal((10, 10, 0), byNamespace["Zaide.Features.ProjectSystem.Presentation"]);
         Assert.Equal((8, 8, 0), byNamespace["Zaide.Features.Language.Contracts"]);
-        Assert.Equal((47, 42, 5), byNamespace["Zaide.Features.Language.Application"]);
-        Assert.Equal((24, 17, 7), byNamespace["Zaide.Features.Language.Infrastructure.Lsp"]);
+        // M11a: 8 Application Language services public→internal (42p/5i → 34p/13i).
+        Assert.Equal((47, 34, 13), byNamespace["Zaide.Features.Language.Application"]);
+        // M11a: LanguageServerBinaryLocator + CsharpLsSessionFactory public→internal (17p/7i → 15p/9i).
+        Assert.Equal((24, 15, 9), byNamespace["Zaide.Features.Language.Infrastructure.Lsp"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Debugging.Contracts"]);
         Assert.Equal((16, 16, 0), byNamespace["Zaide.Features.Debugging.Application"]);
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Infrastructure.Dap"]);

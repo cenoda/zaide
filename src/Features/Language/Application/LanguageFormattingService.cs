@@ -13,7 +13,7 @@ namespace Zaide.Features.Language.Application;
 /// Owns cancellable whole-document <c>textDocument/formatting</c> with
 /// generation/version/active-document validation. Never mutates text.
 /// </summary>
-public sealed class LanguageFormattingService : ILanguageFormattingService
+internal sealed class LanguageFormattingService : ILanguageFormattingService
 {
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;

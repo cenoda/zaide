@@ -1869,6 +1869,19 @@ Each slice updates `PublicProductionTypeBaseline.txt` in the **same** commit
 **Also edit:** `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt`
 (remove the ten full names).
 
+**Architecture bookkeeping (live M11a):**
+- `PublicProductionTypeBaseline.cs` / `ArchitectureInventoryReader.cs` constants:
+  public 346→336, internal 69→79, total 415 unchanged.
+- Namespace rollups: `Language.Application` (47, 42, 5)→(47, 34, 13);
+  `Language.Infrastructure.Lsp` (24, 17, 7)→(24, 15, 9).
+- File/DI/FindingId counts unchanged (prod C# 377, Features 339, App 36, DI 67, FindingIds 2).
+- Historical Phase10 smoke tools under `tools/` reference concrete types but are
+  **not** in `Zaide.slnx` and were already non-buildable at M11a entry because
+  they still import removed legacy `Zaide.Models` / `Zaide.Services` namespaces;
+  they are outside the M11a green gate and are not production assemblies.
+
+**Status:** implemented and staged pending review (not committed).
+
 **Focused tests:**
 
 ```bash
@@ -2162,9 +2175,11 @@ dotnet test Zaide.slnx --no-build
    `AddZaideSettings` has exactly three singletons; public baseline net 0 at 346;
    inventory public 346 / internal 69 / total 415 / prod C# 377 / Features 339 /
    App 36; DI registrations 67; FindingIds 2.
-6. **M11a** is next eligible and remains unauthorized. Do not start M11a+,
-   Refactor 7/8, or Phase 14 without separate authorization.
+6. **M11a** (Language implementation visibility internalization) is implemented
+   and staged pending review: exactly 10 Language types public→internal;
+   public baseline 336; internal 79; total 415; DI 67; FindingIds 2 unchanged.
+   Do not start M11b+, Refactor 7/8, or Phase 14 without separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M10 complete at `843eebf`: Settings panel factory V17; public baseline +ISettingsPanelFactory −SettingsMigrator net 0 = 346; internal 69 / total 415 / prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 99/99, Architecture 21/21, full suite 2320/2320 after one unrelated flaky terminal FD-leak rerun, git diff checks clean; manual Settings verification not run; M11a unauthorized)*
+*Last updated: 2026-07-18 (M11a implemented and staged pending review: Language 10 types internalized; public 336 / internal 79 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 180/180, Architecture 21/21, full suite 2320/2320, git diff checks clean; manual verification not required and not run; M11b unauthorized; no five-document closeout)*

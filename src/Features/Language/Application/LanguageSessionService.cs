@@ -16,7 +16,7 @@ namespace Zaide.Features.Language.Application;
 /// Singleton language-session owner. Reacts to <see cref="IProjectContextService"/>
 /// snapshots, launches csharp-ls, and manages generation-safe teardown.
 /// </summary>
-public sealed class LanguageSessionService : ILanguageSessionService
+internal sealed class LanguageSessionService : ILanguageSessionService
 {
     private static readonly LanguageSessionSnapshot InitialSnapshot = new(
         LanguageSessionState.Unavailable,
