@@ -49,8 +49,9 @@ send and Townhall mirroring. **M9b** is complete at `33a1806`: internal
 `ShellPanelNavigation` owns nine panel commands while MWVM retains notifying
 mode state. **M9c** is complete at `bcb1e97`: internal
 `MainWindowActivationHost` owns activation side effects, completing the M9
-series. **M10** is next eligible, has not started, and requires separate
-authorization.
+series. **M10** is complete at `843eebf`: the Settings panel factory removes
+direct Settings construction from MainWindow with a net-zero public baseline.
+**M11a** is next eligible, has not started, and requires separate authorization.
 Refactors 7 / 8 have no production authorization
 until their own M0 acceptances. Non-C# assets remain outside the
 root-admission ratchet. No V3 production feature implementation is active.
@@ -141,14 +142,14 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 `src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
-(`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M9c internal-only). Live
-inventory after M9c: total top-level **413**, public **346**, internal **67**,
-production C# **375**, App C# **36**. Composition.Registration contains eleven
+(`PublicProductionTypeBaseline.txt`; M5 net −1; M10 net zero). Live inventory
+after M10: total top-level **415**, public **346**, internal **69**, production
+C# **377**, Features C# **339**, App C# **36**. Composition.Registration contains eleven
 internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
 Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M10** Settings panel factory next and
+Refactor 6.3 (**M11a** Language implementation visibility internalization next and
 separately unauthorized).
 
 | Later work | Owns |
@@ -365,4 +366,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M9c complete; M9c at `bcb1e97`; M9 series complete; MainWindowActivationHost owns activation side effects; scheduler substitution preserved via Func<IScheduler>; MWVM 390 lines; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 97/97; Architecture 21/21; full suite 2317/2317), manual activation verification not run; public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; FindingIds 2 unchanged; M10 next eligible and separately unauthorized)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M10 complete; M10 at `843eebf`; Settings panel factory registered only in AddZaideSettings; public baseline +ISettingsPanelFactory −SettingsMigrator net 0 at 346; DI registrations 67; automated verification green (forced build 4 pre-existing warnings / 0 errors; focused 99/99; Architecture 21/21; full suite 2320/2320 after one unrelated flaky terminal FD-leak rerun), manual Settings verification not run; public 346 / internal 69 / total 415 / prod C# 377 / Features C# 339 / App C# 36; FindingIds 2 unchanged; M11a next eligible and separately unauthorized)*
