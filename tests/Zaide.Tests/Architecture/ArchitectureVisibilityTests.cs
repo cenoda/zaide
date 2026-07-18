@@ -187,7 +187,7 @@ public sealed class ArchitectureVisibilityTests
         });
 
         Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
-        Assert.Equal(27, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        Assert.Equal(28, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Post-M1+M2: Features 334 → 336 (M1) → 338 (M2); M5 −1 (SourceControlState).
         Assert.Equal(337, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));

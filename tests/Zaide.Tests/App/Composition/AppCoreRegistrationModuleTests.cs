@@ -32,9 +32,8 @@ public sealed class AppCoreRegistrationModuleTests
         typeof(CommandPaletteViewModel).FullName!,
     };
 
-    private static readonly string[] M6hPlusDirectMarkers =
+    private static readonly string[] M6iPlusDirectMarkers =
     {
-        "AddSingleton<SourceControlViewModel>()",
         "AddSingleton<IProjectContextService, ProjectContextService>()",
         "AddSingleton<ILanguageSessionService, LanguageSessionService>()",
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
@@ -179,23 +178,23 @@ public sealed class AppCoreRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6hPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6iPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6hPlusDirectMarkers)
+        foreach (var marker in M6iPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6b–M6g modules are present; M6h–M6k do not exist yet.
+        // M6b–M6h modules are present; M6i–M6k do not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideSourceControl", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideSourceControl\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideProjectSystem", programSource);
         Assert.DoesNotContain("AddZaideLanguage", programSource);
         Assert.DoesNotContain("AddZaideDebugging", programSource);
