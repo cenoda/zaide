@@ -7,10 +7,11 @@ eighth-revision planning gate.
 
 **Progress (truth-sync):** **M1 complete** at `e590a79`
 (`refactor-6.3: M1 editor session factory`). **M2 complete** at `d9799ad`
-(`refactor-6.3: M2 editor read-only tab gateway`); M2 verification is green
-(build, Architecture 21, full suite, `git diff --check`). **M3** (terminal
-service factory) is the next eligible milestone and still requires a separate
-explicit start — production implementation of M3 has **not** started.
+(`refactor-6.3: M2 editor read-only tab gateway`). **M3 complete** (terminal
+service factory / V05) — production implementation verified green (build,
+Architecture 21, full suite 2201, `git diff --check`); commit pending review.
+**M4** (mention parser purity) is the next eligible independent milestone and
+requires a separate explicit start.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -108,19 +109,17 @@ This section supersedes any shorter paraphrase elsewhere in this document.
 
 ```
 R61-AL-LOC-App
-R61-AL-LOC-EditorTabViewModel
 R61-AL-LOC-Program
-R61-AL-LOC-SourceControlDiffTabService
-R61-AL-NS-ITerminalSessionFactory
 R61-AL-NS-MentionParser
-R61-AL-NS-SourceControlDiffTabService
 R61-AL-NS-SourceControlState
-R61-AL-NS-TerminalSessionFactory
 ```
 
-After M3 renames terminal factory types, the two Terminal NS FindingIds are
-**removed** (debt cleared), not re-keyed to new IDs for the replacement
-`ITerminalServiceFactory` (which must not reintroduce Presentation edges).
+**Live set after M3 (4 FindingIds):** Terminal NS FindingIds
+`R61-AL-NS-ITerminalSessionFactory` and `R61-AL-NS-TerminalSessionFactory`
+were **removed** (V05 debt cleared), not re-keyed. Replacement
+`ITerminalServiceFactory` returns Contracts-only types and does not reintroduce
+Presentation edges. Earlier M1/M2 removals
+(`R61-AL-LOC-EditorTabViewModel`, both V07 FindingIds) remain cleared.
 
 ---
 
@@ -213,7 +212,7 @@ intended milestone files.
 | ID | Live site | FindingId(s) | Clearing milestone |
 |----|-----------|--------------|--------------------|
 | V02 | `SourceControlState` Domain → Application | `R61-AL-NS-SourceControlState` | **M5** |
-| V05 | Terminal factory Contracts/Application → Presentation | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` | **M3** |
+| V05 | Terminal factory Contracts/Application → Presentation | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` | **M3** (cleared) |
 | V06 | `MentionParser` → `IAgentPanelHost` | `R61-AL-NS-MentionParser` | **M4** |
 | V07 | Diff tab service → Editor Presentation + provider | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` | **M2** |
 | V08 | `EditorTabViewModel` + `IServiceProvider` | `R61-AL-LOC-EditorTabViewModel` | **M1** |
@@ -539,9 +538,11 @@ diff tab → confirm read-only diff content → refresh after stage if applicabl
 
 | | |
 |--|--|
-| **Status** | **Not started** — next eligible milestone; requires separate explicit start |
+| **Status** | **Complete** (implementation verified; commit pending review) — `ITerminalServiceFactory` + `LinuxTerminalServiceFactory`; session factory deleted |
 | **Design** | § D3 + § D0 |
-| **Completion condition** | (1) `ITerminalSessionFactory` / `TerminalSessionFactory` deleted; (2) both Terminal NS FindingIds removed; (3) Contracts has no `using` of Terminal.Presentation; (4) public `ITerminalServiceFactory` + public `TerminalHost` ctor; `LinuxTerminalServiceFactory` `internal`; (5) public baseline **net −1**; (6) shared gate green |
+| **Completion condition** | (1) `ITerminalSessionFactory` / `TerminalSessionFactory` deleted; (2) both Terminal NS FindingIds removed; (3) Contracts has no `using` of Terminal.Presentation; (4) public `ITerminalServiceFactory` + public `TerminalHost` ctor; `LinuxTerminalServiceFactory` `internal`; (5) public baseline **net −1**; (6) shared gate green — **all met** |
+| **Live counts after M3** | 398 total / 347 public / 51 internal; FindingIds **4**; locator sites **2** (Program, App); public baseline net **−1** |
+| **Verification** | build 0 errors; focused terminal+Architecture **119** passed; Architecture **21** passed; full suite **2201** passed; `git diff --check` clean; manual desktop session **not run** |
 
 **Focused tests (final names after M3 file renames):**
 
@@ -555,7 +556,8 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 ```
 
 **Manual:** Toggle terminal (Ctrl+`) → new tab → type `echo ok` → close tab.
-Shell process must not outlive tab close / app exit.
+Shell process must not outlive tab close / app exit. **Not exercised** in the
+M3 verification environment (no interactive desktop session claimed).
 
 **Rollback:** single commit.
 

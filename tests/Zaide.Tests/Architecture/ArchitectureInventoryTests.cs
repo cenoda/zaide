@@ -72,8 +72,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Terminal.Contracts"]);
-        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Terminal.Application"]);
-        Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
+        Assert.False(byNamespace.ContainsKey("Zaide.Features.Terminal.Application"));
+        Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Presentation"]);
@@ -241,11 +241,11 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
 
         // Inventory of known M0 forbidden locations — not a failure ratchet.
-        Assert.Contains(
+        // M3 cleared Terminal session factory → Presentation (V05).
+        Assert.DoesNotContain(
             inventory.NamespaceDependencyEvidence,
             e => e.RelativePath.Contains("TerminalSessionFactory", StringComparison.Ordinal)
-                && e.SourceTechnicalFolder == "Features"
-                && e.TargetNamespaceFragment == "Zaide.Features.Terminal.Presentation");
+                || e.RelativePath.Contains("ITerminalSessionFactory", StringComparison.Ordinal));
         Assert.Contains(
             inventory.NamespaceDependencyEvidence,
             e => e.RelativePath.Contains("SourceControlState", StringComparison.Ordinal)

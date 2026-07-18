@@ -67,10 +67,10 @@ public sealed class ArchitectureRatchetTests
 
         Assert.Equal(approvedIds, liveIds);
 
-        // M2 residual size: 4 namespace edges + 2 locator sites + 0 root admissions.
-        Assert.Equal(6, liveIds.Length);
+        // M3 residual size: 2 namespace edges + 2 locator sites + 0 root admissions.
+        Assert.Equal(4, liveIds.Length);
         Assert.Equal(
-            4,
+            2,
             LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(
             2,
@@ -112,12 +112,13 @@ public sealed class ArchitectureRatchetTests
 
         // Known accepted debt sites remain visible (not silently dropped).
         // M2 cleared SourceControlDiffTabService → Editor.Presentation (V07).
+        // M3 cleared Terminal session factory → Presentation (V05).
         Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Domain/SourceControlState.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Application/TerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Agents/Application/MentionParser.cs");
         Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
-        Assert.Equal(4, live.Count);
+        Assert.DoesNotContain(live, v => v.RelativePath.Contains("TerminalSessionFactory", StringComparison.Ordinal));
+        Assert.DoesNotContain(live, v => v.RelativePath.Contains("ITerminalSessionFactory", StringComparison.Ordinal));
+        Assert.Equal(2, live.Count);
     }
 
     [Fact]

@@ -18,14 +18,14 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M2: 398).</summary>
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M3: net 0 vs M2).</summary>
     public const int M0TotalTopLevelTypes = 398;
 
-    /// <summary>M0 baseline public top-level type count.</summary>
-    public const int M0PublicTopLevelTypes = 348;
+    /// <summary>M0 baseline public top-level type count (M3: net −1).</summary>
+    public const int M0PublicTopLevelTypes = 347;
 
-    /// <summary>M0 baseline internal top-level type count (M2: 50).</summary>
-    public const int M0InternalTopLevelTypes = 50;
+    /// <summary>M0 baseline internal top-level type count (M3: +1 factory impl).</summary>
+    public const int M0InternalTopLevelTypes = 51;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",
@@ -64,14 +64,6 @@ public sealed class ArchitectureInventoryReader
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Residual R61-V05 edge after Terminal move: session factory contract/impl
-    /// still depend on presentation session types (Refactor 6.3 inversion).
-    /// </summary>
-    private static readonly Regex TerminalFactoryToPresentationRegex = new(
-        @"(?:using\s+Zaide\.Features\.Terminal\.Presentation\b|Zaide\.Features\.Terminal\.Presentation\.)",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    /// <summary>
     /// Residual R61-V06 edge after Agents move: MentionParser still depends on
     /// panel-host presentation state (Refactor 6.3 inversion).
     /// </summary>
@@ -81,12 +73,6 @@ public sealed class ArchitectureInventoryReader
 
     private const string SourceControlStateRelativePath =
         "src/Features/SourceControl/Domain/SourceControlState.cs";
-
-    private const string TerminalSessionFactoryContractRelativePath =
-        "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs";
-
-    private const string TerminalSessionFactoryRelativePath =
-        "src/Features/Terminal/Application/TerminalSessionFactory.cs";
 
     private const string MentionParserRelativePath =
         "src/Features/Agents/Application/MentionParser.cs";
@@ -358,13 +344,6 @@ public sealed class ArchitectureInventoryReader
                 technicalFolder = "Features";
                 targetRegex = SourceControlStateToApplicationRegex;
                 targetFragment = "Zaide.Features.SourceControl.Application";
-            }
-            else if (normalizedPath.Equals(TerminalSessionFactoryContractRelativePath, StringComparison.Ordinal)
-                || normalizedPath.Equals(TerminalSessionFactoryRelativePath, StringComparison.Ordinal))
-            {
-                technicalFolder = "Features";
-                targetRegex = TerminalFactoryToPresentationRegex;
-                targetFragment = "Zaide.Features.Terminal.Presentation";
             }
             else if (normalizedPath.Equals(MentionParserRelativePath, StringComparison.Ordinal))
             {

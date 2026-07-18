@@ -21,7 +21,7 @@ namespace Zaide.Features.Terminal.Presentation;
 /// single-threaded across chunk boundaries) and then marshals the buffer
 /// mutation onto the UI thread before raising snapshot changes.</para>
 ///
-/// Created per session via <see cref="ITerminalSessionFactory"/> — each
+/// Created per session via <see cref="ITerminalServiceFactory"/> — each
 /// <see cref="TerminalViewModel"/> owns one <see cref="ITerminalService"/>
 /// and is independent from other instances. Dispose to release the session.
 /// </summary>

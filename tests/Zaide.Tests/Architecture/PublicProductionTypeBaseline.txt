@@ -301,9 +301,8 @@ Zaide.Features.SourceControl.Domain.SourceControlState
 Zaide.Features.SourceControl.Infrastructure.GitMutationService
 Zaide.Features.SourceControl.Presentation.SourceControlPanel
 Zaide.Features.SourceControl.Presentation.SourceControlViewModel
-Zaide.Features.Terminal.Application.TerminalSessionFactory
 Zaide.Features.Terminal.Contracts.ITerminalService
-Zaide.Features.Terminal.Contracts.ITerminalSessionFactory
+Zaide.Features.Terminal.Contracts.ITerminalServiceFactory
 Zaide.Features.Terminal.Infrastructure.LinuxTerminalService
 Zaide.Features.Terminal.Presentation.ITerminalHost
 Zaide.Features.Terminal.Presentation.LogCategorizer

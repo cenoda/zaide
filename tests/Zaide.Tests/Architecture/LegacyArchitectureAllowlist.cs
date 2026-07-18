@@ -66,10 +66,8 @@ public static class LegacyArchitectureAllowlist
     {
         "R61-AL-LOC-App",
         "R61-AL-LOC-Program",
-        "R61-AL-NS-ITerminalSessionFactory",
         "R61-AL-NS-MentionParser",
         "R61-AL-NS-SourceControlState",
-        "R61-AL-NS-TerminalSessionFactory",
     };
 
     private static readonly IReadOnlyList<ArchitectureAllowlistEntry> EntriesInternal =
@@ -102,36 +100,6 @@ public static class LegacyArchitectureAllowlist
                 rationale:
                 "Domain/SourceControlState consumes Application/RepositoryStatusSnapshot. " +
                 "Movement alone preserves the residual layer edge (Refactor 6.3 inversion).",
-                removalBoundary: "Refactor 6.3"),
-
-            new(
-                findingId: "R61-AL-NS-ITerminalSessionFactory",
-                category: ArchitectureRatchet.CategoryNamespaceDirection,
-                matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Features",
-                    "Zaide.Features.Terminal.Presentation",
-                    "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs"),
-                m0FindingId: "R61-V05",
-                owner: "Terminal",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "ITerminalSessionFactory public contract returns TerminalViewModel " +
-                "(Terminal Contracts -> Terminal Presentation).",
-                removalBoundary: "Refactor 6.3"),
-
-            new(
-                findingId: "R61-AL-NS-TerminalSessionFactory",
-                category: ArchitectureRatchet.CategoryNamespaceDirection,
-                matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Features",
-                    "Zaide.Features.Terminal.Presentation",
-                    "src/Features/Terminal/Application/TerminalSessionFactory.cs"),
-                m0FindingId: "R61-V05",
-                owner: "Terminal",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "TerminalSessionFactory constructs TerminalViewModel with the process owner " +
-                "as one unit (Terminal Application -> Terminal Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
             new(

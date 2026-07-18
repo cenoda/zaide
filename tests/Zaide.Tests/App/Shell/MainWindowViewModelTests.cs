@@ -41,7 +41,6 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
@@ -95,9 +94,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Moq.Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Moq.Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -180,9 +178,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -252,9 +249,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -432,9 +428,8 @@ public class MainWindowViewModelTests
         var terminalService = new Moq.Mock<ITerminalService>();
         terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("pty failed"));
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory2 = new Moq.Mock<ITerminalSessionFactory>();
-        factory2.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory2 = new Moq.Mock<ITerminalServiceFactory>();
+        factory2.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost2 = new TerminalHost(factory2.Object);
         var townhallState2 = new TownhallState();
         var townhallViewModel2 = new TownhallViewModel(townhallState2);
@@ -456,10 +451,10 @@ public class MainWindowViewModelTests
     public void ToggleBottomPanel_DoesNotDestroySessions()
     {
         var service = new Mock<ITerminalService>();
-        var terminalVm = new TerminalViewModel(service.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalVm);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(service.Object);
         var terminalHost = new TerminalHost(factory.Object);
+        var initialSession = terminalHost.ActiveSession;
         var vm = CreateViewModel(terminalHost);
 
         vm.ToggleBottomPanelCommand.Execute().Subscribe();
@@ -467,7 +462,7 @@ public class MainWindowViewModelTests
         vm.ToggleBottomPanelCommand.Execute().Subscribe();
 
         service.Verify(s => s.Dispose(), Times.Never);
-        Assert.Same(terminalVm, terminalHost.ActiveSession);
+        Assert.Same(initialSession, terminalHost.ActiveSession);
     }
 
     // ── Phase 5.4 M2: Townhall mirroring from SendAgentMessageAsync ───────────
@@ -514,9 +509,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Moq.Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Moq.Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -754,9 +748,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Moq.Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Moq.Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -882,9 +875,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Moq.Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Moq.Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -1040,10 +1032,10 @@ public class MainWindowViewModelTests
     public void HideBottomPanel_HidesPanelWithoutDestroyingLastSession()
     {
         var service = new Mock<ITerminalService>();
-        var terminalVm = new TerminalViewModel(service.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalVm);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(service.Object);
         var terminalHost = new TerminalHost(factory.Object);
+        var initialSession = terminalHost.ActiveSession;
         var vm = CreateViewModel(terminalHost);
 
         vm.ToggleBottomPanelCommand.Execute().Subscribe();
@@ -1054,7 +1046,7 @@ public class MainWindowViewModelTests
         Assert.False(vm.IsBottomPanelVisible);
         service.Verify(s => s.Dispose(), Times.Never);
         Assert.Single(terminalHost.Tabs);
-        Assert.Same(terminalVm, terminalHost.ActiveSession);
+        Assert.Same(initialSession, terminalHost.ActiveSession);
     }
 
     // ── Phase 8.1.3 M3: Workspace Close Lifecycle ────────────────────────────
@@ -1072,9 +1064,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
@@ -1258,9 +1249,8 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);

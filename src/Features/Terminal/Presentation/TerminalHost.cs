@@ -10,7 +10,7 @@ namespace Zaide.Features.Terminal.Presentation;
 
 public sealed class TerminalHost : ReactiveObject, ITerminalHost
 {
-    private readonly ITerminalSessionFactory _factory;
+    private readonly ITerminalServiceFactory _serviceFactory;
     private readonly ObservableCollection<TerminalTabViewModel> _tabs;
     private TerminalTabViewModel? _activeTab;
     private readonly IObservable<string?> _startupError;
@@ -36,12 +36,12 @@ public sealed class TerminalHost : ReactiveObject, ITerminalHost
     public ReactiveCommand<TerminalTabViewModel, Unit> CloseTabCommand { get; }
     public ReactiveCommand<TerminalTabViewModel, Unit> ActivateTabCommand { get; }
 
-    public TerminalHost(ITerminalSessionFactory factory)
+    public TerminalHost(ITerminalServiceFactory serviceFactory)
     {
-        _factory = factory;
+        _serviceFactory = serviceFactory;
         _tabs = new ObservableCollection<TerminalTabViewModel>();
 
-        var initialSession = factory.CreateSession();
+        var initialSession = new TerminalViewModel(_serviceFactory.Create());
         var initialTab = new TerminalTabViewModel(initialSession) { IsActive = true };
         _tabs.Add(initialTab);
         ActiveTab = initialTab;
@@ -71,7 +71,7 @@ public sealed class TerminalHost : ReactiveObject, ITerminalHost
     {
         if (_disposed) throw new ObjectDisposedException(nameof(TerminalHost));
 
-        var session = _factory.CreateSession();
+        var session = new TerminalViewModel(_serviceFactory.Create());
         var tab = new TerminalTabViewModel(session);
 
         if (ActiveTab != null)

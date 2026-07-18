@@ -17,7 +17,6 @@ using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 
@@ -274,8 +273,8 @@ public sealed class SettingsPersistenceUiTests
 
     private static TerminalHost CreateTerminalHost()
     {
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(x => x.CreateSession()).Returns(CreateTerminalSession);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(x => x.Create()).Returns(() => new Mock<ITerminalService>().Object);
         return new TerminalHost(factory.Object);
     }
 

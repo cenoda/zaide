@@ -72,7 +72,7 @@ public sealed class ArchitectureVisibilityTests
         var root = ArchitectureInventoryReader.ResolveRepositoryRoot();
 
         // Load enforces: present, non-empty lines, no comments, unique, sorted,
-        // exact count == 348. Any violation is VISIBILITY_BASELINE_INTEGRITY.
+        // exact count == PublicTopLevelTypes. Any violation is VISIBILITY_BASELINE_INTEGRITY.
         System.Collections.Generic.IReadOnlyList<string> names;
         try
         {
@@ -214,12 +214,12 @@ public sealed class ArchitectureVisibilityTests
     [Fact]
     public void M3LegacyAllowlist_IsUnchangedByM4()
     {
-        // Hard boundary: M4 must not alter legacy allowlist entries to pass.
-        // M2 residual: 6 FindingIds (4 NS + 2 LOC).
-        Assert.Equal(6, LegacyArchitectureAllowlist.Entries.Count);
-        Assert.Equal(6, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
+        // Hard boundary: later visibility work must not alter legacy allowlist to pass.
+        // M3 residual: 4 FindingIds (2 NS + 2 LOC) after Terminal NS clearance.
+        Assert.Equal(4, LegacyArchitectureAllowlist.Entries.Count);
+        Assert.Equal(4, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
         Assert.Equal(
-            4,
+            2,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(

@@ -2,8 +2,6 @@ using Moq;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Infrastructure;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide.Tests.Features.Terminal.Presentation;
@@ -14,8 +12,6 @@ public class TerminalTabCloseBehaviorTests
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
-
-    private static readonly System.Action<System.Action> RunInline = action => action();
 
     [Fact]
     public void ShouldHideBottomPanelInsteadOfClosing_ReturnsTrue_ForSoleTab()
@@ -40,13 +36,8 @@ public class TerminalTabCloseBehaviorTests
 
     private static TerminalHost CreateHost()
     {
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(() =>
-        {
-            var service = new Mock<ITerminalService>();
-            return new TerminalViewModel(service.Object, RunInline);
-        });
-
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(() => new Mock<ITerminalService>().Object);
         return new TerminalHost(factory.Object);
     }
 }

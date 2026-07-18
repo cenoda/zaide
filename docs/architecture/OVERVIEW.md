@@ -200,7 +200,7 @@ The current app contains the agent-workspace shell delivered through V1:
 
 ### Phase 3.9.1 (Terminal Tabs — complete, 2026-07-07)
 
-- `ITerminalSessionFactory` / `TerminalSessionFactory` — creates one `ITerminalService` + `TerminalViewModel` pair per call, enabling independent per-tab shell sessions
+- `ITerminalServiceFactory` / `LinuxTerminalServiceFactory` — creates one `ITerminalService` (process owner) per call; Presentation pairs each service with a `TerminalViewModel` (Refactor 6.3 M3)
 - `ITerminalHost` / `TerminalHost` — owns the tab collection, active-tab switching, create/close/dispose lifecycle, and active-session error projection
 - `TerminalTabViewModel` — per-tab record with title, active state, and session reference
 - `TerminalTabHost` (view layer) — retains one `TerminalPanel` per tab in a `Dictionary` cache so each session keeps its own search, viewport, selection, and log-view state; shows only the active tab's panel

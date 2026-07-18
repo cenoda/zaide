@@ -30,7 +30,6 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
@@ -474,9 +473,8 @@ public sealed class CommandResolutionAcceptanceTests
         var editorTabs = new EditorTabViewModel(
             sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);

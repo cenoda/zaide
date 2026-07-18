@@ -39,7 +39,6 @@ using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.Features.Debugging.Application;
 using Zaide.Tests.Features.Debugging.Presentation;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
@@ -98,7 +97,7 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
         var vm = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,
-            new TerminalHost(new Mock<ITerminalSessionFactory>().Object),
+            new TerminalHost(CreateTerminalServiceFactory().Object),
             new AgentPanelHost(),
             new Mock<IAgentExecutionCoordinator>().Object,
             new AgentRouter(new MentionParser(new AgentPanelHost()), new AgentPanelHost(),
@@ -115,6 +114,13 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
 
         return vm;
+    }
+
+    private static Mock<ITerminalServiceFactory> CreateTerminalServiceFactory()
+    {
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(() => new Mock<ITerminalService>().Object);
+        return factory;
     }
 
     private SourceControlViewModel CreateSourceControlViewModel()

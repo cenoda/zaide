@@ -31,7 +31,6 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Presentation;
 using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Application;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
@@ -367,9 +366,8 @@ public sealed class EditorUxProofTests
         var editorTabs = new EditorTabViewModel(
             sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
-        var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
-        var factory = new Mock<ITerminalSessionFactory>();
-        factory.Setup(f => f.CreateSession()).Returns(terminalViewModel);
+        var factory = new Mock<ITerminalServiceFactory>();
+        factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var panelHost = new AgentPanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
