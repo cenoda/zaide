@@ -2,7 +2,8 @@
 
 ## Status and authorization
 
-**Refactor 6.3 status:** **Accepted and closed (2026-07-19).** M0–M13 complete.
+**Refactor 6.3 status:** **Accepted and closed (2026-07-19)** at `a0e81d1`.
+M0–M13 complete.
 Final closeout evidence is recorded under **M13** below. This plan does **not**
 authorize Refactor 7, Refactor 8, or Phase 14.
 
@@ -1467,8 +1468,8 @@ at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 SourceControl + Terminal five-type visibility internalization; **M11d is
 complete** at `133a3c1` — Agents + Settings three-type visibility
 internalization. The M11 series is complete; **M12 is complete** at `d4d1470`
-(67-row lifetime ownership map). **M13 closeout is complete and staged**;
-Refactor 6.3 is accepted and closed pending the closeout commit.
+(67-row lifetime ownership map). **M13 closeout is complete** at `a0e81d1`;
+Refactor 6.3 is accepted and closed.
 
 ---
 
@@ -2169,7 +2170,7 @@ required** and **not run**. M13 **not started**.
 
 | | |
 |--|--|
-| **Status** | **Complete** — documentation closeout staged (commit pending); Refactor 6.3 **accepted and closed** |
+| **Status** | **Complete** at `a0e81d1` (`docs: close refactor 6.3`); Refactor 6.3 **accepted and closed** |
 | **Proof** | Every owned V0x row is cleared **or** listed as deliberate residual with FindingId — **met** (see evidence) |
 | **Allowlist residual (exact)** | Only `R61-AL-LOC-Program` and `R61-AL-LOC-App` remain (M7 composition-boundary residual). Zero NamespaceDirection FindingIds. Zero non-composition LocatorSite FindingIds. `ApplicationShutdown` remains excluded from LocatorSite FindingIds |
 | **Docs (final truth-sync)** | `CONVENTIONS.md`, `architecture/OVERVIEW.md`, `roadmap/V3.md`, `README.md`, `docs/phases/README.md`, `LIFETIME_MAP.md`, this plan → accepted closed |
@@ -2338,4 +2339,4 @@ wording. No production, test, ratchet, baseline, allowlist, or DI file changed.
 
 ---
 
-*Last updated: 2026-07-19 (M13 complete: Refactor 6.3 accepted closed; Architecture 21/21; full 2320/2320; docs-only; FindingIds R61-AL-LOC-Program + R61-AL-LOC-App; Refactor 7/8 / Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M13 complete at `a0e81d1`: Refactor 6.3 accepted closed; Architecture 21/21; full 2320/2320; docs-only; FindingIds R61-AL-LOC-Program + R61-AL-LOC-App; Refactor 7/8 / Phase 14 unauthorized)*
