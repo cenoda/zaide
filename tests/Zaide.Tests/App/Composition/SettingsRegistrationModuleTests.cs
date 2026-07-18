@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Concurrency;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
@@ -10,26 +11,23 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
-using Zaide.App.Shell;
-using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Infrastructure;
 
 namespace Zaide.Tests.App.Composition;
 
 /// <summary>
-/// Refactor 6.3 M6a: proves AppCore DI membership moved into
-/// <see cref="AppCoreServiceCollectionExtensions.AddZaideAppCore"/> without
-/// changing service types, lifetimes, or total registration membership.
+/// Refactor 6.3 M6b: proves Settings DI membership moved into
+/// <see cref="SettingsServiceCollectionExtensions.AddZaideSettings"/> without
+/// changing service types, lifetimes, secret-path factory, or total registration
+/// membership.
 /// </summary>
-public sealed class AppCoreRegistrationModuleTests
+public sealed class SettingsRegistrationModuleTests
 {
-    private static readonly string[] AppCoreServiceTypeNames =
+    private static readonly string[] SettingsServiceTypeNames =
     {
-        typeof(Workspace).FullName!,
-        typeof(ICommandRegistry).FullName!,
-        typeof(StatusBarViewModel).FullName!,
-        typeof(IScheduler).FullName!,
-        typeof(MainWindowViewModel).FullName!,
-        typeof(CommandPaletteViewModel).FullName!,
+        typeof(ISettingsService).FullName!,
+        typeof(ISecretStore).FullName!,
     };
 
     private static readonly string[] M6cPlusDirectMarkers =
@@ -50,7 +48,7 @@ public sealed class AppCoreRegistrationModuleTests
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
-    static AppCoreRegistrationModuleTests()
+    static SettingsRegistrationModuleTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
@@ -87,105 +85,120 @@ public sealed class AppCoreRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideAppCore_RegistersExactlySixPlannedServices()
+    public void AddZaideSettings_RegistersExactlyTwoPlannedServices()
     {
         var services = new ServiceCollection();
-        services.AddZaideAppCore();
+        services.AddZaideSettings();
 
-        Assert.Equal(6, services.Count);
+        Assert.Equal(2, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
             .Select(d => d.ServiceType.FullName)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
-        var expected = AppCoreServiceTypeNames
+        var expected = SettingsServiceTypeNames
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
         Assert.Equal(expected, serviceTypes);
 
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(ICommandRegistry)
-                && d.ImplementationType == typeof(CommandRegistry));
+            d => d.ServiceType == typeof(ISettingsService)
+                && d.ImplementationType == typeof(SettingsService));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(IScheduler)
-                && d.ImplementationFactory is not null);
+            d => d.ServiceType == typeof(ISecretStore)
+                && d.ImplementationFactory is not null
+                && d.ImplementationType is null);
     }
 
     [Fact]
-    public void ProgramConfigureServices_ResolvesAppCoreServicesAsSingletons()
+    public void AddZaideSettings_SecretStoreFactory_ResolvesFileSecretStoreAtProductionPath()
+    {
+        var services = new ServiceCollection();
+        services.AddZaideSettings();
+
+        using var provider = services.BuildServiceProvider();
+        var store1 = provider.GetRequiredService<ISecretStore>();
+        var store2 = provider.GetRequiredService<ISecretStore>();
+
+        Assert.Same(store1, store2);
+        var fileStore = Assert.IsType<FileSecretStore>(store1);
+
+        var pathField = typeof(FileSecretStore).GetField(
+            "_secretsPath",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(pathField);
+        var actualPath = Assert.IsType<string>(pathField!.GetValue(fileStore));
+        Assert.Equal(SettingsPathResolver.GetSecretsPath(), actualPath);
+    }
+
+    [Fact]
+    public void ProgramConfigureServices_ResolvesSettingsServicesAsSingletons()
     {
         using var provider = BuildProductionProvider();
 
-        var workspace1 = provider.GetRequiredService<Workspace>();
-        var workspace2 = provider.GetRequiredService<Workspace>();
-        Assert.Same(workspace1, workspace2);
+        var settings1 = provider.GetRequiredService<ISettingsService>();
+        var settings2 = provider.GetRequiredService<ISettingsService>();
+        Assert.Same(settings1, settings2);
+        Assert.IsType<SettingsService>(settings1);
 
-        var registry1 = provider.GetRequiredService<ICommandRegistry>();
-        var registry2 = provider.GetRequiredService<ICommandRegistry>();
-        Assert.Same(registry1, registry2);
-        Assert.IsType<CommandRegistry>(registry1);
-
-        var status1 = provider.GetRequiredService<StatusBarViewModel>();
-        var status2 = provider.GetRequiredService<StatusBarViewModel>();
-        Assert.Same(status1, status2);
-
-        var scheduler1 = provider.GetRequiredService<IScheduler>();
-        var scheduler2 = provider.GetRequiredService<IScheduler>();
-        Assert.Same(scheduler1, scheduler2);
-
-        var main1 = provider.GetRequiredService<MainWindowViewModel>();
-        var main2 = provider.GetRequiredService<MainWindowViewModel>();
-        Assert.Same(main1, main2);
-
-        var palette1 = provider.GetRequiredService<CommandPaletteViewModel>();
-        var palette2 = provider.GetRequiredService<CommandPaletteViewModel>();
-        Assert.Same(palette1, palette2);
+        var secrets1 = provider.GetRequiredService<ISecretStore>();
+        var secrets2 = provider.GetRequiredService<ISecretStore>();
+        Assert.Same(secrets1, secrets2);
+        Assert.IsType<FileSecretStore>(secrets1);
     }
 
     [Fact]
-    public void ProgramSource_CallsAddZaideAppCoreOnce_AndDoesNotDeclareAppCoreRegistrations()
+    public void ProgramSource_CallsAddZaideSettingsOnce_AndDoesNotDeclareSettingsRegistrations()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
         Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
 
-        Assert.DoesNotContain("AddSingleton<Workspace>()", programSource);
+        var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
+        var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
+        Assert.True(appCoreIndex >= 0);
+        Assert.True(settingsIndex > appCoreIndex);
+
         Assert.DoesNotContain(
-            "AddSingleton<ICommandRegistry, CommandRegistry>()",
+            "AddSingleton<ISettingsService, SettingsService>()",
             programSource);
-        Assert.DoesNotContain("AddSingleton<StatusBarViewModel>()", programSource);
-        Assert.DoesNotContain("AddSingleton<IScheduler>", programSource);
-        Assert.DoesNotContain("AddSingleton<MainWindowViewModel>()", programSource);
-        Assert.DoesNotContain("AddSingleton<CommandPaletteViewModel>()", programSource);
+        Assert.DoesNotContain("AddSingleton<ISecretStore>", programSource);
+        Assert.DoesNotContain("FileSecretStore", programSource);
+        Assert.DoesNotContain("SettingsPathResolver", programSource);
 
-        // AddLogging remains in Program (not an M6a registration).
+        // AddLogging remains in Program (not an M6b registration).
         Assert.Contains("AddLogging(", programSource);
     }
 
     [Fact]
-    public void AppCoreModuleSource_ContainsExactlyTheSixPlannedRegistrations()
+    public void SettingsModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
-            "src/App/Composition/Registration/AppCoreServiceCollectionExtensions.cs");
+            "src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs");
 
-        Assert.Contains("internal static class AppCoreServiceCollectionExtensions", moduleSource);
-        Assert.Contains("internal static IServiceCollection AddZaideAppCore", moduleSource);
+        Assert.Contains(
+            "internal static class SettingsServiceCollectionExtensions",
+            moduleSource);
+        Assert.Contains("internal static IServiceCollection AddZaideSettings", moduleSource);
 
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<Workspace>\(\)"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<ICommandRegistry,\s*CommandRegistry>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<StatusBarViewModel>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<IScheduler>"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<MainWindowViewModel>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<CommandPaletteViewModel>\(\)"));
+                @"AddSingleton<ISettingsService,\s*SettingsService>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<ISecretStore>"));
+        Assert.Contains(
+            "new FileSecretStore(SettingsPathResolver.GetSecretsPath())",
+            moduleSource);
 
-        Assert.Equal(6, Regex.Matches(moduleSource, @"AddSingleton<").Count);
-        Assert.Contains("AvaloniaScheduler.Instance", moduleSource);
+        Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+
+        // M10 reservation: panel factory is not registered in M6b.
+        Assert.DoesNotContain("ISettingsPanelFactory", moduleSource);
+        Assert.DoesNotContain("SettingsPanelFactory", moduleSource);
     }
 
     [Fact]
@@ -198,8 +211,7 @@ public sealed class AppCoreRegistrationModuleTests
             Assert.Contains(marker, programSource);
         }
 
-        // M6b Settings module is present; M6c–M6k modules do not exist yet.
-        Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
+        // M6c–M6k modules do not exist yet.
         Assert.DoesNotContain("AddZaideWorkspace", programSource);
         Assert.DoesNotContain("AddZaideEditor", programSource);
         Assert.DoesNotContain("AddZaideTerminal", programSource);

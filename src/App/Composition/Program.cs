@@ -8,8 +8,6 @@ using System.Net.Http;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.Features.Settings.Contracts;
-using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
@@ -56,10 +54,9 @@ class Program
     public static void ConfigureServices(IServiceCollection services)
     {
         services.AddZaideAppCore();
+        services.AddZaideSettings();
 
-        // Phase 8.1.1 M1: immutable settings core
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
@@ -73,9 +70,6 @@ class Program
         services.AddSingleton<TownhallViewModel>();
         services.AddSingleton<EditorTabViewModel>();
         services.AddSingleton<SourceControlViewModel>();
-        // Phase 8.1.2 M2: secret boundary (no AgentExecutionOptions singleton)
-        services.AddSingleton<ISecretStore>(_ =>
-            new FileSecretStore(SettingsPathResolver.GetSecretsPath()));
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
         services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
         services.AddSingleton<MentionParser>();
