@@ -21,8 +21,6 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Infrastructure;
 using Zaide.Features.SourceControl.Presentation;
-using Zaide.Features.Townhall.Domain;
-using Zaide.Features.Townhall.Presentation;
 
 namespace Zaide.App.Composition;
 class Program
@@ -45,10 +43,9 @@ class Program
         services.AddZaideEditor();
         services.AddZaideTerminal();
         services.AddZaideAgents();
+        services.AddZaideTownhall();
 
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<TownhallState>();
-        services.AddSingleton<TownhallViewModel>();
         services.AddSingleton<SourceControlViewModel>();
 
         // M1: read-only git repository discovery + status read seam

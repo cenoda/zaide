@@ -10,23 +10,22 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
-using Zaide.Features.Workspace.Contracts;
-using Zaide.Features.Workspace.Infrastructure;
-using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Townhall.Domain;
+using Zaide.Features.Townhall.Presentation;
 
 namespace Zaide.Tests.App.Composition;
 
 /// <summary>
-/// Refactor 6.3 M6c: proves Workspace DI membership moved into
-/// <see cref="WorkspaceServiceCollectionExtensions.AddZaideWorkspace"/> without
-/// changing service types, lifetimes, or total registration membership.
+/// Refactor 6.3 M6g: proves Townhall DI membership moved into
+/// <see cref="TownhallServiceCollectionExtensions.AddZaideTownhall"/> without
+/// changing service types, lifetimes, mappings, or total registration membership.
 /// </summary>
-public sealed class WorkspaceRegistrationModuleTests
+public sealed class TownhallRegistrationModuleTests
 {
-    private static readonly string[] WorkspaceServiceTypeNames =
+    private static readonly string[] TownhallServiceTypeNames =
     {
-        typeof(IFileTreeService).FullName!,
-        typeof(FileTreeViewModel).FullName!,
+        typeof(TownhallState).FullName!,
+        typeof(TownhallViewModel).FullName!,
     };
 
     private static readonly string[] M6hPlusDirectMarkers =
@@ -37,7 +36,7 @@ public sealed class WorkspaceRegistrationModuleTests
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
-    static WorkspaceRegistrationModuleTests()
+    static TownhallRegistrationModuleTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
@@ -74,11 +73,12 @@ public sealed class WorkspaceRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideWorkspace_RegistersExactlyTwoPlannedServices()
+    public void AddZaideTownhall_RegistersExactlyTwoPlannedServices()
     {
         var services = new ServiceCollection();
-        services.AddZaideWorkspace();
+        var returned = services.AddZaideTownhall();
 
+        Assert.Same(services, returned);
         Assert.Equal(2, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
@@ -86,82 +86,96 @@ public sealed class WorkspaceRegistrationModuleTests
             .Select(d => d.ServiceType.FullName)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
-        var expected = WorkspaceServiceTypeNames
+        var expected = TownhallServiceTypeNames
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
         Assert.Equal(expected, serviceTypes);
 
+        // Both remain self-registrations (ServiceType == ImplementationType).
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(IFileTreeService)
-                && d.ImplementationType == typeof(FileTreeService));
+            d => d.ServiceType == typeof(TownhallState)
+                && d.ImplementationType == typeof(TownhallState));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(FileTreeViewModel)
-                && d.ImplementationType == typeof(FileTreeViewModel));
+            d => d.ServiceType == typeof(TownhallViewModel)
+                && d.ImplementationType == typeof(TownhallViewModel));
     }
 
     [Fact]
-    public void ProgramConfigureServices_ResolvesWorkspaceServicesAsSingletons()
+    public void ProgramConfigureServices_ResolvesTownhallServicesAsSingletons()
     {
         using var provider = BuildProductionProvider();
 
-        var fileTree1 = provider.GetRequiredService<IFileTreeService>();
-        var fileTree2 = provider.GetRequiredService<IFileTreeService>();
-        Assert.Same(fileTree1, fileTree2);
-        Assert.IsType<FileTreeService>(fileTree1);
+        var state1 = provider.GetRequiredService<TownhallState>();
+        var state2 = provider.GetRequiredService<TownhallState>();
+        Assert.Same(state1, state2);
 
-        var viewModel1 = provider.GetRequiredService<FileTreeViewModel>();
-        var viewModel2 = provider.GetRequiredService<FileTreeViewModel>();
+        var viewModel1 = provider.GetRequiredService<TownhallViewModel>();
+        var viewModel2 = provider.GetRequiredService<TownhallViewModel>();
         Assert.Same(viewModel1, viewModel2);
+
+        // TownhallViewModel resolves with the registered TownhallState dependency:
+        // Channels/Agents are the same collections exposed by the singleton state,
+        // and DraftText writes sync through to that shared state instance.
+        Assert.Same(state1.Channels, viewModel1.Channels);
+        Assert.Same(state1.Agents, viewModel1.Agents);
+
+        var marker = "m6g-townhall-di-singleton-sync";
+        viewModel1.DraftText = marker;
+        Assert.Equal(marker, state1.DraftText);
     }
 
     [Fact]
-    public void ProgramSource_CallsAddZaideWorkspaceOnce_AndDoesNotDeclareWorkspaceRegistrations()
+    public void ProgramSource_CallsAddZaideTownhallOnce_AndDoesNotDeclareTownhallRegistrations()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
         Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
         var workspaceIndex = programSource.IndexOf("AddZaideWorkspace()", StringComparison.Ordinal);
+        var editorIndex = programSource.IndexOf("AddZaideEditor()", StringComparison.Ordinal);
+        var terminalIndex = programSource.IndexOf("AddZaideTerminal()", StringComparison.Ordinal);
+        var agentsIndex = programSource.IndexOf("AddZaideAgents()", StringComparison.Ordinal);
+        var townhallIndex = programSource.IndexOf("AddZaideTownhall()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
         Assert.True(settingsIndex > appCoreIndex);
         Assert.True(workspaceIndex > settingsIndex);
+        Assert.True(editorIndex > workspaceIndex);
+        Assert.True(terminalIndex > editorIndex);
+        Assert.True(agentsIndex > terminalIndex);
+        Assert.True(townhallIndex > agentsIndex);
 
-        Assert.DoesNotContain(
-            "AddSingleton<IFileTreeService, FileTreeService>()",
-            programSource);
-        Assert.DoesNotContain("AddSingleton<FileTreeViewModel>()", programSource);
+        Assert.DoesNotContain("AddSingleton<TownhallState>()", programSource);
+        Assert.DoesNotContain("AddSingleton<TownhallViewModel>()", programSource);
 
-        // AddLogging remains in Program (not an M6c registration).
+        // AddLogging remains in Program (not an M6g registration).
         Assert.Contains("AddLogging(", programSource);
     }
 
     [Fact]
-    public void WorkspaceModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void TownhallModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
-            "src/App/Composition/Registration/WorkspaceServiceCollectionExtensions.cs");
+            "src/App/Composition/Registration/TownhallServiceCollectionExtensions.cs");
 
         Assert.Contains(
-            "internal static class WorkspaceServiceCollectionExtensions",
+            "internal static class TownhallServiceCollectionExtensions",
             moduleSource);
-        Assert.Contains("internal static IServiceCollection AddZaideWorkspace", moduleSource);
+        Assert.Contains("internal static IServiceCollection AddZaideTownhall", moduleSource);
 
-        Assert.Single(
-            Regex.Matches(
-                moduleSource,
-                @"AddSingleton<IFileTreeService,\s*FileTreeService>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<FileTreeViewModel>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallState>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallViewModel>\(\)"));
 
         Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
-
-        // Domain Workspace remains owned by AppCore (M6a), not this module.
-        Assert.DoesNotContain("AddSingleton<Workspace>()", moduleSource);
     }
 
     [Fact]
@@ -174,11 +188,7 @@ public sealed class WorkspaceRegistrationModuleTests
             Assert.Contains(marker, programSource);
         }
 
-        // M6d–M6g modules are present; M6h–M6k do not exist yet.
-        Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
-        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
-        Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
-        Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
+        // M6h–M6k modules do not exist yet.
         Assert.DoesNotContain("AddZaideSourceControl", programSource);
         Assert.DoesNotContain("AddZaideProjectSystem", programSource);
         Assert.DoesNotContain("AddZaideLanguage", programSource);

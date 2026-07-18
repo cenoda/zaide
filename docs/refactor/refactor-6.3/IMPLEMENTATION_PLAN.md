@@ -87,10 +87,25 @@ public baseline **346** unchanged; internal **56 → 57**; total top-level
 **402 → 403**; production C# **364 → 365**; App C# **25 → 26**; internal
 Composition.Registration modules **6**. Automated verification green (build,
 focused registration+DI+Architecture 56/56, Architecture 21/21, full suite
-2236/2236, `git diff --check`); manual verification **not required**. **M6g**
-is next eligible and requires separate authorization; M6g has not started,
-M6h–M6k remain unauthorized. M6a–M6f are individually completed slices; the
-whole M6 series is not complete.
+2236/2236, `git diff --check`); manual verification **not required**.
+**M6g implemented and staged pending review** (`refactor-6.3: M6g Townhall DI
+module`) — seventh M6 registration slice: internal
+`TownhallServiceCollectionExtensions.AddZaideTownhall` owns the two Townhall
+singleton self-registrations (`TownhallState`; `TownhallViewModel`);
+`Program.ConfigureServices` calls `AddZaideTownhall()` exactly once after
+`AddZaideAgents()`; module order is `AddZaideAppCore` → `AddZaideSettings` →
+`AddZaideWorkspace` → `AddZaideEditor` → `AddZaideTerminal` →
+`AddZaideAgents` → `AddZaideTownhall`; `AddLogging` remains in `Program`;
+M6h–M6k registrations remain direct in `Program`; public baseline **346**
+unchanged; internal **57 → 58**; total top-level **403 → 404**; production C#
+**365 → 366**; App C# **26 → 27**; internal Composition.Registration modules
+**7**. Automated verification green at staging (build clean, focused
+registration+DI+Architecture 61/61, Architecture 21/21, full suite 2241/2241,
+`git diff --check` / `git diff --cached --check` clean). Manual verification
+**not required**. **M6h** (SourceControl)
+is next eligible and requires separate authorization; M6h–M6k remain
+unauthorized. M6a–M6g are individually completed/staged slices; the whole M6
+series is not complete.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -904,19 +919,47 @@ allow one `AddZaideAgents`) and existing composition/DI suite — automated
 verification green (build, focused registration+DI+Architecture 56/56,
 Architecture 21/21, full suite 2236/2236, `git diff --check` clean;
 `git diff --cached --check` was clean before the implementation commit);
-manual verification **not required**. **M6g** (Townhall) is the next eligible
-slice and requires separate explicit authorization; M6g has not started.
-M6h–M6k remain unauthorized. Completing M6f does **not** authorize later M6
-slices.
+manual verification **not required**. **M6g** (Townhall) is **implemented and
+staged pending review** (see below). Completing M6f did **not** authorize later
+M6 slices; M6g required separate explicit authorization.
 
-#### M6g — Townhall (2)
+#### M6g — Townhall (2) — **implemented and staged pending review**
 
 | Registration |
 |--------------|
 | `TownhallState` |
 | `TownhallViewModel` |
 
-File: `…/TownhallServiceCollectionExtensions.cs`
+File: `src/App/Composition/Registration/TownhallServiceCollectionExtensions.cs`
+Method: `AddZaideTownhall`.
+
+Both registrations remain **Singleton self-registrations**
+(`AddSingleton<TownhallState>()`; `AddSingleton<TownhallViewModel>()`).
+`TownhallViewModel` continues to depend on the registered `TownhallState`
+singleton (live ctor: `TownhallViewModel(TownhallState state)`). No lifetime,
+type, constructor, or dependency changes.
+
+Production: `Program.ConfigureServices` calls `services.AddZaideTownhall()`
+exactly once immediately after `AddZaideAgents()`; module order is
+`AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal` → `AddZaideAgents` →
+`AddZaideTownhall`; the two registrations live only in the internal module;
+`AddLogging` remains in `Program`; M6h–M6k registrations remain direct in
+`Program` (no `AddZaideSourceControl` / `AddZaideProjectSystem` /
+`AddZaideLanguage` / `AddZaideDebugging` calls).
+
+Inventory after M6g: public **346** unchanged; internal **57 → 58**; total
+top-level **403 → 404**; production C# **365 → 366**; App C# **26 → 27**;
+internal Composition.Registration modules **7**.
+
+Tests: `TownhallRegistrationModuleTests` plus M6a–M6f ratchet advancement
+(M6gPlus → M6hPlus; Townhall markers removed from later-direct sets; allow one
+`AddZaideTownhall`) and existing composition/DI suite. Architecture
+bookkeeping only for the new internal type/file
+(`ArchitectureInventoryReader`, `ArchitectureInventoryTests`,
+`ArchitectureVisibilityTests`, `PublicProductionTypeBaseline.cs` constants);
+public baseline text and public type count unchanged; FindingIds and
+architecture allowlists unchanged.
 
 #### M6h — SourceControl (6)
 
@@ -1636,17 +1679,20 @@ dotnet test Zaide.slnx --no-build
    `AddZaideWorkspace`). **M6d complete** at `234a38f` (Editor DI registration
    module / `AddZaideEditor`). **M6e complete at `8ab50c0`** (Terminal DI
    registration module / `AddZaideTerminal`; closeout `d85a83b`). **M6f
-   complete at `cd809d2`** (Agents DI registration module / `AddZaideAgents`).
-   M6a–M6f are individually completed slices; the whole M6 series is **not**
-   complete or authorized.
-2. **Next eligible slice:** authorize **M6g only** (§ M6g — Townhall registration
-   module: `TownhallServiceCollectionExtensions.cs` / `AddZaideTownhall`) when
-   ready. M6g production implementation has **not** started and requires a
-   separate explicit authorization.
-3. Do not start M6g–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6f does **not** authorize the rest of M6.
-4. **M6g–M6k** remain unauthorized.
+   complete at `cd809d2`** (Agents DI registration module / `AddZaideAgents`;
+   closeout `8144aba`). **M6g implemented and staged pending review**
+   (Townhall DI registration module / `AddZaideTownhall`; proposed commit
+   message `refactor-6.3: M6g Townhall DI module`). M6a–M6g are individually
+   completed/staged slices; the whole M6 series is **not** complete.
+2. **Next eligible slice:** authorize **M6h only** (§ M6h — SourceControl
+   registration module: `SourceControlServiceCollectionExtensions.cs` /
+   `AddZaideSourceControl`) when ready. M6h production implementation has
+   **not** started and requires a separate explicit authorization.
+3. Do not start M6h–M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. Completing M6g does **not** authorize the rest of M6.
+4. **M6h–M6k** remain unauthorized. Do not update README.md or other status
+   surfaces until the separate M6g closeout step after commit/review.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6f complete; M6f at `cd809d2`; automated verification green: build clean, focused 56/56, Architecture 21/21, full suite 2236/2236, git diff checks clean; manual verification not required; public 346 / internal 57 / total 403 / prod C# 365 / App C# 26; six internal Registration modules; M6g Townhall next eligible and awaiting separate authorization; M6h–M6k unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6f complete; M6g Townhall implemented and staged pending review; automated verification green at staging: build clean, focused 61/61, Architecture 21/21, full suite 2241/2241, git diff checks clean; manual verification not required; public 346 / internal 58 / total 404 / prod C# 366 / App C# 27; seven internal Registration modules; M6h SourceControl next eligible and awaiting separate authorization; M6h–M6k unauthorized)*

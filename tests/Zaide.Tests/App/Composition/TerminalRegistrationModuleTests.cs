@@ -30,9 +30,8 @@ public sealed class TerminalRegistrationModuleTests
         typeof(ITerminalHost).FullName!,
     };
 
-    private static readonly string[] M6gPlusDirectMarkers =
+    private static readonly string[] M6hPlusDirectMarkers =
     {
-        "AddSingleton<TownhallState>()",
         "AddSingleton<SourceControlViewModel>()",
         "AddSingleton<IProjectContextService, ProjectContextService>()",
         "AddSingleton<ILanguageSessionService, LanguageSessionService>()",
@@ -177,18 +176,18 @@ public sealed class TerminalRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6gPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6hPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6gPlusDirectMarkers)
+        foreach (var marker in M6hPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6f Agents module is present; M6g–M6k modules do not exist yet.
+        // M6f Agents and M6g Townhall modules are present; M6h–M6k do not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideTownhall", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTownhall\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideSourceControl", programSource);
         Assert.DoesNotContain("AddZaideProjectSystem", programSource);
         Assert.DoesNotContain("AddZaideLanguage", programSource);
