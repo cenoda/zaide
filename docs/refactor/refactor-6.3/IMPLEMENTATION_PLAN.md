@@ -7,11 +7,12 @@ eighth-revision planning gate.
 
 **Progress (truth-sync):** **M1 complete** at `e590a79`
 (`refactor-6.3: M1 editor session factory`). **M2 complete** at `d9799ad`
-(`refactor-6.3: M2 editor read-only tab gateway`). **M3 complete** (terminal
-service factory / V05) — production implementation verified green (build,
-Architecture 21, full suite 2201, `git diff --check`); commit pending review.
-**M4** (mention parser purity) is the next eligible independent milestone and
-requires a separate explicit start.
+(`refactor-6.3: M2 editor read-only tab gateway`). **M3 complete** at
+`22b869e` (`refactor-6.3: M3 terminal service factory` / V05) — automated
+verification green (build, Architecture 21/21, full suite 2201/2201,
+`git diff --check`); manual terminal smoke **not run**. **M4** (mention
+parser purity) is the next eligible independent milestone and has **not**
+started; it requires a separate explicit authorization.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -538,11 +539,11 @@ diff tab → confirm read-only diff content → refresh after stage if applicabl
 
 | | |
 |--|--|
-| **Status** | **Complete** (implementation verified; commit pending review) — `ITerminalServiceFactory` + `LinuxTerminalServiceFactory`; session factory deleted |
+| **Status** | **Complete** — commit `22b869e` (`refactor-6.3: M3 terminal service factory`); `ITerminalServiceFactory` + `LinuxTerminalServiceFactory`; session factory deleted |
 | **Design** | § D3 + § D0 |
 | **Completion condition** | (1) `ITerminalSessionFactory` / `TerminalSessionFactory` deleted; (2) both Terminal NS FindingIds removed; (3) Contracts has no `using` of Terminal.Presentation; (4) public `ITerminalServiceFactory` + public `TerminalHost` ctor; `LinuxTerminalServiceFactory` `internal`; (5) public baseline **net −1**; (6) shared gate green — **all met** |
-| **Live counts after M3** | 398 total / 347 public / 51 internal; FindingIds **4**; locator sites **2** (Program, App); public baseline net **−1** |
-| **Verification** | build 0 errors; focused terminal+Architecture **119** passed; Architecture **21** passed; full suite **2201** passed; `git diff --check` clean; manual desktop session **not run** |
+| **Live counts after M3** | 398 total / 347 public / 51 internal; FindingIds **4** (6 → 4); locator sites **2** (Program, App); public production types **348 → 347**; public baseline net **−1** |
+| **Verification** | build 0 errors; focused terminal+Architecture **119** passed; Architecture **21/21** passed; full suite **2201/2201** passed; `git diff --check` clean; manual terminal smoke **not run** |
 
 **Focused tests (final names after M3 file renames):**
 
@@ -567,6 +568,7 @@ M3 verification environment (no interactive desktop session claimed).
 
 | | |
 |--|--|
+| **Status** | **Not started** — next eligible milestone; requires a separate explicit authorization |
 | **Design** | § D4 |
 | **Completion condition** | (1) `MentionParser.cs` has no `using`/`field` of Presentation types; (2) `R61-AL-NS-MentionParser` removed; (3) parser tests updated; (4) shared gate green |
 
@@ -1432,11 +1434,13 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1** complete at `e590a79`. **M2** complete at `d9799ad` (verification green).
-2. Authorize **M3 only** (§ D3 — terminal service factory).
-3. Do not start M4+ until M3 completion conditions are met and committed.
-4. M3 production implementation has **not** started and still requires an explicit start.
+1. **M1** complete at `e590a79`. **M2** complete at `d9799ad`. **M3** complete
+   at `22b869e` (automated verification green; manual terminal smoke not run).
+2. Authorize **M4 only** (§ D4 — mention parser purity).
+3. Do not start M5+ until M4 completion conditions are met and committed.
+4. M4 production implementation has **not** started and still requires an
+   explicit separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` complete and verified; M3 next eligible, not started)*
+*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` complete; automated verification green; manual terminal smoke not run; M4 next eligible, not started)*

@@ -26,10 +26,11 @@ mechanical migration is complete** on `master` at `72102da` (feature-first
 tree under `App`, `Features`, and `UI/DesignSystem`). Optional M13 root
 admissions are **declined**. Refactor 6.3 M0 is **accepted** at
 [`docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
-**M1** complete at `e590a79` and **M2** complete at `d9799ad` (verification
-green). **M3** is the next eligible milestone and still requires an explicit
-start; M3 production implementation is not active. Refactors 7 / 8 have no
-production authorization until their own M0 acceptances.
+**M1** complete at `e590a79`, **M2** at `d9799ad`, and **M3** at `22b869e`
+(automated verification green; manual terminal smoke not run). **M4**
+(mention parser purity) is the next eligible milestone and still requires an
+explicit start; M4 production implementation is not active. Refactors 7 / 8
+have no production authorization until their own M0 acceptances.
 Non-C# assets remain outside the root-admission ratchet. No V3 production
 feature implementation is active.
 
@@ -103,7 +104,7 @@ src/
   Features/Language/   # Contracts + Application (6.2 M6a) + Infrastructure/Lsp (6.2 M6b)
   Features/Debugging/  # Contracts + Application (6.2 M7a) + Infrastructure/Dap (6.2 M7b) + Presentation (6.2 M7c)
   Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8)
-  Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; residual R61-V05 for 6.3)
+  Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; R61-V05 cleared in 6.3 M3)
   Features/Townhall/   # Domain, Presentation (6.2 M10; R61-V16 preserved)
   Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M11; residual R61-V06 for 6.3)
 ```
@@ -336,4 +337,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1 `e590a79` + M2 `d9799ad` complete; M3 next eligible, not started)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` complete; automated verification green; manual terminal smoke not run; M4 next eligible, not started)*
