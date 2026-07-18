@@ -5,14 +5,12 @@ using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
 using System.Net.Http;
-using System.Reactive.Concurrency;
+using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.App.Shell;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Workspace.Contracts;
-using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Infrastructure;
 using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Contracts;
@@ -57,13 +55,11 @@ class Program
     /// </summary>
     public static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<Workspace>();
+        services.AddZaideAppCore();
 
         // Phase 8.1.1 M1: immutable settings core
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<ICommandRegistry, CommandRegistry>();
         services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddSingleton<StatusBarViewModel>();
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
@@ -71,10 +67,7 @@ class Program
         services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IFileTreeService, FileTreeService>();
-        services.AddSingleton<IScheduler>(_ => ReactiveUI.Avalonia.AvaloniaScheduler.Instance);
         services.AddSingleton<FileTreeViewModel>();
-        services.AddSingleton<MainWindowViewModel>();
-        services.AddSingleton<CommandPaletteViewModel>();
         services.AddSingleton<EditorSearchViewModel>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();

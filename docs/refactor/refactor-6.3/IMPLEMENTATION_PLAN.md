@@ -16,9 +16,12 @@ complete** at `273cc56` (`refactor-6.3: M5 delete unused source control state`
 / V02) — automated verification green (build, focused Architecture+SourceControl
 150/150, Architecture 21/21, full suite 2204/2204, `git diff --check`);
 manual verification **not required** (deleted type had no production consumer).
-**Refactor 6.3 M1–M5 are complete.** **M6a** (AppCore registration module) is
-the next eligible milestone slice and has **not** started; it requires a
-separate explicit authorization.
+**M6a complete** (staged for review; commit pending) —
+`AppCoreServiceCollectionExtensions.AddZaideAppCore` moves the six AppCore
+registrations; automated verification green (build, focused DI+Architecture
+47/47, Architecture 21/21, full suite 2209/2209, `git diff --check`);
+manual verification **not required**. **M6b–M6k** remain unauthorized and
+unstarted.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -676,6 +679,14 @@ services.AddZaideSettings();
 | `CommandPaletteViewModel` |
 
 File: `src/App/Composition/Registration/AppCoreServiceCollectionExtensions.cs`
+
+**Status:** **complete** (staged for review; commit pending). Production:
+`Program.ConfigureServices` calls `services.AddZaideAppCore()` once; the six
+registrations live only in the internal module (all `AddSingleton`, scheduler
+factory unchanged). Public production baseline unchanged (346). Inventory
+internal count +1 for the extension class. Tests: `AppCoreRegistrationModuleTests`
+plus existing composition/DI suite. M6b+ registrations remain direct in
+`Program`.
 
 #### M6b — Settings (2 at M6 time; M10 adds a third)
 
@@ -1452,19 +1463,17 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1** complete at `e590a79`. **M2** complete at `d9799ad`. **M3** complete
-   at `22b869e` (automated verification green; manual terminal smoke not run).
-   **M4** complete at `698b094` (automated verification green; manual
-   agent-panel routing smoke not run). **M5** complete at `273cc56`
-   (automated verification green; manual verification not required).
-   **Refactor 6.3 M1–M5 are complete.**
-2. Authorize **M6a only** (§ M6a — AppCore registration module:
-   `AppCoreServiceCollectionExtensions.cs` / `AddZaideAppCore`).
-3. Do not start M6b–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. The whole M6 series is **not** authorized by M5 closeout.
-4. M6a production implementation has **not** started and still requires an
+1. **M1–M5 complete** as previously recorded. **M6a complete** (staged for
+   review; commit pending) — AppCore DI registration module
+   (`AddZaideAppCore`); automated verification green; manual verification not
+   required.
+2. After M6a commit, authorize **M6b only** (§ M6b — Settings registration
+   module: `SettingsServiceCollectionExtensions.cs` / `AddZaideSettings`).
+3. Do not start M6c–M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. Completing M6a does **not** authorize the rest of M6.
+4. M6b production implementation has **not** started and still requires an
    explicit separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` + M3 `22b869e` + M4 `698b094` + M5 `273cc56` complete; automated verification green; manual verification not required for M5; M6a next eligible, not started)*
+*Last updated: 2026-07-18 (M1–M5 complete; M6a complete staged for review — build green, focused 47/47, Architecture 21/21, full suite 2209/2209; M6b next eligible, not started)*

@@ -41,6 +41,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.ViewModels"));
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
         Assert.Equal((6, 5, 1), byNamespace["Zaide.App.Composition"]);
+        Assert.Equal((1, 0, 1), byNamespace["Zaide.App.Composition.Registration"]);
         Assert.Equal((16, 14, 2), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
@@ -112,20 +113,21 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1 (SourceControlState deleted).
-        Assert.Equal(359, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a +1 AppCore module.
+        Assert.Equal(360, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(20, byFolder["App"]);
+        Assert.Equal(21, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
         Assert.Equal(337, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
-        // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features).
+        // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
+        // M6a adds Composition.Registration).
         Assert.All(
             inventory.SourceFiles.Where(s => s.TechnicalFolder == "App"),
             s =>
@@ -136,7 +138,9 @@ public sealed class ArchitectureInventoryTests
                     || path.StartsWith("src/App/Shell/", StringComparison.Ordinal),
                     $"Unexpected App path: {path}");
                 Assert.True(
-                    s.DeclaredNamespace is "Zaide.App.Composition" or "Zaide.App.Shell",
+                    s.DeclaredNamespace is "Zaide.App.Composition"
+                        or "Zaide.App.Composition.Registration"
+                        or "Zaide.App.Shell",
                     $"Unexpected App namespace: {s.DeclaredNamespace}");
             });
         Assert.All(
