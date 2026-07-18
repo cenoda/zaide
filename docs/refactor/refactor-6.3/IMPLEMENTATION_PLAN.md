@@ -603,10 +603,12 @@ mirror behavior unchanged; unknown `@Nope` still surfaces routing failure.
 
 | | |
 |--|--|
-| **Status** | **Not started** — next eligible milestone; requires a separate explicit authorization |
+| **Status** | **Implemented — staged for review** (not committed). Production deletion + allowlist/inventory/baseline/residual assertion updates complete; awaiting human commit review |
 | **Design** | § D5 |
-| **Preflight** | `rg -n SourceControlState src --glob '*.cs'` shows only the file being deleted (no other production hits) |
-| **Completion condition** | (1) file deleted; (2) `R61-AL-NS-SourceControlState` removed; (3) inventory special-case removed; (4) shared gate green |
+| **Preflight** | `rg -n SourceControlState src --glob '*.cs'` showed only `src/Features/SourceControl/Domain/SourceControlState.cs` (no other production hits) |
+| **Completion condition** | (1) file deleted; (2) `R61-AL-NS-SourceControlState` removed; (3) inventory special-case removed; (4) shared gate green — **all met** (pending commit) |
+| **Live counts after M5** | FindingIds **2** (3 → 2: `R61-AL-NS-SourceControlState` removed, not re-keyed); NS live violations **0**; locator sites **2** (Program, App); public production types **347 → 346**; total top-level types **398 → 397**; Architecture **21/21** |
+| **Verification** | build 0 errors; focused Architecture+SourceControl **150** passed; Architecture **21/21** passed; full suite **2204/2204** passed; `git diff --check` clean; manual verification **none required** (deleted type had no production consumer) |
 
 **Focused tests:**
 
@@ -616,7 +618,7 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 |FullyQualifiedName~SourceControl"
 ```
 
-**Manual:** none required (dead type).
+**Manual:** none required (dead type). Not invented or claimed.
 
 **Rollback:** single commit.
 

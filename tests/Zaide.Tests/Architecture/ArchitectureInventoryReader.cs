@@ -18,11 +18,11 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M3: net 0 vs M2).</summary>
-    public const int M0TotalTopLevelTypes = 398;
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M5: net −1 vs M4).</summary>
+    public const int M0TotalTopLevelTypes = 397;
 
-    /// <summary>M0 baseline public top-level type count (M3: net −1).</summary>
-    public const int M0PublicTopLevelTypes = 347;
+    /// <summary>M0 baseline public top-level type count (M5: net −1 — SourceControlState deleted).</summary>
+    public const int M0PublicTopLevelTypes = 346;
 
     /// <summary>M0 baseline internal top-level type count (M3: +1 factory impl).</summary>
     public const int M0InternalTopLevelTypes = 51;
@@ -54,17 +54,6 @@ public sealed class ArchitectureInventoryReader
     private static readonly Regex ModelsToServicesRegex = new(
         @"(?:using\s+Zaide\.Services\b|Zaide\.Services\.)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    /// <summary>
-    /// Residual R61-V02 edge after SourceControl move: Domain session bag still
-    /// depends on Application snapshot types (Refactor 6.3 inversion target).
-    /// </summary>
-    private static readonly Regex SourceControlStateToApplicationRegex = new(
-        @"(?:using\s+Zaide\.Features\.SourceControl\.Application\b|Zaide\.Features\.SourceControl\.Application\.)",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    private const string SourceControlStateRelativePath =
-        "src/Features/SourceControl/Domain/SourceControlState.cs";
 
     private readonly string _repositoryRoot;
     private readonly Assembly _productionAssembly;
@@ -325,15 +314,6 @@ public sealed class ArchitectureInventoryReader
                 "Models" => "Zaide.Services",
                 _ => null
             };
-
-            // Refactor 6.2 M8–M9: residual allowlist edges under Features.
-            // Path-scoped so other Features layer edges are not ratcheted.
-            if (normalizedPath.Equals(SourceControlStateRelativePath, StringComparison.Ordinal))
-            {
-                technicalFolder = "Features";
-                targetRegex = SourceControlStateToApplicationRegex;
-                targetFragment = "Zaide.Features.SourceControl.Application";
-            }
 
             if (targetRegex is null || targetFragment is null)
             {

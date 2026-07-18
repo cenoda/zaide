@@ -66,7 +66,7 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((16, 16, 0), byNamespace["Zaide.Features.Debugging.Application"]);
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Infrastructure.Dap"]);
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Presentation"]);
-        Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
+        Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.SourceControl.Application"]);
         Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
@@ -112,8 +112,8 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1 session factory files) → 360 (M2 gateway files).
-        Assert.Equal(360, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1 (SourceControlState deleted).
+        Assert.Equal(359, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -122,7 +122,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(20, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(338, byFolder["Features"]);
+        Assert.Equal(337, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features).
@@ -219,7 +219,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Contains(inventory.Findings, f => f.Kind == "ProductionSourceFile");
         Assert.Contains(inventory.Findings, f => f.Kind == "ProductionType");
         Assert.Contains(inventory.Findings, f => f.Kind == "ProviderEvidence");
-        Assert.Contains(inventory.Findings, f => f.Kind == "NamespaceDependencyEvidence");
+        // M5 cleared the last NamespaceDependencyEvidence residual (SourceControlState).
+        Assert.DoesNotContain(inventory.Findings, f => f.Kind == "NamespaceDependencyEvidence");
         Assert.Contains(inventory.Findings, f => f.Kind == "RootFolderAdmissionEvidence");
 
         // Public type findings are explicit full-name candidates for later M4 allowlist.
@@ -242,14 +243,14 @@ public sealed class ArchitectureInventoryTests
 
         // Inventory of known M0 forbidden locations — not a failure ratchet.
         // M3 cleared Terminal session factory → Presentation (V05).
+        // M5 deleted SourceControlState Domain → Application residual (V02).
         Assert.DoesNotContain(
             inventory.NamespaceDependencyEvidence,
             e => e.RelativePath.Contains("TerminalSessionFactory", StringComparison.Ordinal)
                 || e.RelativePath.Contains("ITerminalSessionFactory", StringComparison.Ordinal));
-        Assert.Contains(
+        Assert.DoesNotContain(
             inventory.NamespaceDependencyEvidence,
-            e => e.RelativePath.Contains("SourceControlState", StringComparison.Ordinal)
-                && e.SourceTechnicalFolder == "Features"
-                && e.TargetNamespaceFragment == "Zaide.Features.SourceControl.Application");
+            e => e.RelativePath.Contains("SourceControlState", StringComparison.Ordinal));
+        Assert.Empty(inventory.NamespaceDependencyEvidence);
     }
 }

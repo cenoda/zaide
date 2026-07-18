@@ -297,7 +297,6 @@ Zaide.Features.SourceControl.Domain.FileChangeEvent
 Zaide.Features.SourceControl.Domain.GitBranch
 Zaide.Features.SourceControl.Domain.GitChangeType
 Zaide.Features.SourceControl.Domain.SourceControlPrimaryAction
-Zaide.Features.SourceControl.Domain.SourceControlState
 Zaide.Features.SourceControl.Infrastructure.GitMutationService
 Zaide.Features.SourceControl.Presentation.SourceControlPanel
 Zaide.Features.SourceControl.Presentation.SourceControlViewModel

@@ -66,7 +66,6 @@ public static class LegacyArchitectureAllowlist
     {
         "R61-AL-LOC-App",
         "R61-AL-LOC-Program",
-        "R61-AL-NS-SourceControlState",
     };
 
     private static readonly IReadOnlyList<ArchitectureAllowlistEntry> EntriesInternal =
@@ -85,21 +84,9 @@ public static class LegacyArchitectureAllowlist
     {
         var entries = new List<ArchitectureAllowlistEntry>
         {
-            // --- NamespaceDirection (Services -> ViewModels / Models -> Services) ---
-            new(
-                findingId: "R61-AL-NS-SourceControlState",
-                category: ArchitectureRatchet.CategoryNamespaceDirection,
-                matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Features",
-                    "Zaide.Features.SourceControl.Application",
-                    "src/Features/SourceControl/Domain/SourceControlState.cs"),
-                m0FindingId: "R61-V02",
-                owner: "SourceControl",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "Domain/SourceControlState consumes Application/RepositoryStatusSnapshot. " +
-                "Movement alone preserves the residual layer edge (Refactor 6.3 inversion).",
-                removalBoundary: "Refactor 6.3"),
+            // NamespaceDirection: empty after M5 (SourceControlState Domain→Application
+            // residual deleted). Services -> ViewModels / Models -> Services remain
+            // ratcheted when technical folders reappear.
 
             // --- LocatorSite (exact production files with provider evidence) ---
             new(
