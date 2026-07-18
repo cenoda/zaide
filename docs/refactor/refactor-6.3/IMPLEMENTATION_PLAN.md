@@ -58,8 +58,8 @@ Editor singletons (`IFileService` → `FileService`; `IEditorSessionFactory` →
 production C# **362 → 363**; App C# **23 → 24**; internal
 Composition.Registration modules **4**. Automated verification green (build,
 focused DI+Architecture 64/64, Architecture 21/21, full suite 2226/2226,
-`git diff --check`); manual verification **not required**. **M6e implemented
-and staged pending review** (`refactor-6.3: M6e Terminal DI module`) — fifth
+`git diff --check`); manual verification **not required**. **M6e complete at
+`8ab50c0`** (`refactor-6.3: M6e Terminal DI module`) — fifth
 M6 registration slice: internal
 `TerminalServiceCollectionExtensions.AddZaideTerminal` owns the two Terminal
 singletons (`ITerminalServiceFactory` → `LinuxTerminalServiceFactory`;
@@ -72,8 +72,9 @@ public baseline **346** unchanged; internal **55 → 56**; total top-level
 Composition.Registration modules **5**. Automated verification green (build,
 focused registration+DI+Architecture 51/51, Architecture 21/21, full suite
 2231/2231, `git diff --check`); manual verification **not required**.
-**M6f–M6k** remain unauthorized; M6a–M6e are individually completed or staged
-slices (whole M6 series not complete).
+**M6f** is next eligible and requires separate authorization; M6f has not
+started, M6g–M6k remain unauthorized. M6a–M6e are individually completed
+slices; the whole M6 series is not complete.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -824,7 +825,7 @@ Composition.Registration contains four internal modules (AppCore, Settings,
 Workspace, Editor). Tests: `EditorRegistrationModuleTests` plus M6a–M6c
 ratchet advancement and existing composition/DI suite — automated verification
 green (build, focused DI+Architecture 64/64, Architecture 21/21, full suite
-2226/2226, `git diff --check`); manual verification **not required**. M6e–M6k
+2226/2226, `git diff --check`); manual verification **not required**. M6f–M6k
 registrations remain direct in `Program` (no later M6 modules yet).
 
 #### M6e — Terminal (2 — post-M3)
@@ -852,8 +853,10 @@ internal modules (AppCore, Settings, Workspace, Editor, Terminal). Tests:
 `TerminalRegistrationModuleTests` plus M6a–M6d ratchet advancement and existing
 composition/DI suite — automated verification green (build, focused
 registration+DI+Architecture 51/51, Architecture 21/21, full suite 2231/2231,
-`git diff --check` / `git diff --cached --check`); manual verification **not
-required**. **M6f** is the next eligible slice but remains **unauthorized**.
+`git diff --check` clean; `git diff --cached --check` was clean before the
+implementation commit); manual verification **not required**. **M6f** is the
+next eligible slice and requires separate explicit authorization; M6f has not
+started. M6g–M6k remain unauthorized.
 
 #### M6f — Agents (6)
 
@@ -1593,9 +1596,9 @@ dotnet test Zaide.slnx --no-build
    `43b8e85` (Settings DI registration module / `AddZaideSettings`). **M6c
    complete** at `1ad3625` (Workspace DI registration module /
    `AddZaideWorkspace`). **M6d complete** at `234a38f` (Editor DI registration
-   module / `AddZaideEditor`). **M6e implemented and staged pending review**
-   (Terminal DI registration module / `AddZaideTerminal` — not yet committed).
-   M6a–M6e are individually completed or staged slices; the whole M6 series is
+   module / `AddZaideEditor`). **M6e complete at `8ab50c0`** (Terminal DI
+   registration module / `AddZaideTerminal`). M6a–M6e are individually
+   completed slices; the whole M6 series is
    **not** complete or authorized.
 2. **Next eligible slice:** authorize **M6f only** (§ M6f — Agents registration
    module: `AgentsServiceCollectionExtensions.cs` / `AddZaideAgents`) when
@@ -1608,4 +1611,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 complete; M6a–M6d complete; M6e implemented and staged pending review — Terminal DI module / AddZaideTerminal; automated verification green: focused 51/51, Architecture 21/21, full suite 2231/2231; manual verification not required; public 346 / internal 56 / total 402 / prod C# 364 / App C# 25; five internal Registration modules; M6f next eligible, unauthorized; M6f–M6k unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6e complete; M6e at `8ab50c0`; automated verification green: build clean, focused 51/51, Architecture 21/21, full suite 2231/2231, git diff checks clean; manual verification not required; public 346 / internal 56 / total 402 / prod C# 364 / App C# 25; five internal Registration modules; M6f next eligible and awaiting separate authorization; M6g–M6k unauthorized)*

@@ -37,11 +37,11 @@ required), **M6c** at `1ad3625` (Workspace DI registration module —
 third completed M6 slice; automated verification green; manual verification
 not required), and **M6d** at `234a38f` (Editor DI registration module —
 fourth completed M6 slice; automated verification green; manual verification
-not required). **Refactor 6.3 M1–M5 and M6a–M6d are complete** as individually
-completed slices. **M6e** (Terminal registration module) is the next eligible
-milestone slice and still requires an explicit start; M6e production
-implementation is not active. Completing M6d does not authorize M6e–M6k or the
-rest of the M6 series.
+not required). **Refactor 6.3 M1–M5 and M6a–M6e are complete** as individually
+completed slices. **M6e** (Terminal registration module) is complete at
+`8ab50c0` (`AddZaideTerminal`). **M6f** is the
+next eligible slice and requires separate explicit authorization; M6f has not
+started. M6g–M6k remain unauthorized, and the whole M6 series is not complete.
 Refactors 7 / 8 have no production authorization until their own M0
 acceptances. Non-C# assets remain outside the root-admission ratchet. No V3
 production feature implementation is active.
@@ -133,12 +133,13 @@ NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
 Shell + Composition/Registration), `Features` (all migrated features), `UI`
 (DesignSystem only); and the current **346** public type names
 (`PublicProductionTypeBaseline.txt`; M5 net −1; M6a–M6d internal-only). Live
-inventory after M6d: total top-level **401**, public **346**, internal **55**,
-production C# **363**, App C# **24**. Composition.Registration contains four
-internal modules (AppCore, Settings, Workspace, Editor). FindingIds remaining:
+inventory after M6e: total top-level **402**, public **346**, internal **56**,
+production C# **364**, App C# **25**. Composition.Registration contains five
+internal modules (AppCore, Settings, Workspace, Editor, Terminal). FindingIds remaining:
 **2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
 by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M6e** Terminal registration module next; M6e–M6k unauthorized).
+Refactor 6.3 (**M6f** Agents registration module next; M6f separately
+unauthorized; M6g–M6k unauthorized).
 
 | Later work | Owns |
 |------------|------|
@@ -354,4 +355,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 complete; M6a complete at `c59ad7b`; M6b complete at `43b8e85`; M6c complete at `1ad3625`; M6d complete at `234a38f` — fourth M6 registration slice; automated verification green, manual verification not required; public 346 / internal 55 / total 401 / prod C# 363 / App C# 24; four internal Registration modules; M6e next eligible, not started)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1–M5 and M6a–M6e complete; M6e at `8ab50c0`; automated verification green, manual verification not required; public 346 / internal 56 / total 402 / prod C# 364 / App C# 25; five internal Registration modules; M6f next eligible and separately unauthorized)*
