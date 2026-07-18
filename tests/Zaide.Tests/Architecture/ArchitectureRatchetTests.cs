@@ -134,8 +134,11 @@ public sealed class ArchitectureRatchetTests
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryLocatorSite);
 
         // M2 cleared SourceControlDiffTabService locator debt; only composition sites remain.
+        // M8: ApplicationShutdown holds ordered-shutdown resolutions but is not a
+        // third LocatorSite FindingId (FindingIds stay Program + App only).
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/Program.cs");
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/App.axaml.cs");
+        Assert.DoesNotContain(live, v => v.RelativePath == ArchitectureRatchet.ApplicationShutdownRelativePath);
         Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Equal(2, live.Count);
 

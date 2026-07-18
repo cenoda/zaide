@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -16,12 +17,15 @@ using Zaide.App.Shell;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Features.Language.Application;
 using Zaide.Features.Language.Contracts;
+using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Tests.Features.ProjectSystem.DI;
 
@@ -101,7 +105,16 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         var output = IndexOf(order, "output");
         var buildDiagnostics = IndexOf(order, "buildDiagnostics");
         var testResults = IndexOf(order, "testResults");
+        var languageFormatting = IndexOf(order, "languageFormatting");
+        var languageNavigation = IndexOf(order, "languageNavigation");
+        var languageSymbol = IndexOf(order, "languageSymbol");
+        var languageCompletion = IndexOf(order, "languageCompletion");
+        var languageHover = IndexOf(order, "languageHover");
+        var languageDiagnostics = IndexOf(order, "languageDiagnostics");
+        var languageBridge = IndexOf(order, "languageBridge");
         var languageSession = IndexOf(order, "languageSession");
+        var projectContext = IndexOf(order, "projectContext");
+        var terminalHost = IndexOf(order, "terminalHost");
 
         Assert.True(debugSession < debugPanel);
         Assert.True(debugPanel < debugCurrentLocation);
@@ -111,7 +124,102 @@ public sealed class ProjectWorkflowProjectionShutdownTests
         Assert.True(workflow < output);
         Assert.True(output < buildDiagnostics);
         Assert.True(buildDiagnostics < testResults);
-        Assert.True(testResults < languageSession);
+        Assert.True(testResults < languageFormatting);
+        Assert.True(languageFormatting < languageNavigation);
+        Assert.True(languageNavigation < languageSymbol);
+        Assert.True(languageSymbol < languageCompletion);
+        Assert.True(languageCompletion < languageHover);
+        Assert.True(languageHover < languageDiagnostics);
+        Assert.True(languageDiagnostics < languageBridge);
+        Assert.True(languageBridge < languageSession);
+        Assert.True(languageSession < projectContext);
+        Assert.True(projectContext < terminalHost);
+    }
+
+    [Fact]
+    public void DisposeServicesOnExit_DisposesEachOrderedOwnerExactlyOnce()
+    {
+        var order = new List<string>();
+        var provider = BuildRecordingProvider(order);
+
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
+
+        var expectedOnce = new[]
+        {
+            "debugSession",
+            "debugPanel",
+            "debugCurrentLocation",
+            "editorBreakpoint",
+            "debugSessionViewModel",
+            "workflow",
+            "output",
+            "buildDiagnostics",
+            "testResults",
+            "languageFormatting",
+            "languageNavigation",
+            "languageSymbol",
+            "languageCompletion",
+            "languageHover",
+            "languageDiagnostics",
+            "languageBridge",
+            "languageSession",
+            "projectContext",
+            "terminalHost",
+        };
+
+        foreach (var name in expectedOnce)
+        {
+            Assert.Equal(1, order.Count(marker => marker == name));
+        }
+
+        // IFileTreeService is optional and absent from the default recording provider.
+        Assert.DoesNotContain("fileTree", order);
+    }
+
+    [Fact]
+    public void DisposeServicesOnExit_PrefersIAsyncDisposableOverIDisposable()
+    {
+        var order = new List<string>();
+        var dual = new DualDisposeRecordingOwner(order, "languageSession");
+        var provider = BuildRecordingProvider(order, languageSessionOverride: dual);
+
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
+
+        Assert.Equal(1, dual.DisposeAsyncCallCount);
+        Assert.Equal(0, dual.DisposeCallCount);
+        Assert.Equal(1, order.Count(marker => marker == "languageSession"));
+    }
+
+    [Fact]
+    public void DisposeServicesOnExit_DisposesOptionalFileTreeWhenPresent()
+    {
+        var order = new List<string>();
+        var provider = BuildRecordingProvider(order, includeFileTree: true);
+
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
+
+        var projectContext = order.IndexOf("projectContext");
+        var fileTree = order.IndexOf("fileTree");
+        var terminalHost = order.IndexOf("terminalHost");
+        Assert.True(projectContext >= 0);
+        Assert.True(fileTree >= 0);
+        Assert.True(terminalHost >= 0);
+        Assert.True(projectContext < fileTree);
+        Assert.True(fileTree < terminalHost);
+        Assert.Equal(1, order.Count(marker => marker == "fileTree"));
+    }
+
+    [Fact]
+    public void DisposeServicesOnExit_SkipsOptionalFileTreeAndTerminalWhenAbsent()
+    {
+        var order = new List<string>();
+        var provider = BuildRecordingProvider(order, includeTerminalHost: false);
+
+        global::Zaide.App.Composition.App.DisposeServicesOnExit(provider);
+
+        Assert.Contains("projectContext", order);
+        Assert.DoesNotContain("fileTree", order);
+        Assert.DoesNotContain("terminalHost", order);
     }
 
     [Fact]
@@ -246,17 +354,30 @@ public sealed class ProjectWorkflowProjectionShutdownTests
 
     private static RecordingServiceProvider BuildRecordingProvider(
         List<string> order,
-        RecordingManagedProcessRunner? runner = null)
+        RecordingManagedProcessRunner? runner = null,
+        bool includeFileTree = false,
+        bool includeTerminalHost = true,
+        ILanguageSessionService? languageSessionOverride = null)
     {
         runner ??= new RecordingManagedProcessRunner(order);
-        return new RecordingServiceProvider(order, runner);
+        return new RecordingServiceProvider(
+            order,
+            runner,
+            includeFileTree,
+            includeTerminalHost,
+            languageSessionOverride);
     }
 
     private sealed class RecordingServiceProvider : IServiceProvider
     {
         private readonly Dictionary<Type, object> _services;
 
-        public RecordingServiceProvider(List<string> order, RecordingManagedProcessRunner runner)
+        public RecordingServiceProvider(
+            List<string> order,
+            RecordingManagedProcessRunner runner,
+            bool includeFileTree,
+            bool includeTerminalHost,
+            ILanguageSessionService? languageSessionOverride)
         {
             _services = new Dictionary<Type, object>
             {
@@ -276,10 +397,22 @@ public sealed class ProjectWorkflowProjectionShutdownTests
                 [typeof(ILanguageHoverService)] = CreateRecordingDisposable<ILanguageHoverService>(order, "languageHover"),
                 [typeof(ILanguageDiagnosticsService)] = CreateRecordingDisposable<ILanguageDiagnosticsService>(order, "languageDiagnostics"),
                 [typeof(ILanguageDocumentBridge)] = CreateRecordingDisposable<ILanguageDocumentBridge>(order, "languageBridge"),
-                [typeof(ILanguageSessionService)] = CreateRecordingSessionService(order),
+                [typeof(ILanguageSessionService)] = languageSessionOverride
+                    ?? CreateRecordingSessionService(order),
                 [typeof(IProjectContextService)] = CreateRecordingDisposable<IProjectContextService>(order, "projectContext"),
-                [typeof(ITerminalHost)] = CreateRecordingDisposable<ITerminalHost>(order, "terminalHost"),
             };
+
+            if (includeFileTree)
+            {
+                _services[typeof(IFileTreeService)] =
+                    CreateRecordingDisposable<IFileTreeService>(order, "fileTree");
+            }
+
+            if (includeTerminalHost)
+            {
+                _services[typeof(ITerminalHost)] =
+                    CreateRecordingDisposable<ITerminalHost>(order, "terminalHost");
+            }
         }
 
         public object? GetService(Type serviceType) =>
@@ -310,10 +443,60 @@ public sealed class ProjectWorkflowProjectionShutdownTests
 
     private static ILanguageSessionService CreateRecordingSessionService(List<string> order)
     {
+        // ILanguageSessionService implements both IAsyncDisposable and IDisposable.
+        // Shutdown must prefer DisposeAsync and must not also call Dispose.
         var mock = new Mock<ILanguageSessionService>();
-        mock.Setup(service => service.Dispose()).Callback(() => order.Add("languageSession"));
-        mock.Setup(service => service.DisposeAsync()).Returns(ValueTask.CompletedTask);
+        mock.Setup(service => service.Dispose()).Callback(() => order.Add("languageSession-dispose"));
+        mock.Setup(service => service.DisposeAsync()).Returns(() =>
+        {
+            order.Add("languageSession");
+            return ValueTask.CompletedTask;
+        });
         return mock.Object;
+    }
+
+    private sealed class DualDisposeRecordingOwner : ILanguageSessionService
+    {
+        private readonly List<string> _order;
+        private readonly string _name;
+
+        public DualDisposeRecordingOwner(List<string> order, string name)
+        {
+            _order = order;
+            _name = name;
+        }
+
+        public int DisposeCallCount { get; private set; }
+        public int DisposeAsyncCallCount { get; private set; }
+
+        public LanguageSessionSnapshot Current { get; } = new(
+            LanguageSessionState.Unavailable,
+            Generation: 0,
+            ProjectFilePath: null,
+            WorkspaceFolderPath: null,
+            ServerProcessId: null,
+            Failure: null);
+
+        public IObservable<LanguageSessionSnapshot> WhenChanged =>
+            new Subject<LanguageSessionSnapshot>();
+
+        public Task RestartAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public ILanguageServerSession? TryGetReadySession(long generation) => null;
+
+        public void Dispose()
+        {
+            DisposeCallCount++;
+            _order.Add(_name + "-dispose");
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeAsyncCallCount++;
+            _order.Add(_name);
+            return ValueTask.CompletedTask;
+        }
     }
 
     private sealed class RecordingManagedProcessRunner : IManagedProcessRunner

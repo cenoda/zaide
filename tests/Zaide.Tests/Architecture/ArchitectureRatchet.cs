@@ -53,6 +53,10 @@ public static class ArchitectureRatchet
     /// inventoried by M2/M7 (IServiceProvider, App.Services, CompositionRoot.Services,
     /// GetRequiredService, GetService). CompositionRoot.cs property declaration is
     /// excluded from inventory (store-only; consumers use CompositionRoot.Services).
+    /// ApplicationShutdown.cs (M8) retains provider evidence for resolution-count
+    /// inventory but is not a separate LocatorSite FindingId: it is the ordered
+    /// shutdown owner invoked from App, and FindingIds remain only
+    /// R61-AL-LOC-Program and R61-AL-LOC-App.
     /// </summary>
     public static IReadOnlyList<ArchitectureViolation> DetectLocatorSiteViolations(
         ArchitectureInventory inventory)
@@ -60,6 +64,10 @@ public static class ArchitectureRatchet
         ArgumentNullException.ThrowIfNull(inventory);
 
         return inventory.ProviderEvidence
+            .Where(e => !string.Equals(
+                NormalizePath(e.RelativePath),
+                ApplicationShutdownRelativePath,
+                StringComparison.Ordinal))
             .GroupBy(e => e.RelativePath, StringComparer.Ordinal)
             .Select(g =>
             {
@@ -73,6 +81,14 @@ public static class ArchitectureRatchet
             .OrderBy(v => v.MatchKey, StringComparer.Ordinal)
             .ToArray();
     }
+
+    /// <summary>
+    /// Ordered shutdown owner (Refactor 6.3 M8 / V12). Provider resolutions are
+    /// inventoried for count floors but excluded from LocatorSite FindingIds so
+    /// the residual set stays R61-AL-LOC-Program and R61-AL-LOC-App only.
+    /// </summary>
+    public const string ApplicationShutdownRelativePath =
+        "src/App/Composition/ApplicationShutdown.cs";
 
     /// <summary>
     /// Tracked production <b>C#</b> files under deny-by-default root folders

@@ -4,7 +4,8 @@ namespace Zaide.App.Composition;
 
 /// <summary>
 /// Composition-boundary store for the ReactiveUI bootstrap provider.
-/// Resolution and shutdown remain in <see cref="App"/>; this type only holds the root.
+/// Bootstrap resolution remains in <see cref="App"/>; ordered shutdown lives in
+/// <see cref="ApplicationShutdown"/>. This type only holds the root.
 /// </summary>
 internal static class CompositionRoot
 {

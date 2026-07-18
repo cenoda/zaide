@@ -40,7 +40,8 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.Services"));
         Assert.False(byNamespace.ContainsKey("Zaide.ViewModels"));
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
-        Assert.Equal((7, 5, 2), byNamespace["Zaide.App.Composition"]);
+        // M8: +1 internal ApplicationShutdown (was 7 total / 5 public / 2 internal).
+        Assert.Equal((8, 5, 3), byNamespace["Zaide.App.Composition"]);
         Assert.Equal((11, 0, 11), byNamespace["Zaide.App.Composition.Registration"]);
         Assert.Equal((16, 14, 2), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
@@ -113,15 +114,15 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a +1; M6b +1; M6c +1; M6d +1; M6e +1; M6f +1; M6g +1; M6h +1; M6i +1; M6j +1; M6k +1 Debugging module.
-        Assert.Equal(371, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown.
+        Assert.Equal(372, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(32, byFolder["App"]);
+        Assert.Equal(33, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
         Assert.Equal(337, byFolder["Features"]);
 
@@ -205,6 +206,12 @@ public sealed class ArchitectureInventoryTests
         Assert.DoesNotContain(
             inventory.ProviderEvidence,
             e => e.RelativePath == "src/App/Composition/CompositionRoot.cs");
+        // M8: ordered shutdown owner resolutions remain inventoried (count floors)
+        // but are excluded from LocatorSite FindingIds in ArchitectureRatchet.
+        Assert.Contains(
+            inventory.ProviderEvidence,
+            e => e.RelativePath == "src/App/Composition/ApplicationShutdown.cs"
+                && e.Kind == ProviderEvidenceEntry.KindGetRequiredService);
         // Public App.Services removed in M7.
         Assert.DoesNotContain(
             inventory.ProviderEvidence,

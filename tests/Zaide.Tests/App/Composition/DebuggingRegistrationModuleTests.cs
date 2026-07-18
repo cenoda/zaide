@@ -418,6 +418,7 @@ public sealed class DebuggingRegistrationModuleTests
         Assert.DoesNotContain("public static IServiceProvider Services", appSource);
         Assert.Contains("CompositionRoot.Services", appSource);
         Assert.Contains("DisposeServicesOnExit", appSource);
+        Assert.Contains("ApplicationShutdown.Run", appSource);
         Assert.Contains("internal static class CompositionRoot", compositionRootSource);
         Assert.Contains("internal static IServiceProvider Services { get; set; }", compositionRootSource);
         Assert.DoesNotContain("GetRequiredService", compositionRootSource);

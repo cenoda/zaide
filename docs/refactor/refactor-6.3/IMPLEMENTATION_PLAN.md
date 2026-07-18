@@ -1454,7 +1454,7 @@ M6k implementation is complete at `df262ac`.
 
 **M6 series status boundary:** M6a–M6k are complete, and the M6 series is
 complete. Refactor 6.3 is not complete. **M7 is complete** (composition root
-store). The next planned milestone is **M8**, which remains **unauthorized**.
+store). **M8** is the current authorized ordered-shutdown slice.
 
 ---
 
@@ -1515,31 +1515,44 @@ registers → open folder.
 
 | | |
 |--|--|
+| **Status** | **Implemented and staged pending review** (not committed) |
 | **Type (locked)** | `internal static class ApplicationShutdown` in `src/App/Composition/ApplicationShutdown.cs` |
 | **API (locked)** | `internal static void Run(IServiceProvider services)` — **not** registered in DI; **not** an instance service |
-| **Call sites** | Desktop Exit handler invokes `ApplicationShutdown.Run(...)`; `App.DisposeServicesOnExit` becomes a **one-line** forwarder `ApplicationShutdown.Run(services)` so existing tests that call `App.DisposeServicesOnExit` keep compiling without a mass rename |
+| **Call sites** | Desktop Exit handler invokes `ApplicationShutdown.Run(CompositionRoot.Services)`; `App.DisposeServicesOnExit` becomes a **one-line** forwarder `ApplicationShutdown.Run(services)` so existing tests that call `App.DisposeServicesOnExit` keep compiling without a mass rename |
 | **Order (locked, from live App.axaml.cs)** | (1) resolve Output, BuildDiagnostics, TestResults; (2) dispose `IDebugSessionService`; (3) dispose debug projection VMs (Panel, CurrentLocation, EditorBreakpoint, Session); (4) dispose `IProjectWorkflowService`; (5) dispose Output/BuildDiagnostics/TestResults; (6) dispose language services (Formatting→Navigation→Symbol→Completion→Hover→Diagnostics→DocumentBridge→Session); (7) dispose `IProjectContextService`; (8) dispose `IFileTreeService?`; (9) dispose `ITerminalHost?` |
 | **Dispose selection (locked — exactly once per owner)** | For each resolved owner, in the order above, call **one** teardown path only: ```text if (owner is IAsyncDisposable asyncDisposable) → asyncDisposable.DisposeAsync().AsTask().Wait(ShutdownAsyncTimeout); else if (owner is IDisposable disposable) → disposable.Dispose(); // never both ``` Constant `ShutdownAsyncTimeout = TimeSpan.FromSeconds(5)`. Do **not** call `Dispose()` and then `DisposeAsync()` on the same instance. Do not introduce a fire-and-forget async Exit handler. |
-| **Exactly-once proof** | Extend `tests/Zaide.Tests/Features/ProjectSystem/DI/ProjectWorkflowProjectionShutdownTests.cs` so each ordered owner is observed disposed **exactly once**. Existing order assertions remain. |
+| **Exactly-once proof** | Extend `tests/Zaide.Tests/Features/ProjectSystem/DI/ProjectWorkflowProjectionShutdownTests.cs` so each ordered owner is observed disposed **exactly once**. Existing order assertions remain. Prove `IAsyncDisposable` precedence over `IDisposable` and optional `IFileTreeService` / `ITerminalHost` behavior. |
 | **Completion** | Body of shutdown lives only in `ApplicationShutdown.Run`; `DisposeServicesOnExit` is ≤ 3 lines; order + exactly-once tests pass; shared gate green |
+| **Inventory after M8 (live)** | public production types **346** (unchanged); internal **63 → 64**; total top-level **409 → 410**; production C# **371 → 372**; App C# **32 → 33**; Composition.Registration modules **11** (unchanged); FindingIds **2** unchanged (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) |
+| **Locator policy amendment (M8)** | `ApplicationShutdown.cs` uses `GetRequiredService` / `GetService` for ordered teardown. Provider evidence for that file **remains inventoried** (resolution-count floors). `ArchitectureRatchet.DetectLocatorSiteViolations` **excludes** `src/App/Composition/ApplicationShutdown.cs` so no third LocatorSite FindingId is introduced. Rationale: ordered shutdown owner invoked from App (V12 ownership), not new V09 composition-root residual. Do **not** add `R61-AL-LOC-ApplicationShutdown`. Keep FindingIds exactly Program + App. |
 
-**Files (exact inventory for M8):**
+**Files (exact inventory for M8 — amended for architecture bookkeeping required to keep the shared gate green):**
 
 | Path | Action |
 |------|--------|
 | `src/App/Composition/ApplicationShutdown.cs` | **Create** |
 | `src/App/Composition/App.axaml.cs` | **Edit** — Exit + thin `DisposeServicesOnExit` |
-| `tests/Zaide.Tests/Features/ProjectSystem/DI/ProjectWorkflowProjectionShutdownTests.cs` | **Edit** — keep `App.DisposeServicesOnExit` entry; add exactly-once coverage |
+| `tests/Zaide.Tests/Features/ProjectSystem/DI/ProjectWorkflowProjectionShutdownTests.cs` | **Edit** — keep `App.DisposeServicesOnExit` entry; add exactly-once / async-precedence / optional-owner coverage |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryReader.cs` | **Edit** — internal **64**, total **410** |
+| `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.cs` | **Edit** — internal **64**, total **410** |
+| `tests/Zaide.Tests/Architecture/ArchitectureInventoryTests.cs` | **Edit** — prod C# **372**, App **33**; ApplicationShutdown provider evidence |
+| `tests/Zaide.Tests/Architecture/ArchitectureVisibilityTests.cs` | **Edit** — App C# **33** |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchet.cs` | **Edit** — exclude ApplicationShutdown from LocatorSite FindingIds |
+| `tests/Zaide.Tests/Architecture/ArchitectureRatchetTests.cs` | **Edit** — assert ApplicationShutdown is not a LocatorSite FindingId |
+| `tests/Zaide.Tests/App/Composition/DebuggingRegistrationModuleTests.cs` | **Edit** — Exit uses `ApplicationShutdown.Run` |
+| `docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md` | **Edit** — in-slice status only (no five-document closeout) |
 
 **Focused tests:**
 
 ```bash
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   --filter "FullyQualifiedName~ProjectWorkflowProjectionShutdownTests\
+|FullyQualifiedName~CompositionDiIntegrationTests\
 |FullyQualifiedName~Architecture"
 ```
 
-**Manual:** start debug or build if tools available → quit app → no orphan
+**Manual:** not required for automated M8 gate unless live behavior proves otherwise.
+Historical note: start debug or build if tools available → quit app → no orphan
 `dotnet`/`netcoredbg`/`csharp-ls` processes (`pgrep -a` before/after).
 
 **Rollback:** single commit.
@@ -2085,18 +2098,21 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M7 complete** as previously recorded for M1–M6; **M7** is complete at
-   `554552f` (composition root store / remove public `App.Services`) under Option A locator
+1. **M1–M7 complete** as previously recorded; **M7** is complete at `554552f`
+   (composition root store / remove public `App.Services`) under Option A locator
    policy. Public `App.Services` is gone; residual static store is
    `CompositionRoot.Services` with FindingIds `R61-AL-LOC-Program` and
    `R61-AL-LOC-App` only.
-2. The next planned milestone is **M8** (ordered shutdown owner / V12), which
-   remains **unauthorized** until separate explicit authorization.
-3. Do not start M8+, Refactor 7/8, or Phase 14 without separate authorization.
-   Completing M7 does **not** authorize M8 or whole-refactor closeout.
-4. Do **not** mark Refactor 6.3 complete from M7 alone (V09 residual remains;
-   M8–M13 still planned).
+2. **M8** (ordered shutdown owner / V12) is implemented and staged pending
+   review: `ApplicationShutdown.Run` owns ordered teardown;
+   `DisposeServicesOnExit` is a thin forwarder. FindingIds remain 2; inventory
+   internal/total/prod/App file counts bump by one for the new type/file.
+3. Do not start M9+, Refactor 7/8, or Phase 14 without separate authorization.
+   Completing M8 does **not** authorize M9 or whole-refactor closeout.
+4. Do **not** mark Refactor 6.3 complete from M8 alone (V09 residual remains;
+   M9–M13 still planned). Do not perform the five-document closeout in this
+   slice.
 
 ---
 
-*Last updated: 2026-07-18 (M7 complete at `554552f`: CompositionRoot store; public App.Services removed; locator evidence Program+App only via CompositionRoot.Services consumer access; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 95/95, Architecture 21/21, full suite 2263/2263, git diff checks clean; manual smoke not run; inventory public 346 / internal 63 / total 409 / prod C# 371 / App C# 32; M8 unauthorized)*
+*Last updated: 2026-07-18 (M8 implemented and staged pending review: ApplicationShutdown ordered owner; DisposeServicesOnExit thin forwarder; inventory public 346 / internal 64 / total 410 / prod C# 372 / App C# 33; FindingIds 2 unchanged; LocatorSite exclusion for ApplicationShutdown; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 40/40, Architecture 21/21, full suite 2267/2267, git diff checks clean; manual verification not run; no five-document closeout)*
