@@ -58,9 +58,22 @@ Editor singletons (`IFileService` → `FileService`; `IEditorSessionFactory` →
 production C# **362 → 363**; App C# **23 → 24**; internal
 Composition.Registration modules **4**. Automated verification green (build,
 focused DI+Architecture 64/64, Architecture 21/21, full suite 2226/2226,
-`git diff --check`); manual verification **not required**. **M6e–M6k** remain
-unauthorized; M6a–M6d are individually completed slices (whole M6 series not
-complete).
+`git diff --check`); manual verification **not required**. **M6e implemented
+and staged pending review** (`refactor-6.3: M6e Terminal DI module`) — fifth
+M6 registration slice: internal
+`TerminalServiceCollectionExtensions.AddZaideTerminal` owns the two Terminal
+singletons (`ITerminalServiceFactory` → `LinuxTerminalServiceFactory`;
+`ITerminalHost` → `TerminalHost`); `Program.ConfigureServices` calls
+`AddZaideTerminal()` exactly once after `AddZaideEditor()`; module order is
+`AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal`; `AddLogging` remains in `Program`;
+public baseline **346** unchanged; internal **55 → 56**; total top-level
+**401 → 402**; production C# **363 → 364**; App C# **24 → 25**; internal
+Composition.Registration modules **5**. Automated verification green (build,
+focused registration+DI+Architecture 51/51, Architecture 21/21, full suite
+2231/2231, `git diff --check`); manual verification **not required**.
+**M6f–M6k** remain unauthorized; M6a–M6e are individually completed or staged
+slices (whole M6 series not complete).
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -822,6 +835,25 @@ registrations remain direct in `Program` (no later M6 modules yet).
 | `ITerminalHost` → `TerminalHost` |
 
 File: `src/App/Composition/Registration/TerminalServiceCollectionExtensions.cs`
+(`AddZaideTerminal`).
+
+**Status:** **implemented and staged pending review** (Refactor 6.3 M6e Terminal
+DI module). Production: `Program.ConfigureServices` calls
+`services.AddZaideTerminal()` exactly once immediately after `AddZaideEditor()`;
+module order is `AddZaideAppCore` → `AddZaideSettings` → `AddZaideWorkspace` →
+`AddZaideEditor` → `AddZaideTerminal`; the two registrations live only in the
+internal module (both `AddSingleton`; `ITerminalServiceFactory` →
+`LinuxTerminalServiceFactory`; `ITerminalHost` → `TerminalHost`).
+`AddLogging` remains in `Program`. M6f–M6k registrations remain direct in
+`Program` (no later M6 modules). Public production types **346** (unchanged);
+internal **56** (+1 extension class); total top-level **402**; production C#
+files **364**; App C# files **25**. Composition.Registration contains five
+internal modules (AppCore, Settings, Workspace, Editor, Terminal). Tests:
+`TerminalRegistrationModuleTests` plus M6a–M6d ratchet advancement and existing
+composition/DI suite — automated verification green (build, focused
+registration+DI+Architecture 51/51, Architecture 21/21, full suite 2231/2231,
+`git diff --check` / `git diff --cached --check`); manual verification **not
+required**. **M6f** is the next eligible slice but remains **unauthorized**.
 
 #### M6f — Agents (6)
 
@@ -1561,17 +1593,19 @@ dotnet test Zaide.slnx --no-build
    `43b8e85` (Settings DI registration module / `AddZaideSettings`). **M6c
    complete** at `1ad3625` (Workspace DI registration module /
    `AddZaideWorkspace`). **M6d complete** at `234a38f` (Editor DI registration
-   module / `AddZaideEditor`). M6a–M6d are individually completed slices; the
-   whole M6 series is **not** complete or authorized.
-2. **Next eligible slice:** authorize **M6e only** (§ M6e — Terminal
-   registration module: `TerminalServiceCollectionExtensions.cs` /
-   `AddZaideTerminal`) when ready. M6e production implementation has **not**
-   started and requires a separate explicit authorization.
-3. Do not start M6e–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6d does **not** authorize the rest of M6.
-4. **M6e–M6k** remain unauthorized. **M6f–M6k** remain unauthorized as later
-   slices within that set.
+   module / `AddZaideEditor`). **M6e implemented and staged pending review**
+   (Terminal DI registration module / `AddZaideTerminal` — not yet committed).
+   M6a–M6e are individually completed or staged slices; the whole M6 series is
+   **not** complete or authorized.
+2. **Next eligible slice:** authorize **M6f only** (§ M6f — Agents registration
+   module: `AgentsServiceCollectionExtensions.cs` / `AddZaideAgents`) when
+   ready. M6f production implementation has **not** started and requires a
+   separate explicit authorization. Do **not** start M6f until M6e is reviewed
+   and committed/closed out.
+3. Do not start M6f–M6k, M7+, Refactor 7/8, or Phase 14 without separate
+   authorization. Completing M6e does **not** authorize the rest of M6.
+4. **M6f–M6k** remain unauthorized.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 complete; M6a–M6d complete — M6d Editor DI module at `234a38f`; automated verification green: focused 64/64, Architecture 21/21, full suite 2226/2226; manual verification not required; public 346 / internal 55 / total 401 / prod C# 363 / App C# 24; four internal Registration modules; M6e next eligible, not started; M6e–M6k unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 complete; M6a–M6d complete; M6e implemented and staged pending review — Terminal DI module / AddZaideTerminal; automated verification green: focused 51/51, Architecture 21/21, full suite 2231/2231; manual verification not required; public 346 / internal 56 / total 402 / prod C# 364 / App C# 25; five internal Registration modules; M6f next eligible, unauthorized; M6f–M6k unauthorized)*

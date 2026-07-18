@@ -22,9 +22,6 @@ using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Infrastructure;
 using Zaide.Features.SourceControl.Presentation;
-using Zaide.Features.Terminal.Contracts;
-using Zaide.Features.Terminal.Infrastructure;
-using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 using Zaide.Features.Agents.Contracts;
@@ -51,10 +48,9 @@ class Program
         services.AddZaideSettings();
         services.AddZaideWorkspace();
         services.AddZaideEditor();
+        services.AddZaideTerminal();
 
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<ITerminalServiceFactory, LinuxTerminalServiceFactory>();
-        services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();

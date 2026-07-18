@@ -10,23 +10,24 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
-using Zaide.Features.Workspace.Contracts;
-using Zaide.Features.Workspace.Infrastructure;
-using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Terminal.Contracts;
+using Zaide.Features.Terminal.Infrastructure;
+using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide.Tests.App.Composition;
 
 /// <summary>
-/// Refactor 6.3 M6c: proves Workspace DI membership moved into
-/// <see cref="WorkspaceServiceCollectionExtensions.AddZaideWorkspace"/> without
-/// changing service types, lifetimes, or total registration membership.
+/// Refactor 6.3 M6e: proves Terminal DI membership moved into
+/// <see cref="TerminalServiceCollectionExtensions.AddZaideTerminal"/> without
+/// changing service types, lifetimes, mappings, or total registration
+/// membership.
 /// </summary>
-public sealed class WorkspaceRegistrationModuleTests
+public sealed class TerminalRegistrationModuleTests
 {
-    private static readonly string[] WorkspaceServiceTypeNames =
+    private static readonly string[] TerminalServiceTypeNames =
     {
-        typeof(IFileTreeService).FullName!,
-        typeof(FileTreeViewModel).FullName!,
+        typeof(ITerminalServiceFactory).FullName!,
+        typeof(ITerminalHost).FullName!,
     };
 
     private static readonly string[] M6fPlusDirectMarkers =
@@ -40,7 +41,7 @@ public sealed class WorkspaceRegistrationModuleTests
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
-    static WorkspaceRegistrationModuleTests()
+    static TerminalRegistrationModuleTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
@@ -77,11 +78,12 @@ public sealed class WorkspaceRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideWorkspace_RegistersExactlyTwoPlannedServices()
+    public void AddZaideTerminal_RegistersExactlyTwoPlannedServices()
     {
         var services = new ServiceCollection();
-        services.AddZaideWorkspace();
+        var returned = services.AddZaideTerminal();
 
+        Assert.Same(services, returned);
         Assert.Equal(2, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
@@ -89,82 +91,91 @@ public sealed class WorkspaceRegistrationModuleTests
             .Select(d => d.ServiceType.FullName)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
-        var expected = WorkspaceServiceTypeNames
+        var expected = TerminalServiceTypeNames
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
         Assert.Equal(expected, serviceTypes);
 
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(IFileTreeService)
-                && d.ImplementationType == typeof(FileTreeService));
+            d => d.ServiceType == typeof(ITerminalServiceFactory)
+                && d.ImplementationType == typeof(LinuxTerminalServiceFactory));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(FileTreeViewModel)
-                && d.ImplementationType == typeof(FileTreeViewModel));
+            d => d.ServiceType == typeof(ITerminalHost)
+                && d.ImplementationType == typeof(TerminalHost));
     }
 
     [Fact]
-    public void ProgramConfigureServices_ResolvesWorkspaceServicesAsSingletons()
+    public void ProgramConfigureServices_ResolvesTerminalServicesAsSingletons()
     {
         using var provider = BuildProductionProvider();
 
-        var fileTree1 = provider.GetRequiredService<IFileTreeService>();
-        var fileTree2 = provider.GetRequiredService<IFileTreeService>();
-        Assert.Same(fileTree1, fileTree2);
-        Assert.IsType<FileTreeService>(fileTree1);
+        var factory1 = provider.GetRequiredService<ITerminalServiceFactory>();
+        var factory2 = provider.GetRequiredService<ITerminalServiceFactory>();
+        Assert.Same(factory1, factory2);
+        Assert.IsType<LinuxTerminalServiceFactory>(factory1);
 
-        var viewModel1 = provider.GetRequiredService<FileTreeViewModel>();
-        var viewModel2 = provider.GetRequiredService<FileTreeViewModel>();
-        Assert.Same(viewModel1, viewModel2);
+        var host1 = provider.GetRequiredService<ITerminalHost>();
+        var host2 = provider.GetRequiredService<ITerminalHost>();
+        Assert.Same(host1, host2);
+        Assert.IsType<TerminalHost>(host1);
     }
 
     [Fact]
-    public void ProgramSource_CallsAddZaideWorkspaceOnce_AndDoesNotDeclareWorkspaceRegistrations()
+    public void ProgramSource_CallsAddZaideTerminalOnce_AndDoesNotDeclareTerminalRegistrations()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
         Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
         var workspaceIndex = programSource.IndexOf("AddZaideWorkspace()", StringComparison.Ordinal);
+        var editorIndex = programSource.IndexOf("AddZaideEditor()", StringComparison.Ordinal);
+        var terminalIndex = programSource.IndexOf("AddZaideTerminal()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
         Assert.True(settingsIndex > appCoreIndex);
         Assert.True(workspaceIndex > settingsIndex);
+        Assert.True(editorIndex > workspaceIndex);
+        Assert.True(terminalIndex > editorIndex);
 
         Assert.DoesNotContain(
-            "AddSingleton<IFileTreeService, FileTreeService>()",
+            "AddSingleton<ITerminalServiceFactory, LinuxTerminalServiceFactory>()",
             programSource);
-        Assert.DoesNotContain("AddSingleton<FileTreeViewModel>()", programSource);
+        Assert.DoesNotContain(
+            "AddSingleton<ITerminalHost, TerminalHost>()",
+            programSource);
 
-        // AddLogging remains in Program (not an M6c registration).
+        // AddLogging remains in Program (not an M6e registration).
         Assert.Contains("AddLogging(", programSource);
     }
 
     [Fact]
-    public void WorkspaceModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void TerminalModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
-            "src/App/Composition/Registration/WorkspaceServiceCollectionExtensions.cs");
+            "src/App/Composition/Registration/TerminalServiceCollectionExtensions.cs");
 
         Assert.Contains(
-            "internal static class WorkspaceServiceCollectionExtensions",
+            "internal static class TerminalServiceCollectionExtensions",
             moduleSource);
-        Assert.Contains("internal static IServiceCollection AddZaideWorkspace", moduleSource);
+        Assert.Contains("internal static IServiceCollection AddZaideTerminal", moduleSource);
 
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IFileTreeService,\s*FileTreeService>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<FileTreeViewModel>\(\)"));
+                @"AddSingleton<ITerminalServiceFactory,\s*LinuxTerminalServiceFactory>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<ITerminalHost,\s*TerminalHost>\(\)"));
 
         Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
-
-        // Domain Workspace remains owned by AppCore (M6a), not this module.
-        Assert.DoesNotContain("AddSingleton<Workspace>()", moduleSource);
     }
 
     [Fact]
@@ -177,9 +188,7 @@ public sealed class WorkspaceRegistrationModuleTests
             Assert.Contains(marker, programSource);
         }
 
-        // M6d Editor and M6e Terminal modules are present; M6f–M6k do not exist yet.
-        Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
-        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
+        // M6f–M6k modules do not exist yet.
         Assert.DoesNotContain("AddZaideAgents", programSource);
         Assert.DoesNotContain("AddZaideTownhall", programSource);
         Assert.DoesNotContain("AddZaideSourceControl", programSource);

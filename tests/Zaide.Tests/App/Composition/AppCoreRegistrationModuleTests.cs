@@ -32,10 +32,8 @@ public sealed class AppCoreRegistrationModuleTests
         typeof(CommandPaletteViewModel).FullName!,
     };
 
-    private static readonly string[] M6ePlusDirectMarkers =
+    private static readonly string[] M6fPlusDirectMarkers =
     {
-        "AddSingleton<ITerminalServiceFactory, LinuxTerminalServiceFactory>()",
-        "AddSingleton<ITerminalHost, TerminalHost>()",
         "AddSingleton<IAgentPanelHost, AgentPanelHost>()",
         "AddSingleton<IAgentExecutionService, AgentExecutionService>()",
         "AddSingleton<TownhallState>()",
@@ -184,20 +182,20 @@ public sealed class AppCoreRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6ePlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6fPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6ePlusDirectMarkers)
+        foreach (var marker in M6fPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6b–M6d modules are present; M6e–M6k do not exist yet.
+        // M6b–M6e modules are present; M6f–M6k do not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideTerminal", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideAgents", programSource);
         Assert.DoesNotContain("AddZaideTownhall", programSource);
         Assert.DoesNotContain("AddZaideSourceControl", programSource);

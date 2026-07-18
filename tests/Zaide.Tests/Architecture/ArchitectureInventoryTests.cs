@@ -41,7 +41,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.ViewModels"));
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
         Assert.Equal((6, 5, 1), byNamespace["Zaide.App.Composition"]);
-        Assert.Equal((4, 0, 4), byNamespace["Zaide.App.Composition.Registration"]);
+        Assert.Equal((5, 0, 5), byNamespace["Zaide.App.Composition.Registration"]);
         Assert.Equal((16, 14, 2), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
@@ -113,15 +113,15 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a +1; M6b +1; M6c +1; M6d +1 Editor module.
-        Assert.Equal(363, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a +1; M6b +1; M6c +1; M6d +1; M6e +1 Terminal module.
+        Assert.Equal(364, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(24, byFolder["App"]);
+        Assert.Equal(25, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
         Assert.Equal(337, byFolder["Features"]);
 
