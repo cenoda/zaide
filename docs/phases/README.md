@@ -44,7 +44,8 @@ implementations internalized), and **M11d** is complete at `133a3c1` (three
 Agents + Settings infrastructure implementations internalized), completing the
 M11 series. Production work still requires separate authorization for each
 implementation milestone. **M12** is complete at `d4d1470` (67-row lifetime
-ownership map); **M13** is next eligible and has not started.
+ownership map); **M13** is complete, and Refactor 6.3 is accepted and closed.
+The next gate is separate authorization to prepare Refactor 7 M0 only.
 
 ## Archive Policy
 

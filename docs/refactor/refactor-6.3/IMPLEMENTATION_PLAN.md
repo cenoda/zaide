@@ -2,6 +2,10 @@
 
 ## Status and authorization
 
+**Refactor 6.3 status:** **Accepted and closed (2026-07-19).** M0–M13 complete.
+Final closeout evidence is recorded under **M13** below. This plan does **not**
+authorize Refactor 7, Refactor 8, or Phase 14.
+
 **M0 acceptance status:** **GO — accepted (2026-07-18).** Human accepted the
 eighth-revision planning gate.
 
@@ -454,15 +458,15 @@ intended milestone files.
 | V02 | `SourceControlState` Domain → Application | `R61-AL-NS-SourceControlState` | **M5** (cleared) |
 | V05 | Terminal factory Contracts/Application → Presentation | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` | **M3** (cleared) |
 | V06 | `MentionParser` → `IAgentPanelHost` | `R61-AL-NS-MentionParser` | **M4** (cleared) |
-| V07 | Diff tab service → Editor Presentation + provider | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` | **M2** |
-| V08 | `EditorTabViewModel` + `IServiceProvider` | `R61-AL-LOC-EditorTabViewModel` | **M1** |
-| V09 | Public static `App.Services` + composition locators | `R61-AL-LOC-Program`, `R61-AL-LOC-App` | **M7** removes public `App.Services` and centralizes the store on `CompositionRoot.Services`. **Deliberate residual** (not full V09 clearance): static mutable composition-root provider + the two composition LOC FindingIds **remain** with updated rationale — see M7. M13 permits only these composition residuals. |
-| V10 | Monolithic 65 registrations | documented | **M6a–M6k** |
-| V11 | Semantic lifetime vs DI singleton | documented | **M12** (cleared) |
-| V12 | Manual sync shutdown | partial LOC-App | **M8** |
-| V13 | `MainWindowViewModel` hub | documented | **M9a–M9c** |
-| V14 | 348 public baseline | executable baseline | **M11a–M11d** |
-| V17 | Shell `new Settings*` | documented | **M10** |
+| V07 | Diff tab service → Editor Presentation + provider | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` | **M2** (cleared) |
+| V08 | `EditorTabViewModel` + `IServiceProvider` | `R61-AL-LOC-EditorTabViewModel` | **M1** (cleared) |
+| V09 | Public static `App.Services` + composition locators | `R61-AL-LOC-Program`, `R61-AL-LOC-App` | **M7** removes public `App.Services` and centralizes the store on `CompositionRoot.Services`. **Deliberate residual** (not full V09 clearance): static mutable composition-root provider + the two composition LOC FindingIds **remain** — see M7 / M13 closeout. |
+| V10 | Monolithic 65 registrations | documented | **M6a–M6k** (cleared; 11 modules, 67 registrations) |
+| V11 | Semantic lifetime vs DI singleton | documented | **M12** (cleared; `LIFETIME_MAP.md`) |
+| V12 | Manual sync shutdown | ordered shutdown owner | **M8** (cleared; `ApplicationShutdown` excluded from LocatorSite FindingIds) |
+| V13 | `MainWindowViewModel` hub | documented | **M9a–M9c** (cleared) |
+| V14 | 348 public baseline | executable baseline | **M11a–M11d** (cleared; cumulative −26 → public **320**) |
+| V17 | Shell `new Settings*` | documented | **M10** (cleared) |
 
 ### Explicitly out of scope
 
@@ -1463,7 +1467,8 @@ at `33a1806` (panel navigation extraction). **M9c is complete** at `bcb1e97`
 SourceControl + Terminal five-type visibility internalization; **M11d is
 complete** at `133a3c1` — Agents + Settings three-type visibility
 internalization. The M11 series is complete; **M12 is complete** at `d4d1470`
-(67-row lifetime ownership map). M13 remains unauthorized.
+(67-row lifetime ownership map). **M13 closeout is complete and staged**;
+Refactor 6.3 is accepted and closed pending the closeout commit.
 
 ---
 
@@ -2164,12 +2169,91 @@ required** and **not run**. M13 **not started**.
 
 | | |
 |--|--|
-| **Proof** | Every owned V0x row is cleared **or** listed as deliberate residual with FindingId |
-| **Allowlist residual (exact)** | Only `R61-AL-LOC-Program` and `R61-AL-LOC-App` may remain (composition-boundary residual from M7). All NS FindingIds and non-composition LOC FindingIds must be gone |
-| **Docs** | Update `CONVENTIONS.md` / `OVERVIEW.md` / `V3.md` next-step; this plan status → accepted closed |
-| **Commands** | Full shared sequential gate; record pass counts in plan closeout section |
+| **Status** | **Complete** — documentation closeout staged (commit pending); Refactor 6.3 **accepted and closed** |
+| **Proof** | Every owned V0x row is cleared **or** listed as deliberate residual with FindingId — **met** (see evidence) |
+| **Allowlist residual (exact)** | Only `R61-AL-LOC-Program` and `R61-AL-LOC-App` remain (M7 composition-boundary residual). Zero NamespaceDirection FindingIds. Zero non-composition LocatorSite FindingIds. `ApplicationShutdown` remains excluded from LocatorSite FindingIds |
+| **Docs (final truth-sync)** | `CONVENTIONS.md`, `architecture/OVERVIEW.md`, `roadmap/V3.md`, `README.md`, `docs/phases/README.md`, `LIFETIME_MAP.md`, this plan → accepted closed |
+| **Commands** | Full shared sequential gate; pass counts recorded below |
 
 **Does not authorize** Refactor 7/8 or Phase 14.
+
+#### M13 final closeout evidence (2026-07-19)
+
+**Entry gate (verified before docs edit):**
+
+| Check | Result |
+|-------|--------|
+| Branch | `master` |
+| `HEAD` = `origin/master` | `9df1ed3` (`docs: close refactor 6.3 M12`) |
+| Working tree at audit start | clean |
+| M12 artifact | `d4d1470` (`docs: add refactor 6.3 lifetime ownership map`) present |
+| M12 closeout | `9df1ed3` present |
+| Live vs locked inventory | **match** — no material production/test/ratchet/baseline/allowlist contradiction |
+
+**Cleared owned V0x rows:**
+
+| ID | Cleared by | FindingIds removed / outcome |
+|----|------------|------------------------------|
+| V08 | M1 | `R61-AL-LOC-EditorTabViewModel` removed |
+| V07 | M2 | `R61-AL-NS-SourceControlDiffTabService`, `R61-AL-LOC-SourceControlDiffTabService` removed |
+| V05 | M3 | `R61-AL-NS-ITerminalSessionFactory`, `R61-AL-NS-TerminalSessionFactory` removed |
+| V06 | M4 | `R61-AL-NS-MentionParser` removed |
+| V02 | M5 | `R61-AL-NS-SourceControlState` removed; NamespaceDirection empty |
+| V10 | M6a–M6k | 11 `AddZaide*` modules; 67 production registrations |
+| V09 (partial) | M7 | Public `App.Services` removed; store → `CompositionRoot.Services` |
+| V12 | M8 | `ApplicationShutdown.Run` ordered exactly-once teardown |
+| V13 | M9a–M9c | Agent mirror / panel navigation / activation host extracted |
+| V17 | M10 | Settings panel factory |
+| V14 | M11a–M11d | Cumulative public reduction **exactly 26** → baseline **320** |
+| V11 | M12 | `LIFETIME_MAP.md` — **67** complete rows |
+
+**Deliberate residuals (exact; only remaining FindingIds):**
+
+| FindingId | MatchKey | Residual class |
+|-----------|----------|----------------|
+| `R61-AL-LOC-Program` | `src/App/Composition/Program.cs` | M7 composition-boundary residual |
+| `R61-AL-LOC-App` | `src/App/Composition/App.axaml.cs` | M7 composition-boundary residual |
+
+Store: internal `CompositionRoot.Services`. `ApplicationShutdown` is the ordered
+shutdown owner (not a third LocatorSite FindingId). No unrecorded owned
+residuals remain for Refactor 6.3.
+
+**Final live inventory (mechanical):**
+
+| Metric | Exact value |
+|--------|------------:|
+| Public production baseline | **320** |
+| Internal production types | **95** |
+| Total top-level production types | **415** |
+| Production C# files | **377** |
+| Features C# files | **339** |
+| App C# files | **36** |
+| Production DI registrations | **67** |
+| Composition.Registration modules | **11** |
+| `LIFETIME_MAP.md` rows | **67** |
+| Remaining FindingIds | **2** (Program + App only) |
+| NamespaceDirection FindingIds | **0** |
+| `EditorViewModel` DI registration | **absent** (factory-created) |
+| M11 cumulative public reduction | **26** |
+
+**Verification (M13 shared sequential gate):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | Succeeded — **4** warnings / **0** errors (CS0067 in `ProjectDebugTargetResolverTests`; xUnit2013 ×3 in Architecture tests) |
+| Architecture filter | **21/21** passed |
+| Full suite `dotnet test Zaide.slnx --no-build` | **2320/2320** passed |
+| `git diff --check` | clean (after staging) |
+| Production / test / ratchet / baseline / allowlist / DI diffs | **none** (docs-only) |
+
+**Manual verification:** **not required** and **not run** (documentation
+closeout; no production behavior change).
+
+**Final status-surface truth-sync:** `README.md`, `docs/phases/README.md`, and
+`LIFETIME_MAP.md` were included to remove stale M13-next / M12-pre-commit
+wording. No production, test, ratchet, baseline, allowlist, or DI file changed.
+
+**Not started:** Refactor 7, Refactor 8, Phase 14.
 
 ---
 
@@ -2243,42 +2327,15 @@ required** and **not run**. M13 **not started**.
 
 ## Exact next step
 
-1. **M1–M8 complete** as previously recorded; **M8** at `874aa79` /
-   closeout `3e465e1`.
-2. **M9a** complete at `172f2a3`; **M9a closeout** at `35df46b`.
-3. **M9b** complete at `33a1806`; **M9b closeout** at `b6bfd8f`.
-4. **M9c** (activation host extraction) is complete at `bcb1e97`:
-   `MainWindowActivationHost` owns activation side effects; MWVM is 390
-   lines and `Activate()` is the locked thin entrypoint; scheduler substitution
-   is preserved through `Func<IScheduler>`. FindingIds remain 2; inventory is
-   public 346 / internal 67 / total 413 / prod C# 375 / App C# 36; Shell
-   namespace (19, 14, 5).
-5. **M10** (settings panel factory) is complete at `843eebf`:
-   `ISettingsPanelFactory` / `SettingsPanelFactory`; `SettingsMigrator` internal;
-   `AddZaideSettings` has exactly three singletons; public baseline net 0 at 346;
-   inventory public 346 / internal 69 / total 415 / prod C# 377 / Features 339 /
-   App 36; DI registrations 67; FindingIds 2.
-6. **M11a** (Language implementation visibility internalization) is complete
-   at `b6228c3`: exactly 10 Language types public→internal;
-   public baseline 336; internal 79; total 415; DI 67; FindingIds 2 unchanged.
-7. **M11b** (Debugging + ProjectSystem implementation visibility internalization)
-   is complete at `a69fc66`: exactly 8 types public→internal;
-   public baseline 328; internal 87; total 415; DI 67; FindingIds 2 unchanged.
-8. **M11c** (SourceControl + Terminal implementation visibility internalization)
-   is complete at `3d03285`: exactly 5 types
-   public→internal; public baseline 323; internal 92; total 415; DI 67;
-   FindingIds 2 unchanged.
-9. **M11d** (Agents + Settings infrastructure visibility internalization) is
-   complete at `133a3c1`: exactly 3 types public→internal;
-   public baseline 320; internal 95; total 415; DI 67; FindingIds 2 unchanged.
-   The M11 series is complete with an exact cumulative public reduction of 26.
-10. **M12** (lifetime ownership map / V11) is complete at `d4d1470` (docs-only):
-    `docs/refactor/refactor-6.3/LIFETIME_MAP.md` with **67** filled rows;
-    live DI count **67**; Architecture **21/21**; full **2320/2320**.
-11. **M13** is next eligible and remains **unauthorized**. Do not start M13,
-    Refactor 7/8, or Phase 14 without separate authorization. Do not perform
-    the five-document closeout until M13 is explicitly authorized.
+1. **Refactor 6.3 is accepted and closed** (M0–M13). Final inventory:
+   public **320** / internal **95** / total **415**; prod C# **377** /
+   Features **339** / App **36**; DI **67**; Registration modules **11**;
+   `LIFETIME_MAP.md` **67** rows; FindingIds exactly
+   `R61-AL-LOC-Program` + `R61-AL-LOC-App`.
+2. **Next roadmap gate:** explicit authorization to prepare **Refactor 7 M0**
+   only. Do **not** start Refactor 7 implementation, Refactor 8, or Phase 14
+   without separate authorization and an accepted M0.
 
 ---
 
-*Last updated: 2026-07-19 (M12 complete at `d4d1470` docs-only: LIFETIME_MAP.md 67 rows; live DI 67 verified; semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; EditorViewModel not registered; Architecture 21/21; full 2320/2320; no production/test/ratchet changes; M13 next eligible and unauthorized)*
+*Last updated: 2026-07-19 (M13 complete: Refactor 6.3 accepted closed; Architecture 21/21; full 2320/2320; docs-only; FindingIds R61-AL-LOC-Program + R61-AL-LOC-App; Refactor 7/8 / Phase 14 unauthorized)*

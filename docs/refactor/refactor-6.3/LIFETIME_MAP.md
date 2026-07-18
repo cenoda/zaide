@@ -1,6 +1,6 @@
 # Refactor 6.3 — Lifetime ownership map (V11)
 
-**Status:** M12 artifact staged against `93d8626` (docs-only; commit pending).
+**Status:** M12 complete at `d4d1470` (docs-only).
 **Scope:** Exactly the 67 production DI registrations in `Program.ConfigureServices` →
 `AddZaide*` registration modules.
 **Verified live registration count:** **67** (all `AddSingleton`; no `AddTransient` /

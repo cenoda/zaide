@@ -18,50 +18,21 @@ performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
 [Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete and closed**
-(rules, hybrid inventory, legacy allowlist ratchet, public full-name baseline
-393/348/45, expanded tracked production **C#** root admission, documentation
-closeout and M0 representation proof). Refactor 6.2 **M1–M12 scheduled
-mechanical migration is complete** on `master` at `72102da` (feature-first
-tree under `App`, `Features`, and `UI/DesignSystem`). Optional M13 root
-admissions are **declined**. Refactor 6.3 M0 is **accepted** at
-[`docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
-**M1** complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e`
-(manual terminal smoke not run), **M4** at `698b094` (manual agent-panel
-routing smoke not run), **M5** at `273cc56` (manual verification not
-required), **M6a** at `c59ad7b` (AppCore DI registration module — first
-completed M6 slice; automated verification green; manual verification not
-required), **M6b** at `43b8e85` (Settings DI registration module — second
-completed M6 slice; automated verification green; manual verification not
-required), **M6c** at `1ad3625` (Workspace DI registration module —
-third completed M6 slice; automated verification green; manual verification
-not required), and **M6d** at `234a38f` (Editor DI registration module —
-fourth completed M6 slice; automated verification green; manual verification
-not required). **Refactor 6.3 M1–M5 and M6a–M6k are complete** as individually
-completed slices. **M6k** (Debugging registration module) is complete at
-`df262ac` (`AddZaideDebugging`), completing the M6 series. **M7** is complete
-at `554552f`: public `App.Services` is removed; the internal
-`CompositionRoot.Services` store and two composition locator residuals remain.
-**M8** is complete at `874aa79`: `ApplicationShutdown.Run` owns ordered,
-exactly-once teardown while the App exit path remains synchronous. **M9a** is
-complete at `172f2a3`: internal `AgentTownhallMirrorCoordinator` owns agent
-send and Townhall mirroring. **M9b** is complete at `33a1806`: internal
-`ShellPanelNavigation` owns nine panel commands while MWVM retains notifying
-mode state. **M9c** is complete at `bcb1e97`: internal
-`MainWindowActivationHost` owns activation side effects, completing the M9
-series. **M10** is complete at `843eebf`: the Settings panel factory removes
-direct Settings construction from MainWindow with a net-zero public baseline.
-**M11a** is complete at `b6228c3`: ten Language implementations are internal.
-**M11b** is complete at `a69fc66`: eight Debugging + ProjectSystem
-implementations are internal. **M11c** is complete at `3d03285`: five
-SourceControl + Terminal implementations are internal. **M11d** is complete at
-`133a3c1`: three Agents + Settings infrastructure implementations are internal,
-completing the M11 series. **M12** is complete at `d4d1470`: the lifetime map
-documents exactly 67 production DI registrations and their semantic ownership.
-**M13** is next eligible, has not started, and requires separate authorization.
-Refactors 7 / 8 have no production authorization
-until their own M0 acceptances. Non-C# assets remain outside the
-root-admission ratchet. No V3 production feature implementation is active.
+implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete and closed**.
+Refactor 6.2 **M1–M12 scheduled mechanical migration is complete** on `master`
+at `72102da` (feature-first tree under `App`, `Features`, and
+`UI/DesignSystem`). Optional 6.2 M13 root admissions are **declined**.
+**Refactor 6.3 is accepted and closed**
+([`IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md)):
+dependency inversion, feature DI registration modules, composition-root store,
+ordered shutdown, shell extractions, Settings panel factory, visibility
+reduction (−26 public types across M11a–M11d), and the 67-row lifetime map
+(`LIFETIME_MAP.md`). Deliberate residuals:
+`CompositionRoot.Services` plus LocatorSite FindingIds
+`R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 / 8 and Phase 14
+have no production authorization until their own M0 acceptances. Non-C#
+assets remain outside the root-admission ratchet. No V3 production feature
+implementation is active.
 
 ---
 
@@ -103,11 +74,12 @@ Key target rules (detail in CONVENTIONS):
   contracts/Domain; Application → Contracts/Domain; Domain → Domain/BCL only.
 - Forbidden: Application → Presentation or concrete Infrastructure;
   Infrastructure → Presentation; cross-feature Presentation/Infrastructure
-  consumption; non-composition `IServiceProvider` / static `App.Services` use.
+  consumption; non-composition `IServiceProvider` / composition-root provider
+  use outside App composition.
 - Root `Infrastructure/` and `UI/Shared/` are deny-by-default multi-consumer
   admissions; LSP stays under Language, DAP under Debugging.
-- Visibility is internal-by-default / public-by-exception (348 public-type
-  full-name baseline + 393/348/45 compiled ceiling; executable in M4).
+- Visibility is internal-by-default / public-by-exception (current ceiling
+  **320** public / **95** internal / **415** total after Refactor 6.3).
 - Current lifetimes: application, workspace, process, projection, editor
   session, terminal session. Conversation, agent session, and run (R61-LT01–
   LT03) are deferred to Refactor 7.
@@ -116,56 +88,51 @@ Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
 and [M0 architecture baseline](../refactor/refactor-6.1/M0_ARCHITECTURE_BASELINE.md).
 
-### Live production tree (Refactor 6.2 M1–M12 complete)
+### Live production tree (Refactor 6.2 + 6.3 complete)
 
-Scheduled mechanical migration is complete. The live tree matches the approved
-feature-first layout (optional M13 root admissions remain unauthorized):
+Scheduled mechanical migration (6.2) and composition/lifetime cleanup (6.3)
+are complete. The live tree matches the approved feature-first layout
+(optional 6.2 M13 root admissions remain unauthorized):
 
 ```text
 src/
-  App/Composition/     # Program, App, command registry (6.2 M12); Registration/AppCore (6.3 M6a) + Settings (6.3 M6b) + Workspace (6.3 M6c) + Editor (6.3 M6d) + Terminal (6.3 M6e) + Agents (6.3 M6f) + Townhall (6.3 M6g) + SourceControl (6.3 M6h) + ProjectSystem (6.3 M6i)
-  App/Shell/           # MainWindow, shell VMs/views, chrome (6.2 M12; Animations/IconFactory shell-owned R62-D03)
-  UI/DesignSystem/     # tokens, icons, typography (6.2 M1)
-  Features/Settings/   # Domain, Contracts, Infrastructure, Presentation (6.2 M2)
-  Features/Workspace/  # Domain, Contracts, Infrastructure, Presentation (6.2 M3)
-  Features/Editor/     # Domain, Contracts, Infrastructure, Presentation (6.2 M4; FileService parked R62-D01)
-  Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation (6.2 M5a–M5c)
-  Features/Language/   # Contracts + Application (6.2 M6a) + Infrastructure/Lsp (6.2 M6b)
-  Features/Debugging/  # Contracts + Application (6.2 M7a) + Infrastructure/Dap (6.2 M7b) + Presentation (6.2 M7c)
-  Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M8; R61-V02 SourceControlState cleared in 6.3 M5)
-  Features/Terminal/   # Contracts, Application, Infrastructure, Presentation (6.2 M9; R61-V05 cleared in 6.3 M3)
-  Features/Townhall/   # Domain, Presentation (6.2 M10; R61-V16 preserved)
-  Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation (6.2 M11; R61-V06 cleared in 6.3 M4)
+  App/Composition/     # Program, App, CompositionRoot, ApplicationShutdown,
+                       # command registry; Registration/ (11 AddZaide* modules)
+  App/Shell/           # MainWindow, shell VMs/views, chrome (Animations/IconFactory shell-owned R62-D03)
+  UI/DesignSystem/     # tokens, icons, typography
+  Features/Settings/   # Domain, Contracts, Infrastructure, Presentation
+  Features/Workspace/  # Domain, Contracts, Infrastructure, Presentation
+  Features/Editor/     # Domain, Contracts, Infrastructure, Presentation (FileService parked R62-D01;
+                       # EditorViewModel factory-created, not DI-registered)
+  Features/ProjectSystem/  # Domain, Contracts, Infrastructure, Presentation
+  Features/Language/   # Contracts + Application + Infrastructure/Lsp
+  Features/Debugging/  # Contracts + Application + Infrastructure/Dap + Presentation
+  Features/SourceControl/  # Domain, Contracts, Application, Infrastructure, Presentation
+  Features/Terminal/   # Contracts, Application, Infrastructure, Presentation
+  Features/Townhall/   # Domain, Presentation (R61-V16 preserved)
+  Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation
 ```
 
 Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
-inventory the baseline (M2), ratchet known legacy debt (M3), and enforce the
-public full-name baseline plus expanded root-folder admission (M4, updated for
-6.2 M1–M12 and 6.3 M1–M6d). Root-admission inventories **tracked production C#
-only** (`git ls-files` of `src/**/*.cs`): exact-file service-locator sites;
-NamespaceDirection edges empty after 6.3 M5; deny-by-default tracked C# under
-`src/Infrastructure/` / `src/UI/Shared/`; admitted folders `App` (Composition +
-Shell + Composition/Registration), `Features` (all migrated features), `UI`
-(DesignSystem only); and the current **320** public type names
-(`PublicProductionTypeBaseline.txt`; M11a −10; M11b −8; M11c −5; M11d −3).
-Live inventory after M11d: total top-level **415**, public **320**, internal **95**,
-production C# **377**, Features C# **339**, App C# **36**.
-Composition.Registration contains eleven
-internal modules (AppCore, Settings, Workspace, Editor, Terminal, Agents,
-Townhall, SourceControl, ProjectSystem, Language, Debugging). FindingIds remaining:
-**2** (`R61-AL-LOC-App`, `R61-AL-LOC-Program`). Non-C# assets are not governed
-by the root-admission detectors. Lifetime/composition debt remains for
-Refactor 6.3 (**M13** closeout next and
-separately unauthorized).
+enforce inventory, legacy allowlist ratchet, public full-name baseline, and
+tracked production **C#** root admission. Live inventory after Refactor 6.3
+closeout: total top-level **415**, public **320**, internal **95**, production
+C# **377**, Features C# **339**, App C# **36**, production DI registrations
+**67** (all Singleton; documented in `LIFETIME_MAP.md`),
+Composition.Registration modules **11**. FindingIds remaining: exactly
+**2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
+boundary residuals. NamespaceDirection allowlist is empty.
+`ApplicationShutdown` is the ordered shutdown owner, not a third locator
+residual. Non-C# assets are not governed by the root-admission detectors.
 
 | Later work | Owns |
 |------------|------|
 | Refactor 6.1 | Closed; rules and executable ratchets |
-| Refactor 6.2 | Mechanical feature-first migration (M1–M12 scheduled complete; M13 optional admission only) |
-| Refactor 6.3 | Composition, visibility reduction, lifetime, dependency inversion |
-| Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation |
+| Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
+| Refactor 6.3 | Closed; composition residuals documented above |
+| Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation (unauthorized until own M0) |
 
 ---
 
@@ -374,4 +341,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 6.3 M1–M12 complete; M12 at `d4d1470`; LIFETIME_MAP.md documents exactly 67 DI singletons with semantic distribution Application 48 / Workspace 4 / Process 1 / Projection 14; Editor/Terminal sessions documented as non-DI ownership; public 320 / internal 95 / total 415 / prod C# 377 / Features 339 / App 36; FindingIds 2 unchanged; Architecture 21/21; full suite 2320/2320; no production/test/ratchet changes; M13 next eligible and separately unauthorized)*
+*Last updated: 2026-07-19 (Refactor 6.3 accepted closed; public 320 / internal 95 / total 415; prod C# 377 / Features 339 / App 36; DI 67 / Registration modules 11 / LIFETIME_MAP 67 rows; FindingIds R61-AL-LOC-Program + R61-AL-LOC-App only; Refactor 7 / 8 / Phase 14 unauthorized)*
