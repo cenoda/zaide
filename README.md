@@ -34,11 +34,11 @@ at `1ad3625` (Workspace DI registration module; third completed M6 slice;
 automated verification green; manual verification not required), and **M6d**
 at `234a38f` (Editor DI registration module; fourth completed M6 slice;
 automated verification green; manual verification not required). **Refactor
-6.3 M1–M5 and M6a–M6h are complete** as individually completed slices. **M6h**
-(SourceControl registration module) is complete at `9f514cd`
-(`AddZaideSourceControl`). **M6i** is the next eligible slice and requires
-separate explicit authorization; M6i has not started. **M6j–M6k** remain
-unauthorized, and the whole M6 series is not complete. Completing M6h does not
+6.3 M1–M5 and M6a–M6i are complete** as individually completed slices. **M6i**
+(ProjectSystem registration module) is complete at `e6f9fb8`
+(`AddZaideProjectSystem`). **M6j** is the next eligible slice and requires
+separate explicit authorization; M6j has not started. **M6k** remains
+unauthorized, and the whole M6 series is not complete. Completing M6i does not
 authorize later M6 slices.
 
 ## Philosophy
@@ -229,10 +229,11 @@ registration module — fourth completed M6 slice). **M6e** is complete at
 is complete at `cd809d2` (Agents DI registration module — sixth completed M6
 slice). **M6g** is complete at `1f18e49` (Townhall DI registration module —
 seventh completed M6 slice). **M6h** is complete at `9f514cd` (SourceControl
-DI registration module — eighth completed M6 slice). **M6i** (ProjectSystem
-registration module) is the next eligible milestone slice and still requires
-separate explicit authorization. M6i has not started; M6j–M6k remain
-unauthorized. Completing M6h does not authorize later M6 slices. Phase 14 and
+DI registration module — eighth completed M6 slice). **M6i** is complete at
+`e6f9fb8` (ProjectSystem DI registration module — ninth completed M6 slice).
+**M6j** (Language registration module) is the next eligible milestone slice and
+still requires separate explicit authorization. M6j has not started; M6k remains
+unauthorized. Completing M6i does not authorize later M6 slices. Phase 14 and
 every preceding refactor still require their own live-code-verified M0
 acceptance before production implementation.
 
