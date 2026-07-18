@@ -14,7 +14,7 @@ namespace Zaide.Features.ProjectSystem.Infrastructure;
 /// Production managed-process runner using <see cref="Process"/> with redirected
 /// stdout/stderr and entire-process-tree kill on cancel/dispose.
 /// </summary>
-public sealed class ManagedProcessRunner : IManagedProcessRunner
+internal sealed class ManagedProcessRunner : IManagedProcessRunner
 {
     private static readonly TimeSpan KillWaitTimeout = TimeSpan.FromSeconds(5);
 

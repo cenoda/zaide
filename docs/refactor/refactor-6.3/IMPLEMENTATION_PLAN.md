@@ -1907,6 +1907,26 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 
 **Shrink:** exactly **−8**.
 
+**Also edit:** `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt`
+(remove the eight full names).
+
+**Architecture bookkeeping (live M11b):**
+- `PublicProductionTypeBaseline.cs` / `ArchitectureInventoryReader.cs` constants:
+  public 336→328, internal 79→87, total 415 unchanged.
+- Namespace rollups: `Debugging.Application` (16, 16, 0)→(16, 14, 2);
+  `Debugging.Infrastructure.Dap` (19, 16, 3)→(19, 14, 5);
+  `ProjectSystem.Infrastructure` (13, 13, 0)→(13, 9, 4).
+- File/DI/FindingId counts unchanged (prod C# 377, Features 339, App 36, DI 67, FindingIds 2).
+- `src/Zaide.csproj`: add `InternalsVisibleTo DynamicProxyGenAssembly2` so Moq can
+  still proxy `ILogger&lt;ProjectContextService&gt;` after internalization (direct
+  construction already covered by `InternalsVisibleTo Zaide.Tests`). No DI,
+  constructor, lifetime, or registration changes.
+
+**Status:** **implemented (staged, uncommitted)** — eight Debugging + ProjectSystem
+types public→internal; baseline 328; inventory public 328 / internal 87 / total 415.
+Verification: forced build 4 pre-existing warnings / 0 errors; focused 543/543;
+Architecture 21/21; full suite 2320/2320; `git diff --check` / `--cached --check` clean.
+
 **Focused tests:**
 
 ```bash
@@ -2179,9 +2199,12 @@ dotnet test Zaide.slnx --no-build
 6. **M11a** (Language implementation visibility internalization) is complete
    at `b6228c3`: exactly 10 Language types public→internal;
    public baseline 336; internal 79; total 415; DI 67; FindingIds 2 unchanged.
-7. **M11b** is next eligible and remains unauthorized. Do not start M11b+,
-   Refactor 7/8, or Phase 14 without separate authorization.
+7. **M11b** (Debugging + ProjectSystem implementation visibility internalization)
+   is **implemented (staged, uncommitted)**: exactly 8 types public→internal;
+   public baseline 328; internal 87; total 415; DI 67; FindingIds 2 unchanged.
+   Do not start M11c+, Refactor 7/8, or Phase 14 without separate authorization.
+   Five-document closeout is not part of this slice.
 
 ---
 
-*Last updated: 2026-07-18 (M11a complete at `b6228c3`: Language 10 types internalized; public 336 / internal 79 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; automated verification green: forced build succeeded with 4 pre-existing warnings / 0 errors, focused 180/180, Architecture 21/21, full suite 2320/2320, git diff checks clean; manual verification not required and not run; M11b unauthorized)*
+*Last updated: 2026-07-18 (M11b implemented staged: Debugging+ProjectSystem 8 types internalized; public 328 / internal 87 / total 415; prod C# 377 / Features 339 / App 36; DI 67; FindingIds 2 unchanged; DynamicProxyGenAssembly2 IVT for Moq ILogger&lt;T&gt;; forced build 4 warn/0 err; focused 543/543; Architecture 21/21; full 2320/2320; M11c unauthorized; no five-document closeout)*

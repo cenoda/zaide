@@ -24,7 +24,7 @@ namespace Zaide.Features.ProjectSystem.Infrastructure;
 /// request may publish a terminal or restoration snapshot; stale completions and
 /// stale cancellations emit nothing.</para>
 /// </summary>
-public sealed class ProjectContextService : IProjectContextService
+internal sealed class ProjectContextService : IProjectContextService
 {
     private readonly IProjectDiscovery _discovery;
     private readonly ILogger<ProjectContextService> _logger;

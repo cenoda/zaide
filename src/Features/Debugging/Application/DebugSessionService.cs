@@ -19,7 +19,7 @@ namespace Zaide.Features.Debugging.Application;
 /// Singleton debug-session owner. Manages one DAP adapter session, generation-safe
 /// teardown, and immutable snapshot publication.
 /// </summary>
-public sealed class DebugSessionService : IDebugSessionService
+internal sealed class DebugSessionService : IDebugSessionService
 {
     private static readonly IReadOnlyList<string> EmptyDiagnostics = Array.Empty<string>();
     private static readonly IReadOnlyList<DebugBreakpointVerification> EmptyVerifications =

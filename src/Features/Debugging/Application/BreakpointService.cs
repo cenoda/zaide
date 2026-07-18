@@ -15,7 +15,7 @@ namespace Zaide.Features.Debugging.Application;
 /// <summary>
 /// Workspace-scoped breakpoint persistence backed by <see cref="ISettingsService"/>.
 /// </summary>
-public sealed class BreakpointService : IBreakpointService
+internal sealed class BreakpointService : IBreakpointService
 {
     private readonly IProjectContextService _projectContext;
     private readonly ISettingsService _settings;

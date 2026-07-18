@@ -6,7 +6,7 @@ namespace Zaide.Features.Debugging.Infrastructure.Dap;
 /// <summary>
 /// Production factory that launches NetCoreDbg and starts the DAP transport.
 /// </summary>
-public sealed class DebugAdapterSessionFactory : IDebugAdapterSessionFactory
+internal sealed class DebugAdapterSessionFactory : IDebugAdapterSessionFactory
 {
     /// <inheritdoc />
     public async Task<IDebugAdapterSession> StartAsync(

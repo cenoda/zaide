@@ -35,7 +35,6 @@ Zaide.Features.Agents.Presentation.AgentPanelView
 Zaide.Features.Agents.Presentation.IAgentPanelHost
 Zaide.Features.Debugging.Application.BreakpointOperationResult
 Zaide.Features.Debugging.Application.BreakpointOutcomeKind
-Zaide.Features.Debugging.Application.BreakpointService
 Zaide.Features.Debugging.Application.DebugBreakpointRequest
 Zaide.Features.Debugging.Application.DebugBreakpointVerification
 Zaide.Features.Debugging.Application.DebugBreakpointVerificationState
@@ -44,7 +43,6 @@ Zaide.Features.Debugging.Application.DebugProjectionState
 Zaide.Features.Debugging.Application.DebugSessionFailure
 Zaide.Features.Debugging.Application.DebugSessionOperationResult
 Zaide.Features.Debugging.Application.DebugSessionOutcomeKind
-Zaide.Features.Debugging.Application.DebugSessionService
 Zaide.Features.Debugging.Application.DebugSessionSnapshot
 Zaide.Features.Debugging.Application.DebugSessionState
 Zaide.Features.Debugging.Application.DebugSessionTimeoutPolicy
@@ -61,8 +59,6 @@ Zaide.Features.Debugging.Infrastructure.Dap.DapStoppedEvent
 Zaide.Features.Debugging.Infrastructure.Dap.DapStoppedInfo
 Zaide.Features.Debugging.Infrastructure.Dap.DapThreadInfo
 Zaide.Features.Debugging.Infrastructure.Dap.DapVariableInfo
-Zaide.Features.Debugging.Infrastructure.Dap.DebugAdapterLocator
-Zaide.Features.Debugging.Infrastructure.Dap.DebugAdapterSessionFactory
 Zaide.Features.Debugging.Infrastructure.Dap.DebugAdapterStartOptions
 Zaide.Features.Debugging.Infrastructure.Dap.IDebugAdapterLocator
 Zaide.Features.Debugging.Infrastructure.Dap.IDebugAdapterSession
@@ -214,10 +210,7 @@ Zaide.Features.ProjectSystem.Domain.TestCaseResult
 Zaide.Features.ProjectSystem.Domain.TestResultsParser
 Zaide.Features.ProjectSystem.Domain.TestResultsSnapshot
 Zaide.Features.ProjectSystem.Domain.TestResultsSummary
-Zaide.Features.ProjectSystem.Infrastructure.BuildDiagnosticsService
 Zaide.Features.ProjectSystem.Infrastructure.FileSystemProjectFileSystem
-Zaide.Features.ProjectSystem.Infrastructure.ManagedProcessRunner
-Zaide.Features.ProjectSystem.Infrastructure.ProjectContextService
 Zaide.Features.ProjectSystem.Infrastructure.ProjectDebugLaunchService
 Zaide.Features.ProjectSystem.Infrastructure.ProjectDebugTargetResolver
 Zaide.Features.ProjectSystem.Infrastructure.ProjectDiscovery
@@ -225,7 +218,6 @@ Zaide.Features.ProjectSystem.Infrastructure.ProjectExecutionProfileResolver
 Zaide.Features.ProjectSystem.Infrastructure.ProjectOperationGate
 Zaide.Features.ProjectSystem.Infrastructure.ProjectOutputService
 Zaide.Features.ProjectSystem.Infrastructure.ProjectTargetResolver
-Zaide.Features.ProjectSystem.Infrastructure.ProjectWorkflowService
 Zaide.Features.ProjectSystem.Infrastructure.TestResultsService
 Zaide.Features.ProjectSystem.Presentation.OutputLineViewModel
 Zaide.Features.ProjectSystem.Presentation.OutputPanel

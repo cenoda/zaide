@@ -32,5 +32,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Zaide.Tests" />
+    <!-- Moq/Castle proxy ILogger&lt;T&gt; when T is internal (e.g. ProjectContextService). -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

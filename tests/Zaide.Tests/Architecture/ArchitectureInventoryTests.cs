@@ -62,7 +62,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
-        Assert.Equal((13, 13, 0), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
+        // M11b: 4 ProjectSystem Infrastructure services public→internal (13p/0i → 9p/4i).
+        Assert.Equal((13, 9, 4), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
         Assert.Equal((10, 10, 0), byNamespace["Zaide.Features.ProjectSystem.Presentation"]);
         Assert.Equal((8, 8, 0), byNamespace["Zaide.Features.Language.Contracts"]);
         // M11a: 8 Application Language services public→internal (42p/5i → 34p/13i).
@@ -70,8 +71,10 @@ public sealed class ArchitectureInventoryTests
         // M11a: LanguageServerBinaryLocator + CsharpLsSessionFactory public→internal (17p/7i → 15p/9i).
         Assert.Equal((24, 15, 9), byNamespace["Zaide.Features.Language.Infrastructure.Lsp"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Debugging.Contracts"]);
-        Assert.Equal((16, 16, 0), byNamespace["Zaide.Features.Debugging.Application"]);
-        Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Infrastructure.Dap"]);
+        // M11b: DebugSessionService + BreakpointService public→internal (16p/0i → 14p/2i).
+        Assert.Equal((16, 14, 2), byNamespace["Zaide.Features.Debugging.Application"]);
+        // M11b: DebugAdapterLocator + DebugAdapterSessionFactory public→internal (16p/3i → 14p/5i).
+        Assert.Equal((19, 14, 5), byNamespace["Zaide.Features.Debugging.Infrastructure.Dap"]);
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);

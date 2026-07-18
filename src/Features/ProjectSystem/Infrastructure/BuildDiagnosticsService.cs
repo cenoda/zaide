@@ -11,7 +11,7 @@ namespace Zaide.Features.ProjectSystem.Infrastructure;
 /// Subscribes to <see cref="IProjectWorkflowService"/> and owns build diagnostics
 /// snapshots parsed at build terminal outcomes.
 /// </summary>
-public sealed class BuildDiagnosticsService : IBuildDiagnosticsService
+internal sealed class BuildDiagnosticsService : IBuildDiagnosticsService
 {
     private readonly IProjectWorkflowService _workflow;
     private readonly Subject<BuildDiagnosticsSnapshot> _subject = new();

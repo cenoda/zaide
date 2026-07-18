@@ -7,7 +7,7 @@ namespace Zaide.Features.Debugging.Infrastructure.Dap;
 /// Discovers NetCoreDbg from <c>ZAIDE_NETCOREDBG_PATH</c> or <c>netcoredbg</c> on PATH.
 /// Does not bundle, download, or scan well-known directories.
 /// </summary>
-public sealed class DebugAdapterLocator : IDebugAdapterLocator
+internal sealed class DebugAdapterLocator : IDebugAdapterLocator
 {
     public const string UnavailableMessage =
         "NetCoreDbg was not found. Set ZAIDE_NETCOREDBG_PATH or add netcoredbg to PATH.";

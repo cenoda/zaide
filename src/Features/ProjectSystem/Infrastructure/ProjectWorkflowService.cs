@@ -14,7 +14,7 @@ namespace Zaide.Features.ProjectSystem.Infrastructure;
 /// Singleton workflow owner. Resolves targets from <see cref="IProjectContextService"/>,
 /// runs one redirected dotnet process at a time, and cancels on context invalidation.
 /// </summary>
-public sealed class ProjectWorkflowService : IProjectWorkflowService
+internal sealed class ProjectWorkflowService : IProjectWorkflowService
 {
     private static readonly ProjectWorkflowSnapshot InitialSnapshot = new(
         ProjectWorkflowOperationState.Idle,
