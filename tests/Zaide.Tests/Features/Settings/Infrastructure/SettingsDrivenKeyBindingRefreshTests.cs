@@ -89,12 +89,12 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
     {
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new MockFileService())
-            .AddTransient<EditorViewModel>()
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();
 
         _ = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance, _registry);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var vm = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,

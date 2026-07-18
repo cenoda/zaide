@@ -87,13 +87,13 @@ public class MainWindowViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton(fileService);
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Moq.Mock<ITerminalSessionFactory>();
@@ -116,13 +116,13 @@ public class MainWindowViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var townhallState = new TownhallState();
         var townhallViewModel = new TownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
@@ -172,13 +172,13 @@ public class MainWindowViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();
@@ -244,13 +244,13 @@ public class MainWindowViewModelTests
         // even though a repository is open.
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();
@@ -423,12 +423,12 @@ public class MainWindowViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         terminalService.Setup(s => s.StartAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("pty failed"));
@@ -507,12 +507,12 @@ public class MainWindowViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Moq.Mock<ITerminalSessionFactory>();
@@ -747,12 +747,12 @@ public class MainWindowViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Moq.Mock<ITerminalSessionFactory>();
@@ -875,12 +875,12 @@ public class MainWindowViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Moq.Mock<ITerminalSessionFactory>();
@@ -1064,13 +1064,13 @@ public class MainWindowViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeService = new FileTreeService();
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();
@@ -1251,12 +1251,12 @@ public class MainWindowViewModelTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();

@@ -34,10 +34,10 @@ internal static class TestTestResultsFactory
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
         services.AddSingleton(new Zaide.Features.Workspace.Domain.Workspace());
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         var sp = services.BuildServiceProvider();
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        return new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
     }
 
     private sealed class EmptyTestResultsService : ITestResultsService

@@ -238,9 +238,10 @@ public sealed class EditorBreakpointViewModelTests
         var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         var sp = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton(workspace)
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, new FileService(), workspace);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), new FileService(), workspace);
         var tab = new EditorViewModel(new Document("/tmp/workspace/Program.cs", ""), new FileService());
         editorTabs.OpenTabs.Add(tab);
         editorTabs.ActiveTab = tab;

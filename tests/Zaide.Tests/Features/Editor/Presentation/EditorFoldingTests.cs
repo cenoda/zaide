@@ -317,11 +317,12 @@ public sealed class EditorFoldingTests
         {
             var sp = new ServiceCollection()
                 .AddSingleton<IFileService>(new FileService())
+                .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
                 .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
                 .BuildServiceProvider();
 
             return new EditorTabViewModel(
-                sp,
+                sp.GetRequiredService<IEditorSessionFactory>(),
                 sp.GetRequiredService<IFileService>(),
                 sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(),
                 registry);

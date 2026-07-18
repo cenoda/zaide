@@ -108,8 +108,9 @@ public sealed class DebugCurrentLocationViewModelTests
         var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService>(new FileService());
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         var sp = services.BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
 
         var stack = new DebugStackProjectionViewModel(debug.Object);
         var location = new DebugCurrentLocationViewModel(debug.Object, stack, editorTabs);

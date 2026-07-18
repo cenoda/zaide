@@ -225,10 +225,9 @@ public sealed class EditorLanguageInputRoutingTests
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
-            services.AddTransient(sp =>
-                new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()));
+            services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
             _sp = services.BuildServiceProvider();
-            Tabs = new EditorTabViewModel(_sp, _sp.GetRequiredService<IFileService>(), Workspace);
+            Tabs = new EditorTabViewModel(_sp.GetRequiredService<IEditorSessionFactory>(), _sp.GetRequiredService<IFileService>(), Workspace);
 
             Completion = new LanguageCompletionService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageCompletionService>.Instance);
@@ -344,12 +343,13 @@ public sealed class EditorLanguageInputRoutingTests
         var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         var session = new FakeSessionService();
         var bridge = new FakeDocumentBridge();
+        var sp = new ServiceCollection()
+            .AddSingleton(workspace)
+            .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
+            .BuildServiceProvider();
         var tabs = new EditorTabViewModel(
-            new ServiceCollection()
-                .AddSingleton(workspace)
-                .AddSingleton<IFileService>(new FileService())
-                .AddTransient(sp => new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()))
-                .BuildServiceProvider(),
+            sp.GetRequiredService<IEditorSessionFactory>(),
             new FileService(),
             workspace);
 
@@ -378,9 +378,9 @@ public sealed class EditorLanguageInputRoutingTests
         var services = new ServiceCollection()
             .AddSingleton(workspace)
             .AddSingleton<IFileService>(new FileService())
-            .AddTransient(sp => new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()))
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .BuildServiceProvider();
-        var tabs = new EditorTabViewModel(services, services.GetRequiredService<IFileService>(), workspace);
+        var tabs = new EditorTabViewModel(services.GetRequiredService<IEditorSessionFactory>(), services.GetRequiredService<IFileService>(), workspace);
 
         _ = new EditorLanguageInputViewModel(
             new LanguageCompletionService(workspace, session, bridge, NullLogger<LanguageCompletionService>.Instance),

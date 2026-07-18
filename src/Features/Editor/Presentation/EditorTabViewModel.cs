@@ -7,14 +7,11 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using Zaide.App.Composition;
-using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
-using Zaide.Features.Language.Contracts;
 
 namespace Zaide.Features.Editor.Presentation;
 
@@ -23,7 +20,7 @@ namespace Zaide.Features.Editor.Presentation;
 /// switching tabs, and closing tabs.
 ///
 /// Registered as Singleton — one tab manager for the app lifetime.
-/// Individual EditorViewModels are resolved as Transient via IServiceProvider.
+/// Individual EditorViewModels are created via IEditorSessionFactory.
 /// </summary>
 public class EditorTabViewModel : ReactiveObject
 {
@@ -32,7 +29,7 @@ public class EditorTabViewModel : ReactiveObject
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 
-    private readonly IServiceProvider _services;
+    private readonly IEditorSessionFactory _editorSessionFactory;
     private readonly IFileService _fileService;
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private EditorViewModel? _activeTab;
@@ -170,10 +167,10 @@ public class EditorTabViewModel : ReactiveObject
     /// </summary>
     public ReactiveCommand<Unit, Unit> TabCloseAllCommand { get; }
 
-    public EditorTabViewModel(IServiceProvider services, IFileService fileService, global::Zaide.Features.Workspace.Domain.Workspace workspace,
+    public EditorTabViewModel(IEditorSessionFactory editorSessionFactory, IFileService fileService, global::Zaide.Features.Workspace.Domain.Workspace workspace,
         ICommandRegistry? commandRegistry = null)
     {
-        _services = services;
+        _editorSessionFactory = editorSessionFactory;
         _fileService = fileService;
         _workspace = workspace;
 
@@ -442,11 +439,7 @@ public class EditorTabViewModel : ReactiveObject
 
         // Open document via Workspace
         var document = _workspace.OpenDocument(normalizedPath, content);
-        var tab = new EditorViewModel(
-            document,
-            _services.GetRequiredService<IFileService>(),
-            _services.GetService<ISettingsService>(),
-            _services.GetService<ILanguageFormattingService>());
+        var tab = _editorSessionFactory.Create(document);
 
         OpenTabs.Add(tab);
         ActiveTab = tab;

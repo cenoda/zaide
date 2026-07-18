@@ -66,6 +66,7 @@ class Program
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<StatusBarViewModel>();
         services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
         services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
@@ -169,13 +170,6 @@ class Program
             client.Timeout = TimeSpan.FromSeconds(120);
             return client;
         });
-
-        services.AddTransient<EditorViewModel>(sp =>
-            new EditorViewModel(
-                new Features.Editor.Domain.Document(""),
-                sp.GetRequiredService<IFileService>(),
-                sp.GetService<ISettingsService>(),
-                sp.GetService<ILanguageFormattingService>()));
     }
 
     public static AppBuilder BuildAvaloniaApp()

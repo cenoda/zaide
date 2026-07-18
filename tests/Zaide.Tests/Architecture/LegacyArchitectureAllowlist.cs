@@ -65,7 +65,6 @@ public static class LegacyArchitectureAllowlist
     public static readonly IReadOnlyList<string> ApprovedFindingIds = new[]
     {
         "R61-AL-LOC-App",
-        "R61-AL-LOC-EditorTabViewModel",
         "R61-AL-LOC-Program",
         "R61-AL-LOC-SourceControlDiffTabService",
         "R61-AL-NS-ITerminalSessionFactory",
@@ -203,19 +202,6 @@ public static class LegacyArchitectureAllowlist
                 rationale:
                 "Non-composition application service stores IServiceProvider and resolves " +
                 "editor dependencies per diff tab.",
-                removalBoundary: "Refactor 6.3"),
-
-            new(
-                findingId: "R61-AL-LOC-EditorTabViewModel",
-                category: ArchitectureRatchet.CategoryLocatorSite,
-                matchKey: ArchitectureRatchet.BuildLocatorMatchKey(
-                    "src/Features/Editor/Presentation/EditorTabViewModel.cs"),
-                m0FindingId: "R61-V08",
-                owner: "Editor",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "ViewModel stores IServiceProvider and resolves editor dependencies when " +
-                "opening a tab. No new View/ViewModel locator site is permitted.",
                 removalBoundary: "Refactor 6.3"),
 
             // RootFolderAdmission: empty by design. Deny-by-default for tracked

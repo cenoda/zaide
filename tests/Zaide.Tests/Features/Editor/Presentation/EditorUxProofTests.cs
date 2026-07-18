@@ -358,14 +358,14 @@ public sealed class EditorUxProofTests
     {
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
-            .AddTransient<EditorViewModel>()
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();
 
         var fileTreeViewModel = new FileTreeViewModel(
             new FileTreeService(), CurrentThreadScheduler.Instance, registry);
         var editorTabs = new EditorTabViewModel(
-            sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
+            sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();

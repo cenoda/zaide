@@ -479,8 +479,10 @@ M3–M5 may run in any order after M0 once M1 is not required; **M2 requires M1*
 
 | | |
 |--|--|
+| **Status** | **Complete (2026-07-18)** — production + architecture bookkeeping verified |
 | **Design** | § D1 + § D0 |
-| **Completion condition** | (1) `EditorTabViewModel` has zero `IServiceProvider` / `GetRequiredService` / `GetService` usages; (2) FindingId `R61-AL-LOC-EditorTabViewModel` removed; (3) inventory shows **3** locator files max (Program, App, DiffTab until M2); (4) public baseline net **0** (`IEditorSessionFactory` added, `FileService` removed); (5) `FileService` is `internal`; (6) shared sequential gate green |
+| **Completion condition** | (1) `EditorTabViewModel` has zero `IServiceProvider` / `GetRequiredService` / `GetService` usages; (2) FindingId `R61-AL-LOC-EditorTabViewModel` removed; (3) inventory shows **3** locator files max (Program, App, DiffTab until M2); (4) public baseline net **0** (`IEditorSessionFactory` added, `FileService` removed); (5) `FileService` is `internal`; (6) shared sequential gate green — **all met** |
+| **Live counts after M1** | 395 total / 348 public / 47 internal; FindingIds **8**; locator sites **3** |
 
 **Focused tests:**
 
@@ -1425,4 +1427,4 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-*Last updated: 2026-07-18 (M0 accepted GO; M1 not authorized until separate start)*
+*Last updated: 2026-07-18 (M1 complete locally — editor session factory + architecture gates green; commit pending unless already landed)*

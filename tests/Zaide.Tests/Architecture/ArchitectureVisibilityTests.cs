@@ -214,14 +214,14 @@ public sealed class ArchitectureVisibilityTests
     public void M3LegacyAllowlist_IsUnchangedByM4()
     {
         // Hard boundary: M4 must not alter legacy allowlist entries to pass.
-        Assert.Equal(9, LegacyArchitectureAllowlist.Entries.Count);
-        Assert.Equal(9, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
+        Assert.Equal(8, LegacyArchitectureAllowlist.Entries.Count);
+        Assert.Equal(8, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
         Assert.Equal(
             5,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(
-            4,
+            3,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryLocatorSite).Count);
         Assert.Empty(

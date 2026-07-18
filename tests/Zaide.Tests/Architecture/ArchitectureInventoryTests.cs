@@ -53,8 +53,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 2, 1), byNamespace["Zaide.Features.Workspace.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
         Assert.Equal((4, 4, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
-        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Editor.Infrastructure"]);
-        Assert.Equal((14, 12, 2), byNamespace["Zaide.Features.Editor.Presentation"]);
+        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Editor.Infrastructure"]);
+        Assert.Equal((16, 13, 3), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
         Assert.Equal((13, 13, 0), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
@@ -196,17 +196,13 @@ public sealed class ArchitectureInventoryTests
             inventory.ProviderEvidence,
             e => e.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"
                 && e.Kind == ProviderEvidenceEntry.KindIServiceProvider);
-        Assert.Contains(
-            inventory.ProviderEvidence,
-            e => e.RelativePath == "src/Features/Editor/Presentation/EditorTabViewModel.cs"
-                && e.Kind == ProviderEvidenceEntry.KindGetService);
 
         var resolutionCalls = inventory.ProviderEvidence.Count(e =>
             e.Kind is ProviderEvidenceEntry.KindGetRequiredService
                 or ProviderEvidenceEntry.KindGetService);
         Assert.True(
-            resolutionCalls >= 44,
-            $"Expected at least the M0 44 resolution call expressions; found {resolutionCalls}.");
+            resolutionCalls >= 38,
+            $"Expected at least 38 resolution call expressions (M1 floor); found {resolutionCalls}.");
     }
 
     [Fact]

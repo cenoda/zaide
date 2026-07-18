@@ -135,11 +135,13 @@ public sealed class DebugToggleBreakpointCommandTests
     private static Harness CreateHarness(ICommandRegistry? registry = null)
     {
         var tab = new EditorViewModel(new Document("/tmp/workspace/Program.cs", "class App {}"), new FileService());
+        var sp = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+            .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
+            .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
+            .BuildServiceProvider();
         var editorTabs = new EditorTabViewModel(
-            new Microsoft.Extensions.DependencyInjection.ServiceCollection()
-                .AddSingleton<IFileService>(new FileService())
-                .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
-                .BuildServiceProvider(),
+            sp.GetRequiredService<IEditorSessionFactory>(),
             new FileService(),
             new global::Zaide.Features.Workspace.Domain.Workspace());
         editorTabs.OpenTabs.Add(tab);

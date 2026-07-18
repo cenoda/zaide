@@ -125,10 +125,10 @@ public sealed class ProjectSystemStatusBarViewModelProjectionTests
         var fileTree = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         using var sp = services.BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalVm = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();

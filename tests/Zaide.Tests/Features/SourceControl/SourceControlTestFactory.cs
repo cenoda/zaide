@@ -26,12 +26,13 @@ internal static class SourceControlTestFactory
         var services = new ServiceCollection();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(diffService ?? new FileDiffService());
         services.AddSingleton<IGitRepositoryService>(gitRepository);
         var sp = services.BuildServiceProvider();
 
         var editorTabs = new EditorTabViewModel(
-            sp,
+            sp.GetRequiredService<IEditorSessionFactory>(),
             sp.GetRequiredService<IFileService>(),
             workspace);
         var diffTabs = new SourceControlDiffTabService(

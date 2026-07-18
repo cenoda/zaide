@@ -33,9 +33,10 @@ public sealed class TabCommandRegistrationTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, mockFs, ws, registry);
+        return new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws, registry);
     }
 
     // ── Metadata ─────────────────────────────────────────────────────────

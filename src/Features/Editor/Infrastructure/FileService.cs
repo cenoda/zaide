@@ -7,7 +7,7 @@ namespace Zaide.Features.Editor.Infrastructure;
 /// <summary>
 /// Production implementation — delegates to System.IO.File async methods.
 /// </summary>
-public class FileService : IFileService
+internal class FileService : IFileService
 {
     public Task<string> ReadAllTextAsync(string path)
         => File.ReadAllTextAsync(path);

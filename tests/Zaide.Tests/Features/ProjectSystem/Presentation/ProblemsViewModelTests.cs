@@ -86,8 +86,9 @@ public sealed class ProblemsViewModelTests
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
+            services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
             _sp = services.BuildServiceProvider();
-            EditorTabs = new EditorTabViewModel(_sp, _sp.GetRequiredService<IFileService>(), Workspace);
+            EditorTabs = new EditorTabViewModel(_sp.GetRequiredService<IEditorSessionFactory>(), _sp.GetRequiredService<IFileService>(), Workspace);
             Problems = new ProblemsViewModel(Diagnostics, BuildDiagnostics, EditorTabs, Workspace)
             {
                 Scheduler = ImmediateScheduler.Instance,

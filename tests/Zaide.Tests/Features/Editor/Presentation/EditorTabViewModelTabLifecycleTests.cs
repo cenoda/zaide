@@ -44,11 +44,11 @@ public sealed class EditorTabViewModelTabLifecycleTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
         return new EditorTabViewModel(
-            sp,
+            sp.GetRequiredService<IEditorSessionFactory>(),
             sp.GetRequiredService<IFileService>(),
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
     }
@@ -63,9 +63,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var mockFs = new MockFileService();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
         return (vm, ws);
     }
 
@@ -301,9 +302,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         // User chooses Save
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
@@ -372,9 +374,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         // User chooses Save
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
@@ -471,9 +474,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         // User chooses Save for dirty tabs
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
@@ -612,9 +616,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 
@@ -649,9 +654,10 @@ public sealed class EditorTabViewModelTabLifecycleTests
         var ws = new global::Zaide.Features.Workspace.Domain.Workspace();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        var vm = new EditorTabViewModel(sp, mockFs, ws);
+        var vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         vm.ConfirmClose.RegisterHandler(ctx => ctx.SetOutput(true));
 

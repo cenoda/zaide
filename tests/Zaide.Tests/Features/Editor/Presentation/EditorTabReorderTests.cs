@@ -38,9 +38,10 @@ public sealed class EditorTabReorderTests
         var mockFs = new MockFileService();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, mockFs, ws);
+        return new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
     }
 
     /// <summary>
@@ -383,9 +384,10 @@ public sealed class EditorTabReorderTests
         var mockFs = new MockFileService();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(mockFs);
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton(ws);
         var sp = services.BuildServiceProvider();
-        vm = new EditorTabViewModel(sp, mockFs, ws);
+        vm = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), mockFs, ws);
 
         var docA = ws.OpenDocument("/tmp/a.cs", "a");
         var tabA = new EditorViewModel(docA, mockFs);

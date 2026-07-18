@@ -93,7 +93,6 @@ Zaide.Features.Editor.Domain.Document
 Zaide.Features.Editor.Domain.SearchEngine
 Zaide.Features.Editor.Domain.SearchMatch
 Zaide.Features.Editor.Domain.SupportedFileTypes
-Zaide.Features.Editor.Infrastructure.FileService
 Zaide.Features.Editor.Presentation.EditorCompletionPopup
 Zaide.Features.Editor.Presentation.EditorHoverPopup
 Zaide.Features.Editor.Presentation.EditorLanguageInputViewModel
@@ -104,6 +103,7 @@ Zaide.Features.Editor.Presentation.EditorTabViewModel
 Zaide.Features.Editor.Presentation.EditorView
 Zaide.Features.Editor.Presentation.EditorViewModel
 Zaide.Features.Editor.Presentation.FoldingOperations
+Zaide.Features.Editor.Presentation.IEditorSessionFactory
 Zaide.Features.Editor.Presentation.SearchBar
 Zaide.Features.Editor.Presentation.UnsavedDialog
 Zaide.Features.Language.Application.LanguageCommandAvailability

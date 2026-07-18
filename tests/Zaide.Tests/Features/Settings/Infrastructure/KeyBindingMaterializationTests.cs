@@ -84,12 +84,12 @@ public sealed class KeyBindingMaterializationTests
     {
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new global::Zaide.Tests.Features.Editor.Infrastructure.MockFileService())
-            .AddTransient<EditorViewModel>()
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>()
             .BuildServiceProvider();
 
         _ = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance, _registry);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         _ = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,

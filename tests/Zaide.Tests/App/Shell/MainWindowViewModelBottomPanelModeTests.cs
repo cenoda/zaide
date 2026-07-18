@@ -76,11 +76,11 @@ public sealed class MainWindowViewModelBottomPanelModeTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Workspace>();
         var sp = services.BuildServiceProvider();
         var workspace = sp.GetRequiredService<Workspace>();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         var terminalService = new Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Mock<ITerminalSessionFactory>();

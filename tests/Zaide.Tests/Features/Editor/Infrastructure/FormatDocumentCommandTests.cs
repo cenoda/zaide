@@ -42,9 +42,9 @@ public sealed class FormatDocumentCommandTests
         var services = new ServiceCollection()
             .AddSingleton(workspace)
             .AddSingleton<IFileService>(new FileService())
-            .AddTransient(sp => new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()))
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .BuildServiceProvider();
-        var tabs = new EditorTabViewModel(services, services.GetRequiredService<IFileService>(), workspace);
+        var tabs = new EditorTabViewModel(services.GetRequiredService<IEditorSessionFactory>(), services.GetRequiredService<IFileService>(), workspace);
 
         _ = new EditorLanguageInputViewModel(
             new LanguageCompletionService(workspace, sessionService, bridge, NullLogger<LanguageCompletionService>.Instance),

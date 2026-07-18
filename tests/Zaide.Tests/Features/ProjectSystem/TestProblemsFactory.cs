@@ -28,8 +28,9 @@ internal static class TestProblemsFactory
         var services = new ServiceCollection();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService>(new global::Zaide.Features.Editor.Infrastructure.FileService());
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         var sp = services.BuildServiceProvider();
-        var tabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var tabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         return Create(workspace, tabs);
     }
 

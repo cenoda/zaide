@@ -73,13 +73,14 @@ public sealed class ProblemsNavigationProjectionTests
         var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService>(new FileService());
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         await using var sp = services.BuildServiceProvider();
 
         var content = "namespace X { class C {} }";
         var path = Path.Combine(TempRoot, "open.cs");
         await File.WriteAllTextAsync(path, content);
 
-        var tabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var tabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         Assert.True(await tabs.OpenFileCommand.Execute(path).FirstAsync());
         Assert.NotNull(tabs.ActiveTab);
 
@@ -123,13 +124,14 @@ public sealed class ProblemsNavigationProjectionTests
         var workspace = new global::Zaide.Features.Workspace.Domain.Workspace();
         services.AddSingleton(workspace);
         services.AddSingleton<IFileService>(new FileService());
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         await using var sp = services.BuildServiceProvider();
 
         var path = Path.Combine(TempRoot, "mutate.cs");
         var original = "ABCDEFGH";
         await File.WriteAllTextAsync(path, original);
 
-        var tabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var tabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         Assert.True(await tabs.OpenFileCommand.Execute(path).FirstAsync());
 
         var diagnostics = new MutableDiagnosticsService();

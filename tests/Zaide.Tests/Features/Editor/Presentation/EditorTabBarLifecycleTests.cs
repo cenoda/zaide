@@ -35,10 +35,10 @@ public class EditorTabBarLifecycleTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
-        return new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
+        return new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
     }
 
     [Fact]

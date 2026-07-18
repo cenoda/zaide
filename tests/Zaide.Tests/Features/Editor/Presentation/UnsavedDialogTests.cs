@@ -219,11 +219,11 @@ public sealed class UnsavedDialogTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
         return new EditorTabViewModel(
-            sp,
+            sp.GetRequiredService<IEditorSessionFactory>(),
             sp.GetRequiredService<IFileService>(),
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
     }

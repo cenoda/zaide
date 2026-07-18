@@ -185,11 +185,11 @@ public sealed class SettingsUiTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         using var provider = services.BuildServiceProvider();
         var fileTree = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(provider, provider.GetRequiredService<IFileService>(), provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
+        var editorTabs = new EditorTabViewModel(provider.GetRequiredService<IEditorSessionFactory>(), provider.GetRequiredService<IFileService>(), provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
         var terminalService = new Mock<ITerminalService>();
         var terminalVm = new TerminalViewModel(terminalService.Object, action => action());
         var terminalFactory = new Mock<ITerminalSessionFactory>();

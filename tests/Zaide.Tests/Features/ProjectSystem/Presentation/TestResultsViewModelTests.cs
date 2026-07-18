@@ -169,10 +169,10 @@ public sealed class TestResultsViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace());
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         var sp = services.BuildServiceProvider();
         var workspace = sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         workflow ??= TestProjectWorkflowFactory.Create();
         var vm = new TestResultsViewModel(service, editorTabs, workflow);
         vm.Scheduler = CurrentThreadScheduler.Instance;
@@ -183,12 +183,12 @@ public sealed class TestResultsViewModelTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
-        services.AddTransient<EditorViewModel>();
+        services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<global::Zaide.Features.Workspace.Domain.Workspace>();
         var sp = services.BuildServiceProvider();
         var workspace = sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var fileTree = new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance);
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), workspace);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), workspace);
         var terminalService = new Moq.Mock<ITerminalService>();
         var terminalViewModel = new TerminalViewModel(terminalService.Object, a => a());
         var factory = new Moq.Mock<ITerminalSessionFactory>();

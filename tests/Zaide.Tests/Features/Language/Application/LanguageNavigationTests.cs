@@ -182,10 +182,9 @@ public sealed class LanguageNavigationTests
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
-            services.AddTransient(sp =>
-                new EditorViewModel(new Document(""), sp.GetRequiredService<IFileService>()));
+            services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
             _sp = services.BuildServiceProvider();
-            Tabs = new EditorTabViewModel(_sp, _sp.GetRequiredService<IFileService>(), Workspace);
+            Tabs = new EditorTabViewModel(_sp.GetRequiredService<IEditorSessionFactory>(), _sp.GetRequiredService<IFileService>(), Workspace);
 
             Service = new LanguageNavigationService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageNavigationService>.Instance);

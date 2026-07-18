@@ -31,9 +31,10 @@ public sealed class EditorBreakpointRegressionTests
         var registry = CommandRegistryFactory.Create();
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
         breakpointVm.Dispose();
@@ -49,9 +50,10 @@ public sealed class EditorBreakpointRegressionTests
         var registry = CommandRegistryFactory.Create();
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
 
@@ -77,9 +79,10 @@ public sealed class EditorBreakpointRegressionTests
         var search = new EditorSearchViewModel(registry);
         var sp = new ServiceCollection()
             .AddSingleton<IFileService>(new FileService())
+            .AddSingleton<IEditorSessionFactory, EditorSessionFactory>()
             .AddSingleton(new global::Zaide.Features.Workspace.Domain.Workspace())
             .BuildServiceProvider();
-        var editorTabs = new EditorTabViewModel(sp, sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
+        var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(), registry);
         var breakpointVm = TestEditorBreakpointFactory.Create(editorTabs, registry);
         breakpointVm.Activate();
 
