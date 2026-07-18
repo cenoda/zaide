@@ -15,8 +15,10 @@ implementation record under [`v2/`](v2/). The
 [Roadmap V3](../roadmap/V3.md) implementation order is accepted. No V3 phase
 plan exists and Phase 14 implementation is not active. Refactor 6.1 is closed,
 and Refactor 6.2 M1–M12 is accepted closed; optional M13 root admissions are
-declined. Refactor 6.3 M0 is the next eligible planning gate. Production work
-still requires the independent refactor's live-code-verified M0 acceptance.
+declined. Refactor 6.3 M0 is **accepted** at
+[`../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md).
+Production work still requires a separate authorization for each implementation
+milestone; **M1** is the next eligible slice and is not started.
 
 ## Archive Policy
 
