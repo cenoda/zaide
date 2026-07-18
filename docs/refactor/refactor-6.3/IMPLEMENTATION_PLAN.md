@@ -3,8 +3,14 @@
 ## Status and authorization
 
 **M0 acceptance status:** **GO — accepted (2026-07-18).** Human accepted the
-eighth-revision planning gate. This document may be committed. M0 authorizes
-**no** production implementation; **M1** requires a separate explicit start.
+eighth-revision planning gate.
+
+**Progress (truth-sync):** **M1 complete** at `e590a79`
+(`refactor-6.3: M1 editor session factory`). **M2 complete** at `d9799ad`
+(`refactor-6.3: M2 editor read-only tab gateway`); M2 verification is green
+(build, Architecture 21, full suite, `git diff --check`). **M3** (terminal
+service factory) is the next eligible milestone and still requires a separate
+explicit start — production implementation of M3 has **not** started.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -479,7 +485,7 @@ M3–M5 may run in any order after M0 once M1 is not required; **M2 requires M1*
 
 | | |
 |--|--|
-| **Status** | **Complete (2026-07-18)** — production + architecture bookkeeping verified |
+| **Status** | **Complete** — commit `e590a79` (`refactor-6.3: M1 editor session factory`) |
 | **Design** | § D1 + § D0 |
 | **Completion condition** | (1) `EditorTabViewModel` has zero `IServiceProvider` / `GetRequiredService` / `GetService` usages; (2) FindingId `R61-AL-LOC-EditorTabViewModel` removed; (3) inventory shows **3** locator files max (Program, App, DiffTab until M2); (4) public baseline net **0** (`IEditorSessionFactory` added, `FileService` removed); (5) `FileService` is `internal`; (6) shared sequential gate green — **all met** |
 | **Live counts after M1** | 395 total / 348 public / 47 internal; FindingIds **8**; locator sites **3** |
@@ -506,10 +512,10 @@ dirty UX unchanged.
 
 | | |
 |--|--|
-| **Status** | **Complete (2026-07-18)** — production + architecture bookkeeping verified |
+| **Status** | **Complete** — commit `d9799ad` (`refactor-6.3: M2 editor read-only tab gateway`); verification green |
 | **Design** | § D2 + § D0; requires M1 complete |
-| **Completion condition** | (1) `SourceControlDiffTabService` has no `IServiceProvider` and no `using Zaide.Features.Editor.Presentation`; (2) both V07 FindingIds removed; (3) inventory special-case for that path removed; (4) public baseline net **0** (+`IEditorReadOnlyTabService`, +`EditorReadOnlyTabRequest`, −`GitRepositoryService`, −`FileDiffService`); (5) both offset types `internal`; (6) shared gate green — **all met** |
-| **Live counts after M2** | 398 total / 348 public / 50 internal; FindingIds **6**; locator sites **2** (Program, App) |
+| **Completion condition** | (1) `SourceControlDiffTabService` has no `IServiceProvider` and no `using Zaide.Features.Editor.Presentation`; (2) both V07 FindingIds removed; (3) inventory special-case for that path removed; (4) public baseline net **0** (+`IEditorReadOnlyTabService`, +`EditorReadOnlyTabRequest`, −`GitRepositoryService`, −`FileDiffService`); (5) both offset types `internal`; (6) shared gate green — **all met** (re-verified on closeout) |
+| **Live counts after M2** | 398 total / 348 public / 50 internal; FindingIds **6**; locator sites **2** (Program, App); production C# **360** / Features **338** |
 
 **Focused tests:**
 
@@ -533,6 +539,7 @@ diff tab → confirm read-only diff content → refresh after stage if applicabl
 
 | | |
 |--|--|
+| **Status** | **Not started** — next eligible milestone; requires separate explicit start |
 | **Design** | § D3 + § D0 |
 | **Completion condition** | (1) `ITerminalSessionFactory` / `TerminalSessionFactory` deleted; (2) both Terminal NS FindingIds removed; (3) Contracts has no `using` of Terminal.Presentation; (4) public `ITerminalServiceFactory` + public `TerminalHost` ctor; `LinuxTerminalServiceFactory` `internal`; (5) public baseline **net −1**; (6) shared gate green |
 
@@ -1421,12 +1428,13 @@ dotnet test Zaide.slnx --no-build
 
 ---
 
-## Exact next step after M0 acceptance
+## Exact next step
 
-1. Human marks M0 accepted.
-2. Authorize **M1 only** (§ D1).
-3. Do not start M2+ until M1 completion conditions are met and committed.
+1. **M1** complete at `e590a79`. **M2** complete at `d9799ad` (verification green).
+2. Authorize **M3 only** (§ D3 — terminal service factory).
+3. Do not start M4+ until M3 completion conditions are met and committed.
+4. M3 production implementation has **not** started and still requires an explicit start.
 
 ---
 
-*Last updated: 2026-07-18 (M1 complete locally — editor session factory + architecture gates green; commit pending unless already landed)*
+*Last updated: 2026-07-18 (M1 `e590a79` + M2 `d9799ad` complete and verified; M3 next eligible, not started)*

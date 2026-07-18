@@ -16,9 +16,11 @@ implementation record under [`v2/`](v2/). The
 plan exists and Phase 14 implementation is not active. Refactor 6.1 is closed,
 and Refactor 6.2 M1–M12 is accepted closed; optional M13 root admissions are
 declined. Refactor 6.3 M0 is **accepted** at
-[`../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md).
-Production work still requires a separate authorization for each implementation
-milestone; **M1** is the next eligible slice and is not started.
+[`../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
+**M1** is complete at `e590a79` and **M2** is complete at `d9799ad` with
+verification green. Production work still requires a separate authorization for
+each implementation milestone; **M3** is the next eligible slice and is not
+started.
 
 ## Archive Policy
 

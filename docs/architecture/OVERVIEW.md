@@ -26,8 +26,10 @@ mechanical migration is complete** on `master` at `72102da` (feature-first
 tree under `App`, `Features`, and `UI/DesignSystem`). Optional M13 root
 admissions are **declined**. Refactor 6.3 M0 is **accepted** at
 [`docs/refactor/refactor-6.3/IMPLEMENTATION_PLAN.md`](../refactor/refactor-6.3/IMPLEMENTATION_PLAN.md);
-implementation milestones still need per-milestone starts (M1 next, not active).
-Refactors 7 / 8 have no production authorization until their own M0 acceptances.
+**M1** complete at `e590a79` and **M2** complete at `d9799ad` (verification
+green). **M3** is the next eligible milestone and still requires an explicit
+start; M3 production implementation is not active. Refactors 7 / 8 have no
+production authorization until their own M0 acceptances.
 Non-C# assets remain outside the root-admission ratchet. No V3 production
 feature implementation is active.
 
@@ -334,4 +336,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-18 (Refactor 6.3 M0 accepted; M1 not started)*
+*Last updated: 2026-07-18 (Refactor 6.3 M1 `e590a79` + M2 `d9799ad` complete; M3 next eligible, not started)*

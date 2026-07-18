@@ -22,8 +22,10 @@ Completed plans are archived under [`docs/phases/`](docs/phases/).
 [Roadmap V3 — AI-Native Orchestration](docs/roadmap/V3.md) is now a
 **user-accepted implementation-order roadmap**. Refactor 6.1 is closed and
 Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
-Optional M13 root admissions are declined; Refactor 6.3 M0 is the next eligible
-planning gate. No V3 production implementation is active yet.
+Optional M13 root admissions are declined. Refactor 6.3 M0 is accepted; **M1**
+is complete at `e590a79` and **M2** is complete at `d9799ad` with verification
+green. **M3** is the next eligible milestone and still requires an explicit
+start; M3 production implementation has not started.
 
 ## Philosophy
 
@@ -203,8 +205,9 @@ while preserving the completed V2 IDE core. Its direction is:
 - begin with bounded architecture refactors (`6.1`–`6.3`, then Refactors 7
   and 8) before Phase 14.
 
-The implementation order is accepted, and Refactor 6.1 M0 planning is the next
-authorized task. Phase 14 and every preceding refactor still require their own
+The implementation order is accepted. Refactor 6.3 **M3** (terminal service
+factory) is the next eligible milestone and still requires an explicit start.
+Phase 14 and every preceding refactor still require their own
 live-code-verified M0 acceptance before production implementation.
 
 ## Why "Zaide"
