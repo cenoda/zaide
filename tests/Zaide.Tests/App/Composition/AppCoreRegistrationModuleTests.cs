@@ -32,10 +32,8 @@ public sealed class AppCoreRegistrationModuleTests
         typeof(CommandPaletteViewModel).FullName!,
     };
 
-    private static readonly string[] M6cPlusDirectMarkers =
+    private static readonly string[] M6dPlusDirectMarkers =
     {
-        "AddSingleton<IFileTreeService, FileTreeService>()",
-        "AddSingleton<FileTreeViewModel>()",
         "AddSingleton<IFileService, FileService>()",
         "AddSingleton<IEditorSessionFactory, EditorSessionFactory>()",
         "AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>()",
@@ -189,18 +187,18 @@ public sealed class AppCoreRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6cPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6dPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6cPlusDirectMarkers)
+        foreach (var marker in M6dPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6b Settings module is present; M6c–M6k modules do not exist yet.
+        // M6b Settings and M6c Workspace modules are present; M6d–M6k do not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideWorkspace", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideEditor", programSource);
         Assert.DoesNotContain("AddZaideTerminal", programSource);
         Assert.DoesNotContain("AddZaideAgents", programSource);

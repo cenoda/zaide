@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Concurrency;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
@@ -11,23 +10,23 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
-using Zaide.Features.Settings.Contracts;
-using Zaide.Features.Settings.Infrastructure;
+using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.Workspace.Infrastructure;
+using Zaide.Features.Workspace.Presentation;
 
 namespace Zaide.Tests.App.Composition;
 
 /// <summary>
-/// Refactor 6.3 M6b: proves Settings DI membership moved into
-/// <see cref="SettingsServiceCollectionExtensions.AddZaideSettings"/> without
-/// changing service types, lifetimes, secret-path factory, or total registration
-/// membership.
+/// Refactor 6.3 M6c: proves Workspace DI membership moved into
+/// <see cref="WorkspaceServiceCollectionExtensions.AddZaideWorkspace"/> without
+/// changing service types, lifetimes, or total registration membership.
 /// </summary>
-public sealed class SettingsRegistrationModuleTests
+public sealed class WorkspaceRegistrationModuleTests
 {
-    private static readonly string[] SettingsServiceTypeNames =
+    private static readonly string[] WorkspaceServiceTypeNames =
     {
-        typeof(ISettingsService).FullName!,
-        typeof(ISecretStore).FullName!,
+        typeof(IFileTreeService).FullName!,
+        typeof(FileTreeViewModel).FullName!,
     };
 
     private static readonly string[] M6dPlusDirectMarkers =
@@ -46,7 +45,7 @@ public sealed class SettingsRegistrationModuleTests
         "AddSingleton<IDebugSessionService, DebugSessionService>()",
     };
 
-    static SettingsRegistrationModuleTests()
+    static WorkspaceRegistrationModuleTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
@@ -83,10 +82,10 @@ public sealed class SettingsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideSettings_RegistersExactlyTwoPlannedServices()
+    public void AddZaideWorkspace_RegistersExactlyTwoPlannedServices()
     {
         var services = new ServiceCollection();
-        services.AddZaideSettings();
+        services.AddZaideWorkspace();
 
         Assert.Equal(2, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
@@ -95,61 +94,38 @@ public sealed class SettingsRegistrationModuleTests
             .Select(d => d.ServiceType.FullName)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
-        var expected = SettingsServiceTypeNames
+        var expected = WorkspaceServiceTypeNames
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
         Assert.Equal(expected, serviceTypes);
 
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(ISettingsService)
-                && d.ImplementationType == typeof(SettingsService));
+            d => d.ServiceType == typeof(IFileTreeService)
+                && d.ImplementationType == typeof(FileTreeService));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(ISecretStore)
-                && d.ImplementationFactory is not null
-                && d.ImplementationType is null);
+            d => d.ServiceType == typeof(FileTreeViewModel)
+                && d.ImplementationType == typeof(FileTreeViewModel));
     }
 
     [Fact]
-    public void AddZaideSettings_SecretStoreFactory_ResolvesFileSecretStoreAtProductionPath()
-    {
-        var services = new ServiceCollection();
-        services.AddZaideSettings();
-
-        using var provider = services.BuildServiceProvider();
-        var store1 = provider.GetRequiredService<ISecretStore>();
-        var store2 = provider.GetRequiredService<ISecretStore>();
-
-        Assert.Same(store1, store2);
-        var fileStore = Assert.IsType<FileSecretStore>(store1);
-
-        var pathField = typeof(FileSecretStore).GetField(
-            "_secretsPath",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(pathField);
-        var actualPath = Assert.IsType<string>(pathField!.GetValue(fileStore));
-        Assert.Equal(SettingsPathResolver.GetSecretsPath(), actualPath);
-    }
-
-    [Fact]
-    public void ProgramConfigureServices_ResolvesSettingsServicesAsSingletons()
+    public void ProgramConfigureServices_ResolvesWorkspaceServicesAsSingletons()
     {
         using var provider = BuildProductionProvider();
 
-        var settings1 = provider.GetRequiredService<ISettingsService>();
-        var settings2 = provider.GetRequiredService<ISettingsService>();
-        Assert.Same(settings1, settings2);
-        Assert.IsType<SettingsService>(settings1);
+        var fileTree1 = provider.GetRequiredService<IFileTreeService>();
+        var fileTree2 = provider.GetRequiredService<IFileTreeService>();
+        Assert.Same(fileTree1, fileTree2);
+        Assert.IsType<FileTreeService>(fileTree1);
 
-        var secrets1 = provider.GetRequiredService<ISecretStore>();
-        var secrets2 = provider.GetRequiredService<ISecretStore>();
-        Assert.Same(secrets1, secrets2);
-        Assert.IsType<FileSecretStore>(secrets1);
+        var viewModel1 = provider.GetRequiredService<FileTreeViewModel>();
+        var viewModel2 = provider.GetRequiredService<FileTreeViewModel>();
+        Assert.Same(viewModel1, viewModel2);
     }
 
     [Fact]
-    public void ProgramSource_CallsAddZaideSettingsOnce_AndDoesNotDeclareSettingsRegistrations()
+    public void ProgramSource_CallsAddZaideWorkspaceOnce_AndDoesNotDeclareWorkspaceRegistrations()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
@@ -165,41 +141,35 @@ public sealed class SettingsRegistrationModuleTests
         Assert.True(workspaceIndex > settingsIndex);
 
         Assert.DoesNotContain(
-            "AddSingleton<ISettingsService, SettingsService>()",
+            "AddSingleton<IFileTreeService, FileTreeService>()",
             programSource);
-        Assert.DoesNotContain("AddSingleton<ISecretStore>", programSource);
-        Assert.DoesNotContain("FileSecretStore", programSource);
-        Assert.DoesNotContain("SettingsPathResolver", programSource);
+        Assert.DoesNotContain("AddSingleton<FileTreeViewModel>()", programSource);
 
-        // AddLogging remains in Program (not an M6b registration).
+        // AddLogging remains in Program (not an M6c registration).
         Assert.Contains("AddLogging(", programSource);
     }
 
     [Fact]
-    public void SettingsModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void WorkspaceModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
-            "src/App/Composition/Registration/SettingsServiceCollectionExtensions.cs");
+            "src/App/Composition/Registration/WorkspaceServiceCollectionExtensions.cs");
 
         Assert.Contains(
-            "internal static class SettingsServiceCollectionExtensions",
+            "internal static class WorkspaceServiceCollectionExtensions",
             moduleSource);
-        Assert.Contains("internal static IServiceCollection AddZaideSettings", moduleSource);
+        Assert.Contains("internal static IServiceCollection AddZaideWorkspace", moduleSource);
 
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<ISettingsService,\s*SettingsService>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<ISecretStore>"));
-        Assert.Contains(
-            "new FileSecretStore(SettingsPathResolver.GetSecretsPath())",
-            moduleSource);
+                @"AddSingleton<IFileTreeService,\s*FileTreeService>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<FileTreeViewModel>\(\)"));
 
         Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
 
-        // M10 reservation: panel factory is not registered in M6b.
-        Assert.DoesNotContain("ISettingsPanelFactory", moduleSource);
-        Assert.DoesNotContain("SettingsPanelFactory", moduleSource);
+        // Domain Workspace remains owned by AppCore (M6a), not this module.
+        Assert.DoesNotContain("AddSingleton<Workspace>()", moduleSource);
     }
 
     [Fact]
@@ -212,8 +182,7 @@ public sealed class SettingsRegistrationModuleTests
             Assert.Contains(marker, programSource);
         }
 
-        // M6c Workspace module is present; M6d–M6k modules do not exist yet.
-        Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
+        // M6d–M6k modules do not exist yet.
         Assert.DoesNotContain("AddZaideEditor", programSource);
         Assert.DoesNotContain("AddZaideTerminal", programSource);
         Assert.DoesNotContain("AddZaideAgents", programSource);

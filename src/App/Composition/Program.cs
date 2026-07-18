@@ -8,9 +8,6 @@ using System.Net.Http;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
-using Zaide.Features.Workspace.Contracts;
-using Zaide.Features.Workspace.Infrastructure;
-using Zaide.Features.Workspace.Presentation;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
@@ -55,6 +52,7 @@ class Program
     {
         services.AddZaideAppCore();
         services.AddZaideSettings();
+        services.AddZaideWorkspace();
 
         services.AddLogging(builder => builder.AddConsole());
         services.AddSingleton<IFileService, FileService>();
@@ -63,8 +61,6 @@ class Program
         services.AddSingleton<ITerminalServiceFactory, LinuxTerminalServiceFactory>();
         services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
-        services.AddSingleton<IFileTreeService, FileTreeService>();
-        services.AddSingleton<FileTreeViewModel>();
         services.AddSingleton<EditorSearchViewModel>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();

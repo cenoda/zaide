@@ -34,9 +34,18 @@ singletons (`ISettingsService` → `SettingsService`; `ISecretStore` factory →
 total top-level **398 → 399**; production C# **360 → 361**; App C# **21 → 22**.
 Automated verification green (build, focused DI+Architecture 53/53,
 Architecture 21/21, full suite 2215/2215, `git diff --check`);
-manual verification **not required**. **M6c** (Workspace registration module)
-is the next eligible slice and has **not** started; it requires separate
-explicit authorization. **M6d–M6k** remain unauthorized.
+manual verification **not required**. **M6c complete** (Workspace DI module;
+staged pending review/commit) — third completed M6 slice: internal
+`WorkspaceServiceCollectionExtensions.AddZaideWorkspace` owns the two
+Workspace/file-tree singletons (`IFileTreeService` → `FileTreeService`;
+`FileTreeViewModel` self-registration); `Program.ConfigureServices` calls
+`AddZaideWorkspace()` exactly once after `AddZaideSettings()`; Domain
+`Workspace` remains in AppCore (M6a); public baseline **346** unchanged;
+internal **53 → 54**; total top-level **399 → 400**; production C#
+**361 → 362**; App C# **22 → 23**. Automated verification green (build,
+focused DI+Architecture 58/58, Architecture 21/21, full suite 2220/2220,
+`git diff --check`); manual verification **not required**. **M6d–M6k**
+remain unauthorized.
 
 **Authorization boundary (M0 docs only):** the only files M0 may create or
 edit are:
@@ -741,7 +750,23 @@ verification **not required**. M6c–M6k registrations remain direct in
 | `IFileTreeService` → `FileTreeService` |
 | `FileTreeViewModel` |
 
-File: `…/WorkspaceServiceCollectionExtensions.cs`
+File: `src/App/Composition/Registration/WorkspaceServiceCollectionExtensions.cs`
+(`AddZaideWorkspace`). Domain `Workspace` stays in M6a AppCore.
+
+**Status:** **complete** (staged pending review/commit;
+`refactor-6.3: M6c Workspace DI module`). Production:
+`Program.ConfigureServices` calls `services.AddZaideWorkspace()` exactly once
+immediately after `AddZaideSettings()`; the two registrations live only in the
+internal module (both `AddSingleton`; `IFileTreeService` → `FileTreeService`;
+`FileTreeViewModel` self-registration). `AddLogging` remains in `Program`.
+Domain `Workspace` remains in `AddZaideAppCore` only. Public production types
+**346** (unchanged); internal **54** (+1 extension class); total top-level
+**400**; production C# files **362**; App C# files **23**. Tests:
+`WorkspaceRegistrationModuleTests` plus M6a/M6b ratchet advancement and
+existing composition/DI suite — automated verification green (build, focused
+58/58, Architecture 21/21, full suite 2220/2220, `git diff --check`); manual
+verification **not required**. M6d–M6k registrations remain direct in
+`Program` (no later M6 modules yet).
 
 #### M6d — Editor (6 — post-M1/M2; no `EditorViewModel` registration)
 
@@ -1500,14 +1525,17 @@ dotnet test Zaide.slnx --no-build
 
 1. **M1–M5 complete** as previously recorded. **M6a complete** at `c59ad7b`
    (AppCore DI registration module / `AddZaideAppCore`). **M6b complete** at
-   `43b8e85` (Settings DI registration module / `AddZaideSettings`).
-2. Authorize **M6c only** (§ M6c — Workspace registration module:
-   `WorkspaceServiceCollectionExtensions.cs` / `AddZaideWorkspace`) when ready.
+   `43b8e85` (Settings DI registration module / `AddZaideSettings`). **M6c
+   complete** (Workspace DI registration module / `AddZaideWorkspace`; staged
+   pending review/commit).
+2. After M6c commit/review closeout, authorize **M6d only** (§ M6d — Editor
+   registration module: `EditorServiceCollectionExtensions.cs` /
+   `AddZaideEditor`) when ready.
 3. Do not start M6d–M6k, M7+, Refactor 7/8, or Phase 14 without separate
-   authorization. Completing M6b does **not** authorize the rest of M6.
-4. M6c production implementation has **not** started and still requires an
+   authorization. Completing M6c does **not** authorize the rest of M6.
+4. M6d production implementation has **not** started and still requires an
    explicit separate authorization.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 complete; M6a complete at `c59ad7b`; M6b complete at `43b8e85` — automated verification green: focused 53/53, Architecture 21/21, full suite 2215/2215; manual verification not required; public 346 / internal 53 / total 399 / prod C# 361 / App C# 22; M6c next eligible, not started; M6d–M6k unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 complete; M6a complete at `c59ad7b`; M6b complete at `43b8e85`; M6c complete staged pending review — automated verification green: focused 58/58, Architecture 21/21, full suite 2220/2220; manual verification not required; public 346 / internal 54 / total 400 / prod C# 362 / App C# 23; M6d next eligible, not started; M6d–M6k unauthorized)*
