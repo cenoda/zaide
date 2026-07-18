@@ -67,6 +67,7 @@ class Program
         services.AddSingleton<StatusBarViewModel>();
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
+        services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
         services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
         services.AddSingleton<ITerminalHost, TerminalHost>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();

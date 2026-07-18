@@ -506,8 +506,10 @@ dirty UX unchanged.
 
 | | |
 |--|--|
+| **Status** | **Complete (2026-07-18)** — production + architecture bookkeeping verified |
 | **Design** | § D2 + § D0; requires M1 complete |
-| **Completion condition** | (1) `SourceControlDiffTabService` has no `IServiceProvider` and no `using Zaide.Features.Editor.Presentation`; (2) both V07 FindingIds removed; (3) inventory special-case for that path removed; (4) public baseline net **0** (+`IEditorReadOnlyTabService`, +`EditorReadOnlyTabRequest`, −`GitRepositoryService`, −`FileDiffService`); (5) both offset types `internal`; (6) shared gate green |
+| **Completion condition** | (1) `SourceControlDiffTabService` has no `IServiceProvider` and no `using Zaide.Features.Editor.Presentation`; (2) both V07 FindingIds removed; (3) inventory special-case for that path removed; (4) public baseline net **0** (+`IEditorReadOnlyTabService`, +`EditorReadOnlyTabRequest`, −`GitRepositoryService`, −`FileDiffService`); (5) both offset types `internal`; (6) shared gate green — **all met** |
+| **Live counts after M2** | 398 total / 348 public / 50 internal; FindingIds **6**; locator sites **2** (Program, App) |
 
 **Focused tests:**
 

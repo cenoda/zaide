@@ -66,10 +66,8 @@ public static class LegacyArchitectureAllowlist
     {
         "R61-AL-LOC-App",
         "R61-AL-LOC-Program",
-        "R61-AL-LOC-SourceControlDiffTabService",
         "R61-AL-NS-ITerminalSessionFactory",
         "R61-AL-NS-MentionParser",
-        "R61-AL-NS-SourceControlDiffTabService",
         "R61-AL-NS-SourceControlState",
         "R61-AL-NS-TerminalSessionFactory",
     };
@@ -151,21 +149,6 @@ public static class LegacyArchitectureAllowlist
                 "(Agents Application -> Agents Presentation).",
                 removalBoundary: "Refactor 6.3"),
 
-            new(
-                findingId: "R61-AL-NS-SourceControlDiffTabService",
-                category: ArchitectureRatchet.CategoryNamespaceDirection,
-                matchKey: ArchitectureRatchet.BuildNamespaceMatchKey(
-                    "Features",
-                    "Zaide.Features.Editor.Presentation",
-                    "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"),
-                m0FindingId: "R61-V07",
-                owner: "SourceControl",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "SourceControlDiffTabService opens and updates editor presentation types " +
-                "(SourceControl Application -> Editor Presentation).",
-                removalBoundary: "Refactor 6.3"),
-
             // --- LocatorSite (exact production files with provider evidence) ---
             new(
                 findingId: "R61-AL-LOC-Program",
@@ -189,19 +172,6 @@ public static class LegacyArchitectureAllowlist
                 rationale:
                 "App owns static Services, startup resolution, and DisposeServicesOnExit " +
                 "provider lookups (R61-V09 / R61-V12 composition and shutdown debt).",
-                removalBoundary: "Refactor 6.3"),
-
-            new(
-                findingId: "R61-AL-LOC-SourceControlDiffTabService",
-                category: ArchitectureRatchet.CategoryLocatorSite,
-                matchKey: ArchitectureRatchet.BuildLocatorMatchKey(
-                    "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"),
-                m0FindingId: "R61-V07",
-                owner: "SourceControl",
-                disposition: DispositionDependencyInversion,
-                rationale:
-                "Non-composition application service stores IServiceProvider and resolves " +
-                "editor dependencies per diff tab.",
                 removalBoundary: "Refactor 6.3"),
 
             // RootFolderAdmission: empty by design. Deny-by-default for tracked

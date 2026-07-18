@@ -189,7 +189,8 @@ public sealed class ArchitectureVisibilityTests
         Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
         Assert.Equal(20, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
-        Assert.Equal(334, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Post-M1+M2: Features 334 → 336 (M1) → 338 (M2 gateway files).
+        Assert.Equal(338, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]
@@ -214,14 +215,15 @@ public sealed class ArchitectureVisibilityTests
     public void M3LegacyAllowlist_IsUnchangedByM4()
     {
         // Hard boundary: M4 must not alter legacy allowlist entries to pass.
-        Assert.Equal(8, LegacyArchitectureAllowlist.Entries.Count);
-        Assert.Equal(8, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
+        // M2 residual: 6 FindingIds (4 NS + 2 LOC).
+        Assert.Equal(6, LegacyArchitectureAllowlist.Entries.Count);
+        Assert.Equal(6, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
         Assert.Equal(
-            5,
+            4,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(
-            3,
+            2,
             LegacyArchitectureAllowlist.EntriesForCategory(
                 ArchitectureRatchet.CategoryLocatorSite).Count);
         Assert.Empty(

@@ -52,9 +52,9 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Workspace.Infrastructure"]);
         Assert.Equal((3, 2, 1), byNamespace["Zaide.Features.Workspace.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
-        Assert.Equal((4, 4, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
+        Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
         Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Editor.Infrastructure"]);
-        Assert.Equal((16, 13, 3), byNamespace["Zaide.Features.Editor.Presentation"]);
+        Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
         Assert.Equal((13, 13, 0), byNamespace["Zaide.Features.ProjectSystem.Infrastructure"]);
@@ -69,7 +69,7 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.SourceControl.Application"]);
-        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
+        Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Terminal.Contracts"]);
         Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Terminal.Application"]);
@@ -112,7 +112,8 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        Assert.Equal(356, inventory.SourceFiles.Count);
+        // Post-M1+M2: 356 base → 358 (M1 session factory files) → 360 (M2 gateway files).
+        Assert.Equal(360, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -121,7 +122,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(20, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(334, byFolder["Features"]);
+        Assert.Equal(338, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features).
@@ -192,17 +193,17 @@ public sealed class ArchitectureInventoryTests
             inventory.ProviderEvidence,
             e => e.RelativePath == "src/App/Composition/App.axaml.cs"
                 && e.Kind == ProviderEvidenceEntry.KindGetRequiredService);
-        Assert.Contains(
+        // M2 cleared SourceControlDiffTabService IServiceProvider evidence.
+        Assert.DoesNotContain(
             inventory.ProviderEvidence,
-            e => e.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs"
-                && e.Kind == ProviderEvidenceEntry.KindIServiceProvider);
+            e => e.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
 
         var resolutionCalls = inventory.ProviderEvidence.Count(e =>
             e.Kind is ProviderEvidenceEntry.KindGetRequiredService
                 or ProviderEvidenceEntry.KindGetService);
         Assert.True(
-            resolutionCalls >= 38,
-            $"Expected at least 38 resolution call expressions (M1 floor); found {resolutionCalls}.");
+            resolutionCalls >= 35,
+            $"Expected at least 35 resolution call expressions (M2 floor); found {resolutionCalls}.");
     }
 
     [Fact]

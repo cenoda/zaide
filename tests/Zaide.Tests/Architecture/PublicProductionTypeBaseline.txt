@@ -83,7 +83,9 @@ Zaide.Features.Debugging.Presentation.EditorBreakpointMarker
 Zaide.Features.Debugging.Presentation.EditorBreakpointViewModel
 Zaide.Features.Debugging.Presentation.EditorInstructionPointerMarker
 Zaide.Features.Debugging.Presentation.InstructionPointerOperations
+Zaide.Features.Editor.Contracts.EditorReadOnlyTabRequest
 Zaide.Features.Editor.Contracts.IEditorLanguageOperations
+Zaide.Features.Editor.Contracts.IEditorReadOnlyTabService
 Zaide.Features.Editor.Contracts.IEditorTextOperations
 Zaide.Features.Editor.Contracts.IFileService
 Zaide.Features.Editor.Contracts.IFoldingOperations
@@ -296,9 +298,7 @@ Zaide.Features.SourceControl.Domain.GitBranch
 Zaide.Features.SourceControl.Domain.GitChangeType
 Zaide.Features.SourceControl.Domain.SourceControlPrimaryAction
 Zaide.Features.SourceControl.Domain.SourceControlState
-Zaide.Features.SourceControl.Infrastructure.FileDiffService
 Zaide.Features.SourceControl.Infrastructure.GitMutationService
-Zaide.Features.SourceControl.Infrastructure.GitRepositoryService
 Zaide.Features.SourceControl.Presentation.SourceControlPanel
 Zaide.Features.SourceControl.Presentation.SourceControlViewModel
 Zaide.Features.Terminal.Application.TerminalSessionFactory

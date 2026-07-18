@@ -12,7 +12,7 @@ namespace Zaide.Features.SourceControl.Infrastructure;
 /// Discovers the repository root by walking upward from a starting path and reads
 /// branch/HEAD + working-tree status. Read-only for all of Phase 7.1.
 /// </summary>
-public sealed class GitRepositoryService : IGitRepositoryService
+internal sealed class GitRepositoryService : IGitRepositoryService
 {
     /// <inheritdoc/>
     public RepositoryDiscoveryResult Discover(string startingPath)

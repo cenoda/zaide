@@ -18,14 +18,14 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M1: 395).</summary>
-    public const int M0TotalTopLevelTypes = 395;
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (M2: 398).</summary>
+    public const int M0TotalTopLevelTypes = 398;
 
     /// <summary>M0 baseline public top-level type count.</summary>
     public const int M0PublicTopLevelTypes = 348;
 
-    /// <summary>M0 baseline internal top-level type count (M1: 47).</summary>
-    public const int M0InternalTopLevelTypes = 47;
+    /// <summary>M0 baseline internal top-level type count (M2: 50).</summary>
+    public const int M0InternalTopLevelTypes = 50;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",
@@ -64,14 +64,6 @@ public sealed class ArchitectureInventoryReader
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Residual R61-V07 edge after SourceControl move: application diff-tab
-    /// service still depends on editor presentation types (Refactor 6.3).
-    /// </summary>
-    private static readonly Regex SourceControlDiffTabToEditorPresentationRegex = new(
-        @"(?:using\s+Zaide\.Features\.Editor\.Presentation\b|Zaide\.Features\.Editor\.Presentation\.)",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    /// <summary>
     /// Residual R61-V05 edge after Terminal move: session factory contract/impl
     /// still depend on presentation session types (Refactor 6.3 inversion).
     /// </summary>
@@ -89,9 +81,6 @@ public sealed class ArchitectureInventoryReader
 
     private const string SourceControlStateRelativePath =
         "src/Features/SourceControl/Domain/SourceControlState.cs";
-
-    private const string SourceControlDiffTabServiceRelativePath =
-        "src/Features/SourceControl/Application/SourceControlDiffTabService.cs";
 
     private const string TerminalSessionFactoryContractRelativePath =
         "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs";
@@ -369,12 +358,6 @@ public sealed class ArchitectureInventoryReader
                 technicalFolder = "Features";
                 targetRegex = SourceControlStateToApplicationRegex;
                 targetFragment = "Zaide.Features.SourceControl.Application";
-            }
-            else if (normalizedPath.Equals(SourceControlDiffTabServiceRelativePath, StringComparison.Ordinal))
-            {
-                technicalFolder = "Features";
-                targetRegex = SourceControlDiffTabToEditorPresentationRegex;
-                targetFragment = "Zaide.Features.Editor.Presentation";
             }
             else if (normalizedPath.Equals(TerminalSessionFactoryContractRelativePath, StringComparison.Ordinal)
                 || normalizedPath.Equals(TerminalSessionFactoryRelativePath, StringComparison.Ordinal))

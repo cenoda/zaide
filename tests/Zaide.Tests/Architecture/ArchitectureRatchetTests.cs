@@ -67,13 +67,13 @@ public sealed class ArchitectureRatchetTests
 
         Assert.Equal(approvedIds, liveIds);
 
-        // M3 baseline size: 5 namespace edges + 3 locator sites + 0 root admissions.
-        Assert.Equal(8, liveIds.Length);
+        // M2 residual size: 4 namespace edges + 2 locator sites + 0 root admissions.
+        Assert.Equal(6, liveIds.Length);
         Assert.Equal(
-            5,
+            4,
             LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryNamespaceDirection).Count);
         Assert.Equal(
-            3,
+            2,
             LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryLocatorSite).Count);
         Assert.Empty(
             LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryRootFolderAdmission));
@@ -111,12 +111,13 @@ public sealed class ArchitectureRatchetTests
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryNamespaceDirection);
 
         // Known accepted debt sites remain visible (not silently dropped).
+        // M2 cleared SourceControlDiffTabService → Editor.Presentation (V07).
         Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Domain/SourceControlState.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Contracts/ITerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Terminal/Application/TerminalSessionFactory.cs");
         Assert.Contains(live, v => v.RelativePath == "src/Features/Agents/Application/MentionParser.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
-        Assert.Equal(5, live.Count);
+        Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
+        Assert.Equal(4, live.Count);
     }
 
     [Fact]
@@ -129,10 +130,11 @@ public sealed class ArchitectureRatchetTests
 
         AssertRatchet(live, allowlist, ArchitectureRatchet.CategoryLocatorSite);
 
+        // M2 cleared SourceControlDiffTabService locator debt; only composition sites remain.
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/Program.cs");
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/App.axaml.cs");
-        Assert.Contains(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
-        Assert.Equal(3, live.Count);
+        Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
+        Assert.Equal(2, live.Count);
 
         // M1 removed the EditorTabViewModel locator site; the presentation layer has
         // no remaining locator debt. Technical Views/ folder is gone after M12.

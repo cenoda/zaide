@@ -13,7 +13,7 @@ namespace Zaide.Features.SourceControl.Infrastructure;
 /// file changes. Uses <c>TreeChanges</c> for path existence, then <c>Patch</c>
 /// for unified diff text and binary detection.
 /// </summary>
-public sealed class FileDiffService : IFileDiffService
+internal sealed class FileDiffService : IFileDiffService
 {
     /// <inheritdoc/>
     public FileDiffResult? GetDiff(string repositoryRoot, FileChange change)
