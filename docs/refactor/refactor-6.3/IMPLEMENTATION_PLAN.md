@@ -210,7 +210,7 @@ registration+DI+LanguageSessionServiceDi+Architecture **82/82**, Architecture
 **21/21**, full suite **2257/2257**, `git diff --check` clean;
 `git diff --cached --check` clean before the implementation commit).
 Manual verification **not required**.
-**M6k implemented and staged pending review** — eleventh M6 registration
+**M6k complete at `df262ac`** (`refactor-6.3: M6k Debugging DI module`) — eleventh and final M6 registration
 slice: internal `DebuggingServiceCollectionExtensions.AddZaideDebugging` owns
 the ten Debugging singleton registrations
 (`IDebugAdapterLocator` factory → `DebugAdapterLocator(ZAIDE_NETCOREDBG_PATH)`;
@@ -238,9 +238,8 @@ descriptor-only: **none**. Tests do not call `Resolve()`, `StartAsync`,
 dependency. M6a–M6j ratchets advanced (allow exactly one `AddZaideDebugging`;
 remove Debugging direct-registration markers; eleven-module order; no direct
 production `AddSingleton` in `Program`; preserve `AddLogging`). M6a–M6k are
-individually implemented slices; the whole M6 series is **not** complete until
-M6k implementation commit and separate documentation closeout. M7 remains
-unauthorized. Automated verification green while staged (forced
+individually completed slices; the whole M6 series is **complete**. M7 remains
+unauthorized. Automated verification green (forced
 `dotnet build Zaide.slnx --no-incremental` succeeded, 4 pre-existing warnings /
 0 errors — CS0067 in ProjectDebugTargetResolverTests; xUnit2013 in
 ArchitectureVisibilityTests; two xUnit2013 in ArchitectureRatchetTests —
@@ -1349,8 +1348,7 @@ architecture allowlists unchanged.
 File: `src/App/Composition/Registration/DebuggingServiceCollectionExtensions.cs`
 Method: `AddZaideDebugging`.
 
-**Status:** **implemented and staged pending review** (implementation commit
-and separate documentation closeout not yet performed).
+**Status:** **complete** at `df262ac` (`refactor-6.3: M6k Debugging DI module`).
 
 All ten registrations remain **Singleton**. Mappings, self-registrations,
 constructors, and dependencies are unchanged. Locator factory behavior is
@@ -1450,15 +1448,13 @@ dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
 **Commit boundary (locked):** exactly **one commit per slice** `M6a` through
 `M6k` (eleven commits). Do **not** batch slices. Each commit message names
 its slice id (e.g. `refactor-6.3: M6b settings DI module`).
-M6k implementation is **staged pending review** — do not commit from this
-implementation session without separate review gate.
+M6k implementation is complete at `df262ac`.
 
 **Manual:** none if DI tests green.
 
-**M6 series status boundary:** M6a–M6k may be described as implemented slices.
-Do **not** mark the whole M6 series or Refactor 6.3 complete before M6k review,
-implementation commit, and separate documentation closeout. M7 is the next
-planned milestone after M6 closeout, but remains **unauthorized**.
+**M6 series status boundary:** M6a–M6k are complete, and the M6 series is
+complete. Refactor 6.3 is not complete. M7 is the next planned milestone after
+M6 closeout, but remains **unauthorized**.
 
 ---
 
@@ -2076,19 +2072,16 @@ dotnet test Zaide.slnx --no-build
 
 ## Exact next step
 
-1. **M1–M5 and M6a–M6j complete** as previously recorded. **M6k implemented
-   and staged pending review** (Debugging DI registration module /
-   `AddZaideDebugging`). M6a–M6k are individually implemented slices; the
-   whole M6 series is **not** complete until M6k implementation commit and
-   separate documentation closeout.
-2. **After M6k review + implementation commit + closeout:** next planned
-   milestone is **M7** (Composition root store / remove public `App.Services`),
-   which remains **unauthorized** until separate explicit authorization.
+1. **M1–M5 and M6a–M6k complete** as previously recorded. **M6k is complete
+   at `df262ac`** (Debugging DI registration module / `AddZaideDebugging`).
+   M6a–M6k are individually completed slices, and the M6 series is complete.
+2. The next planned milestone is **M7** (Composition root store / remove public
+   `App.Services`), which remains **unauthorized** until separate explicit
+   authorization.
 3. Do not start M7+, Refactor 7/8, or Phase 14 without separate authorization.
    Completing M6k does **not** authorize M7 or whole-refactor closeout.
-4. Do **not** mark Refactor 6.3 or the whole M6 series complete from the M6k
-   implementation slice alone.
+4. Do **not** mark Refactor 6.3 complete from M6 closeout alone.
 
 ---
 
-*Last updated: 2026-07-18 (M1–M5 and M6a–M6j complete; M6k Debugging implemented and staged pending review; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors, focused 86/86, Architecture 21/21, full suite 2263/2263, git diff checks clean; public 346 / internal 62 / total 408 / prod C# 370 / App C# 31; eleven internal Registration modules; Program has no direct production AddSingleton; AddLogging remains in Program; whole M6 series not complete until M6k commit+closeout; M7 unauthorized)*
+*Last updated: 2026-07-18 (M1–M5 and M6a–M6k complete; M6k Debugging at `df262ac`; M6 series complete; automated verification green: forced build succeeded, 4 pre-existing warnings / 0 errors, focused 86/86, Architecture 21/21, full suite 2263/2263, git diff checks clean; public 346 / internal 62 / total 408 / prod C# 370 / App C# 31; eleven internal Registration modules; Program has no direct production AddSingleton; AddLogging remains in Program; M7 unauthorized)*
