@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
-using System.Net.Http;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -24,10 +23,6 @@ using Zaide.Features.SourceControl.Infrastructure;
 using Zaide.Features.SourceControl.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
-using Zaide.Features.Agents.Contracts;
-using Zaide.Features.Agents.Application;
-using Zaide.Features.Agents.Infrastructure;
-using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.App.Composition;
 class Program
@@ -49,16 +44,12 @@ class Program
         services.AddZaideWorkspace();
         services.AddZaideEditor();
         services.AddZaideTerminal();
+        services.AddZaideAgents();
 
         services.AddLogging(builder => builder.AddConsole());
-        services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallViewModel>();
         services.AddSingleton<SourceControlViewModel>();
-        services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
-        services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
-        services.AddSingleton<MentionParser>();
-        services.AddSingleton<IAgentRouter, AgentRouter>();
 
         // M1: read-only git repository discovery + status read seam
         services.AddSingleton<IGitRepositoryService, GitRepositoryService>();
@@ -133,14 +124,6 @@ class Program
 
         // Phase 10 M6: whole-document formatting + Format on Save coordination.
         services.AddSingleton<ILanguageFormattingService, LanguageFormattingService>();
-
-        services.AddSingleton(_ =>
-        {
-            var client = new HttpClient();
-            // Default timeout for non-streaming requests
-            client.Timeout = TimeSpan.FromSeconds(120);
-            return client;
-        });
     }
 
     public static AppBuilder BuildAvaloniaApp()

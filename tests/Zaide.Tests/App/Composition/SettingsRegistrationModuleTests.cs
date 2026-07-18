@@ -30,10 +30,8 @@ public sealed class SettingsRegistrationModuleTests
         typeof(ISecretStore).FullName!,
     };
 
-    private static readonly string[] M6fPlusDirectMarkers =
+    private static readonly string[] M6gPlusDirectMarkers =
     {
-        "AddSingleton<IAgentPanelHost, AgentPanelHost>()",
-        "AddSingleton<IAgentExecutionService, AgentExecutionService>()",
         "AddSingleton<TownhallState>()",
         "AddSingleton<SourceControlViewModel>()",
         "AddSingleton<IProjectContextService, ProjectContextService>()",
@@ -198,20 +196,20 @@ public sealed class SettingsRegistrationModuleTests
     }
 
     [Fact]
-    public void ProgramSource_StillDeclaresM6fPlusRegistrationsDirectly()
+    public void ProgramSource_StillDeclaresM6gPlusRegistrationsDirectly()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
-        foreach (var marker in M6fPlusDirectMarkers)
+        foreach (var marker in M6gPlusDirectMarkers)
         {
             Assert.Contains(marker, programSource);
         }
 
-        // M6c–M6e modules are present; M6f–M6k do not exist yet.
+        // M6c–M6f modules are present; M6g–M6k do not exist yet.
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
-        Assert.DoesNotContain("AddZaideAgents", programSource);
+        Assert.Single(Regex.Matches(programSource, @"AddZaideAgents\s*\(\s*\)"));
         Assert.DoesNotContain("AddZaideTownhall", programSource);
         Assert.DoesNotContain("AddZaideSourceControl", programSource);
         Assert.DoesNotContain("AddZaideProjectSystem", programSource);
