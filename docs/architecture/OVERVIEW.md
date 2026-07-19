@@ -135,7 +135,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 typed entry/projection implemented pending acceptance |
+| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 accepted (`0902641`); M4 execution-run/routing only authorized, not implemented |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -345,4 +345,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M3 implemented pending acceptance; implemented baselines remain public 332 / internal 100 / total 432, prod C# 394 / Features 355 / App 37, DI 69 / Registration modules 12; M4–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M3 accepted at `0902641`; M4 only authorized and not implemented; implemented baselines remain public 332 / internal 100 / total 432, prod C# 394 / Features 355 / App 37, DI 69 / Registration modules 12; M5–M7, Refactor 8, and Phase 14 unauthorized)*

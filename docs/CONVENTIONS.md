@@ -368,7 +368,7 @@ into a movement slice.
 | **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 public full-name + expanded root admission; M5 documentation closeout + M0 representation matrix). **Closed.** |
 | **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change. **M1–M12 complete** at `72102da`; M13 optional root admission remains unauthorized. |
 | **6.3** | Dependency inversion, composition modules, visibility reduction, lifetime map, ordered shutdown. **Closed** (deliberate composition locator residuals: `R61-AL-LOC-Program`, `R61-AL-LOC-App`). |
-| **7** | Agent/Conversation domain and R61-LT01–LT03 (M1 actor catalog accepted at `edc5dac`; M2 conversation owner accepted at `94a609f`; M3 typed entry/projection implemented pending acceptance) |
+| **7** | Agent/Conversation domain and R61-LT01–LT03 (M1 actor catalog accepted at `edc5dac`; M2 conversation owner accepted at `94a609f`; M3 typed entry/projection accepted at `0902641`; M4 execution-run/routing only authorized) |
 | **8** | Townhall/shell view extraction and UI foundation |
 
 ### Executable architecture ratchet (Refactor 6.1 M3–M4; residual set after 6.3)
@@ -397,4 +397,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M3 implemented pending acceptance; public baseline 332/100/432; M4–M7 / Refactor 8 / Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M3 accepted at `0902641`; M4 only authorized; public baseline 332/100/432; M5–M7 / Refactor 8 / Phase 14 unauthorized)*
