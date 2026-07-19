@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -500,6 +501,7 @@ public class TownhallViewModelTests
         var initialCount = vm.Messages.Count;
 
         vm.AddMirroredActivity(TownhallMessageKind.Chat, "Hello from agent panel",
+            author: ActorId.TownhallAgent,
             senderId: "agent-1", senderName: "Zaide Agent");
 
         Assert.Equal(initialCount + 1, vm.Messages.Count);
@@ -520,6 +522,7 @@ public class TownhallViewModelTests
         var initialCount = vm.Messages.Count;
 
         vm.AddMirroredActivity(TownhallMessageKind.AgentError, "Request failed: timeout",
+            author: ActorId.TownhallAgent,
             senderId: "agent-1", senderName: "Zaide Agent");
 
         Assert.Equal(initialCount + 1, vm.Messages.Count);
@@ -544,6 +547,7 @@ public class TownhallViewModelTests
 
         // Send a mirrored activity on the initial channel
         vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on initial channel",
+            author: ActorId.HumanUser,
             senderId: "user-1", senderName: "User");
 
         // Switch to another channel
@@ -552,6 +556,7 @@ public class TownhallViewModelTests
 
         // Send a mirrored activity on the other channel
         vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on other channel",
+            author: ActorId.HumanUser,
             senderId: "user-1", senderName: "User");
 
         // The other channel's messages should contain the second message
@@ -576,12 +581,14 @@ public class TownhallViewModelTests
 
         // User sender
         vm.AddMirroredActivity(TownhallMessageKind.Chat, "User message",
+            author: ActorId.HumanUser,
             senderId: "user-1", senderName: "User");
         var userMsg = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal("avatar-user", userMsg.SenderAvatar);
 
         // Agent sender
         vm.AddMirroredActivity(TownhallMessageKind.Chat, "Agent message",
+            author: ActorId.PanelCustom("agent-5"),
             senderId: "agent-5", senderName: "Some Agent");
         var agentMsg = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal("avatar-agent", agentMsg.SenderAvatar);
@@ -631,6 +638,7 @@ public class TownhallViewModelTests
         vm.AddMirroredActivity(
             kind: TownhallMessageKind.Chat,
             content: "Hello from agent panel",
+            author: ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
 

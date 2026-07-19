@@ -127,6 +127,7 @@ public class TownhallViewModel : ReactiveObject
                 LogActivity(
                     kind: TownhallMessageKind.ChannelEvent,
                     content: $"Switched to #{channelName}",
+                    author: _actorCatalog.CanonicalHuman.Id,
                     senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
                     senderName: _actorCatalog.CanonicalHuman.DisplayName);
             }
@@ -236,6 +237,7 @@ public class TownhallViewModel : ReactiveObject
             LogActivity(
                 kind: TownhallMessageKind.Chat,
                 content: draft,
+                author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
                 senderName: _actorCatalog.CanonicalHuman.DisplayName);
 
@@ -252,11 +254,17 @@ public class TownhallViewModel : ReactiveObject
     /// </summary>
     /// <param name="kind">The kind of entry (Chat, AgentError, etc.).</param>
     /// <param name="content">The text content of the entry.</param>
-    /// <param name="senderId">The ID of the sender (agent or user).</param>
-    /// <param name="senderName">The display name of the sender.</param>
-    public void AddMirroredActivity(TownhallMessageKind kind, string content, string senderId, string senderName)
+    /// <param name="author">Authoritative typed actor identity for the entry.</param>
+    /// <param name="senderId">Legacy projected sender ID for Townhall compatibility.</param>
+    /// <param name="senderName">Legacy projected sender name for Townhall compatibility.</param>
+    public void AddMirroredActivity(
+        TownhallMessageKind kind,
+        string content,
+        ActorId author,
+        string senderId,
+        string senderName)
     {
-        LogActivity(kind, content, senderId, senderName);
+        LogActivity(kind, content, author, senderId, senderName);
     }
 
     /// <summary>
@@ -264,7 +272,12 @@ public class TownhallViewModel : ReactiveObject
     /// Writes the authoritative typed entry to the channel conversation, then
     /// projects it into the legacy Townhall compatibility collection.
     /// </summary>
-    private void LogActivity(TownhallMessageKind kind, string content, string senderId, string senderName)
+    private void LogActivity(
+        TownhallMessageKind kind,
+        string content,
+        ActorId author,
+        string senderId,
+        string senderName)
     {
         if (_state.ActiveChannelId is null)
             return;
@@ -279,7 +292,6 @@ public class TownhallViewModel : ReactiveObject
         }
 
         var messagesList = _state.ChannelMessages[_state.ActiveChannelId];
-        var author = ResolveAuthor(senderId);
         var entryKind = TownhallEntryProjection.ClassifyTownhallMirror(
             kind,
             author,
@@ -301,16 +313,6 @@ public class TownhallViewModel : ReactiveObject
             senderName);
 
         messagesList.Add(entry);
-    }
-
-    private ActorId ResolveAuthor(string senderId)
-    {
-        if (_actorCatalog.TryGetByProjectedLegacyId(senderId, out var actor))
-        {
-            return actor.Id;
-        }
-
-        return ActorId.PanelCustom(senderId);
     }
 
     /// <summary>

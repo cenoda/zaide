@@ -322,11 +322,13 @@ automated proof must still cover the ownership/attribution contract.
 ## M3 verification (2026-07-19, pending acceptance)
 
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
-- Focused gate: **325 passed**, 0 failed, 0 skipped.
+- Focused gate: **326 passed**, 0 failed, 0 skipped.
 - Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
 - Architecture gate: **22 passed**, 0 failed, 0 skipped.
-- Full suite: **2407 passed**, 0 failed, 0 skipped.
+- Full suite: **2408 passed**, 0 failed, 0 skipped.
 - `git diff --check` — clean.
+- Authorship fix: typed `ActorId` is passed into Townhall entry admission; legacy
+  `TryGetByProjectedLegacyId` reverse lookup removed.
 
 ## M2 verification (2026-07-19, accepted)
 

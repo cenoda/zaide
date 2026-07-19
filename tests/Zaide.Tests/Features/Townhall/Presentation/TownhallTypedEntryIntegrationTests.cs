@@ -24,6 +24,7 @@ public sealed class TownhallTypedEntryIntegrationTests
         Assert.True(store.TryGetChannelConversation(channelId, out var conversation));
         var entry = Assert.Single(conversation!.Entries);
         Assert.Equal(ConversationEntryKind.UserChat, entry.Kind);
+        Assert.Equal(ActorId.HumanUser, entry.Author);
         Assert.Equal("Townhall hello", entry.Content);
 
         var message = Assert.Single(vm.Messages);
@@ -46,6 +47,7 @@ public sealed class TownhallTypedEntryIntegrationTests
         Assert.True(store.TryGetChannelConversation(otherId, out var conversation));
         var entry = Assert.Single(conversation!.Entries);
         Assert.Equal(ConversationEntryKind.ChannelEvent, entry.Kind);
+        Assert.Equal(ActorId.HumanUser, entry.Author);
         Assert.Contains("Switched to #", entry.Content, StringComparison.Ordinal);
 
         var message = Assert.Single(vm.Messages);
@@ -63,12 +65,14 @@ public sealed class TownhallTypedEntryIntegrationTests
         vm.AddMirroredActivity(
             TownhallMessageKind.Chat,
             "Message on initial channel",
+            ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
         vm.SelectChannelCommand.Execute(otherId).Subscribe();
         vm.AddMirroredActivity(
             TownhallMessageKind.Chat,
             "Message on other channel",
+            ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
 
@@ -86,11 +90,13 @@ public sealed class TownhallTypedEntryIntegrationTests
         vm.AddMirroredActivity(
             TownhallMessageKind.Chat,
             "chat",
+            ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
         vm.AddMirroredActivity(
             TownhallMessageKind.ChannelEvent,
             "event",
+            ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
 

@@ -165,18 +165,4 @@ public sealed class ActorCatalogTests
         Assert.Equal("Agent 1", fallback.DisplayName);
         Assert.Equal("Icon.Avatar", fallback.AvatarResourceKey);
     }
-
-    [Fact]
-    public void TryGetByProjectedLegacyId_ResolvesCanonicalRows()
-    {
-        var catalog = new ActorCatalog();
-
-        Assert.True(catalog.TryGetByProjectedLegacyId("user-1", out var human));
-        Assert.Equal(ActorId.HumanUser, human!.Id);
-
-        Assert.True(catalog.TryGetByProjectedLegacyId("alpha", out var alpha));
-        Assert.Equal(ActorId.PanelSeed("alpha"), alpha!.Id);
-
-        Assert.False(catalog.TryGetByProjectedLegacyId("missing", out _));
-    }
 }

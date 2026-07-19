@@ -44,6 +44,7 @@ internal sealed class AgentTownhallMirrorCoordinator
         _townhallViewModel.AddMirroredActivity(
             kind: TownhallMessageKind.Chat,
             content: userMessage,
+            author: _actorCatalog.CanonicalHuman.Id,
             senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
             senderName: _actorCatalog.CanonicalHuman.DisplayName);
 
@@ -70,6 +71,7 @@ internal sealed class AgentTownhallMirrorCoordinator
             _townhallViewModel.AddMirroredActivity(
                 kind: TownhallMessageKind.AgentError,
                 content: $"Routing failed: {routeResult.FailureReason}",
+                author: sourcePanel.ActorId,
                 senderId: sourcePanel.AgentId,
                 senderName: sourcePanel.AgentName);
             return;
@@ -94,6 +96,7 @@ internal sealed class AgentTownhallMirrorCoordinator
                 _townhallViewModel.AddMirroredActivity(
                     kind: TownhallMessageKind.AgentError,
                     content: lastOutput,
+                    author: panel.ActorId,
                     senderId: panel.AgentId,
                     senderName: panel.AgentName);
             }
@@ -108,6 +111,7 @@ internal sealed class AgentTownhallMirrorCoordinator
                 _townhallViewModel.AddMirroredActivity(
                     kind: TownhallMessageKind.Chat,
                     content: lastOutput,
+                    author: panel.ActorId,
                     senderId: panel.AgentId,
                     senderName: panel.AgentName);
             }

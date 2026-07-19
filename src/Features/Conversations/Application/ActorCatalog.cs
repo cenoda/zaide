@@ -103,27 +103,4 @@ internal sealed class ActorCatalog : IActorCatalog
             return _actors.TryGetValue(id, out actor!);
         }
     }
-
-    public bool TryGetByProjectedLegacyId(string projectedLegacyId, out Actor actor)
-    {
-        ArgumentNullException.ThrowIfNull(projectedLegacyId);
-
-        lock (_sync)
-        {
-            foreach (var candidate in _actors.Values)
-            {
-                if (string.Equals(
-                        candidate.ProjectedLegacyId,
-                        projectedLegacyId,
-                        StringComparison.Ordinal))
-                {
-                    actor = candidate;
-                    return true;
-                }
-            }
-        }
-
-        actor = null!;
-        return false;
-    }
 }

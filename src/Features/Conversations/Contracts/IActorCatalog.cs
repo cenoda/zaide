@@ -23,6 +23,4 @@ public interface IActorCatalog
         string avatarResourceKey);
 
     bool TryGet(ActorId id, out Actor actor);
-
-    bool TryGetByProjectedLegacyId(string projectedLegacyId, out Actor actor);
 }
