@@ -46,6 +46,12 @@ internal sealed class BusyToEnabledConverter : IValueConverter
 /// </summary>
 public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 {
+    private static readonly IBrush SurfaceBaseBackgroundBrush =
+        PaletteTokens.GetBrush("SurfaceBaseBrush", new SolidColorBrush(Color.Parse("#121722")));
+
+    private static readonly IBrush SurfacePanelBackgroundBrush =
+        PaletteTokens.GetBrush("SurfacePanelBrush", new SolidColorBrush(Color.Parse("#0B0F17")));
+
     private readonly TextBlock _headerText;
     private readonly TextBlock _statusText;
     private readonly ListBox _outputList;
@@ -95,7 +101,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
         return new Border
         {
-            Background = PaletteTokens.SurfaceBaseBrush,
+            Background = SurfaceBaseBackgroundBrush,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Child = headerPanel
         };
@@ -157,7 +163,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
     {
         return new Border
         {
-            Background = PaletteTokens.SurfaceBaseBrush,
+            Background = SurfaceBaseBackgroundBrush,
             BorderThickness = new Thickness(0),
             Child = _inputBox
         };
@@ -176,7 +182,7 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto }
             },
-            Background = PaletteTokens.SurfacePanelBrush,
+            Background = SurfacePanelBackgroundBrush,
             Children = { headerBorder, _outputList, inputBorder }
         };
         Grid.SetRow(headerBorder, 0);

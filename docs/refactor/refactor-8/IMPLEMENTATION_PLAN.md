@@ -651,8 +651,9 @@ No `dotnet` production change is required for M0.
       presentation files replaced with `PaletteTokens` equivalents
       (`PrimaryAccentBrush`, `SurfaceBaseBrush`, `TextSecondaryBrush`).
 - [x] Tab label `FontSize = 12` replaced with `TypographyTokens.FontSizeSm`.
-- [x] `AgentPanelView.ResolveBrush` removed; palette routing uses `PaletteTokens`
-      with pixel-identical `App.axaml` resource and fallback values.
+- [x] `AgentPanelView.ResolveBrush` removed; palette routing uses
+      `PaletteTokens.GetBrush` with the pre-M7 per-surface fallback brushes
+      (`SurfaceBaseBrush` → `#121722`, `SurfacePanelBrush` → `#0B0F17`).
 - [x] `IAgentPanelHost`, `AgentPanelHost`, `PanelSendRequested`, and
       `SendRequested` contracts unchanged.
 - [x] No new production types or source files; architecture baseline unchanged.
@@ -1204,7 +1205,7 @@ All three M6-required operations exercised: channel selection, filter toggle
 | File | Change |
 |------|--------|
 | `src/Features/Agents/Presentation/AgentPanelHostView.cs` | **Modified** constructor extracted into `BuildTabScrollViewer`, `BuildTabStripBorder`, `BuildRootLayout`; `Application.Current?.Resources` lookups replaced with `PaletteTokens`; tab label `FontSize` routed through `TypographyTokens.FontSizeSm` |
-| `src/Features/Agents/Presentation/AgentPanelView.cs` | **Modified** constructor extracted into `BuildHeaderBorder`, `BuildOutputList`, `BuildInputBox`, `BuildInputBorder`, `BuildRootLayout`; private `ResolveBrush` removed; palette routing uses `PaletteTokens.SurfaceBaseBrush` and `PaletteTokens.SurfacePanelBrush` |
+| `src/Features/Agents/Presentation/AgentPanelView.cs` | **Modified** constructor extracted into `BuildHeaderBorder`, `BuildOutputList`, `BuildInputBox`, `BuildInputBorder`, `BuildRootLayout`; private `ResolveBrush` removed; palette routing uses `PaletteTokens.GetBrush` with preserved per-surface no-resource fallbacks (`#121722`, `#0B0F17`) |
 
 `IAgentPanelHost`, `AgentPanelHost`, `PanelSendRequested`, and `SendRequested`
 unchanged. No ViewModel, domain, or application files changed.
@@ -1217,12 +1218,14 @@ unchanged. No ViewModel, domain, or application files changed.
 | `AgentPanelHostView.cs` | `Application.Current?.Resources["SurfaceBaseBrush"]` | `PaletteTokens.SurfaceBaseBrush` |
 | `AgentPanelHostView.cs` | `Application.Current?.Resources["TextSecondaryBrush"]` (×2) | `PaletteTokens.TextSecondaryBrush` |
 | `AgentPanelHostView.cs` | `FontSize = 12` (tab label) | `TypographyTokens.FontSizeSm` |
-| `AgentPanelView.cs` | `ResolveBrush("SurfaceBaseBrush", "#121722")` (×2) | `PaletteTokens.SurfaceBaseBrush` |
-| `AgentPanelView.cs` | `ResolveBrush("SurfacePanelBrush", "#0B0F17")` | `PaletteTokens.SurfacePanelBrush` |
-| `AgentPanelView.cs` | private `ResolveBrush` helper | removed (centralized in `PaletteTokens`) |
+| `AgentPanelView.cs` | `ResolveBrush("SurfaceBaseBrush", "#121722")` (×2) | `PaletteTokens.GetBrush("SurfaceBaseBrush", #121722 fallback)` |
+| `AgentPanelView.cs` | `ResolveBrush("SurfacePanelBrush", "#0B0F17")` | `PaletteTokens.GetBrush("SurfacePanelBrush", #0B0F17 fallback)` |
+| `AgentPanelView.cs` | private `ResolveBrush` helper | removed (routing via `PaletteTokens.GetBrush`) |
 
 Preserved unchanged: input `FontSize = 13` (no existing typography token);
 icon size `14` on new-panel button; tab close icon size via `TypographyTokens.FontSizeSm`.
+Agent panel view no-resource fallbacks remain `#121722` / `#0B0F17` (not the global
+`PaletteTokens` accessor defaults).
 
 ### Architecture baseline
 
