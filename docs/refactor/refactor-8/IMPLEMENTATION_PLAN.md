@@ -2,7 +2,7 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M6 implementation in progress (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M6 implemented; pending human acceptance (2026-07-19).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
 M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
 M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
@@ -1154,11 +1154,14 @@ git diff --check
 
 Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m6-smoke.sh`):
 
-1. **Channel switch:** `Ctrl+Shift+C` activated channel switching.
-2. **Filter toggle:** Tab-navigated through filter controls towards toggle buttons.
-3. **Send message:** focused input area, typed "m6 smoke test", pressed Enter to send.
-4. Window remained alive throughout; app log contained no errors or exceptions.
+1. **Filter toggle — Chat:** clicked Chat button position (~225, 55) — activates `ChatOnly` mode.
+2. **Filter toggle — Activity:** clicked Activity button position (~300, 55) — activates `ActivityOnly` mode.
+3. **Filter toggle — All:** clicked All button position (~160, 55) — activates `All` mode (default).
+4. **Send message:** clicked input area (~640, 700), typed "m6 smoke test", pressed Enter to send.
+5. Window remained alive throughout; app log contained no errors or exceptions.
+
+All three filter modes toggled via their respective ToggleButtons, exercising the extracted `WireFilterButton` helper through the mutual-exclusion path (each click unchecks the previously active button and sets `ViewModel.FilterMode`).
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M6 in progress; M5 accepted at `d947efa`; M6 authorized; M7+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M6 implemented; pending human acceptance; M7+ unauthorized; Phase 14 unauthorized)*
