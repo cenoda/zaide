@@ -56,36 +56,36 @@ internal static class TownhallEntryProjection
             SenderId = projectedLegacySenderId,
             SenderName = projectedSenderName,
             SenderAvatar = avatar,
-            Content = entry.Content,
+            Content = ToTownhallDisplayContent(entry),
             Timestamp = entry.Timestamp,
             Kind = ToTownhallMessageKind(entry.Kind)
         };
     }
 
-    public static ConversationEntryKind ClassifyTownhallMirror(
-        TownhallMessageKind kind,
-        ActorId author,
-        string content,
-        IActorCatalog catalog)
+    /// <summary>
+    /// Formats authoritative typed entry content into the frozen Townhall
+    /// compatibility string protocol.
+    /// </summary>
+    public static string ToTownhallDisplayContent(ConversationEntry entry)
     {
-        return kind switch
+        ArgumentNullException.ThrowIfNull(entry);
+
+        return entry.Kind switch
         {
-            TownhallMessageKind.Chat when author == catalog.CanonicalHuman.Id =>
-                ConversationEntryKind.UserChat,
-            TownhallMessageKind.Chat =>
-                ConversationEntryKind.AssistantResponse,
-            TownhallMessageKind.AgentError when content.StartsWith("Routing failed:", StringComparison.Ordinal) =>
-                ConversationEntryKind.RoutingFailure,
-            TownhallMessageKind.AgentError =>
-                ConversationEntryKind.ExecutionFailure,
-            TownhallMessageKind.ChannelEvent =>
-                ConversationEntryKind.ChannelEvent,
-            TownhallMessageKind.System =>
-                ConversationEntryKind.SystemNotification,
+            ConversationEntryKind.UserChat or
+            ConversationEntryKind.ChannelEvent or
+            ConversationEntryKind.SystemNotification =>
+                entry.Content,
+            ConversationEntryKind.AssistantResponse =>
+                $"Assistant: {entry.Content}",
+            ConversationEntryKind.RoutingFailure =>
+                $"Routing failed: {entry.Content}",
+            ConversationEntryKind.ExecutionFailure =>
+                $"Error: {entry.Content}",
             _ => throw new ArgumentOutOfRangeException(
-                nameof(kind),
-                kind,
-                "Unsupported Townhall mirror classification.")
+                nameof(entry),
+                entry.Kind,
+                "Unsupported Townhall display projection.")
         };
     }
 

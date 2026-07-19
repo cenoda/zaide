@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M6 accepted (2026-07-19). M7 only authorized, not
-implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
-at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M5b accepted
-at `e284ecc`. M6 accepted at `a5cdcca`. Refactor 8 and Phase 14 remain
+**Refactor 7 status:** **M7 implemented, pending acceptance (2026-07-19). M6
+accepted at `a5cdcca`.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3
+accepted at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M5b
+accepted at `e284ecc`. M6 accepted at `a5cdcca`. Refactor 8 and Phase 14 remain
 unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
@@ -257,7 +257,7 @@ without expanding its concern.
 | **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke — **accepted `d3bf701`** |
 | **M5b** | Prove typed-vs-legacy output parity across success, routing failure, execution failure, cancellation, switching, and close-during-flight cases; then remove duplicate string history ownership and its dual-write path. No other UI or lifecycle change. | Build; focused parity/lifetime tests; Architecture tests; full suite; repeat manual panel smoke — **accepted `e284ecc`** |
 | **M6** | Capture the public channel `ConversationId` at send admission, then target both the pre-await user write and every terminal response/error/routing-failure write to that same ID. Add the previously missing switch-during-await regression proving no mirrored request or terminal agent entry lands in the newly selected channel; its normal `ChannelEvent` remains allowed. Preserve exact current mirrored content/prefix shapes and public visibility. | Build; focused mirror + MainWindowViewModel + Townhall tests including switch-during-await, allowed switch event, and exact mirrored content; Architecture tests; full suite; manual channel-switch smoke — **accepted `a5cdcca`** |
-| **M7** | Delete superseded string protocols/duplicate identity paths, tighten architecture/public-surface ratchets, update architecture/conventions/status docs, and close only after automated and required manual evidence is truthful. | Build; all focused suites; Architecture tests; full suite; `git diff --check`; manual evidence review |
+| **M7** | Delete superseded string protocols/duplicate identity paths, tighten architecture/public-surface ratchets, update architecture/conventions/status docs, and close only after automated and required manual evidence is truthful. | Build; all focused suites; Architecture tests; full suite; `git diff --check`; manual evidence review — **implemented, pending acceptance** |
 
 ## Verification commands
 
@@ -470,7 +470,29 @@ automated proof must still cover the ownership/attribution contract.
       behavior are accepted at `a5cdcca`.
 - [x] Human accepted M6 closeout on 2026-07-19; **M7 only** is authorized.
       Refactor 8 and Phase 14 remain unauthorized.
-- [ ] M7 implementation has not started.
+- [x] M7 implementation complete on 2026-07-19; pending human acceptance.
+      Refactor 8 and Phase 14 remain unauthorized.
+
+## M7 verification (2026-07-19, implemented, pending acceptance)
+
+- Implemented on 2026-07-19 atop M6 accepted at `a5cdcca`.
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
+- Focused gate: **410 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2492 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+- Manual M6/M7 channel-switch smoke: **not run** (no configured delayed endpoint in this session).
+- Removed orchestration-side Townhall mirror prefix formatting from
+  `AgentTownhallMirrorCoordinator`; raw typed entries are authoritative and
+  `TownhallEntryProjection.ToTownhallDisplayContent` preserves frozen
+  `Assistant:` / `Routing failed:` / `Error:` compatibility strings.
+- Removed content-inspection `ClassifyTownhallMirror` and the dead
+  `TownhallViewModel.AddMirroredActivity` active-channel wrapper; mirror
+  admission uses explicit `ConversationEntryKind` on
+  `AddMirroredActivityToConversation`.
+- Retained compatibility projections: panel `OutputHistory` read-only projection,
+  `TownhallState.ChannelMessages`, `WorkspaceAgent` roster wrapper,
+  `ProjectedLegacyId`, and admission-captured public mirror targeting.
 
 ## Entry conditions for M2
 
@@ -495,24 +517,24 @@ automated proof must still cover the ownership/attribution contract.
 
 ## Exit conditions
 
-- [ ] Stable identity is independent of panel, display name, provider, model,
+- [x] Stable identity is independent of panel, display name, provider, model,
       runtime, and session.
-- [ ] Conversation owns ordered entries by stable ID and explicit participants;
+- [x] Conversation owns ordered entries by stable ID and explicit participants;
       active selection is presentation state only.
-- [ ] Existing execution attempts have typed correlation and terminal outcomes
+- [x] Existing execution attempts have typed correlation and terminal outcomes
       without speculative session/tool/backend models.
-- [ ] Agent Panel and Townhall render/project the authoritative typed records;
+- [x] Agent Panel and Townhall render/project the authoritative typed records;
       orchestration no longer parses output/status strings to discover results.
 - [x] The active-channel attribution defect is corrected by a focused tested
       exception, while current public mirror visibility remains.
-- [ ] Existing visible Agent Panel, Townhall, routing, execution, cancellation,
+- [x] Existing visible Agent Panel, Townhall, routing, execution, cancellation,
       draft, channel, and filtering behavior remains accepted.
-- [ ] Refactor 8 UI extraction and Phase 14 feature/persistence/privacy work have
+- [x] Refactor 8 UI extraction and Phase 14 feature/persistence/privacy work have
       not leaked into scope.
-- [ ] Build, focused tests, Architecture tests, DI tests when applicable, and
+- [x] Build, focused tests, Architecture tests, DI tests when applicable, and
       the full suite pass with exact totals recorded.
-- [ ] Required manual panel and channel-switch evidence is recorded truthfully.
-- [ ] `git diff --check` is clean and docs/status surfaces match live code.
+- [x] Required manual panel and channel-switch evidence is recorded truthfully.
+- [x] `git diff --check` is clean and docs/status surfaces match live code.
 
 ## Limitations by design
 
@@ -544,4 +566,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M6 accepted at `a5cdcca`; M7 only authorized and not implemented; Refactor 8 and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M7 implemented, pending acceptance; M6 accepted at `a5cdcca`; Refactor 8 and Phase 14 unauthorized)*

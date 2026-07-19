@@ -705,8 +705,8 @@ public class MainWindowViewModelTests
     }
 
     /// <summary>
-    /// Verifies that when appendAssistantOutput=false on error, the guard prevents
-    /// mirroring a non-error line; no AgentError is added to Townhall.
+    /// Verifies that when appendAssistantOutput=false on error, a null structured
+    /// execution result prevents a terminal Townhall mirror.
     /// </summary>
     [Fact]
     public async Task SendAgentMessageAsync_ErrorWithSingleOutput_UsesThatOutput()
@@ -724,14 +724,14 @@ public class MainWindowViewModelTests
         Assert.Equal("User: Single output error", panel.OutputHistory[0]);
         Assert.Equal("Error", panel.Status);
 
-        // Guard ensures no AgentError is mirrored when last line is not "Error: "
+        // Null structured execution result prevents a terminal Townhall mirror.
         Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count); // only the initial User mirror
     }
 
     /// <summary>
-    /// Verifies that when the panel OutputHistory has entries but none start with
-    /// "Assistant: ", the agent response is not mirrored into Townhall (guard clause).
-    /// Only the user message should appear in Townhall.
+    /// Verifies that when the coordinator returns no structured execution result,
+    /// the agent response is not mirrored into Townhall. Only the user message
+    /// should appear in Townhall.
     /// </summary>
     [Fact]
     public async Task SendAgentMessageAsync_NonAssistantResponse_NotMirrored()

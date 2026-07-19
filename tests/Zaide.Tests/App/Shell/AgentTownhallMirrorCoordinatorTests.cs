@@ -356,7 +356,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
 
         AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: true);
         Assert.Equal("delayed hello", GetChannelMirrorContent(store, channelA, ConversationEntryKind.UserChat));
-        Assert.Equal("Assistant: Hello back", GetChannelMirrorContent(store, channelA, ConversationEntryKind.AssistantResponse));
+        Assert.Equal("Hello back", GetChannelMirrorContent(store, channelA, ConversationEntryKind.AssistantResponse));
     }
 
     [Fact]
@@ -477,7 +477,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         Assert.True(store.TryGetChannelConversation(channelA, out var conversation));
         Assert.Equal(2, conversation!.Entries.Count);
         Assert.Equal("no switch", conversation.Entries[0].Content);
-        Assert.Equal("Assistant: Hello back", conversation.Entries[1].Content);
+        Assert.Equal("Hello back", conversation.Entries[1].Content);
         Assert.Equal(2, townhall.Messages.Count);
     }
 
@@ -492,14 +492,14 @@ public sealed class AgentTownhallMirrorCoordinatorTests
 
         vm.AddMirroredActivityToConversation(
             unknown,
-            TownhallMessageKind.Chat,
+            ConversationEntryKind.UserChat,
             "unknown target",
             ActorId.HumanUser,
             "user-1",
             "User");
         vm.AddMirroredActivityToConversation(
             direct.Id,
-            TownhallMessageKind.Chat,
+            ConversationEntryKind.UserChat,
             "direct target",
             ActorId.HumanUser,
             "user-1",

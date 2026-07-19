@@ -55,29 +55,33 @@ public sealed class TownhallTypedEntryIntegrationTests
     }
 
     [Fact]
-    public void AddMirroredActivity_StillTargetsActiveChannel_WithTypedOwnership()
+    public void AddMirroredActivityToConversation_StillTargetsCapturedConversation_WithTypedOwnership()
     {
         var store = ConversationsTestSupport.CreateStore();
         var vm = ConversationsTestSupport.CreateTownhallViewModel(store: store);
         var initialId = vm.ActiveChannelId!;
         var otherId = vm.Channels.First(c => c.Id != initialId).Id;
+        Assert.True(store.TryGetChannelConversation(initialId, out var initialConversation));
 
-        vm.AddMirroredActivity(
-            TownhallMessageKind.Chat,
+        vm.AddMirroredActivityToConversation(
+            initialConversation!.Id,
+            ConversationEntryKind.UserChat,
             "Message on initial channel",
             ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
         vm.SelectChannelCommand.Execute(otherId).Subscribe();
-        vm.AddMirroredActivity(
-            TownhallMessageKind.Chat,
+        Assert.True(store.TryGetChannelConversation(otherId, out var otherConversation));
+        vm.AddMirroredActivityToConversation(
+            otherConversation!.Id,
+            ConversationEntryKind.UserChat,
             "Message on other channel",
             ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
 
-        Assert.True(store.TryGetChannelConversation(initialId, out var initialConversation));
-        Assert.True(store.TryGetChannelConversation(otherId, out var otherConversation));
+        Assert.True(store.TryGetChannelConversation(initialId, out initialConversation));
+        Assert.True(store.TryGetChannelConversation(otherId, out otherConversation));
         Assert.Single(initialConversation!.Entries);
         Assert.Equal(2, otherConversation!.Entries.Count);
         Assert.Equal("Message on other channel", otherConversation.Entries[^1].Content);
@@ -94,7 +98,7 @@ public sealed class TownhallTypedEntryIntegrationTests
 
         vm.AddMirroredActivityToConversation(
             initialConversation!.Id,
-            TownhallMessageKind.Chat,
+            ConversationEntryKind.UserChat,
             "Captured target",
             ActorId.HumanUser,
             senderId: "user-1",
@@ -126,15 +130,19 @@ public sealed class TownhallTypedEntryIntegrationTests
     [Fact]
     public void FilterModeCompatibility_RemainsUnchangedAfterTypedProjection()
     {
-        var vm = ConversationsTestSupport.CreateTownhallViewModel();
-        vm.AddMirroredActivity(
-            TownhallMessageKind.Chat,
+        var store = ConversationsTestSupport.CreateStore();
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        Assert.True(store.TryGetChannelConversation(vm.ActiveChannelId!, out var conversation));
+        vm.AddMirroredActivityToConversation(
+            conversation!.Id,
+            ConversationEntryKind.UserChat,
             "chat",
             ActorId.HumanUser,
             senderId: "user-1",
             senderName: "User");
-        vm.AddMirroredActivity(
-            TownhallMessageKind.ChannelEvent,
+        vm.AddMirroredActivityToConversation(
+            conversation.Id,
+            ConversationEntryKind.ChannelEvent,
             "event",
             ActorId.HumanUser,
             senderId: "user-1",

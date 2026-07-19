@@ -33,7 +33,7 @@ public sealed class TownhallEntryProjectionTests
             ConversationEntryId.New(),
             ActorId.PanelSeed("alpha"),
             Timestamp,
-            "Assistant: hello");
+            "hello");
 
         var message = TownhallEntryProjection.ToTownhallMessage(entry, catalog);
 
@@ -85,54 +85,23 @@ public sealed class TownhallEntryProjectionTests
     }
 
     [Theory]
-    [InlineData(TownhallMessageKind.Chat, "user-1", ConversationEntryKind.UserChat)]
-    [InlineData(TownhallMessageKind.Chat, "alpha", ConversationEntryKind.AssistantResponse)]
-    [InlineData(TownhallMessageKind.AgentError, "alpha", ConversationEntryKind.RoutingFailure, "Routing failed: x")]
-    [InlineData(TownhallMessageKind.AgentError, "alpha", ConversationEntryKind.ExecutionFailure, "Error: boom")]
-    [InlineData(TownhallMessageKind.ChannelEvent, "user-1", ConversationEntryKind.ChannelEvent, "Switched")]
-    [InlineData(TownhallMessageKind.System, "user-1", ConversationEntryKind.SystemNotification, "Status")]
-    public void ClassifyTownhallMirror_MapsAuthorizedProducers(
-        TownhallMessageKind kind,
-        string legacySenderId,
-        ConversationEntryKind expectedKind,
-        string content = "hello")
+    [InlineData(ConversationEntryKind.UserChat, "hello", "hello")]
+    [InlineData(ConversationEntryKind.AssistantResponse, "reply", "Assistant: reply")]
+    [InlineData(ConversationEntryKind.RoutingFailure, "unknown", "Routing failed: unknown")]
+    [InlineData(ConversationEntryKind.ExecutionFailure, "boom", "Error: boom")]
+    [InlineData(ConversationEntryKind.ChannelEvent, "Switched", "Switched")]
+    [InlineData(ConversationEntryKind.SystemNotification, "Status", "Status")]
+    public void ToTownhallDisplayContent_PreservesFrozenCompatibilityPrefixes(
+        ConversationEntryKind entryKind,
+        string rawContent,
+        string expectedDisplay)
     {
-        var catalog = ConversationsTestSupport.CreateCatalog();
-        var author = legacySenderId == "user-1"
-            ? ActorId.HumanUser
-            : ActorId.PanelSeed("alpha");
+        var entry = TownhallEntryProjection.CreateTypedEntry(
+            entryKind,
+            ActorId.HumanUser,
+            Timestamp,
+            rawContent);
 
-        var classified = TownhallEntryProjection.ClassifyTownhallMirror(
-            kind,
-            author,
-            content,
-            catalog);
-
-        Assert.Equal(expectedKind, classified);
-    }
-
-    [Fact]
-    public void ClassifyTownhallMirror_RejectsUnusedSpeculativeKinds()
-    {
-        var catalog = ConversationsTestSupport.CreateCatalog();
-
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            TownhallEntryProjection.ClassifyTownhallMirror(
-                TownhallMessageKind.AgentThink,
-                ActorId.HumanUser,
-                "thought",
-                catalog));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            TownhallEntryProjection.ClassifyTownhallMirror(
-                TownhallMessageKind.ToolCall,
-                ActorId.HumanUser,
-                "tool",
-                catalog));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            TownhallEntryProjection.ClassifyTownhallMirror(
-                TownhallMessageKind.ToolResult,
-                ActorId.HumanUser,
-                "result",
-                catalog));
+        Assert.Equal(expectedDisplay, TownhallEntryProjection.ToTownhallDisplayContent(entry));
     }
 }

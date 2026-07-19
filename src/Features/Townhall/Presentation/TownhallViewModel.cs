@@ -125,7 +125,7 @@ public class TownhallViewModel : ReactiveObject
                 var channel = _state.Channels.FirstOrDefault(c => c.Id == value);
                 var channelName = channel?.Name ?? value;
                 LogActivity(
-                    kind: TownhallMessageKind.ChannelEvent,
+                    entryKind: ConversationEntryKind.ChannelEvent,
                     content: $"Switched to #{channelName}",
                     author: _actorCatalog.CanonicalHuman.Id,
                     senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
@@ -235,7 +235,7 @@ public class TownhallViewModel : ReactiveObject
                 return;
 
             LogActivity(
-                kind: TownhallMessageKind.Chat,
+                entryKind: ConversationEntryKind.UserChat,
                 content: draft,
                 author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
@@ -268,40 +268,19 @@ public class TownhallViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Appends a mirrored activity entry to the active channel's message collection.
-    /// This is the narrow public surface for app-layer mirroring (e.g., agent-panel
-    /// interactions mirrored into Townhall). Keeps channel/message-list invariants
-    /// internal to this ViewModel.
-    /// </summary>
-    /// <param name="kind">The kind of entry (Chat, AgentError, etc.).</param>
-    /// <param name="content">The text content of the entry.</param>
-    /// <param name="author">Authoritative typed actor identity for the entry.</param>
-    /// <param name="senderId">Legacy projected sender ID for Townhall compatibility.</param>
-    /// <param name="senderName">Legacy projected sender name for Townhall compatibility.</param>
-    public void AddMirroredActivity(
-        TownhallMessageKind kind,
-        string content,
-        ActorId author,
-        string senderId,
-        string senderName)
-    {
-        LogActivity(kind, content, author, senderId, senderName);
-    }
-
-    /// <summary>
     /// Appends a mirrored activity entry to the specified channel conversation.
     /// Does not consult the active channel and silently no-ops when the target is
     /// unknown or is not a Townhall channel conversation.
     /// </summary>
     public void AddMirroredActivityToConversation(
         ConversationId conversationId,
-        TownhallMessageKind kind,
+        ConversationEntryKind entryKind,
         string content,
         ActorId author,
         string senderId,
         string senderName)
     {
-        AppendMirroredActivity(conversationId, kind, content, author, senderId, senderName);
+        AppendMirroredActivity(conversationId, entryKind, content, author, senderId, senderName);
     }
 
     /// <summary>
@@ -310,7 +289,7 @@ public class TownhallViewModel : ReactiveObject
     /// projects it into the legacy Townhall compatibility collection.
     /// </summary>
     private void LogActivity(
-        TownhallMessageKind kind,
+        ConversationEntryKind entryKind,
         string content,
         ActorId author,
         string senderId,
@@ -322,12 +301,12 @@ public class TownhallViewModel : ReactiveObject
         if (!_conversationStore.TryGetChannelConversation(_state.ActiveChannelId, out var conversation))
             return;
 
-        AppendMirroredActivity(conversation.Id, kind, content, author, senderId, senderName);
+        AppendMirroredActivity(conversation.Id, entryKind, content, author, senderId, senderName);
     }
 
     private void AppendMirroredActivity(
         ConversationId conversationId,
-        TownhallMessageKind kind,
+        ConversationEntryKind entryKind,
         string content,
         ActorId author,
         string senderId,
@@ -348,11 +327,6 @@ public class TownhallViewModel : ReactiveObject
         }
 
         var messagesList = _state.ChannelMessages[channelId];
-        var entryKind = TownhallEntryProjection.ClassifyTownhallMirror(
-            kind,
-            author,
-            content,
-            _actorCatalog);
         var timestamp = DateTimeOffset.UtcNow;
         var typedEntry = TownhallEntryProjection.CreateTypedEntry(
             entryKind,

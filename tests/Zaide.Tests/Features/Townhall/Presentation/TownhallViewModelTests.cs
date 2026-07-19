@@ -3,19 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using Xunit;
-using Zaide.Tests.Features.Conversations;
+using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallViewModelTests
 {
-    private static TownhallViewModel CreateViewModel()
+    private static TownhallViewModel CreateViewModel() =>
+        CreateViewModelWithStore().Vm;
+
+    private static (TownhallViewModel Vm, ConversationStore Store) CreateViewModelWithStore()
     {
+        var store = ConversationsTestSupport.CreateStore();
         var state = new TownhallState();
-        return ConversationsTestSupport.CreateTownhallViewModel(state);
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(state, store: store);
+        return (vm, store);
+    }
+
+    private static ConversationId GetActiveConversationId(TownhallViewModel vm, ConversationStore store)
+    {
+        Assert.True(store.TryGetChannelConversation(vm.ActiveChannelId!, out var conversation));
+        return conversation!.Id;
     }
 
     /// <summary>
@@ -492,104 +504,126 @@ public class TownhallViewModelTests
     }
 
     /// <summary>
-    /// Verifies that AddMirroredActivity with kind=Chat appends a Chat entry to the active channel.
+    /// Verifies that mirrored assistant chat appends a Chat entry to the active channel.
     /// </summary>
     [Fact]
-    public void AddMirroredActivity_ChatKind_AppendsChatEntry()
+    public void AddMirroredActivityToConversation_AssistantChat_AppendsChatEntry()
     {
-        var vm = CreateViewModel();
+        var (vm, store) = CreateViewModelWithStore();
         var initialCount = vm.Messages.Count;
+        var conversationId = GetActiveConversationId(vm, store);
 
-        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Hello from agent panel",
+        vm.AddMirroredActivityToConversation(
+            conversationId,
+            ConversationEntryKind.AssistantResponse,
+            "Hello from agent panel",
             author: ActorId.TownhallAgent,
-            senderId: "agent-1", senderName: "Zaide Agent");
+            senderId: "agent-1",
+            senderName: "Zaide Agent");
 
         Assert.Equal(initialCount + 1, vm.Messages.Count);
         var last = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal(TownhallMessageKind.Chat, last.Kind);
-        Assert.Equal("Hello from agent panel", last.Content);
+        Assert.Equal("Assistant: Hello from agent panel", last.Content);
         Assert.Equal("agent-1", last.SenderId);
         Assert.Equal("Zaide Agent", last.SenderName);
     }
 
     /// <summary>
-    /// Verifies that AddMirroredActivity with kind=AgentError appends an AgentError entry.
+    /// Verifies that mirrored execution failures append an AgentError entry.
     /// </summary>
     [Fact]
-    public void AddMirroredActivity_AgentErrorKind_AppendsAgentErrorEntry()
+    public void AddMirroredActivityToConversation_ExecutionFailure_AppendsAgentErrorEntry()
     {
-        var vm = CreateViewModel();
+        var (vm, store) = CreateViewModelWithStore();
         var initialCount = vm.Messages.Count;
+        var conversationId = GetActiveConversationId(vm, store);
 
-        vm.AddMirroredActivity(TownhallMessageKind.AgentError, "Request failed: timeout",
+        vm.AddMirroredActivityToConversation(
+            conversationId,
+            ConversationEntryKind.ExecutionFailure,
+            "timeout",
             author: ActorId.TownhallAgent,
-            senderId: "agent-1", senderName: "Zaide Agent");
+            senderId: "agent-1",
+            senderName: "Zaide Agent");
 
         Assert.Equal(initialCount + 1, vm.Messages.Count);
         var last = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal(TownhallMessageKind.AgentError, last.Kind);
-        Assert.Equal("Request failed: timeout", last.Content);
+        Assert.Equal("Error: timeout", last.Content);
         Assert.Equal("agent-1", last.SenderId);
         Assert.Equal("Zaide Agent", last.SenderName);
         Assert.Equal("avatar-agent", last.SenderAvatar);
     }
 
     /// <summary>
-    /// Verifies that AddMirroredActivity targets the currently active channel.
+    /// Verifies that mirrored activity targets the currently active channel.
     /// After switching channels, the entry appears in the new active channel, not the old one.
     /// </summary>
     [Fact]
-    public void AddMirroredActivity_TargetsActiveChannel()
+    public void AddMirroredActivityToConversation_TargetsActiveChannel()
     {
-        var vm = CreateViewModel();
+        var (vm, store) = CreateViewModelWithStore();
         var initialId = vm.ActiveChannelId;
         Assert.NotNull(initialId);
+        var initialConversationId = GetActiveConversationId(vm, store);
 
-        // Send a mirrored activity on the initial channel
-        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on initial channel",
+        vm.AddMirroredActivityToConversation(
+            initialConversationId,
+            ConversationEntryKind.UserChat,
+            "Message on initial channel",
             author: ActorId.HumanUser,
-            senderId: "user-1", senderName: "User");
+            senderId: "user-1",
+            senderName: "User");
 
-        // Switch to another channel
         var otherId = vm.Channels.First(c => c.Id != initialId).Id;
         vm.SelectChannelCommand.Execute(otherId).Subscribe();
+        var otherConversationId = GetActiveConversationId(vm, store);
 
-        // Send a mirrored activity on the other channel
-        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Message on other channel",
+        vm.AddMirroredActivityToConversation(
+            otherConversationId,
+            ConversationEntryKind.UserChat,
+            "Message on other channel",
             author: ActorId.HumanUser,
-            senderId: "user-1", senderName: "User");
+            senderId: "user-1",
+            senderName: "User");
 
-        // The other channel's messages should contain the second message
         var otherMessages = vm.Messages;
         var lastOnOther = otherMessages[otherMessages.Count - 1];
         Assert.Equal("Message on other channel", lastOnOther.Content);
 
-        // Switch back to initial channel and verify the first message is still there
         vm.SelectChannelCommand.Execute(initialId!).Subscribe();
         var initialMessages = vm.Messages;
         Assert.Contains(initialMessages, m => m.Content == "Message on initial channel");
     }
 
     /// <summary>
-    /// Verifies that AddMirroredActivity with kind=Chat uses "avatar-user" for user senderId
+    /// Verifies that mirrored activity uses "avatar-user" for user senderId
     /// and "avatar-agent" for non-user senderId.
     /// </summary>
     [Fact]
-    public void AddMirroredActivity_SetsCorrectAvatarBySender()
+    public void AddMirroredActivityToConversation_SetsCorrectAvatarBySender()
     {
-        var vm = CreateViewModel();
+        var (vm, store) = CreateViewModelWithStore();
+        var conversationId = GetActiveConversationId(vm, store);
 
-        // User sender
-        vm.AddMirroredActivity(TownhallMessageKind.Chat, "User message",
+        vm.AddMirroredActivityToConversation(
+            conversationId,
+            ConversationEntryKind.UserChat,
+            "User message",
             author: ActorId.HumanUser,
-            senderId: "user-1", senderName: "User");
+            senderId: "user-1",
+            senderName: "User");
         var userMsg = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal("avatar-user", userMsg.SenderAvatar);
 
-        // Agent sender
-        vm.AddMirroredActivity(TownhallMessageKind.Chat, "Agent message",
+        vm.AddMirroredActivityToConversation(
+            conversationId,
+            ConversationEntryKind.AssistantResponse,
+            "Agent message",
             author: ActorId.PanelCustom("agent-5"),
-            senderId: "agent-5", senderName: "Some Agent");
+            senderId: "agent-5",
+            senderName: "Some Agent");
         var agentMsg = vm.Messages[vm.Messages.Count - 1];
         Assert.Equal("avatar-agent", agentMsg.SenderAvatar);
     }
@@ -625,7 +659,8 @@ public class TownhallViewModelTests
     [Fact]
     public void MirroredActivity_UpdatesFilteredMessages_WithoutTabOrFilterChange()
     {
-        var vm = CreateViewModel();
+        var (vm, store) = CreateViewModelWithStore();
+        var conversationId = GetActiveConversationId(vm, store);
 
         IReadOnlyList<TownhallMessage>? latest = null;
         using var sub = vm.FilteredMessages.Subscribe(list => latest = list);
@@ -633,10 +668,9 @@ public class TownhallViewModelTests
         Assert.NotNull(latest);
         var beforeCount = latest!.Count;
 
-        // Mirror an activity exactly as MainWindowViewModel.SendAgentMessageAsync does
-        // for an agent-panel send — no channel switch, no filter change.
-        vm.AddMirroredActivity(
-            kind: TownhallMessageKind.Chat,
+        vm.AddMirroredActivityToConversation(
+            conversationId,
+            entryKind: ConversationEntryKind.UserChat,
             content: "Hello from agent panel",
             author: ActorId.HumanUser,
             senderId: "user-1",

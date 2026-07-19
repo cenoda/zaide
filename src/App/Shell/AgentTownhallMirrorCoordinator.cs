@@ -7,7 +7,6 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
-using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
 namespace Zaide.App.Shell;
@@ -48,7 +47,7 @@ internal sealed class AgentTownhallMirrorCoordinator
             mirrorTargetConversationId = capturedConversationId;
             _townhallViewModel.AddMirroredActivityToConversation(
                 capturedConversationId,
-                kind: TownhallMessageKind.Chat,
+                entryKind: ConversationEntryKind.UserChat,
                 content: userMessage,
                 author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
@@ -92,8 +91,8 @@ internal sealed class AgentTownhallMirrorCoordinator
             case ExecutionRunOutcome.Success:
                 _townhallViewModel.AddMirroredActivityToConversation(
                     mirrorTargetConversationId,
-                    kind: TownhallMessageKind.Chat,
-                    content: $"Assistant: {executionResult.AssistantResponse}",
+                    entryKind: ConversationEntryKind.AssistantResponse,
+                    content: executionResult.AssistantResponse!,
                     author: run.TargetActorId,
                     senderId: senderId,
                     senderName: senderName);
@@ -102,8 +101,8 @@ internal sealed class AgentTownhallMirrorCoordinator
             case ExecutionRunOutcome.RoutingFailure:
                 _townhallViewModel.AddMirroredActivityToConversation(
                     mirrorTargetConversationId,
-                    kind: TownhallMessageKind.AgentError,
-                    content: $"Routing failed: {executionResult.ErrorMessage}",
+                    entryKind: ConversationEntryKind.RoutingFailure,
+                    content: executionResult.ErrorMessage!,
                     author: run.TargetActorId,
                     senderId: senderId,
                     senderName: senderName);
@@ -113,8 +112,8 @@ internal sealed class AgentTownhallMirrorCoordinator
             case ExecutionRunOutcome.Cancelled:
                 _townhallViewModel.AddMirroredActivityToConversation(
                     mirrorTargetConversationId,
-                    kind: TownhallMessageKind.AgentError,
-                    content: $"Error: {executionResult.ErrorMessage}",
+                    entryKind: ConversationEntryKind.ExecutionFailure,
+                    content: executionResult.ErrorMessage!,
                     author: run.TargetActorId,
                     senderId: senderId,
                     senderName: senderName);
