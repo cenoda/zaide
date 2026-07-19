@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Application;
 
@@ -33,6 +34,8 @@ public sealed class AgentRouter : IAgentRouter
         string rawInput,
         CancellationToken ct = default)
     {
+        var sourcePanel = _panelHost.Panels.FirstOrDefault(p => p.PanelId == sourcePanelId);
+
         IReadOnlyList<string> visibleAgentNames = _panelHost.Panels
             .Select(static p => p.AgentName)
             .ToList();
@@ -41,14 +44,15 @@ public sealed class AgentRouter : IAgentRouter
 
         if (!parseResult.Success || parseResult.Intent is null)
         {
-            return new RouteResult(false, null, parseResult.FailureReason, null);
+            return CreateRoutingFailureRouteResult(
+                sourcePanel,
+                parseResult.FailureReason ?? "Routing failed");
         }
 
         var intent = parseResult.Intent;
-        var sourcePanel = _panelHost.Panels.FirstOrDefault(p => p.PanelId == intent.SourcePanelId);
-        if (sourcePanel is null)
+        if (sourcePanel is null || sourcePanel.PanelId != intent.SourcePanelId)
         {
-            return new RouteResult(false, null, "Unknown source panel", null);
+            return CreateRoutingFailureRouteResult(sourcePanel, "Unknown source panel");
         }
 
         var targetPanel = ResolveTargetPanel(intent, sourcePanel);
@@ -66,6 +70,32 @@ public sealed class AgentRouter : IAgentRouter
             ct);
 
         return new RouteResult(true, request, null, executionResult);
+    }
+
+    private static RouteResult CreateRoutingFailureRouteResult(
+        AgentPanelState? sourcePanel,
+        string failureReason)
+    {
+        var executionResult = TryCreateRoutingFailureResult(sourcePanel, failureReason);
+        return new RouteResult(false, null, failureReason, executionResult);
+    }
+
+    private static AgentExecutionCoordinatorResult? TryCreateRoutingFailureResult(
+        AgentPanelState? sourcePanel,
+        string failureReason)
+    {
+        if (sourcePanel is null)
+            return null;
+
+        var run = new ExecutionRun(
+            ExecutionRunId.New(),
+            sourcePanel.ConversationId,
+            ActorId.HumanUser,
+            sourcePanel.ActorId,
+            sourcePanel.PanelId,
+            ExecutionRunOutcome.RoutingFailure);
+
+        return AgentExecutionCoordinatorResult.RoutingFailure(run, failureReason);
     }
 
     private AgentPanelState ResolveTargetPanel(ParsedRouteIntent intent, AgentPanelState sourcePanel)

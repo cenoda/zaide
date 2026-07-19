@@ -27,6 +27,16 @@ public sealed class ExecutionRun
             throw new ArgumentException("Conversation id is required.", nameof(conversationId));
         }
 
+        if (initiatingActorId == default)
+        {
+            throw new ArgumentException("Initiating actor id is required.", nameof(initiatingActorId));
+        }
+
+        if (targetActorId == default)
+        {
+            throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
+        }
+
         if (string.IsNullOrWhiteSpace(targetPanelId))
         {
             throw new ArgumentException("Target panel id is required.", nameof(targetPanelId));

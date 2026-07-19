@@ -12,16 +12,15 @@ internal static class AgentExecutionTestSupport
         AgentPanelState panel,
         string assistantResponse = "Hello back")
     {
-        return new AgentExecutionCoordinatorResult(
-            new ExecutionRun(
-                ExecutionRunId.New(),
-                panel.ConversationId,
-                ActorId.HumanUser,
-                panel.ActorId,
-                panel.PanelId,
-                ExecutionRunOutcome.Success),
-            assistantResponse,
-            null);
+        var run = new ExecutionRun(
+            ExecutionRunId.New(),
+            panel.ConversationId,
+            ActorId.HumanUser,
+            panel.ActorId,
+            panel.PanelId,
+            ExecutionRunOutcome.Success);
+
+        return AgentExecutionCoordinatorResult.Success(run, assistantResponse);
     }
 
     public static AgentExecutionCoordinatorResult ErrorResult(
@@ -29,15 +28,29 @@ internal static class AgentExecutionTestSupport
         string errorMessage = "Request failed",
         ExecutionRunOutcome outcome = ExecutionRunOutcome.ExecutionFailure)
     {
-        return new AgentExecutionCoordinatorResult(
-            new ExecutionRun(
-                ExecutionRunId.New(),
-                panel.ConversationId,
-                ActorId.HumanUser,
-                panel.ActorId,
-                panel.PanelId,
-                outcome),
-            null,
-            errorMessage);
+        var run = new ExecutionRun(
+            ExecutionRunId.New(),
+            panel.ConversationId,
+            ActorId.HumanUser,
+            panel.ActorId,
+            panel.PanelId,
+            outcome);
+
+        return AgentExecutionCoordinatorResult.Failure(run, errorMessage);
+    }
+
+    public static AgentExecutionCoordinatorResult RoutingFailureResult(
+        AgentPanelState panel,
+        string failureReason = "Unknown target")
+    {
+        var run = new ExecutionRun(
+            ExecutionRunId.New(),
+            panel.ConversationId,
+            ActorId.HumanUser,
+            panel.ActorId,
+            panel.PanelId,
+            ExecutionRunOutcome.RoutingFailure);
+
+        return AgentExecutionCoordinatorResult.RoutingFailure(run, failureReason);
     }
 }

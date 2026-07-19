@@ -50,27 +50,10 @@ internal sealed class AgentTownhallMirrorCoordinator
 
         var routeResult = await _agentRouter.RouteAndExecuteAsync(panelId, userMessage, ct);
 
-        var sourcePanel = _agentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
-
-        if (!routeResult.Success)
+        if (routeResult.ExecutionResult is not null)
         {
-            if (sourcePanel is null)
-                return;
-
-            _townhallViewModel.AddMirroredActivity(
-                kind: TownhallMessageKind.AgentError,
-                content: $"Routing failed: {routeResult.FailureReason}",
-                author: sourcePanel.ActorId,
-                senderId: sourcePanel.AgentId,
-                senderName: sourcePanel.AgentName);
-            return;
+            MirrorTerminalExecution(routeResult.ExecutionResult);
         }
-
-        var executionResult = routeResult.ExecutionResult;
-        if (executionResult is null)
-            return;
-
-        MirrorTerminalExecution(executionResult);
     }
 
     private void MirrorTerminalExecution(AgentExecutionCoordinatorResult executionResult)
@@ -98,9 +81,6 @@ internal sealed class AgentTownhallMirrorCoordinator
         switch (run.Outcome)
         {
             case ExecutionRunOutcome.Success:
-                if (string.IsNullOrWhiteSpace(executionResult.AssistantResponse))
-                    return;
-
                 _townhallViewModel.AddMirroredActivity(
                     kind: TownhallMessageKind.Chat,
                     content: $"Assistant: {executionResult.AssistantResponse}",
@@ -109,11 +89,17 @@ internal sealed class AgentTownhallMirrorCoordinator
                     senderName: senderName);
                 break;
 
+            case ExecutionRunOutcome.RoutingFailure:
+                _townhallViewModel.AddMirroredActivity(
+                    kind: TownhallMessageKind.AgentError,
+                    content: $"Routing failed: {executionResult.ErrorMessage}",
+                    author: run.TargetActorId,
+                    senderId: senderId,
+                    senderName: senderName);
+                break;
+
             case ExecutionRunOutcome.ExecutionFailure:
             case ExecutionRunOutcome.Cancelled:
-                if (string.IsNullOrWhiteSpace(executionResult.ErrorMessage))
-                    return;
-
                 _townhallViewModel.AddMirroredActivity(
                     kind: TownhallMessageKind.AgentError,
                     content: $"Error: {executionResult.ErrorMessage}",

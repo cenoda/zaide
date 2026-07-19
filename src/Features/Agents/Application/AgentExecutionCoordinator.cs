@@ -107,7 +107,16 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             panel.PanelId,
             outcome);
 
-        return new AgentExecutionCoordinatorResult(run, assistantResponse, errorMessage);
+        return outcome switch
+        {
+            ExecutionRunOutcome.Success => AgentExecutionCoordinatorResult.Success(
+                run,
+                assistantResponse!),
+            ExecutionRunOutcome.Cancelled or ExecutionRunOutcome.ExecutionFailure =>
+                AgentExecutionCoordinatorResult.Failure(run, errorMessage!),
+            _ => throw new InvalidOperationException(
+                $"Unexpected coordinator outcome: {outcome}.")
+        };
     }
 
     private static bool IsCancellationMessage(string? message) =>

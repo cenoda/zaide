@@ -113,7 +113,8 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Unknown target", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -133,7 +134,8 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Ambiguous target", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -152,7 +154,8 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Multiple mentions", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -170,7 +173,8 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Empty input", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -189,7 +193,8 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Empty content after stripping", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);

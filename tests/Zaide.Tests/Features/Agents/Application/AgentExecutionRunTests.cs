@@ -14,6 +14,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
@@ -211,7 +212,7 @@ public sealed class AgentExecutionRunTests : IDisposable
     }
 
     [Fact]
-    public async Task RouteAndExecuteAsync_RoutingFailure_DoesNotCreateExecutionResult()
+    public async Task RouteAndExecuteAsync_RoutingFailure_CreatesCorrelatedRoutingFailureRun()
     {
         var host = CreateHostWithPanel(out var panel);
         var handler = new SuccessHandler("unused");
@@ -223,12 +224,19 @@ public sealed class AgentExecutionRunTests : IDisposable
         Assert.False(result.Success);
         Assert.Equal("Unknown target", result.FailureReason);
         Assert.Null(result.Request);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
+        Assert.Equal(panel.ConversationId, result.ExecutionResult.Run.ConversationId);
+        Assert.Equal(panel.ActorId, result.ExecutionResult.Run.TargetActorId);
+        Assert.Equal(panel.PanelId, result.ExecutionResult.Run.TargetPanelId);
+        Assert.Equal(ActorId.HumanUser, result.ExecutionResult.Run.InitiatingActorId);
+        Assert.Equal("Unknown target", result.ExecutionResult.ErrorMessage);
+        Assert.Null(result.ExecutionResult.AssistantResponse);
         Assert.Empty(panel.OutputHistory);
     }
 
     [Fact]
-    public async Task RouteAndExecuteAsync_AmbiguousTarget_DoesNotCreateExecutionResult()
+    public async Task RouteAndExecuteAsync_AmbiguousTarget_CreatesCorrelatedRoutingFailureRun()
     {
         var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
@@ -242,7 +250,10 @@ public sealed class AgentExecutionRunTests : IDisposable
 
         Assert.False(result.Success);
         Assert.Equal("Ambiguous target", result.FailureReason);
-        Assert.Null(result.ExecutionResult);
+        Assert.NotNull(result.ExecutionResult);
+        Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
+        Assert.Equal(source.ActorId, result.ExecutionResult.Run.TargetActorId);
+        Assert.Equal("Ambiguous target", result.ExecutionResult.ErrorMessage);
     }
 
     private sealed class SuccessHandler : HttpMessageHandler

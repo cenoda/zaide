@@ -60,17 +60,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
 
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
-                return Task.FromResult<AgentExecutionCoordinatorResult?>(
-                    new AgentExecutionCoordinatorResult(
-                        new ExecutionRun(
-                            ExecutionRunId.New(),
-                            p.ConversationId,
-                            ActorId.HumanUser,
-                            p.ActorId,
-                            p.PanelId,
-                            ExecutionRunOutcome.ExecutionFailure),
-                        null,
-                        null));
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
             });
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
@@ -137,7 +127,24 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     }
 
     [Fact]
-    public async Task SendAsync_RoutingFailure_MirroredOnce_DoesNotCallExecution()
+    public async Task SendAsync_RoutingFailure_MirrorsStructuredRoutingFailureRun()
+    {
+        var (sut, _, townhall, panel, exec) = CreateSut();
+        var before = townhall.Messages.Count;
+
+        await sut.SendAsync(panel.PanelId, "@NonExistentAgent hello", CancellationToken.None);
+
+        Assert.Equal(before + 2, townhall.Messages.Count);
+        Assert.Equal(TownhallMessageKind.AgentError, townhall.Messages[before + 1].Kind);
+        Assert.Equal("Routing failed: Unknown target", townhall.Messages[before + 1].Content);
+        Assert.Equal("agent-1", townhall.Messages[before + 1].SenderId);
+        exec.Verify(
+            c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SendAsync_RoutingFailure_MirroredExactlyOnce()
     {
         var (sut, _, townhall, panel, exec) = CreateSut();
         var before = townhall.Messages.Count;

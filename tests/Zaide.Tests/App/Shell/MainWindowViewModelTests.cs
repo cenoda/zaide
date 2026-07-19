@@ -512,17 +512,7 @@ public class MainWindowViewModelTests
 
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
-                return Task.FromResult<AgentExecutionCoordinatorResult?>(
-                    new AgentExecutionCoordinatorResult(
-                        new ExecutionRun(
-                            ExecutionRunId.New(),
-                            p.ConversationId,
-                            ActorId.HumanUser,
-                            p.ActorId,
-                            p.PanelId,
-                            ExecutionRunOutcome.ExecutionFailure),
-                        null,
-                        null));
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
             });
 
         var services = new ServiceCollection();
@@ -763,17 +753,7 @@ public class MainWindowViewModelTests
                 p.OutputHistory.Add("Status: Completed");
                 p.Status = "Idle";
                 p.IsBusy = false;
-                return Task.FromResult<AgentExecutionCoordinatorResult?>(
-                    new AgentExecutionCoordinatorResult(
-                        new ExecutionRun(
-                            ExecutionRunId.New(),
-                            p.ConversationId,
-                            ActorId.HumanUser,
-                            p.ActorId,
-                            p.PanelId,
-                            ExecutionRunOutcome.Success),
-                        null,
-                        null));
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
             });
 
         var services = new ServiceCollection();
