@@ -14,7 +14,9 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Tests.Features.Agents;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
@@ -41,11 +43,12 @@ public sealed class AgentExecutionRunTests : IDisposable
         catch { /* best-effort cleanup */ }
     }
 
-    private static AgentPanelHost CreateHostWithPanel(out AgentPanelState panel)
+    private static (AgentPanelHost Host, AgentPanelState Panel, ConversationStore Store) CreateHostWithPanel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
-        return host;
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
+        return (host, panel, store);
     }
 
     private (SettingsService settings, TestSecretStore secrets) CreateSettingsAndSecrets(
@@ -77,6 +80,7 @@ public sealed class AgentExecutionRunTests : IDisposable
 
     private AgentExecutionCoordinator CreateCoordinator(
         AgentPanelHost host,
+        ConversationStore store,
         HttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler);
@@ -87,15 +91,15 @@ public sealed class AgentExecutionRunTests : IDisposable
             Model = "test-model"
         });
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        return new AgentExecutionCoordinator(host, service);
+        return AgentExecutionTestSupport.CreateCoordinator(host, service, store);
     }
 
     [Fact]
     public async Task SendAsync_Success_ReturnsStructuredResultWithStableRunId()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new SuccessHandler("Hello back");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
 
         var result = await coordinator.SendAsync(panel.PanelId, "Hi");
 
@@ -112,9 +116,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task SendAsync_ExecutionFailure_ReturnsStructuredErrorResult()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new StatusHandler(HttpStatusCode.InternalServerError, "Server error");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
 
         var result = await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -127,9 +131,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task SendAsync_CancelledServiceFailure_ReturnsCancelledOutcome()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new FaultHandler(new TaskCanceledException("Request was cancelled."));
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
 
         var result = await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -141,9 +145,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task SendAsync_ThrownException_ReturnsExecutionFailureOutcome()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new FaultHandler(new HttpRequestException("connection refused"));
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
 
         var result = await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -155,9 +159,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task SendAsync_DuplicateInFlight_ReturnsNullWithoutNewRun()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new DelayedSuccessHandler(TimeSpan.FromMilliseconds(200), "Slow");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
 
         var first = coordinator.SendAsync(panel.PanelId, "First");
         var second = await coordinator.SendAsync(panel.PanelId, "Second");
@@ -169,9 +173,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_DirectSend_ResolvesSourceTypedTarget()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new SuccessHandler("Direct reply");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
         var router = new AgentRouter(new MentionParser(), host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "hello");
@@ -190,11 +194,12 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_RoutedSend_ResolvesTargetTypedIdentity()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var handler = new SuccessHandler("Routed reply");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
         var router = new AgentRouter(new MentionParser(), host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta routed hello");
@@ -214,9 +219,9 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_RoutingFailure_CreatesCorrelatedRoutingFailureRun()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new SuccessHandler("unused");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
         var router = new AgentRouter(new MentionParser(), host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "@Missing hello");
@@ -238,12 +243,13 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_AmbiguousTarget_CreatesCorrelatedRoutingFailureRun()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         host.CreatePanel("agent-2", "Beta", "avatar_b");
         host.CreatePanel("agent-3", "Beta", "avatar_b2");
         var handler = new SuccessHandler("unused");
-        var coordinator = CreateCoordinator(host, handler);
+        var coordinator = CreateCoordinator(host, store, handler);
         var router = new AgentRouter(new MentionParser(), host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");

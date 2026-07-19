@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (Refactor 7 M4 +6 execution-run types).</summary>
-    public const int TotalTopLevelTypes = 438;
+    /// <summary>Total non-nested, non-compiler-generated production types (Refactor 7 M5a +2 internal panel projection types).</summary>
+    public const int TotalTopLevelTypes = 440;
 
     /// <summary>Public top-level production type ceiling and baseline count (Refactor 7 M4 +6 execution-run types).</summary>
     public const int PublicTopLevelTypes = 338;
 
-    /// <summary>Internal top-level production type count (Refactor 7 M3 +1 Townhall entry projection).</summary>
-    public const int InternalTopLevelTypes = 100;
+    /// <summary>Internal top-level production type count (Refactor 7 M5a +2 Agents panel projection types).</summary>
+    public const int InternalTopLevelTypes = 102;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Tests.Features.Agents;
 using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
@@ -18,6 +19,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Tests.Features.Settings.Infrastructure;
+using Zaide.Features.Conversations.Application;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
@@ -37,11 +39,12 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         catch { /* best-effort cleanup */ }
     }
 
-    private static AgentPanelHost CreateHostWithPanel(out AgentPanelState panel)
+    private static (AgentPanelHost Host, AgentPanelState Panel, ConversationStore Store) CreateHostWithPanel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
-        return host;
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
+        return (host, panel, store);
     }
 
     /// <summary>
@@ -156,12 +159,12 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Success_AppendsUserAndAssistantOutput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Hello back" }, finish_reason = "stop" } }
         }));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hi");
 
@@ -175,13 +178,13 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Success_ClearsDraftInput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         panel.DraftInput = "Hi there";
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Reply" }, finish_reason = "stop" } }
         }));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hi there");
 
@@ -195,9 +198,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_MissingApiKey_AppendsErrorToOutput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateServiceWithMissingApiKey();
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -214,7 +217,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_MissingBaseUrl_AppendsErrorToOutput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var options = new AgentExecutionOptions
         {
             BaseUrl = "",
@@ -225,7 +228,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(options);
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -237,7 +240,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_MissingModel_AppendsErrorToOutput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var options = new AgentExecutionOptions
         {
             BaseUrl = "https://api.test.com/v1",
@@ -248,7 +251,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(options);
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -262,10 +265,10 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Failure_ClearsDraftInput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         panel.DraftInput = "Hello";
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -279,9 +282,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Failure_AppendsErrorToOutput()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.Unauthorized, "{\"error\": \"bad key\"}");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -302,9 +305,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         // Enter 3 times re-sent "hi" 3 times because the draft was only cleared
         // on success. The draft must clear on every send initiation so a failed
         // request cannot be re-sent by pressing Enter again.
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // Simulate the user typing "hi" into the draft and pressing Enter 3 times.
         for (var i = 0; i < 3; i++)
@@ -327,7 +330,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_OneInFlight_SamePanel_SecondIsNoOp()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         // Use a slow handler that blocks to ensure concurrent call is dropped
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(500));
         var httpClient = new HttpClient(handler);
@@ -338,7 +341,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
             Model = "test-model"
         });
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // Start first send (will block for 500ms)
         var task1 = coordinator.SendAsync(panel.PanelId, "Hello");
@@ -358,14 +361,15 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_OneInFlight_DifferentPanels_BothAllowed()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Reply" }, finish_reason = "stop" } }
         }));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         var task1 = coordinator.SendAsync(panel1.PanelId, "Hello 1");
         var task2 = coordinator.SendAsync(panel2.PanelId, "Hello 2");
@@ -381,12 +385,12 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_UnknownPanel_IsSafeNoOp()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Reply" }, finish_reason = "stop" } }
         }));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // This should not throw
         await coordinator.SendAsync("non-existent-panel-id", "Hello");
@@ -398,9 +402,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_EmptyPanelId_IsSafeNoOp()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, "{}");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync("", "Hello");
 
@@ -410,9 +414,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_EmptyMessage_IsSafeNoOp()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, "{}");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "");
 
@@ -424,7 +428,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_StatusBecomesThinkingWhileRunning()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(200));
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
@@ -434,7 +438,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
             Model = "test-model"
         });
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // Start send (will block for 200ms)
         var task = coordinator.SendAsync(panel.PanelId, "Hello");
@@ -453,12 +457,12 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Success_EndsInIdle()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Reply" }, finish_reason = "stop" } }
         }));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -469,9 +473,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Failure_EndsInError()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -482,9 +486,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_Exception_EndsInError()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateFaultService(new HttpRequestException("connection refused"));
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         await coordinator.SendAsync(panel.PanelId, "Hello");
 
@@ -496,7 +500,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_OneInFlight_KeepsStateTruthfulOnDuplicate()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new BlockingHandler(TimeSpan.FromMilliseconds(300));
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
@@ -506,7 +510,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
             Model = "test-model"
         });
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // Start first send (will block for 300ms)
         var task1 = coordinator.SendAsync(panel.PanelId, "First");
@@ -530,9 +534,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ErrorResetsOnNextSuccessfulSend()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var failService = CreateService(HttpStatusCode.InternalServerError, "Server error");
-        var coordinator = new AgentExecutionCoordinator(host, failService);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, failService, store);
 
         // First send fails
         await coordinator.SendAsync(panel.PanelId, "Hello");
@@ -546,7 +550,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         {
             choices = new[] { new { message = new { content = "OK" }, finish_reason = "stop" } }
         }));
-        var coordinator2 = new AgentExecutionCoordinator(host, successService);
+        var coordinator2 = AgentExecutionTestSupport.CreateCoordinator(host, successService, store);
 
         await coordinator2.SendAsync(panel.PanelId, "Hello again");
 
@@ -564,7 +568,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ErrorResetsWithSingleCoordinatorUsingToggleHandler()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new ToggleHandler();
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
@@ -574,7 +578,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
             Model = "test-model"
         });
         var service = new AgentExecutionService(httpClient, settings, secrets);
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
         // First send fails (ToggleHandler fails first call)
         await coordinator.SendAsync(panel.PanelId, "Hello");
@@ -594,13 +598,13 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_Success_UpdatesPanelOutputAndStatus()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Router reply" }, finish_reason = "stop" } }
         }));
         var parser = new MentionParser();
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
         var router = new AgentRouter(parser, host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello from router");
@@ -619,10 +623,10 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_Failure_UpdatesPanelError()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
         var parser = new MentionParser();
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
         var router = new AgentRouter(parser, host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
@@ -637,7 +641,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_NetworkException_UpdatesPanelError()
     {
-        var host = CreateHostWithPanel(out var panel);
+        var (host, panel, store) = CreateHostWithPanel();
         var handler = new FaultHandler(new HttpRequestException("connection refused"));
         var httpClient = new HttpClient(handler);
         var options = new AgentExecutionOptions
@@ -649,7 +653,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var (settings, secrets) = CreateSettingsAndSecrets(options);
         var service = new AgentExecutionService(httpClient, settings, secrets);
         var parser = new MentionParser();
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
         var router = new AgentRouter(parser, host, coordinator);
 
         await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
@@ -667,7 +671,8 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_RoutedSend_UpdatesTargetPanel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
@@ -675,7 +680,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
             choices = new[] { new { message = new { content = "Target reply" }, finish_reason = "stop" } }
         }));
         var parser = new MentionParser();
-        var coordinator = new AgentExecutionCoordinator(host, service);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
         var router = new AgentRouter(parser, host, coordinator);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello from routed");

@@ -1264,11 +1264,12 @@ public class MainWindowViewModelTests
     private static (MainWindowViewModel Vm, AgentPanelState Panel, string TempDir) BuildFullChainVm(
         IAgentExecutionService executionService)
     {
-        var agentHost = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var agentHost = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         var parser = new MentionParser();
-        var coordinator = new AgentExecutionCoordinator(agentHost, executionService);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(agentHost, executionService, store);
         var router = new AgentRouter(parser, agentHost, coordinator);
 
         var services = new ServiceCollection();

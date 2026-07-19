@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M4 accepted (2026-07-19). M5a only authorized, not
-implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
+**Refactor 7 status:** **M4 accepted (2026-07-19). M5a implemented, pending
+acceptance.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
 at `0902641`. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
@@ -391,7 +391,19 @@ automated proof must still cover the ownership/attribution contract.
       results, typed routing targets, routing-failure run correlation, and
       result-invariant enforcement are accepted at `38418ed`.
 - [x] Human accepted M4 closeout on 2026-07-19; **M5a only** is authorized.
-- [ ] M5a implementation has not started.
+- [x] M5a implementation complete on 2026-07-19; pending human acceptance. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
+
+## M5a verification (2026-07-19, pending acceptance)
+
+- Implementation complete on 2026-07-19; pending human acceptance. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, pre-existing warnings).
+- Focused gate: **366 passed**, 0 failed, 0 skipped.
+- Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2448 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+- Manual M5 panel smoke: **not run** (no configured test endpoint in this session).
+- `AgentExecutionCoordinator` dual-writes authoritative typed user/terminal entries into each admitted attempt's target direct `ConversationId` via `IConversationStore`, then projects the same entries into legacy `OutputHistory` through `AgentPanelEntryProjection`. Routing failures without coordinator execution remain Townhall-only with no direct-conversation or `OutputHistory` mutation. `OutputHistory` ownership is retained for M5b cutover.
 
 ## Entry conditions for M2
 
@@ -465,4 +477,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M4 accepted at `38418ed`; M5a only authorized and not implemented; M5b–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M5a implemented, pending acceptance; M5b–M7, Refactor 8, and Phase 14 unauthorized)*

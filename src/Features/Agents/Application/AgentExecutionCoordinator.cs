@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Application;
@@ -20,12 +21,17 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 {
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionService _executionService;
+    private readonly IConversationStore _conversationStore;
     private readonly HashSet<string> _inFlightPanels = new();
 
-    public AgentExecutionCoordinator(IAgentPanelHost panelHost, IAgentExecutionService executionService)
+    public AgentExecutionCoordinator(
+        IAgentPanelHost panelHost,
+        IAgentExecutionService executionService,
+        IConversationStore conversationStore)
     {
         _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _executionService = executionService ?? throw new ArgumentNullException(nameof(executionService));
+        _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
     }
 
     public async Task<AgentExecutionCoordinatorResult?> SendAsync(
@@ -57,7 +63,10 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 
         try
         {
-            panel.OutputHistory.Add($"User: {userMessage}");
+            AgentPanelDirectConversationWriter.AppendUserMessage(
+                _conversationStore,
+                panel,
+                userMessage);
             panel.DraftInput = string.Empty;
 
             var result = await _executionService.ExecuteAsync(userMessage, ct);
@@ -65,14 +74,20 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             if (result.IsSuccess)
             {
                 assistantResponse = result.ResponseText;
-                panel.OutputHistory.Add($"Assistant: {assistantResponse}");
+                AgentPanelDirectConversationWriter.AppendAssistantResponse(
+                    _conversationStore,
+                    panel,
+                    assistantResponse);
                 panel.Status = "Idle";
                 outcome = ExecutionRunOutcome.Success;
             }
             else
             {
                 errorMessage = result.ErrorMessage;
-                panel.OutputHistory.Add($"Error: {errorMessage}");
+                AgentPanelDirectConversationWriter.AppendExecutionFailure(
+                    _conversationStore,
+                    panel,
+                    errorMessage);
                 panel.Status = "Error";
                 outcome = IsCancellationMessage(errorMessage)
                     ? ExecutionRunOutcome.Cancelled
@@ -82,14 +97,20 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         catch (OperationCanceledException ex)
         {
             errorMessage = ex.Message;
-            panel.OutputHistory.Add($"Error: {errorMessage}");
+            AgentPanelDirectConversationWriter.AppendExecutionFailure(
+                _conversationStore,
+                panel,
+                errorMessage);
             panel.Status = "Error";
             outcome = ExecutionRunOutcome.Cancelled;
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
-            panel.OutputHistory.Add($"Error: {errorMessage}");
+            AgentPanelDirectConversationWriter.AppendExecutionFailure(
+                _conversationStore,
+                panel,
+                errorMessage);
             panel.Status = "Error";
             outcome = ExecutionRunOutcome.ExecutionFailure;
         }
