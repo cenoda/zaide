@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M5b implemented, pending acceptance (2026-07-19).** M1 accepted
-at `edc5dac`. M2 accepted at `94a609f`. M3 accepted at `0902641`. M4 accepted
-at `38418ed`. M5a accepted at `d3bf701`. M6–M7, Refactor 8, and Phase 14 remain
-unauthorized.
+**Refactor 7 status:** **M5b accepted (2026-07-19). M6 only authorized, not
+implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
+at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M7,
+Refactor 8, and Phase 14 remain unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
 Agent/Townhall behavior at `e597972`, locks the intended boundaries and
@@ -15,9 +15,10 @@ milestone order, and defines verification commands. Human acceptance on
 and **M4** at commit `38418ed` (implementation `d1e7f3f` plus routing-failure and
 result-invariant hardening `3a318cf`), and **M5a** at commit `d3bf701`
 (implementation `b9dea42` plus run-correlation hardening `8ce1e07` and
-correlation-id invariant hardening `d3bf701`). **M5b only** is authorized as the
-next separately verifiable implementation milestone. M6–M7, Refactor 8, and
-Phase 14 remain unauthorized.
+correlation-id invariant hardening `d3bf701`), and **M5b** at commit `e284ecc`
+(implementation `e284ecc` including projection-disposal lifecycle hardening).
+**M6 only** is authorized as the next separately verifiable implementation
+milestone. M7, Refactor 8, and Phase 14 remain unauthorized.
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -250,8 +251,8 @@ without expanding its concern.
 | **M2** | Introduce the agent-neutral authoritative in-memory `Conversation` owner, typed ID/kind/participants, targeted store contract, channel conversations, and create-time panel direct conversations under the locked retention/dual-target policy. Preserve channel/panel presentation and both legacy collections for migration. | Build; focused Conversation/store/provisioning + Townhall domain/ViewModel + panel lifecycle tests; registration/Architecture tests; full suite — **accepted `94a609f`** |
 | **M3** | Introduce a narrower typed conversation-entry model and current-rendering projection for chat, response, routing-error, execution-error, channel-event, and system paths. Keep `TownhallMessageKind` as a presentation compatibility enum; do not promote its unused `AgentThink`, `ToolCall`, or `ToolResult` values into domain types/producers, and leave unused `SourceProvider`, `SourceModel`, `ThreadId`, and `Metadata` fields alone. | Build; focused entry invariants, formatting, exact prefix/content, grouping/filtering, and Townhall projection tests; Architecture tests; full suite — **accepted `0902641`** |
 | **M4** | Introduce the minimal correlated execution-run representation and make coordinator/router results structured. After unchanged visible-name parsing, replace `RouteRequest.TargetAgentName` with a resolved typed Actor/panel target here only. Preserve one-in-flight-per-panel and the existing uneven cancellation, status, draft, and backend behavior. | Build; focused execution coordinator/router/service tests including success, failure, cancellation at each boundary, concurrency, and target identity; Architecture tests; full suite — **accepted `38418ed`** |
-| **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke |
-| **M5b** | Prove typed-vs-legacy output parity across success, routing failure, execution failure, cancellation, switching, and close-during-flight cases; then remove duplicate string history ownership and its dual-write path. No other UI or lifecycle change. | Build; focused parity/lifetime tests; Architecture tests; full suite; repeat manual panel smoke |
+| **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke — **accepted `d3bf701`** |
+| **M5b** | Prove typed-vs-legacy output parity across success, routing failure, execution failure, cancellation, switching, and close-during-flight cases; then remove duplicate string history ownership and its dual-write path. No other UI or lifecycle change. | Build; focused parity/lifetime tests; Architecture tests; full suite; repeat manual panel smoke — **accepted `e284ecc`** |
 | **M6** | Capture the public channel `ConversationId` at send admission, then target both the pre-await user write and every terminal response/error/routing-failure write to that same ID. Add the previously missing switch-during-await regression proving no mirrored request or terminal agent entry lands in the newly selected channel; its normal `ChannelEvent` remains allowed. Preserve exact current mirrored content/prefix shapes and public visibility. | Build; focused mirror + MainWindowViewModel + Townhall tests including switch-during-await, allowed switch event, and exact mirrored content; Architecture tests; full suite; manual channel-switch smoke |
 | **M7** | Delete superseded string protocols/duplicate identity paths, tighten architecture/public-surface ratchets, update architecture/conventions/status docs, and close only after automated and required manual evidence is truthful. | Build; all focused suites; Architecture tests; full suite; `git diff --check`; manual evidence review |
 
@@ -418,10 +419,12 @@ automated proof must still cover the ownership/attribution contract.
       are accepted at `d3bf701`.
 - [x] Human accepted M5a closeout on 2026-07-19; **M5b only** is authorized.
 - [x] M5b implementation complete on 2026-07-19; pending human acceptance. M6–M7, Refactor 8, and Phase 14 remain unauthorized.
+- [x] M5b accepted on 2026-07-19; **M6 only** is authorized. M7, Refactor 8, and Phase 14 remain unauthorized.
 
-## M5b verification (2026-07-19, pending acceptance)
+## M5b verification (2026-07-19, accepted)
 
-- Implementation complete on 2026-07-19; pending human acceptance. M6–M7, Refactor 8, and Phase 14 remain unauthorized.
+- Accepted at commit `e284ecc` after review closeout (implementation `e284ecc`
+  including projection-disposal lifecycle hardening).
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
 - Focused gate: **401 passed**, 0 failed, 0 skipped.
 - Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
@@ -430,6 +433,14 @@ automated proof must still cover the ownership/attribution contract.
 - `git diff --check` — clean.
 - Manual M5 panel smoke: **not run** (no configured test endpoint in this session).
 - `AgentPanelHost` disposes each panel's `AgentPanelOutputHistoryProjection` on `ClosePanel`; only open panels subscribe to `IConversationStore.EntryAppended`. Retained direct conversations remain authoritative after close.
+
+## Entry conditions for M6
+
+- [x] M5b authoritative typed direct-conversation output projection, read-only
+      panel history surface, dual-write removal, parity/lifetime tests, and
+      projection disposal on close are accepted at `e284ecc`.
+- [x] Human accepted M5b closeout on 2026-07-19; **M6 only** is authorized.
+- [ ] M6 implementation has not started.
 
 ## Entry conditions for M2
 
@@ -503,4 +514,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M5b implemented, pending acceptance; M5a accepted at `d3bf701`; M6–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M5b accepted at `e284ecc`; M6 only authorized and not implemented; M7, Refactor 8, and Phase 14 unauthorized)*
