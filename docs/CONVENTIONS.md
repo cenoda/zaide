@@ -398,4 +398,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M3 right-column host implemented at `73fc66c`; pending human acceptance; public baseline 339/108/447 after M3; M4+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M3 accepted at `73fc66c`; public baseline 339/108/447 after M3; M4+ unauthorized; Phase 14 unauthorized)*
