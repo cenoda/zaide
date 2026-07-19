@@ -15,6 +15,9 @@ internal static class PaletteTokens
     private static readonly Color SurfaceRaisedFallbackColor = Color.Parse("#243352");
     private static readonly Color SuccessFallbackColor = Color.Parse("#28A745");
     private static readonly Color SurfacePanelFallbackColor = Color.Parse("#1A2540");
+    private static readonly Color SurfaceBaseFallbackColor = Color.Parse("#0A0F19");
+    private static readonly Color SeparatorFallbackColor = Color.Parse("#070C16");
+    private static readonly Color WarningFallbackColor = Color.Parse("#FCBB47");
 
     public static IBrush TextPrimaryBrush =>
         (IBrush?)Application.Current?.Resources["TextPrimaryBrush"]
@@ -39,6 +42,15 @@ internal static class PaletteTokens
 
     public static IBrush SurfacePanelBrush =>
         GetBrush("SurfacePanelBrush", new SolidColorBrush(SurfacePanelFallbackColor));
+
+    public static IBrush SurfaceBaseBrush =>
+        GetBrush("SurfaceBaseBrush", new SolidColorBrush(SurfaceBaseFallbackColor));
+
+    public static IBrush SeparatorBrush =>
+        GetBrush("SeparatorBrush", new SolidColorBrush(SeparatorFallbackColor));
+
+    public static IBrush WarningBrush =>
+        GetBrush("WarningBrush", new SolidColorBrush(WarningFallbackColor));
 
     public static IBrush TextPrimaryBrushOrFallback =>
         GetBrush("TextPrimaryBrush", new SolidColorBrush(TextPrimaryFallbackColor));

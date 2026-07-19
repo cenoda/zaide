@@ -163,21 +163,20 @@ public class TownhallChatPanel : Panel
     /// </summary>
     private static Border CreateCompactMessageRow(TownhallMessage message)
     {
-        var resources = Application.Current?.Resources;
         var iconBrush = message.Kind == TownhallMessageKind.System
-            ? (IBrush?)(resources?["WarningBrush"])
-            : (IBrush?)(resources?["TextSecondaryBrush"]);
+            ? PaletteTokens.WarningBrush
+            : PaletteTokens.TextSecondaryBrush;
         var icon = IconFactory.Create("Icon.Info", iconBrush, 12);
         icon.VerticalAlignment = VerticalAlignment.Center;
         icon.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0);
 
         var timestamp = TextStyles.Caption(FormatTimestamp(message.Timestamp));
         timestamp.VerticalAlignment = VerticalAlignment.Center;
-        timestamp.Foreground = (IBrush?)(resources?["TextSecondaryBrush"]);
+        timestamp.Foreground = PaletteTokens.TextSecondaryBrush;
 
         var summary = TextStyles.Caption(message.Content);
         summary.VerticalAlignment = VerticalAlignment.Center;
-        summary.Foreground = (IBrush?)(resources?["TextSecondaryBrush"]);
+        summary.Foreground = PaletteTokens.TextSecondaryBrush;
         summary.TextTrimming = TextTrimming.CharacterEllipsis;
 
         var rowContent = new StackPanel
@@ -191,7 +190,7 @@ public class TownhallChatPanel : Panel
         var row = new Border
         {
             Padding = LayoutTokens.Inset(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
-            Background = (IBrush?)(resources?["SurfacePanelBrush"]),
+            Background = PaletteTokens.SurfacePanelBrush,
             Child = rowContent
         };
 

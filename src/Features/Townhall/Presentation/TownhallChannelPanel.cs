@@ -21,6 +21,11 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 public class TownhallChannelPanel : Panel
 {
+    // M6: Named constants for hover/active overlay brushes (alpha + primary accent).
+    // These are derived visual treatments, not raw resource keys — kept local.
+    private static readonly Color ActiveChannelOverlay = Color.FromArgb(0x15, 0x06, 0x6A, 0xDB);
+    private static readonly Color HoverOverlay = Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF);
+
     private readonly StackPanel _channelList;
     private Action<string>? _onChannelSelected;
 
@@ -81,8 +86,8 @@ public class TownhallChannelPanel : Panel
         var nameText = TextStyles.Body($"#{channel.Name}");
         nameText.VerticalAlignment = VerticalAlignment.Center;
         nameText.Foreground = channel.IsActive
-            ? (IBrush?)Application.Current!.Resources["TextPrimaryBrush"]
-            : (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+            ? PaletteTokens.TextPrimaryBrush
+            : PaletteTokens.TextSecondaryBrush;
 
         var contentStack = new StackPanel
         {
@@ -97,7 +102,7 @@ public class TownhallChannelPanel : Panel
         {
             var pinIcon = IconFactory.Create(
                 "Icon.Pin",
-                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                PaletteTokens.TextSecondaryBrush,
                 12);
             pinIcon.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
             contentStack.Children.Add(pinIcon);
@@ -113,7 +118,7 @@ public class TownhallChannelPanel : Panel
         // Active channel highlight: tinted background behind readable content
         if (channel.IsActive)
         {
-            row.Background = new SolidColorBrush(Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
+            row.Background = new SolidColorBrush(ActiveChannelOverlay);
             row.CornerRadius = LayoutTokens.RadiusSm;
         }
 
@@ -122,7 +127,7 @@ public class TownhallChannelPanel : Panel
         {
             if (!channel.IsActive)
             {
-                row.Background = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
+                row.Background = new SolidColorBrush(HoverOverlay);
                 row.CornerRadius = LayoutTokens.RadiusSm;
             }
         };

@@ -18,6 +18,9 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 public class TownhallPeoplePanel : Panel
 {
+    // M6: Hover overlay brush (faint white) shared with ChannelPanel.
+    private static readonly Color HoverOverlay = Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF);
+
     private readonly StackPanel _agentList;
 
     public TownhallPeoplePanel()
@@ -138,7 +141,7 @@ public class TownhallPeoplePanel : Panel
         {
             var warningIcon = IconFactory.Create(
                 "Icon.Warning",
-                (IBrush?)Application.Current!.Resources["WarningBrush"],
+                PaletteTokens.WarningBrush,
                 14);
             warningIcon.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
             contentStack.Children.Add(warningIcon);
@@ -154,7 +157,7 @@ public class TownhallPeoplePanel : Panel
         // Hover effect
         row.PointerEntered += (_, _) =>
         {
-            row.Background = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
+            row.Background = new SolidColorBrush(HoverOverlay);
             row.CornerRadius = LayoutTokens.RadiusSm;
         };
         row.PointerExited += (_, _) =>

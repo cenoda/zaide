@@ -51,21 +51,44 @@ public class TownhallView : Panel, IDisposable
 
     public TownhallView()
     {
-        // --- Left sidebar (people + channels) ---
-        _peoplePanel = new TownhallPeoplePanel
+        _peoplePanel = new TownhallPeoplePanel { Background = PaletteTokens.SurfacePanelBrush };
+        _channelPanel = new TownhallChannelPanel { Background = PaletteTokens.SurfacePanelBrush };
+        _chatPanel = new TownhallChatPanel { Background = PaletteTokens.SurfacePanelBrush };
+        _inputArea = new TownhallInputArea
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+            Background = PaletteTokens.SurfacePanelBrush,
+            VerticalAlignment = VerticalAlignment.Bottom
         };
 
-        _channelPanel = new TownhallChannelPanel
+        // Filter toggle buttons: All / Chat / Activity
+        _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
+        _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
+        _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
+
+        var sidebar = BuildSidebar();
+        var filterGroup = BuildFilterGroup();
+        var chatArea = BuildChatArea(filterGroup);
+        var mainGrid = BuildMainLayout(sidebar, chatArea);
+
+        var outerBorder = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
+            Background = PaletteTokens.SurfaceBaseBrush,
+            // M5-allow: M1 introduced the 1px left seam so the Townhall surface stays visually separated.
+            Padding = LayoutTokens.Inset(1, 0, 0, 0),
+            Child = mainGrid
         };
 
-        // Sidebar: people (top) | channels (bottom)
-        // M1.4: Removed 1px Border separator; panels are separated by background
-        // contrast against the SurfaceBaseBrush window background instead.
-        // The interactive GridSplitter between sections is preserved.
+        Children.Add(outerBorder);
+
+        // Wire input area send event
+        _inputArea.SendRequested += OnSendRequested;
+    }
+
+    /// <summary>
+    /// Builds the left sidebar: people panel (top) | interactive splitter | channels panel (bottom).
+    /// </summary>
+    private Grid BuildSidebar()
+    {
         var sidebar = new Grid
         {
             MinWidth = 100,
@@ -84,7 +107,6 @@ public class TownhallView : Panel, IDisposable
         };
         Grid.SetRow(_channelPanel, 2);
 
-        // GridSplitter between people and channels sections (preserved — M1.4 only removes the 1px Border separator, not the interactive splitter)
         var sidebarSplitter = new GridSplitter
         {
             Height = 4,
@@ -97,38 +119,35 @@ public class TownhallView : Panel, IDisposable
         Grid.SetRow(sidebarSplitter, 1);
         sidebar.Children.Add(sidebarSplitter);
 
-        // --- Right side: chat + input ---
-        _chatPanel = new TownhallChatPanel
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"]
-        };
+        return sidebar;
+    }
 
-        _inputArea = new TownhallInputArea
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            VerticalAlignment = VerticalAlignment.Bottom
-        };
-
-        // Segmented filter toggle (All / Chat / Activity) - placed above chat panel per M3
-        _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
-        _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
-        _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
-        var filterGroup = new StackPanel
+    /// <summary>
+    /// Builds the filter toggle group: All / Chat / Activity buttons.
+    /// </summary>
+    private StackPanel BuildFilterGroup()
+    {
+        return new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
             Children = { _filterAllButton, _filterChatButton, _filterActivityButton }
         };
+    }
 
+    /// <summary>
+    /// Builds the right chat area: filter group | chat panel | separator | input area.
+    /// </summary>
+    private Grid BuildChatArea(StackPanel filterGroup)
+    {
         var inputSeparator = new Border
         {
             Height = 1,
-            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
+            Background = PaletteTokens.SeparatorBrush,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
-        // Chat area: filter (auto) | chat messages (fills) | separator | input area (auto, grows with content up to MaxLines=5)
         var chatArea = new Grid
         {
             RowDefinitions =
@@ -151,7 +170,14 @@ public class TownhallView : Panel, IDisposable
         Grid.SetRow(inputSeparator, 2);
         Grid.SetRow(_inputArea, 3);
 
-        // GridSplitter between sidebar and chat area
+        return chatArea;
+    }
+
+    /// <summary>
+    /// Builds the main layout grid: sidebar | splitter | chat area, with splitter normalization.
+    /// </summary>
+    private static Grid BuildMainLayout(Grid sidebar, Grid chatArea)
+    {
         var sidebarChatSplitter = new GridSplitter
         {
             Width = 4,
@@ -161,7 +187,6 @@ public class TownhallView : Panel, IDisposable
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        // Main layout: sidebar | splitter | chat area
         var mainGrid = new Grid
         {
             ColumnDefinitions =
@@ -182,18 +207,29 @@ public class TownhallView : Panel, IDisposable
         Grid.SetColumn(sidebarChatSplitter, 1);
         Grid.SetColumn(chatArea, 2);
 
-        var outerBorder = new Border
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
-            // M5-allow: M1 introduced the 1px left seam so the Townhall surface stays visually separated.
-            Padding = LayoutTokens.Inset(1, 0, 0, 0),
-            Child = mainGrid
-        };
+        return mainGrid;
+    }
 
-        Children.Add(outerBorder);
-
-        // Wire input area send event
-        _inputArea.SendRequested += OnSendRequested;
+    /// <summary>
+    /// Wires a single filter toggle button: sets <see cref="TownhallViewModel.FilterMode"/>
+    /// when checked and unchecks the other two buttons for mutual exclusivity.
+    /// </summary>
+    private IDisposable WireFilterButton(
+        ToggleButton button,
+        ToggleButton other1,
+        ToggleButton other2,
+        FilterMode mode)
+    {
+        return Observable.FromEventPattern<RoutedEventArgs>(
+                h => button.IsCheckedChanged += h,
+                h => button.IsCheckedChanged -= h)
+            .Subscribe(_ =>
+            {
+                if (button.IsChecked != true) return;
+                _viewModel!.FilterMode = mode;
+                if (other1.IsChecked != false) other1.IsChecked = false;
+                if (other2.IsChecked != false) other2.IsChecked = false;
+            });
     }
 
     private void OnSendRequested()
@@ -249,37 +285,12 @@ public class TownhallView : Panel, IDisposable
                     _chatPanel.SetMessages(oc);
                 }));
 
-        // Wire filter toggle buttons to FilterMode (using Avalonia.Interactivity.RoutedEventArgs for IsCheckedChanged).
-        // ToggleButton has no built-in mutual-exclusivity (unlike RadioButton with GroupName), so each handler
-        // explicitly unchecks the other two buttons when checked, guarding against redundant sets to avoid
-        // re-entrant event storms.
-        _disposables.Add(
-            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterAllButton.IsCheckedChanged += h, h => _filterAllButton.IsCheckedChanged -= h)
-                .Subscribe(_ =>
-                {
-                    if (_filterAllButton.IsChecked != true) return;
-                    _viewModel.FilterMode = FilterMode.All;
-                    if (_filterChatButton.IsChecked != false) _filterChatButton.IsChecked = false;
-                    if (_filterActivityButton.IsChecked != false) _filterActivityButton.IsChecked = false;
-                }));
-        _disposables.Add(
-            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterChatButton.IsCheckedChanged += h, h => _filterChatButton.IsCheckedChanged -= h)
-                .Subscribe(_ =>
-                {
-                    if (_filterChatButton.IsChecked != true) return;
-                    _viewModel.FilterMode = FilterMode.ChatOnly;
-                    if (_filterAllButton.IsChecked != false) _filterAllButton.IsChecked = false;
-                    if (_filterActivityButton.IsChecked != false) _filterActivityButton.IsChecked = false;
-                }));
-        _disposables.Add(
-            Observable.FromEventPattern<Avalonia.Interactivity.RoutedEventArgs>(h => _filterActivityButton.IsCheckedChanged += h, h => _filterActivityButton.IsCheckedChanged -= h)
-                .Subscribe(_ =>
-                {
-                    if (_filterActivityButton.IsChecked != true) return;
-                    _viewModel.FilterMode = FilterMode.ActivityOnly;
-                    if (_filterAllButton.IsChecked != false) _filterAllButton.IsChecked = false;
-                    if (_filterChatButton.IsChecked != false) _filterChatButton.IsChecked = false;
-                }));
+        // Wire filter toggle buttons to FilterMode using a shared helper that unchecks
+        // the other two buttons when a button is checked, guarding against redundant
+        // sets to avoid re-entrant event storms.
+        _disposables.Add(WireFilterButton(_filterAllButton, _filterChatButton, _filterActivityButton, FilterMode.All));
+        _disposables.Add(WireFilterButton(_filterChatButton, _filterAllButton, _filterActivityButton, FilterMode.ChatOnly));
+        _disposables.Add(WireFilterButton(_filterActivityButton, _filterAllButton, _filterChatButton, FilterMode.ActivityOnly));
 
         // Sync draft changes: when ViewModel draft changes (e.g., cleared after send), update input
         _disposables.Add(

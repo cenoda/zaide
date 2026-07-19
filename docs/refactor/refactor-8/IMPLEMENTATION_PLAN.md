@@ -2,12 +2,13 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M5 accepted (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M6 implementation in progress (2026-07-19).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
 M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
 M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
 M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`.
-M6+ unauthorized until explicit authorization.
+M6 authorized (2026-07-19): Townhall presentation maintainability cleanup.
+M7+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -599,8 +600,36 @@ No `dotnet` production change is required for M0.
 - [x] Manual smoke: settings open/close/focus, command palette open/dismiss,
       search open/dismiss/focus at default (1280×800) and minimum (960×600) on
       Linux `DISPLAY=:1` (see M5 verification record).
-- [x] Human accepts M5 closeout (code `d947efa`). M6 remains unauthorized until
-      explicit authorization.
+- [x] Human accepts M5 closeout (code `d947efa`).
+
+### Entry conditions for M6 (authorized 2026-07-19)
+
+- [x] Human accepted M5 closeout at `d947efa`.
+- [x] Human authorized **M6 only**.
+- [x] M7+, Phase 14, and adjacent cleanup remain unauthorized.
+- [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
+
+### Exit conditions for M6
+
+- [x] TownhallView constructor extracted into focused builder methods (sidebar,
+      filter group, chat area, main layout) for readability.
+- [x] WireViewModel filter wiring extracted into a shared `WireFilterButton` helper
+      eliminating three nearly-identical subscriptions.
+- [x] Remaining `(IBrush?)Application.Current!.Resources[...]` lookups in Townhall
+      presentation files replaced with `PaletteTokens` equivalents
+      (`SurfacePanelBrush`, `SurfaceBaseBrush`, `SeparatorBrush`, `WarningBrush`,
+      `TextPrimaryBrush`, `TextSecondaryBrush`).
+- [x] Three new palette token accessors added to `PaletteTokens` (`SurfaceBaseBrush`,
+      `SeparatorBrush`, `WarningBrush`) with pixel-identical resource-name and
+      fallback values from `App.axaml`.
+- [x] Hardcoded hover/active overlay colors in `TownhallChannelPanel` and
+      `TownhallPeoplePanel` extracted to named static fields.
+- [x] No ViewModel, domain, entry-projection, or DesignSystem token API changed
+      beyond the three additive palette accessors.
+- [x] No new production types or source files; architecture baseline unchanged.
+- [x] Build; Townhall tests; Architecture; full suite green.
+- [x] Manual smoke: Townhall channel switch, filter toggle, send message.
+- [ ] Human accepts M6 closeout before M7 authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -1081,4 +1110,55 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m5-smoke.sh`):
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M5 accepted at `d947efa`; M6+ unauthorized; Phase 14 unauthorized)*
+## M6 verification record (2026-07-19)
+
+### Production changes
+
+| File | Change |
+|------|--------|
+| `src/UI/DesignSystem/PaletteTokens.cs` | **Modified** added `SurfaceBaseBrush` (#0A0F19), `SeparatorBrush` (#070C16), `WarningBrush` (#FCBB47) with pixel-identical fallback values from `App.axaml` |
+| `src/Features/Townhall/Presentation/TownhallView.cs` | **Modified** constructor extracted into `BuildSidebar`, `BuildFilterGroup`, `BuildChatArea`, `BuildMainLayout` helpers; `WireViewModel` filter wiring extracted into `WireFilterButton` helper; resource lookups replaced with `PaletteTokens` |
+| `src/Features/Townhall/Presentation/TownhallChannelPanel.cs` | **Modified** `Application.Current!.Resources` lookups replaced with `PaletteTokens.TextPrimaryBrush`/`TextSecondaryBrush`; hover/active overlay colors extracted to named constants |
+| `src/Features/Townhall/Presentation/TownhallPeoplePanel.cs` | **Modified** `WarningBrush` resource lookup replaced with `PaletteTokens.WarningBrush`; hover overlay extracted to named constant |
+| `src/Features/Townhall/Presentation/TownhallChatPanel.cs` | **Modified** all `resources?[...]` lookups replaced with `PaletteTokens` equivalents (`WarningBrush`, `TextSecondaryBrush`, `SurfacePanelBrush`) |
+
+No ViewModel, domain, or entry-projection files changed. No new production types or source files.
+
+### Architecture baseline
+
+No change — `PaletteTokens` already exists as an internal type; only additive property accessors were added. Public type count remains **339** public / **111** internal / **450** total (same as M5 baseline). Tracked production source files unchanged at **412**.
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Townhall'
+  → Passed: 81, Failed: 0, Skipped: 0, Total: 81
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.UI.DesignSystem'
+  → Passed: 30, Failed: 0, Skipped: 0, Total: 30
+
+dotnet test (full suite)
+  → Passed: 2523, Failed: 0, Skipped: 0, Total: 2523
+
+git diff --check
+  → clean
+```
+
+### Manual smoke (2026-07-19)
+
+Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m6-smoke.sh`):
+
+1. **Channel switch:** `Ctrl+Shift+C` activated channel switching.
+2. **Filter toggle:** Tab-navigated through filter controls towards toggle buttons.
+3. **Send message:** focused input area, typed "m6 smoke test", pressed Enter to send.
+4. Window remained alive throughout; app log contained no errors or exceptions.
+
+---
+
+*Last updated: 2026-07-19 (Refactor 8 M6 in progress; M5 accepted at `d947efa`; M6 authorized; M7+ unauthorized; Phase 14 unauthorized)*
