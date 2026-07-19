@@ -80,10 +80,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly RowDefinition _bottomPanelRow;
     private readonly RowDefinition _statusBarRow;
     private Grid _layoutRoot = null!;
-    private SettingsPanelView? _settingsPanel;
-    private SettingsViewModel? _settingsPanelViewModel;
-    private LeftPanelMode _settingsReturnLeftPanelMode = LeftPanelMode.Explorer;
-    private MainWindowViewModel? _settingsLifecycleViewModel;
+    private SettingsPanelAttachHost _settingsPanelAttachHost = null!;
 
     [Obsolete("Use the ISettingsService composition constructor.")]
     public MainWindow()
@@ -177,6 +174,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRowSpan(_commandPaletteOverlay, 4);
         _layoutRoot.Children.Add(_commandPaletteOverlay);
 
+        _settingsPanelAttachHost = new SettingsPanelAttachHost(
+            _settings,
+            _secrets,
+            _settingsPanelFactory,
+            _layoutRoot,
+            () => _editorView);
+
         _finalWindowCleanup = new FinalWindowCleanup(
             _editorView.Dispose,
             _terminalTabHost.Dispose);
@@ -185,8 +189,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // === ReactiveUI Bindings ===
         this.WhenActivated(disposables =>
         {
-            _settingsLifecycleViewModel = ViewModel;
-
             // Wire NavBar to ViewModel
             _navBar.ViewModel = ViewModel;
 
@@ -342,26 +344,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
             }));
 
-            disposables.Add(ViewModel.ShowSettings.RegisterHandler(async context =>
-                await HandleShowSettingsAsync(context)));
-            disposables.Add(Disposable.Create(CloseSettingsPanel));
+            _settingsPanelAttachHost.WireToViewModel(ViewModel!, disposables);
 
-            // Phase 9 M2: command palette overlay lifecycle.
-            // OpenRequested fires when palette.open executes (Ctrl+Shift+P or rebound gesture).
-            void OnPaletteOpenRequested() => _commandPaletteOverlay.Show();
-            _paletteViewModel.OpenRequested += OnPaletteOpenRequested;
-            disposables.Add(Disposable.Create(() =>
-                _paletteViewModel.OpenRequested -= OnPaletteOpenRequested));
-
-            // Dismissed fires on Escape, successful execution, or backdrop click.
-            void OnOverlayDismissed()
-            {
-                _commandPaletteOverlay.Hide();
-                RestoreFocusAfterPalette();
-            }
-            _commandPaletteOverlay.Dismissed += OnOverlayDismissed;
-            disposables.Add(Disposable.Create(() =>
-                _commandPaletteOverlay.Dismissed -= OnOverlayDismissed));
+            ShellOverlayFocusWiring.Wire(
+                disposables,
+                _paletteViewModel,
+                _commandPaletteOverlay,
+                _searchViewModel,
+                _searchBar,
+                _editorView,
+                ViewModel!);
 
             // Phase 9 M4: wire folding operations from the shared EditorView
             // to EditorTabViewModel so registered folding commands
@@ -376,29 +368,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             disposables.Add(_searchViewModel.WhenAnyValue(x => x.StatusMessage)
                 .Where(msg => !string.IsNullOrEmpty(msg))
                 .Subscribe(msg => ViewModel!.StatusText = msg));
-
-            // Phase 9 M3: search bar focus management.
-            // FocusRequested fires when Find/Replace opens the surface.
-            void OnSearchFocusRequested() => _searchBar.FocusQuery();
-            _searchViewModel.FocusRequested += OnSearchFocusRequested;
-            disposables.Add(Disposable.Create(() =>
-                _searchViewModel.FocusRequested -= OnSearchFocusRequested));
-
-            // M5c: SelectionUpdated fires when SelectCurrentMatch runs (navigation).
-            // The editor selection update may steal X11 focus; ensure the search bar
-            // keeps focus so the user can continue typing their query.
-            void OnSearchSelectionUpdated() => _searchBar.FocusQueryWithoutSelectAll();
-            _searchViewModel.SelectionUpdated += OnSearchSelectionUpdated;
-            disposables.Add(Disposable.Create(() =>
-                _searchViewModel.SelectionUpdated -= OnSearchSelectionUpdated));
-
-            // When the search surface is dismissed, restore focus to the editor.
-            disposables.Add(_searchViewModel.WhenAnyValue(x => x.IsVisible)
-                .Subscribe(visible =>
-                {
-                    if (!visible && _editorView.IsVisible)
-                        _editorView.Focus();
-                }));
         });
     }
 
@@ -485,118 +454,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         public IObservable<SettingsSaveError> WriteErrors
             => Observable.Empty<SettingsSaveError>();
-    }
-
-    private Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
-    {
-        var vm = RequireSettingsLifecycleViewModel();
-        if (vm.IsSettingsOpen)
-        {
-            HideSettingsPanel();
-            context.SetOutput(false);
-            return Task.CompletedTask;
-        }
-
-        ShowSettingsPanel();
-        context.SetOutput(true);
-        return Task.CompletedTask;
-    }
-
-    private MainWindowViewModel RequireSettingsLifecycleViewModel() =>
-        _settingsLifecycleViewModel
-        ?? throw new InvalidOperationException("MainWindow settings lifecycle is not bound.");
-
-    private void ShowSettingsPanel()
-    {
-        var vm = RequireSettingsLifecycleViewModel();
-        _settingsReturnLeftPanelMode = vm.LeftPanelMode;
-        if (_settingsPanel is null)
-        {
-            var (viewModel, panel) =
-                _settingsPanelFactory.Create(_settings, _secrets);
-            _settingsPanelViewModel = viewModel;
-            _settingsPanel = panel;
-            Grid.SetColumn(panel, 0);
-            Grid.SetColumnSpan(panel, 6);
-            Grid.SetRow(panel, 0);
-            Grid.SetRowSpan(panel, 3);
-            viewModel.CloseRequested += OnSettingsCloseRequested;
-        }
-
-        AttachSettingsPanelToLayout();
-        vm.IsSettingsOpen = true;
-    }
-
-    private void HideSettingsPanel()
-    {
-        var vm = RequireSettingsLifecycleViewModel();
-        if (_settingsPanel is null || !vm.IsSettingsOpen)
-            return;
-
-        DetachSettingsPanelFromLayout();
-        vm.IsSettingsOpen = false;
-        vm.LeftPanelMode = _settingsReturnLeftPanelMode;
-        RestoreFocusAfterSettings();
-    }
-
-    private void OnSettingsCloseRequested(object? sender, EventArgs e) => HideSettingsPanel();
-
-    private void AttachSettingsPanelToLayout()
-    {
-        if (_settingsPanel is null || !_layoutRoot.CheckAccess())
-            return;
-
-        if (!_layoutRoot.Children.Contains(_settingsPanel))
-            _layoutRoot.Children.Add(_settingsPanel);
-    }
-
-    private void DetachSettingsPanelFromLayout()
-    {
-        if (_settingsPanel is null || !_layoutRoot.CheckAccess())
-            return;
-
-        if (_layoutRoot.Children.Contains(_settingsPanel))
-            _layoutRoot.Children.Remove(_settingsPanel);
-    }
-
-    private void RestoreFocusAfterSettings()
-    {
-        var activeTab = _settingsLifecycleViewModel?.EditorTabs.ActiveTab;
-        if (activeTab is not null && _editorView is not null && _editorView.IsVisible)
-        {
-            _editorView.Focus();
-        }
-    }
-
-    private void CloseSettingsPanel()
-    {
-        if (_settingsPanel is null)
-            return;
-
-        if (_settingsPanelViewModel is not null)
-            _settingsPanelViewModel.CloseRequested -= OnSettingsCloseRequested;
-
-        var panel = _settingsPanel;
-        _settingsPanel = null;
-        _settingsPanelViewModel = null;
-        RequireSettingsLifecycleViewModel().IsSettingsOpen = false;
-        if (_layoutRoot.CheckAccess() && _layoutRoot.Children.Contains(panel))
-            _layoutRoot.Children.Remove(panel);
-        panel.Dispose();
-    }
-
-    /// <summary>
-    /// Phase 9 M2: restore focus to the active editor after the command palette
-    /// is dismissed. If no active editor exists, does nothing (never throws).
-    /// Never restores focus to a closed/replaced tab.
-    /// </summary>
-    private void RestoreFocusAfterPalette()
-    {
-        var activeTab = ViewModel?.EditorTabs.ActiveTab;
-        if (activeTab is not null && _editorView.IsVisible)
-        {
-            _editorView.Focus();
-        }
     }
 
     private void OnFinalWindowClosed(object? sender, EventArgs e)

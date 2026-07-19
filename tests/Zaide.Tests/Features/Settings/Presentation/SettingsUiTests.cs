@@ -78,7 +78,8 @@ public sealed class SettingsUiTests
         var secrets = new TestSecretStore();
         using var vm = CreateMainWindowViewModel();
         using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
-        var window = CreateSettingsTestWindow(settings, secrets, vm);
+        using var harness = CreateSettingsTestWindow(settings, secrets, vm);
+        var window = harness.Window;
 
         await status.OpenSettingsCommand.Execute().ToTask();
         var firstPanel = GetSettingsPanel(window);
@@ -103,7 +104,8 @@ public sealed class SettingsUiTests
         var secrets = new TestSecretStore();
         using var vm = CreateMainWindowViewModel();
         using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
-        var window = CreateSettingsTestWindow(settings, secrets, vm);
+        using var harness = CreateSettingsTestWindow(settings, secrets, vm);
+        var window = harness.Window;
 
         vm.LeftPanelMode = LeftPanelMode.SourceControl;
         await status.OpenSettingsCommand.Execute().ToTask();
@@ -126,13 +128,13 @@ public sealed class SettingsUiTests
         var secrets = new TestSecretStore();
         using var vm = CreateMainWindowViewModel();
         using var status = new StatusBarViewModel(vm, settings, new EmptyLanguageSessionService(), ImmediateScheduler.Instance);
-        var window = CreateSettingsTestWindow(settings, secrets, vm);
+        using var harness = CreateSettingsTestWindow(settings, secrets, vm);
+        var window = harness.Window;
 
         await status.OpenSettingsCommand.Execute().ToTask();
         var subscriptionCountBeforeClose = settings.SubscriptionDisposeCount;
 
-        typeof(MainWindow).GetMethod("CloseSettingsPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(window, null);
+        GetSettingsAttachHost(window).ClosePanel();
 
         Assert.Null(GetSettingsPanel(window));
         Assert.False(vm.IsSettingsOpen);
@@ -157,29 +159,43 @@ public sealed class SettingsUiTests
     }
 
     private static SettingsPanelView? GetSettingsPanel(MainWindow window) =>
-        (SettingsPanelView?)typeof(MainWindow).GetField("_settingsPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window);
+        GetSettingsAttachHost(window).PanelForTests;
+
+    private static SettingsPanelAttachHost GetSettingsAttachHost(MainWindow window) =>
+        (SettingsPanelAttachHost)typeof(MainWindow)
+            .GetField("_settingsPanelAttachHost", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(window)!;
 
     private static void SetField<T>(MainWindow window, string name, T value) =>
         typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(window, value);
 
-    private static MainWindow CreateSettingsTestWindow(
+    private sealed class SettingsTestHarness(MainWindow window, CompositeDisposable disposables) : IDisposable
+    {
+        public MainWindow Window { get; } = window;
+        public void Dispose() => disposables.Dispose();
+    }
+
+    private static SettingsTestHarness CreateSettingsTestWindow(
         TestSettingsService settings,
         TestSecretStore secrets,
         MainWindowViewModel vm)
     {
         var window = (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
+        var layoutRoot = new Grid();
         SetField(window, "_settings", settings);
         SetField(window, "_secrets", secrets);
         SetField(window, "_settingsPanelFactory", new SettingsPanelFactory());
-        SetField(window, "_layoutRoot", new Grid());
-        SetField(window, "_settingsLifecycleViewModel", vm);
-        var handler = typeof(MainWindow).GetMethod("HandleShowSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        vm.ShowSettings.RegisterHandler(async context =>
-        {
-            var task = (Task)handler.Invoke(window, new object[] { context })!;
-            await task;
-        });
-        return window;
+        SetField(window, "_layoutRoot", layoutRoot);
+        var host = new SettingsPanelAttachHost(
+            settings,
+            secrets,
+            new SettingsPanelFactory(),
+            layoutRoot,
+            () => null!);
+        SetField(window, "_settingsPanelAttachHost", host);
+        var disposables = new CompositeDisposable();
+        host.WireToViewModel(vm, disposables);
+        return new SettingsTestHarness(window, disposables);
     }
 
     private static MainWindowViewModel CreateMainWindowViewModel()

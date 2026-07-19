@@ -323,7 +323,7 @@ expanding concern.
 | **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke | **[x] 2026-07-19** |
 | **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke | **[x] 2026-07-19** |
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **[x] 2026-07-19** |
-| **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke |
+| **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** (pending human acceptance) |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
 | **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke |
 | **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX |
@@ -572,6 +572,33 @@ No `dotnet` production change is required for M0.
       verification record).
 - [x] Human accepts M4 closeout at `09ccde9` (code `b3c8684`). M5 remains
       unauthorized until explicit authorization.
+
+### Entry conditions for M5 (authorized 2026-07-19)
+
+- [x] Human accepted M4 closeout at `09ccde9` (code `b3c8684`).
+- [x] Human authorized **M5 only**.
+- [x] M6+, Phase 14, and adjacent cleanup remain unauthorized.
+
+### Exit conditions for M5
+
+- [x] `SettingsPanelAttachHost` extracted under `src/App/Shell/`; settings
+      attach/detach, open/close interaction, left-panel restore, focus restore,
+      and deactivate cleanup moved out of `MainWindow`.
+- [x] `ShellOverlayFocusWiring` extracted; command-palette and editor-search
+      focus wiring moved out of `MainWindow.WhenActivated` without behavior change.
+- [x] `MainWindowViewModel`, keybinding materialization, and layout hosts unchanged.
+- [x] `SettingsPanelAttachHostTests` added (attach/detach, toggle, left-panel
+      restore, deactivate cleanup, focus-restore seam).
+- [x] `SettingsUiTests` updated for host seam; existing settings open/close
+      proofs remain green.
+- [x] Architecture baselines updated for `SettingsPanelAttachHost` and
+      `ShellOverlayFocusWiring` (+2 internal types, +2 App source files).
+- [x] Build, shell, Settings.Presentation, Editor.Presentation, Architecture, and
+      full suite green.
+- [x] Manual smoke: settings open/close/focus, command palette open/dismiss,
+      search open/dismiss/focus at default (1280×800) and minimum (960×600) on
+      Linux `DISPLAY=:1` (see M5 verification record).
+- [ ] Human accepts M5 closeout. M6 remains unauthorized until explicit authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -990,4 +1017,66 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m4-smoke.sh`):
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M4 accepted at `b3c8684`; M5+ unauthorized; Phase 14 unauthorized)*
+## M5 verification record (2026-07-19)
+
+### Production changes
+
+| File | Change |
+|------|--------|
+| `src/App/Shell/SettingsPanelAttachHost.cs` | **Added** internal host: settings panel factory/attach/detach, `ShowSettings` interaction, left-panel restore, editor focus restore, deactivate `ClosePanel` |
+| `src/App/Shell/ShellOverlayFocusWiring.cs` | **Added** internal static wiring: command-palette open/dismiss + editor-search focus/selection/dismiss restore |
+| `src/App/Shell/MainWindow.axaml.cs` | **Modified** delegates settings lifecycle and overlay focus wiring to extracted helpers; `WhenActivated` shrinks (~630 → ~486 LOC) |
+
+`MainWindowViewModel`, `GridLayoutResizeHelper`, layout hosts, and keybinding
+materialization unchanged.
+
+### Architecture baseline updates
+
+| Metric | Before M5 | After M5 |
+|--------|-----------|----------|
+| Public / internal / total types | 339 / 109 / 448 | 339 / 111 / 450 |
+| Tracked production source files | 410 | 412 |
+| `App` folder source files | 40 | 42 |
+| `Zaide.App.Shell` namespace types | 22 (14p / 8i) | 24 (14p / 10i) |
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
+  → Passed: 175, Failed: 0, Skipped: 0, Total: 175
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Settings.Presentation'
+  → Passed: 66, Failed: 0, Skipped: 0, Total: 66
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Editor.Presentation'
+  → Passed: 323, Failed: 0, Skipped: 0, Total: 323
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2523, Failed: 0, Skipped: 0, Total: 2523
+
+git diff --check
+  → clean
+```
+
+New focused tests: `SettingsPanelAttachHostTests` (7).
+
+### Manual smoke (2026-07-19)
+
+Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m5-smoke.sh`):
+
+1. **Default size (1280×800):** opened workspace folder and README tab; toggled
+   settings via status-bar gear (open + close); opened command palette
+   (`Ctrl+Shift+P`), typed query, dismissed with Escape; opened search (`Ctrl+F`),
+   typed query, dismissed with Escape.
+2. **Minimum size (960×600):** repeated the same settings/palette/search cycle.
+3. Window remained alive throughout; app log contained no errors or exceptions.
+
+---
+
+*Last updated: 2026-07-19 (Refactor 8 M5 implemented with manual smoke; pending human acceptance; M6+ unauthorized; Phase 14 unauthorized)*
