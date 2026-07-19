@@ -2,9 +2,10 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M4 accepted (2026-07-19). M5a implemented, pending
-acceptance.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
-at `0902641`. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
+**Refactor 7 status:** **M5a accepted (2026-07-19). M5b only authorized, not
+implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
+at `0902641`. M4 accepted at `38418ed`. M6–M7, Refactor 8, and Phase 14 remain
+unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
 Agent/Townhall behavior at `e597972`, locks the intended boundaries and
@@ -12,9 +13,11 @@ milestone order, and defines verification commands. Human acceptance on
 2026-07-19 closed **M1** at commit `edc5dac`, **M2** at commit `94a609f`, and
 **M3** at commit `0902641` (implementation `674b3cf` plus authorship closeout),
 and **M4** at commit `38418ed` (implementation `d1e7f3f` plus routing-failure and
-result-invariant hardening `3a318cf`). **M5a only** is authorized as the next separately
-verifiable implementation milestone. M5b–M7, Refactor 8, and Phase 14 remain
-unauthorized.
+result-invariant hardening `3a318cf`), and **M5a** at commit `d3bf701`
+(implementation `b9dea42` plus run-correlation hardening `8ce1e07` and
+correlation-id invariant hardening `d3bf701`). **M5b only** is authorized as the
+next separately verifiable implementation milestone. M6–M7, Refactor 8, and
+Phase 14 remain unauthorized.
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -392,10 +395,13 @@ automated proof must still cover the ownership/attribution contract.
       result-invariant enforcement are accepted at `38418ed`.
 - [x] Human accepted M4 closeout on 2026-07-19; **M5a only** is authorized.
 - [x] M5a implementation complete on 2026-07-19; pending human acceptance. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
+- [x] M5a accepted on 2026-07-19; **M5b only** is authorized. M6–M7, Refactor 8, and Phase 14 remain unauthorized.
 
-## M5a verification (2026-07-19, pending acceptance)
+## M5a verification (2026-07-19, accepted)
 
-- Implementation complete on 2026-07-19; pending human acceptance. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
+- Accepted at commit `d3bf701` after review closeout (implementation `b9dea42` plus
+  run-correlation hardening `8ce1e07` and correlation-id invariant hardening
+  `d3bf701`).
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
 - Focused gate: **393 passed**, 0 failed, 0 skipped.
 - Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
@@ -477,4 +483,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M5a implemented, pending acceptance; M5b–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M5a accepted at `d3bf701`; M5b only authorized and not implemented; M6–M7, Refactor 8, and Phase 14 unauthorized)*
