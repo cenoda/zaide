@@ -1,26 +1,43 @@
 using System;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Townhall.Domain;
 
 /// <summary>
 /// Represents a person or agent in the Workspace.
+/// Identity projections are read-only views of the canonical <see cref="Actor"/> row.
 /// </summary>
 public class WorkspaceAgent
 {
-    /// <summary>
-    /// Unique identifier for the agent.
-    /// </summary>
-    public string Id { get; set; } = string.Empty;
+    private readonly Actor _actor;
 
     /// <summary>
-    /// Display name of the agent.
+    /// Creates a workspace roster entry bound to a canonical actor row.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public WorkspaceAgent(Actor actor)
+    {
+        _actor = actor ?? throw new ArgumentNullException(nameof(actor));
+    }
 
     /// <summary>
-    /// Avatar path or resource key for the agent.
+    /// Typed canonical actor identity for this roster entry.
     /// </summary>
-    public string Avatar { get; set; } = string.Empty;
+    public ActorId ActorId => _actor.Id;
+
+    /// <summary>
+    /// Legacy projected identifier derived from the canonical actor row.
+    /// </summary>
+    public string Id => _actor.ProjectedLegacyId;
+
+    /// <summary>
+    /// Legacy projected display name derived from the canonical actor row.
+    /// </summary>
+    public string Name => _actor.DisplayName;
+
+    /// <summary>
+    /// Legacy projected avatar resource key derived from the canonical actor row.
+    /// </summary>
+    public string Avatar => _actor.AvatarResourceKey;
 
     /// <summary>
     /// Role of the agent (User or Agent).

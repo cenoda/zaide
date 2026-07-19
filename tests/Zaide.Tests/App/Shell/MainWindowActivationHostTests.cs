@@ -12,6 +12,7 @@ using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Shell;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
@@ -462,9 +463,9 @@ public sealed class MainWindowActivationHostTests
         var terminalHost = new TerminalHost(factory.Object);
 
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
 
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
@@ -573,6 +574,7 @@ public sealed class MainWindowActivationHostTests
             TestEditorBreakpointFactory.Create(editorTabs),
             workspace,
             projectContext,
+            ConversationsTestSupport.CreateCatalogAsInterface(),
             debugCurrentLocationViewModel: location);
 
         return new MwvmHarness

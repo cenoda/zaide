@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 
@@ -17,7 +18,7 @@ namespace Zaide.Tests.Features.Agents.Presentation;
 /// </summary>
 public class AgentPanelHostTests
 {
-    private static AgentPanelHost CreateHost() => new();
+    private static AgentPanelHost CreateHost() => ConversationsTestSupport.CreatePanelHost();
 
     [Fact]
     public void Host_StartsWithEmptyPanelCollection()

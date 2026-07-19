@@ -28,6 +28,7 @@ using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Presentation;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Contracts;
 
 namespace Zaide.App.Shell;
 /// <summary>
@@ -232,6 +233,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                                 EditorBreakpointViewModel editorBreakpointViewModel,
                                 Workspace workspace,
                                 IProjectContextService projectContextService,
+                                IActorCatalog actorCatalog,
                                 ICommandRegistry? commandRegistry = null,
                                 DebugCurrentLocationViewModel? debugCurrentLocationViewModel = null)
     {
@@ -243,7 +245,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _agentTownhallMirror = new AgentTownhallMirrorCoordinator(
             agentRouter,
             agentPanelHost,
-            townhallViewModel);
+            townhallViewModel,
+            actorCatalog);
         SourceControlViewModel = sourceControlViewModel;
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         ProjectWorkflowViewModel = projectWorkflowViewModel ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));

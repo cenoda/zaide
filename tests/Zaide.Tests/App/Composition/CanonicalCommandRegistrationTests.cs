@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
 using Zaide.Tests;
 using Zaide.App.Shell;
@@ -231,11 +232,11 @@ public sealed class CanonicalCommandRegistrationTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateSourceControlViewModel(registry);
         var workspace = sp.GetRequiredService<Workspace>();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
@@ -249,7 +250,7 @@ public sealed class CanonicalCommandRegistrationTests
             TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, registry),
             workspace,
-            new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, ConversationsTestSupport.CreateCatalogAsInterface(), registry);
     }
 
     private static SourceControlViewModel CreateSourceControlViewModel(ICommandRegistry registry)

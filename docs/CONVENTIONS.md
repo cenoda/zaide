@@ -163,6 +163,7 @@ src/
 | `Features/Terminal` | Terminal contracts, application, infrastructure, presentation (moved in Refactor 6.2 M9); V05 factory→presentation edges cleared in Refactor 6.3 (`ITerminalServiceFactory`) |
 | `Features/Townhall` | Townhall domain and presentation (moved in Refactor 6.2 M10); R61-V16 behavior preserved; conversation lifetime remains Refactor 7 |
 | `Features/Agents` | Agents domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M11); V06 MentionParser→presentation edge cleared in Refactor 6.3; no agent-session/run types (LT02/LT03) |
+| `Features/Conversations` | Agent-neutral actor/conversation domain (Refactor 7 M1: typed identity + in-memory actor catalog; conversation store M2+) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
@@ -302,7 +303,7 @@ admits them.
 - The explicit public full-name set is frozen in
   `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` and enforced
   by architecture tests (public-by-exception). Current ceiling after Refactor
-  6.3: **320** public / **95** internal / **415** total top-level production
+  7 M1: **324** public / **98** internal / **422** total top-level production
   types. No new public type without an intentional baseline update in the same
   reviewed change.
 
@@ -367,7 +368,7 @@ into a movement slice.
 | **6.1** | Rules, module map, executable architecture-test baseline (M2 inventory; M3 legacy allowlist ratchet; M4 public full-name + expanded root admission; M5 documentation closeout + M0 representation matrix). **Closed.** |
 | **6.2** | Mechanical moves, namespaces, tests, AXAML/resources — no logic change. **M1–M12 complete** at `72102da`; M13 optional root admission remains unauthorized. |
 | **6.3** | Dependency inversion, composition modules, visibility reduction, lifetime map, ordered shutdown. **Closed** (deliberate composition locator residuals: `R61-AL-LOC-Program`, `R61-AL-LOC-App`). |
-| **7** | Agent/Conversation domain and R61-LT01–LT03 |
+| **7** | Agent/Conversation domain and R61-LT01–LT03 (M1 actor catalog implemented, pending acceptance) |
 | **8** | Townhall/shell view extraction and UI foundation |
 
 ### Executable architecture ratchet (Refactor 6.1 M3–M4; residual set after 6.3)
@@ -379,7 +380,7 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted. Live allowlist after Refactor 6.3: **empty** |
 | **LocatorSite** | M3 | Exact production files with provider/resolution evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted. Live allowlist after Refactor 6.3: **exactly** `Program.cs` and `App.axaml.cs`. `ApplicationShutdown.cs` is inventoried but excluded from LocatorSite FindingIds |
 | **RootFolderAdmission** | M3 + M4 + 6.2 M1–M12 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders after M12: `App` (**only** `src/App/Composition/` and `src/App/Shell/`), `Features` (Settings, Workspace, Editor, ProjectSystem, Language, Debugging, SourceControl, Terminal, Townhall, Agents), `UI` (**only** `src/UI/DesignSystem/`). Technical-layer folders and `src/` root composition C# are **not** admitted. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
-| **Public visibility** | M4 | Exact full-name baseline + count ceiling (**320** public / **95** internal / **415** total after Refactor 6.3); `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
+| **Public visibility** | M4 | Exact full-name baseline + count ceiling (**324** public / **98** internal / **422** total after Refactor 7 M1); `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
 `R61-V##` (or a plan-documented deferred exception), live inventory already
@@ -396,4 +397,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 6.3 accepted closed; public baseline 320/95/415; composition residuals R61-AL-LOC-Program + R61-AL-LOC-App only; Refactor 7 / 8 / Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M1 implemented, pending acceptance; public baseline 324/98/422; Refactor 6.3 composition residuals unchanged; M2–M7 / Refactor 8 / Phase 14 unauthorized)*

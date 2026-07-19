@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Xunit;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Tests.Features.Agents.Domain;
 
@@ -12,15 +13,32 @@ namespace Zaide.Tests.Features.Agents.Domain;
 /// </summary>
 public class AgentPanelStateTests
 {
-    [Fact]
-    public void DefaultState_HasExpectedDefaultValues()
-    {
-        var state = new AgentPanelState();
+    private static Actor CreateActor(
+        string legacyId = "agent-test",
+        string displayName = "Test Agent",
+        string avatar = "avatar-test") =>
+        new(
+            ActorId.PanelCustom(legacyId),
+            ActorKind.Agent,
+            legacyId,
+            displayName,
+            avatar);
 
-        Assert.Empty(state.PanelId);
-        Assert.Empty(state.AgentId);
-        Assert.Empty(state.AgentName);
-        Assert.Empty(state.AvatarResourceKey);
+    private static AgentPanelState CreateState(
+        string legacyId = "agent-test",
+        string displayName = "Test Agent",
+        string avatar = "avatar-test") =>
+        new(CreateActor(legacyId, displayName, avatar));
+
+    [Fact]
+    public void Constructor_BindsIdentityProjectionsToCanonicalActor()
+    {
+        var state = CreateState("agent-gpt", "GPT-4", "AvatarGpt4");
+
+        Assert.Equal("panel-custom:agent-gpt", state.ActorId.Value);
+        Assert.Equal("agent-gpt", state.AgentId);
+        Assert.Equal("GPT-4", state.AgentName);
+        Assert.Equal("AvatarGpt4", state.AvatarResourceKey);
         Assert.Equal("Idle", state.Status);
         Assert.False(state.IsBusy);
         Assert.Empty(state.OutputHistory);
@@ -30,56 +48,49 @@ public class AgentPanelStateTests
     [Fact]
     public void DefaultState_OutputHistory_IsNotNull()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         Assert.NotNull(state.OutputHistory);
     }
 
     [Fact]
     public void CanSetAndReadPanelId()
     {
-        var state = new AgentPanelState { PanelId = "panel-1" };
+        var state = CreateState();
+        state.PanelId = "panel-1";
         Assert.Equal("panel-1", state.PanelId);
     }
 
     [Fact]
-    public void CanSetAndReadAgentId()
+    public void IdentityProjections_AreReadOnly()
     {
-        var state = new AgentPanelState { AgentId = "agent-gpt" };
-        Assert.Equal("agent-gpt", state.AgentId);
-    }
+        var type = typeof(AgentPanelState);
 
-    [Fact]
-    public void CanSetAndReadAgentName()
-    {
-        var state = new AgentPanelState { AgentName = "GPT-4" };
-        Assert.Equal("GPT-4", state.AgentName);
-    }
-
-    [Fact]
-    public void CanSetAndReadAvatarResourceKey()
-    {
-        var state = new AgentPanelState { AvatarResourceKey = "AvatarGpt4" };
-        Assert.Equal("AvatarGpt4", state.AvatarResourceKey);
+        Assert.Null(type.GetProperty(nameof(AgentPanelState.AgentId))!.SetMethod);
+        Assert.Null(type.GetProperty(nameof(AgentPanelState.AgentName))!.SetMethod);
+        Assert.Null(type.GetProperty(nameof(AgentPanelState.AvatarResourceKey))!.SetMethod);
+        Assert.Null(type.GetProperty(nameof(AgentPanelState.ActorId))!.SetMethod);
     }
 
     [Fact]
     public void CanSetAndReadStatus()
     {
-        var state = new AgentPanelState { Status = "Thinking" };
+        var state = CreateState();
+        state.Status = "Thinking";
         Assert.Equal("Thinking", state.Status);
     }
 
     [Fact]
     public void CanSetAndReadDraftInput()
     {
-        var state = new AgentPanelState { DraftInput = "Hello, agent." };
+        var state = CreateState();
+        state.DraftInput = "Hello, agent.";
         Assert.Equal("Hello, agent.", state.DraftInput);
     }
 
     [Fact]
     public void OutputHistory_CanAddAndEnumerateEntries()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         state.OutputHistory.Add("User: Hello");
         state.OutputHistory.Add("Agent: Hi there");
 
@@ -91,26 +102,24 @@ public class AgentPanelStateTests
     [Fact]
     public void OutputHistory_StartsEmpty()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         Assert.Empty(state.OutputHistory);
     }
 
     [Fact]
     public void Shape_ContainsNoRoutingMetadata()
     {
-        // Phase 5.1.1 constraint: no routing fields like RouteTarget, @mention,
-        // ChannelId, or DestinationAgentId should exist.
         var type = typeof(AgentPanelState);
         var props = type.GetProperties().Select(p => p.Name).ToHashSet();
 
         Assert.Contains("PanelId", props);
+        Assert.Contains("ActorId", props);
         Assert.Contains("AgentId", props);
         Assert.Contains("AgentName", props);
         Assert.Contains("AvatarResourceKey", props);
         Assert.Contains("Status", props);
         Assert.Contains("DraftInput", props);
 
-        // Explicitly verify routing-related terms are absent
         Assert.DoesNotContain("RouteTarget", props);
         Assert.DoesNotContain("ChannelId", props);
         Assert.DoesNotContain("DestinationAgentId", props);
@@ -119,8 +128,6 @@ public class AgentPanelStateTests
     [Fact]
     public void Shape_ContainsNoProviderPlatformAbstractions()
     {
-        // Phase 5.1.1 constraint: no provider-platform fields like EndpointUrl,
-        // ApiKey, ModelName, ProviderName, or ConnectionConfig should exist.
         var type = typeof(AgentPanelState);
         var props = type.GetProperties().Select(p => p.Name).ToHashSet();
 
@@ -134,12 +141,6 @@ public class AgentPanelStateTests
     [Fact]
     public void Shape_HasExactlyExpectedFields()
     {
-        // Phase 5.1.1 shape: PanelId, AgentId, AgentName, AvatarResourceKey,
-        // Status, OutputHistory, DraftInput — no more, no less.
-        // M2: AgentPanelState extends ReactiveObject. ReactiveObject exposes
-        // inherited public properties (e.g. Changed, Changing). We filter to
-        // only properties declared directly on AgentPanelState.
-        // M3: Added IsBusy for input-surface disable during in-flight requests.
         var type = typeof(AgentPanelState);
         var props = type.GetProperties()
             .Where(p => p.DeclaringType == typeof(AgentPanelState))
@@ -147,16 +148,25 @@ public class AgentPanelStateTests
             .OrderBy(n => n)
             .ToList();
 
-        var expected = new[] { "AgentId", "AgentName", "AvatarResourceKey", "DraftInput", "IsBusy", "OutputHistory", "PanelId", "Status" };
+        var expected = new[]
+        {
+            "ActorId",
+            "AgentId",
+            "AgentName",
+            "AvatarResourceKey",
+            "DraftInput",
+            "IsBusy",
+            "OutputHistory",
+            "PanelId",
+            "Status"
+        };
         Assert.Equal(expected, props);
     }
-
-    // ── M2: Reactive property behavior ──────────────────────────────────────
 
     [Fact]
     public void Status_Setter_RaisesPropertyChanged()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -172,7 +182,7 @@ public class AgentPanelStateTests
     [Fact]
     public void Status_SameValue_DoesNotRaiseChange()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -180,11 +190,9 @@ public class AgentPanelStateTests
                 changedCount++;
         };
 
-        // Set to non-default value
         state.Status = "Thinking";
         Assert.Equal(1, changedCount);
 
-        // Set same value — should not raise
         state.Status = "Thinking";
         Assert.Equal(1, changedCount);
     }
@@ -192,7 +200,7 @@ public class AgentPanelStateTests
     [Fact]
     public void DraftInput_Setter_RaisesPropertyChanged()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -208,7 +216,7 @@ public class AgentPanelStateTests
     [Fact]
     public void DraftInput_SameValue_DoesNotRaiseChange()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -224,11 +232,9 @@ public class AgentPanelStateTests
     }
 
     [Fact]
-    public void NonReactiveProperties_DoNotRaiseChangeForStatusOrDraftInput()
+    public void PanelId_Change_DoesNotRaiseStatusOrDraftInputNotifications()
     {
-        // Verify that setting non-reactive properties (e.g. AgentName) does
-        // not incorrectly fire change notifications for reactive properties.
-        var state = new AgentPanelState();
+        var state = CreateState();
         var statusChanged = 0;
         var draftChanged = 0;
         state.PropertyChanged += (_, e) =>
@@ -239,26 +245,23 @@ public class AgentPanelStateTests
                 draftChanged++;
         };
 
-        state.AgentName = "New Agent";
         state.PanelId = "new-panel";
 
         Assert.Equal(0, statusChanged);
         Assert.Equal(0, draftChanged);
     }
 
-    // ── M3: IsBusy reactive property behavior ───────────────────────────────
-
     [Fact]
     public void IsBusy_Default_IsFalse()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         Assert.False(state.IsBusy);
     }
 
     [Fact]
     public void IsBusy_Setter_RaisesPropertyChanged()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -274,7 +277,7 @@ public class AgentPanelStateTests
     [Fact]
     public void IsBusy_SameValue_DoesNotRaiseChange()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {
@@ -292,7 +295,7 @@ public class AgentPanelStateTests
     [Fact]
     public void IsBusy_CanToggleBackToFalse()
     {
-        var state = new AgentPanelState();
+        var state = CreateState();
         var changedCount = 0;
         state.PropertyChanged += (_, e) =>
         {

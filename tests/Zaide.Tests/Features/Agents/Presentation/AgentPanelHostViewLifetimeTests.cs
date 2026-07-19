@@ -13,6 +13,7 @@ using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Splat;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
@@ -66,7 +67,7 @@ public class AgentPanelHostViewLifetimeTests
     private static AgentPanelHostView CreateBoundView(out AgentPanelHost host)
     {
         var view = new AgentPanelHostView();
-        host = new AgentPanelHost();
+        host = ConversationsTestSupport.CreatePanelHost();
         view.SetHost(host);
         return view;
     }
@@ -152,7 +153,7 @@ public class AgentPanelHostViewLifetimeTests
     public void SetHost_RebindingDoesNotLeaveStaleSubscriptions()
     {
         var view = new AgentPanelHostView();
-        var hostA = new AgentPanelHost();
+        var hostA = ConversationsTestSupport.CreatePanelHost();
         view.SetHost(hostA);
         var panelA = hostA.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
         var retainedA = view.Panels[panelA];
@@ -161,7 +162,7 @@ public class AgentPanelHostViewLifetimeTests
         Assert.True(HostPropertyChangedSubscribedTo(hostA, view));
         Assert.Equal(1, SendSubscriberCount(retainedA));
 
-        var hostB = new AgentPanelHost();
+        var hostB = ConversationsTestSupport.CreatePanelHost();
         view.SetHost(hostB);
 
         // Old host's subscriptions are gone.
@@ -263,11 +264,11 @@ public class AgentPanelHostViewLifetimeTests
     public void SetHost_RebindKeepsSendBubbling()
     {
         var view = new AgentPanelHostView();
-        var hostA = new AgentPanelHost();
+        var hostA = ConversationsTestSupport.CreatePanelHost();
         view.SetHost(hostA);
         hostA.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
 
-        var hostB = new AgentPanelHost();
+        var hostB = ConversationsTestSupport.CreatePanelHost();
         view.SetHost(hostB);
         var panelB = hostB.CreatePanel("agent-2", "Beta", "Icon.Avatar");
         var retainedB = view.Panels[panelB];

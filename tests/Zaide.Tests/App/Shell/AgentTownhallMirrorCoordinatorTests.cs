@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Shell;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
@@ -25,7 +26,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     private static (AgentTownhallMirrorCoordinator Coordinator, AgentPanelHost Host, TownhallViewModel Townhall, AgentPanelState Panel, Mock<IAgentExecutionCoordinator> Exec)
         CreateSut(string statusOnCompletion = "Idle", bool appendAssistantOutput = true)
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -45,11 +46,11 @@ public sealed class AgentTownhallMirrorCoordinatorTests
             .Returns(Task.CompletedTask);
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
         var channelId = townhall.Channels[0].Id;
         townhall.SelectChannelCommand.Execute(channelId).Subscribe();
 
-        var coordinator = new AgentTownhallMirrorCoordinator(router, host, townhall);
+        var coordinator = new AgentTownhallMirrorCoordinator(router, host, townhall, ConversationsTestSupport.CreateCatalogAsInterface());
         return (coordinator, host, townhall, panel, exec);
     }
 
@@ -127,7 +128,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_PassesCancellationTokenToRouterExecution()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         CancellationToken observed = default;
@@ -136,9 +137,9 @@ public sealed class AgentTownhallMirrorCoordinatorTests
             .Returns(Task.CompletedTask);
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
         townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
-        var sut = new AgentTownhallMirrorCoordinator(router, host, townhall);
+        var sut = new AgentTownhallMirrorCoordinator(router, host, townhall, ConversationsTestSupport.CreateCatalogAsInterface());
 
         using var cts = new CancellationTokenSource();
         await sut.SendAsync(panel.PanelId, "token check", cts.Token);
@@ -149,16 +150,16 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_CancelledToken_PropagatesWithoutExtraMirrorBeyondUser()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
         townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
-        var sut = new AgentTownhallMirrorCoordinator(router, host, townhall);
+        var sut = new AgentTownhallMirrorCoordinator(router, host, townhall, ConversationsTestSupport.CreateCatalogAsInterface());
         var before = townhall.Messages.Count;
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(

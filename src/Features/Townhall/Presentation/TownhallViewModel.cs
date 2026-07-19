@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using ReactiveUI;
+using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Townhall.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
@@ -20,6 +21,7 @@ namespace Zaide.Features.Townhall.Presentation;
 public class TownhallViewModel : ReactiveObject
 {
     private readonly TownhallState _state;
+    private readonly IActorCatalog _actorCatalog;
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
 
@@ -123,8 +125,8 @@ public class TownhallViewModel : ReactiveObject
                 LogActivity(
                     kind: TownhallMessageKind.ChannelEvent,
                     content: $"Switched to #{channelName}",
-                    senderId: "user-1",
-                    senderName: "User");
+                    senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
+                    senderName: _actorCatalog.CanonicalHuman.DisplayName);
             }
 
             // Update the Messages collection to reflect current channel's messages
@@ -155,9 +157,10 @@ public class TownhallViewModel : ReactiveObject
     /// <summary>
     /// Initializes a new instance of the TownhallViewModel class.
     /// </summary>
-    public TownhallViewModel(TownhallState state)
+    public TownhallViewModel(TownhallState state, IActorCatalog actorCatalog)
     {
-        _state = state;
+        _state = state ?? throw new ArgumentNullException(nameof(state));
+        _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
 
         // Initialize explicit session seed state
         InitializeSessionState();
@@ -227,8 +230,8 @@ public class TownhallViewModel : ReactiveObject
             LogActivity(
                 kind: TownhallMessageKind.Chat,
                 content: draft,
-                senderId: "user-1",
-                senderName: "User");
+                senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
+                senderName: _actorCatalog.CanonicalHuman.DisplayName);
 
             // Clear draft after sending
             DraftText = string.Empty;
@@ -273,7 +276,9 @@ public class TownhallViewModel : ReactiveObject
             Id = Guid.NewGuid().ToString(),
             SenderId = senderId,
             SenderName = senderName,
-            SenderAvatar = senderId == "user-1" ? "avatar-user" : "avatar-agent",
+            SenderAvatar = senderId == _actorCatalog.CanonicalHuman.ProjectedLegacyId
+                ? _actorCatalog.CanonicalHuman.AvatarResourceKey
+                : "avatar-agent",
             Content = content,
             Timestamp = DateTimeOffset.UtcNow,
             Kind = kind
@@ -305,12 +310,21 @@ public class TownhallViewModel : ReactiveObject
         // Set initial active channel (which also sets IsActive flags and Messages collection)
         ActiveChannelId = townhallMain.Id;
 
-        // Create initial agents
-        var user = new WorkspaceAgent { Id = "user-1", Name = "User", Avatar = "avatar-user", Role = "user", Status = AgentStatus.Active, HasWarning = false };
-        var agent1 = new WorkspaceAgent { Id = "agent-1", Name = "Zaide Agent", Avatar = "avatar-agent", Role = "agent", Status = AgentStatus.Active, HasWarning = false };
-
-        _state.Agents.Add(user);
-        _state.Agents.Add(agent1);
+        // Create initial agents from the canonical actor catalog.
+        var user = _actorCatalog.CanonicalHuman;
+        var agent1 = _actorCatalog.CanonicalTownhallAgent;
+        _state.Agents.Add(new WorkspaceAgent(user)
+        {
+            Role = "user",
+            Status = AgentStatus.Active,
+            HasWarning = false
+        });
+        _state.Agents.Add(new WorkspaceAgent(agent1)
+        {
+            Role = "agent",
+            Status = AgentStatus.Active,
+            HasWarning = false
+        });
 
         // Set initial draft text (syncs with state automatically via setter)
         DraftText = string.Empty;

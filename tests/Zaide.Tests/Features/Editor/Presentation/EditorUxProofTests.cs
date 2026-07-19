@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
@@ -369,12 +370,12 @@ public sealed class EditorUxProofTests
         var factory = new Mock<ITerminalServiceFactory>();
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>()))
             .Returns(RepositoryDiscoveryResult.NotFound(""));
@@ -390,6 +391,6 @@ public sealed class EditorUxProofTests
             fileTreeViewModel, editorTabs, terminalHost, panelHost,
             router, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
-            new Mock<IProjectContextService>(MockBehavior.Loose).Object, registry);
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, ConversationsTestSupport.CreateCatalogAsInterface(), registry);
     }
 }

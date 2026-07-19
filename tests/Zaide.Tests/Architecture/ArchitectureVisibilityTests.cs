@@ -187,10 +187,10 @@ public sealed class ArchitectureVisibilityTests
         });
 
         Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
-        Assert.Equal(36, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        Assert.Equal(37, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
-        // Post-M1+M2: Features 334 → 336 (M1) → 338 (M2); M5 −1 (SourceControlState); M10 +2 factory files.
-        Assert.Equal(339, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Refactor 7 M1: +6 Conversations production files.
+        Assert.Equal(345, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

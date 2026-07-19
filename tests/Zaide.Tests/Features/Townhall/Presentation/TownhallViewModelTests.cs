@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -13,7 +14,7 @@ public class TownhallViewModelTests
     private static TownhallViewModel CreateViewModel()
     {
         var state = new TownhallState();
-        return new TownhallViewModel(state);
+        return ConversationsTestSupport.CreateTownhallViewModel(state);
     }
 
     /// <summary>
@@ -272,7 +273,7 @@ public class TownhallViewModelTests
     public void DraftText_SyncsToState()
     {
         var state = new TownhallState();
-        var vm = new TownhallViewModel(state);
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(state);
 
         // Set draft text via ViewModel
         vm.DraftText = "Test draft";

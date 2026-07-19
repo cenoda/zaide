@@ -41,11 +41,10 @@ public static class ArchitectureVisibilityRatchet
     }
 
     /// <summary>
-    /// Refactor 6.2 M2–M11: Settings, Workspace, Editor, ProjectSystem,
-    /// Language (including Infrastructure/Lsp), Debugging (application/
-    /// contracts + Infrastructure/Dap + Presentation), SourceControl,
-    /// Terminal, Townhall, and Agents are admitted under <c>src/Features/</c>.
-    /// Other features remain deny-by-default until their migration slices.
+    /// Refactor 6.2 M2–M11 + Refactor 7 M1 Conversations: Settings, Workspace,
+    /// Editor, ProjectSystem, Language (including Infrastructure/Lsp), Debugging,
+    /// SourceControl, Terminal, Townhall, Agents, and Conversations are admitted
+    /// under <c>src/Features/</c>.
     /// </summary>
     public static bool IsApprovedFeaturesPath(string relativePath)
     {
@@ -59,7 +58,8 @@ public static class ArchitectureVisibilityRatchet
             || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Terminal/", StringComparison.Ordinal)
             || path.StartsWith("src/Features/Townhall/", StringComparison.Ordinal)
-            || path.StartsWith("src/Features/Agents/", StringComparison.Ordinal);
+            || path.StartsWith("src/Features/Agents/", StringComparison.Ordinal)
+            || path.StartsWith("src/Features/Conversations/", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -218,8 +218,9 @@ public static class ArchitectureVisibilityRatchet
                         "src/Features/Workspace/, src/Features/Editor/, " +
                         "src/Features/ProjectSystem/, src/Features/Language/, " +
                         "src/Features/Debugging/, src/Features/SourceControl/, " +
-                        "src/Features/Terminal/, src/Features/Townhall/, and src/Features/Agents/ are admitted " +
-                        "(Refactor 6.2 M2–M11). " +
+                        "src/Features/Terminal/, src/Features/Townhall/, src/Features/Agents/, " +
+                        "and src/Features/Conversations/ are admitted (Refactor 6.2 M2–M11; " +
+                        "Refactor 7 M1 Conversations). " +
                         "Other features require their slice."));
                 }
 

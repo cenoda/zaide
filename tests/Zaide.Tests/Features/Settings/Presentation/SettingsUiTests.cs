@@ -25,6 +25,7 @@ using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Splat;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -194,10 +195,10 @@ public sealed class SettingsUiTests
         var terminalFactory = new Mock<ITerminalServiceFactory>();
         terminalFactory.Setup(factory => factory.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(terminalFactory.Object);
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
         var git = new Mock<IGitRepositoryService>();
         git.Setup(service => service.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(service => service.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
@@ -209,7 +210,7 @@ public sealed class SettingsUiTests
         ctxMock.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         var workspace = provider.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var vm = new MainWindowViewModel(fileTree, editorTabs, terminalHost, panelHost, router, townhall,
-            sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object);
+            sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ctxMock.Object, ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return vm;
     }

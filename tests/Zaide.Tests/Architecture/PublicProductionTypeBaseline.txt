@@ -32,6 +32,10 @@ Zaide.Features.Agents.Presentation.AgentPanelHost
 Zaide.Features.Agents.Presentation.AgentPanelHostView
 Zaide.Features.Agents.Presentation.AgentPanelView
 Zaide.Features.Agents.Presentation.IAgentPanelHost
+Zaide.Features.Conversations.Contracts.IActorCatalog
+Zaide.Features.Conversations.Domain.Actor
+Zaide.Features.Conversations.Domain.ActorId
+Zaide.Features.Conversations.Domain.ActorKind
 Zaide.Features.Debugging.Application.BreakpointOperationResult
 Zaide.Features.Debugging.Application.BreakpointOutcomeKind
 Zaide.Features.Debugging.Application.DebugBreakpointRequest

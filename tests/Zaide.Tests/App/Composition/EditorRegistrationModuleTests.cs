@@ -166,18 +166,21 @@ public sealed class EditorRegistrationModuleTests
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
         Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideConversations\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideTerminal\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
+        var conversationsIndex = programSource.IndexOf("AddZaideConversations()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
         var workspaceIndex = programSource.IndexOf("AddZaideWorkspace()", StringComparison.Ordinal);
         var editorIndex = programSource.IndexOf("AddZaideEditor()", StringComparison.Ordinal);
         var terminalIndex = programSource.IndexOf("AddZaideTerminal()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
-        Assert.True(settingsIndex > appCoreIndex);
+        Assert.True(conversationsIndex > appCoreIndex);
+        Assert.True(settingsIndex > conversationsIndex);
         Assert.True(workspaceIndex > settingsIndex);
         Assert.True(editorIndex > workspaceIndex);
         Assert.True(terminalIndex > editorIndex);
@@ -237,11 +240,12 @@ public sealed class EditorRegistrationModuleTests
 
 
     [Fact]
-    public void ProgramSource_CallsAllElevenModules_AndHasNoDirectProductionAddSingleton()
+    public void ProgramSource_CallsAllTwelveModules_AndHasNoDirectProductionAddSingleton()
     {
         var programSource = ReadRepoFile("src/App/Composition/Program.cs");
 
         Assert.Single(Regex.Matches(programSource, @"AddZaideAppCore\s*\(\s*\)"));
+        Assert.Single(Regex.Matches(programSource, @"AddZaideConversations\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideSettings\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideWorkspace\s*\(\s*\)"));
         Assert.Single(Regex.Matches(programSource, @"AddZaideEditor\s*\(\s*\)"));
@@ -254,6 +258,7 @@ public sealed class EditorRegistrationModuleTests
         Assert.Single(Regex.Matches(programSource, @"AddZaideDebugging\s*\(\s*\)"));
 
         var appCoreIndex = programSource.IndexOf("AddZaideAppCore()", StringComparison.Ordinal);
+        var conversationsIndex = programSource.IndexOf("AddZaideConversations()", StringComparison.Ordinal);
         var settingsIndex = programSource.IndexOf("AddZaideSettings()", StringComparison.Ordinal);
         var workspaceIndex = programSource.IndexOf("AddZaideWorkspace()", StringComparison.Ordinal);
         var editorIndex = programSource.IndexOf("AddZaideEditor()", StringComparison.Ordinal);
@@ -265,7 +270,8 @@ public sealed class EditorRegistrationModuleTests
         var languageIndex = programSource.IndexOf("AddZaideLanguage()", StringComparison.Ordinal);
         var debuggingIndex = programSource.IndexOf("AddZaideDebugging()", StringComparison.Ordinal);
         Assert.True(appCoreIndex >= 0);
-        Assert.True(settingsIndex > appCoreIndex);
+        Assert.True(conversationsIndex > appCoreIndex);
+        Assert.True(settingsIndex > conversationsIndex);
         Assert.True(workspaceIndex > settingsIndex);
         Assert.True(editorIndex > workspaceIndex);
         Assert.True(terminalIndex > editorIndex);

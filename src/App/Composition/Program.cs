@@ -22,6 +22,7 @@ class Program
     public static void ConfigureServices(IServiceCollection services)
     {
         services.AddZaideAppCore();
+        services.AddZaideConversations();
         services.AddZaideSettings();
         services.AddZaideWorkspace();
         services.AddZaideEditor();

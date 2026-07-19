@@ -99,7 +99,7 @@ are complete. The live tree matches the approved feature-first layout
 ```text
 src/
   App/Composition/     # Program, App, CompositionRoot, ApplicationShutdown,
-                       # command registry; Registration/ (11 AddZaide* modules)
+                       # command registry; Registration/ (12 AddZaide* modules)
   App/Shell/           # MainWindow, shell VMs/views, chrome (Animations/IconFactory shell-owned R62-D03)
   UI/DesignSystem/     # tokens, icons, typography
   Features/Settings/   # Domain, Contracts, Infrastructure, Presentation
@@ -113,17 +113,18 @@ src/
   Features/Terminal/   # Contracts, Application, Infrastructure, Presentation
   Features/Townhall/   # Domain, Presentation (R61-V16 preserved)
   Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation
+  Features/Conversations/  # Domain, Contracts, Application (Refactor 7 M1 actor catalog)
 ```
 
 Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 6.3
-closeout: total top-level **415**, public **320**, internal **95**, production
-C# **377**, Features C# **339**, App C# **36**, production DI registrations
-**67** (all Singleton; documented in `LIFETIME_MAP.md`),
-Composition.Registration modules **11**. FindingIds remaining: exactly
+tracked production **C#** root admission. Live inventory after Refactor 7 M1
+closeout: total top-level **422**, public **324**, internal **98**, production
+C# **384**, Features C# **345**, App C# **37**, production DI registrations
+**68** (all Singleton; Conversations adds `IActorCatalog`),
+Composition.Registration modules **12**. FindingIds remaining: exactly
 **2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
 boundary residuals. NamespaceDirection allowlist is empty.
 `ApplicationShutdown` is the ordered shutdown owner, not a third locator
@@ -134,7 +135,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M0 accepted; M1 typed identity/catalog only authorized, not implemented |
+| Refactor 7 | M1 implemented (typed actor catalog); pending acceptance; M2–M7 unauthorized |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -344,4 +345,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M0 accepted; M1 typed identity/catalog only authorized and not implemented; implemented baselines remain public 320 / internal 95 / total 415, prod C# 377 / Features 339 / App 36, DI 67 / Registration modules 11; M2–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M1 implemented, pending acceptance; implemented baselines remain public 324 / internal 98 / total 422, prod C# 384 / Features 345 / App 37, DI 68 / Registration modules 12; M2–M7, Refactor 8, and Phase 14 unauthorized)*

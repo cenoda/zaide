@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
 using Zaide.Features.Editor.Contracts;
@@ -96,10 +97,10 @@ public sealed class ProjectSystemMainWindowViewModelProjectionTests
         var factory = new Mock<ITerminalServiceFactory>();
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
-        var townhall = new TownhallViewModel(new TownhallState());
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound(""));
         git.Setup(g => g.ReadStatus(It.IsAny<string>())).Returns(new RepositoryStatusSnapshot());
@@ -112,7 +113,7 @@ public sealed class ProjectSystemMainWindowViewModelProjectionTests
         var vm = new MainWindowViewModel(
             fileTree, editorTabs, terminalHost, panelHost, router,
             townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
-            projectContextService);
+            projectContextService, ConversationsTestSupport.CreateCatalogAsInterface());
         // Use ImmediateScheduler so scheduled work executes synchronously
         // in unit test environments where AvaloniaScheduler is unavailable.
         vm.ProjectContextScheduler = System.Reactive.Concurrency.ImmediateScheduler.Instance;

@@ -2,14 +2,15 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M0 accepted (2026-07-19); M1 only authorized, not
-implemented.**
+**Refactor 7 status:** **M1 implemented (2026-07-19); pending human acceptance.
+M2–M7, Refactor 8, and Phase 14 remain unauthorized.**
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
 Agent/Townhall behavior at `e597972`, locks the intended boundaries and
 milestone order, and defines verification commands. Human acceptance after the
-NO-GO amendments authorizes **M1 only** as the next separately verifiable
-implementation milestone. M2–M7, Refactor 8, and Phase 14 remain unauthorized.
+NO-GO amendments authorized **M1 only** as the next separately verifiable
+implementation milestone. M1 implementation is complete and awaiting review;
+M2–M7, Refactor 8, and Phase 14 remain unauthorized.
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -317,6 +318,23 @@ Manual backend smoke requires a configured test endpoint and must never expose
 credentials in logs or evidence. If it cannot be run, record it as not run;
 automated proof must still cover the ownership/attribution contract.
 
+## M1 verification (2026-07-19, resubmission pending acceptance)
+
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
+- Focused gate: **321 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2336 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+- Review fixes applied: read-only actor-backed projections, synchronized custom
+  registration, factory-only `ActorId`, and removal of unauthorized empty-value
+  validation on the custom panel overload.
+
+## Entry conditions for M2
+
+- [ ] M1 typed `ActorId`/Actor catalog, canonical seeds, read-only projections,
+      and `AddZaideConversations()` composition are accepted.
+- [ ] M2 scope remains unauthorized until human acceptance of M1 closeout.
+
 ## Entry conditions for M1
 
 - [x] Refactor 6.1–6.3 are accepted and closed.
@@ -382,4 +400,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M0 accepted at `e597972`; M1 only authorized and not implemented; M2–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M1 implemented, pending acceptance; M2–M7, Refactor 8, and Phase 14 unauthorized)*

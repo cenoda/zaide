@@ -1,8 +1,10 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -17,15 +19,18 @@ internal sealed class AgentTownhallMirrorCoordinator
     private readonly IAgentRouter _agentRouter;
     private readonly IAgentPanelHost _agentPanelHost;
     private readonly TownhallViewModel _townhallViewModel;
+    private readonly IActorCatalog _actorCatalog;
 
     public AgentTownhallMirrorCoordinator(
         IAgentRouter agentRouter,
         IAgentPanelHost agentPanelHost,
-        TownhallViewModel townhallViewModel)
+        TownhallViewModel townhallViewModel,
+        IActorCatalog actorCatalog)
     {
         _agentRouter = agentRouter;
         _agentPanelHost = agentPanelHost;
         _townhallViewModel = townhallViewModel;
+        _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
     }
 
     /// <summary>
@@ -39,8 +44,8 @@ internal sealed class AgentTownhallMirrorCoordinator
         _townhallViewModel.AddMirroredActivity(
             kind: TownhallMessageKind.Chat,
             content: userMessage,
-            senderId: "user-1",
-            senderName: "User");
+            senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
+            senderName: _actorCatalog.CanonicalHuman.DisplayName);
 
         // Delegate entirely to the routing orchestration seam (M3).
         // NOTE: Do NOT use ConfigureAwait(false) here. The continuation reads

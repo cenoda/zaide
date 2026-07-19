@@ -15,6 +15,7 @@ using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
 using Zaide.Tests.App.Composition;
 using Zaide.App.Shell;
@@ -98,14 +99,14 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return vm;
     }
@@ -122,14 +123,14 @@ public class MainWindowViewModelTests
         var fileTreeViewModel = new FileTreeViewModel(fileTreeService, CurrentThreadScheduler.Instance);
         var editorTabs = new EditorTabViewModel(sp.GetRequiredService<IEditorSessionFactory>(), sp.GetRequiredService<IFileService>(), sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>());
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return vm;
     }
@@ -182,11 +183,11 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
 
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
@@ -204,7 +205,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
         // Before opening a folder the (empty) workspace yields no branch.
@@ -253,11 +254,11 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
 
         var workspace = sp.GetRequiredService<Zaide.Features.Workspace.Domain.Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
@@ -274,7 +275,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
         Assert.Empty(scViewModel.Branches);
@@ -432,14 +433,14 @@ public class MainWindowViewModelTests
         factory2.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost2 = new TerminalHost(factory2.Object);
         var townhallState2 = new TownhallState();
-        var townhallViewModel2 = new TownhallViewModel(townhallState2);
+        var townhallViewModel2 = ConversationsTestSupport.CreateTownhallViewModel(townhallState2);
         var scViewModel2 = CreateScViewModel();
         var workspace2 = sp.GetRequiredService<Workspace>();
         var coordinator2 = CreateMockCoordinator().Object;
-        var panelHost2 = new AgentPanelHost();
+        var panelHost2 = ConversationsTestSupport.CreatePanelHost();
         var parser2 = new MentionParser();
         var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
         await terminalHost2.EnsureActiveSessionStartedAsync();
@@ -476,7 +477,7 @@ public class MainWindowViewModelTests
         bool appendAssistantOutput = true)
     {
         // Create panel
-        var agentHost = new AgentPanelHost();
+        var agentHost = ConversationsTestSupport.CreatePanelHost();
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         // Mock coordinator that simulates a successful or failed send
@@ -513,14 +514,14 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return (vm, panel);
     }
@@ -723,7 +724,7 @@ public class MainWindowViewModelTests
     public async Task SendAgentMessageAsync_NonAssistantResponse_NotMirrored()
     {
         // Create a coordinator that appends output without "Assistant: " prefix
-        var agentHost = new AgentPanelHost();
+        var agentHost = ConversationsTestSupport.CreatePanelHost();
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
@@ -752,14 +753,14 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
         var channelId = vm.TownhallViewModel.Channels[0].Id;
@@ -841,7 +842,7 @@ public class MainWindowViewModelTests
         bool appendTargetOutput = true,
         Action<AgentPanelHost>? afterSend = null)
     {
-        var agentHost = new AgentPanelHost();
+        var agentHost = ConversationsTestSupport.CreatePanelHost();
         var source = agentHost.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var target = agentHost.CreatePanel("agent-2", "Beta", "avatar_beta");
 
@@ -879,14 +880,14 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return (vm, source, target);
     }
@@ -1068,11 +1069,11 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
 
         var workspace = sp.GetRequiredService<Workspace>();
         var coordinator = CreateMockCoordinator().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
@@ -1089,7 +1090,7 @@ public class MainWindowViewModelTests
         var scViewModel = new SourceControlViewModel(
             new SourceControlSnapshotOrchestrator(git.Object), workspace, mutation.Object, git.Object);
 
-        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+        var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return (vm, workspace, scViewModel, fileTreeViewModel);
     }
@@ -1233,7 +1234,7 @@ public class MainWindowViewModelTests
     private static (MainWindowViewModel Vm, AgentPanelState Panel, string TempDir) BuildFullChainVm(
         IAgentExecutionService executionService)
     {
-        var agentHost = new AgentPanelHost();
+        var agentHost = ConversationsTestSupport.CreatePanelHost();
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         var parser = new MentionParser();
@@ -1253,12 +1254,12 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = new TownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock());
+            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
         return (vm, panel, string.Empty);

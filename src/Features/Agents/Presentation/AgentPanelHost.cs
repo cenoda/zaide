@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Conversations.Contracts;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Presentation;
 
@@ -16,8 +18,10 @@ namespace Zaide.Features.Agents.Presentation;
 /// </summary>
 public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 {
+    private readonly IActorCatalog _actorCatalog;
     private readonly ObservableCollection<AgentPanelState> _panels;
     private AgentPanelState? _activePanel;
+    private int _nextSeedIndex;
 
     public ObservableCollection<AgentPanelState> Panels => _panels;
 
@@ -25,19 +29,11 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public AgentPanelHost()
+    public AgentPanelHost(IActorCatalog actorCatalog)
     {
+        _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
         _panels = new ObservableCollection<AgentPanelState>();
     }
-
-    private static readonly (string AgentId, string AgentName, string AvatarResourceKey)[] _seedIdentities =
-    {
-        ("alpha", "Alpha", "Icon.Avatar"),
-        ("beta", "Beta", "Icon.Avatar"),
-        ("gamma", "Gamma", "Icon.Avatar"),
-        ("delta", "Delta", "Icon.Avatar"),
-    };
-    private int _nextSeedIndex;
 
     /// <summary>
     /// Creates a new agent panel using the next seeded identity from the
@@ -46,25 +42,20 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
     /// </summary>
     public AgentPanelState CreatePanel()
     {
-        string agentId, agentName, avatar;
-        if (_nextSeedIndex < _seedIdentities.Length)
+        Actor actor;
+        if (_nextSeedIndex < _actorCatalog.PanelSeedCount)
         {
-            var seed = _seedIdentities[_nextSeedIndex];
-            agentId = seed.AgentId;
-            agentName = seed.AgentName;
-            avatar = seed.AvatarResourceKey;
+            actor = _actorCatalog.GetPanelSeedActor(_nextSeedIndex);
             _nextSeedIndex++;
         }
         else
         {
-            int n = _nextSeedIndex - _seedIdentities.Length + 1;
-            agentId = $"agent-{n}";
-            agentName = $"Agent {n}";
-            avatar = "Icon.Avatar";
+            int fallbackNumber = _nextSeedIndex - _actorCatalog.PanelSeedCount + 1;
+            actor = _actorCatalog.GetOrRegisterPanelFallbackActor(fallbackNumber);
             _nextSeedIndex++;
         }
 
-        return CreatePanel(agentId, agentName, avatar);
+        return CreatePanelFromActor(actor);
     }
 
     /// <summary>
@@ -74,12 +65,18 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
     /// </summary>
     public AgentPanelState CreatePanel(string agentId, string agentName, string avatarResourceKey)
     {
-        var panel = new AgentPanelState
+        var actor = _actorCatalog.RegisterOrGetCustomPanelActor(
+            agentId,
+            agentName,
+            avatarResourceKey);
+        return CreatePanelFromActor(actor);
+    }
+
+    private AgentPanelState CreatePanelFromActor(Actor actor)
+    {
+        var panel = new AgentPanelState(actor)
         {
             PanelId = Guid.NewGuid().ToString("N"),
-            AgentId = agentId,
-            AgentName = agentName,
-            AvatarResourceKey = avatarResourceKey,
             Status = "Idle",
             DraftInput = string.Empty
         };

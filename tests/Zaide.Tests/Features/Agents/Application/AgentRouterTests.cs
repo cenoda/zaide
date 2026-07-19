@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
@@ -34,7 +35,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_NoMention_DispatchesDirectSendToSourcePanel()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var router = CreateRouter(host, out var coordinator);
 
@@ -54,7 +55,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_ValidMention_DispatchesToTargetPanelWithStrippedContent()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var target = host.CreatePanel("agent-2", "Beta", "avatar_beta");
         var router = CreateRouter(host, out var coordinator);
@@ -80,7 +81,7 @@ public sealed class AgentRouterTests
     {
         // Parser has no host dependency; success of a post-construction panel
         // proves the router collects current visible names at route time.
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var router = CreateRouter(host, out var coordinator);
 
@@ -99,7 +100,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_UnknownTarget_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var router = CreateRouter(host, out var coordinator);
 
@@ -116,7 +117,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_AmbiguousTarget_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         host.CreatePanel("agent-2", "Beta", "avatar_beta");
         host.CreatePanel("agent-3", "Beta", "avatar_beta2"); // duplicate name
@@ -135,7 +136,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_MultipleMentions_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         host.CreatePanel("agent-2", "Beta", "avatar_beta");
         var router = CreateRouter(host, out var coordinator);
@@ -153,7 +154,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_EmptyInput_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var router = CreateRouter(host, out var coordinator);
 
@@ -170,7 +171,7 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_EmptyContentAfterStripping_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         host.CreatePanel("agent-2", "Beta", "avatar_beta");
         var router = CreateRouter(host, out var coordinator);

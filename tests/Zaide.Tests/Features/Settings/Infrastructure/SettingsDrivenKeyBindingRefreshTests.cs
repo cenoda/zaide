@@ -15,6 +15,7 @@ using Moq;
 using ReactiveUI;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Application;
@@ -98,10 +99,10 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,
             new TerminalHost(CreateTerminalServiceFactory().Object),
-            new AgentPanelHost(),
-            new AgentRouter(new MentionParser(), new AgentPanelHost(),
+            ConversationsTestSupport.CreatePanelHost(),
+            new AgentRouter(new MentionParser(), ConversationsTestSupport.CreatePanelHost(),
                 new Mock<IAgentExecutionCoordinator>().Object),
-            new TownhallViewModel(new TownhallState()),
+            ConversationsTestSupport.CreateTownhallViewModel(),
             CreateSourceControlViewModel(),
             TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>()),
             TestProjectWorkflowFactory.Create(registry: _registry),
@@ -110,7 +111,7 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
             TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, _registry),
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>(),
-            new Mock<IProjectContextService>(MockBehavior.Loose).Object, _registry);
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, ConversationsTestSupport.CreateCatalogAsInterface(), _registry);
 
         return vm;
     }

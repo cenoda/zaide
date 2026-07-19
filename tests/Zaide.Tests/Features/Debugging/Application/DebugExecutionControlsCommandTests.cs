@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI.Builder;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
 using Zaide.App.Shell;
@@ -265,7 +266,7 @@ public sealed class DebugExecutionControlsCommandTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var panelHost = new AgentPanelHost();
+        var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
         var router = new AgentRouter(parser, panelHost, coordinator);
 
@@ -275,7 +276,7 @@ public sealed class DebugExecutionControlsCommandTests
             terminalHost,
             panelHost,
             router,
-            new TownhallViewModel(new TownhallState()),
+            ConversationsTestSupport.CreateTownhallViewModel(),
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
                 workspace,
@@ -289,7 +290,6 @@ public sealed class DebugExecutionControlsCommandTests
             TestDebugPanelFactory.Create(),
             TestEditorBreakpointFactory.Create(editorTabs, registry),
             workspace,
-            new Mock<IProjectContextService>(MockBehavior.Loose).Object,
-            registry);
+            new Mock<IProjectContextService>(MockBehavior.Loose).Object, ConversationsTestSupport.CreateCatalogAsInterface(), registry);
     }
 }

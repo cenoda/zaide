@@ -42,7 +42,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
         // M8: +1 internal ApplicationShutdown (was 7 total / 5 public / 2 internal).
         Assert.Equal((8, 5, 3), byNamespace["Zaide.App.Composition"]);
-        Assert.Equal((11, 0, 11), byNamespace["Zaide.App.Composition.Registration"]);
+        Assert.Equal((12, 0, 12), byNamespace["Zaide.App.Composition.Registration"]);
         // M9c: +1 internal MainWindowActivationHost (was 18 total / 14 public / 4 internal).
         Assert.Equal((19, 14, 5), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
@@ -90,6 +90,9 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Presentation"]);
+        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
+        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
+        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Conversations.Application"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Contracts"]);
         Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.Agents.Application"]);
@@ -126,17 +129,17 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Post-M1+M2: 356 base → 358 (M1) → 360 (M2); M5 −1; M6a–M6k modules; M7 CompositionRoot; M8 ApplicationShutdown; M9a–M9c shell helpers; M10 +2 factory files.
-        Assert.Equal(377, inventory.SourceFiles.Count);
+        // Refactor 7 M1: +6 Conversations +1 Registration module.
+        Assert.Equal(384, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(36, byFolder["App"]);
+        Assert.Equal(37, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(339, byFolder["Features"]);
+        Assert.Equal(345, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
@@ -178,6 +181,7 @@ public sealed class ArchitectureInventoryTests
                     || path.StartsWith("src/Features/SourceControl/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Terminal/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Townhall/", StringComparison.Ordinal)
+                    || path.StartsWith("src/Features/Conversations/", StringComparison.Ordinal)
                     || path.StartsWith("src/Features/Agents/", StringComparison.Ordinal),
                     $"Unexpected Features path: {path}");
                 Assert.True(
@@ -190,6 +194,7 @@ public sealed class ArchitectureInventoryTests
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.SourceControl.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Terminal.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Townhall.", StringComparison.Ordinal)
+                    || s.DeclaredNamespace.StartsWith("Zaide.Features.Conversations.", StringComparison.Ordinal)
                     || s.DeclaredNamespace.StartsWith("Zaide.Features.Agents.", StringComparison.Ordinal),
                     $"Unexpected Features namespace: {s.DeclaredNamespace}");
             });

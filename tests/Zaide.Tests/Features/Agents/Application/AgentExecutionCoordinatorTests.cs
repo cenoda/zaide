@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
@@ -38,7 +39,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
 
     private static AgentPanelHost CreateHostWithPanel(out AgentPanelState panel)
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         return host;
     }
@@ -357,7 +358,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_OneInFlight_DifferentPanels_BothAllowed()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var panel1 = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var panel2 = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
@@ -665,7 +666,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_RoutedSend_UpdatesTargetPanel()
     {
-        var host = new AgentPanelHost();
+        var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new

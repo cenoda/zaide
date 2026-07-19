@@ -1,5 +1,7 @@
+using System;
 using System.Collections.ObjectModel;
 using ReactiveUI;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Domain;
 
@@ -7,33 +9,48 @@ namespace Zaide.Features.Agents.Domain;
 /// Minimal state shape for a single agent panel.
 /// Phase 5.1.1 — intentionally narrow.
 /// M2: Made reactive for coordinator-mutated scalar properties (Status, DraftInput).
-/// OutputHistory stays as ObservableCollection<string>.
+/// OutputHistory stays as ObservableCollection&lt;string&gt;.
 ///
-/// Contains no routing metadata, no provider-platform abstractions,
-/// and no speculative persistence fields. Multi-panel collection/selection
-/// belongs in the future host seam, not here.
+/// Agent identity projections are read-only views of the canonical <see cref="Actor"/>
+/// row supplied at construction. Presentation fields (PanelId, Status, draft, output)
+/// remain mutable; identity strings are not independently owned copies.
 /// </summary>
 public class AgentPanelState : ReactiveObject
 {
+    private readonly Actor _actor;
+
+    /// <summary>
+    /// Creates panel state bound to a canonical actor row.
+    /// </summary>
+    public AgentPanelState(Actor actor)
+    {
+        _actor = actor ?? throw new ArgumentNullException(nameof(actor));
+    }
+
     /// <summary>
     /// Unique identifier for this panel instance.
     /// </summary>
     public string PanelId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Identifier for the agent this panel represents.
+    /// Typed canonical actor identity for this panel.
     /// </summary>
-    public string AgentId { get; set; } = string.Empty;
+    public ActorId ActorId => _actor.Id;
 
     /// <summary>
-    /// Display name for the agent.
+    /// Legacy projected agent identifier derived from the canonical actor row.
     /// </summary>
-    public string AgentName { get; set; } = string.Empty;
+    public string AgentId => _actor.ProjectedLegacyId;
 
     /// <summary>
-    /// Resource key used to look up the agent's avatar icon.
+    /// Legacy projected display name derived from the canonical actor row.
     /// </summary>
-    public string AvatarResourceKey { get; set; } = string.Empty;
+    public string AgentName => _actor.DisplayName;
+
+    /// <summary>
+    /// Legacy projected avatar resource key derived from the canonical actor row.
+    /// </summary>
+    public string AvatarResourceKey => _actor.AvatarResourceKey;
 
     /// <summary>
     /// Current status of this agent panel (e.g. Idle, Thinking, Error).
