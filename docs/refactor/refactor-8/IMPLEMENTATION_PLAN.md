@@ -2,9 +2,10 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M2 complete (2026-07-19).** M0 planning gate accepted;
-M1 token baseline implemented; M2 bottom-panel host extracted. M3+ unauthorized
-until explicit authorization.
+**Refactor 8 status:** **M2 accepted (2026-07-19).** M0 planning gate accepted;
+M1 token baseline implemented; M2 bottom-panel host extracted and accepted.
+**M3 authorized** (right-column host extraction). M4+ unauthorized until explicit
+authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -514,7 +515,15 @@ No `dotnet` production change is required for M0.
 - [x] Manual smoke: full bottom-panel mode cycle, hide/show, and splitter resize at
       default (1280×800) and minimum (960×600) window sizes on Linux `DISPLAY=:1`
       (see M2 verification record).
-- [ ] Human accepts M2 closeout before M3 authorization.
+- [x] Human accepts M2 closeout before M3 authorization.
+
+### Entry conditions for M3 (authorized 2026-07-19)
+
+- [x] Human accepted M2 closeout at `20a4283` (code `22208fc`; smoke docs
+      `20a4283`).
+- [x] Human authorized **M3 only**.
+- [x] Working tree based on accepted M2 boundary is clean of unrelated edits.
+- [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -807,4 +816,4 @@ Prior partial smoke (toggle-only) superseded by this run.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M2 resubmission: complete bottom-panel manual smoke recorded; pending human acceptance; M3 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M2 accepted; M3 right-column host authorized; Phase 14 unauthorized)*

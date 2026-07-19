@@ -398,4 +398,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M7 accepted at `a7d2887`; Refactor 7 complete and closed; public baseline 339/104/443 unchanged; Refactor 8 and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M7 accepted at `a7d2887`; Refactor 7 complete and closed; Refactor 8 M2 accepted at `22208fc`; M3 authorized; public baseline 339/107/446 after M2; Phase 14 unauthorized)*
