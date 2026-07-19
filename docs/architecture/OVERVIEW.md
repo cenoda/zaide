@@ -13,7 +13,7 @@ tab lifecycle/reordering, and editor status projections. Phase 10 (C# language
 intelligence via LSP), Phase 11 (Project Workflow — Build / Run / Test), and
 Phase 12 (DAP debugging) are complete. Phase 13 (Release Hardening) is
 **complete with explicit limitations**
-([M5 closeout](../phases/v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)): locked
+([M5 closeout](../phases/v2/phase-13/M5_RELEASE_38418ed_EVIDENCE.md)): locked
 performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
@@ -134,7 +134,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 accepted (`0902641`); M4 execution-run/routing implemented, pending acceptance; M5–M7 unauthorized |
+| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 accepted (`0902641`); M4 accepted (`38418ed`); M5a panel projection dual-write only authorized, not implemented |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -344,4 +344,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M3 accepted at `0902641`; M4 only authorized and not implemented; implemented baselines remain public 332 / internal 100 / total 432, prod C# 394 / Features 355 / App 37, DI 69 / Registration modules 12; M5–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M4 accepted at `38418ed`; M5a only authorized and not implemented; implemented baselines remain public 338 / internal 100 / total 438, prod C# 400 / Features 361 / App 37, DI 69 / Registration modules 12; M5b–M7, Refactor 8, and Phase 14 unauthorized)*
