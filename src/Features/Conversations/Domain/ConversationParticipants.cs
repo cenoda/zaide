@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Zaide.Features.Conversations.Domain;
@@ -10,13 +11,15 @@ namespace Zaide.Features.Conversations.Domain;
 public sealed class ConversationParticipants
 {
     private readonly ActorId[] _participants;
+    private readonly ReadOnlyCollection<ActorId> _readOnlyView;
 
     private ConversationParticipants(IReadOnlyList<ActorId> participants)
     {
         _participants = participants.ToArray();
+        _readOnlyView = Array.AsReadOnly(_participants);
     }
 
-    public IReadOnlyList<ActorId> All => _participants;
+    public IReadOnlyList<ActorId> All => _readOnlyView;
 
     public static ConversationParticipants ForChannel() =>
         new(Array.Empty<ActorId>());

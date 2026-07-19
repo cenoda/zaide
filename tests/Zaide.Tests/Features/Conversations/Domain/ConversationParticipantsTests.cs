@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Xunit;
 using Zaide.Features.Conversations.Domain;
 
@@ -33,5 +35,25 @@ public sealed class ConversationParticipantsTests
         Assert.Contains(participants.All, id => id == agent);
         Assert.True(participants.Contains(ActorId.HumanUser));
         Assert.True(participants.Contains(agent));
+    }
+
+    [Fact]
+    public void All_IsMutationResistant()
+    {
+        var participants = ConversationParticipants.ForDirect(
+            ActorId.HumanUser,
+            ActorId.PanelSeed("alpha"));
+
+        var view = participants.All;
+
+        Assert.False(view is ActorId[]);
+
+        Assert.Throws<NotSupportedException>(() =>
+        {
+            if (view is IList<ActorId> list)
+            {
+                list.Add(ActorId.PanelSeed("beta"));
+            }
+        });
     }
 }

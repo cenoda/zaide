@@ -166,6 +166,23 @@ public sealed class ConversationProvisioningIntegrationTests
     }
 
     [Fact]
+    public void AgentPanelHost_PanelIdAndConversationId_AreDistinctImmutableAssociations()
+    {
+        var host = ConversationsTestSupport.CreatePanelHost();
+
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+
+        Assert.False(string.IsNullOrEmpty(panel.PanelId));
+        Assert.NotEqual(default, panel.ConversationId);
+        Assert.NotEqual(panel.PanelId, panel.ConversationId.Value);
+
+        panel.PanelId = "replacement-panel-id";
+
+        Assert.Equal("replacement-panel-id", panel.PanelId);
+        Assert.StartsWith("direct:", panel.ConversationId.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AgentPanelHost_PreservesLegacyOutputHistoryCollection()
     {
         var host = ConversationsTestSupport.CreatePanelHost();

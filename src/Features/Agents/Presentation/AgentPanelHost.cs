@@ -80,10 +80,9 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
             _actorCatalog.CanonicalHuman.Id,
             actor.Id);
 
-        var panel = new AgentPanelState(actor)
+        var panel = new AgentPanelState(actor, conversation.Id)
         {
             PanelId = Guid.NewGuid().ToString("N"),
-            ConversationId = conversation.Id,
             Status = "Idle",
             DraftInput = string.Empty
         };

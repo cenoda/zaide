@@ -27,10 +27,7 @@ internal sealed class ConversationStore : IConversationStore
                 return existing;
             }
 
-            var conversation = new Conversation(
-                conversationId,
-                ConversationKind.Channel,
-                ConversationParticipants.ForChannel());
+            var conversation = Conversation.Channel(conversationId);
             _byId[conversationId] = conversation;
             _channelIndex[channelId] = conversationId;
             return conversation;
@@ -40,9 +37,8 @@ internal sealed class ConversationStore : IConversationStore
     public Conversation CreateDirectConversation(ActorId participantOne, ActorId participantTwo)
     {
         var participants = ConversationParticipants.ForDirect(participantOne, participantTwo);
-        var conversation = new Conversation(
+        var conversation = Conversation.Direct(
             ConversationId.NewDirect(),
-            ConversationKind.Direct,
             participants);
 
         lock (_sync)

@@ -20,11 +20,20 @@ public class AgentPanelState : ReactiveObject
     private readonly Actor _actor;
 
     /// <summary>
-    /// Creates panel state bound to a canonical actor row.
+    /// Creates panel state bound to a canonical actor row and its provisioned
+    /// direct conversation.
     /// </summary>
-    public AgentPanelState(Actor actor)
+    public AgentPanelState(Actor actor, ConversationId conversationId)
     {
         _actor = actor ?? throw new ArgumentNullException(nameof(actor));
+        if (conversationId == default)
+        {
+            throw new ArgumentException(
+                "Panel state requires a provisioned conversation id.",
+                nameof(conversationId));
+        }
+
+        ConversationId = conversationId;
     }
 
     /// <summary>
@@ -36,7 +45,7 @@ public class AgentPanelState : ReactiveObject
     /// Typed authoritative direct conversation provisioned at panel creation.
     /// Separate from <see cref="PanelId"/>.
     /// </summary>
-    public ConversationId ConversationId { get; set; }
+    public ConversationId ConversationId { get; }
 
     /// <summary>
     /// Typed canonical actor identity for this panel.

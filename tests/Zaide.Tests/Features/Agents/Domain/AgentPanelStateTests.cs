@@ -27,8 +27,11 @@ public class AgentPanelStateTests
     private static AgentPanelState CreateState(
         string legacyId = "agent-test",
         string displayName = "Test Agent",
-        string avatar = "avatar-test") =>
-        new(CreateActor(legacyId, displayName, avatar));
+        string avatar = "avatar-test",
+        ConversationId? conversationId = null) =>
+        new(
+            CreateActor(legacyId, displayName, avatar),
+            conversationId ?? ConversationId.NewDirect());
 
     [Fact]
     public void Constructor_BindsIdentityProjectionsToCanonicalActor()
@@ -136,6 +139,27 @@ public class AgentPanelStateTests
         Assert.DoesNotContain("ModelName", props);
         Assert.DoesNotContain("ProviderName", props);
         Assert.DoesNotContain("ConnectionConfig", props);
+    }
+
+    [Fact]
+    public void Constructor_RejectsDefaultConversationId()
+    {
+        var actor = CreateActor();
+
+        Assert.Throws<ArgumentException>(() => new AgentPanelState(actor, default));
+    }
+
+    [Fact]
+    public void ConversationId_IsImmutableAfterConstruction()
+    {
+        var conversationId = ConversationId.NewDirect();
+        var state = CreateState(conversationId: conversationId);
+
+        Assert.Equal(conversationId, state.ConversationId);
+
+        var property = typeof(AgentPanelState).GetProperty(nameof(AgentPanelState.ConversationId));
+        Assert.NotNull(property);
+        Assert.Null(property!.SetMethod);
     }
 
     [Fact]

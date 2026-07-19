@@ -1,3 +1,5 @@
+using System;
+
 namespace Zaide.Features.Conversations.Domain;
 
 /// <summary>
@@ -7,14 +9,14 @@ namespace Zaide.Features.Conversations.Domain;
 /// </summary>
 public sealed class Conversation
 {
-    public Conversation(
+    private Conversation(
         ConversationId id,
         ConversationKind kind,
         ConversationParticipants participants)
     {
         Id = id;
         Kind = kind;
-        Participants = participants ?? throw new System.ArgumentNullException(nameof(participants));
+        Participants = participants;
     }
 
     public ConversationId Id { get; }
@@ -22,4 +24,28 @@ public sealed class Conversation
     public ConversationKind Kind { get; }
 
     public ConversationParticipants Participants { get; }
+
+    public static Conversation Channel(ConversationId id)
+    {
+        return new Conversation(
+            id,
+            ConversationKind.Channel,
+            ConversationParticipants.ForChannel());
+    }
+
+    public static Conversation Direct(
+        ConversationId id,
+        ConversationParticipants participants)
+    {
+        ArgumentNullException.ThrowIfNull(participants);
+
+        if (participants.All.Count != 2)
+        {
+            throw new ArgumentException(
+                "Direct conversations require exactly two participants.",
+                nameof(participants));
+        }
+
+        return new Conversation(id, ConversationKind.Direct, participants);
+    }
 }
