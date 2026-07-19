@@ -81,13 +81,12 @@ public sealed class RightColumnHostSourceTests
     }
 
     [Fact]
-    public void MainWindow_SourceDelegatesRightColumnToHost()
+    public void MainLayoutBuilder_SourceDelegatesRightColumnToHost()
     {
-        var source = ReadRepoFile("src/App/Shell/MainWindow.axaml.cs");
+        var source = ReadRepoFile("src/App/Shell/MainLayoutBuilder.cs");
 
         Assert.Contains("new RightColumnHost(", source);
         Assert.Contains("rightColumnHost.AttachToLayoutGrid(grid)", source);
-        Assert.Contains("RightColumnHost rightColumnHost", source);
         Assert.DoesNotContain("var rightColumn = new Grid", source);
         Assert.DoesNotContain("var rightSplitterH = new GridSplitter", source);
     }

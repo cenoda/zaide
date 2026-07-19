@@ -188,7 +188,8 @@ public sealed class ArchitectureVisibilityTests
 
         Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
         // Refactor 8 M3: +1 RightColumnHost production file (was 38 after M2).
-        Assert.Equal(39, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        // Refactor 8 M4: +1 MainLayoutBuilder production file.
+        Assert.Equal(40, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         Assert.Equal(366, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));

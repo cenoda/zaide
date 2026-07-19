@@ -46,7 +46,8 @@ public sealed class ArchitectureInventoryTests
         // M9c: +1 internal MainWindowActivationHost (was 18 total / 14 public / 4 internal).
         // Refactor 8 M2: +1 internal BottomPanelHost (was 19 total / 14 public / 5 internal).
         // Refactor 8 M3: +1 internal RightColumnHost (was 20 total / 14 public / 6 internal).
-        Assert.Equal((21, 14, 7), byNamespace["Zaide.App.Shell"]);
+        // Refactor 8 M4: +1 internal MainLayoutBuilder (was 21 total / 14 public / 7 internal).
+        Assert.Equal((22, 14, 8), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((4, 2, 2), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
@@ -134,14 +135,15 @@ public sealed class ArchitectureInventoryTests
 
         // Refactor 8 M1: +2 DesignSystem token helper production files.
         // Refactor 8 M3: +1 RightColumnHost production file.
-        Assert.Equal(409, inventory.SourceFiles.Count);
+        // Refactor 8 M4: +1 MainLayoutBuilder production file.
+        Assert.Equal(410, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(39, byFolder["App"]);
+        Assert.Equal(40, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
         Assert.Equal(366, byFolder["Features"]);
 
