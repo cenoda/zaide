@@ -113,16 +113,16 @@ src/
   Features/Terminal/   # Contracts, Application, Infrastructure, Presentation
   Features/Townhall/   # Domain, Presentation (R61-V16 preserved)
   Features/Agents/     # Domain, Contracts, Application, Infrastructure, Presentation
-  Features/Conversations/  # Domain, Contracts, Application (Refactor 7 M1 actor catalog; M2 conversation store)
+  Features/Conversations/  # Domain, Contracts, Application (Refactor 7 M1 actor catalog; M2 conversation store; M3 typed entries)
 ```
 
 Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 7 M2
-closeout: total top-level **428**, public **329**, internal **99**, production
-C# **390**, Features C# **351**, App C# **37**, production DI registrations
+tracked production **C#** root admission. Live inventory after Refactor 7 M3
+implementation: total top-level **432**, public **332**, internal **100**, production
+C# **394**, Features C# **355**, App C# **37**, production DI registrations
 **69** (all Singleton; Conversations adds `IActorCatalog` and
 `IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
 **2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
@@ -135,7 +135,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 typed entry/projection only authorized, not implemented |
+| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 typed entry/projection implemented pending acceptance |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -345,4 +345,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M2 accepted at `94a609f`; M3 only authorized and not implemented; implemented baselines remain public 329 / internal 99 / total 428, prod C# 390 / Features 351 / App 37, DI 69 / Registration modules 12; M4–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M3 implemented pending acceptance; implemented baselines remain public 332 / internal 100 / total 432, prod C# 394 / Features 355 / App 37, DI 69 / Registration modules 12; M4–M7, Refactor 8, and Phase 14 unauthorized)*

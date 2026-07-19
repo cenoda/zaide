@@ -73,4 +73,21 @@ internal sealed class ConversationStore : IConversationStore
         conversation = null!;
         return false;
     }
+
+    public ConversationEntry AppendEntry(ConversationId conversationId, ConversationEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        lock (_sync)
+        {
+            if (!_byId.TryGetValue(conversationId, out var conversation))
+            {
+                throw new KeyNotFoundException(
+                    $"Conversation '{conversationId.Value}' was not found.");
+            }
+
+            conversation.AppendEntry(entry);
+            return entry;
+        }
+    }
 }

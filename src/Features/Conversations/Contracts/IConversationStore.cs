@@ -14,4 +14,12 @@ public interface IConversationStore
     bool TryGet(ConversationId id, out Conversation conversation);
 
     bool TryGetChannelConversation(string channelId, out Conversation conversation);
+
+    /// <summary>
+    /// Appends a factory-constructed entry to the authoritative conversation.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">
+    /// Thrown when <paramref name="conversationId"/> is unknown.
+    /// </exception>
+    ConversationEntry AppendEntry(ConversationId conversationId, ConversationEntry entry);
 }

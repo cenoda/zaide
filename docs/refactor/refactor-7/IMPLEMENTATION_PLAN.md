@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M2 accepted (2026-07-19). M3 only authorized, not
-implemented.** M1 accepted at `edc5dac`. M4–M7, Refactor 8, and Phase 14
+**Refactor 7 status:** **M2 accepted (2026-07-19). M3 implemented, pending human
+acceptance.** M1 accepted at `edc5dac`. M4–M7, Refactor 8, and Phase 14
 remain unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
@@ -242,7 +242,7 @@ without expanding its concern.
 | **M0** | Audit live Agent/Townhall ownership; lock decisions, scope, dependencies, milestones, rollback points, and commands. Documentation only. | `git diff --check`; plan-path/status review; no production/test diff |
 | **M1** | Introduce typed Actor/Agent identity, the locked canonical seed table, and the Actor catalog. Replace identity hardcodes/copies without changing rendered names, avatars, panels, mention parsing, `RouteRequest`, or routing behavior. | Build; focused identity/catalog + existing panel/Townhall seed tests; registration/Architecture tests; full suite — **accepted `edc5dac`** |
 | **M2** | Introduce the agent-neutral authoritative in-memory `Conversation` owner, typed ID/kind/participants, targeted store contract, channel conversations, and create-time panel direct conversations under the locked retention/dual-target policy. Preserve channel/panel presentation and both legacy collections for migration. | Build; focused Conversation/store/provisioning + Townhall domain/ViewModel + panel lifecycle tests; registration/Architecture tests; full suite — **accepted `94a609f`** |
-| **M3** | Introduce a narrower typed conversation-entry model and current-rendering projection for chat, response, routing-error, execution-error, channel-event, and system paths. Keep `TownhallMessageKind` as a presentation compatibility enum; do not promote its unused `AgentThink`, `ToolCall`, or `ToolResult` values into domain types/producers, and leave unused `SourceProvider`, `SourceModel`, `ThreadId`, and `Metadata` fields alone. | Build; focused entry invariants, formatting, exact prefix/content, grouping/filtering, and Townhall projection tests; Architecture tests; full suite |
+| **M3** | Introduce a narrower typed conversation-entry model and current-rendering projection for chat, response, routing-error, execution-error, channel-event, and system paths. Keep `TownhallMessageKind` as a presentation compatibility enum; do not promote its unused `AgentThink`, `ToolCall`, or `ToolResult` values into domain types/producers, and leave unused `SourceProvider`, `SourceModel`, `ThreadId`, and `Metadata` fields alone. | Build; focused entry invariants, formatting, exact prefix/content, grouping/filtering, and Townhall projection tests; Architecture tests; full suite — **implemented, pending acceptance** |
 | **M4** | Introduce the minimal correlated execution-run representation and make coordinator/router results structured. After unchanged visible-name parsing, replace `RouteRequest.TargetAgentName` with a resolved typed Actor/panel target here only. Preserve one-in-flight-per-panel and the existing uneven cancellation, status, draft, and backend behavior. | Build; focused execution coordinator/router/service tests including success, failure, cancellation at each boundary, concurrency, and target identity; Architecture tests; full suite |
 | **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke |
 | **M5b** | Prove typed-vs-legacy output parity across success, routing failure, execution failure, cancellation, switching, and close-during-flight cases; then remove duplicate string history ownership and its dual-write path. No other UI or lifecycle change. | Build; focused parity/lifetime tests; Architecture tests; full suite; repeat manual panel smoke |
@@ -319,6 +319,15 @@ Manual backend smoke requires a configured test endpoint and must never expose
 credentials in logs or evidence. If it cannot be run, record it as not run;
 automated proof must still cover the ownership/attribution contract.
 
+## M3 verification (2026-07-19, pending acceptance)
+
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
+- Focused gate: **325 passed**, 0 failed, 0 skipped.
+- Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2407 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+
 ## M2 verification (2026-07-19, accepted)
 
 - Accepted at commit `94a609f` after review closeout (includes invariant hardening
@@ -345,7 +354,14 @@ automated proof must still cover the ownership/attribution contract.
       and create-time panel direct-conversation provisioning are accepted at
       `94a609f`.
 - [x] Human accepted M2 closeout on 2026-07-19; **M3 only** is authorized.
-- [ ] M3 implementation has not started.
+- [x] M3 implementation complete; pending human acceptance.
+
+## Entry conditions for M4
+
+- [ ] M3 typed conversation-entry model, store append contract, Townhall
+      compatibility projection, and focused regression tests are accepted.
+- [ ] Human accepted M3 closeout; **M4 only** is authorized.
+- [ ] M4 implementation has not started.
 
 ## Entry conditions for M2
 
@@ -419,4 +435,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M2 accepted at `94a609f`; M3 only authorized and not implemented; M4–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M3 implemented pending acceptance; M4–M7, Refactor 8, and Phase 14 unauthorized)*

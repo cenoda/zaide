@@ -1,14 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Zaide.Features.Conversations.Domain;
 
 /// <summary>
-/// Authoritative in-memory conversation aggregate for Refactor 7 M2.
-/// Ordered typed entries arrive in M3; this milestone owns identity, kind,
-/// and participant membership only.
+/// Authoritative in-memory conversation aggregate for Refactor 7.
+/// Owns identity, kind, participant membership, and ordered typed entries.
 /// </summary>
 public sealed class Conversation
 {
+    private readonly List<ConversationEntry> _entries = new();
+
     private Conversation(
         ConversationId id,
         ConversationKind kind,
@@ -17,6 +20,7 @@ public sealed class Conversation
         Id = id;
         Kind = kind;
         Participants = participants;
+        Entries = new ReadOnlyCollection<ConversationEntry>(_entries);
     }
 
     public ConversationId Id { get; }
@@ -24,6 +28,17 @@ public sealed class Conversation
     public ConversationKind Kind { get; }
 
     public ConversationParticipants Participants { get; }
+
+    /// <summary>
+    /// Immutable ordered view of typed entries admitted to this conversation.
+    /// </summary>
+    public ReadOnlyCollection<ConversationEntry> Entries { get; }
+
+    internal void AppendEntry(ConversationEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        _entries.Add(entry);
+    }
 
     public static Conversation Channel(ConversationId id)
     {

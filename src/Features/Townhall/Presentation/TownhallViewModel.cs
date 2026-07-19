@@ -7,6 +7,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using ReactiveUI;
 using Zaide.Features.Conversations.Contracts;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
@@ -260,12 +261,15 @@ public class TownhallViewModel : ReactiveObject
 
     /// <summary>
     /// Appends a classified activity entry to the active channel's message collection.
-    /// Uses the M1 rule: Kind == Chat classifies as chat; all other kinds are action/log.
-    /// Ensures the channel entry exists in ChannelMessages.
+    /// Writes the authoritative typed entry to the channel conversation, then
+    /// projects it into the legacy Townhall compatibility collection.
     /// </summary>
     private void LogActivity(TownhallMessageKind kind, string content, string senderId, string senderName)
     {
         if (_state.ActiveChannelId is null)
+            return;
+
+        if (!_conversationStore.TryGetChannelConversation(_state.ActiveChannelId, out var conversation))
             return;
 
         // Ensure the channel has a messages list in the dictionary
@@ -275,21 +279,38 @@ public class TownhallViewModel : ReactiveObject
         }
 
         var messagesList = _state.ChannelMessages[_state.ActiveChannelId];
+        var author = ResolveAuthor(senderId);
+        var entryKind = TownhallEntryProjection.ClassifyTownhallMirror(
+            kind,
+            author,
+            content,
+            _actorCatalog);
+        var timestamp = DateTimeOffset.UtcNow;
+        var typedEntry = TownhallEntryProjection.CreateTypedEntry(
+            entryKind,
+            author,
+            timestamp,
+            content);
 
-        var entry = new TownhallMessage
-        {
-            Id = Guid.NewGuid().ToString(),
-            SenderId = senderId,
-            SenderName = senderName,
-            SenderAvatar = senderId == _actorCatalog.CanonicalHuman.ProjectedLegacyId
-                ? _actorCatalog.CanonicalHuman.AvatarResourceKey
-                : "avatar-agent",
-            Content = content,
-            Timestamp = DateTimeOffset.UtcNow,
-            Kind = kind
-        };
+        _conversationStore.AppendEntry(conversation.Id, typedEntry);
+
+        var entry = TownhallEntryProjection.ToTownhallMessage(
+            typedEntry,
+            _actorCatalog,
+            senderId,
+            senderName);
 
         messagesList.Add(entry);
+    }
+
+    private ActorId ResolveAuthor(string senderId)
+    {
+        if (_actorCatalog.TryGetByProjectedLegacyId(senderId, out var actor))
+        {
+            return actor.Id;
+        }
+
+        return ActorId.PanelCustom(senderId);
     }
 
     /// <summary>
