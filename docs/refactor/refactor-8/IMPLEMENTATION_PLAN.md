@@ -2,11 +2,11 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M3 accepted (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M4 accepted (2026-07-19).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
-M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`).
-**M4 implemented (2026-07-19); pending human acceptance** (main layout
-builder extraction). M5+ unauthorized until explicit authorization.
+M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
+M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`).
+M5+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -322,7 +322,7 @@ expanding concern.
 | **M1** | **Token baseline for R8-owned surfaces:** apply only the pre-mapped, pixel-identical typography and palette substitutions in the M1 literal inventory below. No layout extraction, hover/selection-overlay cleanup, Agent-panel work, or broader literal sweep. | Build; focused DesignSystem + Townhall + shell tests; Architecture; full suite; manual Townhall/shell glance smoke | **[x] 2026-07-19** |
 | **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke | **[x] 2026-07-19** |
 | **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke | **[x] 2026-07-19** |
-| **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **implemented; pending human acceptance** |
+| **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **[x] 2026-07-19** |
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
 | **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke |
@@ -552,6 +552,26 @@ No `dotnet` production change is required for M0.
 - [x] Human authorized **M4 only**.
 - [x] Working tree based on accepted M3 boundary is clean of unrelated edits.
 - [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
+
+### Exit conditions for M4
+
+- [x] `MainLayoutBuilder` extracted under `src/App/Shell/`; `MainWindow` delegates
+      layout construction and maps the build result to existing field aliases.
+- [x] Inline `BuildLayout` removed from `MainWindow`; `GridLayoutResizeHelper`
+      splitter callbacks preserved unchanged.
+- [x] `MainWindowViewModel`, `WhenActivated` wiring, settings attach, and command
+      palette overlay placement unchanged.
+- [x] `MainLayoutBuilderSourceTests` added (type/source placement ratchets); full
+      builder construction not unit-tested due to transitive `EditorView` resource
+      bootstrap limitation (see M3/M4 verification records).
+- [x] Architecture baselines updated for `MainLayoutBuilder` (+1 internal type,
+      +1 App source file).
+- [x] Build, shell, Architecture, and full suite green.
+- [x] Manual smoke: left/townhall and townhall/editor splitter drags at default
+      (1280×800) and minimum (960×600) window sizes on Linux `DISPLAY=:1` (see M4
+      verification record).
+- [x] Human accepts M4 closeout at `09ccde9` (code `b3c8684`). M5 remains
+      unauthorized until explicit authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -970,4 +990,4 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m4-smoke.sh`):
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M4 main layout builder implemented; pending human acceptance; M5+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M4 accepted at `b3c8684`; M5+ unauthorized; Phase 14 unauthorized)*
