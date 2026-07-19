@@ -511,7 +511,9 @@ No `dotnet` production change is required for M0.
 - [x] Architecture baselines updated for `BottomPanelHost` (+1 internal type,
       +1 App source file).
 - [x] Build, shell filter, Architecture, and full suite green.
-- [x] Manual smoke: app launch + bottom-panel toggle on Linux `DISPLAY=:1`.
+- [x] Manual smoke: full bottom-panel mode cycle, hide/show, and splitter resize at
+      default (1280×800) and minimum (960×600) window sizes on Linux `DISPLAY=:1`
+      (see M2 verification record).
 - [ ] Human accepts M2 closeout before M3 authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
@@ -768,7 +770,7 @@ remained alive with no logged errors.
 
 ```text
 dotnet build Zaide.slnx
-  → succeeded, 0 warnings
+  → succeeded, 4 warnings (pre-existing, unchanged on clean rebuild)
 
 dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
   → Passed: 160, Failed: 0, Skipped: 0, Total: 160
@@ -789,13 +791,20 @@ coverage at the ViewModel seam; attempted host construction tests could not
 reliably bootstrap `Application.Current` when co-loaded with shell
 `RxAppBuilder` static constructors in the same test assembly.
 
-### Manual smoke (2026-07-19)
+### Manual smoke (2026-07-19, completed for M2 resubmission)
 
-Linux `DISPLAY=:1`: `dotnet run` launched Zaide (default 1280×800); `xdotool`
-found the window and sent `Ctrl+J` bottom-panel toggle twice. Process remained
-alive with no logged errors. Full five-mode strip click cycle deferred to human
-acceptance review (same host code path as pre-extraction `BuildLayout`).
+Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m2-smoke.sh`):
+
+1. **Default size (1280×800):** `dotnet run` launched Zaide; bottom panel shown
+   via `Ctrl+J`; mode strip clicked in order — **Terminal**, **Problems**,
+   **Output**, **Test Results**, **Debug**; panel hidden then reshown via
+   `Ctrl+J`; bottom horizontal splitter dragged ~40px to resize panel height.
+2. **Minimum size (960×600):** same cycle repeated — all five modes, hide/show,
+   splitter drag.
+3. Window remained alive throughout; app log contained no errors or exceptions.
+
+Prior partial smoke (toggle-only) superseded by this run.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M2: extract BottomPanelHost from MainWindow.BuildLayout; M3 unauthorized pending M2 acceptance)*
+*Last updated: 2026-07-19 (Refactor 8 M2 resubmission: complete bottom-panel manual smoke recorded; pending human acceptance; M3 unauthorized)*
