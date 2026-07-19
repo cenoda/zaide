@@ -320,7 +320,7 @@ expanding concern.
 | **M0** | Planning gate: live audit, scope, BP boundaries, inventory, slices, commands, rollback, stop rules. **Docs only.** | Plan exists; no production/test diffs required; human acceptance required before M1 |
 | **M1** | **Token baseline for R8-owned surfaces:** apply only the pre-mapped, pixel-identical typography and palette substitutions in the M1 literal inventory below. No layout extraction, hover/selection-overlay cleanup, Agent-panel work, or broader literal sweep. | Build; focused DesignSystem + Townhall + shell tests; Architecture; full suite; manual Townhall/shell glance smoke | **[x] 2026-07-19** |
 | **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke | **[x] 2026-07-19** |
-| **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke |
+| **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke | **[x] 2026-07-19** |
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke |
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
@@ -816,4 +816,75 @@ Prior partial smoke (toggle-only) superseded by this run.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M2 accepted; M3 right-column host authorized; Phase 14 unauthorized)*
+## M3 verification record (2026-07-19)
+
+### Production changes
+
+| File | Change |
+|------|--------|
+| `src/App/Shell/RightColumnHost.cs` | **Added** internal host: editor tab bar, search bar, editor/welcome grid, vertical splitter, agent panel host, `AttachToLayoutGrid` |
+| `src/App/Shell/MainWindow.axaml.cs` | **Modified** `BuildLayout` delegates column 5 to `RightColumnHost`; constructor aliases host surfaces for existing `WhenActivated` wiring |
+| `tests/Zaide.Tests/App/Shell/RightColumnHostSourceTests.cs` | **Added** type/source ratchet tests for host surface and layout placement |
+
+`MainWindowViewModel`, `GridLayoutResizeHelper`, `AgentPanelHost`, `IAgentPanelHost`, and agent send orchestration unchanged.
+
+### Architecture baseline updates
+
+| Metric | Before M3 | After M3 |
+|--------|-----------|----------|
+| Public / internal / total types | 339 / 107 / 446 | 339 / 108 / 447 |
+| Tracked production source files | 408 | 409 |
+| `App` folder source files | 38 | 39 |
+| `Zaide.App.Shell` namespace types | 20 (14p / 6i) | 21 (14p / 7i) |
+
+### Host construction test note
+
+Full `RightColumnHost` construction is not exercised in unit tests: the host always builds
+`EditorView`, whose constructor allocates `EditorCompletionPopup` and reads
+`Application.Current.Resources` at construction time. In `Zaide.Tests`,
+`RxAppBuilder.BuildApp()` leaves `Application.Current` null and Avalonia does not
+expose a supported setter in this stack version. Coverage uses
+`RightColumnHostSourceTests` (public surface + source placement ratchets) plus
+existing Editor/Agent/Shell presentation and activation tests for the wiring seams
+`MainWindow` still owns.
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
+  → Passed: 164, Failed: 0, Skipped: 0, Total: 164
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Agents.Presentation'
+  → Passed: 49, Failed: 0, Skipped: 0, Total: 49
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Editor.Presentation'
+  → Passed: 323, Failed: 0, Skipped: 0, Total: 323
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2512, Failed: 0, Skipped: 0, Total: 2512
+
+git diff --check
+  → clean
+```
+
+New focused tests: `RightColumnHostSourceTests` (4).
+
+### Manual smoke (2026-07-19)
+
+Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m3-smoke.sh`):
+
+1. **Default size (1280×800):** opened workspace folder, opened README tab, invoked search
+   (`Ctrl+F`), dragged editor/agent vertical splitter, created agent panel tab, sent
+   `m3 smoke hello` via Enter.
+2. **Minimum size (960×600):** repeated the same editor/search/splitter/agent-send cycle.
+3. Window remained alive throughout; app log contained no errors or exceptions.
+
+---
+
+*Last updated: 2026-07-19 (Refactor 8 M3 right-column host accepted; M4+ unauthorized; Phase 14 unauthorized)*

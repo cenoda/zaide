@@ -63,10 +63,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly TownhallView _townhallView;
     private readonly StatusBar _statusBar;
     private readonly CommandPaletteOverlay _commandPaletteOverlay;
-    private readonly SearchBar _searchBar;
     private EditorTabBar _editorTabBar = null!;
     private EditorView _editorView = null!;
     private TextBlock _welcomeText = null!;
+    private SearchBar _searchBar = null!;
     private TerminalTabHost _terminalTabHost = null!;
     private ProblemsPanel _problemsPanel = null!;
     private OutputPanel _outputPanel = null!;
@@ -75,6 +75,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
     private BottomPanelHost _bottomPanelHost = null!;
+    private RightColumnHost _rightColumnHost = null!;
     private readonly RowDefinition _bottomSplitterRow;
     private readonly RowDefinition _bottomPanelRow;
     private readonly RowDefinition _statusBarRow;
@@ -139,13 +140,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             WindowTransparencyLevel.Transparent
         };
 
-        // Phase 9 M3: search/replace bar for the active editor document.
-        // Created before BuildLayout so it can be inserted into the editor panel.
-        _searchBar = new SearchBar(_searchViewModel);
-
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
-         _terminalTabHost, _agentPanelHostView, _bottomPanelHost, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+         _terminalTabHost, _agentPanelHostView, _bottomPanelHost, _rightColumnHost,
+         _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+        _editorTabBar = _rightColumnHost.EditorTabBar;
+        _editorView = _rightColumnHost.EditorView;
+        _welcomeText = _rightColumnHost.WelcomeText;
+        _searchBar = _rightColumnHost.SearchBar;
 
         // Phase 9 M2: command palette overlay — hosted as a top-layer child of
         // the layout root grid so it covers all content including the status bar.
@@ -473,7 +475,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// </summary>
     private (NavBar navBar, FileTreeView fileTreeView, SourceControlPanel sourceControlPanel, TownhallView townhallView,
              StatusBar statusBar, TerminalTabHost terminalTabHost, AgentPanelHostView agentPanelHostView,
-             BottomPanelHost bottomPanelHost,
+             BottomPanelHost bottomPanelHost, RightColumnHost rightColumnHost,
              RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow, RowDefinition statusBarRow) BuildLayout()
     {
         var grid = new Grid
@@ -551,16 +553,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(leftSplitter);
 
         // --- Column 3: Center — Townhall (real M3 view) ---
-        _editorTabBar = new EditorTabBar();
-        _editorView = new EditorView(
-            _settings,
-            _languageInputViewModel,
-            _editorBreakpointViewModel,
-            _debugCurrentLocationViewModel);
-        _welcomeText = TextStyles.Body("Open a file to begin");
-        _welcomeText.VerticalAlignment = VerticalAlignment.Center;
-        _welcomeText.HorizontalAlignment = HorizontalAlignment.Center;
-
         var townhallView = new TownhallView();
         Grid.SetColumn(townhallView, 3);
         Grid.SetRow(townhallView, 0);
@@ -582,67 +574,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         grid.Children.Add(rightSplitter);
 
         // --- Column 5: Right — Editor (top) + Agent Panel (bottom) ---
-        // Split column 5 into editor (upper) and agent panel (lower) via
-        // a vertical splitter, keeping both surfaces inside the existing
-        // right-side shell column.
-        var rightSplitterH = new GridSplitter
-        {
-            Height = 4,
-            Background = Brushes.Transparent,
-            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            ResizeDirection = GridResizeDirection.Rows,
-            IsVisible = true
-        };
-
-        var editorPanel = new Grid
-        {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },   // 0: tab bar
-                new RowDefinition { Height = GridLength.Auto },   // 1: search bar
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) } // 2: editor / welcome
-            },
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            // M5-allow: M1 introduced the 1px panel seam as a visual divider, not semantic spacing.
-            Margin = LayoutTokens.Inset(1, 0, 0, 0),
-            Children =
-            {
-                _editorTabBar,
-                _searchBar,
-                _editorView,
-                _welcomeText
-            }
-        };
-        Grid.SetRow(_editorTabBar, 0);
-        Grid.SetRow(_searchBar, 1);
-        Grid.SetRow(_editorView, 2);
-        Grid.SetRow(_welcomeText, 2);
-        _welcomeText.IsVisible = true;
-
-        var agentPanelHostView = new AgentPanelHostView();
-
-        var rightColumn = new Grid
-        {
-            RowDefinitions =
-            {
-                // 0: Editor panel (star, larger)
-                new RowDefinition { Height = new GridLength(2, GridUnitType.Star) },
-                // 1: Horizontal splitter
-                new RowDefinition { Height = new GridLength(4, GridUnitType.Pixel) },
-                // 2: Agent panel (star, smaller)
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Children = { editorPanel, rightSplitterH, agentPanelHostView }
-        };
-        Grid.SetRow(editorPanel, 0);
-        Grid.SetRow(rightSplitterH, 1);
-        Grid.SetRow(agentPanelHostView, 2);
-
-        Grid.SetColumn(rightColumn, 5);
-        Grid.SetRow(rightColumn, 0);
-        grid.Children.Add(rightColumn);
+        var rightColumnHost = new RightColumnHost(
+            _settings,
+            _searchViewModel,
+            _languageInputViewModel,
+            _editorBreakpointViewModel,
+            _debugCurrentLocationViewModel);
+        rightColumnHost.AttachToLayoutGrid(grid);
+        var agentPanelHostView = rightColumnHost.AgentPanelHostView;
 
         var bottomPanelHost = new BottomPanelHost(_settings);
         bottomPanelHost.AttachToLayoutGrid(grid, bottomSplitterRow, bottomPanelRow);
@@ -662,7 +601,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Content = grid;
         _layoutRoot = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
-            terminalTabHost, agentPanelHostView, bottomPanelHost, bottomSplitterRow, bottomPanelRow, statusBarRow);
+            terminalTabHost, agentPanelHostView, bottomPanelHost, rightColumnHost,
+            bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 
     private Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
