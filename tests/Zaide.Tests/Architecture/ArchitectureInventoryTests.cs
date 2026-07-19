@@ -93,9 +93,9 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((10, 10, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Conversations.Application"]);
-        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Domain"]);
+        Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Agents.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Contracts"]);
-        Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.Agents.Application"]);
+        Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         Assert.Equal((5, 4, 1), byNamespace["Zaide.Features.Agents.Presentation"]);
@@ -130,7 +130,7 @@ public sealed class ArchitectureInventoryTests
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
         // Refactor 7 M3: +4 Conversations/Townhall production files.
-        Assert.Equal(394, inventory.SourceFiles.Count);
+        Assert.Equal(400, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -139,7 +139,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(37, byFolder["App"]);
         Assert.Equal(2, byFolder["UI"]);
-        Assert.Equal(355, byFolder["Features"]);
+        Assert.Equal(361, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

@@ -21,11 +21,17 @@ Zaide.Features.Agents.Application.AgentExecutionCoordinator
 Zaide.Features.Agents.Application.AgentExecutionOptions
 Zaide.Features.Agents.Application.AgentExecutionResult
 Zaide.Features.Agents.Application.AgentRouter
+Zaide.Features.Agents.Application.MentionParseResult
 Zaide.Features.Agents.Application.MentionParser
+Zaide.Features.Agents.Application.ParsedRouteIntent
 Zaide.Features.Agents.Contracts.IAgentExecutionCoordinator
 Zaide.Features.Agents.Contracts.IAgentExecutionService
 Zaide.Features.Agents.Contracts.IAgentRouter
+Zaide.Features.Agents.Domain.AgentExecutionCoordinatorResult
 Zaide.Features.Agents.Domain.AgentPanelState
+Zaide.Features.Agents.Domain.ExecutionRun
+Zaide.Features.Agents.Domain.ExecutionRunId
+Zaide.Features.Agents.Domain.ExecutionRunOutcome
 Zaide.Features.Agents.Domain.RouteRequest
 Zaide.Features.Agents.Domain.RouteResult
 Zaide.Features.Agents.Presentation.AgentPanelHost

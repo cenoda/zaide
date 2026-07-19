@@ -608,6 +608,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         Assert.True(result.Success);
         Assert.NotNull(result.Request);
         Assert.True(result.Request!.IsDirectSend);
+        Assert.NotNull(result.ExecutionResult);
         Assert.Equal(2, panel.OutputHistory.Count);
         Assert.Equal("User: Hello from router", panel.OutputHistory[0]);
         Assert.Equal("Assistant: Router reply", panel.OutputHistory[1]);

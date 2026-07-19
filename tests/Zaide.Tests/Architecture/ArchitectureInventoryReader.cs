@@ -19,10 +19,10 @@ namespace Zaide.Tests.Architecture;
 public sealed class ArchitectureInventoryReader
 {
     /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (Refactor 7 M3 +3 public entry types, +1 internal projection).</summary>
-    public const int M0TotalTopLevelTypes = 432;
+    public const int M0TotalTopLevelTypes = 438;
 
     /// <summary>M0 baseline public top-level type count (Refactor 7 M3 +3 Conversations entry types).</summary>
-    public const int M0PublicTopLevelTypes = 332;
+    public const int M0PublicTopLevelTypes = 338;
 
     /// <summary>M0 baseline internal top-level type count (Refactor 7 M3 +1 Townhall entry projection).</summary>
     public const int M0InternalTopLevelTypes = 100;

@@ -46,11 +46,13 @@ using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Tests.Features.Agents;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Infrastructure;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Tests.App.Shell;
 public class MainWindowViewModelTests
@@ -483,23 +485,45 @@ public class MainWindowViewModelTests
         // Mock coordinator that simulates a successful or failed send
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
         mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
-            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            .Returns<string, string, System.Threading.CancellationToken>((id, msg, _) =>
             {
                 var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
-                if (p is null) return;
+                if (p is null)
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+
                 p.OutputHistory.Add($"User: {msg}");
                 if (appendAssistantOutput && statusOnCompletion != "Error")
                 {
                     p.OutputHistory.Add("Assistant: Hello back");
+                    p.Status = statusOnCompletion;
+                    p.IsBusy = false;
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.SuccessResult(p));
                 }
-                else if (appendAssistantOutput && statusOnCompletion == "Error")
+
+                if (appendAssistantOutput && statusOnCompletion == "Error")
                 {
                     p.OutputHistory.Add("Error: Request failed");
+                    p.Status = statusOnCompletion;
+                    p.IsBusy = false;
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.ErrorResult(p));
                 }
+
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    new AgentExecutionCoordinatorResult(
+                        new ExecutionRun(
+                            ExecutionRunId.New(),
+                            p.ConversationId,
+                            ActorId.HumanUser,
+                            p.ActorId,
+                            p.PanelId,
+                            ExecutionRunOutcome.ExecutionFailure),
+                        null,
+                        null));
+            });
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
@@ -729,16 +753,28 @@ public class MainWindowViewModelTests
 
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
         mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
-            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            .Returns<string, string, System.Threading.CancellationToken>((id, msg, _) =>
             {
                 var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
-                if (p is null) return;
+                if (p is null)
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+
                 p.OutputHistory.Add($"User: {msg}");
-                p.OutputHistory.Add("Status: Completed");  // Not "Assistant: " prefixed
+                p.OutputHistory.Add("Status: Completed");
                 p.Status = "Idle";
                 p.IsBusy = false;
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    new AgentExecutionCoordinatorResult(
+                        new ExecutionRun(
+                            ExecutionRunId.New(),
+                            p.ConversationId,
+                            ActorId.HumanUser,
+                            p.ActorId,
+                            p.PanelId,
+                            ExecutionRunOutcome.Success),
+                        null,
+                        null));
+            });
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());
@@ -848,24 +884,38 @@ public class MainWindowViewModelTests
 
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
         mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
-            .Callback<string, string, System.Threading.CancellationToken>((id, msg, ct) =>
+            .Returns<string, string, System.Threading.CancellationToken>((id, msg, _) =>
             {
                 var p = agentHost.Panels.FirstOrDefault(pp => pp.PanelId == id);
-                if (p is null) return;
+                if (p is null)
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+
                 p.OutputHistory.Add($"User: {msg}");
                 if (appendTargetOutput && targetStatusOnCompletion != "Error")
                 {
                     p.OutputHistory.Add("Assistant: Routed response");
+                    p.Status = targetStatusOnCompletion;
+                    p.IsBusy = false;
+                    afterSend?.Invoke(agentHost);
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.SuccessResult(p, "Routed response"));
                 }
-                else if (appendTargetOutput && targetStatusOnCompletion == "Error")
+
+                if (appendTargetOutput && targetStatusOnCompletion == "Error")
                 {
                     p.OutputHistory.Add("Error: Something failed");
+                    p.Status = targetStatusOnCompletion;
+                    p.IsBusy = false;
+                    afterSend?.Invoke(agentHost);
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.ErrorResult(p, "Something failed"));
                 }
+
                 p.Status = targetStatusOnCompletion;
                 p.IsBusy = false;
                 afterSend?.Invoke(agentHost);
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+            });
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());

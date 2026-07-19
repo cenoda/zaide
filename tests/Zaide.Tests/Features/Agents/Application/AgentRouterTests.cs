@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -25,12 +26,17 @@ public sealed class AgentRouterTests
         coordinator = new Mock<IAgentExecutionCoordinator>();
         coordinator
             .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .Returns<string, string, CancellationToken>((panelId, _, _) =>
+            {
+                var panel = host.Panels.FirstOrDefault(p => p.PanelId == panelId);
+                return Task.FromResult(
+                    panel is null
+                        ? null
+                        : AgentExecutionTestSupport.SuccessResult(panel));
+            });
         var parser = new MentionParser();
         return new AgentRouter(parser, host, coordinator.Object);
     }
-
-    // ── Direct-send dispatch ─────────────────────────────────────────────────
 
     [Fact]
     public async Task RouteAndExecuteAsync_NoMention_DispatchesDirectSendToSourcePanel()
@@ -44,13 +50,15 @@ public sealed class AgentRouterTests
         Assert.True(result.Success);
         Assert.NotNull(result.Request);
         Assert.True(result.Request!.IsDirectSend);
-        Assert.Null(result.Request.TargetAgentName);
+        Assert.Equal(source.ActorId, result.Request.TargetActorId);
+        Assert.Equal(source.PanelId, result.Request.TargetPanelId);
+        Assert.Equal(source.ConversationId, result.Request.ConversationId);
+        Assert.Null(typeof(RouteRequest).GetProperty("TargetAgentName"));
+        Assert.NotNull(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(source.PanelId, "hello world", It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
-    // ── Routed-send dispatch ─────────────────────────────────────────────────
 
     [Fact]
     public async Task RouteAndExecuteAsync_ValidMention_DispatchesToTargetPanelWithStrippedContent()
@@ -65,9 +73,9 @@ public sealed class AgentRouterTests
         Assert.True(result.Success);
         Assert.NotNull(result.Request);
         Assert.False(result.Request!.IsDirectSend);
-        Assert.Equal("Beta", result.Request.TargetAgentName);
+        Assert.Equal(target.ActorId, result.Request.TargetActorId);
+        Assert.Equal(target.PanelId, result.Request.TargetPanelId);
         Assert.Equal("please review", result.Request.ContentAfterStrip);
-        // Dispatch must target the resolved TARGET panel's id, not the source.
         coordinator.Verify(
             c => c.SendAsync(target.PanelId, "please review", It.IsAny<CancellationToken>()),
             Times.Once);
@@ -79,8 +87,6 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_SuppliesLiveVisiblePanelNamesToParser()
     {
-        // Parser has no host dependency; success of a post-construction panel
-        // proves the router collects current visible names at route time.
         var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var router = CreateRouter(host, out var coordinator);
@@ -89,13 +95,11 @@ public sealed class AgentRouterTests
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
 
         Assert.True(result.Success);
-        Assert.Equal("Beta", result.Request!.TargetAgentName);
+        Assert.Equal(target.ActorId, result.Request!.TargetActorId);
         coordinator.Verify(
             c => c.SendAsync(target.PanelId, "hello", It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
-    // ── Failure cases: no dispatch ───────────────────────────────────────────
 
     [Fact]
     public async Task RouteAndExecuteAsync_UnknownTarget_ReturnsFailureAndDoesNotDispatch()
@@ -109,6 +113,7 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Unknown target", result.FailureReason);
+        Assert.Null(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -120,7 +125,7 @@ public sealed class AgentRouterTests
         var host = ConversationsTestSupport.CreatePanelHost();
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        host.CreatePanel("agent-3", "Beta", "avatar_beta2"); // duplicate name
+        host.CreatePanel("agent-3", "Beta", "avatar_beta2");
         var router = CreateRouter(host, out var coordinator);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
@@ -128,6 +133,7 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Ambiguous target", result.FailureReason);
+        Assert.Null(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -146,6 +152,7 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Multiple mentions", result.FailureReason);
+        Assert.Null(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -163,6 +170,7 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Empty input", result.FailureReason);
+        Assert.Null(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -181,6 +189,7 @@ public sealed class AgentRouterTests
         Assert.False(result.Success);
         Assert.Null(result.Request);
         Assert.Equal("Empty content after stripping", result.FailureReason);
+        Assert.Null(result.ExecutionResult);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);

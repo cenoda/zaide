@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Townhall.Domain;
@@ -40,7 +41,6 @@ internal sealed class AgentTownhallMirrorCoordinator
     /// </summary>
     public async Task SendAsync(string panelId, string userMessage, CancellationToken ct)
     {
-        // Mirror the user request into Townhall before routing (preserves current truthful behavior).
         _townhallViewModel.AddMirroredActivity(
             kind: TownhallMessageKind.Chat,
             content: userMessage,
@@ -48,21 +48,10 @@ internal sealed class AgentTownhallMirrorCoordinator
             senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
             senderName: _actorCatalog.CanonicalHuman.DisplayName);
 
-        // Delegate entirely to the routing orchestration seam (M3).
-        // NOTE: Do NOT use ConfigureAwait(false) here. The continuation reads
-        // AgentPanelState (OutputHistory, Status) and calls
-        // TownhallViewModel.AddMirroredActivity() which modifies
-        // ObservableCollection<TownhallMessage> — both require the Avalonia UI
-        // thread. AgentRouter and AgentExecutionCoordinator also preserve the
-        // captured SynchronizationContext internally.
         var routeResult = await _agentRouter.RouteAndExecuteAsync(panelId, userMessage, ct);
 
-        // M1: consume the routing outcome so routed flows and routing failures
-        // become visible in Townhall (previously the result was captured but unread).
         var sourcePanel = _agentPanelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
 
-        // Case A: parse/routing failure. Surface as an AgentError under the source
-        // panel identity. If the source panel is gone, there is nothing to attribute to.
         if (!routeResult.Success)
         {
             if (sourcePanel is null)
@@ -77,44 +66,61 @@ internal sealed class AgentTownhallMirrorCoordinator
             return;
         }
 
-        // Choose which panel's output to mirror:
-        //   Case B (routed): the resolved target panel.
-        //   Case C (direct send): the source panel (unchanged existing behavior).
-        var request = routeResult.Request;
-        var panel = request is not null && !request.IsDirectSend
-            ? _agentPanelHost.Panels.FirstOrDefault(p => p.AgentName == request.TargetAgentName)
-            : sourcePanel;
-
-        if (panel is null)
+        var executionResult = routeResult.ExecutionResult;
+        if (executionResult is null)
             return;
 
-        if (panel.Status == "Error")
+        MirrorTerminalExecution(executionResult);
+    }
+
+    private void MirrorTerminalExecution(AgentExecutionCoordinatorResult executionResult)
+    {
+        var run = executionResult.Run;
+        var panel = _agentPanelHost.Panels.FirstOrDefault(p => p.PanelId == run.TargetPanelId);
+
+        string senderId;
+        string senderName;
+        if (panel is not null)
         {
-            var lastOutput = panel.OutputHistory.Count > 0 ? panel.OutputHistory[^1] : null;
-            if (lastOutput is not null && lastOutput.StartsWith("Error: "))
-            {
-                _townhallViewModel.AddMirroredActivity(
-                    kind: TownhallMessageKind.AgentError,
-                    content: lastOutput,
-                    author: panel.ActorId,
-                    senderId: panel.AgentId,
-                    senderName: panel.AgentName);
-            }
+            senderId = panel.AgentId;
+            senderName = panel.AgentName;
+        }
+        else if (_actorCatalog.TryGet(run.TargetActorId, out var actor))
+        {
+            senderId = actor.ProjectedLegacyId;
+            senderName = actor.DisplayName;
         }
         else
         {
-            var lastOutput = panel.OutputHistory.Count > 0
-                ? panel.OutputHistory[^1]
-                : null;
-            if (lastOutput is not null && lastOutput.StartsWith("Assistant: "))
-            {
+            return;
+        }
+
+        switch (run.Outcome)
+        {
+            case ExecutionRunOutcome.Success:
+                if (string.IsNullOrWhiteSpace(executionResult.AssistantResponse))
+                    return;
+
                 _townhallViewModel.AddMirroredActivity(
                     kind: TownhallMessageKind.Chat,
-                    content: lastOutput,
-                    author: panel.ActorId,
-                    senderId: panel.AgentId,
-                    senderName: panel.AgentName);
-            }
+                    content: $"Assistant: {executionResult.AssistantResponse}",
+                    author: run.TargetActorId,
+                    senderId: senderId,
+                    senderName: senderName);
+                break;
+
+            case ExecutionRunOutcome.ExecutionFailure:
+            case ExecutionRunOutcome.Cancelled:
+                if (string.IsNullOrWhiteSpace(executionResult.ErrorMessage))
+                    return;
+
+                _townhallViewModel.AddMirroredActivity(
+                    kind: TownhallMessageKind.AgentError,
+                    content: $"Error: {executionResult.ErrorMessage}",
+                    author: run.TargetActorId,
+                    senderId: senderId,
+                    senderName: senderName);
+                break;
         }
     }
 }

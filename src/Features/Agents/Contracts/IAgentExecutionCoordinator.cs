@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Agents.Domain;
 
 namespace Zaide.Features.Agents.Contracts;
 
@@ -18,6 +19,12 @@ public interface IAgentExecutionCoordinator
     /// <param name="panelId">The panel to send from.</param>
     /// <param name="userMessage">The user message text.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes when the send operation finishes.</returns>
-    Task SendAsync(string panelId, string userMessage, CancellationToken ct = default);
+    /// <returns>
+    /// Structured execution result when an attempt is admitted; otherwise
+    /// <see langword="null"/> for no-op paths.
+    /// </returns>
+    Task<AgentExecutionCoordinatorResult?> SendAsync(
+        string panelId,
+        string userMessage,
+        CancellationToken ct = default);
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Application;
 
@@ -27,68 +28,89 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         _executionService = executionService ?? throw new ArgumentNullException(nameof(executionService));
     }
 
-    public async Task SendAsync(string panelId, string userMessage, CancellationToken ct = default)
+    public async Task<AgentExecutionCoordinatorResult?> SendAsync(
+        string panelId,
+        string userMessage,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(panelId))
-            return;
+            return null;
 
         if (string.IsNullOrWhiteSpace(userMessage))
-            return;
+            return null;
 
-        // --- Resolve panel ---
         var panel = _panelHost.Panels.FirstOrDefault(p => p.PanelId == panelId);
         if (panel is null)
-            return;
+            return null;
 
-        // --- One-in-flight enforcement ---
         if (!_inFlightPanels.Add(panelId))
-            return; // Already in flight for this panel
+            return null;
 
-        // --- Mark busy / Thinking (also resets Error state on new send) ---
+        var runId = ExecutionRunId.New();
+
         panel.Status = "Thinking";
         panel.IsBusy = true;
 
+        ExecutionRunOutcome outcome;
+        string? assistantResponse = null;
+        string? errorMessage = null;
+
         try
         {
-            // Append user message to output history
             panel.OutputHistory.Add($"User: {userMessage}");
-
-            // Consume the draft immediately so the input box clears and the same
-            // text cannot be re-sent by pressing Enter again (e.g. when the
-            // request later fails). The user can always re-type to retry.
             panel.DraftInput = string.Empty;
 
-            // Execute
-            // NOTE: Do NOT use ConfigureAwait(false) here. The continuation
-            // mutates AgentPanelState (OutputHistory, Status, IsBusy) which are
-            // bound to Avalonia views and must be updated on the UI thread.
-            // AgentExecutionService internally uses ConfigureAwait(false) for
-            // its own I/O (that is correct), but after it returns we need the
-            // captured SynchronizationContext so the callers — including
-            // MainWindowViewModel.SendAgentMessageAsync — also remain on the
-            // Avalonia UI thread for Townhall mirroring.
             var result = await _executionService.ExecuteAsync(userMessage, ct);
 
             if (result.IsSuccess)
             {
-                panel.OutputHistory.Add($"Assistant: {result.ResponseText}");
+                assistantResponse = result.ResponseText;
+                panel.OutputHistory.Add($"Assistant: {assistantResponse}");
                 panel.Status = "Idle";
+                outcome = ExecutionRunOutcome.Success;
             }
             else
             {
-                panel.OutputHistory.Add($"Error: {result.ErrorMessage}");
+                errorMessage = result.ErrorMessage;
+                panel.OutputHistory.Add($"Error: {errorMessage}");
                 panel.Status = "Error";
+                outcome = IsCancellationMessage(errorMessage)
+                    ? ExecutionRunOutcome.Cancelled
+                    : ExecutionRunOutcome.ExecutionFailure;
             }
+        }
+        catch (OperationCanceledException ex)
+        {
+            errorMessage = ex.Message;
+            panel.OutputHistory.Add($"Error: {errorMessage}");
+            panel.Status = "Error";
+            outcome = ExecutionRunOutcome.Cancelled;
         }
         catch (Exception ex)
         {
-            panel.OutputHistory.Add($"Error: {ex.Message}");
+            errorMessage = ex.Message;
+            panel.OutputHistory.Add($"Error: {errorMessage}");
             panel.Status = "Error";
+            outcome = ExecutionRunOutcome.ExecutionFailure;
         }
         finally
         {
             panel.IsBusy = false;
             _inFlightPanels.Remove(panelId);
         }
+
+        var run = new ExecutionRun(
+            runId,
+            panel.ConversationId,
+            ActorId.HumanUser,
+            panel.ActorId,
+            panel.PanelId,
+            outcome);
+
+        return new AgentExecutionCoordinatorResult(run, assistantResponse, errorMessage);
     }
+
+    private static bool IsCancellationMessage(string? message) =>
+        message is not null
+        && message.Contains("cancelled", StringComparison.OrdinalIgnoreCase);
 }

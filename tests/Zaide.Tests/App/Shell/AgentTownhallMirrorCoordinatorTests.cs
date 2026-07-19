@@ -8,6 +8,7 @@ using Zaide.Tests.Features.Conversations;
 using Zaide.App.Shell;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Tests.Features.Agents;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
@@ -32,20 +33,45 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((id, msg, _) =>
+            .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
                 var p = host.Panels.FirstOrDefault(pp => pp.PanelId == id);
                 if (p is null)
-                    return;
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+
                 p.OutputHistory.Add($"User: {msg}");
                 if (appendAssistantOutput && statusOnCompletion != "Error")
+                {
                     p.OutputHistory.Add("Assistant: Hello back");
-                else if (appendAssistantOutput && statusOnCompletion == "Error")
+                    p.Status = statusOnCompletion;
+                    p.IsBusy = false;
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.SuccessResult(p));
+                }
+
+                if (appendAssistantOutput && statusOnCompletion == "Error")
+                {
                     p.OutputHistory.Add("Error: Request failed");
+                    p.Status = statusOnCompletion;
+                    p.IsBusy = false;
+                    return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                        AgentExecutionTestSupport.ErrorResult(p));
+                }
+
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    new AgentExecutionCoordinatorResult(
+                        new ExecutionRun(
+                            ExecutionRunId.New(),
+                            p.ConversationId,
+                            ActorId.HumanUser,
+                            p.ActorId,
+                            p.PanelId,
+                            ExecutionRunOutcome.ExecutionFailure),
+                        null,
+                        null));
+            });
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
         var townhall = ConversationsTestSupport.CreateTownhallViewModel();
@@ -136,7 +162,12 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         CancellationToken observed = default;
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, string, CancellationToken>((_, _, ct) => observed = ct)
-            .Returns(Task.CompletedTask);
+            .Returns<string, string, CancellationToken>((id, _, _) =>
+            {
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    AgentExecutionTestSupport.SuccessResult(p));
+            });
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
         var townhall = ConversationsTestSupport.CreateTownhallViewModel();
@@ -167,7 +198,6 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => sut.SendAsync(panel.PanelId, "cancel me", CancellationToken.None));
 
-        // User message is mirrored before routing; no response/error after cancel.
         Assert.Equal(before + 1, townhall.Messages.Count);
         Assert.Equal("cancel me", townhall.Messages[before].Content);
         Assert.Equal(TownhallMessageKind.Chat, townhall.Messages[before].Kind);
@@ -189,17 +219,16 @@ public sealed class AgentTownhallMirrorCoordinatorTests
 
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((id, msg, _) =>
+            .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
-                var p = host.Panels.FirstOrDefault(pp => pp.PanelId == id);
-                if (p is null)
-                    return;
+                var p = host.Panels.First(pp => pp.PanelId == id);
                 p.OutputHistory.Add($"User: {msg}");
                 p.OutputHistory.Add("Assistant: Hello back");
                 p.Status = "Idle";
                 p.IsBusy = false;
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    AgentExecutionTestSupport.SuccessResult(p));
+            });
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
         var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
@@ -236,17 +265,16 @@ public sealed class AgentTownhallMirrorCoordinatorTests
 
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((id, msg, _) =>
+            .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
-                var p = host.Panels.FirstOrDefault(pp => pp.PanelId == id);
-                if (p is null)
-                    return;
+                var p = host.Panels.First(pp => pp.PanelId == id);
                 p.OutputHistory.Add($"User: {msg}");
                 p.OutputHistory.Add("Assistant: Hello back");
                 p.Status = "Idle";
                 p.IsBusy = false;
-            })
-            .Returns(Task.CompletedTask);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    AgentExecutionTestSupport.SuccessResult(p));
+            });
 
         var router = new AgentRouter(new MentionParser(), host, exec.Object);
         var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
@@ -269,5 +297,43 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         Assert.Equal("Custom Agent One", mirrored.SenderName);
         Assert.Equal(TownhallMessageKind.Chat, mirrored.Kind);
         Assert.Equal("Assistant: Hello back", mirrored.Content);
+    }
+
+    [Fact]
+    public async Task SendAsync_RoutedSuccess_UsesStructuredTargetActor_NotOutputHistoryParsing()
+    {
+        var host = ConversationsTestSupport.CreatePanelHost();
+        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
+        var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
+        var exec = new Mock<IAgentExecutionCoordinator>();
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((id, msg, _) =>
+            {
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                p.OutputHistory.Add($"User: {msg}");
+                p.OutputHistory.Add("Assistant: Routed reply");
+                p.Status = "Idle";
+                p.IsBusy = false;
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    AgentExecutionTestSupport.SuccessResult(p, "Routed reply"));
+            });
+
+        var router = new AgentRouter(new MentionParser(), host, exec.Object);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
+        townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
+        var sut = new AgentTownhallMirrorCoordinator(
+            router,
+            host,
+            townhall,
+            ConversationsTestSupport.CreateCatalogAsInterface());
+        var before = townhall.Messages.Count;
+
+        await sut.SendAsync(source.PanelId, "@Beta routed hello", CancellationToken.None);
+
+        var mirrored = townhall.Messages[^1];
+        Assert.Equal("agent-2", mirrored.SenderId);
+        Assert.Equal("Beta", mirrored.SenderName);
+        Assert.Equal("Assistant: Routed reply", mirrored.Content);
+        Assert.Equal(before + 2, townhall.Messages.Count);
     }
 }

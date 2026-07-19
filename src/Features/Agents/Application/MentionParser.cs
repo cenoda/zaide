@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Zaide.Features.Agents.Domain;
 
 namespace Zaide.Features.Agents.Application;
 
@@ -14,14 +13,14 @@ namespace Zaide.Features.Agents.Application;
 /// </summary>
 public sealed class MentionParser
 {
-    public RouteResult Parse(
+    public MentionParseResult Parse(
         string sourcePanelId,
         string rawInput,
         IReadOnlyList<string> visibleAgentNames)
     {
         if (string.IsNullOrWhiteSpace(rawInput))
         {
-            return new RouteResult(false, null, "Empty input");
+            return new MentionParseResult(false, null, "Empty input");
         }
 
         var tokens = rawInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -29,20 +28,22 @@ public sealed class MentionParser
 
         if (mentionTokens.Count == 0)
         {
-            // Direct send intent
-            return new RouteResult(true, new RouteRequest(sourcePanelId, null, rawInput.Trim(), true), null);
+            return new MentionParseResult(
+                true,
+                new ParsedRouteIntent(sourcePanelId, null, rawInput.Trim(), true),
+                null);
         }
 
         if (mentionTokens.Count > 1)
         {
-            return new RouteResult(false, null, "Multiple mentions");
+            return new MentionParseResult(false, null, "Multiple mentions");
         }
 
         var mention = mentionTokens[0];
         var name = mention.Substring(1);
         if (string.IsNullOrEmpty(name))
         {
-            return new RouteResult(false, null, "Empty mention target");
+            return new MentionParseResult(false, null, "Empty mention target");
         }
 
         var matchingNames = visibleAgentNames
@@ -51,12 +52,12 @@ public sealed class MentionParser
 
         if (matchingNames.Count == 0)
         {
-            return new RouteResult(false, null, "Unknown target");
+            return new MentionParseResult(false, null, "Unknown target");
         }
 
         if (matchingNames.Count > 1)
         {
-            return new RouteResult(false, null, "Ambiguous target");
+            return new MentionParseResult(false, null, "Ambiguous target");
         }
 
         var targetName = matchingNames[0];
@@ -64,10 +65,10 @@ public sealed class MentionParser
             rawInput.Replace(mention, " "), @"\s+", " ").Trim();
         if (string.IsNullOrWhiteSpace(stripped))
         {
-            return new RouteResult(false, null, "Empty content after stripping");
+            return new MentionParseResult(false, null, "Empty content after stripping");
         }
 
-        var request = new RouteRequest(sourcePanelId, targetName, stripped, false);
-        return new RouteResult(true, request, null);
+        var intent = new ParsedRouteIntent(sourcePanelId, targetName, stripped, false);
+        return new MentionParseResult(true, intent, null);
     }
 }

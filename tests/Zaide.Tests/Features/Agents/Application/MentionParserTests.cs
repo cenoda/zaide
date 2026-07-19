@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Xunit;
-using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
 
 namespace Zaide.Tests.Features.Agents.Application;
@@ -16,10 +15,10 @@ public class MentionParserTests
         var parser = new MentionParser();
         var result = parser.Parse("p1", "hello world", DefaultVisibleNames);
         Assert.True(result.Success);
-        Assert.NotNull(result.Request);
-        Assert.True(result.Request!.IsDirectSend);
-        Assert.Null(result.Request.TargetAgentName);
-        Assert.Equal("hello world", result.Request.ContentAfterStrip);
+        Assert.NotNull(result.Intent);
+        Assert.True(result.Intent!.IsDirectSend);
+        Assert.Null(result.Intent.MatchedAgentName);
+        Assert.Equal("hello world", result.Intent.ContentAfterStrip);
     }
 
     [Fact]
@@ -28,10 +27,10 @@ public class MentionParserTests
         var parser = new MentionParser();
         var result = parser.Parse("p1", "@Beta please review", DefaultVisibleNames);
         Assert.True(result.Success);
-        Assert.NotNull(result.Request);
-        Assert.False(result.Request!.IsDirectSend);
-        Assert.Equal("Beta", result.Request.TargetAgentName);
-        Assert.Equal("please review", result.Request.ContentAfterStrip);
+        Assert.NotNull(result.Intent);
+        Assert.False(result.Intent!.IsDirectSend);
+        Assert.Equal("Beta", result.Intent.MatchedAgentName);
+        Assert.Equal("please review", result.Intent.ContentAfterStrip);
     }
 
     [Fact]
@@ -40,8 +39,8 @@ public class MentionParserTests
         var parser = new MentionParser();
         var result = parser.Parse("p1", "@gAmMa check this", DefaultVisibleNames);
         Assert.True(result.Success);
-        Assert.Equal("Gamma", result.Request!.TargetAgentName);
-        Assert.Equal("check this", result.Request.ContentAfterStrip);
+        Assert.Equal("Gamma", result.Intent!.MatchedAgentName);
+        Assert.Equal("check this", result.Intent.ContentAfterStrip);
     }
 
     [Fact]
@@ -78,7 +77,7 @@ public class MentionParserTests
         var parser = new MentionParser();
         var result = parser.Parse("p1", "task for @Delta please", DefaultVisibleNames);
         Assert.True(result.Success);
-        Assert.Equal("task for please", result.Request!.ContentAfterStrip);
+        Assert.Equal("task for please", result.Intent!.ContentAfterStrip);
     }
 
     [Fact]
@@ -103,11 +102,10 @@ public class MentionParserTests
     public void Parse_UsesCallerSuppliedVisibleNamesOnly()
     {
         var parser = new MentionParser();
-        // Name exists only when the caller supplies it — no host lookup.
         IReadOnlyList<string> names = new[] { "OnlyOne" };
         var known = parser.Parse("p1", "@OnlyOne go", names);
         Assert.True(known.Success);
-        Assert.Equal("OnlyOne", known.Request!.TargetAgentName);
+        Assert.Equal("OnlyOne", known.Intent!.MatchedAgentName);
 
         var unknown = parser.Parse("p1", "@Beta go", names);
         Assert.False(unknown.Success);
