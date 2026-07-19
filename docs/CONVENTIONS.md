@@ -161,9 +161,9 @@ src/
 | `Features/Debugging` | Debugging application/contracts (M7a) + DAP infrastructure (M7b: `Infrastructure/Dap`) + presentation (M7c) |
 | `Features/SourceControl` | Source Control domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M8); V02/V07 dependency edges cleared in Refactor 6.3 |
 | `Features/Terminal` | Terminal contracts, application, infrastructure, presentation (moved in Refactor 6.2 M9); V05 factory→presentation edges cleared in Refactor 6.3 (`ITerminalServiceFactory`) |
-| `Features/Townhall` | Townhall domain and presentation (moved in Refactor 6.2 M10); R61-V16 behavior preserved; conversation lifetime remains Refactor 7 |
+| `Features/Townhall` | Townhall domain and presentation (moved in Refactor 6.2 M10); R61-V16 behavior preserved; Refactor 7 M3/M7 Townhall compatibility projection and typed mirror admission (`TownhallEntryProjection`, `TownhallViewModel.AddMirroredActivityToConversation`) |
 | `Features/Agents` | Agents domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M11); V06 MentionParser→presentation edge cleared in Refactor 6.3; no agent-session/run types (LT02/LT03) |
-| `Features/Conversations` | Agent-neutral actor/conversation domain (Refactor 7 M1 actor catalog; M2 conversation store and provisioning; M7 typed mirror admission and display projection) |
+| `Features/Conversations` | Agent-neutral actor/conversation domain (Refactor 7 M1 actor catalog; M2 conversation store and provisioning) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
 `src/Styles` has been rehomed to `src/UI/DesignSystem` (namespace
@@ -303,7 +303,7 @@ admits them.
 - The explicit public full-name set is frozen in
   `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` and enforced
   by architecture tests (public-by-exception). Current ceiling after Refactor
-  7 M2: **329** public / **99** internal / **428** total top-level production
+  7 M7: **339** public / **104** internal / **443** total top-level production
   types. No new public type without an intentional baseline update in the same
   reviewed change.
 
@@ -380,7 +380,8 @@ Tests under `tests/Zaide.Tests/Architecture/` enforce:
 | **NamespaceDirection** | M3 | Exact-file `Services → ViewModels` and `Models → Services` edges may remain only when allowlisted; no new edge file is permitted. Live allowlist after Refactor 6.3: **empty** |
 | **LocatorSite** | M3 | Exact production files with provider/resolution evidence may remain only when allowlisted; no new locator file (including any new View/ViewModel site) is permitted. Live allowlist after Refactor 6.3: **exactly** `Program.cs` and `App.axaml.cs`. `ApplicationShutdown.cs` is inventoried but excluded from LocatorSite FindingIds |
 | **RootFolderAdmission** | M3 + M4 + 6.2 M1–M12 | **Tracked production `.cs` only** (inventory via `git ls-files` of `src/**/*.cs`). M3: tracked C# under `src/Infrastructure/` and `src/UI/Shared/` is deny-by-default (empty allowlist). Admitted top-level folders after M12: `App` (**only** `src/App/Composition/` and `src/App/Shell/`), `Features` (Settings, Workspace, Editor, ProjectSystem, Language, Debugging, SourceControl, Terminal, Townhall, Agents), `UI` (**only** `src/UI/DesignSystem/`). Technical-layer folders and `src/` root composition C# are **not** admitted. Non-C# assets (e.g. `.axaml`, `.csproj`, `app.manifest`) are **not** covered by this ratchet |
-| **Public visibility** | M4 | Exact full-name baseline + count ceiling (**329** public / **99** internal / **428** total after Refactor 7 M2); `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
+| **Public visibility** | M4 | Exact full-name baseline + count ceiling (**339** public / **104** internal / **443** total after Refactor 7 M7); `NEW_PUBLIC_TYPE` / `STALE_PUBLIC_BASELINE` / `VISIBILITY_BASELINE_INTEGRITY` |
+| **Refactor 7 M7 ownership** | M7 | `Refactor7M7OwnershipRatchetTests` forbids reintroduction of `TownhallViewModel.AddMirroredActivity`, `TownhallEntryProjection.ClassifyTownhallMirror`, and Townhall display-prefix formatting in `AgentTownhallMirrorCoordinator`; frozen `Assistant:` / `Routing failed:` / `Error:` ownership must remain in `TownhallEntryProjection.ToTownhallDisplayContent` |
 
 **Allowlist mutation rule (M3):** add only when the entry maps to an existing M0
 `R61-V##` (or a plan-documented deferred exception), live inventory already

@@ -478,8 +478,8 @@ automated proof must still cover the ownership/attribution contract.
 - Implemented on 2026-07-19 atop M6 accepted at `a5cdcca`.
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
 - Focused gate: **410 passed**, 0 failed, 0 skipped.
-- Architecture gate: **22 passed**, 0 failed, 0 skipped.
-- Full suite: **2492 passed**, 0 failed, 0 skipped.
+- Architecture gate: **26 passed**, 0 failed, 0 skipped.
+- Full suite: **2496 passed**, 0 failed, 0 skipped.
 - `git diff --check` — clean.
 - Manual M6/M7 channel-switch smoke: **not run** (no configured delayed endpoint in this session).
 - Removed orchestration-side Townhall mirror prefix formatting from
@@ -490,6 +490,9 @@ automated proof must still cover the ownership/attribution contract.
   `TownhallViewModel.AddMirroredActivity` active-channel wrapper; mirror
   admission uses explicit `ConversationEntryKind` on
   `AddMirroredActivityToConversation`.
+- Added `Refactor7M7OwnershipRatchetTests` to forbid reintroduction of removed
+  mirror APIs, coordinator-side display-prefix formatting, and projection
+  ownership drift.
 - Retained compatibility projections: panel `OutputHistory` read-only projection,
   `TownhallState.ChannelMessages`, `WorkspaceAgent` roster wrapper,
   `ProjectedLegacyId`, and admission-captured public mirror targeting.
