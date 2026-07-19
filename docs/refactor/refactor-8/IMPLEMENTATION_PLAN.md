@@ -2,11 +2,12 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M4 accepted (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M5 accepted (2026-07-19).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
 M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
-M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`).
-M5+ unauthorized until explicit authorization.
+M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
+M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`.
+M6+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -323,7 +324,7 @@ expanding concern.
 | **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke | **[x] 2026-07-19** |
 | **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke | **[x] 2026-07-19** |
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **[x] 2026-07-19** |
-| **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** (pending human acceptance) |
+| **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
 | **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke |
 | **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX |
@@ -598,7 +599,8 @@ No `dotnet` production change is required for M0.
 - [x] Manual smoke: settings open/close/focus, command palette open/dismiss,
       search open/dismiss/focus at default (1280×800) and minimum (960×600) on
       Linux `DISPLAY=:1` (see M5 verification record).
-- [ ] Human accepts M5 closeout. M6 remains unauthorized until explicit authorization.
+- [x] Human accepts M5 closeout (code `d947efa`). M6 remains unauthorized until
+      explicit authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -1079,4 +1081,4 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m5-smoke.sh`):
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M5 implemented with manual smoke; pending human acceptance; M6+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M5 accepted at `d947efa`; M6+ unauthorized; Phase 14 unauthorized)*

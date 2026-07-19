@@ -398,4 +398,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M4 accepted at `b3c8684`; public baseline 339/109/448 after M4; M5+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M5 accepted at `d947efa`; public baseline 339/111/450 after M5; M6+ unauthorized; Phase 14 unauthorized)*
