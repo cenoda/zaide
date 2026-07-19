@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
+using Zaide.Tests.Features.Agents;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 
@@ -427,11 +428,12 @@ public class AgentPanelHostTests
     [Fact]
     public void ClosePanel_DoesNotAlterLifecycleOrHistory()
     {
-        var host = CreateHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         panel.Status = "Thinking";
         panel.IsBusy = true;
-        panel.OutputHistory.Add("User: still running");
+        AgentPanelTestSupport.AppendUserChat(store, panel, "still running");
         panel.DraftInput = "partial draft";
 
         host.ClosePanel(panel.PanelId);

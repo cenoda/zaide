@@ -13,7 +13,6 @@ public sealed class AgentPanelEntryProjectionTests
     [InlineData(ConversationEntryKind.UserChat, "hello", "User: hello")]
     [InlineData(ConversationEntryKind.AssistantResponse, "reply", "Assistant: reply")]
     [InlineData(ConversationEntryKind.ExecutionFailure, "boom", "Error: boom")]
-    [InlineData(ConversationEntryKind.RoutingFailure, "Unknown target", "Routing failed: Unknown target")]
     public void ToOutputHistoryLine_PreservesExactLegacyPrefixes(
         ConversationEntryKind kind,
         string content,
@@ -24,6 +23,17 @@ public sealed class AgentPanelEntryProjectionTests
         var line = AgentPanelEntryProjection.ToOutputHistoryLine(entry);
 
         Assert.Equal(expected, line);
+    }
+
+    [Theory]
+    [InlineData(ConversationEntryKind.RoutingFailure)]
+    [InlineData(ConversationEntryKind.ChannelEvent)]
+    [InlineData(ConversationEntryKind.SystemNotification)]
+    public void TryToOutputHistoryLine_UnsupportedPanelKinds_ReturnFalse(ConversationEntryKind kind)
+    {
+        var entry = CreateEntry(kind, "payload");
+
+        Assert.False(AgentPanelEntryProjection.TryToOutputHistoryLine(entry, out _));
     }
 
     [Fact]
@@ -64,6 +74,18 @@ public sealed class AgentPanelEntryProjectionTests
                 ConversationEntry.RoutingFailure(
                     ConversationEntryId.New(),
                     ActorId.PanelSeed("alpha"),
+                    Timestamp,
+                    content),
+            ConversationEntryKind.ChannelEvent =>
+                ConversationEntry.ChannelEvent(
+                    ConversationEntryId.New(),
+                    ActorId.HumanUser,
+                    Timestamp,
+                    content),
+            ConversationEntryKind.SystemNotification =>
+                ConversationEntry.SystemNotification(
+                    ConversationEntryId.New(),
+                    ActorId.HumanUser,
                     Timestamp,
                     content),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)

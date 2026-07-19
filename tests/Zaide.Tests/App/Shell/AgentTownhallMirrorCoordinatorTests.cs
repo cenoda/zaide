@@ -29,7 +29,8 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     private static (AgentTownhallMirrorCoordinator Coordinator, AgentPanelHost Host, TownhallViewModel Townhall, AgentPanelState Panel, Mock<IAgentExecutionCoordinator> Exec)
         CreateSut(string statusOnCompletion = "Idle", bool appendAssistantOutput = true)
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -39,25 +40,23 @@ public sealed class AgentTownhallMirrorCoordinatorTests
                 if (p is null)
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
 
-                p.OutputHistory.Add($"User: {msg}");
                 if (appendAssistantOutput && statusOnCompletion != "Error")
                 {
-                    p.OutputHistory.Add("Assistant: Hello back");
+                    AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
                     p.Status = statusOnCompletion;
-                    p.IsBusy = false;
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.SuccessResult(p));
                 }
 
                 if (appendAssistantOutput && statusOnCompletion == "Error")
                 {
-                    p.OutputHistory.Add("Error: Request failed");
+                    AgentPanelTestSupport.SimulateDirectSendError(store, p, msg);
                     p.Status = statusOnCompletion;
-                    p.IsBusy = false;
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.ErrorResult(p));
                 }
 
+                AgentPanelTestSupport.AppendUserChat(store, p, msg);
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
@@ -229,10 +228,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
             .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
                 var p = host.Panels.First(pp => pp.PanelId == id);
-                p.OutputHistory.Add($"User: {msg}");
-                p.OutputHistory.Add("Assistant: Hello back");
-                p.Status = "Idle";
-                p.IsBusy = false;
+                AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(
                     AgentExecutionTestSupport.SuccessResult(p));
             });
@@ -275,10 +271,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
             .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
                 var p = host.Panels.First(pp => pp.PanelId == id);
-                p.OutputHistory.Add($"User: {msg}");
-                p.OutputHistory.Add("Assistant: Hello back");
-                p.Status = "Idle";
-                p.IsBusy = false;
+                AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(
                     AgentExecutionTestSupport.SuccessResult(p));
             });
@@ -309,7 +302,8 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_RoutedSuccess_UsesStructuredTargetActor_NotOutputHistoryParsing()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
         var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
         var exec = new Mock<IAgentExecutionCoordinator>();
@@ -317,10 +311,7 @@ public sealed class AgentTownhallMirrorCoordinatorTests
             .Returns<string, string, CancellationToken>((id, msg, _) =>
             {
                 var p = host.Panels.First(pp => pp.PanelId == id);
-                p.OutputHistory.Add($"User: {msg}");
-                p.OutputHistory.Add("Assistant: Routed reply");
-                p.Status = "Idle";
-                p.IsBusy = false;
+                AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg, "Routed reply");
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(
                     AgentExecutionTestSupport.SuccessResult(p, "Routed reply"));
             });

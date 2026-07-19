@@ -6,6 +6,7 @@ using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Tests.Features.Agents;
 using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Conversations.Application;
@@ -154,7 +155,7 @@ public sealed class ConversationProvisioningIntegrationTests
         var store = ConversationsTestSupport.CreateStore();
         var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        panel.OutputHistory.Add("User: retained");
+        AgentPanelTestSupport.AppendUserChat(store, panel, "retained");
 
         var conversationId = panel.ConversationId;
         host.ClosePanel(panel.PanelId);
@@ -162,7 +163,9 @@ public sealed class ConversationProvisioningIntegrationTests
         Assert.Empty(host.Panels);
         Assert.True(store.TryGet(conversationId, out var conversation));
         Assert.Equal(ConversationKind.Direct, conversation!.Kind);
-        Assert.Single(panel.OutputHistory);
+        Assert.Single(conversation.Entries);
+        Assert.Equal("retained", conversation.Entries[0].Content);
+        Assert.Equal("User: retained", panel.OutputHistory[0]);
     }
 
     [Fact]
@@ -183,12 +186,13 @@ public sealed class ConversationProvisioningIntegrationTests
     }
 
     [Fact]
-    public void AgentPanelHost_PreservesLegacyOutputHistoryCollection()
+    public void AgentPanelHost_ProjectsOutputHistoryFromAuthoritativeEntries()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
 
-        panel.OutputHistory.Add("User: hello");
+        AgentPanelTestSupport.AppendUserChat(store, panel, "hello");
 
         Assert.Single(panel.OutputHistory);
         Assert.Equal("User: hello", panel.OutputHistory[0]);

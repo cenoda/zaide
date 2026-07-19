@@ -13,25 +13,12 @@ namespace Zaide.Tests.Features.Agents.Domain;
 /// </summary>
 public class AgentPanelStateTests
 {
-    private static Actor CreateActor(
-        string legacyId = "agent-test",
-        string displayName = "Test Agent",
-        string avatar = "avatar-test") =>
-        new(
-            ActorId.PanelCustom(legacyId),
-            ActorKind.Agent,
-            legacyId,
-            displayName,
-            avatar);
-
     private static AgentPanelState CreateState(
         string legacyId = "agent-test",
         string displayName = "Test Agent",
         string avatar = "avatar-test",
         ConversationId? conversationId = null) =>
-        new(
-            CreateActor(legacyId, displayName, avatar),
-            conversationId ?? ConversationId.NewDirect());
+        AgentPanelTestSupport.CreatePanelState(legacyId, displayName, avatar);
 
     [Fact]
     public void Constructor_BindsIdentityProjectionsToCanonicalActor()
@@ -91,15 +78,26 @@ public class AgentPanelStateTests
     }
 
     [Fact]
-    public void OutputHistory_CanAddAndEnumerateEntries()
+    public void OutputHistory_ProjectsAuthoritativeTypedEntries()
     {
-        var state = CreateState();
-        state.OutputHistory.Add("User: Hello");
-        state.OutputHistory.Add("Agent: Hi there");
+        var store = Conversations.ConversationsTestSupport.CreateStore();
+        var state = AgentPanelTestSupport.CreatePanelState(store: store);
+
+        AgentPanelTestSupport.AppendUserChat(store, state, "Hello");
+        AgentPanelTestSupport.AppendAssistantResponse(store, state, "Hi there");
 
         Assert.Equal(2, state.OutputHistory.Count);
         Assert.Equal("User: Hello", state.OutputHistory[0]);
-        Assert.Equal("Agent: Hi there", state.OutputHistory[1]);
+        Assert.Equal("Assistant: Hi there", state.OutputHistory[1]);
+    }
+
+    [Fact]
+    public void OutputHistory_IsNotIndependentlyMutable()
+    {
+        var state = CreateState();
+
+        Assert.Throws<NotSupportedException>(() =>
+            ((System.Collections.IList)state.OutputHistory).Add("User: forged"));
     }
 
     [Fact]
@@ -144,18 +142,36 @@ public class AgentPanelStateTests
     [Fact]
     public void Constructor_RejectsDefaultConversationId()
     {
-        var actor = CreateActor();
+        var actor = new Actor(
+            ActorId.PanelCustom("agent-test"),
+            ActorKind.Agent,
+            "agent-test",
+            "Test Agent",
+            "avatar-test");
+        var store = Conversations.ConversationsTestSupport.CreateStore();
+        var conversation = store.CreateDirectConversation(ActorId.HumanUser, actor.Id);
+        var projection = new Zaide.Features.Agents.Application.AgentPanelOutputHistoryProjection(
+            store,
+            conversation.Id);
 
-        Assert.Throws<ArgumentException>(() => new AgentPanelState(actor, default));
+        Assert.Throws<ArgumentException>(() => new AgentPanelState(actor, default, projection.Lines));
     }
 
     [Fact]
     public void ConversationId_IsImmutableAfterConstruction()
     {
         var conversationId = ConversationId.NewDirect();
-        var state = CreateState(conversationId: conversationId);
+        var store = Conversations.ConversationsTestSupport.CreateStore();
+        var actor = new Actor(
+            ActorId.PanelCustom("agent-test"),
+            ActorKind.Agent,
+            "agent-test",
+            "Test Agent",
+            "avatar-test");
+        store.CreateDirectConversation(ActorId.HumanUser, actor.Id);
+        var state = AgentPanelTestSupport.CreatePanelState(store: store);
 
-        Assert.Equal(conversationId, state.ConversationId);
+        Assert.NotEqual(default, state.ConversationId);
 
         var property = typeof(AgentPanelState).GetProperty(nameof(AgentPanelState.ConversationId));
         Assert.NotNull(property);

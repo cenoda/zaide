@@ -6,8 +6,7 @@ using Zaide.Features.Conversations.Domain;
 namespace Zaide.Features.Agents.Application;
 
 /// <summary>
-/// Dual-writes authoritative typed direct-conversation entries and projects
-/// them into the panel's legacy <see cref="AgentPanelState.OutputHistory"/>.
+/// Appends authoritative typed direct-conversation entries for panel execution.
 /// </summary>
 internal static class AgentPanelDirectConversationWriter
 {
@@ -28,7 +27,6 @@ internal static class AgentPanelDirectConversationWriter
             ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
-        panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));
         return entry;
     }
 
@@ -49,7 +47,6 @@ internal static class AgentPanelDirectConversationWriter
             ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
-        panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));
         return entry;
     }
 
@@ -70,7 +67,6 @@ internal static class AgentPanelDirectConversationWriter
             ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
-        panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));
         return entry;
     }
 }

@@ -120,8 +120,8 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 7 M5a implementation: total top-level **442**, public **339**, internal **103**, production
-C# **404**, Features C# **365**, App C# **37**, production DI registrations
+tracked production **C#** root admission. Live inventory after Refactor 7 M5b implementation: total top-level **443**, public **339**, internal **104**, production
+C# **405**, Features C# **366**, App C# **37**, production DI registrations
 **69** (all Singleton; Conversations adds `IActorCatalog` and
 `IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
 **2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
@@ -134,7 +134,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 accepted (`0902641`); M4 accepted (`38418ed`); M5a accepted (`d3bf701`); M5b legacy output cutover only authorized, not implemented |
+| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 accepted (`0902641`); M4 accepted (`38418ed`); M5a accepted (`d3bf701`); M5b implemented, pending acceptance |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -344,4 +344,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M5a accepted at `d3bf701`; M5b only authorized and not implemented; implemented baselines remain public 339 / internal 103 / total 442, prod C# 404 / Features 365 / App 37, DI 69 / Registration modules 12; M6–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M5b implemented, pending acceptance; M5a accepted at `d3bf701`; implemented baselines remain public 339 / internal 104 / total 443, prod C# 405 / Features 366 / App 37, DI 69 / Registration modules 12; M6–M7, Refactor 8, and Phase 14 unauthorized)*

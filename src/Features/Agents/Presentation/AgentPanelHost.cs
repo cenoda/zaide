@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
@@ -21,6 +23,7 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
     private readonly IActorCatalog _actorCatalog;
     private readonly IConversationStore _conversationStore;
     private readonly ObservableCollection<AgentPanelState> _panels;
+    private readonly Dictionary<AgentPanelState, AgentPanelOutputHistoryProjection> _outputProjections = new();
     private AgentPanelState? _activePanel;
     private int _nextSeedIndex;
 
@@ -80,12 +83,18 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
             _actorCatalog.CanonicalHuman.Id,
             actor.Id);
 
-        var panel = new AgentPanelState(actor, conversation.Id)
+        var outputProjection = new AgentPanelOutputHistoryProjection(
+            _conversationStore,
+            conversation.Id);
+
+        var panel = new AgentPanelState(actor, conversation.Id, outputProjection.Lines)
         {
             PanelId = Guid.NewGuid().ToString("N"),
             Status = "Idle",
             DraftInput = string.Empty
         };
+
+        _outputProjections[panel] = outputProjection;
 
         _activePanel = panel;
         _panels.Add(panel);
@@ -119,9 +128,10 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
     /// <summary>
     /// Removes the panel with the specified PanelId from the host collection.
     /// UI-only: does not cancel, stop, or mutate agent lifecycle fields
-    /// (Status, IsBusy, OutputHistory, DraftInput). If the closed panel was
-    /// active, selects the neighbor at the same index (or the previous panel
-    /// when the closed panel was last). Closing the final panel yields the
+    /// (Status, IsBusy, DraftInput). Disposes the panel output projection so
+    /// closed panels no longer subscribe to conversation appends. If the closed
+    /// panel was active, selects the neighbor at the same index (or the previous
+    /// panel when the closed panel was last). Closing the final panel yields the
     /// empty host state (ActivePanel = null).
     /// </summary>
     public void ClosePanel(string panelId)
@@ -136,6 +146,7 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
         var wasActive = panel == _activePanel;
         int index = _panels.IndexOf(panel);
 
+        DisposeOutputProjection(panel);
         _panels.Remove(panel);
 
         if (_panels.Count == 0)
@@ -154,6 +165,14 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
             int fallbackIndex = index < _panels.Count ? index : _panels.Count - 1;
             _activePanel = _panels[fallbackIndex];
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActivePanel)));
+        }
+    }
+
+    private void DisposeOutputProjection(AgentPanelState panel)
+    {
+        if (_outputProjections.Remove(panel, out var projection))
+        {
+            projection.Dispose();
         }
     }
 }

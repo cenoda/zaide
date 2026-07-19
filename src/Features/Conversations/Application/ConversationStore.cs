@@ -15,6 +15,8 @@ internal sealed class ConversationStore : IConversationStore
     private readonly Dictionary<ConversationId, Conversation> _byId = new();
     private readonly Dictionary<string, ConversationId> _channelIndex = new(StringComparer.Ordinal);
 
+    public event Action<ConversationId, ConversationEntry>? EntryAppended;
+
     public Conversation CreateChannelConversation(string channelId)
     {
         ArgumentNullException.ThrowIfNull(channelId);
@@ -87,7 +89,9 @@ internal sealed class ConversationStore : IConversationStore
             }
 
             conversation.AppendEntry(entry);
-            return entry;
         }
+
+        EntryAppended?.Invoke(conversationId, entry);
+        return entry;
     }
 }

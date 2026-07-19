@@ -479,7 +479,8 @@ public class MainWindowViewModelTests
         bool appendAssistantOutput = true)
     {
         // Create panel
-        var agentHost = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var agentHost = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         // Mock coordinator that simulates a successful or failed send
@@ -491,25 +492,23 @@ public class MainWindowViewModelTests
                 if (p is null)
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
 
-                p.OutputHistory.Add($"User: {msg}");
                 if (appendAssistantOutput && statusOnCompletion != "Error")
                 {
-                    p.OutputHistory.Add("Assistant: Hello back");
+                    AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
                     p.Status = statusOnCompletion;
-                    p.IsBusy = false;
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.SuccessResult(p));
                 }
 
                 if (appendAssistantOutput && statusOnCompletion == "Error")
                 {
-                    p.OutputHistory.Add("Error: Request failed");
+                    AgentPanelTestSupport.SimulateDirectSendError(store, p, msg);
                     p.Status = statusOnCompletion;
-                    p.IsBusy = false;
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.ErrorResult(p));
                 }
 
+                AgentPanelTestSupport.AppendUserChat(store, p, msg);
                 p.Status = statusOnCompletion;
                 p.IsBusy = false;
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
@@ -737,8 +736,8 @@ public class MainWindowViewModelTests
     [Fact]
     public async Task SendAgentMessageAsync_NonAssistantResponse_NotMirrored()
     {
-        // Create a coordinator that appends output without "Assistant: " prefix
-        var agentHost = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var agentHost = ConversationsTestSupport.CreatePanelHost(store: store);
         var panel = agentHost.CreatePanel("agent-1", "Test Agent", "avatar_test");
 
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
@@ -749,8 +748,7 @@ public class MainWindowViewModelTests
                 if (p is null)
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
 
-                p.OutputHistory.Add($"User: {msg}");
-                p.OutputHistory.Add("Status: Completed");
+                AgentPanelTestSupport.AppendUserChat(store, p, msg);
                 p.Status = "Idle";
                 p.IsBusy = false;
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
@@ -786,10 +784,9 @@ public class MainWindowViewModelTests
 
         await vm.SendAgentMessageAsync(panel.PanelId, "Non-standard response");
 
-        // Panel has user + non-assistant status entry
-        Assert.Equal(2, panel.OutputHistory.Count);
+        // Panel has only the user entry because no structured terminal result was returned
+        Assert.Single(panel.OutputHistory);
         Assert.Equal("User: Non-standard response", panel.OutputHistory[0]);
-        Assert.Equal("Status: Completed", panel.OutputHistory[1]);
 
         // Only the user message should be mirrored (no "Assistant:" prefix match)
         Assert.Equal(beforeCount + 1, vm.TownhallViewModel.Messages.Count);
@@ -858,7 +855,8 @@ public class MainWindowViewModelTests
         bool appendTargetOutput = true,
         Action<AgentPanelHost>? afterSend = null)
     {
-        var agentHost = ConversationsTestSupport.CreatePanelHost();
+        var store = ConversationsTestSupport.CreateStore();
+        var agentHost = ConversationsTestSupport.CreatePanelHost(store: store);
         var source = agentHost.CreatePanel("agent-1", "Alpha", "avatar_alpha");
         var target = agentHost.CreatePanel("agent-2", "Beta", "avatar_beta");
 
@@ -870,12 +868,10 @@ public class MainWindowViewModelTests
                 if (p is null)
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
 
-                p.OutputHistory.Add($"User: {msg}");
                 if (appendTargetOutput && targetStatusOnCompletion != "Error")
                 {
-                    p.OutputHistory.Add("Assistant: Routed response");
+                    AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg, "Routed response");
                     p.Status = targetStatusOnCompletion;
-                    p.IsBusy = false;
                     afterSend?.Invoke(agentHost);
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.SuccessResult(p, "Routed response"));
@@ -883,14 +879,14 @@ public class MainWindowViewModelTests
 
                 if (appendTargetOutput && targetStatusOnCompletion == "Error")
                 {
-                    p.OutputHistory.Add("Error: Something failed");
+                    AgentPanelTestSupport.SimulateDirectSendError(store, p, msg, "Something failed");
                     p.Status = targetStatusOnCompletion;
-                    p.IsBusy = false;
                     afterSend?.Invoke(agentHost);
                     return Task.FromResult<AgentExecutionCoordinatorResult?>(
                         AgentExecutionTestSupport.ErrorResult(p, "Something failed"));
                 }
 
+                AgentPanelTestSupport.AppendUserChat(store, p, msg);
                 p.Status = targetStatusOnCompletion;
                 p.IsBusy = false;
                 afterSend?.Invoke(agentHost);

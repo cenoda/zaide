@@ -1,3 +1,4 @@
+using System;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Conversations.Contracts;
@@ -7,6 +8,10 @@ namespace Zaide.Features.Conversations.Contracts;
 /// </summary>
 public interface IConversationStore
 {
+    /// <summary>
+    /// Raised after an entry is appended to the authoritative conversation.
+    /// </summary>
+    event Action<ConversationId, ConversationEntry>? EntryAppended;
     Conversation CreateChannelConversation(string channelId);
 
     Conversation CreateDirectConversation(ActorId participantOne, ActorId participantTwo);

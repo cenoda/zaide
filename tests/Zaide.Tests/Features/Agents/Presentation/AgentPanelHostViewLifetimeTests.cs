@@ -14,6 +14,7 @@ using ReactiveUI.Builder;
 using Splat;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
+using Zaide.Tests.Features.Agents;
 using Zaide;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
@@ -357,13 +358,16 @@ public class AgentPanelHostViewLifetimeTests
     [Fact]
     public void CloseButton_OnActiveTab_SelectsNeighborWithoutStoppingLifecycle()
     {
-        var view = CreateBoundView(out var host);
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var view = new AgentPanelHostView();
+        view.SetHost(host);
         var panel1 = host.CreatePanel("agent-1", "Alpha", "Icon.Avatar");
         var panel2 = host.CreatePanel("agent-2", "Beta", "Icon.Avatar");
         // panel2 is active
         panel2.Status = "Thinking";
         panel2.IsBusy = true;
-        panel2.OutputHistory.Add("still running");
+        AgentPanelTestSupport.AppendUserChat(store, panel2, "still running");
 
         var close = FindCloseButton(view.TabItems[panel2]);
         Assert.NotNull(close);
@@ -373,7 +377,7 @@ public class AgentPanelHostViewLifetimeTests
         Assert.Single(view.Panels);
         Assert.Equal("Thinking", panel2.Status);
         Assert.True(panel2.IsBusy);
-        Assert.Equal(new[] { "still running" }, panel2.OutputHistory.ToArray());
+        Assert.Equal(new[] { "User: still running" }, panel2.OutputHistory.ToArray());
     }
 
     [Fact]

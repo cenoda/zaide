@@ -2,9 +2,9 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M5a accepted (2026-07-19). M5b only authorized, not
-implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
-at `0902641`. M4 accepted at `38418ed`. M6–M7, Refactor 8, and Phase 14 remain
+**Refactor 7 status:** **M5b implemented, pending acceptance (2026-07-19).** M1 accepted
+at `edc5dac`. M2 accepted at `94a609f`. M3 accepted at `0902641`. M4 accepted
+at `38418ed`. M5a accepted at `d3bf701`. M6–M7, Refactor 8, and Phase 14 remain
 unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
@@ -417,7 +417,19 @@ automated proof must still cover the ownership/attribution contract.
       entries, legacy `OutputHistory` projection, and correlation-id invariants
       are accepted at `d3bf701`.
 - [x] Human accepted M5a closeout on 2026-07-19; **M5b only** is authorized.
-- [ ] M5b implementation has not started.
+- [x] M5b implementation complete on 2026-07-19; pending human acceptance. M6–M7, Refactor 8, and Phase 14 remain unauthorized.
+
+## M5b verification (2026-07-19, pending acceptance)
+
+- Implementation complete on 2026-07-19; pending human acceptance. M6–M7, Refactor 8, and Phase 14 remain unauthorized.
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
+- Focused gate: **401 passed**, 0 failed, 0 skipped.
+- Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2483 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+- Manual M5 panel smoke: **not run** (no configured test endpoint in this session).
+- `AgentPanelHost` disposes each panel's `AgentPanelOutputHistoryProjection` on `ClosePanel`; only open panels subscribe to `IConversationStore.EntryAppended`. Retained direct conversations remain authoritative after close.
 
 ## Entry conditions for M2
 
@@ -491,4 +503,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M5a accepted at `d3bf701`; M5b only authorized and not implemented; M6–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M5b implemented, pending acceptance; M5a accepted at `d3bf701`; M6–M7, Refactor 8, and Phase 14 unauthorized)*

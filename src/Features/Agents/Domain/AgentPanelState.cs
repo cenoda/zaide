@@ -9,7 +9,7 @@ namespace Zaide.Features.Agents.Domain;
 /// Minimal state shape for a single agent panel.
 /// Phase 5.1.1 — intentionally narrow.
 /// M2: Made reactive for coordinator-mutated scalar properties (Status, DraftInput).
-/// OutputHistory stays as ObservableCollection&lt;string&gt;.
+/// M5b: OutputHistory is a read-only projection of authoritative conversation entries.
 ///
 /// Agent identity projections are read-only views of the canonical <see cref="Actor"/>
 /// row supplied at construction. Presentation fields (PanelId, Status, draft, output)
@@ -23,7 +23,10 @@ public class AgentPanelState : ReactiveObject
     /// Creates panel state bound to a canonical actor row and its provisioned
     /// direct conversation.
     /// </summary>
-    public AgentPanelState(Actor actor, ConversationId conversationId)
+    public AgentPanelState(
+        Actor actor,
+        ConversationId conversationId,
+        ReadOnlyObservableCollection<string> outputHistory)
     {
         _actor = actor ?? throw new ArgumentNullException(nameof(actor));
         if (conversationId == default)
@@ -34,6 +37,8 @@ public class AgentPanelState : ReactiveObject
         }
 
         ConversationId = conversationId;
+        OutputHistory = outputHistory
+            ?? throw new ArgumentNullException(nameof(outputHistory));
     }
 
     /// <summary>
@@ -92,11 +97,10 @@ public class AgentPanelState : ReactiveObject
     }
 
     /// <summary>
-    /// Ordered output history for this panel.
-    /// Each entry is a free-form text segment (user message, agent reply, status update).
-    /// ObservableCollection already provides change notifications — no reactive conversion needed.
+    /// Read-only projection of authoritative direct-conversation entries rendered
+    /// with the existing Agent Panel string protocol.
     /// </summary>
-    public ObservableCollection<string> OutputHistory { get; } = new();
+    public ReadOnlyObservableCollection<string> OutputHistory { get; }
 
     /// <summary>
     /// Current draft text being composed by the user for this panel.

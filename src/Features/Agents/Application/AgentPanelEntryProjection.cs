@@ -5,25 +5,41 @@ namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Pure compatibility projection from authoritative typed direct-conversation
-/// entries to the existing Agent Panel <c>OutputHistory</c> string protocol.
+/// entries to the existing Agent Panel output string protocol.
 /// </summary>
 internal static class AgentPanelEntryProjection
 {
-    public static string ToOutputHistoryLine(ConversationEntry entry)
+    public static bool TryToOutputHistoryLine(ConversationEntry entry, out string line)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
-        return entry.Kind switch
+        switch (entry.Kind)
         {
-            ConversationEntryKind.UserChat => $"User: {entry.Content}",
-            ConversationEntryKind.AssistantResponse => $"Assistant: {entry.Content}",
-            ConversationEntryKind.ExecutionFailure => $"Error: {entry.Content}",
-            ConversationEntryKind.RoutingFailure =>
-                $"Routing failed: {entry.Content}",
-            _ => throw new ArgumentOutOfRangeException(
+            case ConversationEntryKind.UserChat:
+                line = $"User: {entry.Content}";
+                return true;
+            case ConversationEntryKind.AssistantResponse:
+                line = $"Assistant: {entry.Content}";
+                return true;
+            case ConversationEntryKind.ExecutionFailure:
+                line = $"Error: {entry.Content}";
+                return true;
+            default:
+                line = string.Empty;
+                return false;
+        }
+    }
+
+    public static string ToOutputHistoryLine(ConversationEntry entry)
+    {
+        if (!TryToOutputHistoryLine(entry, out var line))
+        {
+            throw new ArgumentOutOfRangeException(
                 nameof(entry),
                 entry.Kind,
-                "Unsupported Agent Panel output projection.")
-        };
+                "Unsupported Agent Panel output projection.");
+        }
+
+        return line;
     }
 }
