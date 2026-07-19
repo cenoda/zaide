@@ -41,7 +41,7 @@ public sealed class AgentPanelHostView : UserControl
 
     private IAgentPanelHost? _host;
     private AgentPanelState? _activePanel;
-    private readonly IBrush? _activeBrush;
+    private readonly IBrush _activeBrush = PaletteTokens.PrimaryAccentBrush;
     private readonly IBrush _inactiveBrush = Brushes.Transparent;
 
     /// <summary>
@@ -64,9 +64,6 @@ public sealed class AgentPanelHostView : UserControl
 
     public AgentPanelHostView()
     {
-        _activeBrush = Avalonia.Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
-
-        // --- Tab strip ---
         _tabsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -74,73 +71,12 @@ public sealed class AgentPanelHostView : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // Mirror the EditorTabBar scroll mechanism: wrap the tab strip in a
-        // horizontal ScrollViewer so the agent tabs scroll when they overflow,
-        // with vertical wheel events translated to horizontal scrolling.
-        _scrollViewer = new ScrollViewer
-        {
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            Content = _tabsPanel,
-            MinHeight = 32, // content-driven; MinHeight avoids HiDPI clipping
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        // Translate vertical mouse wheel → horizontal scrolling.
-        // By default ScrollViewer only scrolls vertically on wheel events.
-        _scrollViewer.PointerWheelChanged += (_, e) =>
-        {
-            // Multiply by 50 px/notch — Linux wheel deltas are tiny otherwise.
-            var delta = e.Delta.Y * 50;
-            _scrollViewer.Offset = new Vector(
-                _scrollViewer.Offset.X - delta, _scrollViewer.Offset.Y);
-            e.Handled = true;
-        };
-
+        _scrollViewer = BuildTabScrollViewer();
         _newPanelButton = BuildNewPanelButton();
         _newPanelButton.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
-
-        // Place the ScrollViewer directly in the Star column so it gets a
-        // constrained width to clip against. A wrapping horizontal StackPanel
-        // (the old leftStrip) would hand it unlimited width and defeat the
-        // scroll — the same flat Grid placement is what makes EditorTabBar
-        // scroll work.
-        var stripGrid = new Grid
-        {
-            ColumnDefinitions =
-            {
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                new ColumnDefinition { Width = GridLength.Auto }
-            },
-            Children = { _scrollViewer, _newPanelButton }
-        };
-        Grid.SetColumn(_scrollViewer, 0);
-        Grid.SetColumn(_newPanelButton, 1);
-
-        var stripBorder = new Border
-        {
-            Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfaceBaseBrush"],
-            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXs, 0),
-            Child = stripGrid
-        };
-
-        // --- Content area ---
         _content = new ContentControl();
 
-        // --- Root layout ---
-        var grid = new Grid
-        {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-            },
-            Children = { stripBorder, _content }
-        };
-        Grid.SetRow(stripBorder, 0);
-        Grid.SetRow(_content, 1);
-
-        Content = grid;
+        Content = BuildRootLayout(BuildTabStripBorder());
     }
 
     /// <summary>
@@ -206,6 +142,81 @@ public sealed class AgentPanelHostView : UserControl
         _tabsPanel.Children.Clear();
         _content.Content = null;
         _activePanel = null;
+    }
+
+    private ScrollViewer BuildTabScrollViewer()
+    {
+        var scrollViewer = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = _tabsPanel,
+            MinHeight = 32, // content-driven; MinHeight avoids HiDPI clipping
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // Translate vertical mouse wheel → horizontal scrolling.
+        // By default ScrollViewer only scrolls vertically on wheel events.
+        scrollViewer.PointerWheelChanged += (_, e) =>
+        {
+            // Multiply by 50 px/notch — Linux wheel deltas are tiny otherwise.
+            var delta = e.Delta.Y * 50;
+            scrollViewer.Offset = new Vector(
+                scrollViewer.Offset.X - delta, scrollViewer.Offset.Y);
+            e.Handled = true;
+        };
+
+        return scrollViewer;
+    }
+
+    /// <summary>
+    /// Builds the tab strip border: scrollable tabs in a star column plus the new-panel button.
+    /// </summary>
+    private Border BuildTabStripBorder()
+    {
+        // Place the ScrollViewer directly in the Star column so it gets a
+        // constrained width to clip against. A wrapping horizontal StackPanel
+        // (the old leftStrip) would hand it unlimited width and defeat the
+        // scroll — the same flat Grid placement is what makes EditorTabBar
+        // scroll work.
+        var stripGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Children = { _scrollViewer, _newPanelButton }
+        };
+        Grid.SetColumn(_scrollViewer, 0);
+        Grid.SetColumn(_newPanelButton, 1);
+
+        return new Border
+        {
+            Background = PaletteTokens.SurfaceBaseBrush,
+            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXs, 0),
+            Child = stripGrid
+        };
+    }
+
+    /// <summary>
+    /// Builds the root layout grid: tab strip (auto) | content (star).
+    /// </summary>
+    private Grid BuildRootLayout(Border stripBorder)
+    {
+        var grid = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            },
+            Children = { stripBorder, _content }
+        };
+        Grid.SetRow(stripBorder, 0);
+        Grid.SetRow(_content, 1);
+
+        return grid;
     }
 
     private void OnNewPanelClick(object? sender, RoutedEventArgs e)
@@ -302,7 +313,7 @@ public sealed class AgentPanelHostView : UserControl
     {
         var label = new TextBlock
         {
-            FontSize = 12,
+            FontSize = TypographyTokens.FontSizeSm,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Horizontal(LayoutTokens.SpacingSm)
         };
@@ -319,8 +330,8 @@ public sealed class AgentPanelHostView : UserControl
         // the tab border, so close cannot be confused with activate/stop.
         var closeIcon = IconFactory.Create(
             "Icon.X",
-            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
-            12);
+            PaletteTokens.TextSecondaryBrush,
+            TypographyTokens.FontSizeSm);
         var closeButton = new Button
         {
             Content = closeIcon,
@@ -396,7 +407,7 @@ public sealed class AgentPanelHostView : UserControl
     {
         var plus = IconFactory.Create(
             "Icon.Plus",
-            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
+            PaletteTokens.TextSecondaryBrush,
             14);
         return new Button
         {

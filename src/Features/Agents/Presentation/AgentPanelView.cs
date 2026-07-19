@@ -59,7 +59,6 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
 
     public AgentPanelView()
     {
-        // --- Header: agent name + status ---
         _headerText = TextStyles.Header("");
         _headerText.VerticalAlignment = VerticalAlignment.Center;
 
@@ -67,6 +66,26 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
         _statusText.VerticalAlignment = VerticalAlignment.Center;
         _statusText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0);
 
+        _outputList = BuildOutputList();
+        _inputBox = BuildInputBox();
+
+        Content = BuildRootLayout(BuildHeaderBorder(), BuildInputBorder());
+
+        // --- Bindings ---
+        this.WhenActivated(d =>
+        {
+            d.Add(this.OneWayBind(ViewModel, vm => vm.AgentName, v => v._headerText.Text));
+            d.Add(this.OneWayBind(ViewModel, vm => vm.Status, v => v._statusText.Text));
+            d.Add(this.OneWayBind(ViewModel, vm => vm.OutputHistory, v => v._outputList.ItemsSource));
+            d.Add(this.Bind(ViewModel, vm => vm.DraftInput, v => v._inputBox.Text));
+        });
+    }
+
+    /// <summary>
+    /// Builds the header border: agent name and status on a raised surface.
+    /// </summary>
+    private Border BuildHeaderBorder()
+    {
         var headerPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -74,30 +93,41 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             Children = { _headerText, _statusText }
         };
 
-        var headerBorder = new Border
+        return new Border
         {
-            Background = ResolveBrush("SurfaceBaseBrush", "#121722"),
+            Background = PaletteTokens.SurfaceBaseBrush,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
             Child = headerPanel
         };
+    }
 
-        // --- Output history ---
-        _outputList = new ListBox
+    /// <summary>
+    /// Builds the scrollable output history list.
+    /// </summary>
+    private ListBox BuildOutputList()
+    {
+        var outputList = new ListBox
         {
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm)
         };
 
-        // Item template for output entries
-        _outputList.ItemTemplate = new FuncDataTemplate<string>((entry, _) =>
+        outputList.ItemTemplate = new FuncDataTemplate<string>((entry, _) =>
         {
             if (entry is null) return null;
             return TextStyles.Body(entry);
         });
 
-        // --- Input area ---
-        _inputBox = new TextBox
+        return outputList;
+    }
+
+    /// <summary>
+    /// Builds the draft input text box with Enter-to-send and busy-disable binding.
+    /// </summary>
+    private TextBox BuildInputBox()
+    {
+        var inputBox = new TextBox
         {
             FontSize = 13,
             PlaceholderText = "Type a message...",
@@ -108,25 +138,36 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd)
         };
 
-        // M2: Enter-to-send trigger
-        _inputBox.KeyDown += OnInputBoxKeyDown;
+        inputBox.KeyDown += OnInputBoxKeyDown;
 
-        // M3: Disable input while busy (IsBusy=true → IsEnabled=false)
-        _inputBox.Bind(
+        inputBox.Bind(
             TextBox.IsEnabledProperty,
             new Binding(nameof(AgentPanelState.IsBusy))
             {
                 Converter = new BusyToEnabledConverter()
             });
 
-        var inputBorder = new Border
+        return inputBox;
+    }
+
+    /// <summary>
+    /// Builds the input area border wrapping the draft text box.
+    /// </summary>
+    private Border BuildInputBorder()
+    {
+        return new Border
         {
-            Background = ResolveBrush("SurfaceBaseBrush", "#121722"),
+            Background = PaletteTokens.SurfaceBaseBrush,
             BorderThickness = new Thickness(0),
             Child = _inputBox
         };
+    }
 
-        // --- Layout ---
+    /// <summary>
+    /// Builds the root layout grid: header | output | input.
+    /// </summary>
+    private Grid BuildRootLayout(Border headerBorder, Border inputBorder)
+    {
         var root = new Grid
         {
             RowDefinitions =
@@ -135,23 +176,14 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto }
             },
-            Background = ResolveBrush("SurfacePanelBrush", "#0B0F17"),
+            Background = PaletteTokens.SurfacePanelBrush,
             Children = { headerBorder, _outputList, inputBorder }
         };
         Grid.SetRow(headerBorder, 0);
         Grid.SetRow(_outputList, 1);
         Grid.SetRow(inputBorder, 2);
 
-        Content = root;
-
-        // --- Bindings ---
-        this.WhenActivated(d =>
-        {
-            d.Add(this.OneWayBind(ViewModel, vm => vm.AgentName, v => v._headerText.Text));
-            d.Add(this.OneWayBind(ViewModel, vm => vm.Status, v => v._statusText.Text));
-            d.Add(this.OneWayBind(ViewModel, vm => vm.OutputHistory, v => v._outputList.ItemsSource));
-            d.Add(this.Bind(ViewModel, vm => vm.DraftInput, v => v._inputBox.Text));
-        });
+        return root;
     }
 
     private void OnInputBoxKeyDown(object? sender, KeyEventArgs e)
@@ -171,21 +203,5 @@ public sealed class AgentPanelView : ReactiveUserControl<AgentPanelState>
             return;
 
         SendRequested?.Invoke(panelId, message);
-    }
-
-    private static IBrush ResolveBrush(string resourceKey, string fallbackColor)
-    {
-        try
-        {
-            if (Avalonia.Application.Current?.Resources[resourceKey] is IBrush brush)
-                return brush;
-        }
-        catch (InvalidOperationException)
-        {
-            // Test hosts may construct views without a UI-thread-owned
-            // Application. Use the palette fallback in that case.
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackColor));
     }
 }

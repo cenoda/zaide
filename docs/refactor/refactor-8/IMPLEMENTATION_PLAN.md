@@ -8,7 +8,8 @@ M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`)
 M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
 M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`;
 M6 Townhall presentation maintainability cleanup accepted at `1ca1e08` (smoke docs `3b40af8`).
-M7+ unauthorized until explicit authorization.
+**M7 agent panel presentation maintainability cleanup implemented; pending human acceptance.**
+M8+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -327,7 +328,7 @@ expanding concern.
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **[x] 2026-07-19** |
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
-| **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke |
+| **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke | implemented; pending human acceptance |
 | **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX |
 
 ### Milestone slice rule
@@ -631,6 +632,35 @@ No `dotnet` production change is required for M0.
 - [x] Manual smoke: Townhall channel switch, filter toggle, send message.
 - [x] Human accepts M6 closeout at `1ca1e08` (smoke docs `3b40af8`). M7 remains unauthorized
       until explicit authorization.
+
+### Entry conditions for M7 (authorized 2026-07-19)
+
+- [x] Human accepted M6 closeout at `1ca1e08` (smoke docs `3b40af8`).
+- [x] Human authorized **M7 only**.
+- [x] M8, Phase 14, and adjacent feature work remain unauthorized.
+- [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
+
+### Exit conditions for M7
+
+- [x] `AgentPanelHostView` constructor extracted into focused builder methods
+      (`BuildTabScrollViewer`, `BuildTabStripBorder`, `BuildRootLayout`) for readability.
+- [x] `AgentPanelView` constructor extracted into focused builder methods
+      (`BuildHeaderBorder`, `BuildOutputList`, `BuildInputBox`, `BuildInputBorder`,
+      `BuildRootLayout`).
+- [x] Remaining `Application.Current?.Resources[...]` lookups in Agent panel
+      presentation files replaced with `PaletteTokens` equivalents
+      (`PrimaryAccentBrush`, `SurfaceBaseBrush`, `TextSecondaryBrush`).
+- [x] Tab label `FontSize = 12` replaced with `TypographyTokens.FontSizeSm`.
+- [x] `AgentPanelView.ResolveBrush` removed; palette routing uses `PaletteTokens`
+      with pixel-identical `App.axaml` resource and fallback values.
+- [x] `IAgentPanelHost`, `AgentPanelHost`, `PanelSendRequested`, and
+      `SendRequested` contracts unchanged.
+- [x] No new production types or source files; architecture baseline unchanged.
+- [x] Build; Agents.Presentation tests; Architecture; full suite green.
+- [x] Manual smoke: multi-panel create/send/tab-switch at default (1280×800) and
+      minimum (960×600) on Linux `DISPLAY=:1`.
+- [ ] Human accepts M7 closeout. M8 remains unauthorized until explicit
+      authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -1167,4 +1197,67 @@ All three M6-required operations exercised: channel selection, filter toggle
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M6 accepted at `1ca1e08`; M7+ unauthorized; Phase 14 unauthorized)*
+## M7 verification record (2026-07-19)
+
+### Production changes
+
+| File | Change |
+|------|--------|
+| `src/Features/Agents/Presentation/AgentPanelHostView.cs` | **Modified** constructor extracted into `BuildTabScrollViewer`, `BuildTabStripBorder`, `BuildRootLayout`; `Application.Current?.Resources` lookups replaced with `PaletteTokens`; tab label `FontSize` routed through `TypographyTokens.FontSizeSm` |
+| `src/Features/Agents/Presentation/AgentPanelView.cs` | **Modified** constructor extracted into `BuildHeaderBorder`, `BuildOutputList`, `BuildInputBox`, `BuildInputBorder`, `BuildRootLayout`; private `ResolveBrush` removed; palette routing uses `PaletteTokens.SurfaceBaseBrush` and `PaletteTokens.SurfacePanelBrush` |
+
+`IAgentPanelHost`, `AgentPanelHost`, `PanelSendRequested`, and `SendRequested`
+unchanged. No ViewModel, domain, or application files changed.
+
+### Removed source literals
+
+| File | Removed | Replacement |
+|------|---------|-------------|
+| `AgentPanelHostView.cs` | `Application.Current?.Resources["PrimaryAccentBrush"]` | `PaletteTokens.PrimaryAccentBrush` |
+| `AgentPanelHostView.cs` | `Application.Current?.Resources["SurfaceBaseBrush"]` | `PaletteTokens.SurfaceBaseBrush` |
+| `AgentPanelHostView.cs` | `Application.Current?.Resources["TextSecondaryBrush"]` (×2) | `PaletteTokens.TextSecondaryBrush` |
+| `AgentPanelHostView.cs` | `FontSize = 12` (tab label) | `TypographyTokens.FontSizeSm` |
+| `AgentPanelView.cs` | `ResolveBrush("SurfaceBaseBrush", "#121722")` (×2) | `PaletteTokens.SurfaceBaseBrush` |
+| `AgentPanelView.cs` | `ResolveBrush("SurfacePanelBrush", "#0B0F17")` | `PaletteTokens.SurfacePanelBrush` |
+| `AgentPanelView.cs` | private `ResolveBrush` helper | removed (centralized in `PaletteTokens`) |
+
+Preserved unchanged: input `FontSize = 13` (no existing typography token);
+icon size `14` on new-panel button; tab close icon size via `TypographyTokens.FontSizeSm`.
+
+### Architecture baseline
+
+No change — only presentation maintainability within existing types. Public type
+count remains **339** public / **111** internal / **450** total (same as M6
+baseline). Tracked production source files unchanged at **412**.
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Agents.Presentation'
+  → Passed: 49, Failed: 0, Skipped: 0, Total: 49
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2523, Failed: 0, Skipped: 0, Total: 2523
+
+git diff --check
+  → clean
+```
+
+### Manual smoke (2026-07-19)
+
+Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m7-smoke.sh`):
+
+1. **Default size (1280×800):** created two agent panel tabs via + button; sent
+   `m7 panel one` and `m7 panel two` via Enter; clicked first tab to switch back.
+2. **Minimum size (960×600):** repeated multi-tab create/send/tab-switch cycle.
+3. Window remained alive throughout; app log contained no errors or exceptions.
+
+---
+
+*Last updated: 2026-07-20 (Refactor 8 M7 implemented; pending human acceptance; M8+ unauthorized; Phase 14 unauthorized)*
