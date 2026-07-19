@@ -53,9 +53,9 @@ shrinking it from 328 to 323. **M11d** (Agents + Settings infrastructure
 visibility internalization) is complete at `133a3c1`, shrinking it from 323 to
 320 and completing the M11 series. **M12** (lifetime ownership map) is complete
 at `d4d1470`, documenting exactly 67 production DI registrations. **M13** is
-complete, and Refactor 6.3 is accepted and closed. The next roadmap gate is
-separate authorization to prepare Refactor 7 M0 only; Refactor 7 implementation,
-Refactor 8, and Phase 14 remain unauthorized.
+complete, and Refactor 6.3 is accepted and closed. Refactor 7 M0 is accepted;
+M1 typed Actor/Agent identity and catalog work is the only authorized next
+milestone. M2–M7, Refactor 8, and Phase 14 remain unauthorized.
 
 ## Philosophy
 
@@ -263,10 +263,10 @@ at `3d03285` (five SourceControl + Terminal implementations internalized).
 **M11d** is complete at `133a3c1` (three Agents + Settings infrastructure
 implementations internalized), completing the M11 series. **M12** is complete
 at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
-6.3 is accepted and closed. The next gate is Refactor 7 M0 authorization only.
-Phase
-14 and every preceding refactor still require their own live-code-verified M0
-acceptance before production implementation.
+6.3 is accepted and closed. Refactor 7 M0 is accepted, and M1 typed identity /
+Actor catalog work is the only authorized next milestone. M2–M7, Refactor 8,
+and Phase 14 remain unauthorized and require their own accepted gates before
+implementation.
 
 ## Why "Zaide"
 

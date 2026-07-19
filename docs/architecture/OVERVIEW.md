@@ -80,9 +80,11 @@ Key target rules (detail in CONVENTIONS):
   admissions; LSP stays under Language, DAP under Debugging.
 - Visibility is internal-by-default / public-by-exception (current ceiling
   **320** public / **95** internal / **415** total after Refactor 6.3).
-- Current lifetimes: application, workspace, process, projection, editor
-  session, terminal session. Conversation, agent session, and run (R61-LT01–
-  LT03) are deferred to Refactor 7.
+- Current implemented lifetimes remain application, workspace, process,
+  projection, editor session, and terminal session. Refactor 7 M0 accepted
+  Conversation ownership (R61-LT01) and a minimum correlated execution-run
+  representation (R61-LT03) as planned work; Agent Session (R61-LT02) remains
+  explicitly deferred because no concrete resumable-session owner exists.
 
 Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
@@ -132,7 +134,8 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 / 8 | Agent-conversation domain; Townhall/shell UI foundation (unauthorized until own M0) |
+| Refactor 7 | M0 accepted; M1 typed identity/catalog only authorized, not implemented |
+| Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
 
@@ -341,4 +344,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 6.3 accepted closed; public 320 / internal 95 / total 415; prod C# 377 / Features 339 / App 36; DI 67 / Registration modules 11 / LIFETIME_MAP 67 rows; FindingIds R61-AL-LOC-Program + R61-AL-LOC-App only; Refactor 7 / 8 / Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M0 accepted; M1 typed identity/catalog only authorized and not implemented; implemented baselines remain public 320 / internal 95 / total 415, prod C# 377 / Features 339 / App 36, DI 67 / Registration modules 11; M2–M7, Refactor 8, and Phase 14 unauthorized)*
