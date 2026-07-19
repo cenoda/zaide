@@ -116,6 +116,14 @@ public sealed class ConversationEntry
             throw new ArgumentException("Entry content is required.", nameof(content));
         }
 
+        if (correlationId is { } presentCorrelation
+            && string.IsNullOrWhiteSpace(presentCorrelation.Value))
+        {
+            throw new ArgumentException(
+                "Correlation id must be omitted or contain a non-empty value.",
+                nameof(correlationId));
+        }
+
         return new ConversationEntry(id, kind, author, timestamp, content, correlationId);
     }
 }

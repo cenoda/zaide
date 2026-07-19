@@ -27,6 +27,50 @@ public sealed class ConversationEntryTests
         Assert.Equal("hello", entry.Content);
         Assert.Equal(Timestamp, entry.Timestamp);
         Assert.NotEqual(default, entry.Id);
+        Assert.Null(entry.CorrelationId);
+    }
+
+    [Theory]
+    [InlineData(nameof(ConversationEntry.UserChat))]
+    [InlineData(nameof(ConversationEntry.AssistantResponse))]
+    [InlineData(nameof(ConversationEntry.RoutingFailure))]
+    [InlineData(nameof(ConversationEntry.ExecutionFailure))]
+    [InlineData(nameof(ConversationEntry.ChannelEvent))]
+    [InlineData(nameof(ConversationEntry.SystemNotification))]
+    public void FactoryMethods_AllowOmittedCorrelation(string factoryName)
+    {
+        var entry = InvokeFactory(factoryName);
+
+        Assert.Null(entry.CorrelationId);
+    }
+
+    [Theory]
+    [InlineData(nameof(ConversationEntry.UserChat))]
+    [InlineData(nameof(ConversationEntry.AssistantResponse))]
+    [InlineData(nameof(ConversationEntry.RoutingFailure))]
+    [InlineData(nameof(ConversationEntry.ExecutionFailure))]
+    [InlineData(nameof(ConversationEntry.ChannelEvent))]
+    [InlineData(nameof(ConversationEntry.SystemNotification))]
+    public void FactoryMethods_RetainValidCorrelation(string factoryName)
+    {
+        var correlation = ConversationEntryCorrelationId.FromValue("run:correlated");
+
+        var entry = InvokeFactory(factoryName, correlation);
+
+        Assert.Equal(correlation, entry.CorrelationId);
+    }
+
+    [Theory]
+    [InlineData(nameof(ConversationEntry.UserChat))]
+    [InlineData(nameof(ConversationEntry.AssistantResponse))]
+    [InlineData(nameof(ConversationEntry.RoutingFailure))]
+    [InlineData(nameof(ConversationEntry.ExecutionFailure))]
+    [InlineData(nameof(ConversationEntry.ChannelEvent))]
+    [InlineData(nameof(ConversationEntry.SystemNotification))]
+    public void FactoryMethods_RejectPresentButDefaultCorrelation(string factoryName)
+    {
+        Assert.Throws<ArgumentException>(() =>
+            InvokeFactory(factoryName, default(ConversationEntryCorrelationId)));
     }
 
     [Fact]
@@ -72,22 +116,31 @@ public sealed class ConversationEntryTests
         Assert.Empty(constructors);
     }
 
-    private static ConversationEntry InvokeFactory(string factoryName)
+    private static ConversationEntry InvokeFactory(
+        string factoryName,
+        ConversationEntryCorrelationId? correlationId = null)
     {
         var method = typeof(ConversationEntry).GetMethod(
             factoryName,
             BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
 
-        return (ConversationEntry)method!.Invoke(
-            null,
-            new object?[]
-            {
-                ConversationEntryId.New(),
-                ActorId.HumanUser,
-                Timestamp,
-                "hello",
-                null
-            })!;
+        try
+        {
+            return (ConversationEntry)method!.Invoke(
+                null,
+                new object?[]
+                {
+                    ConversationEntryId.New(),
+                    ActorId.HumanUser,
+                    Timestamp,
+                    "hello",
+                    correlationId
+                })!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw ex.InnerException;
+        }
     }
 }

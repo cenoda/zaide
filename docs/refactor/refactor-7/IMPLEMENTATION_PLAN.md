@@ -397,13 +397,13 @@ automated proof must still cover the ownership/attribution contract.
 
 - Implementation complete on 2026-07-19; pending human acceptance. M5b–M7, Refactor 8, and Phase 14 remain unauthorized.
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
-- Focused gate: **375 passed**, 0 failed, 0 skipped.
+- Focused gate: **393 passed**, 0 failed, 0 skipped.
 - Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
 - Architecture gate: **22 passed**, 0 failed, 0 skipped.
-- Full suite: **2457 passed**, 0 failed, 0 skipped.
+- Full suite: **2475 passed**, 0 failed, 0 skipped.
 - `git diff --check` — clean.
 - Manual M5 panel smoke: **not run** (no configured test endpoint in this session).
-- `AgentExecutionCoordinator` dual-writes authoritative typed user/terminal entries into each admitted attempt's target direct `ConversationId` via `IConversationStore`, correlating both entries with the same `ExecutionRunId` through the agent-neutral `ConversationEntryCorrelationId` seam (`ExecutionRunCorrelation`). Legacy `OutputHistory` is projected from the same typed entries via `AgentPanelEntryProjection`. Routing failures without coordinator execution remain Townhall-only with no direct-conversation or `OutputHistory` mutation. `OutputHistory` ownership is retained for M5b cutover.
+- `AgentExecutionCoordinator` dual-writes authoritative typed user/terminal entries into each admitted attempt's target direct `ConversationId` via `IConversationStore`, correlating both entries with the same `ExecutionRunId` through the agent-neutral `ConversationEntryCorrelationId` seam (`ExecutionRunCorrelation`). `ConversationEntry` rejects present-but-default correlation ids while allowing omitted/`null` uncorrelated entries. Legacy `OutputHistory` is projected from the same typed entries via `AgentPanelEntryProjection`. Routing failures without coordinator execution remain Townhall-only with no direct-conversation or `OutputHistory` mutation. `OutputHistory` ownership is retained for M5b cutover.
 
 ## Entry conditions for M2
 
