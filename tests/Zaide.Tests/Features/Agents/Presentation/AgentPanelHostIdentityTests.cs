@@ -12,7 +12,8 @@ public sealed class AgentPanelHostIdentityTests
     public void CreatePanel_CustomConflict_ThrowsBeforeHostMutation()
     {
         var catalog = new ActorCatalog();
-        var host = new AgentPanelHost(catalog);
+        var store = new ConversationStore();
+        var host = new AgentPanelHost(catalog, store);
         var first = host.CreatePanel("agent-x", "X Agent", "avatar_x");
 
         var ex = Assert.Throws<ArgumentException>(() =>
@@ -29,7 +30,8 @@ public sealed class AgentPanelHostIdentityTests
     public void CreatePanel_CustomIdenticalReuse_AllowsMultiplePanels()
     {
         var catalog = new ActorCatalog();
-        var host = new AgentPanelHost(catalog);
+        var store = new ConversationStore();
+        var host = new AgentPanelHost(catalog, store);
 
         var first = host.CreatePanel("agent-x", "X Agent", "avatar_x");
         var second = host.CreatePanel("agent-x", "X Agent", "avatar_x");

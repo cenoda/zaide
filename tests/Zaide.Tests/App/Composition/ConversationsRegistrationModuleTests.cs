@@ -37,16 +37,36 @@ public sealed class ConversationsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideConversations_RegistersExactlyOnePlannedService()
+    public void AddZaideConversations_RegistersExactlyTwoPlannedServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideConversations();
 
         Assert.Same(services, returned);
-        Assert.Single(services);
-        Assert.Equal(ServiceLifetime.Singleton, services[0].Lifetime);
-        Assert.Equal(typeof(IActorCatalog), services[0].ServiceType);
-        Assert.Equal(typeof(ActorCatalog), services[0].ImplementationType);
+        Assert.Equal(2, services.Count);
+        Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
+
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IActorCatalog)
+                && d.ImplementationType == typeof(ActorCatalog));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IConversationStore)
+                && d.ImplementationType == typeof(ConversationStore));
+    }
+
+    [Fact]
+    public void ProgramConfigureServices_ResolvesConversationStoreAsSingleton()
+    {
+        var services = new ServiceCollection();
+        Program.ConfigureServices(services);
+        using var provider = services.BuildServiceProvider();
+
+        var store1 = provider.GetRequiredService<IConversationStore>();
+        var store2 = provider.GetRequiredService<IConversationStore>();
+        Assert.Same(store1, store2);
+        Assert.IsType<ConversationStore>(store1);
     }
 
     [Fact]
@@ -83,7 +103,7 @@ public sealed class ConversationsRegistrationModuleTests
     }
 
     [Fact]
-    public void ConversationsModuleSource_ContainsExactlyTheOnePlannedRegistration()
+    public void ConversationsModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/ConversationsServiceCollectionExtensions.cs");
@@ -96,5 +116,9 @@ public sealed class ConversationsRegistrationModuleTests
             Regex.Matches(
                 moduleSource,
                 @"AddSingleton<IActorCatalog,\s*ActorCatalog>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IConversationStore,\s*ConversationStore>\(\)"));
     }
 }

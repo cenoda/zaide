@@ -22,6 +22,7 @@ public class TownhallViewModel : ReactiveObject
 {
     private readonly TownhallState _state;
     private readonly IActorCatalog _actorCatalog;
+    private readonly IConversationStore _conversationStore;
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
 
@@ -157,10 +158,14 @@ public class TownhallViewModel : ReactiveObject
     /// <summary>
     /// Initializes a new instance of the TownhallViewModel class.
     /// </summary>
-    public TownhallViewModel(TownhallState state, IActorCatalog actorCatalog)
+    public TownhallViewModel(
+        TownhallState state,
+        IActorCatalog actorCatalog,
+        IConversationStore conversationStore)
     {
         _state = state ?? throw new ArgumentNullException(nameof(state));
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
+        _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
 
         // Initialize explicit session seed state
         InitializeSessionState();
@@ -301,6 +306,11 @@ public class TownhallViewModel : ReactiveObject
         _state.Channels.Add(townhallMain);
         _state.Channels.Add(aiStatus);
         _state.Channels.Add(codebaseRefactoring);
+
+        foreach (var channel in _state.Channels)
+        {
+            _conversationStore.CreateChannelConversation(channel.Id);
+        }
 
         // Create empty per-channel message collections in state
         _state.ChannelMessages[townhallMain.Id] = new ObservableCollection<TownhallMessage>();

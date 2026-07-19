@@ -19,6 +19,7 @@ namespace Zaide.Features.Agents.Presentation;
 public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 {
     private readonly IActorCatalog _actorCatalog;
+    private readonly IConversationStore _conversationStore;
     private readonly ObservableCollection<AgentPanelState> _panels;
     private AgentPanelState? _activePanel;
     private int _nextSeedIndex;
@@ -29,9 +30,10 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public AgentPanelHost(IActorCatalog actorCatalog)
+    public AgentPanelHost(IActorCatalog actorCatalog, IConversationStore conversationStore)
     {
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
+        _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
         _panels = new ObservableCollection<AgentPanelState>();
     }
 
@@ -74,9 +76,14 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 
     private AgentPanelState CreatePanelFromActor(Actor actor)
     {
+        var conversation = _conversationStore.CreateDirectConversation(
+            _actorCatalog.CanonicalHuman.Id,
+            actor.Id);
+
         var panel = new AgentPanelState(actor)
         {
             PanelId = Guid.NewGuid().ToString("N"),
+            ConversationId = conversation.Id,
             Status = "Idle",
             DraftInput = string.Empty
         };

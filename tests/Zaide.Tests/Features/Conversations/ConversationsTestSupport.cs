@@ -1,5 +1,4 @@
 using Zaide.Features.Agents.Presentation;
-using Zaide.Tests.Features.Conversations;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Townhall.Domain;
@@ -8,7 +7,7 @@ using Zaide.Features.Townhall.Presentation;
 namespace Zaide.Tests.Features.Conversations;
 
 /// <summary>
-/// Shared catalog/host helpers for tests that construct agent/townhall surfaces
+/// Shared catalog/store/host helpers for tests that construct agent/townhall surfaces
 /// outside the production DI container.
 /// </summary>
 internal static class ConversationsTestSupport
@@ -17,11 +16,18 @@ internal static class ConversationsTestSupport
 
     public static IActorCatalog CreateCatalogAsInterface() => CreateCatalog();
 
-    public static AgentPanelHost CreatePanelHost(IActorCatalog? catalog = null) =>
-        new(catalog ?? CreateCatalog());
+    public static ConversationStore CreateStore() => new();
+
+    public static IConversationStore CreateStoreAsInterface() => CreateStore();
+
+    public static AgentPanelHost CreatePanelHost(
+        IActorCatalog? catalog = null,
+        IConversationStore? store = null) =>
+        new(catalog ?? CreateCatalog(), store ?? CreateStore());
 
     public static TownhallViewModel CreateTownhallViewModel(
         TownhallState? state = null,
-        IActorCatalog? catalog = null) =>
-        new(state ?? new TownhallState(), catalog ?? CreateCatalog());
+        IActorCatalog? catalog = null,
+        IConversationStore? store = null) =>
+        new(state ?? new TownhallState(), catalog ?? CreateCatalog(), store ?? CreateStore());
 }

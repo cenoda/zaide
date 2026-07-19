@@ -10,6 +10,7 @@ internal static class ConversationsServiceCollectionExtensions
         this IServiceCollection services)
     {
         services.AddSingleton<IActorCatalog, ActorCatalog>();
+        services.AddSingleton<IConversationStore, ConversationStore>();
 
         return services;
     }

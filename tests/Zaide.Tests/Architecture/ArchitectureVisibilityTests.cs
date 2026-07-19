@@ -189,8 +189,8 @@ public sealed class ArchitectureVisibilityTests
         Assert.Equal(0, inventory.SourceFiles.Count(f => f.TechnicalFolder == "src"));
         Assert.Equal(37, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(2, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
-        // Refactor 7 M1: +6 Conversations production files.
-        Assert.Equal(345, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Refactor 7 M2: +6 Conversations production files.
+        Assert.Equal(351, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -33,6 +33,12 @@ public class AgentPanelState : ReactiveObject
     public string PanelId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Typed authoritative direct conversation provisioned at panel creation.
+    /// Separate from <see cref="PanelId"/>.
+    /// </summary>
+    public ConversationId ConversationId { get; set; }
+
+    /// <summary>
     /// Typed canonical actor identity for this panel.
     /// </summary>
     public ActorId ActorId => _actor.Id;

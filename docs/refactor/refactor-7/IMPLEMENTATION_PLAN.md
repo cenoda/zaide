@@ -2,15 +2,15 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M1 accepted (2026-07-19). M2 only authorized, not
-implemented.** M3–M7, Refactor 8, and Phase 14 remain unauthorized.
+**Refactor 7 status:** **M2 implemented, pending human acceptance (2026-07-19).**
+M1 accepted at `edc5dac`. M3–M7, Refactor 8, and Phase 14 remain unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
 Agent/Townhall behavior at `e597972`, locks the intended boundaries and
 milestone order, and defines verification commands. Human acceptance on
-2026-07-19 closed **M1** at commit `edc5dac`. **M2 only** is authorized as the
-next separately verifiable implementation milestone. M3–M7, Refactor 8, and
-Phase 14 remain unauthorized.
+2026-07-19 closed **M1** at commit `edc5dac`. **M2** is implemented on
+`master` and pending human acceptance. M3–M7, Refactor 8, and Phase 14 remain
+unauthorized.
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -240,7 +240,7 @@ without expanding its concern.
 |-----------|-----------------|-------------------|
 | **M0** | Audit live Agent/Townhall ownership; lock decisions, scope, dependencies, milestones, rollback points, and commands. Documentation only. | `git diff --check`; plan-path/status review; no production/test diff |
 | **M1** | Introduce typed Actor/Agent identity, the locked canonical seed table, and the Actor catalog. Replace identity hardcodes/copies without changing rendered names, avatars, panels, mention parsing, `RouteRequest`, or routing behavior. | Build; focused identity/catalog + existing panel/Townhall seed tests; registration/Architecture tests; full suite — **accepted `edc5dac`** |
-| **M2** | Introduce the agent-neutral authoritative in-memory `Conversation` owner, typed ID/kind/participants, targeted store contract, channel conversations, and create-time panel direct conversations under the locked retention/dual-target policy. Preserve channel/panel presentation and both legacy collections for migration. | Build; focused Conversation/store/provisioning + Townhall domain/ViewModel + panel lifecycle tests; registration/Architecture tests; full suite |
+| **M2** | Introduce the agent-neutral authoritative in-memory `Conversation` owner, typed ID/kind/participants, targeted store contract, channel conversations, and create-time panel direct conversations under the locked retention/dual-target policy. Preserve channel/panel presentation and both legacy collections for migration. | Build; focused Conversation/store/provisioning + Townhall domain/ViewModel + panel lifecycle tests; registration/Architecture tests; full suite — **implemented, pending acceptance** |
 | **M3** | Introduce a narrower typed conversation-entry model and current-rendering projection for chat, response, routing-error, execution-error, channel-event, and system paths. Keep `TownhallMessageKind` as a presentation compatibility enum; do not promote its unused `AgentThink`, `ToolCall`, or `ToolResult` values into domain types/producers, and leave unused `SourceProvider`, `SourceModel`, `ThreadId`, and `Metadata` fields alone. | Build; focused entry invariants, formatting, exact prefix/content, grouping/filtering, and Townhall projection tests; Architecture tests; full suite |
 | **M4** | Introduce the minimal correlated execution-run representation and make coordinator/router results structured. After unchanged visible-name parsing, replace `RouteRequest.TargetAgentName` with a resolved typed Actor/panel target here only. Preserve one-in-flight-per-panel and the existing uneven cancellation, status, draft, and backend behavior. | Build; focused execution coordinator/router/service tests including success, failure, cancellation at each boundary, concurrency, and target identity; Architecture tests; full suite |
 | **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke |
@@ -318,6 +318,16 @@ Manual backend smoke requires a configured test endpoint and must never expose
 credentials in logs or evidence. If it cannot be run, record it as not run;
 automated proof must still cover the ownership/attribution contract.
 
+## M2 verification (2026-07-19, pending acceptance)
+
+- Implemented on `master` after M1 closeout at `9a653e8`; pending human review.
+- Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
+- Focused gate: **273 passed**, 0 failed, 0 skipped.
+- Registration/DI gate: **67 passed**, 0 failed, 0 skipped.
+- Architecture gate: **22 passed**, 0 failed, 0 skipped.
+- Full suite: **2355 passed**, 0 failed, 0 skipped.
+- `git diff --check` — clean.
+
 ## M1 verification (2026-07-19, accepted)
 
 - Accepted at commit `edc5dac` after review closeout.
@@ -327,12 +337,18 @@ automated proof must still cover the ownership/attribution contract.
 - Full suite: **2336 passed**, 0 failed, 0 skipped.
 - `git diff --check` — clean.
 
+## Entry conditions for M3
+
+- [ ] M2 authoritative conversation owner, store contract, channel provisioning,
+      and create-time panel direct-conversation provisioning are accepted.
+- [ ] Human accepted M2 closeout; **M3 only** is authorized.
+
 ## Entry conditions for M2
 
 - [x] M1 typed `ActorId`/Actor catalog, canonical seeds, read-only projections,
       and `AddZaideConversations()` composition are accepted at `edc5dac`.
-- [x] Human accepted M1 closeout on 2026-07-19; **M2 only** is authorized.
-- [ ] M2 implementation has not started.
+- [x] Human accepted M1 closeout on 2026-07-19; **M2 only** was authorized.
+- [x] M2 implementation complete and pending human acceptance (2026-07-19).
 
 ## Entry conditions for M1
 
@@ -399,4 +415,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M1 accepted at `edc5dac`; M2 only authorized and not implemented; M3–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M2 implemented, pending human acceptance; M1 accepted at `edc5dac`; M3–M7, Refactor 8, and Phase 14 unauthorized)*
