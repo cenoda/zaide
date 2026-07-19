@@ -2,12 +2,12 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M6 implemented; pending human acceptance (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M6 accepted (2026-07-19).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
 M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
 M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
-M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`.
-M6 authorized (2026-07-19): Townhall presentation maintainability cleanup.
+M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`;
+M6 Townhall presentation maintainability cleanup accepted at `1ca1e08` (smoke docs `3b40af8`).
 M7+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
@@ -629,7 +629,8 @@ No `dotnet` production change is required for M0.
 - [x] No new production types or source files; architecture baseline unchanged.
 - [x] Build; Townhall tests; Architecture; full suite green.
 - [x] Manual smoke: Townhall channel switch, filter toggle, send message.
-- [ ] Human accepts M6 closeout before M7 authorization.
+- [x] Human accepts M6 closeout at `1ca1e08` (smoke docs `3b40af8`). M7 remains unauthorized
+      until explicit authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -1166,4 +1167,4 @@ All three M6-required operations exercised: channel selection, filter toggle
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M6 implemented; pending human acceptance; M7+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 8 M6 accepted at `1ca1e08`; M7+ unauthorized; Phase 14 unauthorized)*
