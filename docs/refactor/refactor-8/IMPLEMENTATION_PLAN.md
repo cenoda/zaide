@@ -1154,13 +1154,15 @@ git diff --check
 
 Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m6-smoke.sh`):
 
-1. **Filter toggle — Chat:** clicked Chat button position (~225, 55) — activates `ChatOnly` mode.
-2. **Filter toggle — Activity:** clicked Activity button position (~300, 55) — activates `ActivityOnly` mode.
-3. **Filter toggle — All:** clicked All button position (~160, 55) — activates `All` mode (default).
-4. **Send message:** clicked input area (~640, 700), typed "m6 smoke test", pressed Enter to send.
-5. Window remained alive throughout; app log contained no errors or exceptions.
+1. **Channel switch:** clicked second channel row (~70, 110) in left sidebar to trigger `SelectChannelCommand`.
+2. **Filter toggle — Chat:** clicked Chat button position (~225, 55) — activates `ChatOnly` mode.
+3. **Filter toggle — Activity:** clicked Activity button position (~300, 55) — activates `ActivityOnly` mode.
+4. **Filter toggle — All:** clicked All button position (~160, 55) — activates `All` mode (default).
+5. **Send message:** clicked input area (~640, 700), typed "m6 smoke test", pressed Enter to send.
+6. Window remained alive throughout; app log contained no errors or exceptions.
 
-All three filter modes toggled via their respective ToggleButtons, exercising the extracted `WireFilterButton` helper through the mutual-exclusion path (each click unchecks the previously active button and sets `ViewModel.FilterMode`).
+All three M6-required operations exercised: channel selection, filter toggle
+(Chat/Activity/All through the extracted `WireFilterButton` helper), and send.
 
 ---
 
