@@ -921,7 +921,7 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m3-smoke.sh`):
 
 | File | Change |
 |------|--------|
-| `src/App/Shell/MainLayoutBuilder.cs` | **Added** internal builder: root grid column/row definitions, nav/left/townhall placement, horizontal splitters, status bar, host attachment (`e55f748`) |
+| `src/App/Shell/MainLayoutBuilder.cs` | **Added** internal builder: root grid column/row definitions, nav/left/townhall placement, horizontal splitters, status bar, host attachment |
 | `src/App/Shell/MainWindow.axaml.cs` | **Modified** delegates layout construction to `MainLayoutBuilder`; removes inline `BuildLayout` |
 | `tests/Zaide.Tests/App/Shell/MainLayoutBuilderSourceTests.cs` | **Added** type/source ratchet tests for builder surface and geometry |
 | `tests/Zaide.Tests/App/Shell/RightColumnHostSourceTests.cs` | **Modified** right-column delegation ratchet now targets `MainLayoutBuilder` |
