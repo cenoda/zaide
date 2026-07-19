@@ -2,9 +2,9 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M7 implemented, pending acceptance (2026-07-19). M6
-accepted at `a5cdcca`.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3
-accepted at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M5b
+**Refactor 7 status:** **Complete and closed (2026-07-19). M7 accepted at
+`a7d2887`.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
+at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M5b
 accepted at `e284ecc`. M6 accepted at `a5cdcca`. Refactor 8 and Phase 14 remain
 unauthorized.
 
@@ -19,9 +19,10 @@ result-invariant hardening `3a318cf`), and **M5a** at commit `d3bf701`
 correlation-id invariant hardening `d3bf701`), and **M5b** at commit `e284ecc`
 (implementation `e284ecc` including projection-disposal lifecycle hardening),
 and **M6** at commit `a5cdcca` (implementation `a5cdcca` including targeted
-Townhall admission and switch-during-await attribution regression).
-**M7 only** is authorized as the next separately verifiable implementation
-milestone. Refactor 8 and Phase 14 remain unauthorized.
+Townhall admission and switch-during-await attribution regression), and
+**M7** at commit `a7d2887` (implementation `18a4f78` plus ownership-ratchet
+closeout `a7d2887`). Refactor 7 is complete and closed. Refactor 8 and Phase 14
+remain unauthorized.
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -257,7 +258,7 @@ without expanding its concern.
 | **M5a** | Dual-write authoritative typed direct-conversation/run entries and project them into the Agent Panel while retaining `OutputHistory` as a compatibility path. Preserve exact rendered prefixes/order, tab lifecycle, drafts, focus/input behavior, and routing. | Build; focused Agent Panel projection + host/view lifetime + routing tests; Architecture tests; full suite; manual panel smoke — **accepted `d3bf701`** |
 | **M5b** | Prove typed-vs-legacy output parity across success, routing failure, execution failure, cancellation, switching, and close-during-flight cases; then remove duplicate string history ownership and its dual-write path. No other UI or lifecycle change. | Build; focused parity/lifetime tests; Architecture tests; full suite; repeat manual panel smoke — **accepted `e284ecc`** |
 | **M6** | Capture the public channel `ConversationId` at send admission, then target both the pre-await user write and every terminal response/error/routing-failure write to that same ID. Add the previously missing switch-during-await regression proving no mirrored request or terminal agent entry lands in the newly selected channel; its normal `ChannelEvent` remains allowed. Preserve exact current mirrored content/prefix shapes and public visibility. | Build; focused mirror + MainWindowViewModel + Townhall tests including switch-during-await, allowed switch event, and exact mirrored content; Architecture tests; full suite; manual channel-switch smoke — **accepted `a5cdcca`** |
-| **M7** | Delete superseded string protocols/duplicate identity paths, tighten architecture/public-surface ratchets, update architecture/conventions/status docs, and close only after automated and required manual evidence is truthful. | Build; all focused suites; Architecture tests; full suite; `git diff --check`; manual evidence review — **implemented, pending acceptance** |
+| **M7** | Delete superseded string protocols/duplicate identity paths, tighten architecture/public-surface ratchets, update architecture/conventions/status docs, and close only after automated and required manual evidence is truthful. | Build; all focused suites; Architecture tests; full suite; `git diff --check`; manual evidence review — **accepted `a7d2887`** |
 
 ## Verification commands
 
@@ -472,9 +473,13 @@ automated proof must still cover the ownership/attribution contract.
       Refactor 8 and Phase 14 remain unauthorized.
 - [x] M7 implementation complete on 2026-07-19; pending human acceptance.
       Refactor 8 and Phase 14 remain unauthorized.
+- [x] M7 accepted on 2026-07-19 at `a7d2887`. Refactor 7 is complete and closed.
+      Refactor 8 and Phase 14 remain unauthorized.
 
-## M7 verification (2026-07-19, implemented, pending acceptance)
+## M7 verification (2026-07-19, accepted)
 
+- Accepted at commit `a7d2887` after review closeout (implementation `18a4f78`
+  plus ownership-ratchet hardening `a7d2887`).
 - Implemented on 2026-07-19 atop M6 accepted at `a5cdcca`.
 - Build: `dotnet build Zaide.slnx --no-restore` — succeeded (0 errors, 4 pre-existing warnings).
 - Focused gate: **410 passed**, 0 failed, 0 skipped.
@@ -569,4 +574,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M7 implemented, pending acceptance; M6 accepted at `a5cdcca`; Refactor 8 and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (M7 accepted at `a7d2887`; Refactor 7 complete and closed; Refactor 8 and Phase 14 unauthorized)*
