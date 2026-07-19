@@ -22,6 +22,10 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement?>> _pending = new();
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly object _readLoopGate = new();
+    private readonly object _requestLifecycleGate = new();
+    private readonly CancellationTokenSource _disposeCts = new();
+    private TaskCompletionSource? _requestsDrained;
+    private int _activeRequestCount;
     private int _nextSeq = 1;
     private Task? _readLoop;
     private CancellationTokenSource? _readLoopCts;
@@ -58,7 +62,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
         object arguments,
         CancellationToken cancellationToken)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnterRequest();
 
         var seq = Interlocked.Increment(ref _nextSeq);
         var tcs = new TaskCompletionSource<JsonElement?>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -66,6 +70,9 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
 
         try
         {
+            using var writeCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                _disposeCts.Token);
             await WriteMessageAsync(
                 new Dictionary<string, object?>
                 {
@@ -74,7 +81,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
                     ["command"] = command,
                     ["arguments"] = arguments,
                 },
-                cancellationToken).ConfigureAwait(false);
+                writeCancellation.Token).ConfigureAwait(false);
 
             using var registration = cancellationToken.Register(() => CancelPendingRequest(seq, cancellationToken));
             return await tcs.Task.ConfigureAwait(false);
@@ -82,6 +89,7 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
         finally
         {
             _pending.TryRemove(seq, out _);
+            ExitRequest();
         }
     }
 
@@ -89,10 +97,25 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
     {
         if (_disposed)
             return;
-        _disposed = true;
+        Task requestsDrained;
+        lock (_requestLifecycleGate)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            _requestsDrained ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_activeRequestCount == 0)
+                _requestsDrained.TrySetResult();
+
+            requestsDrained = _requestsDrained.Task;
+        }
 
         _readLoopCts?.Cancel();
+        _disposeCts.Cancel();
         CancelAllPendingRequests();
+
+        await requestsDrained.ConfigureAwait(false);
 
         if (_readLoop is not null)
         {
@@ -107,7 +130,27 @@ internal sealed class DapContentLengthTransport : IAsyncDisposable
         }
 
         _readLoopCts?.Dispose();
+        _disposeCts.Dispose();
         _writeGate.Dispose();
+    }
+
+    private void EnterRequest()
+    {
+        lock (_requestLifecycleGate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _activeRequestCount++;
+        }
+    }
+
+    private void ExitRequest()
+    {
+        lock (_requestLifecycleGate)
+        {
+            _activeRequestCount--;
+            if (_disposed && _activeRequestCount == 0)
+                _requestsDrained?.TrySetResult();
+        }
     }
 
     private void CancelPendingRequest(int seq, CancellationToken cancellationToken)

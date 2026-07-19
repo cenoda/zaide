@@ -676,6 +676,45 @@ and `ArchitectureVisibilityTests` UI source-file assertions were updated.
 
 New focused tests: `TypographyTokensTests` (1), `PaletteTokensTests` (11).
 
+### Post-M1 full-suite gate repair (2026-07-19)
+
+The first full-suite rerun after M1 resubmission failed in
+`DapContentLengthTransportTests.DisposeRacingOutstandingRequests_CancelsAllWithoutCollectionExceptions`.
+The timeout occurred before disposal while the test polled for all eight
+outbound frames; it did not indicate a Townhall or shell regression.
+
+The user explicitly authorized repair of the gate. Tightening the test to
+dispose against the admitted pending set then exposed an actual DAP transport
+lifecycle race: `_writeGate` could be disposed before an in-flight request
+released it, producing `ObjectDisposedException`. The repair links admitted
+request writes to disposal cancellation and makes `DisposeAsync` await all
+admitted requests before disposing the gate. The test now asserts the pending
+set directly, eliminating its scheduling-dependent outbound-frame polling.
+
+This repair is recorded in `TOFIX.md` as `R8-M1-001`. It changes no Townhall,
+shell, Agent Panel, Phase 14, or user-visible behavior. M2 remains
+unauthorized until the repaired full-suite gate is recorded green and M1 is
+accepted.
+
+Verification after the repair:
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 pre-existing warnings on a clean rebuild
+
+dotnet test --filter 'FullyQualifiedName~DapContentLengthTransportTests'
+  → Passed: 5, Failed: 0, Skipped: 0, Total: 5
+
+DisposeRacingOutstandingRequests_CancelsAllWithoutCollectionExceptions
+  → passed in 40 consecutive focused runs
+
+dotnet test (full suite)
+  → Passed: 2508, Failed: 0, Skipped: 0, Total: 2508
+
+git diff --check
+  → clean
+```
+
 ### Manual smoke (2026-07-19)
 
 Run on Linux with `DISPLAY=:1` and `xdotool`: `dotnet run` launched Zaide
@@ -685,4 +724,4 @@ remained alive with no logged errors.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M1 resubmission: architecture source-file ratchet fix)*
+*Last updated: 2026-07-19 (Refactor 8 M1 gate repair: DAP disposal lifecycle and full-suite stabilization; M2 remains unauthorized pending M1 acceptance)*

@@ -153,10 +153,13 @@ public sealed class DapContentLengthTransportTests
             var requests = Enumerable.Range(0, 8)
                 .Select(i => harness.Transport.RequestAsync($"outstanding-{i}", new { attempt, i }, CancellationToken.None))
                 .ToArray();
-            await Task.Yield();
 
-            for (var i = 0; i < requests.Length; i++)
-                await harness.ReadNextRequestAsync();
+            // RequestAsync registers each pending request before it awaits the
+            // serialized output write. The disposal contract is about
+            // cancelling that pending set, not about observing every frame.
+            // Waiting on the test stream here made this stress loop dependent
+            // on thread-pool scheduling under the full suite.
+            Assert.Equal(requests.Length, harness.GetPendingCount());
 
             await harness.Transport.DisposeAsync();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Task.WhenAll(requests));
