@@ -411,6 +411,14 @@ automated proof must still cover the ownership/attribution contract.
 - Manual M5 panel smoke: **not run** (no configured test endpoint in this session).
 - `AgentExecutionCoordinator` dual-writes authoritative typed user/terminal entries into each admitted attempt's target direct `ConversationId` via `IConversationStore`, correlating both entries with the same `ExecutionRunId` through the agent-neutral `ConversationEntryCorrelationId` seam (`ExecutionRunCorrelation`). `ConversationEntry` rejects present-but-default correlation ids while allowing omitted/`null` uncorrelated entries. Legacy `OutputHistory` is projected from the same typed entries via `AgentPanelEntryProjection`. Routing failures without coordinator execution remain Townhall-only with no direct-conversation or `OutputHistory` mutation. `OutputHistory` ownership is retained for M5b cutover.
 
+## Entry conditions for M5b
+
+- [x] M5a authoritative typed direct-conversation dual-write, run-correlated
+      entries, legacy `OutputHistory` projection, and correlation-id invariants
+      are accepted at `d3bf701`.
+- [x] Human accepted M5a closeout on 2026-07-19; **M5b only** is authorized.
+- [ ] M5b implementation has not started.
+
 ## Entry conditions for M2
 
 - [x] M1 typed `ActorId`/Actor catalog, canonical seeds, read-only projections,
