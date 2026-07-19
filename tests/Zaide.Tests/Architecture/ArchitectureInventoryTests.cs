@@ -130,8 +130,8 @@ public sealed class ArchitectureInventoryTests
         var inventory = new ArchitectureInventoryReader().Read();
         var byFolder = inventory.SourceFileCountByTechnicalFolder;
 
-        // Refactor 7 M5b: +1 output projection production file.
-        Assert.Equal(405, inventory.SourceFiles.Count);
+        // Refactor 8 M1: +2 DesignSystem token helper production files.
+        Assert.Equal(407, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -139,7 +139,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(37, byFolder["App"]);
-        Assert.Equal(2, byFolder["UI"]);
+        Assert.Equal(4, byFolder["UI"]);
         Assert.Equal(366, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree

@@ -641,7 +641,10 @@ Palette fallback values (no-resource path): `#E3E4F4` (`TextPrimaryBrush`),
 
 Visibility baseline updated: **339** public / **106** internal / **445** total.
 
-### Automated verification (2026-07-19)
+Source-file inventory baseline updated: **407** total production source files
+(**UI** folder **2 → 4** for `TypographyTokens.cs` and `PaletteTokens.cs`).
+
+### Automated verification (2026-07-19, resubmission after architecture source-file ratchet fix)
 
 ```text
 dotnet build Zaide.slnx
@@ -658,6 +661,7 @@ dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
 
 dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
   → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+  (includes source-file ratchets: total 407, UI 4)
 
 dotnet test (full suite)
   → Passed: 2508, Failed: 0, Skipped: 0, Total: 2508
@@ -665,6 +669,10 @@ dotnet test (full suite)
 git diff --check
   → clean
 ```
+
+Prior `f046142` submission failed Architecture **24/26** until
+`ArchitectureInventoryTests.Read_SourceFolderPlacement_MatchesM0TrackedFileCounts`
+and `ArchitectureVisibilityTests` UI source-file assertions were updated.
 
 New focused tests: `TypographyTokensTests` (1), `PaletteTokensTests` (11).
 
@@ -677,4 +685,4 @@ remained alive with no logged errors.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M1 token baseline closeout)*
+*Last updated: 2026-07-19 (Refactor 8 M1 resubmission: architecture source-file ratchet fix)*
