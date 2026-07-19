@@ -66,6 +66,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             AgentPanelDirectConversationWriter.AppendUserMessage(
                 _conversationStore,
                 panel,
+                runId,
                 userMessage);
             panel.DraftInput = string.Empty;
 
@@ -73,20 +74,39 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 
             if (result.IsSuccess)
             {
-                assistantResponse = result.ResponseText;
-                AgentPanelDirectConversationWriter.AppendAssistantResponse(
-                    _conversationStore,
-                    panel,
-                    assistantResponse);
-                panel.Status = "Idle";
-                outcome = ExecutionRunOutcome.Success;
+                var responseText = result.ResponseText;
+                if (string.IsNullOrWhiteSpace(responseText))
+                {
+                    errorMessage = "Assistant response was empty.";
+                    AgentPanelDirectConversationWriter.AppendExecutionFailure(
+                        _conversationStore,
+                        panel,
+                        runId,
+                        errorMessage);
+                    panel.Status = "Error";
+                    outcome = ExecutionRunOutcome.ExecutionFailure;
+                }
+                else
+                {
+                    assistantResponse = responseText;
+                    AgentPanelDirectConversationWriter.AppendAssistantResponse(
+                        _conversationStore,
+                        panel,
+                        runId,
+                        assistantResponse);
+                    panel.Status = "Idle";
+                    outcome = ExecutionRunOutcome.Success;
+                }
             }
             else
             {
-                errorMessage = result.ErrorMessage;
+                errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Request failed."
+                    : result.ErrorMessage;
                 AgentPanelDirectConversationWriter.AppendExecutionFailure(
                     _conversationStore,
                     panel,
+                    runId,
                     errorMessage);
                 panel.Status = "Error";
                 outcome = IsCancellationMessage(errorMessage)
@@ -96,20 +116,26 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         }
         catch (OperationCanceledException ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = string.IsNullOrWhiteSpace(ex.Message)
+                ? "The operation was canceled."
+                : ex.Message;
             AgentPanelDirectConversationWriter.AppendExecutionFailure(
                 _conversationStore,
                 panel,
+                runId,
                 errorMessage);
             panel.Status = "Error";
             outcome = ExecutionRunOutcome.Cancelled;
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = string.IsNullOrWhiteSpace(ex.Message)
+                ? "Request failed."
+                : ex.Message;
             AgentPanelDirectConversationWriter.AppendExecutionFailure(
                 _conversationStore,
                 panel,
+                runId,
                 errorMessage);
             panel.Status = "Error";
             outcome = ExecutionRunOutcome.ExecutionFailure;

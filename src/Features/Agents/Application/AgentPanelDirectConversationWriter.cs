@@ -14,6 +14,7 @@ internal static class AgentPanelDirectConversationWriter
     public static ConversationEntry AppendUserMessage(
         IConversationStore conversationStore,
         AgentPanelState panel,
+        ExecutionRunId runId,
         string userMessage)
     {
         ArgumentNullException.ThrowIfNull(conversationStore);
@@ -23,7 +24,8 @@ internal static class AgentPanelDirectConversationWriter
             ConversationEntryId.New(),
             ActorId.HumanUser,
             DateTimeOffset.UtcNow,
-            userMessage);
+            userMessage,
+            ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
         panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));
@@ -33,6 +35,7 @@ internal static class AgentPanelDirectConversationWriter
     public static ConversationEntry AppendAssistantResponse(
         IConversationStore conversationStore,
         AgentPanelState panel,
+        ExecutionRunId runId,
         string assistantResponse)
     {
         ArgumentNullException.ThrowIfNull(conversationStore);
@@ -42,7 +45,8 @@ internal static class AgentPanelDirectConversationWriter
             ConversationEntryId.New(),
             panel.ActorId,
             DateTimeOffset.UtcNow,
-            assistantResponse);
+            assistantResponse,
+            ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
         panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));
@@ -52,6 +56,7 @@ internal static class AgentPanelDirectConversationWriter
     public static ConversationEntry AppendExecutionFailure(
         IConversationStore conversationStore,
         AgentPanelState panel,
+        ExecutionRunId runId,
         string errorMessage)
     {
         ArgumentNullException.ThrowIfNull(conversationStore);
@@ -61,7 +66,8 @@ internal static class AgentPanelDirectConversationWriter
             ConversationEntryId.New(),
             panel.ActorId,
             DateTimeOffset.UtcNow,
-            errorMessage);
+            errorMessage,
+            ExecutionRunCorrelation.ToEntryCorrelation(runId));
 
         conversationStore.AppendEntry(panel.ConversationId, entry);
         panel.OutputHistory.Add(AgentPanelEntryProjection.ToOutputHistoryLine(entry));

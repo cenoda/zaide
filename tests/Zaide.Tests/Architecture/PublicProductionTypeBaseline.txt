@@ -45,6 +45,7 @@ Zaide.Features.Conversations.Domain.ActorId
 Zaide.Features.Conversations.Domain.ActorKind
 Zaide.Features.Conversations.Domain.Conversation
 Zaide.Features.Conversations.Domain.ConversationEntry
+Zaide.Features.Conversations.Domain.ConversationEntryCorrelationId
 Zaide.Features.Conversations.Domain.ConversationEntryId
 Zaide.Features.Conversations.Domain.ConversationEntryKind
 Zaide.Features.Conversations.Domain.ConversationId

@@ -81,12 +81,13 @@ public sealed class ConversationEntryTests
 
         return (ConversationEntry)method!.Invoke(
             null,
-            new object[]
+            new object?[]
             {
                 ConversationEntryId.New(),
                 ActorId.HumanUser,
                 Timestamp,
-                "hello"
+                "hello",
+                null
             })!;
     }
 }

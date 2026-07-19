@@ -120,8 +120,8 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 7 M5a implementation: total top-level **440**, public **338**, internal **102**, production
-C# **402**, Features C# **363**, App C# **37**, production DI registrations
+tracked production **C#** root admission. Live inventory after Refactor 7 M5a implementation: total top-level **442**, public **339**, internal **103**, production
+C# **404**, Features C# **365**, App C# **37**, production DI registrations
 **69** (all Singleton; Conversations adds `IActorCatalog` and
 `IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
 **2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
@@ -344,4 +344,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M5a implemented, pending acceptance; implemented baselines remain public 338 / internal 102 / total 440, prod C# 402 / Features 363 / App 37, DI 69 / Registration modules 12; M5b–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M5a implemented, pending acceptance; implemented baselines remain public 339 / internal 103 / total 442, prod C# 404 / Features 365 / App 37, DI 69 / Registration modules 12; M5b–M7, Refactor 8, and Phase 14 unauthorized)*

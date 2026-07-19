@@ -110,6 +110,74 @@ public sealed class AgentPanelDualWriteTests : IDisposable
     }
 
     [Fact]
+    public async Task MultipleAttempts_PartitionUserAndTerminalEntriesByDistinctRunCorrelation()
+    {
+        var (host, panel, store) = CreatePanel();
+        var coordinator = CreateCoordinator(host, store, new ToggleHandler());
+
+        var first = await coordinator.SendAsync(panel.PanelId, "First");
+        var second = await coordinator.SendAsync(panel.PanelId, "Second");
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotEqual(first!.Run.Id, second!.Run.Id);
+        Assert.Equal(ExecutionRunOutcome.ExecutionFailure, first.Run.Outcome);
+        Assert.Equal(ExecutionRunOutcome.Success, second.Run.Outcome);
+
+        Assert.True(store.TryGet(panel.ConversationId, out var conversation));
+        Assert.Equal(4, conversation!.Entries.Count);
+
+        var correlated = conversation.Entries
+            .Where(entry => entry.CorrelationId is not null)
+            .ToList();
+        Assert.Equal(4, correlated.Count);
+
+        var groups = correlated
+            .GroupBy(entry => entry.CorrelationId!.Value.Value)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+        Assert.Equal(2, groups.Count);
+        Assert.True(groups.TryGetValue(first.Run.Id.Value, out var firstEntries));
+        Assert.True(groups.TryGetValue(second.Run.Id.Value, out var secondEntries));
+
+        var firstKinds = firstEntries!
+            .OrderBy(entry => entry.Timestamp)
+            .Select(entry => entry.Kind)
+            .ToArray();
+        Assert.Equal(
+            new[] { ConversationEntryKind.UserChat, ConversationEntryKind.ExecutionFailure },
+            firstKinds);
+        Assert.All(firstEntries, entry => Assert.Equal(first.Run.Id.Value, entry.CorrelationId!.Value.Value));
+
+        var secondKinds = secondEntries!
+            .OrderBy(entry => entry.Timestamp)
+            .Select(entry => entry.Kind)
+            .ToArray();
+        Assert.Equal(
+            new[] { ConversationEntryKind.UserChat, ConversationEntryKind.AssistantResponse },
+            secondKinds);
+        Assert.All(secondEntries, entry => Assert.Equal(second.Run.Id.Value, entry.CorrelationId!.Value.Value));
+    }
+
+    [Fact]
+    public async Task DirectSend_Success_CorrelatesTypedEntriesWithStructuredRunId()
+    {
+        var (host, panel, store) = CreatePanel();
+        var coordinator = CreateCoordinator(host, store, new SuccessHandler("Hello back"));
+
+        var result = await coordinator.SendAsync(panel.PanelId, "Hi");
+
+        Assert.NotNull(result);
+        Assert.True(store.TryGet(panel.ConversationId, out var conversation));
+        Assert.All(
+            conversation!.Entries,
+            entry =>
+            {
+                Assert.NotNull(entry.CorrelationId);
+                Assert.Equal(result!.Run.Id.Value, entry.CorrelationId!.Value.Value);
+            });
+    }
+
+    [Fact]
     public async Task RoutedSend_Success_TargetsTargetPanelConversation()
     {
         var store = ConversationsTestSupport.CreateStore();
@@ -263,6 +331,31 @@ public sealed class AgentPanelDualWriteTests : IDisposable
         Assert.True(store.TryGet(firstConversationId, out var conversation));
         Assert.Equal(2, conversation!.Entries.Count);
         Assert.Empty(second.OutputHistory);
+    }
+
+    private sealed class ToggleHandler : HttpMessageHandler
+    {
+        private bool _hasFailed;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (!_hasFailed)
+            {
+                _hasFailed = true;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent("Server error", Encoding.UTF8, "application/json")
+                });
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    choices = new[] { new { message = new { content = "Recovered" }, finish_reason = "stop" } }
+                }), Encoding.UTF8, "application/json")
+            });
+        }
     }
 
     private sealed class SuccessHandler : HttpMessageHandler

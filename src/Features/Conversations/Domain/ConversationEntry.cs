@@ -13,13 +13,15 @@ public sealed class ConversationEntry
         ConversationEntryKind kind,
         ActorId author,
         DateTimeOffset timestamp,
-        string content)
+        string content,
+        ConversationEntryCorrelationId? correlationId)
     {
         Id = id;
         Kind = kind;
         Author = author;
         Timestamp = timestamp;
         Content = content;
+        CorrelationId = correlationId;
     }
 
     public ConversationEntryId Id { get; }
@@ -32,54 +34,67 @@ public sealed class ConversationEntry
 
     public string Content { get; }
 
+    /// <summary>
+    /// Optional producer-supplied correlation token for entries that belong to
+    /// one bounded execution attempt.
+    /// </summary>
+    public ConversationEntryCorrelationId? CorrelationId { get; }
+
     public static ConversationEntry UserChat(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.UserChat, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.UserChat, author, timestamp, content, correlationId);
 
     public static ConversationEntry AssistantResponse(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.AssistantResponse, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.AssistantResponse, author, timestamp, content, correlationId);
 
     public static ConversationEntry RoutingFailure(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.RoutingFailure, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.RoutingFailure, author, timestamp, content, correlationId);
 
     public static ConversationEntry ExecutionFailure(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.ExecutionFailure, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.ExecutionFailure, author, timestamp, content, correlationId);
 
     public static ConversationEntry ChannelEvent(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.ChannelEvent, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.ChannelEvent, author, timestamp, content, correlationId);
 
     public static ConversationEntry SystemNotification(
         ConversationEntryId id,
         ActorId author,
         DateTimeOffset timestamp,
-        string content) =>
-        Create(id, ConversationEntryKind.SystemNotification, author, timestamp, content);
+        string content,
+        ConversationEntryCorrelationId? correlationId = null) =>
+        Create(id, ConversationEntryKind.SystemNotification, author, timestamp, content, correlationId);
 
     private static ConversationEntry Create(
         ConversationEntryId id,
         ConversationEntryKind kind,
         ActorId author,
         DateTimeOffset timestamp,
-        string content)
+        string content,
+        ConversationEntryCorrelationId? correlationId)
     {
         if (id == default)
         {
@@ -101,6 +116,6 @@ public sealed class ConversationEntry
             throw new ArgumentException("Entry content is required.", nameof(content));
         }
 
-        return new ConversationEntry(id, kind, author, timestamp, content);
+        return new ConversationEntry(id, kind, author, timestamp, content, correlationId);
     }
 }
