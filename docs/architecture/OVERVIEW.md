@@ -121,10 +121,10 @@ root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
 tracked production **C#** root admission. Live inventory after Refactor 7 M2
-implementation (pending acceptance): total top-level **428**, public **329**,
-internal **99**, production C# **390**, Features C# **351**, App C# **37**,
-production DI registrations **69** (all Singleton; Conversations adds
-`IActorCatalog` and `IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
+closeout: total top-level **428**, public **329**, internal **99**, production
+C# **390**, Features C# **351**, App C# **37**, production DI registrations
+**69** (all Singleton; Conversations adds `IActorCatalog` and
+`IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
 **2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
 boundary residuals. NamespaceDirection allowlist is empty.
 `ApplicationShutdown` is the ordered shutdown owner, not a third locator
@@ -135,7 +135,7 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.1 | Closed; rules and executable ratchets |
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
-| Refactor 7 | M1 accepted (`edc5dac`); M2 authoritative conversation owner implemented, pending acceptance |
+| Refactor 7 | M1 accepted (`edc5dac`); M2 accepted (`94a609f`); M3 typed entry/projection only authorized, not implemented |
 | Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
 
 ---
@@ -345,4 +345,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M2 implemented, pending acceptance; implemented baselines remain public 329 / internal 99 / total 428, prod C# 390 / Features 351 / App 37, DI 69 / Registration modules 12; M3–M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M2 accepted at `94a609f`; M3 only authorized and not implemented; implemented baselines remain public 329 / internal 99 / total 428, prod C# 390 / Features 351 / App 37, DI 69 / Registration modules 12; M4–M7, Refactor 8, and Phase 14 unauthorized)*
