@@ -17,15 +17,17 @@ public static class TownhallAvatarFactory
             ? "?"
             : displayName[..1].ToUpperInvariant();
 
-        var baseColor = GetColor("SurfaceRaisedBrushColor", Color.Parse("#243352"));
-        var accentColor = GetColor("PrimaryAccentBrushColor", Color.Parse("#066ADB"));
-        var statusBrush = GetBrush(statusBrushKey, new SolidColorBrush(Color.Parse("#28A745")));
-        var surfaceBrush = GetBrush("SurfacePanelBrush", new SolidColorBrush(Color.Parse("#1A2540")));
+        var baseColor = PaletteTokens.SurfaceRaisedColor;
+        var accentColor = PaletteTokens.PrimaryAccentColor;
+        var statusBrush = PaletteTokens.GetBrush(
+            statusBrushKey,
+            PaletteTokens.CreateSuccessStatusFallbackBrush());
+        var surfaceBrush = PaletteTokens.SurfacePanelBrush;
 
         var initialsText = TextStyles.Body(initials);
         initialsText.HorizontalAlignment = HorizontalAlignment.Center;
         initialsText.VerticalAlignment = VerticalAlignment.Center;
-        initialsText.Foreground = GetBrush("TextPrimaryBrush", new SolidColorBrush(Color.Parse("#E3E4F4")));
+        initialsText.Foreground = PaletteTokens.TextPrimaryBrushOrFallback;
 
         var avatarBackground = new Border
         {
@@ -100,25 +102,4 @@ public static class TownhallAvatarFactory
             Channel(color.B));
     }
 
-    private static Color GetColor(string resourceKey, Color fallback)
-    {
-        if (Application.Current?.Resources.TryGetValue(resourceKey, out var value) == true &&
-            value is Color color)
-        {
-            return color;
-        }
-
-        return fallback;
-    }
-
-    private static IBrush GetBrush(string resourceKey, IBrush fallback)
-    {
-        if (Application.Current?.Resources.TryGetValue(resourceKey, out var value) == true &&
-            value is IBrush brush)
-        {
-            return brush;
-        }
-
-        return fallback;
-    }
 }

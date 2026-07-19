@@ -45,7 +45,7 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((12, 0, 12), byNamespace["Zaide.App.Composition.Registration"]);
         // M9c: +1 internal MainWindowActivationHost (was 18 total / 14 public / 4 internal).
         Assert.Equal((19, 14, 5), byNamespace["Zaide.App.Shell"]);
-        Assert.Equal((2, 2, 0), byNamespace["Zaide.UI.DesignSystem"]);
+        Assert.Equal((4, 2, 2), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
         // M11d: SettingsService + FileSecretStore public→internal (5p/2i → 3p/4i).

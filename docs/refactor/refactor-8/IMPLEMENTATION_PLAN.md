@@ -2,11 +2,8 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M0 planning only (2026-07-19).** This document is the
-Refactor 8 M0 planning gate. It audits the live post–Refactor 7 shell/Townhall
-UI surface at `945f0e7`, locks scope and behavior-preservation boundaries,
-records the file inventory, and defines milestone slices, verification
-commands, rollback points, and stop rules.
+**Refactor 8 status:** **M1 complete (2026-07-19).** M0 planning gate accepted;
+M1 token baseline implemented. M2+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -319,7 +316,7 @@ expanding concern.
 | Milestone | Description | Verification gate |
 |-----------|-------------|-------------------|
 | **M0** | Planning gate: live audit, scope, BP boundaries, inventory, slices, commands, rollback, stop rules. **Docs only.** | Plan exists; no production/test diffs required; human acceptance required before M1 |
-| **M1** | **Token baseline for R8-owned surfaces:** apply only the pre-mapped, pixel-identical typography and palette substitutions in the M1 literal inventory below. No layout extraction, hover/selection-overlay cleanup, Agent-panel work, or broader literal sweep. | Build; focused DesignSystem + Townhall + shell tests; Architecture; full suite; manual Townhall/shell glance smoke |
+| **M1** | **Token baseline for R8-owned surfaces:** apply only the pre-mapped, pixel-identical typography and palette substitutions in the M1 literal inventory below. No layout extraction, hover/selection-overlay cleanup, Agent-panel work, or broader literal sweep. | Build; focused DesignSystem + Townhall + shell tests; Architecture; full suite; manual Townhall/shell glance smoke | **[x] 2026-07-19** |
 | **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke |
 | **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke |
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke |
@@ -489,8 +486,15 @@ No `dotnet` production change is required for M0.
 
 - [x] `docs/refactor/refactor-8/IMPLEMENTATION_PLAN.md` exists with scope, BP
       boundaries, inventory, milestones, commands, rollback, and stop rules.
-- [ ] Human accepts this M0 plan.
-- [ ] Human explicitly authorizes **M1 only** (or declines / revises plan).
+- [x] Human accepts this M0 plan.
+- [x] Human explicitly authorizes **M1 only** (or declines / revises plan).
+
+### Exit conditions for M1
+
+- [x] M1 literal inventory substitutions applied with pixel-identical fallbacks.
+- [x] Focused DesignSystem, Townhall, shell, Architecture, and full-suite gates green.
+- [x] Manual Townhall input/send and Output/Test Results/Debug bottom-mode smoke run.
+- [ ] Human accepts M1 closeout before M2 authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -588,12 +592,89 @@ Stop work and ask the user (do not continue the milestone) when:
 
 ## Entry conditions for M1 (future)
 
-- [ ] Human accepted this M0 plan.
-- [ ] Human authorized **M1 only**.
-- [ ] Working tree based on accepted M0 baseline (or later accepted R8
+- [x] Human accepted this M0 plan.
+- [x] Human authorized **M1 only**.
+- [x] Working tree based on accepted M0 baseline (or later accepted R8
       boundary) is clean of unrelated edits.
-- [ ] Implementer re-reads BP-01–BP-10 and stop rules before editing.
+- [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M0 plan tightened: bounded M1 literal inventory and fallback-preservation contract; M5 Settings/Editor filters + wiring/lifecycle test obligation; M1+ and Phase 14 unauthorized until human acceptance)*
+## M1 verification record (2026-07-19)
+
+### Removed source literals (exact lines at M1 start)
+
+| File | Removed line(s) | Replacement |
+|------|-----------------|-------------|
+| `src/App/Shell/MainWindow.axaml.cs` | `749` `FontSize = 12,` (Output tab) | `TypographyTokens.FontSizeSm` |
+| `src/App/Shell/MainWindow.axaml.cs` | `765` `FontSize = 12,` (Test Results tab) | `TypographyTokens.FontSizeSm` |
+| `src/App/Shell/MainWindow.axaml.cs` | `781` `FontSize = 12,` (Debug tab) | `TypographyTokens.FontSizeSm` |
+| `src/Features/Townhall/Presentation/TownhallInputArea.cs` | `60` `Foreground = (IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),` | `PaletteTokens.TextPrimaryBrush` |
+| `src/Features/Townhall/Presentation/TownhallInputArea.cs` | `77` `(IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),` | `PaletteTokens.TextPrimaryBrush` |
+| `src/Features/Townhall/Presentation/TownhallInputArea.cs` | `85` `Background = (IBrush?)Application.Current?.Resources["PrimaryAccentBrush"] ?? new SolidColorBrush(Color.Parse("#066ADB")),` | `PaletteTokens.PrimaryAccentBrush` |
+| `src/Features/Townhall/Presentation/TownhallInputArea.cs` | `103` `(IBrush?)Application.Current?.Resources["TextSecondaryBrush"] ?? new SolidColorBrush(Color.Parse("#8B95A5")),` | `PaletteTokens.TextSecondaryBrush` |
+| `src/Features/Townhall/Presentation/TownhallAvatarFactory.cs` | `20–23` inline `GetColor`/`GetBrush` calls with `#243352`, `#066ADB`, `#28A745`, `#1A2540` | `PaletteTokens.SurfaceRaisedColor`, `PrimaryAccentColor`, `GetBrush(..., CreateSuccessStatusFallbackBrush())`, `SurfacePanelBrush` |
+| `src/Features/Townhall/Presentation/TownhallAvatarFactory.cs` | `28` `GetBrush("TextPrimaryBrush", new SolidColorBrush(Color.Parse("#E3E4F4")))` | `PaletteTokens.TextPrimaryBrushOrFallback` |
+| `src/Features/Townhall/Presentation/TownhallAvatarFactory.cs` | `103–123` private `GetColor` / `GetBrush` helpers | removed (centralized in `PaletteTokens`) |
+
+Preserved unchanged: `TownhallInputArea` `0x0D` input overlay; avatar
+`Lighten` / derived-alpha ring; Terminal/Problems theme-default sizes; all
+unlisted literals.
+
+### Token / resource names added or used
+
+| Name | Kind | Value / role |
+|------|------|----------------|
+| `FontSizeSm` | `App.axaml` `x:Double` resource | `12` — bottom-mode button typography |
+| `TypographyTokens.FontSizeSm` | internal accessor | resolves `FontSizeSm` with fallback `12` |
+| `PaletteTokens` | internal helper | resource-backed brushes/colors with M1-listed hex fallbacks |
+
+Palette fallback values (no-resource path): `#E3E4F4` (`TextPrimaryBrush`),
+`#066ADB` (`PrimaryAccentBrush` / `PrimaryAccentBrushColor`),
+`#8B95A5` (`TextSecondaryBrush`), `#243352` (`SurfaceRaisedBrushColor`),
+`#28A745` (`SuccessBrush` / status fallback), `#1A2540` (`SurfacePanelBrush`).
+
+### New production types (internal)
+
+- `Zaide.UI.DesignSystem.TypographyTokens`
+- `Zaide.UI.DesignSystem.PaletteTokens`
+
+Visibility baseline updated: **339** public / **106** internal / **445** total.
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.UI.DesignSystem'
+  → Passed: 30, Failed: 0, Skipped: 0, Total: 30
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Features.Townhall'
+  → Passed: 81, Failed: 0, Skipped: 0, Total: 81
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
+  → Passed: 160, Failed: 0, Skipped: 0, Total: 160
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2508, Failed: 0, Skipped: 0, Total: 2508
+
+git diff --check
+  → clean
+```
+
+New focused tests: `TypographyTokensTests` (1), `PaletteTokensTests` (11).
+
+### Manual smoke (2026-07-19)
+
+Run on Linux with `DISPLAY=:1` and `xdotool`: `dotnet run` launched Zaide
+(1280×800). Townhall input received typed message + Enter (send path); bottom
+mode strip tabs Output, Test Results, and Debug clicked in sequence. Window
+remained alive with no logged errors.
+
+---
+
+*Last updated: 2026-07-19 (Refactor 8 M1 token baseline closeout)*

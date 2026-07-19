@@ -57,7 +57,7 @@ public class TownhallInputArea : Panel
         {
             PlaceholderText = "Message...",
             Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
-            Foreground = (IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),
+            Foreground = PaletteTokens.TextPrimaryBrush,
             BorderThickness = new Thickness(0),
             MinHeight = 32,
             MaxLines = 5,
@@ -74,7 +74,7 @@ public class TownhallInputArea : Panel
         var sendIcon = CreateIconOrFallback(
             "Icon.ArrowUp",
             "↑",
-            (IBrush?)Application.Current?.Resources["TextPrimaryBrush"] ?? new SolidColorBrush(Color.Parse("#E3E4F4")),
+            PaletteTokens.TextPrimaryBrush,
             14);
 
         _sendButton = new Border
@@ -82,7 +82,7 @@ public class TownhallInputArea : Panel
             Width = 32,
             Height = 32,
             CornerRadius = LayoutTokens.RadiusFull,
-            Background = (IBrush?)Application.Current?.Resources["PrimaryAccentBrush"] ?? new SolidColorBrush(Color.Parse("#066ADB")),
+            Background = PaletteTokens.PrimaryAccentBrush,
             Child = sendIcon,
             Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,
@@ -100,7 +100,7 @@ public class TownhallInputArea : Panel
             Child = CreateIconOrFallback(
                 "Icon.Plus",
                 "+",
-                (IBrush?)Application.Current?.Resources["TextSecondaryBrush"] ?? new SolidColorBrush(Color.Parse("#8B95A5")),
+                PaletteTokens.TextSecondaryBrush,
                 14),
             Cursor = CreateHandCursorOrNull(),
             VerticalAlignment = VerticalAlignment.Center,

@@ -746,7 +746,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = 12,
+            FontSize = TypographyTokens.FontSizeSm,
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             Cursor = new Cursor(StandardCursorType.Hand),
         };
@@ -762,7 +762,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = 12,
+            FontSize = TypographyTokens.FontSizeSm,
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             Cursor = new Cursor(StandardCursorType.Hand),
         };
@@ -778,7 +778,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = 12,
+            FontSize = TypographyTokens.FontSizeSm,
             Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             Cursor = new Cursor(StandardCursorType.Hand),
         };
