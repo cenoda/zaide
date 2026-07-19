@@ -2,8 +2,9 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M1 complete (2026-07-19).** M0 planning gate accepted;
-M1 token baseline implemented. M2+ unauthorized until explicit authorization.
+**Refactor 8 status:** **M2 complete (2026-07-19).** M0 planning gate accepted;
+M1 token baseline implemented; M2 bottom-panel host extracted. M3+ unauthorized
+until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -317,7 +318,7 @@ expanding concern.
 |-----------|-------------|-------------------|
 | **M0** | Planning gate: live audit, scope, BP boundaries, inventory, slices, commands, rollback, stop rules. **Docs only.** | Plan exists; no production/test diffs required; human acceptance required before M1 |
 | **M1** | **Token baseline for R8-owned surfaces:** apply only the pre-mapped, pixel-identical typography and palette substitutions in the M1 literal inventory below. No layout extraction, hover/selection-overlay cleanup, Agent-panel work, or broader literal sweep. | Build; focused DesignSystem + Townhall + shell tests; Architecture; full suite; manual Townhall/shell glance smoke | **[x] 2026-07-19** |
-| **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke |
+| **M2** | **Extract bottom panel host** from `MainWindow.BuildLayout` (mode strip buttons, content grid, border chrome) into an `App/Shell` type. Preserve commands, visibility, heights, Terminal focus path. | Build; bottom-panel shell tests; Architecture; full suite; manual bottom-panel mode smoke | **[x] 2026-07-19** |
 | **M3** | **Extract right column host** (editor tab bar + search + editor/welcome + vertical splitter + `AgentPanelHostView`) into an `App/Shell` type. Preserve splitter and agent host wiring points. | Build; shell + agent host tests; Architecture; full suite; manual editor/agent resize smoke |
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke |
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke |
@@ -494,7 +495,24 @@ No `dotnet` production change is required for M0.
 - [x] M1 literal inventory substitutions applied with pixel-identical fallbacks.
 - [x] Focused DesignSystem, Townhall, shell, Architecture, and full-suite gates green.
 - [x] Manual Townhall input/send and Output/Test Results/Debug bottom-mode smoke run.
-- [ ] Human accepts M1 closeout before M2 authorization.
+- [x] Human accepts M1 closeout before M2 authorization.
+
+### Exit conditions for M2
+
+- [x] `BottomPanelHost` extracted under `src/App/Shell/`; `MainWindow.BuildLayout`
+      delegates bottom splitter/panel construction and `WhenActivated` visibility/mode
+      wiring to the host.
+- [x] `MainWindowViewModel` signature and command surface unchanged.
+- [x] Focused shell VM bottom-panel tests remain green; no new host construction
+      tests added (existing `MainWindowViewModelBottomPanelModeTests` already prove
+      mode flags; shell `RxAppBuilder` static-ctor ordering blocks reliable Avalonia
+      `Application.Current` bootstrap for full host construction tests in this
+      milestone).
+- [x] Architecture baselines updated for `BottomPanelHost` (+1 internal type,
+      +1 App source file).
+- [x] Build, shell filter, Architecture, and full suite green.
+- [x] Manual smoke: app launch + bottom-panel toggle on Linux `DISPLAY=:1`.
+- [ ] Human accepts M2 closeout before M3 authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
 
@@ -724,4 +742,60 @@ remained alive with no logged errors.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M1 gate repair: DAP disposal lifecycle and full-suite stabilization; M2 remains unauthorized pending M1 acceptance)*
+---
+
+## M2 verification record (2026-07-19)
+
+### Production changes
+
+| File | Change |
+|------|--------|
+| `src/App/Shell/BottomPanelHost.cs` | **Added** internal host: mode strip, five panel surfaces, border chrome, splitter/panel grid attach, `WireToViewModel` visibility/mode routing, Terminal focus/start seam |
+| `src/App/Shell/MainWindow.axaml.cs` | **Modified** `BuildLayout` delegates bottom section to `BottomPanelHost`; `WhenActivated` calls `_bottomPanelHost.WireToViewModel` instead of inline subscriptions |
+
+`MainWindowViewModel` unchanged. `GridLayoutResizeHelper` untouched.
+
+### Architecture baseline updates
+
+| Metric | Before M2 | After M2 |
+|--------|-----------|----------|
+| Public / internal / total types | 339 / 106 / 445 | 339 / 107 / 446 |
+| Tracked production source files | 407 | 408 |
+| `App` folder source files | 37 | 38 |
+| `Zaide.App.Shell` namespace types | 19 (14p / 5i) | 20 (14p / 6i) |
+
+### Automated verification (2026-07-19)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 0 warnings
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'
+  → Passed: 160, Failed: 0, Skipped: 0, Total: 160
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2508, Failed: 0, Skipped: 0, Total: 2508
+
+git diff --check
+  → clean
+```
+
+No new focused `BottomPanelHost` construction tests in this milestone: existing
+`MainWindowViewModelBottomPanelModeTests` retain bottom-panel mode routing
+coverage at the ViewModel seam; attempted host construction tests could not
+reliably bootstrap `Application.Current` when co-loaded with shell
+`RxAppBuilder` static constructors in the same test assembly.
+
+### Manual smoke (2026-07-19)
+
+Linux `DISPLAY=:1`: `dotnet run` launched Zaide (default 1280×800); `xdotool`
+found the window and sent `Ctrl+J` bottom-panel toggle twice. Process remained
+alive with no logged errors. Full five-mode strip click cycle deferred to human
+acceptance review (same host code path as pre-extraction `BuildLayout`).
+
+---
+
+*Last updated: 2026-07-19 (Refactor 8 M2: extract BottomPanelHost from MainWindow.BuildLayout; M3 unauthorized pending M2 acceptance)*

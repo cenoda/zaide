@@ -74,8 +74,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private DebugPanel _debugPanel = null!;
     private FinalWindowCleanup _finalWindowCleanup = null!;
     private AgentPanelHostView _agentPanelHostView = null!;
-    private Border _bottomPanel = null!;
-    private GridSplitter _bottomPanelSplitter = null!;
+    private BottomPanelHost _bottomPanelHost = null!;
     private readonly RowDefinition _bottomSplitterRow;
     private readonly RowDefinition _bottomPanelRow;
     private readonly RowDefinition _statusBarRow;
@@ -146,7 +145,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         (_navBar, _fileTreeView, _sourceControlPanel, _townhallView, _statusBar,
-         _terminalTabHost, _agentPanelHostView, _bottomPanel, _bottomPanelSplitter, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
+         _terminalTabHost, _agentPanelHostView, _bottomPanelHost, _bottomSplitterRow, _bottomPanelRow, _statusBarRow) = BuildLayout();
 
         // Phase 9 M2: command palette overlay — hosted as a top-layer child of
         // the layout root grid so it covers all content including the status bar.
@@ -307,43 +306,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .ObserveOn(AvaloniaScheduler.Instance)
                 .Subscribe(snapshot => MaterializeRegistryBindings(snapshot)));
 
-            // Bind bottom panel visibility → row height.
-            // M3: focus and start are routed through the view host seam so the
-            // active tab's retained panel — not a single shared panel — gets focus.
-            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.IsBottomPanelVisible)
-                .Subscribe(visible =>
-                {
-                    _bottomSplitterRow.Height = visible
-                        ? new GridLength(4, GridUnitType.Pixel)
-                        : new GridLength(0);
-                    _bottomPanelRow.Height = visible
-                        ? new GridLength(250)
-                        : new GridLength(0);
-                    _bottomPanelSplitter.IsVisible = visible;
-                    _bottomPanel.IsVisible = visible;
-
-                    if (visible && ViewModel.BottomPanelMode == BottomPanelMode.Terminal)
-                    {
-                        _terminalTabHost.FocusActiveSession();
-                        _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
-                    }
-                }));
-
-            // Phase 10 M3 / Phase 11 M2/M5: switch bottom content between panel modes.
-            disposables.Add(this.WhenAnyValue(x => x.ViewModel!.BottomPanelMode)
-                .Subscribe(mode =>
-                {
-                    _terminalTabHost.IsVisible = mode == BottomPanelMode.Terminal;
-                    _problemsPanel.IsVisible = mode == BottomPanelMode.Problems;
-                    _outputPanel.IsVisible = mode == BottomPanelMode.Output;
-                    _testResultsPanel.IsVisible = mode == BottomPanelMode.TestResults;
-                    _debugPanel.IsVisible = mode == BottomPanelMode.Debug;
-                    if (mode == BottomPanelMode.Terminal && ViewModel!.IsBottomPanelVisible)
-                    {
-                        _terminalTabHost.FocusActiveSession();
-                        _ = ViewModel.TerminalHost.EnsureActiveSessionStartedAsync();
-                    }
-                }));
+            // Bind bottom panel visibility and mode routing through the extracted host.
+            _bottomPanelHost.WireToViewModel(ViewModel!, disposables);
 
             // PickFolder handler — opens native folder dialog
             disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
@@ -509,7 +473,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     /// </summary>
     private (NavBar navBar, FileTreeView fileTreeView, SourceControlPanel sourceControlPanel, TownhallView townhallView,
              StatusBar statusBar, TerminalTabHost terminalTabHost, AgentPanelHostView agentPanelHostView,
-             Border bottomPanel, GridSplitter bottomPanelSplitter,
+             BottomPanelHost bottomPanelHost,
              RowDefinition bottomSplitterRow, RowDefinition bottomPanelRow, RowDefinition statusBarRow) BuildLayout()
     {
         var grid = new Grid
@@ -680,165 +644,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Grid.SetRow(rightColumn, 0);
         grid.Children.Add(rightColumn);
 
-        // --- Bottom Panel Splitter (spans columns 3-5: center + editor only) ---
-        var bottomPanelSplitter = new GridSplitter
-        {
-            Height = 4,
-            Background = Brushes.Transparent,
-            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            ResizeDirection = GridResizeDirection.Rows
-        };
-        bottomPanelSplitter.IsVisible = false;
-        Grid.SetColumn(bottomPanelSplitter, 3);
-        Grid.SetColumnSpan(bottomPanelSplitter, 3); // Under center + editor only
-        Grid.SetRow(bottomPanelSplitter, 1);
-        grid.Children.Add(bottomPanelSplitter);
-
-        // --- Bottom Panel (spans columns 3-5: center + editor only) ---
-        // Hosts Terminal, Problems, Output, Test Results, and Debug surfaces with a mode strip.
-        var terminalTabHost = new TerminalTabHost(_settings);
-        var problemsPanel = new ProblemsPanel { IsVisible = false };
-        var outputPanel = new OutputPanel { IsVisible = false };
-        var testResultsPanel = new TestResultsPanel { IsVisible = false };
-        var debugPanel = new DebugPanel { IsVisible = false };
-        _problemsPanel = problemsPanel;
-        _outputPanel = outputPanel;
-        _testResultsPanel = testResultsPanel;
-        _debugPanel = debugPanel;
-
-        var terminalTabButton = new Button
-        {
-            Content = "Terminal",
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        terminalTabButton.Click += (_, _) =>
-        {
-            if (ViewModel is not null)
-                ViewModel.SwitchToTerminalBottomCommand.Execute().Subscribe();
-        };
-
-        var problemsTabButton = new Button
-        {
-            Content = "Problems",
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        problemsTabButton.Click += (_, _) =>
-        {
-            if (ViewModel is not null)
-                ViewModel.SwitchToProblemsBottomCommand.Execute().Subscribe();
-        };
-
-        var outputTabButton = new Button
-        {
-            Content = "Output",
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = TypographyTokens.FontSizeSm,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        outputTabButton.Click += (_, _) =>
-        {
-            if (ViewModel is not null)
-                ViewModel.SwitchToOutputBottomCommand.Execute().Subscribe();
-        };
-
-        var testResultsTabButton = new Button
-        {
-            Content = "Test Results",
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = TypographyTokens.FontSizeSm,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        testResultsTabButton.Click += (_, _) =>
-        {
-            if (ViewModel is not null)
-                ViewModel.SwitchToTestResultsBottomCommand.Execute().Subscribe();
-        };
-
-        var debugTabButton = new Button
-        {
-            Content = "Debug",
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            FontSize = TypographyTokens.FontSizeSm,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-        debugTabButton.Click += (_, _) =>
-        {
-            if (ViewModel is not null)
-                ViewModel.SwitchToDebugBottomCommand.Execute().Subscribe();
-        };
-
-        var bottomModeStrip = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = LayoutTokens.SpacingXxs,
-            Children =
-            {
-                terminalTabButton,
-                problemsTabButton,
-                outputTabButton,
-                testResultsTabButton,
-                debugTabButton,
-            },
-        };
-
-        var bottomContent = new Grid
-        {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
-            },
-            Children =
-            {
-                bottomModeStrip,
-                terminalTabHost,
-                problemsPanel,
-                outputPanel,
-                testResultsPanel,
-                debugPanel,
-            },
-        };
-        Grid.SetRow(bottomModeStrip, 0);
-        Grid.SetRow(terminalTabHost, 1);
-        Grid.SetRow(problemsPanel, 1);
-        Grid.SetRow(outputPanel, 1);
-        Grid.SetRow(testResultsPanel, 1);
-        Grid.SetRow(debugPanel, 1);
-
-        var bottomPanel = new Border
-        {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            Padding = LayoutTokens.NoneThickness,
-            // M5-allow: M1 introduced the 1px top seam above the bottom panel to preserve the raised-layer split.
-            Margin = LayoutTokens.Inset(0, 1, 0, 0),
-            Child = bottomContent
-        };
-        bottomPanel.IsVisible = false;
-        Grid.SetColumn(bottomPanel, 3);
-        Grid.SetColumnSpan(bottomPanel, 3); // Under center + editor only
-        Grid.SetRow(bottomPanel, 2);
-        grid.Children.Add(bottomPanel);
+        var bottomPanelHost = new BottomPanelHost(_settings);
+        bottomPanelHost.AttachToLayoutGrid(grid, bottomSplitterRow, bottomPanelRow);
+        var terminalTabHost = bottomPanelHost.TerminalTabHost;
+        _problemsPanel = bottomPanelHost.ProblemsPanel;
+        _outputPanel = bottomPanelHost.OutputPanel;
+        _testResultsPanel = bottomPanelHost.TestResultsPanel;
+        _debugPanel = bottomPanelHost.DebugPanel;
 
         // --- Status Bar (full width, row 3) ---
         var statusBar = new StatusBar();
@@ -850,7 +662,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         Content = grid;
         _layoutRoot = grid;
         return (navBar, fileTreeView, sourceControlPanel, townhallView, statusBar,
-            terminalTabHost, agentPanelHostView, bottomPanel, bottomPanelSplitter, bottomSplitterRow, bottomPanelRow, statusBarRow);
+            terminalTabHost, agentPanelHostView, bottomPanelHost, bottomSplitterRow, bottomPanelRow, statusBarRow);
     }
 
     private Task HandleShowSettingsAsync(IInteractionContext<System.Reactive.Unit, bool> context)
