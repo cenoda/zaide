@@ -334,4 +334,260 @@ public sealed class AgentTownhallMirrorCoordinatorTests
         Assert.Equal("Assistant: Routed reply", mirrored.Content);
         Assert.Equal(before + 2, townhall.Messages.Count);
     }
+
+    [Fact]
+    public async Task SendAsync_SwitchDuringAwait_Success_RemainsInAdmittedChannel()
+    {
+        var (sut, host, townhall, panel, exec, store, channelA, channelB) = CreateDelayedSut();
+        var admissionGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>(async (id, msg, _) =>
+            {
+                await admissionGate.Task;
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
+                return AgentExecutionTestSupport.SuccessResult(p);
+            });
+
+        var sendTask = sut.SendAsync(panel.PanelId, "delayed hello", CancellationToken.None);
+        townhall.SelectChannelCommand.Execute(channelB).Subscribe();
+        admissionGate.SetResult(true);
+        await sendTask;
+
+        AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: true);
+        Assert.Equal("delayed hello", GetChannelMirrorContent(store, channelA, ConversationEntryKind.UserChat));
+        Assert.Equal("Assistant: Hello back", GetChannelMirrorContent(store, channelA, ConversationEntryKind.AssistantResponse));
+    }
+
+    [Fact]
+    public async Task SendAsync_SwitchDuringAwait_ExecutionFailure_RemainsInAdmittedChannel()
+    {
+        var (sut, host, townhall, panel, exec, store, channelA, channelB) = CreateDelayedSut();
+        var admissionGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>(async (id, msg, _) =>
+            {
+                await admissionGate.Task;
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                AgentPanelTestSupport.SimulateDirectSendError(store, p, msg);
+                return AgentExecutionTestSupport.ErrorResult(p);
+            });
+
+        var sendTask = sut.SendAsync(panel.PanelId, "delayed fail", CancellationToken.None);
+        townhall.SelectChannelCommand.Execute(channelB).Subscribe();
+        admissionGate.SetResult(true);
+        await sendTask;
+
+        AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: true);
+        var terminal = GetLastChannelMessage(townhall, channelA);
+        Assert.Equal("Error: Request failed", terminal.Content);
+        Assert.Equal(TownhallMessageKind.AgentError, terminal.Kind);
+    }
+
+    [Fact]
+    public async Task SendAsync_SwitchDuringAwait_StructuredCancellation_RemainsInAdmittedChannel()
+    {
+        var (sut, host, townhall, panel, exec, store, channelA, channelB) = CreateDelayedSut();
+        var admissionGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>(async (id, msg, _) =>
+            {
+                await admissionGate.Task;
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                AgentPanelTestSupport.AppendUserChat(store, p, msg);
+                return AgentExecutionTestSupport.ErrorResult(
+                    p,
+                    errorMessage: "Cancelled",
+                    outcome: ExecutionRunOutcome.Cancelled);
+            });
+
+        var sendTask = sut.SendAsync(panel.PanelId, "delayed cancel", CancellationToken.None);
+        townhall.SelectChannelCommand.Execute(channelB).Subscribe();
+        admissionGate.SetResult(true);
+        await sendTask;
+
+        AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: true);
+        Assert.Equal("Error: Cancelled", GetLastChannelMessage(townhall, channelA).Content);
+    }
+
+    [Fact]
+    public async Task SendAsync_SwitchDuringAwait_RoutingFailure_RemainsInAdmittedChannel()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
+        var exec = new Mock<IAgentExecutionCoordinator>();
+        var router = new AgentRouter(new MentionParser(), host, exec.Object);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        var channelA = townhall.ActiveChannelId!;
+        var channelB = townhall.Channels.First(c => c.Id != channelA).Id;
+        var sut = new AgentTownhallMirrorCoordinator(
+            router,
+            host,
+            townhall,
+            ConversationsTestSupport.CreateCatalogAsInterface());
+
+        await sut.SendAsync(panel.PanelId, "@Missing routed", CancellationToken.None);
+        townhall.SelectChannelCommand.Execute(channelB).Subscribe();
+
+        AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: true);
+        Assert.Equal("Routing failed: Unknown target", GetLastChannelMessage(townhall, channelA).Content);
+        exec.Verify(
+            c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SendAsync_SwitchDuringAwait_PropagatedCancellation_KeepsUserOnlyInAdmittedChannel()
+    {
+        var (sut, _, townhall, panel, exec, store, channelA, channelB) = CreateDelayedSut();
+        var admissionGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>(async (_, _, _) =>
+            {
+                await admissionGate.Task;
+                throw new OperationCanceledException();
+            });
+
+        var sendTask = sut.SendAsync(panel.PanelId, "propagated cancel", CancellationToken.None);
+        townhall.SelectChannelCommand.Execute(channelB).Subscribe();
+        admissionGate.SetResult(true);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sendTask);
+
+        AssertSwitchDuringAwaitAttribution(townhall, store, channelA, channelB, expectTerminal: false);
+        Assert.Equal("propagated cancel", GetChannelMirrorContent(store, channelA, ConversationEntryKind.UserChat));
+    }
+
+    [Fact]
+    public async Task SendAsync_NoSwitch_PreservesExistingBehavior()
+    {
+        var (sut, host, townhall, panel, exec, store, channelA, _) = CreateDelayedSut();
+        exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((id, msg, _) =>
+            {
+                var p = host.Panels.First(pp => pp.PanelId == id);
+                AgentPanelTestSupport.SimulateDirectSendSuccess(store, p, msg);
+                return Task.FromResult<AgentExecutionCoordinatorResult?>(
+                    AgentExecutionTestSupport.SuccessResult(p));
+            });
+
+        await sut.SendAsync(panel.PanelId, "no switch", CancellationToken.None);
+
+        Assert.True(store.TryGetChannelConversation(channelA, out var conversation));
+        Assert.Equal(2, conversation!.Entries.Count);
+        Assert.Equal("no switch", conversation.Entries[0].Content);
+        Assert.Equal("Assistant: Hello back", conversation.Entries[1].Content);
+        Assert.Equal(2, townhall.Messages.Count);
+    }
+
+    [Fact]
+    public void AddMirroredActivityToConversation_UnknownOrNonChannel_DoesNotMutateOtherConversations()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        var channelA = vm.ActiveChannelId!;
+        var direct = store.CreateDirectConversation(ActorId.HumanUser, ActorId.PanelSeed("alpha"));
+        var unknown = ConversationId.ForChannel("missing-channel");
+
+        vm.AddMirroredActivityToConversation(
+            unknown,
+            TownhallMessageKind.Chat,
+            "unknown target",
+            ActorId.HumanUser,
+            "user-1",
+            "User");
+        vm.AddMirroredActivityToConversation(
+            direct.Id,
+            TownhallMessageKind.Chat,
+            "direct target",
+            ActorId.HumanUser,
+            "user-1",
+            "User");
+
+        Assert.True(store.TryGetChannelConversation(channelA, out var channelConversation));
+        Assert.Empty(channelConversation!.Entries);
+        Assert.Empty(direct.Entries);
+        Assert.Empty(vm.Messages);
+    }
+
+    private static (
+        AgentTownhallMirrorCoordinator Coordinator,
+        AgentPanelHost Host,
+        TownhallViewModel Townhall,
+        AgentPanelState Panel,
+        Mock<IAgentExecutionCoordinator> Exec,
+        IConversationStore Store,
+        string ChannelA,
+        string ChannelB) CreateDelayedSut()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
+        var exec = new Mock<IAgentExecutionCoordinator>();
+        var router = new AgentRouter(new MentionParser(), host, exec.Object);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        var channelA = townhall.ActiveChannelId!;
+        var channelB = townhall.Channels.First(c => c.Id != channelA).Id;
+        var coordinator = new AgentTownhallMirrorCoordinator(
+            router,
+            host,
+            townhall,
+            ConversationsTestSupport.CreateCatalogAsInterface());
+
+        return (coordinator, host, townhall, panel, exec, store, channelA, channelB);
+    }
+
+    private static void AssertSwitchDuringAwaitAttribution(
+        TownhallViewModel townhall,
+        IConversationStore store,
+        string channelA,
+        string channelB,
+        bool expectTerminal)
+    {
+        Assert.True(store.TryGetChannelConversation(channelA, out var conversationA));
+        Assert.True(store.TryGetChannelConversation(channelB, out var conversationB));
+        Assert.Equal(expectTerminal ? 2 : 1, conversationA!.Entries.Count);
+        Assert.DoesNotContain(
+            conversationB!.Entries,
+            entry => entry.Kind is ConversationEntryKind.UserChat
+                or ConversationEntryKind.AssistantResponse
+                or ConversationEntryKind.ExecutionFailure
+                or ConversationEntryKind.RoutingFailure);
+        Assert.Single(
+            conversationB.Entries,
+            entry => entry.Kind == ConversationEntryKind.ChannelEvent);
+
+        Assert.Same(GetChannelMessages(townhall, channelB), townhall.Messages);
+        Assert.Single(GetChannelMessages(townhall, channelB));
+        Assert.Equal(TownhallMessageKind.ChannelEvent, GetChannelMessages(townhall, channelB)[0].Kind);
+        Assert.Equal(expectTerminal ? 2 : 1, GetChannelMessages(townhall, channelA).Count);
+        Assert.DoesNotContain(
+            GetChannelMessages(townhall, channelB),
+            message => message.Kind is TownhallMessageKind.Chat or TownhallMessageKind.AgentError);
+    }
+
+    private static string GetChannelMirrorContent(
+        IConversationStore store,
+        string channelId,
+        ConversationEntryKind kind)
+    {
+        Assert.True(store.TryGetChannelConversation(channelId, out var conversation));
+        return conversation!.Entries.Single(entry => entry.Kind == kind).Content;
+    }
+
+    private static TownhallMessage GetLastChannelMessage(TownhallViewModel townhall, string channelId) =>
+        GetChannelMessages(townhall, channelId)[^1];
+
+    private static System.Collections.ObjectModel.ObservableCollection<TownhallMessage> GetChannelMessages(
+        TownhallViewModel townhall,
+        string channelId)
+    {
+        var stateField = typeof(TownhallViewModel)
+            .GetField("_state", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var state = stateField!.GetValue(townhall);
+        var channelMessagesProperty = state!.GetType().GetProperty("ChannelMessages");
+        var channelMessages = (System.Collections.Generic.Dictionary<string, System.Collections.ObjectModel.ObservableCollection<TownhallMessage>>)channelMessagesProperty!.GetValue(state)!;
+        return channelMessages[channelId];
+    }
 }

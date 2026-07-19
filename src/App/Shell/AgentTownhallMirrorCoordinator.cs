@@ -6,6 +6,7 @@ using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -41,22 +42,30 @@ internal sealed class AgentTownhallMirrorCoordinator
     /// </summary>
     public async Task SendAsync(string panelId, string userMessage, CancellationToken ct)
     {
-        _townhallViewModel.AddMirroredActivity(
-            kind: TownhallMessageKind.Chat,
-            content: userMessage,
-            author: _actorCatalog.CanonicalHuman.Id,
-            senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
-            senderName: _actorCatalog.CanonicalHuman.DisplayName);
+        ConversationId? mirrorTargetConversationId = null;
+        if (_townhallViewModel.TryGetActiveChannelConversationId(out var capturedConversationId))
+        {
+            mirrorTargetConversationId = capturedConversationId;
+            _townhallViewModel.AddMirroredActivityToConversation(
+                capturedConversationId,
+                kind: TownhallMessageKind.Chat,
+                content: userMessage,
+                author: _actorCatalog.CanonicalHuman.Id,
+                senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
+                senderName: _actorCatalog.CanonicalHuman.DisplayName);
+        }
 
         var routeResult = await _agentRouter.RouteAndExecuteAsync(panelId, userMessage, ct);
 
-        if (routeResult.ExecutionResult is not null)
+        if (routeResult.ExecutionResult is not null && mirrorTargetConversationId is not null)
         {
-            MirrorTerminalExecution(routeResult.ExecutionResult);
+            MirrorTerminalExecution(mirrorTargetConversationId.Value, routeResult.ExecutionResult);
         }
     }
 
-    private void MirrorTerminalExecution(AgentExecutionCoordinatorResult executionResult)
+    private void MirrorTerminalExecution(
+        ConversationId mirrorTargetConversationId,
+        AgentExecutionCoordinatorResult executionResult)
     {
         var run = executionResult.Run;
         var panel = _agentPanelHost.Panels.FirstOrDefault(p => p.PanelId == run.TargetPanelId);
@@ -81,7 +90,8 @@ internal sealed class AgentTownhallMirrorCoordinator
         switch (run.Outcome)
         {
             case ExecutionRunOutcome.Success:
-                _townhallViewModel.AddMirroredActivity(
+                _townhallViewModel.AddMirroredActivityToConversation(
+                    mirrorTargetConversationId,
                     kind: TownhallMessageKind.Chat,
                     content: $"Assistant: {executionResult.AssistantResponse}",
                     author: run.TargetActorId,
@@ -90,7 +100,8 @@ internal sealed class AgentTownhallMirrorCoordinator
                 break;
 
             case ExecutionRunOutcome.RoutingFailure:
-                _townhallViewModel.AddMirroredActivity(
+                _townhallViewModel.AddMirroredActivityToConversation(
+                    mirrorTargetConversationId,
                     kind: TownhallMessageKind.AgentError,
                     content: $"Routing failed: {executionResult.ErrorMessage}",
                     author: run.TargetActorId,
@@ -100,7 +111,8 @@ internal sealed class AgentTownhallMirrorCoordinator
 
             case ExecutionRunOutcome.ExecutionFailure:
             case ExecutionRunOutcome.Cancelled:
-                _townhallViewModel.AddMirroredActivity(
+                _townhallViewModel.AddMirroredActivityToConversation(
+                    mirrorTargetConversationId,
                     kind: TownhallMessageKind.AgentError,
                     content: $"Error: {executionResult.ErrorMessage}",
                     author: run.TargetActorId,

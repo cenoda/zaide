@@ -2,9 +2,9 @@
 
 ## Status and authorization
 
-**Refactor 7 status:** **M5b accepted (2026-07-19). M6 only authorized, not
-implemented.** M1 accepted at `edc5dac`. M2 accepted at `94a609f`. M3 accepted
-at `0902641`. M4 accepted at `38418ed`. M5a accepted at `d3bf701`. M7,
+**Refactor 7 status:** **M6 implemented, pending acceptance (2026-07-19).** M1 accepted
+at `edc5dac`. M2 accepted at `94a609f`. M3 accepted at `0902641`. M4 accepted
+at `38418ed`. M5a accepted at `d3bf701`. M5b accepted at `e284ecc`. M7,
 Refactor 8, and Phase 14 remain unauthorized.
 
 This document is the accepted Refactor 7 M0 planning gate. It audits the live
@@ -18,7 +18,8 @@ result-invariant hardening `3a318cf`), and **M5a** at commit `d3bf701`
 correlation-id invariant hardening `d3bf701`), and **M5b** at commit `e284ecc`
 (implementation `e284ecc` including projection-disposal lifecycle hardening).
 **M6 only** is authorized as the next separately verifiable implementation
-milestone. M7, Refactor 8, and Phase 14 remain unauthorized.
+milestone. M7, Refactor 8, and Phase 14 remain unauthorized. **M6
+implementation is complete and pending human acceptance.**
 
 **Dependency status:** Refactor 6.1, Refactor 6.2, and Refactor 6.3 are
 accepted and closed. Refactor 6.3's lifetime map and feature-first composition
@@ -440,7 +441,15 @@ automated proof must still cover the ownership/attribution contract.
       panel history surface, dual-write removal, parity/lifetime tests, and
       projection disposal on close are accepted at `e284ecc`.
 - [x] Human accepted M5b closeout on 2026-07-19; **M6 only** is authorized.
-- [ ] M6 implementation has not started.
+- [x] M6 implementation complete on 2026-07-19; pending human acceptance. M7, Refactor 8, and Phase 14 remain unauthorized.
+
+## Entry conditions for M7
+
+- [ ] M6 public-channel mirror attribution capture, targeted admission API,
+      switch-during-await regression coverage, and preserved cancellation
+      behavior are accepted.
+- [ ] Human accepted M6 closeout; **M7 only** is authorized. Refactor 8 and
+      Phase 14 remain unauthorized.
 
 ## Entry conditions for M2
 
@@ -514,4 +523,4 @@ automated proof must still cover the ownership/attribution contract.
 
 ---
 
-*Last updated: 2026-07-19 (M5b accepted at `e284ecc`; M6 only authorized and not implemented; M7, Refactor 8, and Phase 14 unauthorized)*
+*Last updated: 2026-07-19 (Refactor 7 M6 implemented, pending acceptance; M7, Refactor 8, and Phase 14 unauthorized)*

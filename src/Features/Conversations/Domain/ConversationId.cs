@@ -38,4 +38,23 @@ public readonly struct ConversationId : IEquatable<ConversationId>
     public static bool operator !=(ConversationId left, ConversationId right) => !left.Equals(right);
 
     public override string ToString() => Value;
+
+    /// <summary>
+    /// Returns the channel presentation key when this identity was created by
+    /// <see cref="ForChannel"/>.
+    /// </summary>
+    public bool TryGetChannelId(out string channelId)
+    {
+        const string prefix = "channel:";
+        if (_value is not null
+            && _value.StartsWith(prefix, StringComparison.Ordinal)
+            && _value.Length > prefix.Length)
+        {
+            channelId = _value[prefix.Length..];
+            return true;
+        }
+
+        channelId = string.Empty;
+        return false;
+    }
 }

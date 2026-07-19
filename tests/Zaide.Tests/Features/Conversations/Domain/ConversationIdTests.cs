@@ -28,6 +28,23 @@ public sealed class ConversationIdTests
     }
 
     [Fact]
+    public void TryGetChannelId_ReturnsChannelPresentationKey()
+    {
+        var channelConversation = ConversationId.ForChannel("channel-2");
+
+        Assert.True(channelConversation.TryGetChannelId(out var channelId));
+        Assert.Equal("channel-2", channelId);
+    }
+
+    [Fact]
+    public void TryGetChannelId_RejectsDirectConversationIds()
+    {
+        Assert.False(ConversationId.NewDirect().TryGetChannelId(out var channelId));
+        Assert.Equal(string.Empty, channelId);
+        Assert.False(default(ConversationId).TryGetChannelId(out channelId));
+    }
+
+    [Fact]
     public void Equality_IsOrdinalAndExact()
     {
         var left = ConversationId.ForChannel("channel-2");

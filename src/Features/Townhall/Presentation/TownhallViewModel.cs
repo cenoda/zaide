@@ -247,6 +247,27 @@ public class TownhallViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Resolves the authoritative channel conversation for the currently active
+    /// public channel. Used to capture mirror ownership at send admission.
+    /// </summary>
+    public bool TryGetActiveChannelConversationId(out ConversationId conversationId)
+    {
+        conversationId = default;
+        if (_state.ActiveChannelId is null)
+        {
+            return false;
+        }
+
+        if (!_conversationStore.TryGetChannelConversation(_state.ActiveChannelId, out var conversation))
+        {
+            return false;
+        }
+
+        conversationId = conversation.Id;
+        return true;
+    }
+
+    /// <summary>
     /// Appends a mirrored activity entry to the active channel's message collection.
     /// This is the narrow public surface for app-layer mirroring (e.g., agent-panel
     /// interactions mirrored into Townhall). Keeps channel/message-list invariants
@@ -268,6 +289,22 @@ public class TownhallViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Appends a mirrored activity entry to the specified channel conversation.
+    /// Does not consult the active channel and silently no-ops when the target is
+    /// unknown or is not a Townhall channel conversation.
+    /// </summary>
+    public void AddMirroredActivityToConversation(
+        ConversationId conversationId,
+        TownhallMessageKind kind,
+        string content,
+        ActorId author,
+        string senderId,
+        string senderName)
+    {
+        AppendMirroredActivity(conversationId, kind, content, author, senderId, senderName);
+    }
+
+    /// <summary>
     /// Appends a classified activity entry to the active channel's message collection.
     /// Writes the authoritative typed entry to the channel conversation, then
     /// projects it into the legacy Townhall compatibility collection.
@@ -285,13 +322,32 @@ public class TownhallViewModel : ReactiveObject
         if (!_conversationStore.TryGetChannelConversation(_state.ActiveChannelId, out var conversation))
             return;
 
-        // Ensure the channel has a messages list in the dictionary
-        if (!_state.ChannelMessages.ContainsKey(_state.ActiveChannelId))
+        AppendMirroredActivity(conversation.Id, kind, content, author, senderId, senderName);
+    }
+
+    private void AppendMirroredActivity(
+        ConversationId conversationId,
+        TownhallMessageKind kind,
+        string content,
+        ActorId author,
+        string senderId,
+        string senderName)
+    {
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+            return;
+
+        if (conversation.Kind != ConversationKind.Channel)
+            return;
+
+        if (!conversationId.TryGetChannelId(out var channelId))
+            return;
+
+        if (!_state.ChannelMessages.ContainsKey(channelId))
         {
-            _state.ChannelMessages[_state.ActiveChannelId] = new ObservableCollection<TownhallMessage>();
+            _state.ChannelMessages[channelId] = new ObservableCollection<TownhallMessage>();
         }
 
-        var messagesList = _state.ChannelMessages[_state.ActiveChannelId];
+        var messagesList = _state.ChannelMessages[channelId];
         var entryKind = TownhallEntryProjection.ClassifyTownhallMirror(
             kind,
             author,
