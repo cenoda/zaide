@@ -2,13 +2,13 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M6 accepted (2026-07-19).** M0 planning gate accepted;
+**Refactor 8 status:** **M7 accepted (2026-07-20).** M0 planning gate accepted;
 M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
 M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
 M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
 M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`;
-M6 Townhall presentation maintainability cleanup accepted at `1ca1e08` (smoke docs `3b40af8`).
-**M7 agent panel presentation maintainability cleanup implemented; pending human acceptance.**
+M6 Townhall presentation maintainability cleanup accepted at `1ca1e08` (smoke docs `3b40af8`);
+M7 agent panel presentation maintainability cleanup accepted at `000d486`.
 M8+ unauthorized until explicit authorization.
 
 **Production and test code must not change under M0.** M0 is documentation-
@@ -328,7 +328,7 @@ expanding concern.
 | **M4** | **Extract main layout builder** (column definitions, nav/left/townhall placement, splitters, status bar attach) so `MainWindow` composes hosts rather than inlining geometry. Preserve `GridLayoutResizeHelper` behavior. | Build; shell tests; Architecture; full suite; manual default + min window layout smoke | **[x] 2026-07-19** |
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
-| **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke | implemented; pending human acceptance |
+| **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke | **[x] 2026-07-20** |
 | **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX |
 
 ### Milestone slice rule
@@ -660,7 +660,7 @@ No `dotnet` production change is required for M0.
 - [x] Build; Agents.Presentation tests; Architecture; full suite green.
 - [x] Manual smoke: multi-panel create/send/tab-switch at default (1280×800) and
       minimum (960×600) on Linux `DISPLAY=:1`.
-- [ ] Human accepts M7 closeout. M8 remains unauthorized until explicit
+- [x] Human accepts M7 closeout at `000d486`. M8 remains unauthorized until explicit
       authorization.
 
 ### Exit conditions for Refactor 8 (after M8)
@@ -1261,6 +1261,13 @@ Linux `DISPLAY=:1` with `xdotool` (`/tmp/zaide-m7-smoke.sh`):
 2. **Minimum size (960×600):** repeated multi-tab create/send/tab-switch cycle.
 3. Window remained alive throughout; app log contained no errors or exceptions.
 
+### Acceptance (2026-07-20)
+
+Human accepted M7 at `000d486` after the no-resource fallback repair
+(`PaletteTokens.GetBrush` with `#121722` / `#0B0F17`). Focused
+Agents.Presentation + Architecture gates: **75/75**; build succeeded with
+four pre-existing warnings; full suite exited cleanly.
+
 ---
 
-*Last updated: 2026-07-20 (Refactor 8 M7 implemented; pending human acceptance; M8+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-20 (Refactor 8 M7 accepted at `000d486`; M8+ unauthorized; Phase 14 unauthorized)*
