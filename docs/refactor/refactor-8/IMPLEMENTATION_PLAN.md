@@ -11,7 +11,10 @@ overlay focus wiring extracted and accepted at `d947efa`; M6 Townhall
 presentation maintainability cleanup accepted at `1ca1e08` (smoke docs
 `3b40af8`); M7 agent panel presentation maintainability cleanup accepted at
 `000d486` (status docs `b07e3f4`); M8 docs/status truth-sync accepted.
-Phase 14 remains unauthorized.
+Phase 14 M0 is a separate plan
+([`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../../phases/v3/phase-14/IMPLEMENTATION_PLAN.md));
+Phase 14 production work remains unauthorized until that M0 is accepted and a
+named milestone is authorized.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly

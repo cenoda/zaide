@@ -29,10 +29,12 @@ ordered shutdown, shell extractions, Settings panel factory, visibility
 reduction (−26 public types across M11a–M11d), and the 67-row lifetime map
 (`LIFETIME_MAP.md`). Deliberate residuals:
 `CompositionRoot.Services` plus LocatorSite FindingIds
-`R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 / 8 and Phase 14
-have no production authorization until their own M0 acceptances. Non-C#
-assets remain outside the root-admission ratchet. No V3 production feature
-implementation is active.
+`R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 and 8 are complete
+and closed. Phase 14 M0 is written at
+[`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
+and is **accepted (2026-07-20)**; **no Phase 14 production milestone is
+authorized** until a named milestone is explicitly approved. Non-C# assets
+remain outside the root-admission ratchet.
 
 ---
 
@@ -138,7 +140,7 @@ by the root-admission detectors.
 | Refactor 6.3 | Closed; composition residuals documented above |
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
-| Phase 14 | Unauthorized until its own accepted M0 |
+| Phase 14 | M0 accepted (2026-07-20); M1+ production unauthorized |
 
 ---
 
@@ -347,4 +349,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-20 (Refactor 8 M8 accepted; Refactor 8 complete and closed; baselines public 339 / internal 111 / total 450, tracked prod C# 412 / App 42 / UI 4 / Features 366, DI 69 / Registration modules 12; Phase 14 unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M0 accepted; baselines public 339 / internal 111 / total 450; M1+ production unauthorized)*

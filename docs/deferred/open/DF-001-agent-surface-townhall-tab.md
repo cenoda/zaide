@@ -21,40 +21,41 @@ Panel may be retired only after Phase 14 proves required behavior parity.
 ## Current behavior
 
 The agent surface is currently treated separately from the Townhall tab model.
-The V3 discovery roadmap now records the accepted product direction. Detailed
-interaction, persistence, migration, and ownership boundaries remain pending
-the pre-Phase-14 refactors and Phase 14 M0.
+Refactor 7 delivered typed conversations and direct-conversation entries behind
+the Agent Panel. Refactor 8 extracted shell/Townhall/Agent presentation structure.
+The dedicated Agent Panel remains visible; public channel mirroring of agent
+sends remains; there is still no Townhall DM navigation.
 
 ## Evidence
 
 - Test or smoke-check: Product/UI review observation
 - Reproduction steps: Not applicable
 - Output, screenshot, or log: None captured
-- Relevant code path: See `docs/roadmap/V3.md`; live paths must be traced in
-  Refactor 7, Refactor 8, and Phase 14 M0
+- Relevant code path: See `docs/roadmap/V3.md` and
+  `docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md` (M0 live audit)
 
 ## Why deferred
 
-The direction is accepted, but implementation depends on the conversation
-domain, UI foundation, backend capability, persistence, privacy, and migration
-contracts. It is not part of an active implementation scope.
+Direction is accepted. Pre-Phase-14 refactors are closed. Phase 14 M0 is
+accepted (2026-07-20); production milestones (DM nav, privacy, persistence,
+panel retirement) remain unauthorized until each is explicitly approved.
 
 ## Investigation notes
 
 This is a broader conversation-system decision, not only a visual relocation
-or tab-hosting change. V3 discovery requires one owning `ConversationId`,
-explicit visibility, participant membership, and private Agent DMs. Refactor 7
-and Refactor 8 prepare the domain and UI seams; Phase 14 owns visible unification
-and dedicated-panel retirement after parity evidence.
+or tab-hosting change. V3 requires one owning `ConversationId`, explicit
+visibility, participant membership, and private Agent DMs. Phase 14 M0 locks
+milestones M1–M9 and the retirement parity checklist; DF-001 closes when M8
+retires the panel (or closeout records an accepted residual).
 
 ## Revisit trigger
 
-Revisit after Refactor 7 and Refactor 8 closeout; resolve only when Phase
-14 closes the visible migration and parity boundary.
+Revisit when Phase 14 M0 is accepted and implementation milestones are
+authorized; resolve when Phase 14 M8/M9 close the visible migration and parity
+boundary.
 
 ## Resolution
 
 - **Outcome:** open
-- **Fix/issue/phase:** V3 Refactor 7, Refactor 8, and Phase 14 (planned direction;
-  no implementation authorized)
+- **Fix/issue/phase:** Phase 14 (M0 accepted 2026-07-20; M1+ unauthorized)
 - **Commit or date:**
