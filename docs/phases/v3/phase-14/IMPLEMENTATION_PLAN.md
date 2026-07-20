@@ -116,8 +116,8 @@ milestone that owns it, with tests and (when UI-visible) manual evidence.
 | Gap | Evidence | Owning milestone |
 |-----|----------|------------------|
 | No Townhall navigation for direct conversations | `TownhallChannelPanel` / `TownhallViewModel` expose channels only | M2 |
-| No stable find-or-create direct by participant pair | `ConversationStore.CreateDirectConversation` always `NewDirect()` | M1 |
-| No conversation enumeration API | `IConversationStore` lacks list/query | M1 |
+| ~~No stable find-or-create direct by participant pair~~ | **Closed in M1:** `GetOrCreateDirectConversation` + `DirectParticipantPairKey` (`5397ade`) | M1 ✅ |
+| ~~No conversation enumeration API~~ | **Closed in M1:** `ListConversations()` (`5397ade`) | M1 ✅ |
 | Single global Townhall draft | `TownhallState.DraftText` not keyed by conversation | M5 |
 | Panel drafts not conversation-owned | `AgentPanelState.DraftInput` is panel-local | M5 |
 | No unread/read cursor | Absent in domain and UI | M5 |
@@ -439,6 +439,9 @@ M2+ remains unauthorized until explicitly approved.
 
 ## M1 closeout (2026-07-20)
 
+**Acceptance commit:** `5397ade`  
+(`feat(conversations): add store navigation seams for direct participant pairs (Phase 14 M1)`)
+
 **Pair-key rule (D05):** `DirectParticipantPairKey.FromActors` sorts two distinct
 `ActorId` values by **ordinal string comparison** on `ActorId.Value` before
 indexing; argument order does not create duplicate directs.
@@ -478,8 +481,8 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Audit amendments: per-panel concurrency; UI acceptance lock (V3 §18); LOC recount + counting rule; membership vs channel participants; V2 migration N/A; M1 pair-key handoff; re-send vs retry (D21); dual-write public API naming; SQLite prose; suite not re-run note. |
 | 2026-07-20 | Human accepted amended M0. Production milestones still unauthorized. |
 | 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
-| 2026-07-20 | **M1 complete** — store navigation seams; pair key via ordinal-sorted `ActorId.Value`; panel find-or-create wired. M2+ unauthorized. |
+| 2026-07-20 | **M1 complete** at `5397ade` — store navigation seams; pair key via ordinal-sorted `ActorId.Value`; panel find-or-create wired. M2+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M1 complete; M2+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M1 complete at `5397ade`; M2+ unauthorized)*
