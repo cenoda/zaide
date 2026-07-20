@@ -242,11 +242,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         TerminalHost = terminalHost;
         AgentPanelHost = agentPanelHost;
         TownhallViewModel = townhallViewModel;
-        _agentTownhallMirror = new AgentTownhallMirrorCoordinator(
-            agentRouter,
-            agentPanelHost,
-            townhallViewModel,
-            actorCatalog);
+        _agentTownhallMirror = new AgentTownhallMirrorCoordinator(agentRouter);
         SourceControlViewModel = sourceControlViewModel;
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         ProjectWorkflowViewModel = projectWorkflowViewModel ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));

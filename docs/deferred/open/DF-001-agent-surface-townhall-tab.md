@@ -23,8 +23,10 @@ Panel may be retired only after Phase 14 proves required behavior parity.
 The agent surface is currently treated separately from the Townhall tab model.
 Refactor 7 delivered typed conversations and direct-conversation entries behind
 the Agent Panel. Refactor 8 extracted shell/Townhall/Agent presentation structure.
-The dedicated Agent Panel remains visible; public channel mirroring of agent
-sends remains; there is still no Townhall DM navigation.
+The dedicated Agent Panel remains visible. **Phase 14 M4 (2026-07-20):** agent-panel
+sends no longer mirror into public channels. Townhall DM navigation and unified
+send shipped in M2–M3. Persistence, draft/unread, parity bridge, and panel
+retirement remain unauthorized (M5+).
 
 ## Evidence
 
@@ -36,10 +38,9 @@ sends remains; there is still no Townhall DM navigation.
 
 ## Why deferred
 
-Direction is accepted. Pre-Phase-14 refactors are closed. Phase 14 M0 is
-accepted and M1 (store seams only) is authorized (2026-07-20). DM nav,
-privacy, persistence, and panel retirement remain unauthorized until their
-milestones are approved.
+Direction is accepted. Pre-Phase-14 refactors are closed. Phase 14 M0–M4 are
+complete (2026-07-20). Persistence, draft/unread, parity bridge, and panel
+retirement remain unauthorized until their milestones are approved.
 
 ## Investigation notes
 
@@ -58,5 +59,5 @@ boundary.
 ## Resolution
 
 - **Outcome:** open
-- **Fix/issue/phase:** Phase 14 (M0 accepted; M1 authorized only 2026-07-20; M2+ unauthorized)
+- **Fix/issue/phase:** Phase 14 (M0–M4 complete 2026-07-20; M5+ unauthorized)
 - **Commit or date:**

@@ -311,27 +311,6 @@ public class TownhallViewModel : ReactiveObject
         }
     }
 
-    /// <summary>
-    /// Resolves the authoritative channel conversation for the currently active
-    /// public channel. Used to capture mirror ownership at send admission.
-    /// </summary>
-    public bool TryGetActiveChannelConversationId(out ConversationId conversationId)
-    {
-        conversationId = default;
-        if (_state.ActiveChannelId is null)
-        {
-            return false;
-        }
-
-        if (!_conversationStore.TryGetChannelConversation(_state.ActiveChannelId, out var conversation))
-        {
-            return false;
-        }
-
-        conversationId = conversation.Id;
-        return true;
-    }
-
     private void SelectConversation(ConversationId conversationId)
     {
         if (!_conversationStore.TryGet(conversationId, out var conversation))
@@ -588,22 +567,6 @@ public class TownhallViewModel : ReactiveObject
         {
             // Swallow: presentation projection must not fail the write path.
         }
-    }
-
-    /// <summary>
-    /// Appends a mirrored activity entry to the specified channel conversation.
-    /// Does not consult the active channel and silently no-ops when the target is
-    /// unknown or is not a Townhall channel conversation.
-    /// </summary>
-    public void AddMirroredActivityToConversation(
-        ConversationId conversationId,
-        ConversationEntryKind entryKind,
-        string content,
-        ActorId author,
-        string senderId,
-        string senderName)
-    {
-        AppendMirroredActivity(conversationId, entryKind, content, author, senderId, senderName);
     }
 
     /// <summary>

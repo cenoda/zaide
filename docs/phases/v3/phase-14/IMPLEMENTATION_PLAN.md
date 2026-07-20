@@ -6,9 +6,10 @@
 navigation seams. **M2 complete (2026-07-20)** — Townhall navigation for channels and
 direct conversations. **M3 complete (2026-07-20)** — unified conversation surface for
 selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
-**M4 and later milestones remain unauthorized** until a human explicitly authorizes the
-next named milestone only. M3 does **not** authorize privacy changes, persistence
-implementation, Agent Panel retirement, or any later milestone scope.
+**M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
+**M5 and later milestones remain unauthorized** until a human explicitly authorizes the
+next named milestone only. M4 does **not** authorize persistence implementation,
+Agent Panel retirement, or any later milestone scope.
 
 **Dependency status:**
 
@@ -62,13 +63,13 @@ a named plan amendment rather than silently adding a package.
 | Conversation store | `IConversationStore` / `ConversationStore` (singleton) | Create channel/direct, `TryGet`, `TryGetChannelConversation`, `AppendEntry`, `EntryAppended`. **No enumerate, no find-direct-by-participants, no remove/archive, no persistence.** |
 | Entry kinds | `ConversationEntryKind` | `UserChat`, `AssistantResponse`, `RoutingFailure`, `ExecutionFailure`, `ChannelEvent`, `SystemNotification`. Tool/think/raw-trace kinds intentionally absent. |
 | Townhall presentation state | `TownhallState` + `TownhallViewModel` | Channels list, `ActiveChannelId`, per-channel `ChannelMessages` compatibility collections, single global `DraftText`, people roster (`WorkspaceAgent`). Seeds three channels on first run. |
-| Townhall dual-write | Public: `TownhallViewModel.AddMirroredActivityToConversation`; private helper `AppendMirroredActivity` | Writes typed entry to `IConversationStore`, then projects into `TownhallState.ChannelMessages` via `TownhallEntryProjection`. Selection still uses string channel id, not a general conversation selector. |
+| Townhall channel activity | `TownhallViewModel.LogActivity` / `AppendMirroredActivity` (private) | Channel chat send and channel-switch events write typed entries to the active channel conversation and project into `TownhallState.ChannelMessages`. Agent-panel sends no longer use this path (M4). |
 | Agent panel lifetime | `IAgentPanelHost` / `AgentPanelHost` | Creates panel → `CreateDirectConversation(Human, actor)` → output projection. Close disposes projection only; **does not cancel in-flight work**; conversation remains orphaned in store with no UI re-entry path. |
 | Panel presentation | `AgentPanelState` | `PanelId` (presentation), `ConversationId` (domain), `ActorId` projections, `Status`/`IsBusy` strings, `DraftInput`, read-only `OutputHistory` lines. |
 | Direct output projection | `AgentPanelOutputHistoryProjection` + `AgentPanelEntryProjection` | Subscribes to `EntryAppended`; maps typed entries to legacy `"User: "` / `"Assistant: "` / `"Error: "` strings. |
 | Execution | `AgentExecutionCoordinator` → `IAgentExecutionService` | **At most one in-flight send per panel** (`_inFlightPanels` is a `HashSet` of panel ids). Concurrent sends on different panels are not globally serialized. Appends user/assistant/failure to **panel** `ConversationId`; clears draft; non-streaming only. Cancel via `CancellationToken` yields cancelled outcome. **No first-class retry command** — product path is re-send. |
 | Routing | `MentionParser` + `AgentRouter` | Resolves `@Name` against **visible open panel display names**, then routes by panel id / typed actor. Routing failures produce coordinator results without appending a direct-conversation entry in the router path; mirror may still publish to public Townhall. |
-| Public mirror | `AgentTownhallMirrorCoordinator` (constructed by `MainWindowViewModel`, not DI) | At send admission, captures **active public channel** `ConversationId`, writes user activity there, awaits route/execute, mirrors terminal outcome to the **captured** channel. Privacy-violating product behavior relative to V3 locked direction; intentional until Phase 14 privacy milestone. |
+| Public mirror | ~~`AgentTownhallMirrorCoordinator`~~ **Removed in M4** | Agent-panel send routes/executes only; no implicit copy into public channels. `AgentTownhallMirrorCoordinator` name retained as thin router forwarder. |
 | Shell layout | `MainLayoutBuilder` + `RightColumnHost` | Townhall is center star column; agent panel lives under editor in right column (`AgentPanelHostView` row 2). Dedicated panel is still first-class chrome. |
 | DI modules | `AddZaideConversations`, `AddZaideTownhall`, `AddZaideAgents` | Conversations: catalog + store singletons. Townhall: `TownhallState` + `TownhallViewModel`. Agents: panel host, execution, router, `HttpClient`. No conversation navigation or persistence services. |
 | Architecture baselines | `PublicProductionTypeBaseline` / inventory reader | **339** public / **111** internal / **450** total top-level production types. Prefer `internal` for new types. |
@@ -87,7 +88,7 @@ amendment on baseline `1dc4cf8`.
 | Conversations feature | `src/Features/Conversations/**/*.cs` | **810** |
 | Townhall feature | `src/Features/Townhall/**/*.cs` | **2,117** |
 | Agents feature | `src/Features/Agents/**/*.cs` | **2,191** |
-| Shell mirror coordinator | `src/App/Shell/AgentTownhallMirrorCoordinator.cs` | 123 |
+| Shell mirror coordinator | `src/App/Shell/AgentTownhallMirrorCoordinator.cs` | 27 |
 | Right column (editor + agent) | `src/App/Shell/RightColumnHost.cs` | 110 |
 | Main window | `src/App/Shell/MainWindow.axaml.cs` | 486 |
 | Full suite at Refactor 8 closeout | docs record only — **not re-run for this M0** | **2523** passed (historical) |
@@ -100,8 +101,8 @@ milestone that owns it, with tests and (when UI-visible) manual evidence.
 
 1. **Dedicated Agent Panel remains visible** until M8 retirement is authorized
    and parity evidence is accepted.
-2. **Public mirror of agent-panel sends into the active/captured Townhall
-   channel remains** until the privacy milestone (M4) is authorized.
+2. ~~**Public mirror of agent-panel sends into the active/captured Townhall
+   channel remains** until the privacy milestone (M4) is authorized.~~ **Closed in M4** — agent-panel sends no longer copy into public channels.
 3. **Direct send, `@mention` routing, busy/idle/error presentation, draft
    clear-on-send, and panel close-does-not-cancel** remain until their owning
    milestones redefine them with parity tests.
@@ -123,7 +124,7 @@ milestone that owns it, with tests and (when UI-visible) manual evidence.
 | Single global Townhall draft | `TownhallState.DraftText` not keyed by conversation | M5 |
 | Panel drafts not conversation-owned | `AgentPanelState.DraftInput` is panel-local | M5 |
 | No unread/read cursor | Absent in domain and UI | M5 |
-| Implicit public mirror of private agent activity | `AgentTownhallMirrorCoordinator` | M4 |
+| Implicit public mirror of private agent activity | ~~`AgentTownhallMirrorCoordinator`~~ | M4 ✅ |
 | Panel is only re-entry path to direct history | Close panel → orphan conversation in store | M2–M3, M7 |
 | `@mention` depends on open panel names | `AgentRouter` uses `_panelHost.Panels` display names | M7 (identity-based roster) |
 | No persistence/recovery | In-memory store + panel host | M6 |
@@ -269,7 +270,7 @@ Harness or ACP platform.
 | **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | **Complete (2026-07-20)** — commit `5397ade` |
 | **M2** | **Townhall navigation UI** for channels + directs (list, select, create/open DM with known agents). Dedicated Agent Panel still present. No privacy change yet. Semantic list controls + keyboard select path. | Build; Townhall + Conversations tests; Architecture; full suite; manual nav smoke | **Complete (2026-07-20)** — commit `c25ce09` |
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | **Complete (2026-07-20)** — commit `a38d1ff` |
-| **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | Unauthorized |
+| **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | **Complete (2026-07-20)** — commit `3db36d7` |
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | Unauthorized |
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | Unauthorized |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | Unauthorized |
@@ -441,6 +442,40 @@ M4+ remains unauthorized until explicitly approved.
 
 ---
 
+## M4 closeout (2026-07-20)
+
+**Acceptance commit:** `3db36d7`
+(`feat(townhall): remove implicit public mirror of agent sends (Phase 14 M4)`)
+
+**Delivered:**
+
+- `AgentTownhallMirrorCoordinator` reduced to route/execute forwarder; no channel mirror writes.
+- Removed mirror-only APIs: `TownhallViewModel.AddMirroredActivityToConversation`,
+  `TryGetActiveChannelConversationId`.
+- Channel send and `LogActivity` (channel events) unchanged; Townhall DM send (M3) unchanged.
+- Tests inverted to privacy expectations in Shell + Townhall suites.
+- Architecture inventory baseline corrected for M3 `TownhallChatScrollPolicy` (+1 Features file).
+
+**Limitation:** Pre-M4 mirrored entries already in an in-memory session are not rewritten.
+
+**Verification (2026-07-20):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.App.Shell'` | 166 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Townhall'` | 90 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Agents'` | 193 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Architecture'` | 26 passed |
+| `dotnet test Zaide.slnx` | 2535 passed |
+| `git diff --check` | clean |
+
+**Manual smoke:** recorded in [`M4_MANUAL_EVIDENCE.md`](M4_MANUAL_EVIDENCE.md) — interactive GUI rows not validated on display in agent session.
+
+**M5+ still unauthorized.**
+
+---
+
 ## M3 closeout (2026-07-20)
 
 **Acceptance commit:** `a38d1ff`  
@@ -555,8 +590,9 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Audit amendments: per-panel concurrency; UI acceptance lock (V3 §18); LOC recount + counting rule; membership vs channel participants; V2 migration N/A; M1 pair-key handoff; re-send vs retry (D21); dual-write public API naming; SQLite prose; suite not re-run note. |
 | 2026-07-20 | Human accepted amended M0. Production milestones still unauthorized. |
 | 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
+| 2026-07-20 | **M4 complete** — privacy: agent-panel sends no longer mirror to public channels. M5+ unauthorized. |
 | 2026-07-20 | **M3 complete** — unified Townhall send for channels + directs; scroll UX; panel-backed execution (choice A). M4+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M3 complete; M4+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M4 complete; M5+ unauthorized)*
