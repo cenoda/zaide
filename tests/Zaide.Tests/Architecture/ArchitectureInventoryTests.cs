@@ -93,7 +93,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
-        Assert.Equal((8, 7, 1), byNamespace["Zaide.Features.Townhall.Presentation"]);
+        // Phase 14 M2: TownhallChannelPanel removed; +3 internal navigation types.
+        Assert.Equal((10, 6, 4), byNamespace["Zaide.Features.Townhall.Presentation"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
         Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Conversations.Application"]);
@@ -139,7 +140,8 @@ public sealed class ArchitectureInventoryTests
         // Refactor 8 M4: +1 MainLayoutBuilder production file.
         // Refactor 8 M5: +2 SettingsPanelAttachHost, ShellOverlayFocusWiring production files.
         // Phase 14 M1: +1 internal DirectParticipantPairKey production file.
-        Assert.Equal(413, inventory.SourceFiles.Count);
+        // Phase 14 M2: -1 TownhallChannelPanel, +3 internal navigation production files.
+        Assert.Equal(415, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -148,7 +150,7 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(42, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
-        Assert.Equal(367, byFolder["Features"]);
+        Assert.Equal(369, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

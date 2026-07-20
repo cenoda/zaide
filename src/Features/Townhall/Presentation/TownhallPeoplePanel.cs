@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
 using Zaide.App.Shell;
@@ -22,6 +23,7 @@ public class TownhallPeoplePanel : Panel
     private static readonly Color HoverOverlay = Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF);
 
     private readonly StackPanel _agentList;
+    private Action<ActorId>? _onOpenDirectMessage;
 
     public TownhallPeoplePanel()
     {
@@ -67,6 +69,14 @@ public class TownhallPeoplePanel : Panel
     }
 
     /// <summary>
+    /// Sets the callback invoked when the user opens a direct message with an agent.
+    /// </summary>
+    public void SetOnOpenDirectMessage(Action<ActorId> onOpenDirectMessage)
+    {
+        _onOpenDirectMessage = onOpenDirectMessage;
+    }
+
+    /// <summary>
     /// Populates the panel with the given agents.
     /// Called each time the agent list changes or is initialized.
     /// </summary>
@@ -80,7 +90,7 @@ public class TownhallPeoplePanel : Panel
         }
     }
 
-    private static Border CreateAgentRow(WorkspaceAgent agent)
+    private Border CreateAgentRow(WorkspaceAgent agent)
     {
         var statusBrushKey = agent.Status switch
         {
@@ -165,6 +175,11 @@ public class TownhallPeoplePanel : Panel
             row.Background = null;
             row.CornerRadius = LayoutTokens.NoneRadius;
         };
+
+        if (string.Equals(agent.Role, "agent", StringComparison.OrdinalIgnoreCase))
+        {
+            row.PointerPressed += (_, _) => _onOpenDirectMessage?.Invoke(agent.ActorId);
+        }
 
         return row;
     }

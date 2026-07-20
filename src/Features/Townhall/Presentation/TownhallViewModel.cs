@@ -37,6 +37,11 @@ public class TownhallViewModel : ReactiveObject
     /// </summary>
     public ObservableCollection<WorkspaceAgent> Agents { get; }
 
+    /// <summary>
+    /// Gets the list of direct conversation navigation rows.
+    /// </summary>
+    internal ObservableCollection<TownhallNavigationItem> DirectNavItems { get; } = new();
+
     private ObservableCollection<TownhallMessage> _messages = new();
 
     /// <summary>
@@ -99,57 +104,44 @@ public class TownhallViewModel : ReactiveObject
     public IObservable<System.Collections.Generic.IReadOnlyList<TownhallMessage>> FilteredMessages { get; }
 
     /// <summary>
-    /// Gets or sets the ID of the currently active channel.
-    /// Also updates Channel.IsActive flags for all channels and syncs Messages collection.
+    /// Gets or sets the authoritative active conversation selection.
     /// </summary>
-    public string? ActiveChannelId
+    public ConversationId? ActiveConversationId
     {
-        get => _state.ActiveChannelId;
+        get => _state.ActiveConversationId;
         private set
         {
-            var oldActiveId = _state.ActiveChannelId;
-            if (oldActiveId == value) return;
-
-            // Update all channel active states
-            foreach (var c in _state.Channels)
+            if (_state.ActiveConversationId == value)
             {
-                c.IsActive = c.Id == value;
+                return;
             }
 
-            _state.ActiveChannelId = value;
-            this.RaisePropertyChanged(nameof(ActiveChannelId));
-
-            // Log channel switch event to the *newly active* channel (only for actual switches, not initial activation)
-            if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(oldActiveId))
-            {
-                var channel = _state.Channels.FirstOrDefault(c => c.Id == value);
-                var channelName = channel?.Name ?? value;
-                LogActivity(
-                    entryKind: ConversationEntryKind.ChannelEvent,
-                    content: $"Switched to #{channelName}",
-                    author: _actorCatalog.CanonicalHuman.Id,
-                    senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
-                    senderName: _actorCatalog.CanonicalHuman.DisplayName);
-            }
-
-            // Update the Messages collection to reflect current channel's messages
-            if (!string.IsNullOrEmpty(value) && _state.ChannelMessages.TryGetValue(value, out var channelMsgs))
-            {
-                this.Messages = channelMsgs;
-            }
-            else
-            {
-                // Fallback: use empty collection
-                this.Messages = new ObservableCollection<TownhallMessage>();
-            }
+            _state.ActiveConversationId = value;
+            this.RaisePropertyChanged(nameof(ActiveConversationId));
+            UpdateDirectNavSelection();
         }
     }
+
+    /// <summary>
+    /// Gets the ID of the currently active channel when a channel conversation is selected.
+    /// </summary>
+    public string? ActiveChannelId => _state.ActiveChannelId;
 
     /// <summary>
     /// Command to select a channel by its ID.
     /// Updates Channel.IsActive flags, active channel state, and message list.
     /// </summary>
     public ReactiveCommand<string, Unit> SelectChannelCommand { get; }
+
+    /// <summary>
+    /// Command to select a conversation by its authoritative id.
+    /// </summary>
+    public ReactiveCommand<ConversationId, Unit> SelectConversationCommand { get; }
+
+    /// <summary>
+    /// Command to open or select a direct conversation with the given agent actor.
+    /// </summary>
+    public ReactiveCommand<ActorId, Unit> OpenDirectConversationCommand { get; }
 
     /// <summary>
     /// Command to send the current draft message.
@@ -168,6 +160,8 @@ public class TownhallViewModel : ReactiveObject
         _state = state ?? throw new ArgumentNullException(nameof(state));
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
+
+        _conversationStore.EntryAppended += OnConversationEntryAppended;
 
         // Initialize explicit session seed state
         InitializeSessionState();
@@ -221,8 +215,12 @@ public class TownhallViewModel : ReactiveObject
         // Selected channel command - updates channel active flags and active channel id
         SelectChannelCommand = ReactiveCommand.Create<string>(channelId =>
         {
-            ActiveChannelId = channelId;
+            SelectConversation(ConversationId.ForChannel(channelId));
         });
+
+        SelectConversationCommand = ReactiveCommand.Create<ConversationId>(SelectConversation);
+
+        OpenDirectConversationCommand = ReactiveCommand.Create<ActorId>(OpenDirectConversation);
 
         // Send message command - validates and appends to active channel's message list
         SendMessageCommand = ReactiveCommand.Create(() =>
@@ -265,6 +263,173 @@ public class TownhallViewModel : ReactiveObject
 
         conversationId = conversation.Id;
         return true;
+    }
+
+    private void SelectConversation(ConversationId conversationId)
+    {
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            return;
+        }
+
+        ActiveConversationId = conversationId;
+
+        if (conversation.Kind == ConversationKind.Channel
+            && conversationId.TryGetChannelId(out var channelId))
+        {
+            ApplyChannelSelection(channelId);
+            return;
+        }
+
+        if (conversation.Kind == ConversationKind.Direct)
+        {
+            ApplyDirectSelection(conversation);
+        }
+    }
+
+    private void OpenDirectConversation(ActorId agentActorId)
+    {
+        if (agentActorId == _actorCatalog.CanonicalHuman.Id)
+        {
+            return;
+        }
+
+        var conversation = _conversationStore.GetOrCreateDirectConversation(
+            _actorCatalog.CanonicalHuman.Id,
+            agentActorId);
+        RefreshDirectNavItems();
+        SelectConversation(conversation.Id);
+    }
+
+    private void ApplyChannelSelection(string channelId)
+    {
+        var oldActiveId = _state.ActiveChannelId;
+        if (oldActiveId == channelId)
+        {
+            return;
+        }
+
+        foreach (var c in _state.Channels)
+        {
+            c.IsActive = c.Id == channelId;
+        }
+
+        _state.ActiveChannelId = channelId;
+        this.RaisePropertyChanged(nameof(ActiveChannelId));
+
+        if (!string.IsNullOrEmpty(channelId) && !string.IsNullOrEmpty(oldActiveId))
+        {
+            var channel = _state.Channels.FirstOrDefault(c => c.Id == channelId);
+            var channelName = channel?.Name ?? channelId;
+            LogActivity(
+                entryKind: ConversationEntryKind.ChannelEvent,
+                content: $"Switched to #{channelName}",
+                author: _actorCatalog.CanonicalHuman.Id,
+                senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
+                senderName: _actorCatalog.CanonicalHuman.DisplayName);
+        }
+
+        if (_state.ChannelMessages.TryGetValue(channelId, out var channelMsgs))
+        {
+            Messages = channelMsgs;
+        }
+        else
+        {
+            Messages = new ObservableCollection<TownhallMessage>();
+        }
+    }
+
+    private void ApplyDirectSelection(Conversation conversation)
+    {
+        foreach (var c in _state.Channels)
+        {
+            c.IsActive = false;
+        }
+
+        if (_state.ActiveChannelId is not null)
+        {
+            _state.ActiveChannelId = null;
+            this.RaisePropertyChanged(nameof(ActiveChannelId));
+        }
+
+        Messages = ProjectDirectMessages(conversation);
+    }
+
+    private ObservableCollection<TownhallMessage> ProjectDirectMessages(Conversation conversation)
+    {
+        var projected = new ObservableCollection<TownhallMessage>();
+        foreach (var entry in conversation.Entries)
+        {
+            projected.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+        }
+
+        return projected;
+    }
+
+    private void RefreshDirectNavItems()
+    {
+        var humanId = _actorCatalog.CanonicalHuman.Id;
+        var selectedId = _state.ActiveConversationId;
+        var items = _conversationStore.ListConversations()
+            .Where(c => c.Kind == ConversationKind.Direct && c.Participants.Contains(humanId))
+            .Select(c => CreateDirectNavItem(c, humanId, selectedId))
+            .OrderBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        DirectNavItems.Clear();
+        foreach (var item in items)
+        {
+            DirectNavItems.Add(item);
+        }
+    }
+
+    private TownhallNavigationItem CreateDirectNavItem(
+        Conversation conversation,
+        ActorId humanId,
+        ConversationId? selectedId)
+    {
+        var peer = conversation.Participants.All.First(participant => participant != humanId);
+        var label = _actorCatalog.TryGet(peer, out var actor)
+            ? actor.DisplayName
+            : peer.Value;
+
+        return new TownhallNavigationItem
+        {
+            ConversationId = conversation.Id,
+            Kind = TownhallNavigationKind.Direct,
+            Label = label,
+            PeerActorId = peer,
+            IsSelected = selectedId.HasValue && selectedId.Value == conversation.Id
+        };
+    }
+
+    private void UpdateDirectNavSelection()
+    {
+        var selectedId = _state.ActiveConversationId;
+        foreach (var item in DirectNavItems)
+        {
+            item.IsSelected = selectedId.HasValue && item.ConversationId == selectedId.Value;
+        }
+    }
+
+    private void OnConversationEntryAppended(ConversationId conversationId, ConversationEntry entry)
+    {
+        RefreshDirectNavItems();
+
+        if (_state.ActiveConversationId != conversationId)
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            return;
+        }
+
+        if (conversation.Kind == ConversationKind.Direct)
+        {
+            Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+        }
     }
 
     /// <summary>
@@ -371,7 +536,8 @@ public class TownhallViewModel : ReactiveObject
         _state.ChannelMessages[codebaseRefactoring.Id] = new ObservableCollection<TownhallMessage>();
 
         // Set initial active channel (which also sets IsActive flags and Messages collection)
-        ActiveChannelId = townhallMain.Id;
+        SelectConversation(ConversationId.ForChannel(townhallMain.Id));
+        RefreshDirectNavItems();
 
         // Create initial agents from the canonical actor catalog.
         var user = _actorCatalog.CanonicalHuman;

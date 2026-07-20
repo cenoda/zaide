@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -27,7 +28,7 @@ namespace Zaide.Features.Townhall.Presentation;
 public class TownhallView : Panel, IDisposable
 {
     private readonly TownhallPeoplePanel _peoplePanel;
-    private readonly TownhallChannelPanel _channelPanel;
+    private readonly TownhallNavigationPanel _navigationPanel;
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
@@ -52,7 +53,7 @@ public class TownhallView : Panel, IDisposable
     public TownhallView()
     {
         _peoplePanel = new TownhallPeoplePanel { Background = PaletteTokens.SurfacePanelBrush };
-        _channelPanel = new TownhallChannelPanel { Background = PaletteTokens.SurfacePanelBrush };
+        _navigationPanel = new TownhallNavigationPanel { Background = PaletteTokens.SurfacePanelBrush };
         _chatPanel = new TownhallChatPanel { Background = PaletteTokens.SurfacePanelBrush };
         _inputArea = new TownhallInputArea
         {
@@ -102,10 +103,10 @@ public class TownhallView : Panel, IDisposable
             Children =
             {
                 _peoplePanel,
-                _channelPanel
+                _navigationPanel
             }
         };
-        Grid.SetRow(_channelPanel, 2);
+        Grid.SetRow(_navigationPanel, 2);
 
         var sidebarSplitter = new GridSplitter
         {
@@ -250,13 +251,28 @@ public class TownhallView : Panel, IDisposable
 
         // Populate people panel
         _peoplePanel.SetAgents(_viewModel.Agents);
+        _peoplePanel.SetOnOpenDirectMessage(agentActorId =>
+        {
+            _viewModel.OpenDirectConversationCommand.Execute(agentActorId).Subscribe();
+        });
 
-        // Populate channel panel
-        _channelPanel.SetOnChannelSelected(channelId =>
+        // Populate navigation panel
+        _navigationPanel.SetOnChannelSelected(channelId =>
         {
             _viewModel.SelectChannelCommand.Execute(channelId).Subscribe();
         });
-        _channelPanel.SetChannels(_viewModel.Channels);
+        _navigationPanel.SetOnDirectSelected(conversationId =>
+        {
+            _viewModel.SelectConversationCommand.Execute(conversationId).Subscribe();
+        });
+        _navigationPanel.SetChannels(_viewModel.Channels);
+        _navigationPanel.SetDirectItems(_viewModel.DirectNavItems);
+
+        _disposables.Add(
+            Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => _viewModel.DirectNavItems.CollectionChanged += h,
+                    h => _viewModel.DirectNavItems.CollectionChanged -= h)
+                .Subscribe(_ => _navigationPanel.SetDirectItems(_viewModel.DirectNavItems)));
 
         // Populate chat panel with initial messages (will be updated by FilteredMessages subscription below)
         if (_viewModel.Messages is not null)
@@ -267,12 +283,13 @@ public class TownhallView : Panel, IDisposable
         // Update placeholder text based on active channel
         UpdatePlaceholder();
 
-        // React to active channel changes: update channel list highlight and messages
+        // React to active conversation changes: update navigation highlight and messages
         _disposables.Add(
-            _viewModel.WhenAnyValue(x => x.ActiveChannelId)
+            _viewModel.WhenAnyValue(x => x.ActiveConversationId)
                 .Subscribe(_ =>
                 {
-                    _channelPanel.SetChannels(_viewModel.Channels);
+                    _navigationPanel.SetChannels(_viewModel.Channels);
+                    _navigationPanel.SetDirectItems(_viewModel.DirectNavItems);
                     UpdatePlaceholder();
                 }));
 
@@ -323,6 +340,14 @@ public class TownhallView : Panel, IDisposable
                 return;
             }
         }
+
+        if (_viewModel?.ActiveConversationId is { } activeConversationId
+            && _viewModel.DirectNavItems.FirstOrDefault(item => item.ConversationId == activeConversationId) is { } directItem)
+        {
+            _inputArea.PlaceholderText = $"Direct message with {directItem.Label}";
+            return;
+        }
+
         _inputArea.PlaceholderText = "Message...";
     }
 

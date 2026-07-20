@@ -323,7 +323,6 @@ Zaide.Features.Townhall.Domain.TownhallMessageKind
 Zaide.Features.Townhall.Domain.TownhallState
 Zaide.Features.Townhall.Domain.WorkspaceAgent
 Zaide.Features.Townhall.Presentation.TownhallAvatarFactory
-Zaide.Features.Townhall.Presentation.TownhallChannelPanel
 Zaide.Features.Townhall.Presentation.TownhallChatPanel
 Zaide.Features.Townhall.Presentation.TownhallInputArea
 Zaide.Features.Townhall.Presentation.TownhallPeoplePanel

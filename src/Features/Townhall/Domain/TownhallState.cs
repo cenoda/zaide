@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Townhall.Domain;
 
@@ -15,9 +16,14 @@ public class TownhallState
     public ObservableCollection<Channel> Channels { get; } = new();
 
     /// <summary>
-    /// ID of the currently active channel.
+    /// ID of the currently active channel when a channel conversation is selected.
     /// </summary>
     public string? ActiveChannelId { get; set; }
+
+    /// <summary>
+    /// Authoritative presentation selection for the active conversation.
+    /// </summary>
+    public ConversationId? ActiveConversationId { get; set; }
 
     /// <summary>
     /// Messages indexed by channel ID. Each key maps to a list of messages for that channel.
