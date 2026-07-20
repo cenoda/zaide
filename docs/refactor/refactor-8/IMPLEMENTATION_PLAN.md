@@ -1360,7 +1360,7 @@ as the closeout BP-10 evidence set.
 
 ### Acceptance (2026-07-20)
 
-Human accepted M8 at `544eb29`. Build succeeded with four pre-existing
+Human accepted M8 at `f0ed3a2`. Build succeeded with four pre-existing
 warnings; Architecture **26/26**; full suite **2523/2523**; `git diff --check`
 clean. Refactor 8 is complete and closed. Phase 14 remains unauthorized.
 
