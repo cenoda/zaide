@@ -58,5 +58,5 @@ boundary.
 ## Resolution
 
 - **Outcome:** open
-- **Fix/issue/phase:** Phase 14 (M0 accepted 2026-07-20; M1+ unauthorized)
+- **Fix/issue/phase:** Phase 14 (M0 accepted; M1 authorized only 2026-07-20; M2+ unauthorized)
 - **Commit or date:**
