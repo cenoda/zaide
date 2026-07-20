@@ -2,12 +2,9 @@
 
 ## Status and authorization
 
-**Phase 14 status:** **M0 accepted (2026-07-20).** **M1 authorized only
-(2026-07-20)** — store navigation seams. Human acceptance of M0 and
-authorization of M1 are recorded in this plan.
-
-**M2 and later milestones remain unauthorized** until a human explicitly
-authorizes the next named milestone only. M1 does **not** authorize DM
+**Phase 14 status:** **M0 accepted (2026-07-20).** **M1 complete (2026-07-20)** — store
+navigation seams. **M2 and later milestones remain unauthorized** until a human
+explicitly authorizes the next named milestone only. M1 does **not** authorize DM
 navigation UI, privacy changes, persistence implementation, Agent Panel
 retirement, or any later milestone scope.
 
@@ -267,7 +264,7 @@ Harness or ACP platform.
 | Milestone | Description | Test / gate | Status |
 |-----------|-------------|-------------|--------|
 | **M0** | Planning gate: live audit, decisions D01–D21, persistence contract, UI acceptance lock, milestones, commands, rollback. **Docs only.** | Plan review; no production diff required | **Accepted (2026-07-20)** |
-| **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | **Authorized (2026-07-20)** — not complete |
+| **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | **Complete (2026-07-20)** — commit `c22ea53` |
 | **M2** | **Townhall navigation UI** for channels + directs (list, select, create/open DM with known agents). Dedicated Agent Panel still present. No privacy change yet. Semantic list controls + keyboard select path. | Build; Townhall + Conversations tests; Architecture; full suite; manual nav smoke | Unauthorized |
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | Unauthorized |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | Unauthorized |
@@ -433,10 +430,43 @@ Manual smoke (minimum, expand per milestone evidence):
 
 1. ~~Human accepts this **amended** M0 plan.~~ **Done (2026-07-20).**
 2. ~~Human authorizes **M1 only**.~~ **Done (2026-07-20).**
-3. **Implement M1** store navigation seams with tests (including sorted pair
-   key); no DM UI, no panel retirement, no M2+.
+3. ~~**Implement M1** store navigation seams with tests (including sorted pair
+   key); no DM UI, no panel retirement, no M2+.~~ **Done (2026-07-20).**
 
 M2+ remains unauthorized until explicitly approved.
+
+---
+
+## M1 closeout (2026-07-20)
+
+**Pair-key rule (D05):** `DirectParticipantPairKey.FromActors` sorts two distinct
+`ActorId` values by **ordinal string comparison** on `ActorId.Value` before
+indexing; argument order does not create duplicate directs.
+
+**Delivered:**
+
+- `IConversationStore.ListConversations()` — stable snapshot ordered by
+  `ConversationId.Value`.
+- `GetOrCreateDirectConversation` / `TryGetDirectConversation` — find-or-create
+  by unordered pair; `CreateDirectConversation` remains create-only (no pair
+  index) for explicit orphan directs in tests.
+- `AgentPanelHost` panel create path uses get-or-create (`CanonicalHuman` +
+  actor).
+- Internal `DirectParticipantPairKey` type; architecture baseline **451** total /
+  **339** public / **112** internal.
+
+**Verification (2026-07-20):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors, 4 warnings (pre-existing) |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Conversations'` | 93 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Agents'` | 191 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Architecture'` | 26 passed |
+| `dotnet test Zaide.slnx` | 2533 passed |
+| `git diff --check` | clean |
+
+**M2+ still unauthorized.**
 
 ---
 
@@ -448,7 +478,8 @@ M2+ remains unauthorized until explicitly approved.
 | 2026-07-20 | Audit amendments: per-panel concurrency; UI acceptance lock (V3 §18); LOC recount + counting rule; membership vs channel participants; V2 migration N/A; M1 pair-key handoff; re-send vs retry (D21); dual-write public API naming; SQLite prose; suite not re-run note. |
 | 2026-07-20 | Human accepted amended M0. Production milestones still unauthorized. |
 | 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
+| 2026-07-20 | **M1 complete** — store navigation seams; pair key via ordinal-sorted `ActorId.Value`; panel find-or-create wired. M2+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M0 accepted; M1 authorized only; M2+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M1 complete; M2+ unauthorized)*

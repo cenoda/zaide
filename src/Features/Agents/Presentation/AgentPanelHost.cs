@@ -79,7 +79,7 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
 
     private AgentPanelState CreatePanelFromActor(Actor actor)
     {
-        var conversation = _conversationStore.CreateDirectConversation(
+        var conversation = _conversationStore.GetOrCreateDirectConversation(
             _actorCatalog.CanonicalHuman.Id,
             actor.Id);
 

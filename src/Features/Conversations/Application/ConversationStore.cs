@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
@@ -14,6 +15,7 @@ internal sealed class ConversationStore : IConversationStore
     private readonly object _sync = new();
     private readonly Dictionary<ConversationId, Conversation> _byId = new();
     private readonly Dictionary<string, ConversationId> _channelIndex = new(StringComparer.Ordinal);
+    private readonly Dictionary<DirectParticipantPairKey, ConversationId> _directPairIndex = new();
 
     public event Action<ConversationId, ConversationEntry>? EntryAppended;
 
@@ -49,6 +51,56 @@ internal sealed class ConversationStore : IConversationStore
         }
 
         return conversation;
+    }
+
+    public Conversation GetOrCreateDirectConversation(ActorId participantOne, ActorId participantTwo)
+    {
+        var pairKey = DirectParticipantPairKey.FromActors(participantOne, participantTwo);
+
+        lock (_sync)
+        {
+            if (_directPairIndex.TryGetValue(pairKey, out var existingId)
+                && _byId.TryGetValue(existingId, out var existing))
+            {
+                return existing;
+            }
+
+            var participants = ConversationParticipants.ForDirect(participantOne, participantTwo);
+            var conversation = Conversation.Direct(ConversationId.NewDirect(), participants);
+            _byId[conversation.Id] = conversation;
+            _directPairIndex[pairKey] = conversation.Id;
+            return conversation;
+        }
+    }
+
+    public bool TryGetDirectConversation(
+        ActorId participantOne,
+        ActorId participantTwo,
+        out Conversation conversation)
+    {
+        var pairKey = DirectParticipantPairKey.FromActors(participantOne, participantTwo);
+
+        lock (_sync)
+        {
+            if (_directPairIndex.TryGetValue(pairKey, out var conversationId)
+                && _byId.TryGetValue(conversationId, out conversation!))
+            {
+                return true;
+            }
+        }
+
+        conversation = null!;
+        return false;
+    }
+
+    public IReadOnlyList<Conversation> ListConversations()
+    {
+        lock (_sync)
+        {
+            return _byId.Values
+                .OrderBy(conversation => conversation.Id.Value, StringComparer.Ordinal)
+                .ToArray();
+        }
     }
 
     public bool TryGet(ConversationId id, out Conversation conversation)

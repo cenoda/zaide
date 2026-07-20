@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Application;
@@ -55,6 +57,105 @@ public sealed class ConversationStoreTests
         Assert.True(conversation.Participants.Contains(ActorId.HumanUser));
         Assert.True(conversation.Participants.Contains(ActorId.PanelSeed("alpha")));
         Assert.True(store.TryGet(conversation.Id, out _));
+    }
+
+    [Fact]
+    public void CreateDirectConversation_DoesNotRegisterPairIndex()
+    {
+        var store = new ConversationStore();
+        var human = ActorId.HumanUser;
+        var agent = ActorId.PanelSeed("alpha");
+
+        var first = store.CreateDirectConversation(human, agent);
+        var second = store.CreateDirectConversation(human, agent);
+
+        Assert.NotEqual(first.Id, second.Id);
+        Assert.False(store.TryGetDirectConversation(human, agent, out _));
+    }
+
+    [Fact]
+    public void GetOrCreateDirectConversation_ReturnsSameConversationForSamePair()
+    {
+        var store = new ConversationStore();
+        var human = ActorId.HumanUser;
+        var agent = ActorId.PanelSeed("alpha");
+
+        var first = store.GetOrCreateDirectConversation(human, agent);
+        var second = store.GetOrCreateDirectConversation(agent, human);
+
+        Assert.Same(first, second);
+        Assert.Equal(first.Id, second.Id);
+        Assert.True(store.TryGetDirectConversation(human, agent, out var lookedUp));
+        Assert.Same(first, lookedUp);
+    }
+
+    [Fact]
+    public void GetOrCreateDirectConversation_DifferentPairsAreDistinct()
+    {
+        var store = new ConversationStore();
+        var human = ActorId.HumanUser;
+        var alpha = ActorId.PanelSeed("alpha");
+        var beta = ActorId.PanelSeed("beta");
+
+        var alphaConversation = store.GetOrCreateDirectConversation(human, alpha);
+        var betaConversation = store.GetOrCreateDirectConversation(human, beta);
+
+        Assert.NotEqual(alphaConversation.Id, betaConversation.Id);
+        Assert.NotSame(alphaConversation, betaConversation);
+    }
+
+    [Fact]
+    public void GetOrCreateDirectConversation_RejectsSameParticipant()
+    {
+        var store = new ConversationStore();
+
+        Assert.Throws<ArgumentException>(() =>
+            store.GetOrCreateDirectConversation(ActorId.HumanUser, ActorId.HumanUser));
+    }
+
+    [Fact]
+    public void ListConversations_IncludesChannelsAndDirectsAfterCreate()
+    {
+        var store = new ConversationStore();
+        var channel = store.CreateChannelConversation("channel-1");
+        var direct = store.GetOrCreateDirectConversation(
+            ActorId.HumanUser,
+            ActorId.PanelSeed("alpha"));
+
+        var conversations = store.ListConversations();
+
+        Assert.Equal(2, conversations.Count);
+        Assert.Contains(conversations, conversation => conversation.Id == channel.Id);
+        Assert.Contains(conversations, conversation => conversation.Id == direct.Id);
+    }
+
+    [Fact]
+    public async Task GetOrCreateDirectConversation_ConcurrentSamePair_DoesNotCreateDuplicates()
+    {
+        var store = new ConversationStore();
+        var human = ActorId.HumanUser;
+        var agent = ActorId.PanelSeed("alpha");
+        var results = new List<Conversation>();
+        var tasks = new List<Task>();
+
+        for (var i = 0; i < 32; i++)
+        {
+            tasks.Add(Task.Run(() =>
+            {
+                var conversation = store.GetOrCreateDirectConversation(human, agent);
+                lock (results)
+                {
+                    results.Add(conversation);
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+
+        Assert.Equal(32, results.Count);
+        Assert.Single(results.Select(conversation => conversation.Id).Distinct());
+        Assert.Equal(1, store.ListConversations().Count(conversation =>
+            conversation.Kind == ConversationKind.Direct));
     }
 
     [Fact]
@@ -135,7 +236,7 @@ public sealed class ConversationProvisioningIntegrationTests
     }
 
     [Fact]
-    public void AgentPanelHost_IdenticalCustomActorAcrossPanels_GetsDistinctDirectConversations()
+    public void AgentPanelHost_IdenticalCustomActorAcrossPanels_SharesDirectConversation()
     {
         var store = ConversationsTestSupport.CreateStore();
         var host = ConversationsTestSupport.CreatePanelHost(store: store);
@@ -143,10 +244,31 @@ public sealed class ConversationProvisioningIntegrationTests
         var first = host.CreatePanel("agent-x", "X Agent", "avatar_x");
         var second = host.CreatePanel("agent-x", "X Agent", "avatar_x");
 
-        Assert.NotEqual(first.ConversationId, second.ConversationId);
+        Assert.Equal(first.ConversationId, second.ConversationId);
         Assert.NotEqual(first.PanelId, second.PanelId);
         Assert.True(store.TryGet(first.ConversationId, out _));
-        Assert.True(store.TryGet(second.ConversationId, out _));
+    }
+
+    [Fact]
+    public void AgentPanelHost_CloseThenRecreate_ReusesConversationIdForSameActor()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+
+        var first = host.CreatePanel("agent-x", "X Agent", "avatar_x");
+        AgentPanelTestSupport.AppendUserChat(store, first, "retained");
+        var conversationId = first.ConversationId;
+
+        host.ClosePanel(first.PanelId);
+        Assert.Empty(host.Panels);
+
+        var second = host.CreatePanel("agent-x", "X Agent", "avatar_x");
+
+        Assert.Equal(conversationId, second.ConversationId);
+        Assert.NotEqual(first.PanelId, second.PanelId);
+        Assert.True(store.TryGet(conversationId, out var conversation));
+        Assert.Single(conversation!.Entries);
+        Assert.Equal("retained", conversation.Entries[0].Content);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Conversations.Contracts;
@@ -15,6 +16,25 @@ public interface IConversationStore
     Conversation CreateChannelConversation(string channelId);
 
     Conversation CreateDirectConversation(ActorId participantOne, ActorId participantTwo);
+
+    /// <summary>
+    /// Returns an existing direct conversation for the unordered participant pair,
+    /// or creates and indexes one when absent.
+    /// </summary>
+    Conversation GetOrCreateDirectConversation(ActorId participantOne, ActorId participantTwo);
+
+    /// <summary>
+    /// Looks up a direct conversation by unordered participant pair.
+    /// </summary>
+    bool TryGetDirectConversation(
+        ActorId participantOne,
+        ActorId participantTwo,
+        out Conversation conversation);
+
+    /// <summary>
+    /// Returns a stable snapshot of all conversations currently held by the store.
+    /// </summary>
+    IReadOnlyList<Conversation> ListConversations();
 
     bool TryGet(ConversationId id, out Conversation conversation);
 

@@ -193,7 +193,8 @@ public sealed class ArchitectureVisibilityTests
         Assert.Equal(42, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
-        Assert.Equal(366, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 14 M1: +1 DirectParticipantPairKey production file.
+        Assert.Equal(367, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]
