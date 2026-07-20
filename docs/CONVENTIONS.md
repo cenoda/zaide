@@ -303,9 +303,9 @@ admits them.
 - The explicit public full-name set is frozen in
   `tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt` and enforced
   by architecture tests (public-by-exception). Current ceiling after Refactor
-  7 M7: **339** public / **104** internal / **443** total top-level production
-  types. No new public type without an intentional baseline update in the same
-  reviewed change.
+  8 M8 closeout: **339** public / **111** internal / **450** total top-level
+  production types. No new public type without an intentional baseline update in
+  the same reviewed change.
 
 ### Composition and DI (Refactor 6.3)
 
@@ -398,4 +398,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 8 M5 accepted at `d947efa`; public baseline 339/111/450 after M5; M6+ unauthorized; Phase 14 unauthorized)*
+*Last updated: 2026-07-20 (Refactor 8 M8 accepted; Refactor 8 complete and closed; public baseline 339/111/450; Phase 14 unauthorized)*

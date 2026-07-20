@@ -49,7 +49,7 @@ and dedicated-panel retirement after parity evidence.
 
 ## Revisit trigger
 
-Revisit during Refactor 7 and Refactor 8 planning, then resolve only when Phase
+Revisit after Refactor 7 and Refactor 8 closeout; resolve only when Phase
 14 closes the visible migration and parity boundary.
 
 ## Resolution

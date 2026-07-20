@@ -2,14 +2,16 @@
 
 ## Status and authorization
 
-**Refactor 8 status:** **M7 accepted (2026-07-20).** M0 planning gate accepted;
-M1 token baseline implemented; M2 bottom-panel host extracted and accepted;
-M3 right-column host extracted and accepted at `73fc66c` (status docs `19bb674`);
-M4 main layout builder extracted and accepted at `b3c8684` (status docs `09ccde9`);
-M5 settings attach and overlay focus wiring extracted and accepted at `d947efa`;
-M6 Townhall presentation maintainability cleanup accepted at `1ca1e08` (smoke docs `3b40af8`);
-M7 agent panel presentation maintainability cleanup accepted at `000d486`.
-M8+ unauthorized until explicit authorization.
+**Refactor 8 status:** **M8 accepted (2026-07-20).** Refactor 8 is complete and
+closed. M0 planning gate accepted; M1 token baseline implemented; M2
+bottom-panel host extracted and accepted; M3 right-column host extracted and
+accepted at `73fc66c` (status docs `19bb674`); M4 main layout builder extracted
+and accepted at `b3c8684` (status docs `09ccde9`); M5 settings attach and
+overlay focus wiring extracted and accepted at `d947efa`; M6 Townhall
+presentation maintainability cleanup accepted at `1ca1e08` (smoke docs
+`3b40af8`); M7 agent panel presentation maintainability cleanup accepted at
+`000d486` (status docs `b07e3f4`); M8 docs/status truth-sync accepted.
+Phase 14 remains unauthorized.
 
 **Production and test code must not change under M0.** M0 is documentation-
 only. **M1 and later milestones are unauthorized** until a human explicitly
@@ -329,7 +331,7 @@ expanding concern.
 | **M5** | **Extract view-side settings attach + reduce `WhenActivated` pressure** into shell helper type(s) without changing interactions. Keep palette/search/editor wiring behavior identical. **If** settings attach/detach or focus-restoration logic moves beyond what existing tests cover, M5 must add a focused shell wiring/lifecycle test in the same milestone (plan-required; missing test = incomplete). | Build; shell tests; Settings Presentation + Editor Presentation focused filters (see Verification commands); new shell wiring/lifecycle test when extraction moves settings attach/detach or focus restore beyond existing coverage; Architecture; full suite; manual settings/palette/search smoke | **[x] 2026-07-19** |
 | **M6** | **Townhall presentation maintainability:** structural cleanup only (constructor clarity, local helpers, token leftovers). No ViewModel/domain API change. Optional internal seam only if required by extraction. | Build; Townhall tests; Architecture; full suite; manual Townhall filter/send/channel smoke |
 | **M7** | **Agent panel presentation maintainability:** structural/token cleanup in host/view only; preserve `IAgentPanelHost` and send event. No panel retirement. | Build; agent presentation tests; Architecture; full suite; manual multi-panel send smoke | **[x] 2026-07-20** |
-| **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX |
+| **M8** | **Closeout:** docs/status truth-sync, optional architecture ratchet notes, confirm BP checklist, record LOC/public baseline, confirm Phase 14 still unauthorized. | Build; Architecture; full suite; `git diff --check`; manual evidence review; no open TOFIX | **[x] 2026-07-20** |
 
 ### Milestone slice rule
 
@@ -660,20 +662,30 @@ No `dotnet` production change is required for M0.
 - [x] Build; Agents.Presentation tests; Architecture; full suite green.
 - [x] Manual smoke: multi-panel create/send/tab-switch at default (1280×800) and
       minimum (960×600) on Linux `DISPLAY=:1`.
-- [x] Human accepts M7 closeout at `000d486`. M8 remains unauthorized until explicit
-      authorization.
+- [x] Human accepts M7 closeout at `000d486` (status docs `b07e3f4`). M8 remains
+      unauthorized until explicit authorization.
+
+### Entry conditions for M8 (authorized 2026-07-20)
+
+- [x] Human accepted M7 closeout at `000d486` (status docs `b07e3f4`).
+- [x] Human authorized **M8 only**.
+- [x] Phase 14 and adjacent feature work remain unauthorized.
+- [x] Implementer re-reads BP-01–BP-10 and stop rules before editing.
 
 ### Exit conditions for Refactor 8 (after M8)
 
-- [ ] `MainWindow` is no longer the monolithic imperative layout owner; hosts
-      own construction seams.
-- [ ] R8-owned Townhall/Agent/shell surfaces use DesignSystem tokens for values
-      that previously were identical hardcodes (residuals documented if any).
-- [ ] BP-01–BP-10 hold; full suite and Architecture green.
-- [ ] Public baseline intentional and recorded.
-- [ ] No Phase 14 feature behavior landed.
-- [ ] Docs/status surfaces match live code.
-- [ ] Human accepts M8 closeout.
+- [x] `MainWindow` is no longer the monolithic imperative layout owner; hosts
+      own construction seams (`BottomPanelHost`, `RightColumnHost`,
+      `MainLayoutBuilder`, `SettingsPanelAttachHost`, `ShellOverlayFocusWiring`).
+- [x] R8-owned Townhall/Agent/shell surfaces use DesignSystem tokens for values
+      that previously were identical hardcodes (residuals documented in M1/M6/M7
+      records and Limitations by design).
+- [x] BP-01–BP-10 hold; full suite and Architecture green (see M8 verification).
+- [x] Public baseline intentional and recorded (**339** / **111** / **450**;
+      **412** tracked production source files).
+- [x] No Phase 14 feature behavior landed.
+- [x] Docs/status surfaces match live code.
+- [x] Human accepts M8 closeout.
 
 ---
 
@@ -1270,4 +1282,88 @@ four pre-existing warnings; full suite exited cleanly.
 
 ---
 
-*Last updated: 2026-07-20 (Refactor 8 M7 accepted at `000d486`; M8+ unauthorized; Phase 14 unauthorized)*
+## M8 verification record (2026-07-20)
+
+### Scope
+
+Docs/status truth-sync only. **No production or test code modified.**
+
+Updated surfaces: this plan, `docs/architecture/OVERVIEW.md`,
+`docs/roadmap/V3.md`, `docs/CONVENTIONS.md`, `README.md`,
+`docs/phases/README.md`, and `docs/deferred/open/DF-001-agent-surface-townhall-tab.md`.
+
+### BP checklist (BP-01–BP-10)
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| BP-01 | Hold | R7 ownership/mirror tests green in full suite |
+| BP-02 | Hold | M4 layout smoke + shell tests |
+| BP-03 | Hold | M6 Townhall smoke + Townhall tests |
+| BP-04 | Hold | M7 agent panel smoke + Agents.Presentation tests |
+| BP-05 | Hold | `MainWindowViewModelBottomPanelModeTests` + M2 smoke |
+| BP-06 | Hold | M5 settings smoke + Settings Presentation tests |
+| BP-07 | Hold | M5 palette/search smoke + shell/editor tests |
+| BP-08 | Hold | Architecture **26/26**; baseline **339/111/450** unchanged since M5 |
+| BP-09 | Hold | Code review + stop rules; no DM navigation added |
+| BP-10 | Hold | Cumulative M1–M7 manual smoke records; pixel-identical token substitutions only |
+
+### LOC and architecture baseline (closeout)
+
+| Metric | M0 audit (`945f0e7`) | M8 closeout (live) |
+|--------|----------------------|---------------------|
+| `MainWindow.axaml.cs` LOC | ~995 | **486** (−509, ~51%) |
+| Public / internal / total types | 339 / 104 / 443 | **339 / 111 / 450** (+7 internal, net zero public) |
+| Tracked production source files | 405 (R7) → 407 (M1 start) | **412** (App **42**, UI **4**, Features **366**) |
+| R8 shell extractees | — | `BottomPanelHost`, `RightColumnHost`, `MainLayoutBuilder`, `SettingsPanelAttachHost`, `ShellOverlayFocusWiring` |
+| R8 DesignSystem helpers | — | `TypographyTokens`, `PaletteTokens` |
+
+**R61-V15 residual:** `MainWindow` still owns top-level composition,
+`WhenActivated` wiring, and keybinding materialization; layout geometry and
+panel hosts are extracted. Further shell decomposition is out of R8 scope.
+
+**Architecture ratchet notes:** M6–M8 introduced no new production types or
+source files. `PublicProductionTypeBaseline` and inventory tests already
+reflect the M5 closeout (**339/111/450**, **412** files); no ratchet amendment
+required in M8.
+
+### TOFIX
+
+No open findings. `R8-M1-001` remains resolved (gate repair, not UI scope).
+
+### Phase 14 boundary
+
+Completing M8 closes Refactor 8. **Phase 14 remains unauthorized** until its
+own accepted M0 and explicit milestone authorization.
+
+### Automated verification (2026-07-20)
+
+```text
+dotnet build Zaide.slnx
+  → succeeded, 4 warnings (pre-existing, unchanged)
+
+dotnet test --filter 'FullyQualifiedName~Zaide.Tests.Architecture'
+  → Passed: 26, Failed: 0, Skipped: 0, Total: 26
+
+dotnet test (full suite)
+  → Passed: 2523, Failed: 0, Skipped: 0, Total: 2523
+  (first run: 1 transient failure in LinuxTerminalServiceTests.
+   Restart_DoesNotLeakFileDescriptors; immediate re-run green)
+
+git diff --check
+  → clean (docs-only diff)
+```
+
+### Manual evidence review
+
+M8 does not require new smoke. Reviewed cumulative M1–M7 manual smoke records
+as the closeout BP-10 evidence set.
+
+### Acceptance (2026-07-20)
+
+Human accepted M8 at `544eb29`. Build succeeded with four pre-existing
+warnings; Architecture **26/26**; full suite **2523/2523**; `git diff --check`
+clean. Refactor 8 is complete and closed. Phase 14 remains unauthorized.
+
+---
+
+*Last updated: 2026-07-20 (Refactor 8 M8 accepted; Refactor 8 complete and closed; Phase 14 unauthorized)*

@@ -120,14 +120,16 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 7 M5b implementation: total top-level **443**, public **339**, internal **104**, production
-C# **405**, Features C# **366**, App C# **37**, production DI registrations
-**69** (all Singleton; Conversations adds `IActorCatalog` and
-`IConversationStore`), Composition.Registration modules **12**. FindingIds remaining: exactly
-**2** (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate M7 composition-
-boundary residuals. NamespaceDirection allowlist is empty.
-`ApplicationShutdown` is the ordered shutdown owner, not a third locator
-residual. Non-C# assets are not governed by the root-admission detectors.
+tracked production **C#** root admission. Live inventory after Refactor 8 M8
+closeout: total top-level **450**, public **339**, internal **111**, tracked
+production C# source files **412** (App **42**, UI **4**, Features **366**),
+production DI registrations **69** (all Singleton; Conversations adds
+`IActorCatalog` and `IConversationStore`), Composition.Registration modules
+**12**. FindingIds remaining: exactly **2** (`R61-AL-LOC-Program`,
+`R61-AL-LOC-App`) — deliberate M7 composition-boundary residuals.
+NamespaceDirection allowlist is empty. `ApplicationShutdown` is the ordered
+shutdown owner, not a third locator residual. Non-C# assets are not governed
+by the root-admission detectors.
 
 | Later work | Owns |
 |------------|------|
@@ -135,7 +137,8 @@ residual. Non-C# assets are not governed by the root-admission detectors.
 | Refactor 6.2 | Closed scheduled migration (optional root admission declined) |
 | Refactor 6.3 | Closed; composition residuals documented above |
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
-| Refactor 8 | Townhall/shell UI foundation; unauthorized until its own M0 |
+| Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
+| Phase 14 | Unauthorized until its own accepted M0 |
 
 ---
 
@@ -344,4 +347,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-19 (Refactor 7 M7 accepted at `a7d2887`; Refactor 7 complete and closed; implemented baselines remain public 339 / internal 104 / total 443, prod C# 405 / Features 366 / App 37, DI 69 / Registration modules 12; Refactor 8 and Phase 14 unauthorized)*
+*Last updated: 2026-07-20 (Refactor 8 M8 accepted; Refactor 8 complete and closed; baselines public 339 / internal 111 / total 450, tracked prod C# 412 / App 42 / UI 4 / Features 366, DI 69 / Registration modules 12; Phase 14 unauthorized)*
