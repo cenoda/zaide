@@ -50,6 +50,20 @@ public class TownhallInputArea : Panel
         set => _inputField.PlaceholderText = value;
     }
 
+    /// <summary>
+    /// Enables or disables user input and send affordances.
+    /// </summary>
+    public bool IsInputEnabled
+    {
+        get => _inputField.IsEnabled;
+        set
+        {
+            _inputField.IsEnabled = value;
+            _sendButton.IsHitTestVisible = value;
+            _sendButton.Opacity = value ? 1.0 : 0.5;
+        }
+    }
+
     public TownhallInputArea()
     {
         // Input text box
@@ -181,6 +195,11 @@ public class TownhallInputArea : Panel
 
     private void TriggerSend()
     {
+        if (!IsInputEnabled)
+        {
+            return;
+        }
+
         var text = InputText.Trim();
         if (string.IsNullOrEmpty(text))
             return;

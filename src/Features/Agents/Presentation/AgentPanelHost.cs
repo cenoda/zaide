@@ -77,6 +77,19 @@ public sealed class AgentPanelHost : IAgentPanelHost, INotifyPropertyChanged
         return CreatePanelFromActor(actor);
     }
 
+    /// <inheritdoc />
+    public AgentPanelState CreatePanelForActor(ActorId actorId)
+    {
+        if (!_actorCatalog.TryGet(actorId, out var actor))
+        {
+            throw new ArgumentException(
+                $"No catalog actor exists for id '{actorId.Value}'.",
+                nameof(actorId));
+        }
+
+        return CreatePanelFromActor(actor);
+    }
+
     private AgentPanelState CreatePanelFromActor(Actor actor)
     {
         var conversation = _conversationStore.GetOrCreateDirectConversation(

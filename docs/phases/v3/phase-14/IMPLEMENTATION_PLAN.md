@@ -4,10 +4,11 @@
 
 **Phase 14 status:** **M0 accepted (2026-07-20).** **M1 complete (2026-07-20)** — store
 navigation seams. **M2 complete (2026-07-20)** — Townhall navigation for channels and
-direct conversations. **M3 and later milestones remain unauthorized** until a human
-explicitly authorizes the next named milestone only. M2 does **not** authorize unified
-DM send surface, privacy changes, persistence implementation, Agent Panel
-retirement, or any later milestone scope.
+direct conversations. **M3 complete (2026-07-20)** — unified conversation surface for
+selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
+**M4 and later milestones remain unauthorized** until a human explicitly authorizes the
+next named milestone only. M3 does **not** authorize privacy changes, persistence
+implementation, Agent Panel retirement, or any later milestone scope.
 
 **Dependency status:**
 
@@ -267,7 +268,7 @@ Harness or ACP platform.
 | **M0** | Planning gate: live audit, decisions D01–D21, persistence contract, UI acceptance lock, milestones, commands, rollback. **Docs only.** | Plan review; no production diff required | **Accepted (2026-07-20)** |
 | **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | **Complete (2026-07-20)** — commit `5397ade` |
 | **M2** | **Townhall navigation UI** for channels + directs (list, select, create/open DM with known agents). Dedicated Agent Panel still present. No privacy change yet. Semantic list controls + keyboard select path. | Build; Townhall + Conversations tests; Architecture; full suite; manual nav smoke | **Complete (2026-07-20)** — commit `c25ce09` |
-| **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | Unauthorized |
+| **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | **Complete (2026-07-20)** — pending acceptance commit |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | Unauthorized |
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | Unauthorized |
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | Unauthorized |
@@ -436,7 +437,45 @@ Manual smoke (minimum, expand per milestone evidence):
 4. ~~Human authorizes **M2 only**.~~ **Done (2026-07-20).**
 5. ~~**Implement M2** Townhall navigation UI.~~ **Done (2026-07-20).**
 
-M3+ remains unauthorized until explicitly approved.
+M4+ remains unauthorized until explicitly approved.
+
+---
+
+## M3 closeout (2026-07-20)
+
+**Acceptance commit:** *(pending human commit at M3 boundary)*
+
+**Execution wiring:** **Choice A** — Townhall direct send ensures a panel exists for the
+peer catalog actor (`CreatePanelForActor`) and calls existing
+`IAgentExecutionCoordinator.SendAsync(panelId, …)`. Agent Panel UI and public mirror
+unchanged (M4 removes mirror).
+
+**Delivered:**
+
+- `TownhallViewModel.SendMessageCommand` sends on channel (`ActiveChannelId`) and direct
+  (`ActiveConversationId`) with busy/disable via panel `IsBusy`.
+- `IAgentPanelHost.CreatePanelForActor(ActorId)` so execution targets the same direct
+  conversation as Townhall navigation (no custom-panel actor drift).
+- `TownhallChatPanel` incremental updates, scroll anchoring, near-bottom auto-follow,
+  new-message affordance; `TownhallChatScrollPolicy` pure helper.
+- `TownhallInputArea.IsInputEnabled` wired from `TownhallViewModel.IsInputEnabled`.
+- Tests: `TownhallDirectSendTests`, `TownhallChatScrollPolicyTests`; architecture baseline
+  **454** total / **338** public / **116** internal.
+
+**Verification (2026-07-20):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Townhall'` | 96 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Features.Agents'` | 193 passed |
+| `dotnet test Zaide.slnx --filter 'FullyQualifiedName~Zaide.Tests.Architecture'` | 26 passed |
+| `dotnet test Zaide.slnx` | 2550 passed |
+| `git diff --check` | clean |
+
+**Manual smoke:** recorded in [`M3_MANUAL_EVIDENCE.md`](M3_MANUAL_EVIDENCE.md) — interactive GUI rows not validated on display in agent session.
+
+**M4+ still unauthorized.**
 
 ---
 
@@ -515,8 +554,8 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Audit amendments: per-panel concurrency; UI acceptance lock (V3 §18); LOC recount + counting rule; membership vs channel participants; V2 migration N/A; M1 pair-key handoff; re-send vs retry (D21); dual-write public API naming; SQLite prose; suite not re-run note. |
 | 2026-07-20 | Human accepted amended M0. Production milestones still unauthorized. |
 | 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
-| 2026-07-20 | **M2 complete** — Townhall navigation for channels + directs; `ActiveConversationId`; People open-DM; internal `TownhallNavigationPanel`. M3+ unauthorized. |
+| 2026-07-20 | **M3 complete** — unified Townhall send for channels + directs; scroll UX; panel-backed execution (choice A). M4+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M2 complete; M3+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M3 complete; M4+ unauthorized)*

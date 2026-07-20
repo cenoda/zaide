@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Presentation;
 
@@ -36,6 +37,12 @@ public interface IAgentPanelHost
     /// to the collection. The new panel becomes the active panel.
     /// </summary>
     AgentPanelState CreatePanel(string agentId, string agentName, string avatarResourceKey);
+
+    /// <summary>
+    /// Create a new agent panel for a canonical catalog actor and add it to
+    /// the collection. The new panel becomes the active panel.
+    /// </summary>
+    AgentPanelState CreatePanelForActor(ActorId actorId);
 
     /// <summary>
     /// Activate the panel identified by <paramref name="panelId"/>.

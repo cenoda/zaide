@@ -235,7 +235,10 @@ public class TownhallView : Panel, IDisposable
 
     private void OnSendRequested()
     {
-        if (_viewModel is null) return;
+        if (_viewModel is null || !_viewModel.IsInputEnabled)
+        {
+            return;
+        }
 
         // Sync text from input to ViewModel draft, then send
         _viewModel.DraftText = _inputArea.InputText;
@@ -288,6 +291,7 @@ public class TownhallView : Panel, IDisposable
             _viewModel.WhenAnyValue(x => x.ActiveConversationId)
                 .Subscribe(_ =>
                 {
+                    _chatPanel.ResetForConversation();
                     _navigationPanel.SetChannels(_viewModel.Channels);
                     _navigationPanel.SetDirectItems(_viewModel.DirectNavItems);
                     UpdatePlaceholder();
@@ -296,11 +300,11 @@ public class TownhallView : Panel, IDisposable
         // React to FilteredMessages changes (filter mode or underlying collection updates).
         _disposables.Add(
             _viewModel.FilteredMessages
-                .Subscribe(filtered =>
-                {
-                    var oc = new ObservableCollection<TownhallMessage>(filtered);
-                    _chatPanel.SetMessages(oc);
-                }));
+                .Subscribe(filtered => _chatPanel.UpdateMessages(filtered)));
+
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.IsInputEnabled)
+                .Subscribe(enabled => _inputArea.IsInputEnabled = enabled));
 
         // Wire filter toggle buttons to FilterMode using a shared helper that unchecks
         // the other two buttons when a button is checked, guarding against redundant

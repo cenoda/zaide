@@ -1,3 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
@@ -28,6 +33,26 @@ internal static class ConversationsTestSupport
     public static TownhallViewModel CreateTownhallViewModel(
         TownhallState? state = null,
         IActorCatalog? catalog = null,
-        IConversationStore? store = null) =>
-        new(state ?? new TownhallState(), catalog ?? CreateCatalog(), store ?? CreateStore());
+        IConversationStore? store = null,
+        IAgentPanelHost? panelHost = null,
+        IAgentExecutionCoordinator? executionCoordinator = null)
+    {
+        var resolvedCatalog = catalog ?? CreateCatalog();
+        var resolvedStore = store ?? CreateStore();
+        return new TownhallViewModel(
+            state ?? new TownhallState(),
+            resolvedCatalog,
+            resolvedStore,
+            panelHost ?? CreatePanelHost(resolvedCatalog, resolvedStore),
+            executionCoordinator ?? new NoOpAgentExecutionCoordinator());
+    }
+
+    private sealed class NoOpAgentExecutionCoordinator : IAgentExecutionCoordinator
+    {
+        public Task<AgentExecutionCoordinatorResult?> SendAsync(
+            string panelId,
+            string userMessage,
+            CancellationToken ct = default) =>
+            Task.FromResult<AgentExecutionCoordinatorResult?>(null);
+    }
 }

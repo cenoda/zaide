@@ -4,8 +4,13 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
@@ -24,8 +29,12 @@ public class TownhallViewModel : ReactiveObject
     private readonly TownhallState _state;
     private readonly IActorCatalog _actorCatalog;
     private readonly IConversationStore _conversationStore;
+    private readonly IAgentPanelHost _panelHost;
+    private readonly IAgentExecutionCoordinator _executionCoordinator;
+    private readonly SerialDisposable _directBusySubscription = new();
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
+    private bool _isDirectSendBusy;
 
     /// <summary>
     /// Gets the list of channels.
@@ -119,8 +128,34 @@ public class TownhallViewModel : ReactiveObject
             _state.ActiveConversationId = value;
             this.RaisePropertyChanged(nameof(ActiveConversationId));
             UpdateDirectNavSelection();
+            UpdateDirectSendBusyTracking();
         }
     }
+
+    /// <summary>
+    /// True when the active direct conversation has an in-flight agent request.
+    /// Channel selection always yields false.
+    /// </summary>
+    public bool IsDirectSendBusy
+    {
+        get => _isDirectSendBusy;
+        private set
+        {
+            if (_isDirectSendBusy == value)
+            {
+                return;
+            }
+
+            _isDirectSendBusy = value;
+            this.RaisePropertyChanged(nameof(IsDirectSendBusy));
+            this.RaisePropertyChanged(nameof(IsInputEnabled));
+        }
+    }
+
+    /// <summary>
+    /// Townhall input is enabled unless the active direct conversation is busy.
+    /// </summary>
+    public bool IsInputEnabled => !IsDirectSendBusy;
 
     /// <summary>
     /// Gets the ID of the currently active channel when a channel conversation is selected.
@@ -145,7 +180,7 @@ public class TownhallViewModel : ReactiveObject
 
     /// <summary>
     /// Command to send the current draft message.
-    /// Appends to the active channel's message list.
+    /// Appends to the active channel or sends through the agent execution path for directs.
     /// </summary>
     public ReactiveCommand<Unit, Unit> SendMessageCommand { get; }
 
@@ -155,11 +190,15 @@ public class TownhallViewModel : ReactiveObject
     public TownhallViewModel(
         TownhallState state,
         IActorCatalog actorCatalog,
-        IConversationStore conversationStore)
+        IConversationStore conversationStore,
+        IAgentPanelHost panelHost,
+        IAgentExecutionCoordinator executionCoordinator)
     {
         _state = state ?? throw new ArgumentNullException(nameof(state));
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
+        _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
+        _executionCoordinator = executionCoordinator ?? throw new ArgumentNullException(nameof(executionCoordinator));
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
 
@@ -222,26 +261,54 @@ public class TownhallViewModel : ReactiveObject
 
         OpenDirectConversationCommand = ReactiveCommand.Create<ActorId>(OpenDirectConversation);
 
-        // Send message command - validates and appends to active channel's message list
-        SendMessageCommand = ReactiveCommand.Create(() =>
+        SendMessageCommand = ReactiveCommand.CreateFromTask(SendMessageAsync);
+        UpdateDirectSendBusyTracking();
+    }
+
+    private async Task SendMessageAsync()
+    {
+        var draft = DraftText?.Trim();
+        if (string.IsNullOrEmpty(draft))
         {
-            var draft = DraftText?.Trim();
-            if (string.IsNullOrEmpty(draft))
-                return;
+            return;
+        }
 
-            if (_state.ActiveChannelId is null)
-                return;
-
+        if (_state.ActiveChannelId is not null)
+        {
             LogActivity(
                 entryKind: ConversationEntryKind.UserChat,
                 content: draft,
                 author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
                 senderName: _actorCatalog.CanonicalHuman.DisplayName);
-
-            // Clear draft after sending
             DraftText = string.Empty;
-        });
+            return;
+        }
+
+        if (_state.ActiveConversationId is not { } activeConversationId)
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(activeConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            return;
+        }
+
+        var panel = EnsurePanelForDirectConversation(conversation);
+        UpdateDirectSendBusyTracking();
+
+        if (panel.IsBusy)
+        {
+            return;
+        }
+
+        var result = await _executionCoordinator.SendAsync(panel.PanelId, draft);
+        if (result is not null)
+        {
+            DraftText = string.Empty;
+        }
     }
 
     /// <summary>
@@ -353,6 +420,73 @@ public class TownhallViewModel : ReactiveObject
         }
 
         Messages = ProjectDirectMessages(conversation);
+        UpdateDirectSendBusyTracking();
+    }
+
+    private AgentPanelState? FindPanelForConversation(ConversationId conversationId) =>
+        _panelHost.Panels.FirstOrDefault(panel => panel.ConversationId == conversationId);
+
+    private AgentPanelState EnsurePanelForDirectConversation(Conversation conversation)
+    {
+        var existing = FindPanelForConversation(conversation.Id);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var peerActorId = ResolveDirectPeerActorId(conversation);
+        existing = _panelHost.Panels.FirstOrDefault(panel => panel.ActorId == peerActorId);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        return _panelHost.CreatePanelForActor(peerActorId);
+    }
+
+    private ActorId ResolveDirectPeerActorId(Conversation conversation)
+    {
+        var humanId = _actorCatalog.CanonicalHuman.Id;
+        var peer = conversation.Participants.All.FirstOrDefault(participant => participant != humanId);
+        if (peer == default)
+        {
+            throw new InvalidOperationException(
+                $"Direct conversation '{conversation.Id.Value}' has no non-human participant.");
+        }
+
+        return peer;
+    }
+
+    private void UpdateDirectSendBusyTracking()
+    {
+        _directBusySubscription.Disposable = null;
+
+        if (_state.ActiveChannelId is not null
+            || _state.ActiveConversationId is not { } activeConversationId
+            || !_conversationStore.TryGet(activeConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            IsDirectSendBusy = false;
+            return;
+        }
+
+        var panel = FindPanelForConversation(activeConversationId);
+        if (panel is null)
+        {
+            IsDirectSendBusy = false;
+            return;
+        }
+
+        IsDirectSendBusy = panel.IsBusy;
+        PropertyChangedEventHandler? handler = (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+            {
+                IsDirectSendBusy = panel.IsBusy;
+            }
+        };
+        panel.PropertyChanged += handler;
+        _directBusySubscription.Disposable = Disposable.Create(() => panel.PropertyChanged -= handler);
     }
 
     private ObservableCollection<TownhallMessage> ProjectDirectMessages(Conversation conversation)

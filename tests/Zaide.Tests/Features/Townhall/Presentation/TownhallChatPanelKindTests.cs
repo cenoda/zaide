@@ -96,7 +96,8 @@ public class TownhallChatPanelKindTests
 
     private static System.Collections.Generic.IReadOnlyList<Border> GetRenderedRows(TownhallChatPanel panel)
     {
-        var scrollViewer = Assert.IsType<ScrollViewer>(Assert.Single(panel.Children));
+        var root = Assert.IsType<Grid>(Assert.Single(panel.Children));
+        var scrollViewer = root.Children.OfType<ScrollViewer>().Single();
         var messageList = Assert.IsType<StackPanel>(scrollViewer.Content);
         return messageList.Children.OfType<Border>().ToList();
     }

@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
@@ -20,8 +21,14 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 public class TownhallChatPanel : Panel
 {
+    private readonly Grid _root;
     private readonly StackPanel _messageList;
     private readonly ScrollViewer _scrollViewer;
+    private readonly Button _newMessagesButton;
+    private int _renderedMessageCount;
+    private string? _firstMessageId;
+    private TownhallMessage? _previousMessage;
+    private int _unseenMessageCount;
 
     public TownhallChatPanel()
     {
@@ -37,8 +44,37 @@ public class TownhallChatPanel : Panel
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
+        _scrollViewer.ScrollChanged += OnScrollChanged;
 
-        Children.Add(_scrollViewer);
+        _newMessagesButton = new Button
+        {
+            Content = TextStyles.Caption("New messages"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingMd),
+            IsVisible = false
+        };
+        _newMessagesButton.Click += (_, _) => ScrollToEndAndClearChip();
+
+        _root = new Grid
+        {
+            Children = { _scrollViewer, _newMessagesButton }
+        };
+
+        Children.Add(_root);
+    }
+
+    /// <summary>
+    /// Clears rendered rows when the authoritative conversation selection changes.
+    /// </summary>
+    public void ResetForConversation()
+    {
+        _messageList.Children.Clear();
+        _renderedMessageCount = 0;
+        _firstMessageId = null;
+        _previousMessage = null;
+        _unseenMessageCount = 0;
+        HideNewMessageChip();
     }
 
     /// <summary>
@@ -47,18 +83,138 @@ public class TownhallChatPanel : Panel
     /// </summary>
     public void SetMessages(ObservableCollection<TownhallMessage> messages)
     {
-        _messageList.Children.Clear();
+        ResetForConversation();
+        UpdateMessages(messages);
+        ScrollToEnd();
+    }
 
-        TownhallMessage? previousMessage = null;
-        foreach (var message in messages)
+    /// <summary>
+    /// Applies filtered message updates with scroll anchoring and near-bottom auto-follow.
+    /// </summary>
+    public void UpdateMessages(IReadOnlyList<TownhallMessage> messages)
+    {
+        if (messages.Count < _renderedMessageCount || NeedsFullRebuild(messages))
         {
-            var renderHeader = ShouldRenderHeader(previousMessage, message);
-            _messageList.Children.Add(CreateMessageRow(message, renderHeader));
-            previousMessage = message;
+            var scrollToEnd = _renderedMessageCount == 0 || IsNearBottom();
+            RebuildAll(messages);
+            if (scrollToEnd)
+            {
+                ScrollToEnd();
+            }
+
+            return;
         }
 
-        // Scroll to bottom (newest messages)
+        if (messages.Count == _renderedMessageCount)
+        {
+            return;
+        }
+
+        var wasNearBottom = IsNearBottom();
+        var appendedCount = 0;
+        for (var i = _renderedMessageCount; i < messages.Count; i++)
+        {
+            var message = messages[i];
+            var renderHeader = ShouldRenderHeader(_previousMessage, message);
+            _messageList.Children.Add(CreateMessageRow(message, renderHeader));
+            _previousMessage = message;
+            appendedCount++;
+        }
+
+        _renderedMessageCount = messages.Count;
+        if (_firstMessageId is null && messages.Count > 0)
+        {
+            _firstMessageId = messages[0].Id;
+        }
+
+        if (TownhallChatScrollPolicy.ShouldAutoFollowOnAppend(wasNearBottom))
+        {
+            ScrollToEnd();
+            return;
+        }
+
+        if (appendedCount > 0)
+        {
+            _unseenMessageCount += appendedCount;
+            ShowNewMessageChip();
+        }
+    }
+
+    private bool NeedsFullRebuild(IReadOnlyList<TownhallMessage> messages)
+    {
+        if (_renderedMessageCount == 0)
+        {
+            return false;
+        }
+
+        if (messages.Count == 0)
+        {
+            return _renderedMessageCount > 0;
+        }
+
+        return !string.Equals(messages[0].Id, _firstMessageId, StringComparison.Ordinal);
+    }
+
+    private void RebuildAll(IReadOnlyList<TownhallMessage> messages)
+    {
+        _messageList.Children.Clear();
+        _renderedMessageCount = 0;
+        _firstMessageId = null;
+        _previousMessage = null;
+        _unseenMessageCount = 0;
+        HideNewMessageChip();
+
+        foreach (var message in messages)
+        {
+            var renderHeader = ShouldRenderHeader(_previousMessage, message);
+            _messageList.Children.Add(CreateMessageRow(message, renderHeader));
+            _previousMessage = message;
+            _renderedMessageCount++;
+        }
+
+        if (messages.Count > 0)
+        {
+            _firstMessageId = messages[0].Id;
+        }
+    }
+
+    private bool IsNearBottom() =>
+        TownhallChatScrollPolicy.IsNearBottom(
+            _scrollViewer.Offset.Y,
+            _scrollViewer.ScrollBarMaximum.Y);
+
+    private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        if (IsNearBottom() && _unseenMessageCount > 0)
+        {
+            ScrollToEndAndClearChip();
+        }
+    }
+
+    private void ScrollToEnd()
+    {
         _scrollViewer.ScrollToEnd();
+        HideNewMessageChip();
+    }
+
+    private void ScrollToEndAndClearChip()
+    {
+        _unseenMessageCount = 0;
+        ScrollToEnd();
+    }
+
+    private void ShowNewMessageChip()
+    {
+        _newMessagesButton.IsVisible = true;
+        _newMessagesButton.Content = _unseenMessageCount == 1
+            ? TextStyles.Caption("New message")
+            : TextStyles.Caption($"New messages ({_unseenMessageCount})");
+    }
+
+    private void HideNewMessageChip()
+    {
+        _unseenMessageCount = 0;
+        _newMessagesButton.IsVisible = false;
     }
 
     private static bool ShouldRenderHeader(TownhallMessage? previousMessage, TownhallMessage message)

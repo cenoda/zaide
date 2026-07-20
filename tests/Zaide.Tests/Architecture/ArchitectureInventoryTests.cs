@@ -94,7 +94,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
         // Phase 14 M2: TownhallChannelPanel removed; +3 internal navigation types.
-        Assert.Equal((10, 6, 4), byNamespace["Zaide.Features.Townhall.Presentation"]);
+        // Phase 14 M3: +1 internal TownhallChatScrollPolicy.
+        Assert.Equal((11, 6, 5), byNamespace["Zaide.Features.Townhall.Presentation"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
         Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Conversations.Application"]);
