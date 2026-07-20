@@ -442,9 +442,10 @@ Manual smoke (minimum, expand per milestone evidence):
 6. ~~**Implement M3–M4**.~~ **Done (2026-07-20).**
 7. ~~Human authorizes **M5 only**.~~ **Done (2026-07-20).**
 8. ~~**Implement M5** per-conversation draft + unread/read cursor.~~ **Done (2026-07-20).**
-9. Human authorizes **M6 only**, then implement persistence + recovery.
+9. ~~Human authorizes **M6 only**.~~ **Done (2026-07-20).**
+10. **Implement M6** persistence + recovery (schema v1 file store).
 
-M6+ remains unauthorized until explicitly approved.
+M7+ remains unauthorized until explicitly approved.
 
 ---
 
@@ -647,7 +648,8 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | **M3 complete** — unified Townhall send for channels + directs; scroll UX; panel-backed execution (choice A). M4+ unauthorized. |
 | 2026-07-20 | Human authorized **M5 only** — per-conversation draft + unread/read cursor. M6+ unauthorized. |
 | 2026-07-20 | **M5 complete** — per-conversation draft + unread/read cursor (in-memory). M6+ unauthorized. |
+| 2026-07-20 | Human authorized **M6 only** — persistence + recovery. M7+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M5 complete; M6+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M5 complete; M6 authorized only; M7+ unauthorized)*
