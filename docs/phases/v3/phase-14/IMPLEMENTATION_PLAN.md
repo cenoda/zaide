@@ -7,8 +7,9 @@ navigation seams. **M2 complete (2026-07-20)** — Townhall navigation for chann
 direct conversations. **M3 complete (2026-07-20)** — unified conversation surface for
 selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
 **M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
-**M5 and later milestones remain unauthorized** until a human explicitly authorizes the
-next named milestone only. M4 does **not** authorize persistence implementation,
+**M5 authorized only (2026-07-20)** — per-conversation draft + unread/read cursor.
+**M6 and later milestones remain unauthorized** until a human explicitly authorizes the
+next named milestone only. M5 does **not** authorize persistence implementation,
 Agent Panel retirement, or any later milestone scope.
 
 **Dependency status:**
@@ -271,7 +272,7 @@ Harness or ACP platform.
 | **M2** | **Townhall navigation UI** for channels + directs (list, select, create/open DM with known agents). Dedicated Agent Panel still present. No privacy change yet. Semantic list controls + keyboard select path. | Build; Townhall + Conversations tests; Architecture; full suite; manual nav smoke | **Complete (2026-07-20)** — commit `c25ce09` |
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | **Complete (2026-07-20)** — commit `a38d1ff` |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | **Complete (2026-07-20)** — commit `921d238` |
-| **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | Unauthorized |
+| **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | **Authorized (2026-07-20)** — not complete |
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | Unauthorized |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | Unauthorized |
 | **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | Unauthorized |
@@ -437,8 +438,11 @@ Manual smoke (minimum, expand per milestone evidence):
    key); no DM UI, no panel retirement, no M2+.~~ **Done (2026-07-20).**
 4. ~~Human authorizes **M2 only**.~~ **Done (2026-07-20).**
 5. ~~**Implement M2** Townhall navigation UI.~~ **Done (2026-07-20).**
+6. ~~**Implement M3–M4**.~~ **Done (2026-07-20).**
+7. ~~Human authorizes **M5 only**.~~ **Done (2026-07-20).**
+8. **Implement M5** per-conversation draft + unread/read cursor.
 
-M4+ remains unauthorized until explicitly approved.
+M6+ remains unauthorized until explicitly approved.
 
 ---
 
@@ -472,7 +476,7 @@ M4+ remains unauthorized until explicitly approved.
 
 **Manual smoke:** recorded in [`M4_MANUAL_EVIDENCE.md`](M4_MANUAL_EVIDENCE.md) — interactive GUI rows not validated on display in agent session.
 
-**M5+ still unauthorized.**
+**M5 authorized only (2026-07-20); M6+ unauthorized.**
 
 ---
 
@@ -592,7 +596,8 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
 | 2026-07-20 | **M4 complete** — privacy: agent-panel sends no longer mirror to public channels. M5+ unauthorized. |
 | 2026-07-20 | **M3 complete** — unified Townhall send for channels + directs; scroll UX; panel-backed execution (choice A). M4+ unauthorized. |
+| 2026-07-20 | Human authorized **M5 only** — per-conversation draft + unread/read cursor. M6+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M4 complete; M5+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M4 complete; M5 authorized only; M6+ unauthorized)*
