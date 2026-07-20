@@ -443,7 +443,8 @@ M4+ remains unauthorized until explicitly approved.
 
 ## M3 closeout (2026-07-20)
 
-**Acceptance commit:** 
+**Acceptance commit:** `a38d1ff`  
+(`feat(townhall): unified channel and direct send surface (Phase 14 M3)`)
 
 **Execution wiring:** **Choice A** — Townhall direct send ensures a panel exists for the
 peer catalog actor (`CreatePanelForActor`) and calls existing
