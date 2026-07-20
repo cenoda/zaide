@@ -95,7 +95,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Townhall.Domain"]);
         // Phase 14 M2: TownhallChannelPanel removed; +3 internal navigation types.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy.
-        Assert.Equal((11, 6, 5), byNamespace["Zaide.Features.Townhall.Presentation"]);
+        // Phase 14 M5: +1 internal TownhallConversationUiState.
+        Assert.Equal((12, 6, 6), byNamespace["Zaide.Features.Townhall.Presentation"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
         Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Conversations.Application"]);
@@ -143,7 +144,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M1: +1 internal DirectParticipantPairKey production file.
         // Phase 14 M2: -1 TownhallChannelPanel, +3 internal navigation production files.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
-        Assert.Equal(416, inventory.SourceFiles.Count);
+        // Phase 14 M5: +1 internal TownhallConversationUiState production file.
+        Assert.Equal(417, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -152,8 +154,8 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(42, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
-        // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
-        Assert.Equal(370, byFolder["Features"]);
+        // Phase 14 M5: +1 internal TownhallConversationUiState production file.
+        Assert.Equal(371, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

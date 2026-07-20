@@ -13,6 +13,7 @@ public class Channel : System.ComponentModel.INotifyPropertyChanged
     private string _name = string.Empty;
     private bool _isPinned;
     private bool _isActive;
+    private bool _hasUnread;
 
     /// <summary>
     /// Unique identifier for the channel.
@@ -74,6 +75,23 @@ public class Channel : System.ComponentModel.INotifyPropertyChanged
             if (_isActive != value)
             {
                 _isActive = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether this channel has unread activity relative to the last-read cursor.
+    /// Presentation-only; raised via PropertyChanged for nav affordance.
+    /// </summary>
+    public bool HasUnread
+    {
+        get => _hasUnread;
+        set
+        {
+            if (_hasUnread != value)
+            {
+                _hasUnread = value;
                 OnPropertyChanged();
             }
         }

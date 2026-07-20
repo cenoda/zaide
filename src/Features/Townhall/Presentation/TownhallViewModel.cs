@@ -31,6 +31,7 @@ public class TownhallViewModel : ReactiveObject
     private readonly IConversationStore _conversationStore;
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _executionCoordinator;
+    private readonly TownhallConversationUiState _conversationUiState = new();
     private readonly SerialDisposable _directBusySubscription = new();
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
@@ -281,7 +282,7 @@ public class TownhallViewModel : ReactiveObject
                 author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
                 senderName: _actorCatalog.CanonicalHuman.DisplayName);
-            DraftText = string.Empty;
+            ClearActiveConversationDraft();
             return;
         }
 
@@ -307,7 +308,7 @@ public class TownhallViewModel : ReactiveObject
         var result = await _executionCoordinator.SendAsync(panel.PanelId, draft);
         if (result is not null)
         {
-            DraftText = string.Empty;
+            ClearActiveConversationDraft();
         }
     }
 
@@ -318,18 +319,97 @@ public class TownhallViewModel : ReactiveObject
             return;
         }
 
+        var previousId = _state.ActiveConversationId;
+        if (previousId is { } previous && previous != conversationId)
+        {
+            _conversationUiState.SetDraft(previous, DraftText);
+        }
+
         ActiveConversationId = conversationId;
+
+        if (previousId != conversationId)
+        {
+            DraftText = _conversationUiState.GetDraft(conversationId);
+        }
 
         if (conversation.Kind == ConversationKind.Channel
             && conversationId.TryGetChannelId(out var channelId))
         {
             ApplyChannelSelection(channelId);
+            MarkConversationRead(conversationId);
             return;
         }
 
         if (conversation.Kind == ConversationKind.Direct)
         {
             ApplyDirectSelection(conversation);
+            MarkConversationRead(conversationId);
+        }
+    }
+
+    private void ClearActiveConversationDraft()
+    {
+        if (_state.ActiveConversationId is { } activeConversationId)
+        {
+            _conversationUiState.ClearDraft(activeConversationId);
+        }
+
+        DraftText = string.Empty;
+    }
+
+    private void MarkConversationRead(ConversationId conversationId)
+    {
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            return;
+        }
+
+        if (conversation.Entries.Count == 0)
+        {
+            _conversationUiState.SetLastReadEntryId(conversationId, null);
+        }
+        else
+        {
+            _conversationUiState.SetLastReadEntryId(
+                conversationId,
+                conversation.Entries[^1].Id);
+        }
+
+        ApplyUnreadPresentation(conversation);
+    }
+
+    private void AdvanceLastRead(ConversationId conversationId, ConversationEntry entry)
+    {
+        _conversationUiState.SetLastReadEntryId(conversationId, entry.Id);
+        if (_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            ApplyUnreadPresentation(conversation);
+        }
+    }
+
+    private void ApplyUnreadPresentation(Conversation conversation)
+    {
+        var isUnread = _conversationUiState.IsUnread(conversation);
+
+        if (conversation.Kind == ConversationKind.Channel
+            && conversation.Id.TryGetChannelId(out var channelId))
+        {
+            var channel = _state.Channels.FirstOrDefault(c => c.Id == channelId);
+            if (channel is not null)
+            {
+                channel.HasUnread = isUnread;
+            }
+
+            return;
+        }
+
+        if (conversation.Kind == ConversationKind.Direct)
+        {
+            var item = DirectNavItems.FirstOrDefault(i => i.ConversationId == conversation.Id);
+            if (item is not null)
+            {
+                item.HasUnread = isUnread;
+            }
         }
     }
 
@@ -527,7 +607,8 @@ public class TownhallViewModel : ReactiveObject
             Kind = TownhallNavigationKind.Direct,
             Label = label,
             PeerActorId = peerId,
-            IsSelected = selectedId.HasValue && selectedId.Value == conversation.Id
+            IsSelected = selectedId.HasValue && selectedId.Value == conversation.Id,
+            HasUnread = _conversationUiState.IsUnread(conversation)
         };
     }
 
@@ -537,6 +618,10 @@ public class TownhallViewModel : ReactiveObject
         foreach (var item in DirectNavItems)
         {
             item.IsSelected = selectedId.HasValue && item.ConversationId == selectedId.Value;
+            if (_conversationStore.TryGet(item.ConversationId, out var conversation))
+            {
+                item.HasUnread = _conversationUiState.IsUnread(conversation);
+            }
         }
     }
 
@@ -552,12 +637,23 @@ public class TownhallViewModel : ReactiveObject
                 return;
             }
 
-            // Only refresh direct nav when a direct conversation is involved.
+            var isActive = _state.ActiveConversationId == conversationId;
+            if (isActive)
+            {
+                // Active + visible: advance last-read so appends do not leave sticky unread.
+                AdvanceLastRead(conversationId, entry);
+            }
+            else
+            {
+                // Inactive: leave cursor; derived unread becomes true when history advanced.
+                ApplyUnreadPresentation(conversation);
+            }
+
             if (conversation.Kind == ConversationKind.Direct)
             {
                 RefreshDirectNavItems();
 
-                if (_state.ActiveConversationId == conversationId)
+                if (isActive)
                 {
                     Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
                 }

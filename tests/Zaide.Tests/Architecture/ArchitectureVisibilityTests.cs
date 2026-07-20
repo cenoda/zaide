@@ -195,7 +195,8 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
-        Assert.Equal(370, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 14 M5: +1 internal TownhallConversationUiState production file.
+        Assert.Equal(371, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -128,16 +129,16 @@ internal sealed class TownhallNavigationPanel : Panel
     {
         var nameText = TextStyles.Body($"#{channel.Name}");
         nameText.VerticalAlignment = VerticalAlignment.Center;
-        nameText.Foreground = channel.IsActive
-            ? PaletteTokens.TextPrimaryBrush
-            : PaletteTokens.TextSecondaryBrush;
+        ApplyRowForeground(nameText, channel.IsActive);
+
+        var unreadDot = CreateUnreadDot(channel.HasUnread);
 
         var contentStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { nameText }
+            Children = { unreadDot, nameText }
         };
 
         if (channel.IsPinned)
@@ -152,6 +153,22 @@ internal sealed class TownhallNavigationPanel : Panel
 
         var row = CreateSelectableRow(contentStack, channel.IsActive);
         row.PointerPressed += (_, _) => _onChannelSelected?.Invoke(channel.Id);
+
+        void OnChannelPropertyChanged(object? _, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Channel.IsActive))
+            {
+                ApplyRowForeground(nameText, channel.IsActive);
+                ApplyRowActiveBackground(row, channel.IsActive);
+            }
+            else if (e.PropertyName == nameof(Channel.HasUnread))
+            {
+                unreadDot.IsVisible = channel.HasUnread;
+            }
+        }
+
+        channel.PropertyChanged += OnChannelPropertyChanged;
+        row.DetachedFromVisualTree += (_, _) => channel.PropertyChanged -= OnChannelPropertyChanged;
         return row;
     }
 
@@ -159,13 +176,79 @@ internal sealed class TownhallNavigationPanel : Panel
     {
         var nameText = TextStyles.Body(item.Label);
         nameText.VerticalAlignment = VerticalAlignment.Center;
-        nameText.Foreground = item.IsSelected
+        ApplyRowForeground(nameText, item.IsSelected);
+
+        var unreadDot = CreateUnreadDot(item.HasUnread);
+
+        var contentStack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXs,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { unreadDot, nameText }
+        };
+
+        var row = CreateSelectableRow(contentStack, item.IsSelected);
+        row.PointerPressed += (_, _) => _onDirectSelected?.Invoke(item.ConversationId);
+
+        void OnItemPropertyChanged(object? _, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(TownhallNavigationItem.IsSelected))
+            {
+                ApplyRowForeground(nameText, item.IsSelected);
+                ApplyRowActiveBackground(row, item.IsSelected);
+            }
+            else if (e.PropertyName == nameof(TownhallNavigationItem.HasUnread))
+            {
+                unreadDot.IsVisible = item.HasUnread;
+            }
+        }
+
+        item.PropertyChanged += OnItemPropertyChanged;
+        row.DetachedFromVisualTree += (_, _) => item.PropertyChanged -= OnItemPropertyChanged;
+        return row;
+    }
+
+    private static Ellipse CreateUnreadDot(bool isVisible)
+    {
+        const double size = 8d;
+        return new Ellipse
+        {
+            Width = size,
+            Height = size,
+            Fill = PaletteTokens.PrimaryAccentBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsVisible = isVisible
+        };
+    }
+
+    private static void ApplyRowForeground(TextBlock nameText, bool isActive)
+    {
+        nameText.Foreground = isActive
             ? PaletteTokens.TextPrimaryBrush
             : PaletteTokens.TextSecondaryBrush;
+        if (isActive)
+        {
+            nameText.FontWeight = FontWeight.SemiBold;
+        }
+        else
+        {
+            nameText.FontWeight = FontWeight.Normal;
+        }
+    }
 
-        var row = CreateSelectableRow(nameText, item.IsSelected);
-        row.PointerPressed += (_, _) => _onDirectSelected?.Invoke(item.ConversationId);
-        return row;
+    private static void ApplyRowActiveBackground(Border row, bool isActive)
+    {
+        if (isActive)
+        {
+            row.Background = new SolidColorBrush(ActiveRowOverlay);
+            row.CornerRadius = LayoutTokens.RadiusSm;
+        }
+        else
+        {
+            row.Background = null;
+            row.CornerRadius = LayoutTokens.NoneRadius;
+        }
     }
 
     private static Border CreateSelectableRow(Control content, bool isActive)
@@ -178,15 +261,11 @@ internal sealed class TownhallNavigationPanel : Panel
             Focusable = true
         };
 
-        if (isActive)
-        {
-            row.Background = new SolidColorBrush(ActiveRowOverlay);
-            row.CornerRadius = LayoutTokens.RadiusSm;
-        }
+        ApplyRowActiveBackground(row, isActive);
 
         row.PointerEntered += (_, _) =>
         {
-            if (!isActive)
+            if (row.Background is null)
             {
                 row.Background = new SolidColorBrush(HoverOverlay);
                 row.CornerRadius = LayoutTokens.RadiusSm;
@@ -194,7 +273,10 @@ internal sealed class TownhallNavigationPanel : Panel
         };
         row.PointerExited += (_, _) =>
         {
-            if (!isActive)
+            // Restore active overlay if still selected; otherwise clear hover.
+            // Active state is reapplied via PropertyChanged; hover only when no background.
+            if (row.Background is SolidColorBrush brush
+                && brush.Color == HoverOverlay)
             {
                 row.Background = null;
                 row.CornerRadius = LayoutTokens.NoneRadius;
