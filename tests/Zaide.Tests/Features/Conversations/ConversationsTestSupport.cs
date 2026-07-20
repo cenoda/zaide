@@ -35,7 +35,10 @@ internal static class ConversationsTestSupport
         IActorCatalog? catalog = null,
         IConversationStore? store = null,
         IAgentPanelHost? panelHost = null,
-        IAgentExecutionCoordinator? executionCoordinator = null)
+        IAgentExecutionCoordinator? executionCoordinator = null,
+        TownhallConversationUiState? conversationUiState = null,
+        TownhallConversationPersistenceBridge? persistenceBridge = null,
+        Zaide.Features.Conversations.Infrastructure.ConversationPersistenceService? persistenceService = null)
     {
         var resolvedCatalog = catalog ?? CreateCatalog();
         var resolvedStore = store ?? CreateStore();
@@ -44,7 +47,10 @@ internal static class ConversationsTestSupport
             resolvedCatalog,
             resolvedStore,
             panelHost ?? CreatePanelHost(resolvedCatalog, resolvedStore),
-            executionCoordinator ?? new NoOpAgentExecutionCoordinator());
+            executionCoordinator ?? new NoOpAgentExecutionCoordinator(),
+            conversationUiState ?? new TownhallConversationUiState(),
+            persistenceBridge,
+            persistenceService);
     }
 
     private sealed class NoOpAgentExecutionCoordinator : IAgentExecutionCoordinator

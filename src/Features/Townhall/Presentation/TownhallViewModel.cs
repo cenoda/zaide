@@ -13,6 +13,8 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Conversations.Application;
+using Zaide.Features.Conversations.Infrastructure;
 using Zaide.Features.Townhall.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
@@ -31,7 +33,8 @@ public class TownhallViewModel : ReactiveObject
     private readonly IConversationStore _conversationStore;
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _executionCoordinator;
-    private readonly TownhallConversationUiState _conversationUiState = new();
+    private readonly TownhallConversationUiState _conversationUiState;
+    private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
@@ -194,12 +197,36 @@ public class TownhallViewModel : ReactiveObject
         IConversationStore conversationStore,
         IAgentPanelHost panelHost,
         IAgentExecutionCoordinator executionCoordinator)
+        : this(
+            state,
+            actorCatalog,
+            conversationStore,
+            panelHost,
+            executionCoordinator,
+            new TownhallConversationUiState(),
+            persistenceBridge: null,
+            persistenceService: null)
     {
+    }
+
+    internal TownhallViewModel(
+        TownhallState state,
+        IActorCatalog actorCatalog,
+        IConversationStore conversationStore,
+        IAgentPanelHost panelHost,
+        IAgentExecutionCoordinator executionCoordinator,
+        TownhallConversationUiState conversationUiState,
+        IConversationWorkspacePersistenceBridge? persistenceBridge,
+        ConversationPersistenceService? persistenceService)
+    {
+        _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
         _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _executionCoordinator = executionCoordinator ?? throw new ArgumentNullException(nameof(executionCoordinator));
+        _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
+        _persistenceBridge = persistenceBridge;
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
 
@@ -258,7 +285,8 @@ public class TownhallViewModel : ReactiveObject
             SelectConversation(ConversationId.ForChannel(channelId));
         });
 
-        SelectConversationCommand = ReactiveCommand.Create<ConversationId>(SelectConversation);
+        SelectConversationCommand = ReactiveCommand.Create<ConversationId>(
+            id => SelectConversation(id));
 
         OpenDirectConversationCommand = ReactiveCommand.Create<ActorId>(OpenDirectConversation);
 
@@ -312,7 +340,7 @@ public class TownhallViewModel : ReactiveObject
         }
     }
 
-    private void SelectConversation(ConversationId conversationId)
+    private void SelectConversation(ConversationId conversationId, bool markRead = true)
     {
         if (!_conversationStore.TryGet(conversationId, out var conversation))
         {
@@ -323,6 +351,7 @@ public class TownhallViewModel : ReactiveObject
         if (previousId is { } previous && previous != conversationId)
         {
             _conversationUiState.SetDraft(previous, DraftText);
+            NotifyPresentationPersisted();
         }
 
         ActiveConversationId = conversationId;
@@ -330,20 +359,36 @@ public class TownhallViewModel : ReactiveObject
         if (previousId != conversationId)
         {
             DraftText = _conversationUiState.GetDraft(conversationId);
+            NotifyPresentationPersisted();
         }
 
         if (conversation.Kind == ConversationKind.Channel
             && conversationId.TryGetChannelId(out var channelId))
         {
             ApplyChannelSelection(channelId);
-            MarkConversationRead(conversationId);
+            if (markRead)
+            {
+                MarkConversationRead(conversationId);
+            }
+            else
+            {
+                ApplyUnreadPresentation(conversation);
+            }
+
             return;
         }
 
         if (conversation.Kind == ConversationKind.Direct)
         {
             ApplyDirectSelection(conversation);
-            MarkConversationRead(conversationId);
+            if (markRead)
+            {
+                MarkConversationRead(conversationId);
+            }
+            else
+            {
+                ApplyUnreadPresentation(conversation);
+            }
         }
     }
 
@@ -376,6 +421,7 @@ public class TownhallViewModel : ReactiveObject
         }
 
         ApplyUnreadPresentation(conversation);
+        NotifyPresentationPersisted();
     }
 
     private void AdvanceLastRead(ConversationId conversationId, ConversationEntry entry)
@@ -733,6 +779,49 @@ public class TownhallViewModel : ReactiveObject
     /// </summary>
     private void InitializeSessionState()
     {
+        if (_persistenceBridge?.WasRestoredFromPersistence == true)
+        {
+            InitializeFromPersistedSession();
+            return;
+        }
+
+        InitializeSeededSession();
+    }
+
+    private void InitializeFromPersistedSession()
+    {
+        foreach (var channel in _state.Channels)
+        {
+            _conversationStore.CreateChannelConversation(channel.Id);
+            RebuildChannelMessages(channel.Id);
+        }
+
+        SeedWorkspaceAgents();
+        RefreshDirectNavItems();
+
+        foreach (var conversation in _conversationStore.ListConversations())
+        {
+            ApplyUnreadPresentation(conversation);
+        }
+
+        if (_persistenceBridge?.RestoredActiveConversationId is { } activeValue
+            && TryParseConversationId(activeValue, out var activeConversationId)
+            && _conversationStore.TryGet(activeConversationId, out _))
+        {
+            SelectConversation(activeConversationId, markRead: false);
+            DraftText = _conversationUiState.GetDraft(activeConversationId);
+            return;
+        }
+
+        if (_state.Channels.Count > 0)
+        {
+            SelectConversation(ConversationId.ForChannel(_state.Channels[0].Id), markRead: false);
+            DraftText = string.Empty;
+        }
+    }
+
+    private void InitializeSeededSession()
+    {
         // Create initial channels
         var townhallMain = new Channel { Id = "channel-1", Name = "townhall-main", IsPinned = true };
         var aiStatus = new Channel { Id = "channel-2", Name = "ai-status", IsPinned = false };
@@ -757,6 +846,17 @@ public class TownhallViewModel : ReactiveObject
         RefreshDirectNavItems();
 
         // Create initial agents from the canonical actor catalog.
+        SeedWorkspaceAgents();
+        DraftText = string.Empty;
+    }
+
+    private void SeedWorkspaceAgents()
+    {
+        if (_state.Agents.Count > 0)
+        {
+            return;
+        }
+
         var user = _actorCatalog.CanonicalHuman;
         var agent1 = _actorCatalog.CanonicalTownhallAgent;
         _state.Agents.Add(new WorkspaceAgent(user)
@@ -771,10 +871,41 @@ public class TownhallViewModel : ReactiveObject
             Status = AgentStatus.Active,
             HasWarning = false
         });
-
-        // Set initial draft text (syncs with state automatically via setter)
-        DraftText = string.Empty;
     }
+
+    private void RebuildChannelMessages(string channelId)
+    {
+        if (!_conversationStore.TryGetChannelConversation(channelId, out var conversation))
+        {
+            _state.ChannelMessages[channelId] = new ObservableCollection<TownhallMessage>();
+            return;
+        }
+
+        var messages = new ObservableCollection<TownhallMessage>();
+        foreach (var entry in conversation.Entries)
+        {
+            messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+        }
+
+        _state.ChannelMessages[channelId] = messages;
+    }
+
+    private static bool TryParseConversationId(string value, out ConversationId conversationId)
+    {
+        try
+        {
+            conversationId = ConversationId.FromValue(value);
+            return true;
+        }
+        catch
+        {
+            conversationId = default;
+            return false;
+        }
+    }
+
+    private void NotifyPresentationPersisted() =>
+        _persistenceBridge?.NotifyPresentationStateChanged();
 
     private System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage> ApplyFilter()
     {

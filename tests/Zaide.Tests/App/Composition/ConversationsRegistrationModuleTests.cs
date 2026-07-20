@@ -37,7 +37,7 @@ public sealed class ConversationsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideConversations_RegistersExactlyTwoPlannedServices()
+    public void AddZaideConversations_RegistersPlannedConversationServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideConversations();
@@ -103,7 +103,7 @@ public sealed class ConversationsRegistrationModuleTests
     }
 
     [Fact]
-    public void ConversationsModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void ConversationsModuleSource_ContainsPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/ConversationsServiceCollectionExtensions.cs");

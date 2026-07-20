@@ -40,6 +40,19 @@ public readonly struct ActorId : IEquatable<ActorId>
     public static ActorId PanelCustom(string legacyAgentId) =>
         new($"panel-custom:{legacyAgentId}");
 
+    /// <summary>
+    /// Reconstructs a persisted actor identity. For deserialization only.
+    /// </summary>
+    public static ActorId FromValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Actor id value is required.", nameof(value));
+        }
+
+        return new ActorId(value);
+    }
+
     public bool Equals(ActorId other) =>
         string.Equals(_value, other._value, StringComparison.Ordinal);
 

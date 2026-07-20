@@ -63,4 +63,30 @@ public sealed class Conversation
 
         return new Conversation(id, ConversationKind.Direct, participants);
     }
+
+    /// <summary>
+    /// Rebuilds a conversation aggregate from persisted metadata and ordered entries.
+    /// </summary>
+    internal static Conversation Restore(
+        ConversationId id,
+        ConversationKind kind,
+        ConversationParticipants participants,
+        IReadOnlyList<ConversationEntry> entries)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+
+        var conversation = kind switch
+        {
+            ConversationKind.Channel => Channel(id),
+            ConversationKind.Direct => Direct(id, participants),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+
+        foreach (var entry in entries)
+        {
+            conversation.AppendEntry(entry);
+        }
+
+        return conversation;
+    }
 }

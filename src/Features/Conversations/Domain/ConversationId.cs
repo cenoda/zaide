@@ -24,6 +24,19 @@ public readonly struct ConversationId : IEquatable<ConversationId>
     public static ConversationId NewDirect() =>
         new($"direct:{Guid.NewGuid():N}");
 
+    /// <summary>
+    /// Reconstructs a persisted conversation identity. For deserialization only.
+    /// </summary>
+    public static ConversationId FromValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Conversation id value is required.", nameof(value));
+        }
+
+        return new ConversationId(value);
+    }
+
     public bool Equals(ConversationId other) =>
         string.Equals(_value, other._value, StringComparison.Ordinal);
 

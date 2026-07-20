@@ -96,10 +96,14 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M2: TownhallChannelPanel removed; +3 internal navigation types.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy.
         // Phase 14 M5: +1 internal TownhallConversationUiState.
-        Assert.Equal((12, 6, 6), byNamespace["Zaide.Features.Townhall.Presentation"]);
+        // Phase 14 M6: +1 internal TownhallConversationPersistenceBridge.
+        Assert.Equal((13, 6, 7), byNamespace["Zaide.Features.Townhall.Presentation"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
-        Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Conversations.Application"]);
+        // Phase 14 M6: +1 internal IConversationWorkspacePersistenceBridge.
+        Assert.Equal((5, 0, 5), byNamespace["Zaide.Features.Conversations.Application"]);
+        // Phase 14 M6: +8 internal conversation persistence types.
+        Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Conversations.Infrastructure"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Agents.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Refactor 7 M5b: +1 internal AgentPanelOutputHistoryProjection.
@@ -145,7 +149,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M2: -1 TownhallChannelPanel, +3 internal navigation production files.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
         // Phase 14 M5: +1 internal TownhallConversationUiState production file.
-        Assert.Equal(417, inventory.SourceFiles.Count);
+        // Phase 14 M6: +10 conversation persistence production files.
+        Assert.Equal(427, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -154,8 +159,8 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Styles"));
         Assert.Equal(42, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
-        // Phase 14 M5: +1 internal TownhallConversationUiState production file.
-        Assert.Equal(371, byFolder["Features"]);
+        // Phase 14 M6: +10 conversation persistence production files.
+        Assert.Equal(381, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

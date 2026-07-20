@@ -10,6 +10,8 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
+using Zaide.Features.Conversations.Application;
+using Zaide.Features.Conversations.Infrastructure;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -22,13 +24,6 @@ namespace Zaide.Tests.App.Composition;
 /// </summary>
 public sealed class TownhallRegistrationModuleTests
 {
-    private static readonly string[] TownhallServiceTypeNames =
-    {
-        typeof(TownhallState).FullName!,
-        typeof(TownhallViewModel).FullName!,
-    };
-
-
     static TownhallRegistrationModuleTests()
     {
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
@@ -66,33 +61,23 @@ public sealed class TownhallRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideTownhall_RegistersExactlyTwoPlannedServices()
+    public void AddZaideTownhall_RegistersPlannedTownhallServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideTownhall();
 
         Assert.Same(services, returned);
-        Assert.Equal(2, services.Count);
+        Assert.Equal(5, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
-        var serviceTypes = services
-            .Select(d => d.ServiceType.FullName)
-            .OrderBy(n => n, StringComparer.Ordinal)
-            .ToArray();
-        var expected = TownhallServiceTypeNames
-            .OrderBy(n => n, StringComparer.Ordinal)
-            .ToArray();
-        Assert.Equal(expected, serviceTypes);
-
-        // Both remain self-registrations (ServiceType == ImplementationType).
+        Assert.Contains(services, d => d.ServiceType == typeof(TownhallState));
+        Assert.Contains(services, d => d.ServiceType == typeof(TownhallConversationUiState));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(TownhallState)
-                && d.ImplementationType == typeof(TownhallState));
-        Assert.Contains(
-            services,
-            d => d.ServiceType == typeof(TownhallViewModel)
-                && d.ImplementationType == typeof(TownhallViewModel));
+            d => d.ServiceType == typeof(IConversationWorkspacePersistenceBridge)
+                && d.ImplementationType == typeof(TownhallConversationPersistenceBridge));
+        Assert.Contains(services, d => d.ServiceType == typeof(ConversationPersistenceService));
+        Assert.Contains(services, d => d.ServiceType == typeof(TownhallViewModel));
     }
 
     [Fact]
@@ -158,7 +143,7 @@ public sealed class TownhallRegistrationModuleTests
     }
 
     [Fact]
-    public void TownhallModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void TownhallModuleSource_ContainsPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/TownhallServiceCollectionExtensions.cs");
@@ -169,9 +154,15 @@ public sealed class TownhallRegistrationModuleTests
         Assert.Contains("internal static IServiceCollection AddZaideTownhall", moduleSource);
 
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallState>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallConversationUiState>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IConversationWorkspacePersistenceBridge,\s*TownhallConversationPersistenceBridge>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<ConversationPersistenceService>\(\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallViewModel>\(\)"));
 
-        Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+        Assert.Equal(5, Regex.Matches(moduleSource, @"AddSingleton<").Count);
     }
 
 

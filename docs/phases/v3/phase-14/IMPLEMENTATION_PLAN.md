@@ -8,7 +8,7 @@ direct conversations. **M3 complete (2026-07-20)** — unified conversation surf
 selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
 **M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
 **M5 complete (2026-07-20)** — per-conversation draft + unread/read cursor (in-memory).
-**M6 authorized only (2026-07-20)** — persistence + recovery (file store, schema v1).
+**M6 complete (2026-07-20)** — persistence + recovery (file store, schema v1).
 **M7 and later milestones remain unauthorized** until a human explicitly authorizes the
 next named milestone only. M6 does **not** authorize parity bridge, Agent Panel
 retirement, or any later milestone scope.
@@ -129,7 +129,7 @@ milestone that owns it, with tests and (when UI-visible) manual evidence.
 | Implicit public mirror of private agent activity | ~~`AgentTownhallMirrorCoordinator`~~ | M4 ✅ |
 | Panel is only re-entry path to direct history | Close panel → orphan conversation in store | M2–M3, M7 |
 | `@mention` depends on open panel names | `AgentRouter` uses `_panelHost.Panels` display names | M7 (identity-based roster) |
-| No persistence/recovery | In-memory store + panel host | M6 |
+| No persistence/recovery | In-memory store + panel host | M6 ✅ |
 | Dual presentation truth for Townhall | `ChannelMessages` compatibility collections still required by UI | M3 gradual; full retirement optional at closeout |
 | Agent Panel retirement not proven | DF-001 open; shell still hosts `AgentPanelHostView` | M7 parity → M8 retire |
 
@@ -274,7 +274,7 @@ Harness or ACP platform.
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | **Complete (2026-07-20)** — commit `a38d1ff` |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | **Complete (2026-07-20)** — commit `921d238` |
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | **Complete (2026-07-20)** — commit `c7692da` |
-| **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Authorized (2026-07-20)** — not complete |
+| **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Complete (2026-07-20)** — see M6 closeout |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | Unauthorized |
 | **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | Unauthorized |
 | **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | Unauthorized |
@@ -443,7 +443,7 @@ Manual smoke (minimum, expand per milestone evidence):
 7. ~~Human authorizes **M5 only**.~~ **Done (2026-07-20).**
 8. ~~**Implement M5** per-conversation draft + unread/read cursor.~~ **Done (2026-07-20).**
 9. ~~Human authorizes **M6 only**.~~ **Done (2026-07-20).**
-10. **Implement M6** persistence + recovery (schema v1 file store).
+10. ~~**Implement M6** persistence + recovery (schema v1 file store).~~ **Done (2026-07-20).**
 
 M7+ remains unauthorized until explicitly approved.
 
@@ -649,7 +649,54 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Human authorized **M5 only** — per-conversation draft + unread/read cursor. M6+ unauthorized. |
 | 2026-07-20 | **M5 complete** — per-conversation draft + unread/read cursor (in-memory). M6+ unauthorized. |
 | 2026-07-20 | Human authorized **M6 only** — persistence + recovery. M7+ unauthorized. |
+| 2026-07-20 | **M6 complete** — persistence + recovery (schema v1 file store). M7+ unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M5 complete; M6 authorized only; M7+ unauthorized)*
+## M6 closeout (2026-07-20)
+
+**Acceptance commit:** `6de911f`
+(`feat(conversations): persist workspace state across restarts (Phase 14 M6)`)
+
+**Ownership:** Conversations feature owns versioned JSON file store, atomic write,
+and `ConversationStore` hydration. Townhall owns draft/last-read/active selection
+and channel nav rows via `IConversationWorkspacePersistenceBridge` /
+`TownhallConversationPersistenceBridge`.
+
+**Store (D15):** application-lifetime; path
+`{config}/zaide/conversations/conversations.json` (+ `.tmp`, `.lastknowngood`);
+isolated from `settings.json` and secrets.
+
+**Schema v1:** `schemaVersion`, `channels[]`, `conversations[]` (full typed
+entries), `activeConversationId`, `drafts`, `lastReadEntryIds`.
+
+**Delivered:**
+
+- `ConversationStorePathResolver`, `ConversationPersistenceService`, snapshot DTOs
+- Load on startup before Townhall session init; debounced save on entry append +
+  presentation changes; flush on dispose
+- Corrupt / unsupported-future / missing / interrupted-write handling per M0 contract
+- No auto-resume of agent runs after reload
+- Recovery matrix tests in `ConversationPersistenceTests`
+- Architecture baseline: **465** total / **338** public / **127** internal;
+  Features source files **381**
+
+**Verification (2026-07-20):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors |
+| `dotnet test … ~Zaide.Tests.Features.Conversations` | 101 passed |
+| `dotnet test … ~Zaide.Tests.Features.Townhall` | 98 passed |
+| `dotnet test … ~Zaide.Tests.Architecture` | 26 passed |
+| `dotnet test Zaide.slnx` (excl. known DAP hang flake) | 2546 passed |
+| `git diff --check` | clean |
+
+**Manual smoke:** [`M6_MANUAL_EVIDENCE.md`](M6_MANUAL_EVIDENCE.md) — interactive
+GUI rows not validated on display in agent session; automated recovery matrix green.
+
+**M7+ still unauthorized.**
+
+---
+
+*Last updated: 2026-07-20 (Phase 14 M6 complete; M7+ unauthorized)*

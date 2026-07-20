@@ -20,6 +20,19 @@ public readonly struct ConversationEntryId : IEquatable<ConversationEntryId>
     public static ConversationEntryId New() =>
         new($"entry:{Guid.NewGuid():N}");
 
+    /// <summary>
+    /// Reconstructs a persisted entry identity. For deserialization only.
+    /// </summary>
+    public static ConversationEntryId FromValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Entry id value is required.", nameof(value));
+        }
+
+        return new ConversationEntryId(value);
+    }
+
     public bool Equals(ConversationEntryId other) =>
         string.Equals(_value, other._value, StringComparison.Ordinal);
 

@@ -146,4 +146,39 @@ internal sealed class ConversationStore : IConversationStore
         EntryAppended?.Invoke(conversationId, entry);
         return entry;
     }
+
+    /// <summary>
+    /// Replaces the in-memory store with persisted conversations. Used on startup
+    /// recovery only; does not raise <see cref="EntryAppended"/>.
+    /// </summary>
+    internal void RestoreFromPersistence(IReadOnlyList<Conversation> conversations)
+    {
+        ArgumentNullException.ThrowIfNull(conversations);
+
+        lock (_sync)
+        {
+            _byId.Clear();
+            _channelIndex.Clear();
+            _directPairIndex.Clear();
+
+            foreach (var conversation in conversations)
+            {
+                _byId[conversation.Id] = conversation;
+
+                if (conversation.Kind == ConversationKind.Channel
+                    && conversation.Id.TryGetChannelId(out var channelId))
+                {
+                    _channelIndex[channelId] = conversation.Id;
+                }
+                else if (conversation.Kind == ConversationKind.Direct
+                         && conversation.Participants.All.Count == 2)
+                {
+                    var pairKey = DirectParticipantPairKey.FromActors(
+                        conversation.Participants.All[0],
+                        conversation.Participants.All[1]);
+                    _directPairIndex[pairKey] = conversation.Id;
+                }
+            }
+        }
+    }
 }

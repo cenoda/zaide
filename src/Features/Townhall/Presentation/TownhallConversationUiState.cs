@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
@@ -58,5 +60,46 @@ internal sealed class TownhallConversationUiState
         }
 
         return lastRead != latestId;
+    }
+
+    public void ImportMaps(
+        IReadOnlyDictionary<string, string> drafts,
+        IReadOnlyDictionary<string, string> lastReadEntryIds)
+    {
+        _draftsByConversation.Clear();
+        _lastReadByConversation.Clear();
+
+        foreach (var pair in drafts)
+        {
+            if (string.IsNullOrEmpty(pair.Value))
+            {
+                continue;
+            }
+
+            _draftsByConversation[ConversationId.FromValue(pair.Key)] = pair.Value;
+        }
+
+        foreach (var pair in lastReadEntryIds)
+        {
+            _lastReadByConversation[ConversationId.FromValue(pair.Key)] =
+                ConversationEntryId.FromValue(pair.Value);
+        }
+    }
+
+    public void ExportMaps(
+        out IReadOnlyDictionary<string, string> drafts,
+        out IReadOnlyDictionary<string, string> lastReadEntryIds)
+    {
+        drafts = _draftsByConversation
+            .Where(pair => !string.IsNullOrEmpty(pair.Value))
+            .ToDictionary(
+                pair => pair.Key.Value,
+                pair => pair.Value,
+                StringComparer.Ordinal);
+
+        lastReadEntryIds = _lastReadByConversation.ToDictionary(
+            pair => pair.Key.Value,
+            pair => pair.Value.Value,
+            StringComparer.Ordinal);
     }
 }
