@@ -8,9 +8,10 @@ direct conversations. **M3 complete (2026-07-20)** — unified conversation surf
 selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
 **M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
 **M5 complete (2026-07-20)** — per-conversation draft + unread/read cursor (in-memory).
-**M6 and later milestones remain unauthorized** until a human explicitly authorizes the
-next named milestone only. M5 does **not** authorize persistence implementation,
-Agent Panel retirement, or any later milestone scope.
+**M6 authorized only (2026-07-20)** — persistence + recovery (file store, schema v1).
+**M7 and later milestones remain unauthorized** until a human explicitly authorizes the
+next named milestone only. M6 does **not** authorize parity bridge, Agent Panel
+retirement, or any later milestone scope.
 
 **Dependency status:**
 
@@ -273,7 +274,7 @@ Harness or ACP platform.
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | **Complete (2026-07-20)** — commit `a38d1ff` |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | **Complete (2026-07-20)** — commit `921d238` |
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | **Complete (2026-07-20)** — commit `c7692da` |
-| **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | Unauthorized |
+| **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Authorized (2026-07-20)** — not complete |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | Unauthorized |
 | **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | Unauthorized |
 | **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | Unauthorized |
