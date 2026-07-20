@@ -211,6 +211,50 @@ public sealed class AgentExecutionServiceTests : IDisposable
         Assert.Equal("Cline envelope reply", result.ResponseText);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ClineEnvelopeWithProviderMetadata_ReturnsAssistantText()
+    {
+        // Shape observed from api.cline.bot for deepseek-v4-flash (2026-07-20).
+        const string body =
+            """
+            {"success":true,"data":{"choices":[{"finish_reason":"stop","index":0,"message":{"role":"assistant","content":"Hi from Cline","provider_metadata":{"gateway":{"cost":"0.01"}},"reasoning":null}}],"id":"gen_test","model":"cline-pass/deepseek-v4-flash"}}
+            """;
+        var service = CreateService(HttpStatusCode.OK, body);
+
+        var result = await service.ExecuteAsync("hello deepseek");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Hi from Cline", result.ResponseText);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_MultipartTextContentArray_ReturnsJoinedText()
+    {
+        var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
+        {
+            choices = new[]
+            {
+                new
+                {
+                    message = new
+                    {
+                        content = new object[]
+                        {
+                            new { type = "text", text = "Hello " },
+                            new { type = "text", text = "world" }
+                        }
+                    },
+                    finish_reason = "stop"
+                }
+            }
+        }));
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Hello world", result.ResponseText);
+    }
+
     // ── Missing API key ─────────────────────────────────────────────────────
 
     [Fact]

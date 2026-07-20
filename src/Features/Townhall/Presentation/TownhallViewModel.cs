@@ -388,17 +388,32 @@ public class TownhallViewModel : ReactiveObject
         ActorId humanId,
         ConversationId? selectedId)
     {
-        var peer = conversation.Participants.All.First(participant => participant != humanId);
-        var label = _actorCatalog.TryGet(peer, out var actor)
-            ? actor.DisplayName
-            : peer.Value;
+        var peer = conversation.Participants.All.FirstOrDefault(participant => participant != humanId);
+        string label;
+        ActorId? peerId = null;
+        if (peer != default)
+        {
+            peerId = peer;
+            label = _actorCatalog.TryGet(peer, out var actor) && !string.IsNullOrWhiteSpace(actor.DisplayName)
+                ? actor.DisplayName
+                : peer.Value;
+        }
+        else
+        {
+            label = "Direct";
+        }
+
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            label = "Direct";
+        }
 
         return new TownhallNavigationItem
         {
             ConversationId = conversation.Id,
             Kind = TownhallNavigationKind.Direct,
             Label = label,
-            PeerActorId = peer,
+            PeerActorId = peerId,
             IsSelected = selectedId.HasValue && selectedId.Value == conversation.Id
         };
     }
@@ -414,21 +429,30 @@ public class TownhallViewModel : ReactiveObject
 
     private void OnConversationEntryAppended(ConversationId conversationId, ConversationEntry entry)
     {
-        RefreshDirectNavItems();
-
-        if (_state.ActiveConversationId != conversationId)
+        // Must never throw into ConversationStore.AppendEntry callers (agent send
+        // path). A UI rebind NRE here was previously recorded as the assistant
+        // ExecutionFailure: "Object reference not set to an instance of an object."
+        try
         {
-            return;
+            if (!_conversationStore.TryGet(conversationId, out var conversation))
+            {
+                return;
+            }
+
+            // Only refresh direct nav when a direct conversation is involved.
+            if (conversation.Kind == ConversationKind.Direct)
+            {
+                RefreshDirectNavItems();
+
+                if (_state.ActiveConversationId == conversationId)
+                {
+                    Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+                }
+            }
         }
-
-        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        catch
         {
-            return;
-        }
-
-        if (conversation.Kind == ConversationKind.Direct)
-        {
-            Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+            // Swallow: presentation projection must not fail the write path.
         }
     }
 

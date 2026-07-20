@@ -79,16 +79,33 @@ internal sealed class TownhallNavigationPanel : Panel
 
     public void SetChannels(ObservableCollection<Channel> channels)
     {
-        _channelList.ItemsSource = channels;
-        _channelList.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<Channel>(
-            (channel, _) => CreateChannelRow(channel!));
+        // Keep the same ItemsSource instance when possible so intermediate
+        // CollectionChanged events during rebuild do not rebind templates.
+        if (!ReferenceEquals(_channelList.ItemsSource, channels))
+        {
+            _channelList.ItemsSource = channels;
+        }
+
+        _channelList.ItemTemplate ??= new Avalonia.Controls.Templates.FuncDataTemplate<Channel>(
+            (channel, _) => channel is null
+                ? new Border()
+                : CreateChannelRow(channel));
     }
 
     public void SetDirectItems(ObservableCollection<TownhallNavigationItem> items)
     {
-        _directList.ItemsSource = items;
-        _directList.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<TownhallNavigationItem>(
-            (item, _) => CreateDirectRow(item!));
+        if (!ReferenceEquals(_directList.ItemsSource, items))
+        {
+            _directList.ItemsSource = items;
+        }
+
+        // Null item guard: ListBox can invoke the template with null while the
+        // bound ObservableCollection is mid-rebuild (Clear before re-Add).
+        // An uncaught NRE here was previously surfaced as an agent ExecutionFailure.
+        _directList.ItemTemplate ??= new Avalonia.Controls.Templates.FuncDataTemplate<TownhallNavigationItem>(
+            (item, _) => item is null
+                ? new Border()
+                : CreateDirectRow(item));
     }
 
     private static ListBox CreateNavListBox(string automationName)

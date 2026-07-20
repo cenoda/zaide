@@ -112,4 +112,37 @@ public class TownhallNavigationTests
         Assert.Single(vm.Messages);
         Assert.Equal("Hello agent", vm.Messages[0].Content);
     }
+
+    [Fact]
+    public void AppendToDirect_WhileTownhallSubscribed_DoesNotThrow()
+    {
+        // Regression: EntryAppended refreshed DirectNavItems (Clear/Add) and a
+        // null ListBox template item previously threw NRE into the agent send path.
+        var (vm, store) = CreateViewModelWithStore();
+        var agentId = vm.Agents.First(a => a.Role == "agent").ActorId;
+        vm.OpenDirectConversationCommand.Execute(agentId).Subscribe();
+
+        var conversationId = vm.ActiveConversationId!.Value;
+        var exception = Record.Exception(() =>
+        {
+            store.AppendEntry(
+                conversationId,
+                ConversationEntry.UserChat(
+                    ConversationEntryId.New(),
+                    ActorId.HumanUser,
+                    DateTimeOffset.UtcNow,
+                    "hello deepseek"));
+            store.AppendEntry(
+                conversationId,
+                ConversationEntry.AssistantResponse(
+                    ConversationEntryId.New(),
+                    agentId,
+                    DateTimeOffset.UtcNow,
+                    "hi"));
+        });
+
+        Assert.Null(exception);
+        Assert.Equal(2, vm.Messages.Count);
+        Assert.Contains(vm.DirectNavItems, item => item.ConversationId == conversationId);
+    }
 }

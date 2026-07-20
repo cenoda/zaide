@@ -37,6 +37,27 @@ internal sealed class AgentExecutionService : IAgentExecutionService
 
     public async Task<AgentExecutionResult> ExecuteAsync(string userMessage, CancellationToken ct = default)
     {
+        // Outer guard: never throw into the coordinator. Unexpected NREs were
+        // previously surfaced as opaque "Object reference not set..." chat errors.
+        try
+        {
+            return await ExecuteCoreAsync(userMessage, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return AgentExecutionResult.Failure("Request was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            return AgentExecutionResult.Failure(
+                $"Unexpected error ({ex.GetType().Name}): {ex.Message}");
+        }
+    }
+
+    private async Task<AgentExecutionResult> ExecuteCoreAsync(
+        string userMessage,
+        CancellationToken ct)
+    {
         if (string.IsNullOrWhiteSpace(userMessage))
             return AgentExecutionResult.Failure("User message must not be empty.");
 
@@ -104,6 +125,11 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         }
 
         // --- Read response body ---
+        if (response.Content is null)
+        {
+            return AgentExecutionResult.Failure("HTTP response had no content.");
+        }
+
         string responseBody;
         try
         {
@@ -135,46 +161,102 @@ internal sealed class AgentExecutionService : IAgentExecutionService
             return AgentExecutionResult.Failure($"Invalid JSON response: {ex.Message}");
         }
 
-        // --- Extract assistant content ---
-        try
+        using (doc)
         {
-            // Cline Pass may wrap the OpenAI-compatible response in a
-            // `{ "data": { ... }, "success": true }` envelope. Preserve the
-            // standard top-level response path and unwrap only this observed
-            // object envelope.
-            var responseRoot = doc.RootElement;
-            if (!responseRoot.TryGetProperty("choices", out _) &&
-                responseRoot.TryGetProperty("data", out var data) &&
-                data.ValueKind == JsonValueKind.Object)
+            // --- Extract assistant content ---
+            try
             {
-                responseRoot = data;
+                // Cline Pass may wrap the OpenAI-compatible response in a
+                // `{ "data": { ... }, "success": true }` envelope. Preserve the
+                // standard top-level response path and unwrap only this observed
+                // object envelope.
+                var responseRoot = doc.RootElement;
+                if (!responseRoot.TryGetProperty("choices", out _) &&
+                    responseRoot.TryGetProperty("data", out var data) &&
+                    data.ValueKind == JsonValueKind.Object)
+                {
+                    responseRoot = data;
+                }
+
+                if (!responseRoot.TryGetProperty("choices", out var choices) ||
+                    choices.ValueKind != JsonValueKind.Array)
+                {
+                    return AgentExecutionResult.Failure(
+                        $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                        $"for model '{options.Model}': missing choices array. " +
+                        $"Response shape: {DescribeResponseShape(doc)}");
+                }
+
+                if (choices.GetArrayLength() == 0)
+                    return AgentExecutionResult.Failure("Response contains no choices.");
+
+                var firstChoice = choices[0];
+                if (!firstChoice.TryGetProperty("message", out var message) ||
+                    message.ValueKind != JsonValueKind.Object)
+                {
+                    return AgentExecutionResult.Failure(
+                        $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                        $"for model '{options.Model}': missing message object. " +
+                        $"Response shape: {DescribeResponseShape(doc)}");
+                }
+
+                if (!TryExtractAssistantContent(message, out var content) ||
+                    string.IsNullOrWhiteSpace(content))
+                {
+                    return AgentExecutionResult.Failure("Response contains no assistant content.");
+                }
+
+                return AgentExecutionResult.Success(content);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or KeyNotFoundException or NotSupportedException)
+            {
+                return AgentExecutionResult.Failure(
+                    $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
+                    $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extracts assistant text from OpenAI-compatible message.content (string or
+    /// multi-part text array).
+    /// </summary>
+    private static bool TryExtractAssistantContent(JsonElement message, out string content)
+    {
+        content = string.Empty;
+        if (!message.TryGetProperty("content", out var contentElement))
+        {
+            return false;
+        }
+
+        if (contentElement.ValueKind == JsonValueKind.String)
+        {
+            content = contentElement.GetString() ?? string.Empty;
+            return true;
+        }
+
+        if (contentElement.ValueKind == JsonValueKind.Array)
+        {
+            var builder = new StringBuilder();
+            foreach (var part in contentElement.EnumerateArray())
+            {
+                if (part.ValueKind == JsonValueKind.Object &&
+                    part.TryGetProperty("text", out var textElement) &&
+                    textElement.ValueKind == JsonValueKind.String)
+                {
+                    builder.Append(textElement.GetString());
+                }
+                else if (part.ValueKind == JsonValueKind.String)
+                {
+                    builder.Append(part.GetString());
+                }
             }
 
-            var choices = responseRoot.GetProperty("choices");
-            if (choices.GetArrayLength() == 0)
-                return AgentExecutionResult.Failure("Response contains no choices.");
-
-            var firstChoice = choices[0];
-            var message = firstChoice.GetProperty("message");
-            var content = message.GetProperty("content").GetString();
-
-            if (string.IsNullOrWhiteSpace(content))
-                return AgentExecutionResult.Failure("Response contains no assistant content.");
-
-            return AgentExecutionResult.Success(content);
+            content = builder.ToString();
+            return true;
         }
-        catch (InvalidOperationException ex)
-        {
-            return AgentExecutionResult.Failure(
-                $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
-                $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return AgentExecutionResult.Failure(
-                $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
-                $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
-        }
+
+        return false;
     }
 
     private static string DescribeResponseShape(string responseBody)
