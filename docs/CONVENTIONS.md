@@ -398,4 +398,4 @@ M4 does not invent one.
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M0 accepted; public baseline 339/111/450; M1+ production unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M0 accepted; M1 authorized only; public baseline 339/111/450; M2+ unauthorized)*

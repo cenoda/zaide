@@ -37,8 +37,9 @@ sends remains; there is still no Townhall DM navigation.
 ## Why deferred
 
 Direction is accepted. Pre-Phase-14 refactors are closed. Phase 14 M0 is
-accepted (2026-07-20); production milestones (DM nav, privacy, persistence,
-panel retirement) remain unauthorized until each is explicitly approved.
+accepted and M1 (store seams only) is authorized (2026-07-20). DM nav,
+privacy, persistence, and panel retirement remain unauthorized until their
+milestones are approved.
 
 ## Investigation notes
 

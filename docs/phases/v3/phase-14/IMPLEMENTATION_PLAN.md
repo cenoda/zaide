@@ -2,14 +2,14 @@
 
 ## Status and authorization
 
-**Phase 14 status:** **M0 accepted (2026-07-20)** after external audit
-amendments (“Accept after small amendments”). Human acceptance recorded in this
-plan. **No production code may change under M0.** M0 is documentation-only.
+**Phase 14 status:** **M0 accepted (2026-07-20).** **M1 authorized only
+(2026-07-20)** — store navigation seams. Human acceptance of M0 and
+authorization of M1 are recorded in this plan.
 
-**M1 and later milestones are unauthorized** until a human explicitly authorizes
-the next named milestone only. Accepting M0 does **not** authorize panel
-retirement, DM navigation UI, privacy changes, persistence implementation, or
-any production feature work.
+**M2 and later milestones remain unauthorized** until a human explicitly
+authorizes the next named milestone only. M1 does **not** authorize DM
+navigation UI, privacy changes, persistence implementation, Agent Panel
+retirement, or any later milestone scope.
 
 **Dependency status:**
 
@@ -267,7 +267,7 @@ Harness or ACP platform.
 | Milestone | Description | Test / gate | Status |
 |-----------|-------------|-------------|--------|
 | **M0** | Planning gate: live audit, decisions D01–D21, persistence contract, UI acceptance lock, milestones, commands, rollback. **Docs only.** | Plan review; no production diff required | **Accepted (2026-07-20)** |
-| **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | Unauthorized |
+| **M1** | **Store navigation seams:** enumerate conversations; find-or-create direct by participant pair with **explicit pair key** (sorted `ActorId` ordinal key or equivalent; document rule in tests); optional title/metadata needed by navigation; keep existing panel create path working via find-or-create; tests for stability and **per-panel** concurrent sends (not global single-flight). No DM UI yet. | `dotnet build`; Conversations tests; Architecture; full suite | **Authorized (2026-07-20)** — not complete |
 | **M2** | **Townhall navigation UI** for channels + directs (list, select, create/open DM with known agents). Dedicated Agent Panel still present. No privacy change yet. Semantic list controls + keyboard select path. | Build; Townhall + Conversations tests; Architecture; full suite; manual nav smoke | Unauthorized |
 | **M3** | **Unified conversation surface** for selected `ConversationId` (history + input + busy/error for directs using existing coordinator path). Channel send remains. Prefer projecting store entries over dual ownership growth. Deliver UI acceptance: scroll anchoring, near-bottom auto-follow, new-message affordance; virtualize only if proven necessary. | Build; Townhall + Agents tests; Architecture; full suite; manual channel+DM send + scroll smoke | Unauthorized |
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | Unauthorized |
@@ -346,8 +346,8 @@ Manual smoke (minimum, expand per milestone evidence):
 ### For authorizing M1
 
 - [x] M0 accepted by human.
-- [ ] Human explicitly authorizes **M1 only**.
-- [ ] Working tree ready; no conflicting Phase 14 production branch assumptions.
+- [x] Human explicitly authorizes **M1 only** (2026-07-20).
+- [x] Working tree ready on `master` at M0 acceptance (`0d80e4d` + this auth).
 
 ### For authorizing M8 (retirement)
 
@@ -432,11 +432,11 @@ Manual smoke (minimum, expand per milestone evidence):
 ## Exact next step
 
 1. ~~Human accepts this **amended** M0 plan.~~ **Done (2026-07-20).**
-2. Human authorizes **M1 only**.
-3. Implement M1 store navigation seams with tests (including sorted pair key);
-   no DM UI, no panel retirement.
+2. ~~Human authorizes **M1 only**.~~ **Done (2026-07-20).**
+3. **Implement M1** store navigation seams with tests (including sorted pair
+   key); no DM UI, no panel retirement, no M2+.
 
-Until step 2 happens, **no Phase 14 production code**.
+M2+ remains unauthorized until explicitly approved.
 
 ---
 
@@ -447,7 +447,8 @@ Until step 2 happens, **no Phase 14 production code**.
 | 2026-07-20 | Initial M0 plan written (docs only). |
 | 2026-07-20 | Audit amendments: per-panel concurrency; UI acceptance lock (V3 §18); LOC recount + counting rule; membership vs channel participants; V2 migration N/A; M1 pair-key handoff; re-send vs retry (D21); dual-write public API naming; SQLite prose; suite not re-run note. |
 | 2026-07-20 | Human accepted amended M0. Production milestones still unauthorized. |
+| 2026-07-20 | Human authorized **M1 only**. M2+ remains unauthorized. |
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M0 accepted; M1+ production unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M0 accepted; M1 authorized only; M2+ unauthorized)*
