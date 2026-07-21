@@ -65,5 +65,6 @@ New tests: `Phase14F1ConversationContextTests` (channel→DM, DM→channel, head
 
 ## Phase disposition
 
-F1 corrective milestone complete. Phase 14 **still pending explicit human acceptance**; do not
-begin Phase 15.
+F1 corrective milestone complete. **Phase 14 accepted and closed** by explicit
+human decision on 2026-07-21 at accepted baseline `67da1394`. Phase 15 may begin
+with its own M0 planning gate; no production milestone is authorized.

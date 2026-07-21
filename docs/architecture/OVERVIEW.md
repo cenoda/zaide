@@ -30,11 +30,12 @@ reduction (−26 public types across M11a–M11d), and the 67-row lifetime map
 (`LIFETIME_MAP.md`). Deliberate residuals:
 `CompositionRoot.Services` plus LocatorSite FindingIds
 `R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 and 8 are complete
-and closed. Phase 14 M0–M9 engineering closeout is **complete (2026-07-21)** at
+and closed. Phase 14 is **accepted and closed (2026-07-21)** at
 [`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
 (unified conversation workspace, privacy, draft/unread, schema v1 persistence,
-Agent Panel retired, closeout evidence). **Pending explicit human acceptance**;
-Phase 15 unauthorized. Non-C#
+Agent Panel retired, F1 corrected, closeout evidence accepted at `67da1394`).
+Phase 15 may begin with its own M0 planning gate; production implementation is
+not yet authorized. Non-C#
 assets remain outside the root-admission ratchet.
 
 ---
@@ -139,7 +140,7 @@ governed by the root-admission detectors.
 | Refactor 6.3 | Closed; composition residuals documented above |
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
-| Phase 14 | **M0–M9 engineering closeout complete** (2026-07-21); pending human acceptance; Phase 15 unauthorized |
+| Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
 
 ---
 
@@ -348,4 +349,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 M9 complete — engineering closeout; pending human acceptance; baselines public 337 / internal 126 / total 463)*
+*Last updated: 2026-07-21 (Phase 14 accepted and closed at baseline `67da1394`; Phase 15 M0 planning eligible; baselines public 337 / internal 126 / total 463)*

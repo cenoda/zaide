@@ -55,10 +55,11 @@ visibility internalization) is complete at `133a3c1`, shrinking it from 323 to
 at `d4d1470`, documenting exactly 67 production DI registrations. **M13** is
 complete, and Refactor 6.3 is accepted and closed. **Refactor 7** is complete
 and closed at `a7d2887`. **Refactor 8** is complete and closed (M1 through M8;
-shell layout hosts extracted; public baseline **339/111/450**). **Phase 14 M0–M9 engineering
-closeout is complete** (2026-07-21) — unified conversation workspace, schema v1
-persistence, Agent Panel retired, closeout evidence recorded; **pending explicit
-human acceptance**. Phase 15 unauthorized.
+shell layout hosts extracted; public baseline **339/111/450**). **Phase 14 is
+accepted and closed** (2026-07-21, accepted baseline `67da1394`) — unified
+conversation workspace, schema v1 persistence, Agent Panel retired, F1 corrected,
+and closeout evidence accepted. Phase 15 may begin with its own M0 planning gate;
+production implementation is not yet authorized.
 
 ## Philosophy
 
@@ -268,8 +269,9 @@ implementations internalized), completing the M11 series. **M12** is complete
 at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
 6.3 is accepted and closed. **Refactor 7** is complete and closed at
 `a7d2887`. **Refactor 8** is complete and closed (M1 through M8; shell layout
-hosts extracted). **Phase 14 M0–M9 and corrective F1 are complete**
-(2026-07-21); **pending explicit human acceptance**. Phase 15 unauthorized.
+hosts extracted). **Phase 14 is accepted and closed** (2026-07-21, accepted
+baseline `67da1394`). Phase 15 may begin with its own M0 planning gate;
+production implementation is not yet authorized.
 
 ## Why "Zaide"
 

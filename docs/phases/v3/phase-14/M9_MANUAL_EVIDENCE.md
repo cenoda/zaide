@@ -131,11 +131,12 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 
 ## Phase disposition
 
-Phase 14 **engineering closeout complete** with residual risks documented above.
+Phase 14 engineering closeout is complete with residual risks documented above.
 **F1 corrective fix (2026-07-21):** conversation header and input context now follow
 `ActiveConversationId` — see [`M9_F1_MANUAL_EVIDENCE.md`](M9_F1_MANUAL_EVIDENCE.md) and
 replaced screenshots in `evidence/m9/`. Prior M9 DM captures incorrectly showed
 `#townhall-main` while Direct was selected.
 
-**Pending explicit human acceptance** to treat the phase as formally product-closed.
-Do **not** begin Phase 15 from this milestone.
+**Phase 14 accepted and closed** by explicit human decision on 2026-07-21 at
+accepted baseline `67da1394`. Phase 15 may begin with its own M0 planning gate;
+no production milestone is authorized by this acceptance.

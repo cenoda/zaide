@@ -1,7 +1,7 @@
 # Phase 14: Unified Conversation Workspace — TOFIX
 
-**Status:** F1 fixed (2026-07-21). Phase 14 engineering closeout remains complete; **human
-acceptance still pending** after F1 evidence review. Phase 15 unauthorized.
+**Status:** F1 fixed (2026-07-21). **Phase 14 accepted and closed** by explicit
+human decision on 2026-07-21 at accepted baseline `67da1394`.
 
 **Source:** Human acceptance audit of the published M9 closeout at `e5c26d0`
 (2026-07-21).

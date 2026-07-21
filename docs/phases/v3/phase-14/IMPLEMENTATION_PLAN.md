@@ -2,10 +2,12 @@
 
 ## Status and authorization
 
-**Phase 14 status:** **M0–M9 complete; F1 corrective fix complete (2026-07-21).** Unified
-conversation workspace delivered; dedicated Agent Panel retired; closeout evidence in
-`M9_MANUAL_EVIDENCE.md` + `M9_DESIGN_BRIEF.md`; F1 evidence in `M9_F1_MANUAL_EVIDENCE.md`.
-**Pending explicit human acceptance** of the phase. No Phase 15 authorized.
+**Phase 14 status:** **Accepted and closed (2026-07-21).** M0–M9 and corrective
+F1 are complete; unified conversation workspace delivered; dedicated Agent Panel
+retired; closeout evidence in `M9_MANUAL_EVIDENCE.md` + `M9_DESIGN_BRIEF.md`;
+F1 evidence in `M9_F1_MANUAL_EVIDENCE.md`. Explicit human acceptance recorded
+against baseline `67da1394`. Phase 15 may begin with its own M0 planning gate;
+production implementation is not yet authorized.
 
 **Dependency status:**
 
@@ -373,8 +375,8 @@ Manual smoke (minimum, expand per milestone evidence):
 - [x] Architecture baselines truthful; full suite green; docs truth-synced.
 - [x] Limitations section lists honest environment or deferred items.
 
-**Phase disposition:** engineering exit conditions met (2026-07-21). **Pending
-explicit human acceptance** before treating Phase 14 as product-closed.
+**Phase disposition:** **accepted and closed (2026-07-21)** by explicit human
+decision against baseline `67da1394`.
 
 ---
 
@@ -455,10 +457,10 @@ explicit human acceptance** before treating Phase 14 as product-closed.
 14. ~~Human authorizes **M9 only**.~~ **Done (2026-07-21).**
 15. ~~**Implement M9** closeout evidence, design brief, keyboard/focus/a11y notes,
     UI acceptance table closeout, docs truth-sync.~~ **Done (2026-07-21).**
-16. **Human accepts Phase 14** (or requests a narrowly named corrective milestone).
-    **Do not begin Phase 15** until explicitly authorized.
+16. ~~**Human accepts Phase 14** (or requests a narrowly named corrective milestone).~~
+    **Done (2026-07-21)** — accepted against baseline `67da1394`.
 17. ~~**F1 (TOFIX):** conversation header/input context follows `ActiveConversationId`.~~
-    **Done (2026-07-21)** — see F1 closeout below; human acceptance still pending.
+    **Done (2026-07-21)** — see F1 closeout below.
 
 ---
 
@@ -490,8 +492,9 @@ explicit human acceptance** before treating Phase 14 as product-closed.
 | `dotnet test Zaide.slnx` (full suite) | 2524 passed |
 | `git diff --check` | clean |
 
-**Phase disposition:** F1 complete; **pending explicit human acceptance** — do not mark Phase
-14 product-closed or begin Phase 15.
+**Phase disposition:** F1 complete; **Phase 14 accepted and closed (2026-07-21)**
+against baseline `67da1394`. Phase 15 M0 planning is eligible; no production
+milestone is authorized.
 
 ## M7 implementation boundary (authorized 2026-07-21)
 
@@ -751,6 +754,7 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-21 | Preserved M8 closeout “Goal delivered” line repair in working tree before M9 edits. |
 | 2026-07-21 | **M9 complete** — closeout evidence, design brief, keyboard/screenshots, UI lock, docs truth-sync. Phase pending human acceptance. |
 | 2026-07-21 | **F1 complete** — conversation header/input context follows `ActiveConversationId`; human-supplied DM acceptance capture added and inaccurate screenshot labels corrected. Human acceptance still pending. |
+| 2026-07-21 | **Human accepted and closed Phase 14** against baseline `67da1394`; Phase 15 M0 planning became eligible, with production implementation still unauthorized. |
 
 ---
 
@@ -944,4 +948,4 @@ acceptance**.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 F1 complete — pending human acceptance)*
+*Last updated: 2026-07-21 (Phase 14 accepted and closed at baseline `67da1394`; Phase 15 M0 planning eligible)*
