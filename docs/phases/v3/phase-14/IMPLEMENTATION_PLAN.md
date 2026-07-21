@@ -2,17 +2,10 @@
 
 ## Status and authorization
 
-**Phase 14 status:** **M0 accepted (2026-07-20).** **M1 complete (2026-07-20)** — store
-navigation seams. **M2 complete (2026-07-20)** — Townhall navigation for channels and
-direct conversations. **M3 complete (2026-07-20)** — unified conversation surface for
-selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
-**M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
-**M5 complete (2026-07-20)** — per-conversation draft + unread/read cursor (in-memory).
-**M6 complete (2026-07-20)** — persistence + recovery (file store, schema v1).
-**M7 complete (2026-07-21)** — parity bridge. **M8 complete (2026-07-21)** — dedicated
-Agent Panel retired; Townhall is the sole user-facing DM workflow. **M9+ remain
-unauthorized.** M8 does not authorize closeout/design/a11y screenshot work beyond
-evidence strictly required to validate retirement.
+**Phase 14 status:** **M0–M9 complete (engineering closeout 2026-07-21).** Unified
+conversation workspace delivered; dedicated Agent Panel retired; closeout evidence
+in `M9_MANUAL_EVIDENCE.md` + `M9_DESIGN_BRIEF.md`. **Pending explicit human
+acceptance** of the phase. No Phase 15 authorized.
 
 **Dependency status:**
 
@@ -188,16 +181,16 @@ M0 adopts or defers each item so M3/M8/M9 scope is not ambiguous:
 
 | UI acceptance item | Phase 14 disposition | Owning milestone / note |
 |--------------------|----------------------|-------------------------|
-| Incremental or virtualized rendering for growing history | **In Phase 14 if needed for correctness/perf on realistic history**; otherwise document measured limit | M3 baseline list rendering; virtualization only if M3/M9 evidence shows need — not a blank-check redesign |
-| Stable scroll anchoring | **In Phase 14** (do not jump scroll position on append when user is not following bottom) | M3 |
-| Near-bottom auto-follow | **In Phase 14** (follow new messages when already near bottom) | M3 |
-| New-message affordance when scrolled away | **In Phase 14** (minimal control/badge to jump to latest) | M3 (may be simple; polish in M9) |
-| Semantic controls | **In Phase 14** for new nav/list/input chrome (accessible names on primary controls) | M2–M3; evidence in M9 |
-| Keyboard-only navigation | **In Phase 14** for conversation list → select → input → send / newline | M2–M3 parity; M8 retirement must not regress; M9 evidence |
-| Visible focus | **In Phase 14** for new focusable chrome (match existing shell patterns) | M2–M3; M9 evidence |
-| Screen-reader naming | **Best-effort in Phase 14** on new controls; not WCAG certification | M9 records what was named; gaps → limitations |
-| Narrow / wide / high-DPI evidence | **In Phase 14 closeout** (Linux desktop screenshots: default + narrow; high-DPI if available) | M9; missing environment rows → explicit not-validated |
-| Design brief + comparison vs `docs/DESIGN.md` | **In Phase 14** | M9 (incremental chrome allowed earlier) |
+| Incremental or virtualized rendering for growing history | **Accepted limitation (M9)** — non-virtualized list remains correct; virtualization not required by Phase 14 evidence | M3 baseline; residual large-history perf risk |
+| Stable scroll anchoring | **Closed (M3/M9)** | `TownhallChatScrollPolicy` + tests |
+| Near-bottom auto-follow | **Closed (M3/M9)** | Same policy + tests |
+| New-message affordance when scrolled away | **Closed (M3/M9)** | Chip + accessible name |
+| Semantic controls | **Closed (M9)** | Nav lists, input, send, chip, people open-DM names |
+| Keyboard-only navigation | **Closed (M9)** with residuals | List → select → input → Enter/Shift+Enter; People open-DM pointer-primary |
+| Visible focus | **Closed (M9)** with residual | Platform focus; ring contrast not pixel-certified |
+| Screen-reader naming | **Closed best-effort (M9)** | Names recorded; no Orca/NVDA session |
+| Narrow / wide / high-DPI evidence | **Closed (M9)** with env limit | Linux default + narrow screenshots; high-DPI **unavailable** (96 DPI) |
+| Design brief + comparison vs `docs/DESIGN.md` | **Closed (M9)** | `M9_DESIGN_BRIEF.md` |
 
 Items marked **In Phase 14** are phase exit criteria unless M9 records an
 accepted limitation with evidence of residual risk.
@@ -278,7 +271,7 @@ Harness or ACP platform.
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Complete (2026-07-20)** — see M6 closeout |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | **Complete (2026-07-21)** — see M7 closeout |
 | **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | **Complete (2026-07-21)** — see M8 closeout |
-| **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | Unauthorized |
+| **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | **Complete (2026-07-21)** — see M9 closeout |
 
 If a milestone exceeds one agent session, split into `MNa` / `MNb` slices with
 separate verification — do **not** invent sub-phases for session sizing.
@@ -360,25 +353,28 @@ Manual smoke (minimum, expand per milestone evidence):
 
 ### For authorizing M9 (closeout)
 
-- [ ] M8 accepted with evidence.
-- [ ] Human explicitly authorizes **M9 only**.
+- [x] M8 accepted with evidence.
+- [x] Human explicitly authorizes **M9 only** (2026-07-21).
 
 ---
 
 ## Exit conditions (phase)
 
-- [ ] Channels and Agent DMs share one conversation system navigable from Townhall.
-- [ ] Direct conversations are private by default (no implicit public mirror).
-- [ ] Per-conversation draft and unread/read behavior work.
-- [ ] Persistence/recovery contract implemented and tested; no blind run resume.
-- [ ] Dedicated Agent Panel retired **or** an accepted closeout limitation explains
+- [x] Channels and Agent DMs share one conversation system navigable from Townhall.
+- [x] Direct conversations are private by default (no implicit public mirror).
+- [x] Per-conversation draft and unread/read behavior work.
+- [x] Persistence/recovery contract implemented and tested; no blind run resume.
+- [x] Dedicated Agent Panel retired **or** an accepted closeout limitation explains
       residual chrome with user-visible DM parity already complete.
-- [ ] DF-001 closed or explicitly re-scoped with residual rationale.
-- [ ] Design brief + keyboard/focus evidence recorded.
-- [ ] UI acceptance lock items marked **In Phase 14** closed or accepted as
+- [x] DF-001 closed or explicitly re-scoped with residual rationale.
+- [x] Design brief + keyboard/focus evidence recorded.
+- [x] UI acceptance lock items marked **In Phase 14** closed or accepted as
       limitations with residual risk.
-- [ ] Architecture baselines truthful; full suite green; docs truth-synced.
-- [ ] Limitations section lists honest environment or deferred items.
+- [x] Architecture baselines truthful; full suite green; docs truth-synced.
+- [x] Limitations section lists honest environment or deferred items.
+
+**Phase disposition:** engineering exit conditions met (2026-07-21). **Pending
+explicit human acceptance** before treating Phase 14 as product-closed.
 
 ---
 
@@ -405,6 +401,9 @@ Manual smoke (minimum, expand per milestone evidence):
   remain later concerns unless a milestone proves display breakage.
 - Full suite total **2523** is the Refactor 8 closeout record and was not
   re-run as part of this M0 docs gate.
+- **M9 closeout residuals:** high-DPI screenshots unavailable (96 DPI host);
+  no hardware screen-reader session; People open-DM pointer-primary; non-virtualized
+  history; thin non-visual `IAgentPanelHost` retained (DF-001 residual).
 
 ---
 
@@ -452,9 +451,12 @@ Manual smoke (minimum, expand per milestone evidence):
 10. ~~**Implement M6** persistence + recovery (schema v1 file store).~~ **Done (2026-07-20).**
 11. ~~Human authorizes **M7 only**.~~ **Done (2026-07-21).**
 12. ~~**Implement M7** parity bridge.~~ **Done (2026-07-21).**
-13. ~~**Implement M8** retire dedicated Agent Panel.~~ **Done (2026-07-21).** **Do not begin M9.**
-
-M9 remains unauthorized until explicitly approved.
+13. ~~**Implement M8** retire dedicated Agent Panel.~~ **Done (2026-07-21).**
+14. ~~Human authorizes **M9 only**.~~ **Done (2026-07-21).**
+15. ~~**Implement M9** closeout evidence, design brief, keyboard/focus/a11y notes,
+    UI acceptance table closeout, docs truth-sync.~~ **Done (2026-07-21).**
+16. **Human accepts Phase 14** (or requests a narrowly named corrective milestone).
+    **Do not begin Phase 15** until explicitly authorized.
 
 ---
 
@@ -712,6 +714,9 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | **M6 complete** — persistence + recovery (schema v1 file store). M7+ unauthorized. |
 | 2026-07-21 | Human authorized **M7 only** — parity bridge. M8+ unauthorized. M7 boundary recorded above. |
 | 2026-07-21 | **M8 complete** — dedicated Agent Panel retired. M9 unauthorized. |
+| 2026-07-21 | Human authorized **M9 only** — Phase 14 closeout evidence. No Phase 15. |
+| 2026-07-21 | Preserved M8 closeout “Goal delivered” line repair in working tree before M9 edits. |
+| 2026-07-21 | **M9 complete** — closeout evidence, design brief, keyboard/screenshots, UI lock, docs truth-sync. Phase pending human acceptance. |
 
 ---
 
@@ -814,6 +819,8 @@ GUI rows not validated on display in agent session; automated recovery matrix gr
 
 **Acceptance commit:** `ec5c680`
 (`feat(townhall): retire dedicated Agent Panel shell chrome (Phase 14 M8)`)
+
+**Goal delivered:** Remove dedicated Agent Panel shell chrome; Townhall is the sole
 user-facing workflow for Agent direct conversations while preserving M7-proven behavior.
 
 **Delivered:**
@@ -848,8 +855,56 @@ evidence polish); interactive GUI smoke not run in agent session.
 **Manual smoke:** [`M8_MANUAL_EVIDENCE.md`](M8_MANUAL_EVIDENCE.md) — interactive GUI
 rows not validated on display in agent session; automated retirement matrix green.
 
-**M9 still unauthorized.**
+**M9 complete (2026-07-21)** — see M9 closeout below.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 M8 complete — Agent Panel retired; M9 unauthorized)*
+## M9 closeout (2026-07-21)
+
+**Goal delivered:** Phase 14 acceptance evidence — design brief vs `docs/DESIGN.md`,
+keyboard/focus/a11y verification, Linux default/narrow screenshots, UI acceptance
+lock rows closed or limited with residual risk, docs/status truth-sync.
+
+**Delivered:**
+
+- Authorization recorded; focused evidence artifacts:
+  [`M9_MANUAL_EVIDENCE.md`](M9_MANUAL_EVIDENCE.md),
+  [`M9_DESIGN_BRIEF.md`](M9_DESIGN_BRIEF.md),
+  screenshots under [`evidence/m9/`](evidence/m9/).
+- Small acceptance-only fix: accessible names/help text on Townhall message input,
+  send control, new-message chip, people open-DM rows, and honest “attachment
+  unavailable” naming.
+- Interactive Linux GUI verification: conversation list selection, input focus,
+  Enter send, Shift+Enter newline; unit tests for Enter/Shift+Enter retained.
+- Cross-checks: M8 panel retirement remains complete; DF-001 closed with thin
+  non-visual host residual; M4 privacy intact; M6 persistence/no-auto-resume
+  evidence unchanged and truthful.
+- Architecture baseline **unchanged** (no new production types): **463** total /
+  **337** public / **126** internal.
+
+**Not done / environment limits:**
+
+- High-DPI screenshots **unavailable** (host 96×96 DPI).
+- Hardware screen-reader (Orca/NVDA/VoiceOver) **not run**.
+- macOS / Windows **not validated**.
+- Phase 15 **not started**.
+
+**Verification (2026-07-21):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors, 4 warnings (pre-existing) |
+| `dotnet test … ~Zaide.Tests.Features.Conversations` | 102 passed |
+| `dotnet test … ~Zaide.Tests.Features.Townhall` | 112 passed |
+| `dotnet test … ~Zaide.Tests.Features.Agents` | 178 passed |
+| `dotnet test … ~Zaide.Tests.App.Shell` | 134 passed |
+| `dotnet test … ~Zaide.Tests.Architecture` | 26 passed |
+| `dotnet test Zaide.slnx` (full suite) | 2519 passed |
+| `git diff --check` | clean |
+
+**Phase disposition:** engineering closeout complete; **pending explicit human
+acceptance**.
+
+---
+
+*Last updated: 2026-07-21 (Phase 14 M9 complete — engineering closeout; pending human acceptance)*

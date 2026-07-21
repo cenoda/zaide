@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -83,6 +84,10 @@ public class TownhallInputArea : Panel
             TextWrapping = TextWrapping.Wrap,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm)
         };
+        AutomationProperties.SetName(_inputField, "Townhall message input");
+        AutomationProperties.SetHelpText(
+            _inputField,
+            "Type a message. Press Enter to send. Press Shift+Enter for a new line.");
 
         // Send button (arrow icon)
         var sendIcon = CreateIconOrFallback(
@@ -104,8 +109,12 @@ public class TownhallInputArea : Panel
             RenderTransformOrigin = RelativePoint.Center,
             RenderTransform = new ScaleTransform(1, 1)
         };
+        AutomationProperties.SetName(_sendButton, "Send message");
+        AutomationProperties.SetHelpText(
+            _sendButton,
+            "Send the current Townhall message. Enter in the input field also sends.");
 
-        // "+" attachment button
+        // "+" attachment button (visual affordance only in Phase 14)
         var attachButton = new Border
         {
             Width = 28,
@@ -120,6 +129,10 @@ public class TownhallInputArea : Panel
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0)
         };
+        AutomationProperties.SetName(attachButton, "Attachment (unavailable)");
+        AutomationProperties.SetHelpText(
+            attachButton,
+            "Attachment actions are not available in Phase 14.");
 
         // Layout: [+ button] [send button] [input field (fills)]
         // DockPanel: the LAST child always fills remaining space.

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -103,6 +104,20 @@ public class TownhallInputAreaTests
         });
 
         Assert.Equal(0, sendCount);
+    }
+
+    [Fact]
+    public void PrimaryControls_HaveAccessibleNames()
+    {
+        var inputArea = new TownhallInputArea();
+        var inputField = GetInputField(inputArea);
+        var sendButton = inputArea.GetVisualDescendants()
+            .OfType<Border>()
+            .First(b => AutomationProperties.GetName(b) == "Send message");
+
+        Assert.Equal("Townhall message input", AutomationProperties.GetName(inputField));
+        Assert.Contains("Enter to send", AutomationProperties.GetHelpText(inputField) ?? string.Empty, StringComparison.Ordinal);
+        Assert.Equal("Send message", AutomationProperties.GetName(sendButton));
     }
 
     private static TextBox GetInputField(TownhallInputArea inputArea)

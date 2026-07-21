@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -164,6 +165,19 @@ public class TownhallPeoplePanel : Panel
             Cursor = new Cursor(StandardCursorType.Hand)
         };
 
+        var openable = string.Equals(agent.Role, "agent", StringComparison.OrdinalIgnoreCase);
+        AutomationProperties.SetName(
+            row,
+            openable
+                ? $"Open direct conversation with {agent.Name}"
+                : agent.Name);
+        if (openable)
+        {
+            AutomationProperties.SetHelpText(
+                row,
+                "Opens or selects the Human↔Agent direct conversation in Townhall.");
+        }
+
         // Hover effect
         row.PointerEntered += (_, _) =>
         {
@@ -176,7 +190,7 @@ public class TownhallPeoplePanel : Panel
             row.CornerRadius = LayoutTokens.NoneRadius;
         };
 
-        if (string.Equals(agent.Role, "agent", StringComparison.OrdinalIgnoreCase))
+        if (openable)
         {
             row.PointerPressed += (_, _) => _onOpenDirectMessage?.Invoke(agent.ActorId);
         }

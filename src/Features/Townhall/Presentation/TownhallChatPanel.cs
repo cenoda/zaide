@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
@@ -54,6 +55,10 @@ public class TownhallChatPanel : Panel
             Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingMd),
             IsVisible = false
         };
+        AutomationProperties.SetName(_newMessagesButton, "Jump to new messages");
+        AutomationProperties.SetHelpText(
+            _newMessagesButton,
+            "Scroll to the latest messages in this conversation.");
         _newMessagesButton.Click += (_, _) => ScrollToEndAndClearChip();
 
         _root = new Grid
@@ -206,9 +211,11 @@ public class TownhallChatPanel : Panel
     private void ShowNewMessageChip()
     {
         _newMessagesButton.IsVisible = true;
-        _newMessagesButton.Content = _unseenMessageCount == 1
-            ? TextStyles.Caption("New message")
-            : TextStyles.Caption($"New messages ({_unseenMessageCount})");
+        var label = _unseenMessageCount == 1
+            ? "New message"
+            : $"New messages ({_unseenMessageCount})";
+        _newMessagesButton.Content = TextStyles.Caption(label);
+        AutomationProperties.SetName(_newMessagesButton, $"Jump to {label.ToLowerInvariant()}");
     }
 
     private void HideNewMessageChip()

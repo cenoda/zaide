@@ -34,4 +34,5 @@ Panel may be retired only after Phase 14 proves required behavior parity.
 
 Thin non-visual `IAgentPanelHost` execution seams remain for conversation
 provisioning and coordinator lookup. No user-facing panel state or chrome.
-Keyboard/a11y closeout evidence is M9 scope.
+Keyboard/a11y closeout evidence recorded in Phase 14 M9
+(`docs/phases/v3/phase-14/M9_MANUAL_EVIDENCE.md`).

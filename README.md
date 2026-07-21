@@ -55,9 +55,10 @@ visibility internalization) is complete at `133a3c1`, shrinking it from 323 to
 at `d4d1470`, documenting exactly 67 production DI registrations. **M13** is
 complete, and Refactor 6.3 is accepted and closed. **Refactor 7** is complete
 and closed at `a7d2887`. **Refactor 8** is complete and closed (M1 through M8;
-shell layout hosts extracted; public baseline **339/111/450**). **Phase 14 M0–M6
-are complete** (2026-07-20) — unified conversation workspace with schema v1
-persistence; **M8 complete (2026-07-21)** — Agent Panel retired; **M9+ unauthorized**.
+shell layout hosts extracted; public baseline **339/111/450**). **Phase 14 M0–M9 engineering
+closeout is complete** (2026-07-21) — unified conversation workspace, schema v1
+persistence, Agent Panel retired, closeout evidence recorded; **pending explicit
+human acceptance**. Phase 15 unauthorized.
 
 ## Philosophy
 

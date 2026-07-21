@@ -30,11 +30,11 @@ reduction (−26 public types across M11a–M11d), and the 67-row lifetime map
 (`LIFETIME_MAP.md`). Deliberate residuals:
 `CompositionRoot.Services` plus LocatorSite FindingIds
 `R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 and 8 are complete
-and closed. Phase 14 M0–M6 are **complete (2026-07-20)** at
+and closed. Phase 14 M0–M9 engineering closeout is **complete (2026-07-21)** at
 [`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
-(unified conversation workspace, privacy, draft/unread, schema v1 persistence).
-**M7+ unauthorized** — parity bridge and Agent Panel retirement are not
-authorized. Non-C#
+(unified conversation workspace, privacy, draft/unread, schema v1 persistence,
+Agent Panel retired, closeout evidence). **Pending explicit human acceptance**;
+Phase 15 unauthorized. Non-C#
 assets remain outside the root-admission ratchet.
 
 ---
@@ -123,16 +123,14 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Refactor 8 M8
-closeout: total top-level **450**, public **339**, internal **111**, tracked
-production C# source files **412** (App **42**, UI **4**, Features **366**),
-production DI registrations **69** (all Singleton; Conversations adds
-`IActorCatalog` and `IConversationStore`), Composition.Registration modules
-**12**. FindingIds remaining: exactly **2** (`R61-AL-LOC-Program`,
-`R61-AL-LOC-App`) — deliberate M7 composition-boundary residuals.
-NamespaceDirection allowlist is empty. `ApplicationShutdown` is the ordered
-shutdown owner, not a third locator residual. Non-C# assets are not governed
-by the root-admission detectors.
+tracked production **C#** root admission. Live inventory after Phase 14 M8/M9
+closeout: total top-level **463**, public **337**, internal **126**, tracked
+production C# source files **426** (App **41**, UI **4**, Features **381**),
+Composition.Registration modules **12**. FindingIds remaining: exactly **2**
+(`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate composition-boundary
+residuals. NamespaceDirection allowlist is empty. `ApplicationShutdown` is the
+ordered shutdown owner, not a third locator residual. Non-C# assets are not
+governed by the root-admission detectors.
 
 | Later work | Owns |
 |------------|------|
@@ -141,7 +139,7 @@ by the root-admission detectors.
 | Refactor 6.3 | Closed; composition residuals documented above |
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
-| Phase 14 | **M0–M6 complete** (2026-07-20); M7+ unauthorized |
+| Phase 14 | **M0–M9 engineering closeout complete** (2026-07-21); pending human acceptance; Phase 15 unauthorized |
 
 ---
 
@@ -350,4 +348,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M0–M6 complete; M7+ unauthorized; baselines public 338 / internal 127 / total 465)*
+*Last updated: 2026-07-21 (Phase 14 M9 complete — engineering closeout; pending human acceptance; baselines public 337 / internal 126 / total 463)*
