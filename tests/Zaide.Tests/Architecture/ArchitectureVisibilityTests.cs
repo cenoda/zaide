@@ -197,7 +197,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M8: −2 Agent Panel view production files.
-        Assert.Equal(381, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 15 M1b: +17 backend-neutral session/event contract production files.
+        Assert.Equal(398, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]
