@@ -812,7 +812,8 @@ GUI rows not validated on display in agent session; automated recovery matrix gr
 
 ## M8 closeout (2026-07-21)
 
-**Goal delivered:** Remove dedicated Agent Panel shell chrome; Townhall is the sole
+**Acceptance commit:** `ec5c680`
+(`feat(townhall): retire dedicated Agent Panel shell chrome (Phase 14 M8)`)
 user-facing workflow for Agent direct conversations while preserving M7-proven behavior.
 
 **Delivered:**
