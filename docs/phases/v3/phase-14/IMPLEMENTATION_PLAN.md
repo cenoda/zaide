@@ -504,7 +504,7 @@ with separate verification — **do not invent sub-phases; do not begin M8**.
 
 ## M4 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`
+**Acceptance commit:** `921d238`
 (`feat(townhall): remove implicit public mirror of agent sends (Phase 14 M4)`)
 
 **Delivered:**
@@ -538,7 +538,7 @@ with separate verification — **do not invent sub-phases; do not begin M8**.
 
 ## M5 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`
+**Acceptance commit:** `c7692da`
 (`feat(townhall): per-conversation draft and unread cursor (Phase 14 M5)`)
 
 **Ownership:** Townhall presentation owns in-memory draft + last-read via
@@ -585,7 +585,7 @@ coverage green.
 
 ## M3 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`  
+**Acceptance commit:** `a38d1ff`
 (`feat(townhall): unified channel and direct send surface (Phase 14 M3)`)
 
 **Execution wiring:** **Choice A** — Townhall direct send ensures a panel exists for the
@@ -624,7 +624,7 @@ unchanged (M4 removes mirror).
 
 ## M2 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`
+**Acceptance commit:** `c25ce09`
 
 **Delivered:**
 
@@ -655,7 +655,7 @@ unchanged (M4 removes mirror).
 
 ## M1 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`  
+**Acceptance commit:** `5397ade`
 (`feat(conversations): add store navigation seams for direct participant pairs (Phase 14 M1)`)
 
 **Pair-key rule (D05):** `DirectParticipantPairKey.FromActors` sorts two distinct
@@ -710,7 +710,7 @@ indexing; argument order does not create duplicate directs.
 
 ## M7 closeout (2026-07-21)
 
-**Acceptance commit:** this commit on `master`
+**Acceptance commit:** `908df9f`
 (`feat(townhall): parity bridge — conversation-owned execution and catalog routing (Phase 14 M7)`)
 
 **Goal delivered:** Townhall direct-conversation workspace is the truthful execution
@@ -759,7 +759,7 @@ rows not validated on display in agent session; automated parity matrix green.
 
 ## M6 closeout (2026-07-20)
 
-**Acceptance commit:** this commit on `master`
+**Acceptance commit:** `8a7a7c2`
 (`feat(conversations): persist workspace state across restarts (Phase 14 M6)`)
 
 **Ownership:** Conversations feature owns versioned JSON file store, atomic write,
