@@ -190,13 +190,14 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 8 M3: +1 RightColumnHost production file (was 38 after M2).
         // Refactor 8 M4: +1 MainLayoutBuilder production file.
         // Refactor 8 M5: +2 SettingsPanelAttachHost, ShellOverlayFocusWiring production files.
-        Assert.Equal(42, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        Assert.Equal(41, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
         // Phase 14 M6: +10 conversation persistence production files.
-        Assert.Equal(383, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 14 M8: −2 Agent Panel view production files.
+        Assert.Equal(381, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

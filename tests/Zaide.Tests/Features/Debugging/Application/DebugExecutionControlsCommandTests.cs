@@ -273,10 +273,7 @@ public sealed class DebugExecutionControlsCommandTests
         _ = new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), System.Reactive.Concurrency.CurrentThreadScheduler.Instance),
             editorTabs,
-            terminalHost,
-            panelHost,
-            router,
-            ConversationsTestSupport.CreateTownhallViewModel(),
+            terminalHost, ConversationsTestSupport.CreateTownhallViewModel(),
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
                 workspace,

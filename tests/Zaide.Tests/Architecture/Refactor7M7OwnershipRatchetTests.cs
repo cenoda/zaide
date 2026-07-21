@@ -1,7 +1,7 @@
 using System;
-using System.IO;
 using System.Reflection;
 using Xunit;
+using Zaide.App.Shell;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -13,16 +13,6 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class Refactor7M7OwnershipRatchetTests
 {
-    private static readonly string[] ForbiddenMirrorCoordinatorDisplayPrefixes =
-    [
-        "$\"Assistant:",
-        "$\"Routing failed:",
-        "$\"Error:",
-        "\"Assistant: \"",
-        "\"Routing failed: \"",
-        "\"Error: \"",
-    ];
-
     [Fact]
     public void TownhallViewModel_AddMirroredActivity_RemainsAbsent()
     {
@@ -44,14 +34,16 @@ public sealed class Refactor7M7OwnershipRatchetTests
     }
 
     [Fact]
-    public void AgentTownhallMirrorCoordinator_DoesNotFormatTownhallDisplayPrefixes()
+    public void MainWindowViewModel_DoesNotExposeRetiredPanelSendSeam()
     {
-        var source = ReadProductionSource("src/App/Shell/AgentTownhallMirrorCoordinator.cs");
+        var type = typeof(MainWindowViewModel);
 
-        foreach (var forbidden in ForbiddenMirrorCoordinatorDisplayPrefixes)
-        {
-            Assert.DoesNotContain(forbidden, source, StringComparison.Ordinal);
-        }
+        Assert.DoesNotContain(
+            type.GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public),
+            m => m.Name == "SendAgentMessageAsync");
+        Assert.DoesNotContain(
+            type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public),
+            p => p.Name == "AgentPanelHost");
     }
 
     [Fact]
@@ -83,11 +75,5 @@ public sealed class Refactor7M7OwnershipRatchetTests
             content);
 
         return TownhallEntryProjection.ToTownhallDisplayContent(entry);
-    }
-
-    private static string ReadProductionSource(string relativePath)
-    {
-        var repoRoot = ArchitectureInventoryReader.ResolveRepositoryRoot();
-        return File.ReadAllText(Path.Combine(repoRoot, relativePath));
     }
 }

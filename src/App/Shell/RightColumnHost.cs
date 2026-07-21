@@ -1,10 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Settings.Contracts;
@@ -13,8 +10,8 @@ using Zaide.UI.DesignSystem;
 namespace Zaide.App.Shell;
 
 /// <summary>
-/// Shell-owned right column: editor tab bar, search bar, editor/welcome surface,
-/// vertical splitter, and agent panel host.
+/// Shell-owned right column: editor tab bar, search bar, and editor/welcome surface.
+/// Phase 14 M8: dedicated Agent Panel chrome removed; Townhall is the sole DM workflow.
 /// </summary>
 internal sealed class RightColumnHost
 {
@@ -36,17 +33,6 @@ internal sealed class RightColumnHost
         WelcomeText.VerticalAlignment = VerticalAlignment.Center;
         WelcomeText.HorizontalAlignment = HorizontalAlignment.Center;
         WelcomeText.IsVisible = true;
-
-        var verticalSplitter = new GridSplitter
-        {
-            Height = 4,
-            Background = Brushes.Transparent,
-            Cursor = new Cursor(StandardCursorType.SizeNorthSouth),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            ResizeDirection = GridResizeDirection.Rows,
-            IsVisible = true,
-        };
 
         var editorPanel = new Grid
         {
@@ -72,21 +58,7 @@ internal sealed class RightColumnHost
         Grid.SetRow(EditorView, 2);
         Grid.SetRow(WelcomeText, 2);
 
-        AgentPanelHostView = new AgentPanelHostView();
-
-        Root = new Grid
-        {
-            RowDefinitions =
-            {
-                new RowDefinition { Height = new GridLength(2, GridUnitType.Star) },
-                new RowDefinition { Height = new GridLength(4, GridUnitType.Pixel) },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
-            },
-            Children = { editorPanel, verticalSplitter, AgentPanelHostView },
-        };
-        Grid.SetRow(editorPanel, 0);
-        Grid.SetRow(verticalSplitter, 1);
-        Grid.SetRow(AgentPanelHostView, 2);
+        Root = editorPanel;
     }
 
     public Grid Root { get; }
@@ -98,8 +70,6 @@ internal sealed class RightColumnHost
     public EditorView EditorView { get; }
 
     public TextBlock WelcomeText { get; }
-
-    public AgentPanelHostView AgentPanelHostView { get; }
 
     public void AttachToLayoutGrid(Grid layoutRoot, int column = 5, int row = 0)
     {

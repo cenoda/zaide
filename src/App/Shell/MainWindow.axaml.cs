@@ -31,7 +31,6 @@ using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Presentation;
-using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.App.Shell;
 /// <summary>
@@ -73,7 +72,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private TestResultsPanel _testResultsPanel = null!;
     private DebugPanel _debugPanel = null!;
     private FinalWindowCleanup _finalWindowCleanup = null!;
-    private AgentPanelHostView _agentPanelHostView = null!;
     private BottomPanelHost _bottomPanelHost = null!;
     private RightColumnHost _rightColumnHost = null!;
     private readonly RowDefinition _bottomSplitterRow;
@@ -154,7 +152,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _bottomPanelHost = layout.BottomPanelHost;
         _rightColumnHost = layout.RightColumnHost;
         _terminalTabHost = layout.BottomPanelHost.TerminalTabHost;
-        _agentPanelHostView = layout.RightColumnHost.AgentPanelHostView;
         _bottomSplitterRow = layout.BottomSplitterRow;
         _bottomPanelRow = layout.BottomPanelRow;
         _statusBarRow = layout.StatusBarRow;
@@ -201,22 +198,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // M3: The bottom-panel host owns the per-tab TerminalPanel cache.
             // Bind it to ITerminalHost — never to a single concrete session VM.
             _terminalTabHost.SetHost(ViewModel!.TerminalHost);
-
-            // Wire the agent-panel host view to IAgentPanelHost
-            _agentPanelHostView.SetHost(ViewModel!.AgentPanelHost);
-
-            // M5: explicit cleanup path — detach host/panel subscriptions and
-            // release retained views when the window deactivates.
-            disposables.Add(Disposable.Create(() => _agentPanelHostView.DetachHost()));
-
-            // M2: Wire panel send event through the thin composition seam
-            void OnPanelSendRequested(string panelId, string message)
-            {
-                _ = ViewModel!.SendAgentMessageAsync(panelId, message);
-            }
-            _agentPanelHostView.PanelSendRequested += OnPanelSendRequested;
-            disposables.Add(Disposable.Create(() =>
-                _agentPanelHostView.PanelSendRequested -= OnPanelSendRequested));
 
             // Wire SourceControlPanel to its ViewModel
             _sourceControlPanel.ViewModel = ViewModel.SourceControlViewModel;

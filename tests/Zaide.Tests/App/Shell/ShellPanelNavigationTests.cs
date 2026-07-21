@@ -257,10 +257,7 @@ public sealed class ShellPanelNavigationTests
         return new MainWindowViewModel(
             new FileTreeViewModel(new FileTreeService(), CurrentThreadScheduler.Instance),
             editorTabs,
-            terminalHost,
-            panelHost,
-            router,
-            ConversationsTestSupport.CreateTownhallViewModel(),
+            terminalHost, ConversationsTestSupport.CreateTownhallViewModel(),
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Mock<IGitRepositoryService>().Object),
                 workspace,

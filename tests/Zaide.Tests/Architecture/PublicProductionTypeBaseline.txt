@@ -35,8 +35,6 @@ Zaide.Features.Agents.Domain.ExecutionRunOutcome
 Zaide.Features.Agents.Domain.RouteRequest
 Zaide.Features.Agents.Domain.RouteResult
 Zaide.Features.Agents.Presentation.AgentPanelHost
-Zaide.Features.Agents.Presentation.AgentPanelHostView
-Zaide.Features.Agents.Presentation.AgentPanelView
 Zaide.Features.Agents.Presentation.IAgentPanelHost
 Zaide.Features.Conversations.Contracts.IActorCatalog
 Zaide.Features.Conversations.Contracts.IConversationDraftState

@@ -204,10 +204,7 @@ public sealed class TestResultsViewModelTests
         return new MainWindowViewModel(
             fileTree,
             editorTabs,
-            terminalHost,
-            panelHost,
-            router,
-            ConversationsTestSupport.CreateTownhallViewModel(),
+            terminalHost, ConversationsTestSupport.CreateTownhallViewModel(),
             new SourceControlViewModel(
                 new SourceControlSnapshotOrchestrator(new Moq.Mock<IGitRepositoryService>().Object),
                 workspace,

@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (Phase 14 M7 draft state).</summary>
-    public const int TotalTopLevelTypes = 467;
+    /// <summary>Total non-nested, non-compiler-generated production types (Phase 14 M8 panel retirement).</summary>
+    public const int TotalTopLevelTypes = 463;
 
-    /// <summary>Public top-level production type ceiling and baseline count (Phase 14 M7 +1 IConversationDraftState).</summary>
-    public const int PublicTopLevelTypes = 339;
+    /// <summary>Public top-level production type ceiling and baseline count (Phase 14 M8 −2 panel view types).</summary>
+    public const int PublicTopLevelTypes = 337;
 
-    /// <summary>Internal top-level production type count (Phase 14 M7 +1 ConversationDraftState).</summary>
-    public const int InternalTopLevelTypes = 128;
+    /// <summary>Internal top-level production type count (Phase 14 M8 −1 mirror coordinator).</summary>
+    public const int InternalTopLevelTypes = 126;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

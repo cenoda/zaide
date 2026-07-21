@@ -6,19 +6,13 @@ using Avalonia.Controls;
 using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Shell;
-using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Editor.Presentation;
 
 namespace Zaide.Tests.App.Shell;
 
 /// <summary>
-/// Structural coverage for <see cref="RightColumnHost"/> after Refactor 8 M3.
-/// Full host construction is not exercised here: the host always builds
-/// <see cref="EditorView"/>, whose constructor allocates popups that read
-/// <c>Application.Current.Resources</c> at construction time. In this test
-/// assembly <see cref="ReactiveUI.Builder.RxAppBuilder.BuildApp"/> does not
-/// establish a resource-backed <c>Application.Current</c>, and Avalonia does
-/// not expose a supported setter in this stack version.
+/// Structural coverage for <see cref="RightColumnHost"/> after Refactor 8 M3 and
+/// Phase 14 M8 (editor-only right column; no Agent Panel chrome).
 /// </summary>
 public sealed class RightColumnHostSourceTests
 {
@@ -44,9 +38,8 @@ public sealed class RightColumnHostSourceTests
             p => p.Name == nameof(RightColumnHost.EditorView) && p.PropertyType == typeof(EditorView));
         Assert.Contains(type.GetProperties(BindingFlags.Instance | BindingFlags.Public),
             p => p.Name == nameof(RightColumnHost.WelcomeText) && p.PropertyType == typeof(TextBlock));
-        Assert.Contains(type.GetProperties(BindingFlags.Instance | BindingFlags.Public),
-            p => p.Name == nameof(RightColumnHost.AgentPanelHostView)
-                 && p.PropertyType == typeof(AgentPanelHostView));
+        Assert.DoesNotContain(type.GetProperties(BindingFlags.Instance | BindingFlags.Public),
+            p => p.Name.Contains("AgentPanel", StringComparison.Ordinal));
         Assert.Contains(type.GetMethods(BindingFlags.Instance | BindingFlags.Public),
             m => m.Name == nameof(RightColumnHost.AttachToLayoutGrid));
     }
@@ -63,21 +56,18 @@ public sealed class RightColumnHostSourceTests
         Assert.Contains("WelcomeText.IsVisible = true", source);
         Assert.Contains("TextStyles.Body(\"Open a file to begin\")", source);
         Assert.Contains("new SearchBar(searchViewModel)", source);
-        Assert.Contains("new AgentPanelHostView()", source);
+        Assert.DoesNotContain("AgentPanelHostView", source);
+        Assert.DoesNotContain("GridSplitter", source);
     }
 
     [Fact]
-    public void RightColumnHost_SourceRetainsVerticalSplitterAndStarRows()
+    public void MainWindow_SourceDoesNotWireAgentPanelChrome()
     {
-        var source = ReadRepoFile("src/App/Shell/RightColumnHost.cs");
+        var source = ReadRepoFile("src/App/Shell/MainWindow.axaml.cs");
 
-        Assert.Contains("new GridLength(2, GridUnitType.Star)", source);
-        Assert.Contains("new GridLength(4, GridUnitType.Pixel)", source);
-        Assert.Contains("new GridLength(1, GridUnitType.Star)", source);
-        Assert.Contains("ResizeDirection = GridResizeDirection.Rows", source);
-        Assert.Contains("Grid.SetRow(AgentPanelHostView, 2)", source);
-        Assert.Contains("LayoutTokens.Inset(1, 0, 0, 0)", source);
-        Assert.Contains("SurfacePanelBrush", source);
+        Assert.DoesNotContain("AgentPanelHostView", source);
+        Assert.DoesNotContain("SendAgentMessageAsync", source);
+        Assert.DoesNotContain("PanelSendRequested", source);
     }
 
     [Fact]

@@ -235,14 +235,9 @@ public sealed class CanonicalCommandRegistrationTests
         var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var scViewModel = CreateSourceControlViewModel(registry);
         var workspace = sp.GetRequiredService<Workspace>();
-        var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
-        var panelHost = ConversationsTestSupport.CreatePanelHost();
-        var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         return new MainWindowViewModel(
-            fileTreeViewModel, editorTabs, terminalHost, panelHost,
-            router, townhallViewModel, scViewModel,
+            fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(registry: registry),
             TestTestResultsFactory.Create(editorTabs),

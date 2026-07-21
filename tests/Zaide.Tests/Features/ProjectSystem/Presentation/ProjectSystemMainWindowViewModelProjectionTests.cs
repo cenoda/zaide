@@ -111,8 +111,7 @@ public sealed class ProjectSystemMainWindowViewModelProjectionTests
 
         var workspace = sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
         var vm = new MainWindowViewModel(
-            fileTree, editorTabs, terminalHost, panelHost, router,
-            townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
+            fileTree, editorTabs, terminalHost, townhall, sourceControl, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
             projectContextService, ConversationsTestSupport.CreateCatalogAsInterface());
         // Use ImmediateScheduler so scheduled work executes synchronously
         // in unit test environments where AvaloniaScheduler is unavailable.

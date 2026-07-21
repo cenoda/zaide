@@ -561,10 +561,7 @@ public sealed class MainWindowActivationHostTests
         var vm = new MainWindowViewModel(
             fileTree,
             editorTabs,
-            terminalHost,
-            panelHost,
-            router,
-            townhall,
+            terminalHost, townhall,
             sc,
             TestProblemsFactory.Create(workspace, editorTabs),
             workflowVm,

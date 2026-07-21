@@ -26,8 +26,6 @@ using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Infrastructure;
 using Zaide.Features.Terminal.Presentation;
 using Zaide.Features.Townhall.Presentation;
-using Zaide.Features.Agents.Contracts;
-using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 
 namespace Zaide.App.Shell;
@@ -70,7 +68,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
-    private readonly AgentTownhallMirrorCoordinator _agentTownhallMirror;
     private readonly ShellPanelNavigation _panelNavigation;
     private readonly MainWindowActivationHost _activationHost;
 
@@ -185,7 +182,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public FileTreeViewModel FileTreeViewModel { get; }
     public EditorTabViewModel EditorTabs { get; }
     public ITerminalHost TerminalHost { get; }
-    public IAgentPanelHost AgentPanelHost { get; }
     public TownhallViewModel TownhallViewModel { get; }
     public SourceControlViewModel SourceControlViewModel { get; }
     public ProblemsViewModel ProblemsViewModel { get; }
@@ -221,8 +217,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public MainWindowViewModel(FileTreeViewModel fileTreeViewModel,
                                 EditorTabViewModel editorTabViewModel,
                                 ITerminalHost terminalHost,
-                                IAgentPanelHost agentPanelHost,
-                                IAgentRouter agentRouter,
                                 TownhallViewModel townhallViewModel,
                                 SourceControlViewModel sourceControlViewModel,
                                 ProblemsViewModel problemsViewModel,
@@ -240,9 +234,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         FileTreeViewModel = fileTreeViewModel;
         EditorTabs = editorTabViewModel;
         TerminalHost = terminalHost;
-        AgentPanelHost = agentPanelHost;
         TownhallViewModel = townhallViewModel;
-        _agentTownhallMirror = new AgentTownhallMirrorCoordinator(agentRouter);
         SourceControlViewModel = sourceControlViewModel;
         ProblemsViewModel = problemsViewModel ?? throw new ArgumentNullException(nameof(problemsViewModel));
         ProjectWorkflowViewModel = projectWorkflowViewModel ?? throw new ArgumentNullException(nameof(projectWorkflowViewModel));
@@ -345,16 +337,6 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _disposables = new CompositeDisposable();
         _activationHost.Activate(_disposables);
     }
-
-    /// <summary>
-    /// Forwards agent send to <see cref="AgentTownhallMirrorCoordinator"/>.
-    /// Public name/signature unchanged for the view.
-    /// </summary>
-    public Task SendAgentMessageAsync(
-        string panelId,
-        string userMessage,
-        CancellationToken ct = default) =>
-        _agentTownhallMirror.SendAsync(panelId, userMessage, ct);
 
     public void Dispose()
     {

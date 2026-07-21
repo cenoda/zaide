@@ -9,9 +9,10 @@ selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
 **M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
 **M5 complete (2026-07-20)** — per-conversation draft + unread/read cursor (in-memory).
 **M6 complete (2026-07-20)** — persistence + recovery (file store, schema v1).
-**M7 complete (2026-07-21)** — parity bridge. **M8+ remain unauthorized.** M7 does
-**not** authorize Agent Panel retirement, shell layout removal, or any later milestone
-scope.
+**M7 complete (2026-07-21)** — parity bridge. **M8 complete (2026-07-21)** — dedicated
+Agent Panel retired; Townhall is the sole user-facing DM workflow. **M9+ remain
+unauthorized.** M8 does not authorize closeout/design/a11y screenshot work beyond
+evidence strictly required to validate retirement.
 
 **Dependency status:**
 
@@ -205,20 +206,20 @@ accepted limitation with evidence of residual risk.
 
 All items must be proven before removing `AgentPanelHostView` from the shell:
 
-- [ ] Open/select a Human↔Agent direct conversation from Townhall navigation
-- [ ] Send message; see user + assistant/error entries in that conversation only
-- [ ] Busy/disable input while in-flight **for that conversation/panel**; restore on completion (per-panel concurrency — not global single-flight)
-- [ ] Cancel/exception paths remain truthful (existing coordinator semantics)
-- [ ] Re-send works after failure/cancel (**no** dedicated retry command required)
-- [ ] Draft retained per conversation across selection changes
-- [ ] Routing failure visible in the owning conversation (and not lost)
-- [ ] `@mention` / multi-agent routing works without requiring the retired tab strip **or** an accepted interim limitation is documented and does not block DM primary path
-- [ ] Closing/reopening the app restores history + draft + unread per D11–D13
-- [ ] No implicit public-channel copy of DM content (M4)
-- [ ] Keyboard: focus conversation list, select, focus input, send (Enter), newline (Shift+Enter) parity with current Townhall/panel paths where applicable
-- [ ] Scroll: stable anchoring + near-bottom auto-follow + new-message affordance when scrolled away (UI acceptance lock)
-- [ ] In-flight work is not silently dropped without status when navigating away (define: stay attached to conversation, not to panel chrome)
-- [ ] Automated regression suite green; manual smoke evidence recorded
+- [x] Open/select a Human↔Agent direct conversation from Townhall navigation
+- [x] Send message; see user + assistant/error entries in that conversation only
+- [x] Busy/disable input while in-flight **for that conversation/panel**; restore on completion (per-panel concurrency — not global single-flight)
+- [x] Cancel/exception paths remain truthful (existing coordinator semantics)
+- [x] Re-send works after failure/cancel (**no** dedicated retry command required)
+- [x] Draft retained per conversation across selection changes
+- [x] Routing failure visible in the owning conversation (and not lost)
+- [x] `@mention` / multi-agent routing works without requiring the retired tab strip **or** an accepted interim limitation is documented and does not block DM primary path
+- [x] Closing/reopening the app restores history + draft + unread per D11–D13
+- [x] No implicit public-channel copy of DM content (M4)
+- [x] Keyboard: focus conversation list, select, focus input, send (Enter), newline (Shift+Enter) parity with current Townhall/panel paths where applicable (automated structural; interactive deferred M9)
+- [x] Scroll: stable anchoring + near-bottom auto-follow + new-message affordance when scrolled away (M3; unchanged M8)
+- [x] In-flight work is not silently dropped without status when navigating away (define: stay attached to conversation, not to panel chrome)
+- [x] Automated regression suite green; manual smoke evidence recorded (`M8_MANUAL_EVIDENCE.md`)
 
 ---
 
@@ -276,7 +277,7 @@ Harness or ACP platform.
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | **Complete (2026-07-20)** — commit `c7692da` |
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Complete (2026-07-20)** — see M6 closeout |
 | **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | **Complete (2026-07-21)** — see M7 closeout |
-| **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | Unauthorized |
+| **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | **Complete (2026-07-21)** — see M8 closeout |
 | **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | Unauthorized |
 
 If a milestone exceeds one agent session, split into `MNa` / `MNb` slices with
@@ -353,9 +354,14 @@ Manual smoke (minimum, expand per milestone evidence):
 
 ### For authorizing M8 (retirement)
 
-- [ ] M1–M7 accepted with evidence.
-- [ ] Retirement parity checklist complete.
-- [ ] Human explicitly authorizes **M8 only**.
+- [x] M1–M7 accepted with evidence.
+- [x] Retirement parity checklist complete.
+- [x] Human explicitly authorizes **M8 only** (2026-07-21).
+
+### For authorizing M9 (closeout)
+
+- [ ] M8 accepted with evidence.
+- [ ] Human explicitly authorizes **M9 only**.
 
 ---
 
@@ -445,9 +451,10 @@ Manual smoke (minimum, expand per milestone evidence):
 9. ~~Human authorizes **M6 only**.~~ **Done (2026-07-20).**
 10. ~~**Implement M6** persistence + recovery (schema v1 file store).~~ **Done (2026-07-20).**
 11. ~~Human authorizes **M7 only**.~~ **Done (2026-07-21).**
-12. ~~**Implement M7** parity bridge.~~ **Done (2026-07-21).** **Do not begin M8.**
+12. ~~**Implement M7** parity bridge.~~ **Done (2026-07-21).**
+13. ~~**Implement M8** retire dedicated Agent Panel.~~ **Done (2026-07-21).** **Do not begin M9.**
 
-M8+ remains unauthorized until explicitly approved.
+M9 remains unauthorized until explicitly approved.
 
 ---
 
@@ -704,7 +711,7 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | Human authorized **M6 only** — persistence + recovery. M7+ unauthorized. |
 | 2026-07-20 | **M6 complete** — persistence + recovery (schema v1 file store). M7+ unauthorized. |
 | 2026-07-21 | Human authorized **M7 only** — parity bridge. M8+ unauthorized. M7 boundary recorded above. |
-| 2026-07-21 | **M7 complete** — parity bridge. M8+ unauthorized. |
+| 2026-07-21 | **M8 complete** — dedicated Agent Panel retired. M9 unauthorized. |
 
 ---
 
@@ -799,8 +806,49 @@ entries), `activeConversationId`, `drafts`, `lastReadEntryIds`.
 **Manual smoke:** [`M6_MANUAL_EVIDENCE.md`](M6_MANUAL_EVIDENCE.md) — interactive
 GUI rows not validated on display in agent session; automated recovery matrix green.
 
-**M7 complete (2026-07-21); M8+ still unauthorized.**
+**M9 still unauthorized.**
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 M7 complete — parity bridge; M8+ unauthorized)*
+## M8 closeout (2026-07-21)
+
+**Goal delivered:** Remove dedicated Agent Panel shell chrome; Townhall is the sole
+user-facing workflow for Agent direct conversations while preserving M7-proven behavior.
+
+**Delivered:**
+
+- Removed `AgentPanelHostView`, `AgentPanelView`, right-column panel row/splitter,
+  `MainWindow` panel wiring, `MainWindowViewModel.SendAgentMessageAsync` /
+  `AgentPanelHost` surface, and `AgentTownhallMirrorCoordinator`.
+- `RightColumnHost` is editor-only; thin `IAgentPanelHost` execution seams retained.
+- Townhall remains authoritative for navigation, send, busy, drafts, unread, private
+  history, and restored persisted state.
+- DF-001 closed (`docs/deferred/closed/DF-001-agent-surface-townhall-tab.md`).
+- Automated retirement suite: `Phase14M8PanelRetirementTests`; shell source ratchets updated.
+- Architecture baseline: **463** total / **337** public / **126** internal;
+  Features source files **381**; App source files **41**.
+
+**Not done (hard boundary):** M9 closeout (design brief, a11y screenshots, keyboard
+evidence polish); interactive GUI smoke not run in agent session.
+
+**Verification (2026-07-21):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors |
+| `dotnet test … ~Zaide.Tests.Features.Conversations` | 102 passed |
+| `dotnet test … ~Zaide.Tests.Features.Townhall` | 111 passed |
+| `dotnet test … ~Zaide.Tests.Features.Agents` | 178 passed |
+| `dotnet test … ~Zaide.Tests.App.Shell` | 134 passed |
+| `dotnet test … ~Zaide.Tests.Architecture` | 26 passed |
+| `dotnet test Zaide.slnx` (full suite) | 2518 passed |
+| `git diff --check` | clean |
+
+**Manual smoke:** [`M8_MANUAL_EVIDENCE.md`](M8_MANUAL_EVIDENCE.md) — interactive GUI
+rows not validated on display in agent session; automated retirement matrix green.
+
+**M9 still unauthorized.**
+
+---
+
+*Last updated: 2026-07-21 (Phase 14 M8 complete — Agent Panel retired; M9 unauthorized)*

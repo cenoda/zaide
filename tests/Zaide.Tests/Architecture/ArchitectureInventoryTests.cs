@@ -48,7 +48,8 @@ public sealed class ArchitectureInventoryTests
         // Refactor 8 M3: +1 internal RightColumnHost (was 20 total / 14 public / 6 internal).
         // Refactor 8 M4: +1 internal MainLayoutBuilder (was 21 total / 14 public / 7 internal).
         // Refactor 8 M5: +2 internal SettingsPanelAttachHost, ShellOverlayFocusWiring.
-        Assert.Equal((24, 14, 10), byNamespace["Zaide.App.Shell"]);
+        // Phase 14 M8: −1 internal AgentTownhallMirrorCoordinator.
+        Assert.Equal((23, 14, 9), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((4, 2, 2), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
@@ -112,7 +113,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((11, 7, 4), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Infrastructure"]);
-        Assert.Equal((5, 4, 1), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
+        Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -153,18 +155,19 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M5: +1 internal TownhallConversationUiState production file.
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files (contract + implementation).
-        Assert.Equal(429, inventory.SourceFiles.Count);
+        // Phase 14 M8: −3 production files (2 panel views + mirror coordinator).
+        Assert.Equal(426, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(42, byFolder["App"]);
+        Assert.Equal(41, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.
-        Assert.Equal(383, byFolder["Features"]);
+        Assert.Equal(381, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

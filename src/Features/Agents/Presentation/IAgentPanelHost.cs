@@ -5,14 +5,8 @@ using Zaide.Features.Conversations.Domain;
 namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
-/// Host seam for agent panel collection and active-panel selection.
-///
-/// Mirrors the ITerminalHost pattern: the host owns the panel collection
-/// and active selection; MainWindowViewModel composes the host rather than
-/// owning panel state directly.
-///
-/// Phase 5.1.2 only — intentionally narrow. No UI, execution, Townhall,
-/// routing, or persistence concerns.
+/// Non-visual thin host for agent direct-conversation execution seams.
+/// Owns in-memory panel state keyed by catalog actor; no UI chrome (Phase 14 M8).
 /// </summary>
 public interface IAgentPanelHost
 {

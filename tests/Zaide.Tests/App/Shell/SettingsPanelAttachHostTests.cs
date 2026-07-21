@@ -235,10 +235,7 @@ public sealed class SettingsPanelAttachHostTests
         var vm = new MainWindowViewModel(
             fileTree,
             editorTabs,
-            terminalHost,
-            panelHost,
-            router,
-            townhall,
+            terminalHost, townhall,
             sourceControl,
             TestProblemsFactory.Create(workspace, editorTabs),
             TestProjectWorkflowFactory.Create(),

@@ -388,8 +388,7 @@ public sealed class EditorUxProofTests
         var workspace = sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>();
 
         return new MainWindowViewModel(
-            fileTreeViewModel, editorTabs, terminalHost, panelHost,
-            router, townhallViewModel, scViewModel,
+            fileTreeViewModel, editorTabs, terminalHost, townhallViewModel, scViewModel,
             TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace,
             new Mock<IProjectContextService>(MockBehavior.Loose).Object, ConversationsTestSupport.CreateCatalogAsInterface(), registry);
     }

@@ -78,7 +78,7 @@ public class TownhallViewModel : ReactiveObject
 
     /// <summary>
     /// Gets or sets the current draft text input. Syncs with TownhallState.DraftText on set
-    /// and the per-conversation draft map (shared with Agent Panel thin host).
+    /// and the per-conversation draft map (conversation-owned; Phase 14 M8).
     /// </summary>
     public string DraftText
     {
@@ -94,7 +94,6 @@ public class TownhallViewModel : ReactiveObject
                 if (_state.ActiveConversationId is { } activeConversationId)
                 {
                     _conversationUiState.SetDraft(activeConversationId, value);
-                    SyncPanelDraft(activeConversationId, value);
                     NotifyPresentationPersisted();
                 }
             }
@@ -560,22 +559,10 @@ public class TownhallViewModel : ReactiveObject
         UpdateDirectSendBusyTracking();
     }
 
-    private AgentPanelState? FindPanelForConversation(ConversationId conversationId) =>
-        _panelHost.Panels.FirstOrDefault(panel => panel.ConversationId == conversationId);
-
     private AgentPanelState EnsurePanelForDirectConversation(Conversation conversation)
     {
         var peerActorId = ResolveDirectPeerActorId(conversation);
         return _panelHost.GetOrCreatePanelForActor(peerActorId);
-    }
-
-    private void SyncPanelDraft(ConversationId conversationId, string draft)
-    {
-        var panel = FindPanelForConversation(conversationId);
-        if (panel is not null && panel.DraftInput != draft)
-        {
-            panel.DraftInput = draft;
-        }
     }
 
     private ActorId ResolveDirectPeerActorId(Conversation conversation)
@@ -604,7 +591,7 @@ public class TownhallViewModel : ReactiveObject
             return;
         }
 
-        // Conversation-keyed busy survives panel close and navigation (M7).
+        // Conversation-keyed busy survives navigation (M7); no panel chrome projection (M8).
         IsDirectSendBusy = _executionCoordinator.IsConversationBusy(activeConversationId);
 
         Action<ConversationId, bool> busyHandler = (conversationId, isBusy) =>
@@ -616,34 +603,9 @@ public class TownhallViewModel : ReactiveObject
         };
         _executionCoordinator.ConversationBusyChanged += busyHandler;
 
-        // Also project open-panel IsBusy while a thin host exists.
-        var panel = FindPanelForConversation(activeConversationId);
-        PropertyChangedEventHandler? panelHandler = null;
-        if (panel is not null)
-        {
-            if (panel.IsBusy)
-            {
-                IsDirectSendBusy = true;
-            }
-
-            panelHandler = (_, e) =>
-            {
-                if (e.PropertyName == nameof(AgentPanelState.IsBusy))
-                {
-                    IsDirectSendBusy = panel.IsBusy
-                        || _executionCoordinator.IsConversationBusy(activeConversationId);
-                }
-            };
-            panel.PropertyChanged += panelHandler;
-        }
-
         _directBusySubscription.Disposable = Disposable.Create(() =>
         {
             _executionCoordinator.ConversationBusyChanged -= busyHandler;
-            if (panel is not null && panelHandler is not null)
-            {
-                panel.PropertyChanged -= panelHandler;
-            }
         });
     }
 
