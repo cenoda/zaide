@@ -32,6 +32,7 @@ public sealed class AgentsRegistrationModuleTests
         typeof(IAgentSessionService).FullName!,
         typeof(IAgentPanelHost).FullName!,
         typeof(IAgentExecutionService).FullName!,
+        typeof(IAgentBackend).FullName!,
         typeof(IAgentExecutionCoordinator).FullName!,
         typeof(MentionParser).FullName!,
         typeof(IAgentRouter).FullName!,
@@ -76,13 +77,13 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideAgents_RegistersExactlyEightPlannedServices()
+    public void AddZaideAgents_RegistersExactlyNinePlannedServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(8, services.Count);
+        Assert.Equal(9, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -110,6 +111,10 @@ public sealed class AgentsRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(IAgentExecutionService)
                 && d.ImplementationType == typeof(AgentExecutionService));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentBackend)
+                && d.ImplementationType == typeof(LegacyOpenAiCompatibleAgentBackend));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentExecutionCoordinator)
@@ -143,6 +148,11 @@ public sealed class AgentsRegistrationModuleTests
         var executionService2 = provider.GetRequiredService<IAgentExecutionService>();
         Assert.Same(executionService1, executionService2);
         Assert.IsType<AgentExecutionService>(executionService1);
+
+        var backend1 = provider.GetRequiredService<IAgentBackend>();
+        var backend2 = provider.GetRequiredService<IAgentBackend>();
+        Assert.Same(backend1, backend2);
+        Assert.IsType<LegacyOpenAiCompatibleAgentBackend>(backend1);
 
         var coordinator1 = provider.GetRequiredService<IAgentExecutionCoordinator>();
         var coordinator2 = provider.GetRequiredService<IAgentExecutionCoordinator>();
@@ -223,7 +233,7 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AgentsModuleSource_ContainsExactlyTheEightPlannedRegistrations()
+    public void AgentsModuleSource_ContainsExactlyTheNinePlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs");
@@ -249,6 +259,10 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
+                @"AddSingleton<IAgentBackend,\s*LegacyOpenAiCompatibleAgentBackend>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
                 @"AddSingleton<IAgentExecutionCoordinator,\s*AgentExecutionCoordinator>\(\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<MentionParser>\(\)"));
         Assert.Single(
@@ -258,7 +272,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(Regex.Matches(moduleSource, @"new HttpClient\(\)"));
         Assert.Contains("TimeSpan.FromSeconds(120)", moduleSource);
 
-        Assert.Equal(8, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(9, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

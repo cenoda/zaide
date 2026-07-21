@@ -2,16 +2,13 @@
 
 ## Status and authorization
 
-**Phase 15 status:** **M0 accepted (2026-07-21).**
-This document is a planning and research gate only. No production or test code,
-dependency, SDK, schema, protocol type, harness implementation, ACP adapter, or
-benchmark runner is authorized by M0 acceptance.
+**Phase 15 status:** **M0–M3a accepted (2026-07-22).** M3b and later milestones
+remain unauthorized pending separate explicit authorization.
 
-**Production authorization:** **NO-GO.** Human acceptance covers this plan
-only. M1a or any later milestone still requires separate explicit
-authorization. Phase 16 has not started and this plan does not assign it an
-outcome. Native Harness production implementation and ACP integration have not
-started.
+**Production authorization:** **M3a GO.** M3b-1/M3b-2, coordinator/router
+cutover, and Phase 15 closeout remain **NO-GO** until separately authorized.
+Phase 16 has not started. Native Harness production implementation and ACP
+integration have not started.
 
 **Audit baseline:**
 
@@ -598,6 +595,13 @@ HTTP handler is automated evidence; no real credential is required.
 **Rollback/commit:** adapter and registration are additive behind the legacy
 path. Expected commit: `feat(agents): adapt legacy HTTP execution as backend`.
 
+**M3a acceptance (2026-07-22):** Human accepted at parent commit
+`9e97ca181a4d136afdd1d598054b1de7d7a337af` gate. Implementation commit adds
+`LegacyOpenAiCompatibleAgentBackend` (`backend:legacy-openai-compatible`),
+typed failure classification in `AgentExecutionService`, versioned capability
+snapshots (including resolution-unavailable truth), attachments unavailable row,
+and DI registration as the sole `IAgentBackend`. M3b remains unauthorized.
+
 ### M3b-1 — Coordinator/router session cutover
 
 **Tests first:** direct send, mention route, structured admission rejection,
@@ -854,4 +858,4 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ---
 
-*Last updated: 2026-07-21 (M0 accepted; M1a and all production milestones remain unauthorized)*
+*Last updated: 2026-07-22 (M3a accepted; M3b unauthorized)*

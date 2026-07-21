@@ -199,7 +199,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 14 M8: −2 Agent Panel view production files.
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
-        Assert.Equal(402, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
+        Assert.Equal(403, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

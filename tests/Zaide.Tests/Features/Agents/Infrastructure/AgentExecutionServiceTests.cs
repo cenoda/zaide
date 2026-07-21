@@ -20,6 +20,8 @@ namespace Zaide.Tests.Features.Agents.Infrastructure;
 
 public sealed class AgentExecutionServiceTests : IDisposable
 {
+    internal const string SentinelSecret = "SENTINEL-SECRET-7f3a9b2c";
+
     private readonly string _tempDir;
 
     public AgentExecutionServiceTests()
@@ -439,6 +441,82 @@ public sealed class AgentExecutionServiceTests : IDisposable
     // ── HTTP request failure ────────────────────────────────────────────────
 
     [Fact]
+    public async Task ExecuteAsync_ResponseReadCancellation_ReturnsCancellationFailure()
+    {
+        var handler = new SlowReadHandler(TimeSpan.FromSeconds(30));
+        var httpClient = new HttpClient(handler);
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
+
+        using var cts = new CancellationTokenSource();
+        var executeTask = service.ExecuteAsync("Hello", cts.Token);
+        await Task.Delay(50);
+        cts.Cancel();
+
+        var result = await executeTask;
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(AgentFailureKind.Cancellation, result.FailureKind);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ResponseReadTimeout_ReturnsTimeoutFailure()
+    {
+        var handler = new SlowReadHandler(TimeSpan.Zero, SlowReadMode.ThrowTimeoutOnRead);
+        var httpClient = new HttpClient(handler);
+        var (settings, secrets) = CreateSettingsAndSecrets(DefaultOptions());
+        var service = new AgentExecutionService(httpClient, settings, secrets);
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(AgentFailureKind.Timeout, result.FailureKind);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_HttpRequestException_RedactsApiKeyFromFailureMessage()
+    {
+        var handler = new FaultMessageHandler(
+            new HttpRequestException($"Connection failed using key {SentinelSecret}"));
+        var httpClient = new HttpClient(handler);
+        var options = new AgentExecutionOptions
+        {
+            BaseUrl = "https://api.test.com/v1",
+            ApiKey = SentinelSecret,
+            Model = "test-model",
+        };
+        var (settings, secrets) = CreateSettingsAndSecrets(options);
+        var service = new AgentExecutionService(httpClient, settings, secrets);
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.False(result.IsSuccess);
+        Assert.DoesNotContain(SentinelSecret, result.ErrorMessage, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED]", result.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ConfigResolutionFailure_DoesNotExposeExceptionSecret()
+    {
+        var settings = new ThrowingOnCurrentSettingsService(
+            $"Configuration unavailable: {SentinelSecret}");
+        var secrets = new TestSecretStore();
+        var service = new AgentExecutionService(
+            new HttpClient(new FakeMessageHandler(HttpStatusCode.OK, "{}")),
+            settings,
+            secrets);
+
+        var result = await service.ExecuteAsync("Hello");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(AgentFailureKind.Indeterminate, result.FailureKind);
+        Assert.DoesNotContain(SentinelSecret, result.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("Failed to resolve LLM configuration.", result.ErrorMessage);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_HttpRequestException_ReturnsFailure()
     {
         var handler = new FaultMessageHandler(new HttpRequestException("Connection refused"));
@@ -614,4 +692,234 @@ internal sealed class FaultMessageHandler : HttpMessageHandler
     {
         throw _exception;
     }
+}
+
+/// <summary>
+/// Returns HTTP 200 immediately but delays response-body reads so cancellation
+/// and timeout can occur during <c>ReadAsStringAsync</c>.
+/// </summary>
+internal sealed class SlowReadHandler : HttpMessageHandler
+{
+    private readonly TimeSpan _readDelay;
+    private readonly SlowReadMode _mode;
+
+    public SlowReadHandler(TimeSpan readDelay, SlowReadMode mode = SlowReadMode.RespectCancellation)
+    {
+        _readDelay = readDelay;
+        _mode = mode;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new BlockingReadStream(_readDelay, _mode)),
+        };
+        response.Content.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        return Task.FromResult(response);
+    }
+}
+
+internal enum SlowReadMode
+{
+    RespectCancellation,
+    ThrowTimeoutOnRead,
+}
+
+internal sealed class BlockingReadStream : Stream
+{
+    private readonly TimeSpan _delay;
+    private readonly SlowReadMode _mode;
+    private bool _delivered;
+
+    public BlockingReadStream(TimeSpan delay, SlowReadMode mode = SlowReadMode.RespectCancellation)
+    {
+        _delay = delay;
+        _mode = mode;
+    }
+
+    public override bool CanRead => true;
+
+    public override bool CanSeek => false;
+
+    public override bool CanWrite => false;
+
+    public override long Length => throw new NotSupportedException();
+
+    public override long Position
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    public override void Flush()
+    {
+    }
+
+    public override int Read(byte[] buffer, int offset, int count) =>
+        throw new NotSupportedException();
+
+    public override long Seek(long offset, SeekOrigin origin) =>
+        throw new NotSupportedException();
+
+    public override void SetLength(long value) =>
+        throw new NotSupportedException();
+
+    public override void Write(byte[] buffer, int offset, int count) =>
+        throw new NotSupportedException();
+
+    public override async Task<int> ReadAsync(
+        byte[] buffer,
+        int offset,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        if (_mode == SlowReadMode.ThrowTimeoutOnRead)
+        {
+            await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
+            throw new TaskCanceledException("The read operation timed out.");
+        }
+
+        if (!_delivered)
+        {
+            await Task.Delay(_delay, cancellationToken).ConfigureAwait(false);
+            _delivered = true;
+        }
+
+        var payload = Encoding.UTF8.GetBytes("{}");
+        var toCopy = Math.Min(count, payload.Length);
+        Array.Copy(payload, 0, buffer, offset, toCopy);
+        return toCopy;
+    }
+}
+
+internal sealed class ThrowingOnCurrentSettingsService : ISettingsService
+{
+    private readonly string _exceptionMessage;
+
+    public ThrowingOnCurrentSettingsService(string exceptionMessage)
+    {
+        _exceptionMessage = exceptionMessage;
+    }
+
+    public SettingsModel Current =>
+        throw new InvalidOperationException(_exceptionMessage);
+
+    public IObservable<SettingsModel> WhenChanged =>
+        throw new NotSupportedException();
+
+    public SettingsLoadResult LoadResult => SettingsLoadResult.Loaded;
+
+    public Task<SettingsMutationResult> UpdateAsync(
+        Func<SettingsModel, SettingsModel> producer,
+        CancellationToken ct = default) =>
+        throw new NotSupportedException();
+
+    public Task<SettingsMutationResult> ApplyAsync(
+        SettingsModel expectedCurrent,
+        SettingsModel next,
+        CancellationToken ct = default) =>
+        throw new NotSupportedException();
+
+    public Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default) =>
+        throw new NotSupportedException();
+
+    public IObservable<SettingsSaveError> WriteErrors =>
+        throw new NotSupportedException();
+}
+
+internal sealed class ThrowOnFirstCurrentReadSettingsService : ISettingsService
+{
+    private readonly SettingsService _inner;
+    private int _currentReadCount;
+
+    public ThrowOnFirstCurrentReadSettingsService(SettingsService inner)
+    {
+        _inner = inner;
+    }
+
+    public int CurrentReadCount => _currentReadCount;
+
+    public SettingsModel Current
+    {
+        get
+        {
+            _currentReadCount++;
+            if (_currentReadCount == 1)
+            {
+                throw new InvalidOperationException("Settings unavailable on first read.");
+            }
+
+            return _inner.Current;
+        }
+    }
+
+    public IObservable<SettingsModel> WhenChanged => _inner.WhenChanged;
+
+    public SettingsLoadResult LoadResult => _inner.LoadResult;
+
+    public Task<SettingsMutationResult> UpdateAsync(
+        Func<SettingsModel, SettingsModel> producer,
+        CancellationToken ct = default) =>
+        _inner.UpdateAsync(producer, ct);
+
+    public Task<SettingsMutationResult> ApplyAsync(
+        SettingsModel expectedCurrent,
+        SettingsModel next,
+        CancellationToken ct = default) =>
+        _inner.ApplyAsync(expectedCurrent, next, ct);
+
+    public Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default) =>
+        _inner.SaveAsync(ct);
+
+    public IObservable<SettingsSaveError> WriteErrors => _inner.WriteErrors;
+}
+
+internal sealed class ControllableCurrentReadSettingsService : ISettingsService
+{
+    private readonly SettingsService _inner;
+    private volatile bool _failCurrentRead;
+
+    public ControllableCurrentReadSettingsService(SettingsService inner)
+    {
+        _inner = inner;
+    }
+
+    public void SetCurrentReadFails(bool failCurrentRead) => _failCurrentRead = failCurrentRead;
+
+    public SettingsModel Current
+    {
+        get
+        {
+            if (_failCurrentRead)
+            {
+                throw new InvalidOperationException("Settings unavailable.");
+            }
+
+            return _inner.Current;
+        }
+    }
+
+    public IObservable<SettingsModel> WhenChanged => _inner.WhenChanged;
+
+    public SettingsLoadResult LoadResult => _inner.LoadResult;
+
+    public Task<SettingsMutationResult> UpdateAsync(
+        Func<SettingsModel, SettingsModel> producer,
+        CancellationToken ct = default) =>
+        _inner.UpdateAsync(producer, ct);
+
+    public Task<SettingsMutationResult> ApplyAsync(
+        SettingsModel expectedCurrent,
+        SettingsModel next,
+        CancellationToken ct = default) =>
+        _inner.ApplyAsync(expectedCurrent, next, ct);
+
+    public Task<SettingsSaveResult> SaveAsync(CancellationToken ct = default) =>
+        _inner.SaveAsync(ct);
+
+    public IObservable<SettingsSaveError> WriteErrors => _inner.WriteErrors;
 }

@@ -93,7 +93,10 @@ Key target rules (detail in CONVENTIONS):
   Conversation ownership (R61-LT01) and a minimum correlated execution-run
   representation (R61-LT03). Phase 15 M2 added an in-memory Agent Session
   lifecycle owner (`AgentSessionService`) over backend-neutral contracts;
-  sessions are non-resumable and not persisted.
+  Phase 15 M3a adds `LegacyOpenAiCompatibleAgentBackend` as the first
+  `IAgentBackend` implementation, wrapping the existing non-streaming
+  `IAgentExecutionService` HTTP path without duplicating transport; sessions are
+  non-resumable and not persisted.
 
 Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
@@ -146,7 +149,7 @@ governed by the root-admission detectors.
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
-| Phase 15 | **M0/M1a/M1b accepted; M2 in review** (2026-07-21) — backend-neutral Agent Session/run/event contracts and in-memory lifecycle owner; M3 HTTP adapter unauthorized |
+| Phase 15 | **M0/M1a/M1b/M2/M3a accepted** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner, and legacy HTTP compatibility backend adapter (`LegacyOpenAiCompatibleAgentBackend`) behind `IAgentBackend`; coordinator/router cutover (M3b) unauthorized |
 
 ---
 
@@ -355,4 +358,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 15 M0 accepted; M1a and production milestones unauthorized; production baselines unchanged at public 337 / internal 126 / total 463)*
+*Last updated: 2026-07-22 (Phase 15 M3a accepted; M3b unauthorized; production baselines 337 public / 163 internal / 500 total)*

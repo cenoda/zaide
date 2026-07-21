@@ -19,6 +19,9 @@ internal readonly struct AgentCapabilityId : IEquatable<AgentCapabilityId>
     public static AgentCapabilityId MessageCompletion { get; } =
         FromValue("capability:message-completion");
 
+    public static AgentCapabilityId Attachments { get; } =
+        FromValue("capability:attachments");
+
     public static AgentCapabilityId Streaming { get; } =
         FromValue("capability:streaming");
 

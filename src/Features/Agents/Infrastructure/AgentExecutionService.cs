@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Domain;
 
 namespace Zaide.Features.Agents.Infrastructure;
 
@@ -43,14 +44,23 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         {
             return await ExecuteCoreAsync(userMessage, ct).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-            return AgentExecutionResult.Failure("Request was cancelled.");
-        }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             return AgentExecutionResult.Failure(
-                $"Unexpected error ({ex.GetType().Name}): {ex.Message}");
+                "Request was cancelled.",
+                AgentFailureKind.Cancellation);
+        }
+        catch (OperationCanceledException)
+        {
+            return AgentExecutionResult.Failure(
+                "Request was cancelled.",
+                AgentFailureKind.Timeout);
+        }
+        catch (Exception)
+        {
+            return AgentExecutionResult.Failure(
+                "Unexpected error during execution.",
+                AgentFailureKind.Indeterminate);
         }
     }
 
@@ -59,19 +69,36 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userMessage))
-            return AgentExecutionResult.Failure("User message must not be empty.");
+            return AgentExecutionResult.Failure(
+                "User message must not be empty.",
+                AgentFailureKind.Execution);
 
-        var options = BuildEffectiveOptions();
+        var options = ResolveEffectiveOptions();
+        if (options is null)
+        {
+            return AgentExecutionResult.Failure(
+                "Failed to resolve LLM configuration.",
+                AgentFailureKind.Indeterminate);
+        }
 
         // --- Validate configuration ---
         if (string.IsNullOrWhiteSpace(options.ApiKey))
-            return AgentExecutionResult.Failure("API key is missing. Set AGENT_API_KEY.");
+            return Failure(
+                options,
+                "API key is missing. Set AGENT_API_KEY.",
+                AgentFailureKind.Execution);
 
         if (string.IsNullOrWhiteSpace(options.BaseUrl))
-            return AgentExecutionResult.Failure("Base URL is missing. Set AGENT_API_URL.");
+            return Failure(
+                options,
+                "Base URL is missing. Set AGENT_API_URL.",
+                AgentFailureKind.Execution);
 
         if (string.IsNullOrWhiteSpace(options.Model))
-            return AgentExecutionResult.Failure("Model is missing. Set AGENT_MODEL.");
+            return Failure(
+                options,
+                "Model is missing. Set AGENT_MODEL.",
+                AgentFailureKind.Execution);
 
         // --- Build request body ---
         var requestBody = new
@@ -94,7 +121,10 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         }
         catch (Exception ex)
         {
-            return AgentExecutionResult.Failure($"Failed to serialize request: {ex.Message}");
+            return Failure(
+                options,
+                $"Failed to serialize request: {ex.Message}",
+                AgentFailureKind.Indeterminate);
         }
 
         // --- Build HTTP request ---
@@ -113,21 +143,47 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         }
         catch (HttpRequestException ex)
         {
-            return AgentExecutionResult.Failure($"Request failed: {ex.Message}");
+            return Failure(
+                options,
+                $"Request failed: {ex.Message}",
+                AgentFailureKind.Transport);
+        }
+        catch (TaskCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Cancellation);
         }
         catch (TaskCanceledException)
         {
-            return AgentExecutionResult.Failure("Request was cancelled.");
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Timeout);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Cancellation);
         }
         catch (OperationCanceledException)
         {
-            return AgentExecutionResult.Failure("Request was cancelled.");
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Timeout);
         }
 
         // --- Read response body ---
         if (response.Content is null)
         {
-            return AgentExecutionResult.Failure("HTTP response had no content.");
+            return Failure(
+                options,
+                "HTTP response had no content.",
+                AgentFailureKind.Indeterminate);
         }
 
         string responseBody;
@@ -135,9 +191,40 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         {
             responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException and not TaskCanceledException)
         {
-            return AgentExecutionResult.Failure($"Failed to read response: {ex.Message}");
+            return Failure(
+                options,
+                $"Failed to read response: {ex.Message}",
+                AgentFailureKind.Transport);
+        }
+        catch (TaskCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Cancellation);
+        }
+        catch (TaskCanceledException)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Timeout);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Cancellation);
+        }
+        catch (OperationCanceledException)
+        {
+            return Failure(
+                options,
+                "Request was cancelled.",
+                AgentFailureKind.Timeout);
         }
 
         // --- Check HTTP status ---
@@ -145,9 +232,11 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         {
             var statusCode = (int)response.StatusCode;
             var shape = DescribeResponseShape(responseBody);
-            return AgentExecutionResult.Failure(
+            return Failure(
+                options,
                 $"HTTP {statusCode} at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
-                $"for model '{options.Model}'. Response shape: {shape}");
+                $"for model '{options.Model}'. Response shape: {shape}",
+                AgentFailureKind.Execution);
         }
 
         // --- Parse response JSON ---
@@ -158,7 +247,10 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         }
         catch (JsonException ex)
         {
-            return AgentExecutionResult.Failure($"Invalid JSON response: {ex.Message}");
+            return Failure(
+                options,
+                $"Invalid JSON response: {ex.Message}",
+                AgentFailureKind.Indeterminate);
         }
 
         using (doc)
@@ -181,38 +273,50 @@ internal sealed class AgentExecutionService : IAgentExecutionService
                 if (!responseRoot.TryGetProperty("choices", out var choices) ||
                     choices.ValueKind != JsonValueKind.Array)
                 {
-                    return AgentExecutionResult.Failure(
+                    return Failure(
+                        options,
                         $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
                         $"for model '{options.Model}': missing choices array. " +
-                        $"Response shape: {DescribeResponseShape(doc)}");
+                        $"Response shape: {DescribeResponseShape(doc)}",
+                        AgentFailureKind.Indeterminate);
                 }
 
                 if (choices.GetArrayLength() == 0)
-                    return AgentExecutionResult.Failure("Response contains no choices.");
+                    return Failure(
+                        options,
+                        "Response contains no choices.",
+                        AgentFailureKind.Indeterminate);
 
                 var firstChoice = choices[0];
                 if (!firstChoice.TryGetProperty("message", out var message) ||
                     message.ValueKind != JsonValueKind.Object)
                 {
-                    return AgentExecutionResult.Failure(
+                    return Failure(
+                        options,
                         $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
                         $"for model '{options.Model}': missing message object. " +
-                        $"Response shape: {DescribeResponseShape(doc)}");
+                        $"Response shape: {DescribeResponseShape(doc)}",
+                        AgentFailureKind.Indeterminate);
                 }
 
                 if (!TryExtractAssistantContent(message, out var content) ||
                     string.IsNullOrWhiteSpace(content))
                 {
-                    return AgentExecutionResult.Failure("Response contains no assistant content.");
+                    return Failure(
+                        options,
+                        "Response contains no assistant content.",
+                        AgentFailureKind.Indeterminate);
                 }
 
                 return AgentExecutionResult.Success(content);
             }
             catch (Exception ex) when (ex is InvalidOperationException or KeyNotFoundException or NotSupportedException)
             {
-                return AgentExecutionResult.Failure(
+                return Failure(
+                    options,
                     $"Unexpected response structure at {request.RequestUri?.AbsolutePath ?? "<unknown>"} " +
-                    $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}");
+                    $"for model '{options.Model}': {ex.Message} Response shape: {DescribeResponseShape(doc)}",
+                    AgentFailureKind.Indeterminate);
             }
         }
     }
@@ -298,6 +402,18 @@ internal sealed class AgentExecutionService : IAgentExecutionService
         return description;
     }
 
+    private AgentExecutionOptions? ResolveEffectiveOptions()
+    {
+        try
+        {
+            return BuildEffectiveOptions();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// Builds the effective per-call options.
     /// Precedence: env var → secret store → saved settings → empty/default.
@@ -331,5 +447,21 @@ internal sealed class AgentExecutionService : IAgentExecutionService
             ApiKey = apiKey,
             Model = model,
         };
+    }
+
+    private static AgentExecutionResult Failure(
+        AgentExecutionOptions options,
+        string message,
+        AgentFailureKind kind) =>
+        AgentExecutionResult.Failure(RedactSecrets(message, options.ApiKey), kind);
+
+    private static string RedactSecrets(string value, string apiKey)
+    {
+        if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(apiKey))
+        {
+            return value;
+        }
+
+        return value.Replace(apiKey, "[REDACTED]", StringComparison.Ordinal);
     }
 }

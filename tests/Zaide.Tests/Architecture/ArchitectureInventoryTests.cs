@@ -113,7 +113,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         Assert.Equal((15, 7, 8), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
-        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
+        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
@@ -159,7 +160,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M8: −3 production files (2 panel views + mirror coordinator).
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
-        Assert.Equal(447, inventory.SourceFiles.Count);
+        // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
+        Assert.Equal(448, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -172,7 +174,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M7: +2 draft-state production files.
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
-        Assert.Equal(402, byFolder["Features"]);
+        // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
+        Assert.Equal(403, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

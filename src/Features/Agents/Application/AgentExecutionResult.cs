@@ -1,4 +1,5 @@
 using System;
+using Zaide.Features.Agents.Domain;
 
 namespace Zaide.Features.Agents.Application;
 
@@ -25,6 +26,12 @@ public sealed class AgentExecutionResult
     public string? ErrorMessage { get; private init; }
 
     /// <summary>
+    /// Typed failure category when produced by infrastructure. Null for success and
+    /// for legacy <see cref="Failure(string)"/> callers that omit classification.
+    /// </summary>
+    internal AgentFailureKind? FailureKind { get; private init; }
+
+    /// <summary>
     /// Creates a success result with the assistant's response text.
     /// </summary>
     public static AgentExecutionResult Success(string responseText) =>
@@ -35,4 +42,12 @@ public sealed class AgentExecutionResult
     /// </summary>
     public static AgentExecutionResult Failure(string errorMessage) =>
         new() { IsSuccess = false, ErrorMessage = errorMessage ?? throw new ArgumentNullException(nameof(errorMessage)) };
+
+    internal static AgentExecutionResult Failure(string errorMessage, AgentFailureKind failureKind) =>
+        new()
+        {
+            IsSuccess = false,
+            ErrorMessage = errorMessage ?? throw new ArgumentNullException(nameof(errorMessage)),
+            FailureKind = failureKind,
+        };
 }
