@@ -34,8 +34,12 @@ and closed. Phase 14 is **accepted and closed (2026-07-21)** at
 [`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
 (unified conversation workspace, privacy, draft/unread, schema v1 persistence,
 Agent Panel retired, F1 corrected, closeout evidence accepted at `67da1394`).
-Phase 15 may begin with its own M0 planning gate; production implementation is
-not yet authorized. Non-C#
+Phase 15 M0 is accepted (2026-07-21) at
+[`docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-15/IMPLEMENTATION_PLAN.md)
+and selects a backend-neutral in-memory Agent Session/run/event foundation
+before the independent Native Harness and ACP backend paths. M1a and production
+implementation are not authorized; Phase 16, Native Harness production, and
+ACP implementation have not started. Non-C#
 assets remain outside the root-admission ratchet.
 
 ---
@@ -141,6 +145,7 @@ governed by the root-admission detectors.
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
+| Phase 15 | **M0 accepted** (2026-07-21) — backend-neutral Agent Session/run/event foundation; M1a and production milestones unauthorized |
 
 ---
 
@@ -349,4 +354,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 accepted and closed at baseline `67da1394`; Phase 15 M0 planning eligible; baselines public 337 / internal 126 / total 463)*
+*Last updated: 2026-07-21 (Phase 15 M0 accepted; M1a and production milestones unauthorized; production baselines unchanged at public 337 / internal 126 / total 463)*
