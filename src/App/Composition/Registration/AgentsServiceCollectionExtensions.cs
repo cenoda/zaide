@@ -13,6 +13,8 @@ internal static class AgentsServiceCollectionExtensions
     internal static IServiceCollection AddZaideAgents(
         this IServiceCollection services)
     {
+        services.AddSingleton<AgentEventStream>();
+        services.AddSingleton<IAgentSessionService, AgentSessionService>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
         services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();

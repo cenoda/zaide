@@ -28,6 +28,8 @@ public sealed class AgentsRegistrationModuleTests
 {
     private static readonly string[] AgentsServiceTypeNames =
     {
+        typeof(AgentEventStream).FullName!,
+        typeof(IAgentSessionService).FullName!,
         typeof(IAgentPanelHost).FullName!,
         typeof(IAgentExecutionService).FullName!,
         typeof(IAgentExecutionCoordinator).FullName!,
@@ -74,13 +76,13 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideAgents_RegistersExactlySixPlannedServices()
+    public void AddZaideAgents_RegistersExactlyEightPlannedServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(6, services.Count);
+        Assert.Equal(8, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -92,6 +94,14 @@ public sealed class AgentsRegistrationModuleTests
             .ToArray();
         Assert.Equal(expected, serviceTypes);
 
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(AgentEventStream)
+                && d.ImplementationType == typeof(AgentEventStream));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentSessionService)
+                && d.ImplementationType == typeof(AgentSessionService));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentPanelHost)
@@ -147,6 +157,15 @@ public sealed class AgentsRegistrationModuleTests
         var router2 = provider.GetRequiredService<IAgentRouter>();
         Assert.Same(router1, router2);
         Assert.IsType<AgentRouter>(router1);
+
+        var sessionService1 = provider.GetRequiredService<IAgentSessionService>();
+        var sessionService2 = provider.GetRequiredService<IAgentSessionService>();
+        Assert.Same(sessionService1, sessionService2);
+        Assert.IsType<AgentSessionService>(sessionService1);
+
+        var eventStream1 = provider.GetRequiredService<AgentEventStream>();
+        var eventStream2 = provider.GetRequiredService<AgentEventStream>();
+        Assert.Same(eventStream1, eventStream2);
 
         // Resolving HttpClient constructs a client only; no network request is issued.
         var httpClient1 = provider.GetRequiredService<HttpClient>();
@@ -204,7 +223,7 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AgentsModuleSource_ContainsExactlyTheSixPlannedRegistrations()
+    public void AgentsModuleSource_ContainsExactlyTheEightPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs");
@@ -214,6 +233,11 @@ public sealed class AgentsRegistrationModuleTests
             moduleSource);
         Assert.Contains("internal static IServiceCollection AddZaideAgents", moduleSource);
 
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<AgentEventStream>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentSessionService,\s*AgentSessionService>\(\)"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -234,7 +258,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(Regex.Matches(moduleSource, @"new HttpClient\(\)"));
         Assert.Contains("TimeSpan.FromSeconds(120)", moduleSource);
 
-        Assert.Equal(6, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(8, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

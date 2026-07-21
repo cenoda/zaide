@@ -162,7 +162,7 @@ src/
 | `Features/SourceControl` | Source Control domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M8); V02/V07 dependency edges cleared in Refactor 6.3 |
 | `Features/Terminal` | Terminal contracts, application, infrastructure, presentation (moved in Refactor 6.2 M9); V05 factory→presentation edges cleared in Refactor 6.3 (`ITerminalServiceFactory`) |
 | `Features/Townhall` | Townhall domain and presentation (moved in Refactor 6.2 M10); R61-V16 behavior preserved; Refactor 7 M3/M7 Townhall compatibility projection (`TownhallEntryProjection`); channel activity via private `AppendMirroredActivity` (agent-panel public mirror removed Phase 14 M4); Phase 14 M7: truthful direct execution/routing surface (panel thin host) |
-| `Features/Agents` | Agents domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M11); V06 MentionParser→presentation edge cleared in Refactor 6.3; no agent-session/run types (LT02/LT03) |
+| `Features/Agents` | Agents domain, contracts, application, infrastructure, presentation (moved in Refactor 6.2 M11); V06 MentionParser→presentation edge cleared in Refactor 6.3; Phase 15 M1b/M2 backend-neutral session/run contracts and in-memory lifecycle owner (`AgentSessionService`) |
 | `Features/Conversations` | Agent-neutral actor/conversation domain (Refactor 7 M1 actor catalog; M2 conversation store and provisioning) |
 | `UI/Shared` | Feature-neutral presentation primitives only (admission rules below) |
 
