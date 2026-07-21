@@ -861,6 +861,9 @@ rows not validated on display in agent session; automated retirement matrix gree
 
 ## M9 closeout (2026-07-21)
 
+**Acceptance commit:** `b74653e`
+(`docs(phase-14): M9 closeout evidence and accessible control names`)
+
 **Goal delivered:** Phase 14 acceptance evidence — design brief vs `docs/DESIGN.md`,
 keyboard/focus/a11y verification, Linux default/narrow screenshots, UI acceptance
 lock rows closed or limited with residual risk, docs/status truth-sync.

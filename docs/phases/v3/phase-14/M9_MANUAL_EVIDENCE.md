@@ -4,7 +4,8 @@
 UI acceptance lock, docs truth-sync  
 **Date:** 2026-07-21  
 **Environment:** Linux desktop, X11 `DISPLAY=:1`, 1920×1080, **96×96 DPI**  
-**Baseline:** M8 accepted at `75c6d4c` / product commit `ec5c680`
+**Baseline:** M8 accepted at `75c6d4c` / product commit `ec5c680`  
+**M9 acceptance commit:** `b74653e`
 
 ## Authorization
 
