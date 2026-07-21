@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
@@ -107,6 +108,26 @@ internal sealed class TownhallNavigationPanel : Panel
             (item, _) => item is null
                 ? new Border()
                 : CreateDirectRow(item));
+    }
+
+    public void SyncChannelSelection(string channelId)
+    {
+        if (_channelList.ItemsSource is ObservableCollection<Channel> channels)
+        {
+            _channelList.SelectedItem = channels.FirstOrDefault(c => c.Id == channelId);
+        }
+
+        _directList.SelectedIndex = -1;
+    }
+
+    public void SyncDirectSelection(ConversationId conversationId)
+    {
+        if (_directList.ItemsSource is ObservableCollection<TownhallNavigationItem> items)
+        {
+            _directList.SelectedItem = items.FirstOrDefault(i => i.ConversationId == conversationId);
+        }
+
+        _channelList.SelectedIndex = -1;
     }
 
     private static ListBox CreateNavListBox(string automationName)

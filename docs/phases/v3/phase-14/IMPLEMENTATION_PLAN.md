@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Phase 14 status:** **M0–M9 complete (engineering closeout 2026-07-21).** Unified
-conversation workspace delivered; dedicated Agent Panel retired; closeout evidence
-in `M9_MANUAL_EVIDENCE.md` + `M9_DESIGN_BRIEF.md`. **Pending explicit human
-acceptance** of the phase. No Phase 15 authorized.
+**Phase 14 status:** **M0–M9 complete; F1 corrective fix complete (2026-07-21).** Unified
+conversation workspace delivered; dedicated Agent Panel retired; closeout evidence in
+`M9_MANUAL_EVIDENCE.md` + `M9_DESIGN_BRIEF.md`; F1 evidence in `M9_F1_MANUAL_EVIDENCE.md`.
+**Pending explicit human acceptance** of the phase. No Phase 15 authorized.
 
 **Dependency status:**
 
@@ -457,8 +457,40 @@ explicit human acceptance** before treating Phase 14 as product-closed.
     UI acceptance table closeout, docs truth-sync.~~ **Done (2026-07-21).**
 16. **Human accepts Phase 14** (or requests a narrowly named corrective milestone).
     **Do not begin Phase 15** until explicitly authorized.
+17. ~~**F1 (TOFIX):** conversation header/input context follows `ActiveConversationId`.~~
+    **Done (2026-07-21)** — see F1 closeout below; human acceptance still pending.
 
 ---
+
+## F1 closeout (2026-07-21)
+
+**Finding:** TOFIX F1 — selecting an Agent DM left chat header/input showing `#townhall-main`.
+
+**Delivered:**
+
+- `ActiveConversationHeaderLabel` + `ActiveConversationInputPlaceholder` on
+  `TownhallViewModel`, derived from `ActiveConversationId`.
+- `SelectConversation` applies channel/direct side effects before publishing selection.
+- `TownhallChatPanel` conversation header; `TownhallView` binds header and placeholder.
+- Nav list selection sync (`SyncChannelSelection` / `SyncDirectSelection`).
+- Regression tests: `Phase14F1ConversationContextTests` (+5).
+- Corrected Linux evidence: `M9_F1_MANUAL_EVIDENCE.md`; replaced inaccurate M9 DM screenshots.
+
+**Verification (2026-07-21):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors, 4 warnings (pre-existing) |
+| `dotnet test … ~Zaide.Tests.Features.Conversations` | 102 passed |
+| `dotnet test … ~Zaide.Tests.Features.Townhall` | 117 passed |
+| `dotnet test … ~Zaide.Tests.Features.Agents` | 178 passed |
+| `dotnet test … ~Zaide.Tests.App.Shell` | 134 passed |
+| `dotnet test … ~Zaide.Tests.Architecture` | 26 passed |
+| `dotnet test Zaide.slnx` (full suite) | 2524 passed |
+| `git diff --check` | clean |
+
+**Phase disposition:** F1 complete; **pending explicit human acceptance** — do not mark Phase
+14 product-closed or begin Phase 15.
 
 ## M7 implementation boundary (authorized 2026-07-21)
 
@@ -717,6 +749,7 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-21 | Human authorized **M9 only** — Phase 14 closeout evidence. No Phase 15. |
 | 2026-07-21 | Preserved M8 closeout “Goal delivered” line repair in working tree before M9 edits. |
 | 2026-07-21 | **M9 complete** — closeout evidence, design brief, keyboard/screenshots, UI lock, docs truth-sync. Phase pending human acceptance. |
+| 2026-07-21 | **F1 complete** — conversation header/input context follows `ActiveConversationId`; corrected M9 DM screenshots. Human acceptance still pending. |
 
 ---
 
@@ -910,4 +943,4 @@ acceptance**.
 
 ---
 
-*Last updated: 2026-07-21 (Phase 14 M9 complete — engineering closeout; pending human acceptance)*
+*Last updated: 2026-07-21 (Phase 14 F1 complete — pending human acceptance)*

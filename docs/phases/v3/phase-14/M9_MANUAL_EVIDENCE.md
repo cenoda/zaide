@@ -79,11 +79,11 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 | File | Purpose |
 |------|---------|
 | `townhall-default-1400x900.png` | Default-ish workspace width (no Agent Panel chrome) |
-| `townhall-dm-default-1400x900.png` | DM-only workflow at default width (Direct “Zaide Agent”) |
-| `townhall-dm-multiline-input-1400x900.png` | Shift+Enter multiline draft in DM input |
-| `townhall-dm-after-send-1400x900.png` | After Enter send |
-| `townhall-dm-narrow-960x720.png` | Narrow width DM workspace |
-| `townhall-narrow-800x600.png` | Minimum practical width (DESIGN checklist 800×600) |
+| `townhall-dm-default-1400x900.png` | DM workflow — header `Zaide Agent`, placeholder `Direct message with …` (**F1 corrected**) |
+| `townhall-dm-multiline-input-1400x900.png` | Shift+Enter multiline draft in DM input (**F1 corrected**) |
+| `townhall-dm-after-send-1400x900.png` | After Enter send with DM header context (**F1 corrected**) |
+| `townhall-dm-narrow-960x720.png` | Narrow width DM workspace (**F1 corrected**) |
+| `townhall-narrow-800x600.png` | 800×600 crop at shell minimum width (`MinWidth` 960) — **F1 corrected** |
 
 ### Environment rows
 
@@ -129,5 +129,10 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 ## Phase disposition
 
 Phase 14 **engineering closeout complete** with residual risks documented above.
+**F1 corrective fix (2026-07-21):** conversation header and input context now follow
+`ActiveConversationId` — see [`M9_F1_MANUAL_EVIDENCE.md`](M9_F1_MANUAL_EVIDENCE.md) and
+replaced screenshots in `evidence/m9/`. Prior M9 DM captures incorrectly showed
+`#townhall-main` while Direct was selected.
+
 **Pending explicit human acceptance** to treat the phase as formally product-closed.
 Do **not** begin Phase 15 from this milestone.

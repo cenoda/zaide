@@ -8,10 +8,10 @@ using Avalonia.Media;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
 using Zaide.App.Shell;
@@ -283,8 +283,8 @@ public class TownhallView : Panel, IDisposable
             _chatPanel.SetMessages(new ObservableCollection<TownhallMessage>(_viewModel.Messages));
         }
 
-        // Update placeholder text based on active channel
-        UpdatePlaceholder();
+        _chatPanel.SetConversationHeader(_viewModel.ActiveConversationHeaderLabel);
+        _inputArea.PlaceholderText = _viewModel.ActiveConversationInputPlaceholder;
 
         // React to active conversation changes: update navigation highlight and messages
         _disposables.Add(
@@ -294,8 +294,16 @@ public class TownhallView : Panel, IDisposable
                     _chatPanel.ResetForConversation();
                     _navigationPanel.SetChannels(_viewModel.Channels);
                     _navigationPanel.SetDirectItems(_viewModel.DirectNavItems);
-                    UpdatePlaceholder();
+                    SyncNavigationSelection();
                 }));
+
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.ActiveConversationHeaderLabel)
+                .Subscribe(label => _chatPanel.SetConversationHeader(label)));
+
+        _disposables.Add(
+            _viewModel.WhenAnyValue(x => x.ActiveConversationInputPlaceholder)
+                .Subscribe(placeholder => _inputArea.PlaceholderText = placeholder));
 
         // React to FilteredMessages changes (filter mode or underlying collection updates).
         _disposables.Add(
@@ -333,26 +341,23 @@ public class TownhallView : Panel, IDisposable
             }));
     }
 
-    private void UpdatePlaceholder()
+    private void SyncNavigationSelection()
     {
-        if (_viewModel?.ActiveChannelId is not null)
+        if (_viewModel is null)
         {
-            var activeChannel = _viewModel.Channels.FirstOrDefault(c => c.IsActive);
-            if (activeChannel is not null)
-            {
-                _inputArea.PlaceholderText = $"Message #{activeChannel.Name}";
-                return;
-            }
-        }
-
-        if (_viewModel?.ActiveConversationId is { } activeConversationId
-            && _viewModel.DirectNavItems.FirstOrDefault(item => item.ConversationId == activeConversationId) is { } directItem)
-        {
-            _inputArea.PlaceholderText = $"Direct message with {directItem.Label}";
             return;
         }
 
-        _inputArea.PlaceholderText = "Message...";
+        if (_viewModel.ActiveChannelId is { } channelId)
+        {
+            _navigationPanel.SyncChannelSelection(channelId);
+            return;
+        }
+
+        if (_viewModel.ActiveConversationId is { } conversationId)
+        {
+            _navigationPanel.SyncDirectSelection(conversationId);
+        }
     }
 
     public void Dispose()

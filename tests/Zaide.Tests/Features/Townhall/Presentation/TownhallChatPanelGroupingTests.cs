@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Xunit;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
@@ -96,8 +97,7 @@ public class TownhallChatPanelGroupingTests
 
     private static System.Collections.Generic.IReadOnlyList<Border> GetRenderedRows(TownhallChatPanel panel)
     {
-        var root = Assert.IsType<Grid>(Assert.Single(panel.Children));
-        var scrollViewer = root.Children.OfType<ScrollViewer>().Single();
+        var scrollViewer = panel.GetVisualDescendants().OfType<ScrollViewer>().Single();
         var messageList = Assert.IsType<StackPanel>(scrollViewer.Content);
         return messageList.Children.OfType<Border>().ToList();
     }

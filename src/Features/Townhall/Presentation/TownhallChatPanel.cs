@@ -15,14 +15,14 @@ namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
 /// Chat message panel for the Townhall.
-/// Shows a scrollable list of messages with sender avatar, name, content, and timestamp.
-/// Warning-type messages show amber alert icon and tinted background.
-/// Messages are displayed newest-at-bottom.
+/// Shows the active conversation header, scrollable message list, sender avatars,
+/// and a new-messages affordance when scrolled away.
 /// Matches M0.5 palette and M3 spec.
 /// </summary>
 public class TownhallChatPanel : Panel
 {
     private readonly Grid _root;
+    private readonly TextBlock _conversationHeader;
     private readonly StackPanel _messageList;
     private readonly ScrollViewer _scrollViewer;
     private readonly Button _newMessagesButton;
@@ -61,12 +61,50 @@ public class TownhallChatPanel : Panel
             "Scroll to the latest messages in this conversation.");
         _newMessagesButton.Click += (_, _) => ScrollToEndAndClearChip();
 
+        _conversationHeader = TextStyles.Header(string.Empty);
+        _conversationHeader.IsVisible = false;
+        AutomationProperties.SetName(_conversationHeader, "Active conversation");
+        var headerBorder = new Border
+        {
+            Padding = LayoutTokens.Inset(
+                LayoutTokens.SpacingLg,
+                LayoutTokens.SpacingMd,
+                LayoutTokens.SpacingLg,
+                LayoutTokens.SpacingSm),
+            Child = _conversationHeader
+        };
+
+        var messageArea = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+            },
+            Children = { headerBorder, _scrollViewer }
+        };
+        Grid.SetRow(_scrollViewer, 1);
+
         _root = new Grid
         {
-            Children = { _scrollViewer, _newMessagesButton }
+            Children = { messageArea, _newMessagesButton }
         };
 
         Children.Add(_root);
+    }
+
+    /// <summary>
+    /// Gets the rendered conversation header label (for tests).
+    /// </summary>
+    public string ConversationHeaderLabel => _conversationHeader.Text ?? string.Empty;
+
+    /// <summary>
+    /// Updates the conversation header shown above the message list.
+    /// </summary>
+    public void SetConversationHeader(string label)
+    {
+        _conversationHeader.Text = label;
+        _conversationHeader.IsVisible = !string.IsNullOrEmpty(label);
     }
 
     /// <summary>

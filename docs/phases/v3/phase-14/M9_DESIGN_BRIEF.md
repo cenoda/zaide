@@ -39,9 +39,13 @@ enhancement for glass/blur.
 
 ## Defects found in M9 closeout
 
-None that block Phase 14 acceptance. M9 applied a small naming fix for primary
-controls that lacked `AutomationProperties` names (input, send, new-message chip,
-people rows). No layout redesign.
+**F1 (fixed 2026-07-21):** Selecting an Agent DM left the chat header and input placeholder
+showing `#townhall-main`. Corrected in F1 — header shows agent identity; `#channel-name` only
+when a public channel is selected. See `M9_F1_MANUAL_EVIDENCE.md`.
+
+M9 applied a small naming fix for primary controls that lacked `AutomationProperties` names
+(input, send, new-message chip, people rows). No layout redesign beyond the F1 conversation
+header.
 
 ## Screenshots
 

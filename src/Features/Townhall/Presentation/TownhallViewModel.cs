@@ -174,6 +174,17 @@ public class TownhallViewModel : ReactiveObject
     public string? ActiveChannelId => _state.ActiveChannelId;
 
     /// <summary>
+    /// Header label for the active conversation surface (#channel-name or agent display name).
+    /// Derived from <see cref="ActiveConversationId"/> — not <see cref="ActiveChannelId"/>.
+    /// </summary>
+    public string ActiveConversationHeaderLabel { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Input placeholder for the active conversation. Derived from <see cref="ActiveConversationId"/>.
+    /// </summary>
+    public string ActiveConversationInputPlaceholder { get; private set; } = "Message...";
+
+    /// <summary>
     /// Command to select a channel by its ID.
     /// Updates Channel.IsActive flags, active channel state, and message list.
     /// </summary>
@@ -385,14 +396,8 @@ public class TownhallViewModel : ReactiveObject
             NotifyPresentationPersisted();
         }
 
-        ActiveConversationId = conversationId;
-
-        if (previousId != conversationId)
-        {
-            DraftText = _conversationUiState.GetDraft(conversationId);
-            NotifyPresentationPersisted();
-        }
-
+        // Apply channel/direct side effects before publishing ActiveConversationId so
+        // views observing selection see consistent header and input context.
         if (conversation.Kind == ConversationKind.Channel
             && conversationId.TryGetChannelId(out var channelId))
         {
@@ -405,11 +410,8 @@ public class TownhallViewModel : ReactiveObject
             {
                 ApplyUnreadPresentation(conversation);
             }
-
-            return;
         }
-
-        if (conversation.Kind == ConversationKind.Direct)
+        else if (conversation.Kind == ConversationKind.Direct)
         {
             ApplyDirectSelection(conversation);
             if (markRead)
@@ -421,6 +423,16 @@ public class TownhallViewModel : ReactiveObject
                 ApplyUnreadPresentation(conversation);
             }
         }
+
+        ActiveConversationId = conversationId;
+
+        if (previousId != conversationId)
+        {
+            DraftText = _conversationUiState.GetDraft(conversationId);
+            NotifyPresentationPersisted();
+        }
+
+        UpdateActiveConversationDisplayContext();
     }
 
     private void ClearActiveConversationDraft()
@@ -921,6 +933,68 @@ public class TownhallViewModel : ReactiveObject
 
     private void NotifyPresentationPersisted() =>
         _persistenceBridge?.NotifyPresentationStateChanged();
+
+    private void UpdateActiveConversationDisplayContext()
+    {
+        string header;
+        string placeholder;
+
+        if (_state.ActiveConversationId is not { } activeId
+            || !_conversationStore.TryGet(activeId, out var conversation))
+        {
+            header = string.Empty;
+            placeholder = "Message...";
+        }
+        else if (conversation.Kind == ConversationKind.Channel
+                 && activeId.TryGetChannelId(out var channelId))
+        {
+            var channel = _state.Channels.FirstOrDefault(c => c.Id == channelId);
+            var name = channel?.Name ?? channelId;
+            header = $"#{name}";
+            placeholder = $"Message #{name}";
+        }
+        else if (conversation.Kind == ConversationKind.Direct)
+        {
+            header = ResolveDirectDisplayLabel(conversation);
+            placeholder = $"Direct message with {header}";
+        }
+        else
+        {
+            header = string.Empty;
+            placeholder = "Message...";
+        }
+
+        if (ActiveConversationHeaderLabel != header)
+        {
+            ActiveConversationHeaderLabel = header;
+            this.RaisePropertyChanged(nameof(ActiveConversationHeaderLabel));
+        }
+
+        if (ActiveConversationInputPlaceholder != placeholder)
+        {
+            ActiveConversationInputPlaceholder = placeholder;
+            this.RaisePropertyChanged(nameof(ActiveConversationInputPlaceholder));
+        }
+    }
+
+    private string ResolveDirectDisplayLabel(Conversation conversation)
+    {
+        var humanId = _actorCatalog.CanonicalHuman.Id;
+        var peer = conversation.Participants.All.FirstOrDefault(participant => participant != humanId);
+        if (peer != default
+            && _actorCatalog.TryGet(peer, out var actor)
+            && !string.IsNullOrWhiteSpace(actor.DisplayName))
+        {
+            return actor.DisplayName;
+        }
+
+        if (peer != default)
+        {
+            return peer.Value;
+        }
+
+        return "Direct";
+    }
 
     private System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage> ApplyFilter()
     {
