@@ -30,10 +30,11 @@ reduction (−26 public types across M11a–M11d), and the 67-row lifetime map
 (`LIFETIME_MAP.md`). Deliberate residuals:
 `CompositionRoot.Services` plus LocatorSite FindingIds
 `R61-AL-LOC-Program` and `R61-AL-LOC-App` only. Refactors 7 and 8 are complete
-and closed. Phase 14 M0 is written at
+and closed. Phase 14 M0–M6 are **complete (2026-07-20)** at
 [`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
-and is **accepted (2026-07-20)**; **Phase 14 M1 is authorized only** (store
-navigation seams). Later Phase 14 milestones remain unauthorized. Non-C#
+(unified conversation workspace, privacy, draft/unread, schema v1 persistence).
+**M7+ unauthorized** — parity bridge and Agent Panel retirement are not
+authorized. Non-C#
 assets remain outside the root-admission ratchet.
 
 ---
@@ -140,7 +141,7 @@ by the root-admission detectors.
 | Refactor 6.3 | Closed; composition residuals documented above |
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
-| Phase 14 | M0 accepted; **M1 authorized only** (2026-07-20); M2+ unauthorized |
+| Phase 14 | **M0–M6 complete** (2026-07-20); M7+ unauthorized |
 
 ---
 
@@ -349,4 +350,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M0 accepted; M1 authorized only; baselines public 339 / internal 111 / total 450; M2+ unauthorized)*
+*Last updated: 2026-07-20 (Phase 14 M0–M6 complete; M7+ unauthorized; baselines public 338 / internal 127 / total 465)*

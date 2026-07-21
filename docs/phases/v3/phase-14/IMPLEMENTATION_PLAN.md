@@ -655,7 +655,7 @@ indexing; argument order does not create duplicate directs.
 
 ## M6 closeout (2026-07-20)
 
-**Acceptance commit:** `6de911f`
+**Acceptance commit:** `8a7a7c2`
 (`feat(conversations): persist workspace state across restarts (Phase 14 M6)`)
 
 **Ownership:** Conversations feature owns versioned JSON file store, atomic write,
