@@ -99,9 +99,11 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M6: +1 internal TownhallConversationPersistenceBridge.
         Assert.Equal((13, 6, 7), byNamespace["Zaide.Features.Townhall.Presentation"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Conversations.Domain"]);
-        Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
+        // Phase 14 M7: +1 public IConversationDraftState.
+        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Conversations.Contracts"]);
         // Phase 14 M6: +1 internal IConversationWorkspacePersistenceBridge.
-        Assert.Equal((5, 0, 5), byNamespace["Zaide.Features.Conversations.Application"]);
+        // Phase 14 M7: +1 internal ConversationDraftState.
+        Assert.Equal((6, 0, 6), byNamespace["Zaide.Features.Conversations.Application"]);
         // Phase 14 M6: +8 internal conversation persistence types.
         Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Conversations.Infrastructure"]);
         Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.Agents.Domain"]);
@@ -150,7 +152,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
         // Phase 14 M5: +1 internal TownhallConversationUiState production file.
         // Phase 14 M6: +10 conversation persistence production files.
-        Assert.Equal(427, inventory.SourceFiles.Count);
+        // Phase 14 M7: +2 draft-state production files (contract + implementation).
+        Assert.Equal(429, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -160,7 +163,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(42, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
-        Assert.Equal(381, byFolder["Features"]);
+        // Phase 14 M7: +2 draft-state production files.
+        Assert.Equal(383, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

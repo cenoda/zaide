@@ -250,7 +250,7 @@ public sealed class ShellPanelNavigationTests
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var projectContext = new Mock<IProjectContextService>(MockBehavior.Loose);
         projectContext.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
 

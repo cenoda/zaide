@@ -156,7 +156,7 @@ public sealed class CommandRegistrationTests
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         return new MainWindowViewModel(
             fileTreeViewModel, editorTabs, terminalHost, panelHost,

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Application;
@@ -6,6 +7,7 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
+using ConversationDraftStateImpl = Zaide.Features.Conversations.Application.ConversationDraftState;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -25,10 +27,13 @@ internal static class ConversationsTestSupport
 
     public static IConversationStore CreateStoreAsInterface() => CreateStore();
 
+    public static IConversationDraftState CreateDraftState() => new ConversationDraftStateImpl();
+
     public static AgentPanelHost CreatePanelHost(
         IActorCatalog? catalog = null,
-        IConversationStore? store = null) =>
-        new(catalog ?? CreateCatalog(), store ?? CreateStore());
+        IConversationStore? store = null,
+        IConversationDraftState? draftState = null) =>
+        new(catalog ?? CreateCatalog(), store ?? CreateStore(), draftState);
 
     public static TownhallViewModel CreateTownhallViewModel(
         TownhallState? state = null,
@@ -38,23 +43,35 @@ internal static class ConversationsTestSupport
         IAgentExecutionCoordinator? executionCoordinator = null,
         TownhallConversationUiState? conversationUiState = null,
         TownhallConversationPersistenceBridge? persistenceBridge = null,
-        Zaide.Features.Conversations.Infrastructure.ConversationPersistenceService? persistenceService = null)
+        Zaide.Features.Conversations.Infrastructure.ConversationPersistenceService? persistenceService = null,
+        IAgentRouter? agentRouter = null,
+        IConversationDraftState? draftState = null)
     {
         var resolvedCatalog = catalog ?? CreateCatalog();
         var resolvedStore = store ?? CreateStore();
+        var resolvedDrafts = draftState ?? CreateDraftState();
+        var resolvedUiState = conversationUiState ?? new TownhallConversationUiState(resolvedDrafts);
         return new TownhallViewModel(
             state ?? new TownhallState(),
             resolvedCatalog,
             resolvedStore,
-            panelHost ?? CreatePanelHost(resolvedCatalog, resolvedStore),
+            panelHost ?? CreatePanelHost(resolvedCatalog, resolvedStore, resolvedDrafts),
             executionCoordinator ?? new NoOpAgentExecutionCoordinator(),
-            conversationUiState ?? new TownhallConversationUiState(),
+            resolvedUiState,
             persistenceBridge,
-            persistenceService);
+            persistenceService,
+            agentRouter);
     }
 
     private sealed class NoOpAgentExecutionCoordinator : IAgentExecutionCoordinator
     {
+#pragma warning disable CS0067 // Event required by interface; no-op coordinator never raises it.
+        public event Action<Zaide.Features.Conversations.Domain.ConversationId, bool>? ConversationBusyChanged;
+#pragma warning restore CS0067
+
+        public bool IsConversationBusy(Zaide.Features.Conversations.Domain.ConversationId conversationId) =>
+            false;
+
         public Task<AgentExecutionCoordinatorResult?> SendAsync(
             string panelId,
             string userMessage,

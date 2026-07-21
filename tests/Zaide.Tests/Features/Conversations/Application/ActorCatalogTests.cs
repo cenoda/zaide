@@ -165,4 +165,21 @@ public sealed class ActorCatalogTests
         Assert.Equal("Agent 1", fallback.DisplayName);
         Assert.Equal("Icon.Avatar", fallback.AvatarResourceKey);
     }
+
+    [Fact]
+    public void ListAgents_ReturnsOnlyAgentKind_OrderedByActorIdValue()
+    {
+        var catalog = new ActorCatalog();
+        catalog.RegisterOrGetCustomPanelActor("z-custom", "Zed", "avatar_z");
+
+        var agents = catalog.ListAgents();
+
+        Assert.DoesNotContain(agents, a => a.Kind != ActorKind.Agent);
+        Assert.DoesNotContain(agents, a => a.Id == ActorId.HumanUser);
+        Assert.Contains(agents, a => a.Id == ActorId.PanelSeed("alpha"));
+        Assert.Contains(agents, a => a.DisplayName == "Zed");
+        Assert.Equal(
+            agents.Select(a => a.Id.Value).OrderBy(v => v, StringComparer.Ordinal).ToArray(),
+            agents.Select(a => a.Id.Value).ToArray());
+    }
 }

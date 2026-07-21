@@ -69,4 +69,24 @@ internal static class AgentPanelDirectConversationWriter
         conversationStore.AppendEntry(panel.ConversationId, entry);
         return entry;
     }
+
+    public static ConversationEntry AppendRoutingFailure(
+        IConversationStore conversationStore,
+        AgentPanelState panel,
+        ExecutionRunId runId,
+        string failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(conversationStore);
+        ArgumentNullException.ThrowIfNull(panel);
+
+        var entry = ConversationEntry.RoutingFailure(
+            ConversationEntryId.New(),
+            panel.ActorId,
+            DateTimeOffset.UtcNow,
+            failureReason,
+            ExecutionRunCorrelation.ToEntryCorrelation(runId));
+
+        conversationStore.AppendEntry(panel.ConversationId, entry);
+        return entry;
+    }
 }

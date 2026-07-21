@@ -107,7 +107,7 @@ public class MainWindowViewModelTests
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return vm;
@@ -131,7 +131,7 @@ public class MainWindowViewModelTests
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, panelHost, router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
         return vm;
@@ -191,7 +191,7 @@ public class MainWindowViewModelTests
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>()))
@@ -262,7 +262,7 @@ public class MainWindowViewModelTests
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>()))
@@ -441,7 +441,7 @@ public class MainWindowViewModelTests
         var coordinator2 = CreateMockCoordinator().Object;
         var panelHost2 = ConversationsTestSupport.CreatePanelHost();
         var parser2 = new MentionParser();
-        var router2 = new AgentRouter(parser2, panelHost2, coordinator2);
+        var router2 = new AgentRouter(parser2, panelHost2, coordinator2, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost2, panelHost2, router2, townhallViewModel2, scViewModel2, TestProblemsFactory.Create(workspace2, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace2, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
         vm.Activate();
 
@@ -531,7 +531,7 @@ public class MainWindowViewModelTests
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
             router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
@@ -724,7 +724,7 @@ public class MainWindowViewModelTests
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
             router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
@@ -796,10 +796,12 @@ public class MainWindowViewModelTests
         bool appendTargetOutput = true,
         Action<AgentPanelHost>? afterSend = null)
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var agentHost = ConversationsTestSupport.CreatePanelHost(store: store);
-        var source = agentHost.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var target = agentHost.CreatePanel("agent-2", "Beta", "avatar_beta");
+        var agentHost = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        // Use catalog seed actors so @Beta resolves to the same panel/conversation.
+        var source = agentHost.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
+        var target = agentHost.GetOrCreatePanelForActor(ActorId.PanelSeed("beta"));
 
         var mockCoordinator = new Moq.Mock<IAgentExecutionCoordinator>();
         mockCoordinator.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
@@ -847,14 +849,17 @@ public class MainWindowViewModelTests
         factory.Setup(f => f.Create()).Returns(terminalService.Object);
         var terminalHost = new TerminalHost(factory.Object);
         var townhallState = new TownhallState();
-        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
+        var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(
+            townhallState,
+            catalog: catalog,
+            store: store);
         var scViewModel = CreateScViewModel();
         var workspace = sp.GetRequiredService<Workspace>();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object);
+        var router = new AgentRouter(parser, agentHost, mockCoordinator.Object, catalog, store);
 
         var vm = new MainWindowViewModel(fileTreeViewModel, editorTabs, terminalHost, agentHost,
-            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), ConversationsTestSupport.CreateCatalogAsInterface());
+            router, townhallViewModel, scViewModel, TestProblemsFactory.Create(workspace, editorTabs), TestProjectWorkflowFactory.Create(), TestTestResultsFactory.Create(), TestDebugSessionFactory.Create(), TestDebugPanelFactory.Create(), TestEditorBreakpointFactory.Create(editorTabs), workspace, ProjectContextServiceMock(), catalog);
         vm.Activate();
         return (vm, source, target);
     }
@@ -1006,7 +1011,7 @@ public class MainWindowViewModelTests
         var coordinator = CreateMockCoordinator().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var git = new Mock<IGitRepositoryService>();
         git.Setup(g => g.Discover(It.IsAny<string>()))
@@ -1171,7 +1176,7 @@ public class MainWindowViewModelTests
 
         var parser = new MentionParser();
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(agentHost, executionService, store);
-        var router = new AgentRouter(parser, agentHost, coordinator);
+        var router = new AgentRouter(parser, agentHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var services = new ServiceCollection();
         services.AddSingleton<IFileService>(new FileService());

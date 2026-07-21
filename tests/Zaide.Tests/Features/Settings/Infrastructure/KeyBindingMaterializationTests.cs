@@ -96,7 +96,7 @@ public sealed class KeyBindingMaterializationTests
             new TerminalHost(CreateTerminalServiceFactory().Object),
             ConversationsTestSupport.CreatePanelHost(),
             new AgentRouter(new MentionParser(), ConversationsTestSupport.CreatePanelHost(),
-                new Mock<IAgentExecutionCoordinator>().Object),
+                new Mock<IAgentExecutionCoordinator>().Object, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore()),
             ConversationsTestSupport.CreateTownhallViewModel(),
             CreateSourceControlViewModel(),
             TestProblemsFactory.CreateWithWorkspace(sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>()),

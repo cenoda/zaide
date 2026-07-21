@@ -20,6 +20,7 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Tests.Features.Settings.Infrastructure;
 using Zaide.Features.Conversations.Application;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
@@ -605,7 +606,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         }));
         var parser = new MentionParser();
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
-        var router = new AgentRouter(parser, host, coordinator);
+        var router = new AgentRouter(parser, host, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello from router");
 
@@ -627,7 +628,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var service = CreateService(HttpStatusCode.InternalServerError, "Server error");
         var parser = new MentionParser();
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
-        var router = new AgentRouter(parser, host, coordinator);
+        var router = new AgentRouter(parser, host, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
 
@@ -654,7 +655,7 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var service = new AgentExecutionService(httpClient, settings, secrets);
         var parser = new MentionParser();
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
-        var router = new AgentRouter(parser, host, coordinator);
+        var router = new AgentRouter(parser, host, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         await router.RouteAndExecuteAsync(panel.PanelId, "Hello");
 
@@ -671,17 +672,18 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     [Fact]
     public async Task SendAsync_ThroughRouter_RoutedSend_UpdatesTargetPanel()
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
-        var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var source = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
+        var target = host.GetOrCreatePanelForActor(ActorId.PanelSeed("beta"));
         var service = CreateService(HttpStatusCode.OK, JsonSerializer.Serialize(new
         {
             choices = new[] { new { message = new { content = "Target reply" }, finish_reason = "stop" } }
         }));
         var parser = new MentionParser();
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
-        var router = new AgentRouter(parser, host, coordinator);
+        var router = new AgentRouter(parser, host, coordinator, catalog, store);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello from routed");
 

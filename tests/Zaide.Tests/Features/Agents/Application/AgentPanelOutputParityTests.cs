@@ -158,28 +158,35 @@ public sealed class AgentPanelOutputParityTests : IDisposable
     }
 
     [Fact]
-    public async Task RoutingFailure_DoesNotWriteDirectConversationOrProjectedOutput()
+    public async Task RoutingFailure_WritesTypedEntryAndProjectsErrorLine()
     {
-        var (host, panel, store) = CreatePanel();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var panel = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
         var coordinator = CreateCoordinator(host, store, new SuccessHandler("unused"));
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
         await router.RouteAndExecuteAsync(panel.PanelId, "@Missing hello");
 
         Assert.True(store.TryGet(panel.ConversationId, out var conversation));
-        Assert.Empty(conversation!.Entries);
-        Assert.Empty(panel.OutputHistory);
+        Assert.Contains(
+            conversation!.Entries,
+            e => e.Kind == ConversationEntryKind.RoutingFailure);
+        Assert.Single(panel.OutputHistory);
+        Assert.Equal("Error: Unknown target", panel.OutputHistory[0]);
     }
 
     [Fact]
     public async Task RoutedSend_Success_OnlyTargetPanelProjectsFrozenLegacyStrings()
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
-        var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var source = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
+        var target = host.GetOrCreatePanelForActor(ActorId.PanelSeed("beta"));
         var coordinator = CreateCoordinator(host, store, new SuccessHandler("Routed reply"));
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
         await router.RouteAndExecuteAsync(source.PanelId, "@Beta routed hello");
 
@@ -438,8 +445,9 @@ public sealed class AgentPanelOutputParityTests : IDisposable
                 "visible reply",
                 correlation));
 
+        // Channel/system kinds remain unrendered; routing failure projects as Error.
         Assert.Equal(
-            new[] { "User: visible", "Assistant: visible reply" },
+            new[] { "User: visible", "Error: routing failed", "Assistant: visible reply" },
             panel.OutputHistory.ToArray());
     }
 

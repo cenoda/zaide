@@ -43,7 +43,7 @@ public sealed class ConversationsRegistrationModuleTests
         var returned = services.AddZaideConversations();
 
         Assert.Same(services, returned);
-        Assert.Equal(2, services.Count);
+        Assert.Equal(3, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         Assert.Contains(
@@ -54,6 +54,10 @@ public sealed class ConversationsRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(IConversationStore)
                 && d.ImplementationType == typeof(ConversationStore));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IConversationDraftState)
+                && d.ImplementationType == typeof(ConversationDraftState));
     }
 
     [Fact]
@@ -120,5 +124,9 @@ public sealed class ConversationsRegistrationModuleTests
             Regex.Matches(
                 moduleSource,
                 @"AddSingleton<IConversationStore,\s*ConversationStore>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IConversationDraftState,\s*ConversationDraftState>\(\)"));
     }
 }

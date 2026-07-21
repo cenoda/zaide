@@ -12,26 +12,40 @@ using Zaide.Features.Conversations.Domain;
 namespace Zaide.Features.Agents.Application;
 
 /// <summary>
-/// Orchestrates panel send flow by composing <see cref="IAgentPanelHost"/> and
-/// <see cref="IAgentExecutionService"/>. Owns per-panel one-in-flight enforcement,
-/// output history updates, and draft clearing. No View, Townhall, or
-/// provider-platform references.
+/// Orchestrates agent send flow by composing <see cref="IAgentPanelHost"/> and
+/// <see cref="IAgentExecutionService"/>. Owns per-<see cref="ConversationId"/>
+/// one-in-flight enforcement; panel chrome is a thin projection of conversation
+/// busy/status/draft. No View, Townhall, or provider-platform references.
 /// </summary>
 public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 {
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionService _executionService;
     private readonly IConversationStore _conversationStore;
-    private readonly HashSet<string> _inFlightPanels = new();
+    private readonly IConversationDraftState? _draftState;
+    private readonly HashSet<ConversationId> _inFlightConversations = new();
+    private readonly object _sync = new();
 
     public AgentExecutionCoordinator(
         IAgentPanelHost panelHost,
         IAgentExecutionService executionService,
-        IConversationStore conversationStore)
+        IConversationStore conversationStore,
+        IConversationDraftState? draftState = null)
     {
         _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _executionService = executionService ?? throw new ArgumentNullException(nameof(executionService));
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
+        _draftState = draftState;
+    }
+
+    public event Action<ConversationId, bool>? ConversationBusyChanged;
+
+    public bool IsConversationBusy(ConversationId conversationId)
+    {
+        lock (_sync)
+        {
+            return _inFlightConversations.Contains(conversationId);
+        }
     }
 
     public async Task<AgentExecutionCoordinatorResult?> SendAsync(
@@ -49,13 +63,12 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         if (panel is null)
             return null;
 
-        if (!_inFlightPanels.Add(panelId))
+        var conversationId = panel.ConversationId;
+        if (!TryBeginInFlight(conversationId))
             return null;
 
         var runId = ExecutionRunId.New();
-
-        panel.Status = "Thinking";
-        panel.IsBusy = true;
+        ApplyPanelBusyProjection(conversationId, isBusy: true, status: "Thinking");
 
         ExecutionRunOutcome outcome;
         string? assistantResponse = null;
@@ -68,7 +81,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 panel,
                 runId,
                 userMessage);
-            panel.DraftInput = string.Empty;
+            ClearDraft(panel);
 
             var result = await _executionService.ExecuteAsync(userMessage, ct);
 
@@ -83,7 +96,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                         panel,
                         runId,
                         errorMessage);
-                    panel.Status = "Error";
+                    ApplyPanelBusyProjection(conversationId, isBusy: false, status: "Error");
                     outcome = ExecutionRunOutcome.ExecutionFailure;
                 }
                 else
@@ -94,7 +107,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                         panel,
                         runId,
                         assistantResponse);
-                    panel.Status = "Idle";
+                    ApplyPanelBusyProjection(conversationId, isBusy: false, status: "Idle");
                     outcome = ExecutionRunOutcome.Success;
                 }
             }
@@ -108,7 +121,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                     panel,
                     runId,
                     errorMessage);
-                panel.Status = "Error";
+                ApplyPanelBusyProjection(conversationId, isBusy: false, status: "Error");
                 outcome = IsCancellationMessage(errorMessage)
                     ? ExecutionRunOutcome.Cancelled
                     : ExecutionRunOutcome.ExecutionFailure;
@@ -124,7 +137,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 panel,
                 runId,
                 errorMessage);
-            panel.Status = "Error";
+            ApplyPanelBusyProjection(conversationId, isBusy: false, status: "Error");
             outcome = ExecutionRunOutcome.Cancelled;
         }
         catch (Exception ex)
@@ -137,21 +150,39 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 panel,
                 runId,
                 errorMessage);
-            panel.Status = "Error";
+            ApplyPanelBusyProjection(conversationId, isBusy: false, status: "Error");
             outcome = ExecutionRunOutcome.ExecutionFailure;
         }
         finally
         {
-            panel.IsBusy = false;
-            _inFlightPanels.Remove(panelId);
+            EndInFlight(conversationId);
+            // Ensure busy projection is cleared even if a status path was missed.
+            var stillBusy = false;
+            lock (_sync)
+            {
+                stillBusy = _inFlightConversations.Contains(conversationId);
+            }
+
+            if (!stillBusy)
+            {
+                var livePanel = FindPanelForConversation(conversationId);
+                if (livePanel is not null && livePanel.IsBusy)
+                {
+                    livePanel.IsBusy = false;
+                }
+            }
         }
+
+        // Re-resolve panel for result correlation — original panel may have been closed.
+        var resultPanelId = FindPanelForConversation(conversationId)?.PanelId ?? panel.PanelId;
+        var targetActorId = panel.ActorId;
 
         var run = new ExecutionRun(
             runId,
-            panel.ConversationId,
+            conversationId,
             ActorId.HumanUser,
-            panel.ActorId,
-            panel.PanelId,
+            targetActorId,
+            resultPanelId,
             outcome);
 
         return outcome switch
@@ -164,6 +195,51 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             _ => throw new InvalidOperationException(
                 $"Unexpected coordinator outcome: {outcome}.")
         };
+    }
+
+    private bool TryBeginInFlight(ConversationId conversationId)
+    {
+        lock (_sync)
+        {
+            if (!_inFlightConversations.Add(conversationId))
+            {
+                return false;
+            }
+        }
+
+        ConversationBusyChanged?.Invoke(conversationId, true);
+        return true;
+    }
+
+    private void EndInFlight(ConversationId conversationId)
+    {
+        lock (_sync)
+        {
+            _inFlightConversations.Remove(conversationId);
+        }
+
+        ConversationBusyChanged?.Invoke(conversationId, false);
+    }
+
+    private void ApplyPanelBusyProjection(ConversationId conversationId, bool isBusy, string status)
+    {
+        var livePanel = FindPanelForConversation(conversationId);
+        if (livePanel is null)
+        {
+            return;
+        }
+
+        livePanel.Status = status;
+        livePanel.IsBusy = isBusy;
+    }
+
+    private AgentPanelState? FindPanelForConversation(ConversationId conversationId) =>
+        _panelHost.Panels.FirstOrDefault(p => p.ConversationId == conversationId);
+
+    private void ClearDraft(AgentPanelState panel)
+    {
+        panel.DraftInput = string.Empty;
+        _draftState?.ClearDraft(panel.ConversationId);
     }
 
     private static bool IsCancellationMessage(string? message) =>

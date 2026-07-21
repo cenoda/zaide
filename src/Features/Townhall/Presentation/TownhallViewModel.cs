@@ -33,6 +33,7 @@ public class TownhallViewModel : ReactiveObject
     private readonly IConversationStore _conversationStore;
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _executionCoordinator;
+    private readonly IAgentRouter? _agentRouter;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
@@ -76,7 +77,8 @@ public class TownhallViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Gets or sets the current draft text input. Syncs with TownhallState.DraftText on set.
+    /// Gets or sets the current draft text input. Syncs with TownhallState.DraftText on set
+    /// and the per-conversation draft map (shared with Agent Panel thin host).
     /// </summary>
     public string DraftText
     {
@@ -89,6 +91,12 @@ public class TownhallViewModel : ReactiveObject
                 this.RaisePropertyChanged();
                 // Sync to state for M3 integration
                 _state.DraftText = value;
+                if (_state.ActiveConversationId is { } activeConversationId)
+                {
+                    _conversationUiState.SetDraft(activeConversationId, value);
+                    SyncPanelDraft(activeConversationId, value);
+                    NotifyPresentationPersisted();
+                }
             }
         }
     }
@@ -196,7 +204,8 @@ public class TownhallViewModel : ReactiveObject
         IActorCatalog actorCatalog,
         IConversationStore conversationStore,
         IAgentPanelHost panelHost,
-        IAgentExecutionCoordinator executionCoordinator)
+        IAgentExecutionCoordinator executionCoordinator,
+        IAgentRouter? agentRouter = null)
         : this(
             state,
             actorCatalog,
@@ -205,7 +214,8 @@ public class TownhallViewModel : ReactiveObject
             executionCoordinator,
             new TownhallConversationUiState(),
             persistenceBridge: null,
-            persistenceService: null)
+            persistenceService: null,
+            agentRouter: agentRouter)
     {
     }
 
@@ -217,7 +227,8 @@ public class TownhallViewModel : ReactiveObject
         IAgentExecutionCoordinator executionCoordinator,
         TownhallConversationUiState conversationUiState,
         IConversationWorkspacePersistenceBridge? persistenceBridge,
-        ConversationPersistenceService? persistenceService)
+        ConversationPersistenceService? persistenceService,
+        IAgentRouter? agentRouter = null)
     {
         _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -225,6 +236,7 @@ public class TownhallViewModel : ReactiveObject
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
         _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _executionCoordinator = executionCoordinator ?? throw new ArgumentNullException(nameof(executionCoordinator));
+        _agentRouter = agentRouter;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
 
@@ -328,8 +340,28 @@ public class TownhallViewModel : ReactiveObject
         var panel = EnsurePanelForDirectConversation(conversation);
         UpdateDirectSendBusyTracking();
 
-        if (panel.IsBusy)
+        if (_executionCoordinator.IsConversationBusy(conversation.Id) || panel.IsBusy)
         {
+            return;
+        }
+
+        // Prefer router so @mention targets resolve via catalog ActorId roster
+        // without requiring an open target panel tab.
+        if (_agentRouter is not null)
+        {
+            var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, draft);
+            if (routeResult.Success
+                || routeResult.ExecutionResult is not null
+                || !string.IsNullOrEmpty(routeResult.FailureReason))
+            {
+                // Admitted execution or recorded routing failure both clear the input.
+                // Empty/no-op rejects leave the draft for re-send.
+                if (routeResult.Success || routeResult.ExecutionResult is not null)
+                {
+                    ClearActiveConversationDraft();
+                }
+            }
+
             return;
         }
 
@@ -533,20 +565,17 @@ public class TownhallViewModel : ReactiveObject
 
     private AgentPanelState EnsurePanelForDirectConversation(Conversation conversation)
     {
-        var existing = FindPanelForConversation(conversation.Id);
-        if (existing is not null)
-        {
-            return existing;
-        }
-
         var peerActorId = ResolveDirectPeerActorId(conversation);
-        existing = _panelHost.Panels.FirstOrDefault(panel => panel.ActorId == peerActorId);
-        if (existing is not null)
-        {
-            return existing;
-        }
+        return _panelHost.GetOrCreatePanelForActor(peerActorId);
+    }
 
-        return _panelHost.CreatePanelForActor(peerActorId);
+    private void SyncPanelDraft(ConversationId conversationId, string draft)
+    {
+        var panel = FindPanelForConversation(conversationId);
+        if (panel is not null && panel.DraftInput != draft)
+        {
+            panel.DraftInput = draft;
+        }
     }
 
     private ActorId ResolveDirectPeerActorId(Conversation conversation)
@@ -575,23 +604,47 @@ public class TownhallViewModel : ReactiveObject
             return;
         }
 
-        var panel = FindPanelForConversation(activeConversationId);
-        if (panel is null)
-        {
-            IsDirectSendBusy = false;
-            return;
-        }
+        // Conversation-keyed busy survives panel close and navigation (M7).
+        IsDirectSendBusy = _executionCoordinator.IsConversationBusy(activeConversationId);
 
-        IsDirectSendBusy = panel.IsBusy;
-        PropertyChangedEventHandler? handler = (_, e) =>
+        Action<ConversationId, bool> busyHandler = (conversationId, isBusy) =>
         {
-            if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+            if (conversationId == activeConversationId)
             {
-                IsDirectSendBusy = panel.IsBusy;
+                IsDirectSendBusy = isBusy;
             }
         };
-        panel.PropertyChanged += handler;
-        _directBusySubscription.Disposable = Disposable.Create(() => panel.PropertyChanged -= handler);
+        _executionCoordinator.ConversationBusyChanged += busyHandler;
+
+        // Also project open-panel IsBusy while a thin host exists.
+        var panel = FindPanelForConversation(activeConversationId);
+        PropertyChangedEventHandler? panelHandler = null;
+        if (panel is not null)
+        {
+            if (panel.IsBusy)
+            {
+                IsDirectSendBusy = true;
+            }
+
+            panelHandler = (_, e) =>
+            {
+                if (e.PropertyName == nameof(AgentPanelState.IsBusy))
+                {
+                    IsDirectSendBusy = panel.IsBusy
+                        || _executionCoordinator.IsConversationBusy(activeConversationId);
+                }
+            };
+            panel.PropertyChanged += panelHandler;
+        }
+
+        _directBusySubscription.Disposable = Disposable.Create(() =>
+        {
+            _executionCoordinator.ConversationBusyChanged -= busyHandler;
+            if (panel is not null && panelHandler is not null)
+            {
+                panel.PropertyChanged -= panelHandler;
+            }
+        });
     }
 
     private ObservableCollection<TownhallMessage> ProjectDirectMessages(Conversation conversation)

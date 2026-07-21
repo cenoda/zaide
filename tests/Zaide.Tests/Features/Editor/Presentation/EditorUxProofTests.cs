@@ -373,7 +373,7 @@ public sealed class EditorUxProofTests
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var townhallState = new TownhallState();
         var townhallViewModel = ConversationsTestSupport.CreateTownhallViewModel(townhallState);
         var git = new Mock<IGitRepositoryService>();

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
@@ -101,6 +102,17 @@ internal sealed class ActorCatalog : IActorCatalog
         lock (_sync)
         {
             return _actors.TryGetValue(id, out actor!);
+        }
+    }
+
+    public IReadOnlyList<Actor> ListAgents()
+    {
+        lock (_sync)
+        {
+            return _actors.Values
+                .Where(static a => a.Kind == ActorKind.Agent)
+                .OrderBy(static a => a.Id.Value, StringComparer.Ordinal)
+                .ToList();
         }
     }
 }

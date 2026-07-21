@@ -1,30 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
 
 /// <summary>
-/// In-memory per-conversation Townhall UI state: draft text and last-read cursor.
-/// Owned by Townhall presentation (not the conversation store). Phase 14 M5 is
-/// session-only; M6 may persist the same field shape.
+/// In-memory per-conversation Townhall UI state: draft text (shared contract) and
+/// last-read cursor. Owned by Townhall presentation (not the conversation store).
 /// </summary>
 internal sealed class TownhallConversationUiState
 {
-    private readonly Dictionary<ConversationId, string> _draftsByConversation = new();
+    private readonly IConversationDraftState _drafts;
     private readonly Dictionary<ConversationId, ConversationEntryId> _lastReadByConversation = new();
 
+    public TownhallConversationUiState()
+        : this(new Zaide.Features.Conversations.Application.ConversationDraftState())
+    {
+    }
+
+    public TownhallConversationUiState(IConversationDraftState drafts)
+    {
+        _drafts = drafts ?? throw new ArgumentNullException(nameof(drafts));
+    }
+
     public string GetDraft(ConversationId conversationId) =>
-        _draftsByConversation.TryGetValue(conversationId, out var draft)
-            ? draft
-            : string.Empty;
+        _drafts.GetDraft(conversationId);
 
     public void SetDraft(ConversationId conversationId, string? draft) =>
-        _draftsByConversation[conversationId] = draft ?? string.Empty;
+        _drafts.SetDraft(conversationId, draft);
 
     public void ClearDraft(ConversationId conversationId) =>
-        _draftsByConversation[conversationId] = string.Empty;
+        _drafts.ClearDraft(conversationId);
 
     public ConversationEntryId? GetLastReadEntryId(ConversationId conversationId) =>
         _lastReadByConversation.TryGetValue(conversationId, out var entryId)
@@ -66,18 +74,8 @@ internal sealed class TownhallConversationUiState
         IReadOnlyDictionary<string, string> drafts,
         IReadOnlyDictionary<string, string> lastReadEntryIds)
     {
-        _draftsByConversation.Clear();
+        _drafts.ImportDrafts(drafts);
         _lastReadByConversation.Clear();
-
-        foreach (var pair in drafts)
-        {
-            if (string.IsNullOrEmpty(pair.Value))
-            {
-                continue;
-            }
-
-            _draftsByConversation[ConversationId.FromValue(pair.Key)] = pair.Value;
-        }
 
         foreach (var pair in lastReadEntryIds)
         {
@@ -90,12 +88,7 @@ internal sealed class TownhallConversationUiState
         out IReadOnlyDictionary<string, string> drafts,
         out IReadOnlyDictionary<string, string> lastReadEntryIds)
     {
-        drafts = _draftsByConversation
-            .Where(pair => !string.IsNullOrEmpty(pair.Value))
-            .ToDictionary(
-                pair => pair.Key.Value,
-                pair => pair.Value,
-                StringComparer.Ordinal);
+        drafts = _drafts.ExportNonEmptyDrafts();
 
         lastReadEntryIds = _lastReadByConversation.ToDictionary(
             pair => pair.Key.Value,

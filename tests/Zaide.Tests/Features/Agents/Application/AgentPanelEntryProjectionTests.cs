@@ -26,7 +26,6 @@ public sealed class AgentPanelEntryProjectionTests
     }
 
     [Theory]
-    [InlineData(ConversationEntryKind.RoutingFailure)]
     [InlineData(ConversationEntryKind.ChannelEvent)]
     [InlineData(ConversationEntryKind.SystemNotification)]
     public void TryToOutputHistoryLine_UnsupportedPanelKinds_ReturnFalse(ConversationEntryKind kind)
@@ -34,6 +33,15 @@ public sealed class AgentPanelEntryProjectionTests
         var entry = CreateEntry(kind, "payload");
 
         Assert.False(AgentPanelEntryProjection.TryToOutputHistoryLine(entry, out _));
+    }
+
+    [Fact]
+    public void TryToOutputHistoryLine_RoutingFailure_ProjectsAsErrorLine()
+    {
+        var entry = CreateEntry(ConversationEntryKind.RoutingFailure, "Unknown target");
+
+        Assert.True(AgentPanelEntryProjection.TryToOutputHistoryLine(entry, out var line));
+        Assert.Equal("Error: Unknown target", line);
     }
 
     [Fact]

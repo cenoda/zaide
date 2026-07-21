@@ -176,7 +176,7 @@ public sealed class AgentExecutionRunTests : IDisposable
         var (host, panel, store) = CreateHostWithPanel();
         var handler = new SuccessHandler("Direct reply");
         var coordinator = CreateCoordinator(host, store, handler);
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "hello");
 
@@ -194,13 +194,14 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_RoutedSend_ResolvesTargetTypedIdentity()
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
-        var target = host.CreatePanel("agent-2", "Beta", "avatar_b");
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var source = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
+        var target = host.GetOrCreatePanelForActor(ActorId.PanelSeed("beta"));
         var handler = new SuccessHandler("Routed reply");
         var coordinator = CreateCoordinator(host, store, handler);
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta routed hello");
 
@@ -219,10 +220,13 @@ public sealed class AgentExecutionRunTests : IDisposable
     [Fact]
     public async Task RouteAndExecuteAsync_RoutingFailure_CreatesCorrelatedRoutingFailureRun()
     {
-        var (host, panel, store) = CreateHostWithPanel();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var panel = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
         var handler = new SuccessHandler("unused");
         var coordinator = CreateCoordinator(host, store, handler);
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
         var result = await router.RouteAndExecuteAsync(panel.PanelId, "@Missing hello");
 
@@ -237,22 +241,25 @@ public sealed class AgentExecutionRunTests : IDisposable
         Assert.Equal(ActorId.HumanUser, result.ExecutionResult.Run.InitiatingActorId);
         Assert.Equal("Unknown target", result.ExecutionResult.ErrorMessage);
         Assert.Null(result.ExecutionResult.AssistantResponse);
-        Assert.Empty(panel.OutputHistory);
+        // Routing failure is recorded as a typed entry and projected as Error: line.
+        Assert.Single(panel.OutputHistory);
+        Assert.StartsWith("Error:", panel.OutputHistory[0]);
     }
 
     [Fact]
     public async Task RouteAndExecuteAsync_AmbiguousTarget_CreatesCorrelatedRoutingFailureRun()
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_a");
-        host.CreatePanel("agent-2", "Beta", "avatar_b");
-        host.CreatePanel("agent-3", "Beta", "avatar_b2");
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var source = host.GetOrCreatePanelForActor(ActorId.PanelSeed("alpha"));
+        host.CreatePanel("agent-twin-a", "Twin", "avatar_a");
+        host.CreatePanel("agent-twin-b", "Twin", "avatar_b");
         var handler = new SuccessHandler("unused");
         var coordinator = CreateCoordinator(host, store, handler);
-        var router = new AgentRouter(new MentionParser(), host, coordinator);
+        var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
-        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
+        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Twin hello");
 
         Assert.False(result.Success);
         Assert.Equal("Ambiguous target", result.FailureReason);

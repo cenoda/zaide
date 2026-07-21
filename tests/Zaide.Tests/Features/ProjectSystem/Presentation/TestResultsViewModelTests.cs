@@ -196,7 +196,7 @@ public sealed class TestResultsViewModelTests
         var coordinator = new Moq.Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
         var parser = new MentionParser();
-        var router = new AgentRouter(parser, panelHost, coordinator);
+        var router = new AgentRouter(parser, panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
 
         var projectContext = new Moq.Mock<IProjectContextService>(Moq.MockBehavior.Loose);
         projectContext.Setup(s => s.WhenChanged).Returns(System.Reactive.Linq.Observable.Never<ProjectContext>());

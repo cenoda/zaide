@@ -12,6 +12,7 @@ internal static class ConversationsServiceCollectionExtensions
     {
         services.AddSingleton<IActorCatalog, ActorCatalog>();
         services.AddSingleton<IConversationStore, ConversationStore>();
+        services.AddSingleton<IConversationDraftState, ConversationDraftState>();
 
         return services;
     }

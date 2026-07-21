@@ -464,7 +464,7 @@ public sealed class MainWindowActivationHostTests
 
         var coordinator = new Mock<IAgentExecutionCoordinator>().Object;
         var panelHost = ConversationsTestSupport.CreatePanelHost();
-        var router = new AgentRouter(new MentionParser(), panelHost, coordinator);
+        var router = new AgentRouter(new MentionParser(), panelHost, coordinator, ConversationsTestSupport.CreateCatalog(), ConversationsTestSupport.CreateStore());
         var townhall = ConversationsTestSupport.CreateTownhallViewModel();
 
         var git = new Mock<IGitRepositoryService>();

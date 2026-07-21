@@ -8,22 +8,28 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Contracts;
+using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
 /// <summary>
-/// Phase 6.1 M2: focused tests for the routing orchestration seam.
-/// Covers parse resolution, direct-send vs routed-send dispatch, and all failure
-/// cases. No Townhall dependency or assertions — Townhall visibility is owned by
-/// <see cref="MainWindowViewModel"/> and covered in MainWindowViewModelTests.
+/// Phase 6.1 M2 + Phase 14 M7: routing orchestration seam.
+/// Resolves mentions against the actor catalog roster (not open-panel names).
 /// </summary>
 public sealed class AgentRouterTests
 {
-    private static AgentRouter CreateRouter(
-        AgentPanelHost host,
-        out Mock<IAgentExecutionCoordinator> coordinator)
+    private static (
+        AgentRouter Router,
+        AgentPanelHost Host,
+        Mock<IAgentExecutionCoordinator> Coordinator,
+        IActorCatalog Catalog,
+        IConversationStore Store) CreateSurface()
     {
-        coordinator = new Mock<IAgentExecutionCoordinator>();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
+        var coordinator = new Mock<IAgentExecutionCoordinator>();
         coordinator
             .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns<string, string, CancellationToken>((panelId, _, _) =>
@@ -34,16 +40,20 @@ public sealed class AgentRouterTests
                         ? null
                         : AgentExecutionTestSupport.SuccessResult(panel));
             });
-        var parser = new MentionParser();
-        return new AgentRouter(parser, host, coordinator.Object);
+        var router = new AgentRouter(
+            new MentionParser(),
+            host,
+            coordinator.Object,
+            catalog,
+            store);
+        return (router, host, coordinator, catalog, store);
     }
 
     [Fact]
     public async Task RouteAndExecuteAsync_NoMention_DispatchesDirectSendToSourcePanel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "hello world");
 
@@ -63,10 +73,9 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_ValidMention_DispatchesToTargetPanelWithStrippedContent()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var target = host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
+        var target = host.GetOrCreatePanelForActor(ActorId.PanelSeed("beta"));
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta please review");
 
@@ -85,28 +94,28 @@ public sealed class AgentRouterTests
     }
 
     [Fact]
-    public async Task RouteAndExecuteAsync_SuppliesLiveVisiblePanelNamesToParser()
+    public async Task RouteAndExecuteAsync_MentionTarget_DoesNotRequireOpenTargetPanel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-source", "Source Agent", "avatar_source");
+        Assert.DoesNotContain(host.Panels, p => p.ActorId == ActorId.PanelSeed("beta"));
 
-        var target = host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
+        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello without tab");
 
         Assert.True(result.Success);
-        Assert.Equal(target.ActorId, result.Request!.TargetActorId);
+        Assert.Equal(ActorId.PanelSeed("beta"), result.Request!.TargetActorId);
+        Assert.False(result.Request.IsDirectSend);
+        var betaPanel = host.Panels.First(p => p.ActorId == ActorId.PanelSeed("beta"));
         coordinator.Verify(
-            c => c.SendAsync(target.PanelId, "hello", It.IsAny<CancellationToken>()),
+            c => c.SendAsync(betaPanel.PanelId, "hello without tab", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task RouteAndExecuteAsync_UnknownTarget_ReturnsFailureAndDoesNotDispatch()
+    public async Task RouteAndExecuteAsync_UnknownTarget_AppendsRoutingFailureToSourceConversation()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, store) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Ghost hello");
 
@@ -115,6 +124,10 @@ public sealed class AgentRouterTests
         Assert.Equal("Unknown target", result.FailureReason);
         Assert.NotNull(result.ExecutionResult);
         Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
+        Assert.True(store.TryGet(source.ConversationId, out var conversation));
+        Assert.Contains(
+            conversation!.Entries,
+            e => e.Kind == ConversationEntryKind.RoutingFailure && e.Content == "Unknown target");
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -123,13 +136,12 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_AmbiguousTarget_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        host.CreatePanel("agent-3", "Beta", "avatar_beta2");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
+        host.CreatePanel("agent-twin-a", "Twin", "avatar_a");
+        host.CreatePanel("agent-twin-b", "Twin", "avatar_b");
 
-        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta hello");
+        var result = await router.RouteAndExecuteAsync(source.PanelId, "@Twin hello");
 
         Assert.False(result.Success);
         Assert.Null(result.Request);
@@ -144,10 +156,8 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_MultipleMentions_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Alpha @Beta hello");
 
@@ -164,9 +174,8 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_EmptyInput_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, store) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "   ");
 
@@ -175,6 +184,8 @@ public sealed class AgentRouterTests
         Assert.Equal("Empty input", result.FailureReason);
         Assert.NotNull(result.ExecutionResult);
         Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.ExecutionResult!.Run.Outcome);
+        Assert.True(store.TryGet(source.ConversationId, out var conversation));
+        Assert.Contains(conversation!.Entries, e => e.Kind == ConversationEntryKind.RoutingFailure);
         coordinator.Verify(
             c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -183,10 +194,8 @@ public sealed class AgentRouterTests
     [Fact]
     public async Task RouteAndExecuteAsync_EmptyContentAfterStripping_ReturnsFailureAndDoesNotDispatch()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
-        var source = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
-        host.CreatePanel("agent-2", "Beta", "avatar_beta");
-        var router = CreateRouter(host, out var coordinator);
+        var (router, host, coordinator, _, _) = CreateSurface();
+        var source = host.CreatePanel("agent-1", "Source", "avatar_source");
 
         var result = await router.RouteAndExecuteAsync(source.PanelId, "@Beta");
 

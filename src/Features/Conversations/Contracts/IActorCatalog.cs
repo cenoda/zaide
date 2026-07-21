@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Conversations.Contracts;
@@ -23,4 +24,11 @@ public interface IActorCatalog
         string avatarResourceKey);
 
     bool TryGet(ActorId id, out Actor actor);
+
+    /// <summary>
+    /// Snapshot of all currently registered agent actors (excludes humans), ordered
+    /// by <see cref="ActorId.Value"/>. Used for <c>@mention</c> roster resolution
+    /// without requiring an open panel tab.
+    /// </summary>
+    IReadOnlyList<Actor> ListAgents();
 }

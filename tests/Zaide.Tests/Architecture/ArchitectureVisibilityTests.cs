@@ -196,7 +196,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
         // Phase 14 M6: +10 conversation persistence production files.
-        Assert.Equal(381, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(383, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

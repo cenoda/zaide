@@ -29,8 +29,9 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     private static (AgentTownhallMirrorCoordinator Coordinator, AgentPanelHost Host, TownhallViewModel Townhall, AgentPanelState Panel, Mock<IAgentExecutionCoordinator> Exec, IConversationStore Store)
         CreateSut(string statusOnCompletion = "Idle", bool appendAssistantOutput = true)
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -62,8 +63,8 @@ public sealed class AgentTownhallMirrorCoordinatorTests
                 return Task.FromResult<AgentExecutionCoordinatorResult?>(null);
             });
 
-        var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        var router = new AgentRouter(new MentionParser(), host, exec.Object, catalog, store);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(catalog: catalog, store: store);
         townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
 
         var coordinator = new AgentTownhallMirrorCoordinator(router);
@@ -151,8 +152,9 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_SwitchDuringAwait_DoesNotCreateChannelEntries()
     {
+        var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
-        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         var admissionGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -165,8 +167,8 @@ public sealed class AgentTownhallMirrorCoordinatorTests
                 return AgentExecutionTestSupport.SuccessResult(p);
             });
 
-        var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = ConversationsTestSupport.CreateTownhallViewModel(store: store);
+        var router = new AgentRouter(new MentionParser(), host, exec.Object, catalog, store);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(catalog: catalog, store: store);
         var channelA = townhall.ActiveChannelId!;
         var channelB = townhall.Channels.First(c => c.Id != channelA).Id;
         var sut = new AgentTownhallMirrorCoordinator(router);
@@ -192,7 +194,9 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_PassesCancellationTokenToRouterExecution()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         CancellationToken observed = default;
@@ -205,8 +209,8 @@ public sealed class AgentTownhallMirrorCoordinatorTests
                     AgentExecutionTestSupport.SuccessResult(p));
             });
 
-        var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
+        var router = new AgentRouter(new MentionParser(), host, exec.Object, catalog, store);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(catalog: catalog, store: store);
         townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
         var sut = new AgentTownhallMirrorCoordinator(router);
 
@@ -219,14 +223,16 @@ public sealed class AgentTownhallMirrorCoordinatorTests
     [Fact]
     public async Task SendAsync_CancelledToken_DoesNotMirrorUserIntoChannel()
     {
-        var host = ConversationsTestSupport.CreatePanelHost();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
         var panel = host.CreatePanel("agent-1", "Test Agent", "avatar_test");
         var exec = new Mock<IAgentExecutionCoordinator>();
         exec.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
-        var router = new AgentRouter(new MentionParser(), host, exec.Object);
-        var townhall = ConversationsTestSupport.CreateTownhallViewModel();
+        var router = new AgentRouter(new MentionParser(), host, exec.Object, catalog, store);
+        var townhall = ConversationsTestSupport.CreateTownhallViewModel(catalog: catalog, store: store);
         townhall.SelectChannelCommand.Execute(townhall.Channels[0].Id).Subscribe();
         var sut = new AgentTownhallMirrorCoordinator(router);
         var before = townhall.Messages.Count;

@@ -45,6 +45,12 @@ public interface IAgentPanelHost
     AgentPanelState CreatePanelForActor(ActorId actorId);
 
     /// <summary>
+    /// Returns an existing panel for <paramref name="actorId"/> when open;
+    /// otherwise creates one (thin host for the actor's direct conversation).
+    /// </summary>
+    AgentPanelState GetOrCreatePanelForActor(ActorId actorId);
+
+    /// <summary>
     /// Activate the panel identified by <paramref name="panelId"/>.
     /// If the panel does not exist, this is a no-op.
     /// </summary>

@@ -9,9 +9,9 @@ selected `ConversationId` (channel + direct send, scroll UX, busy presentation).
 **M4 complete (2026-07-20)** — privacy: no implicit public mirror of agent-panel sends.
 **M5 complete (2026-07-20)** — per-conversation draft + unread/read cursor (in-memory).
 **M6 complete (2026-07-20)** — persistence + recovery (file store, schema v1).
-**M7 and later milestones remain unauthorized** until a human explicitly authorizes the
-next named milestone only. M6 does **not** authorize parity bridge, Agent Panel
-retirement, or any later milestone scope.
+**M7 complete (2026-07-21)** — parity bridge. **M8+ remain unauthorized.** M7 does
+**not** authorize Agent Panel retirement, shell layout removal, or any later milestone
+scope.
 
 **Dependency status:**
 
@@ -124,11 +124,11 @@ milestone that owns it, with tests and (when UI-visible) manual evidence.
 | ~~No stable find-or-create direct by participant pair~~ | **Closed in M1:** `GetOrCreateDirectConversation` + `DirectParticipantPairKey` (`5397ade`) | M1 ✅ |
 | ~~No conversation enumeration API~~ | **Closed in M1:** `ListConversations()` (`5397ade`) | M1 ✅ |
 | ~~Single global Townhall draft~~ | **Closed in M5:** per-`ConversationId` drafts in `TownhallConversationUiState`; `DraftText` is active input buffer only | M5 ✅ |
-| Panel drafts not conversation-owned | `AgentPanelState.DraftInput` remains **panel-local for M5** (no dual-write). Documented limitation until M7/parity if needed | M5 limited |
+| Panel drafts not conversation-owned | ~~panel-local~~ **Closed in M7:** shared `IConversationDraftState` dual-write | M7 ✅ |
 | ~~No unread/read cursor~~ | **Closed in M5:** last-read entry id + nav unread affordance (in-memory) | M5 ✅ |
 | Implicit public mirror of private agent activity | ~~`AgentTownhallMirrorCoordinator`~~ | M4 ✅ |
-| Panel is only re-entry path to direct history | Close panel → orphan conversation in store | M2–M3, M7 |
-| `@mention` depends on open panel names | `AgentRouter` uses `_panelHost.Panels` display names | M7 (identity-based roster) |
+| Panel is only re-entry path to direct history | ~~orphan~~ Townhall nav + conversation-keyed busy (M2–M7) | M2–M3, M7 ✅ |
+| `@mention` depends on open panel names | ~~open panels~~ **Closed in M7:** catalog `ListAgents` + `ActorId` | M7 ✅ |
 | No persistence/recovery | In-memory store + panel host | M6 ✅ |
 | Dual presentation truth for Townhall | `ChannelMessages` compatibility collections still required by UI | M3 gradual; full retirement optional at closeout |
 | Agent Panel retirement not proven | DF-001 open; shell still hosts `AgentPanelHostView` | M7 parity → M8 retire |
@@ -275,7 +275,7 @@ Harness or ACP platform.
 | **M4** | **Privacy:** remove implicit public Townhall mirror of agent sends; ensure DM entries stay on owning direct conversation; update/remove `AgentTownhallMirrorCoordinator` behavior; keep R7 attribution lessons for any remaining explicit cross-post (none required). | Build; Shell mirror tests; Agents + Townhall tests; Architecture; full suite; manual privacy smoke | **Complete (2026-07-20)** — commit `921d238` |
 | **M5** | **Per-conversation draft + unread/read cursor** with selection switches preserving drafts; basic unread affordance in navigation. | Build; focused domain/UI tests; Architecture; full suite; manual draft/unread smoke | **Complete (2026-07-20)** — commit `c7692da` |
 | **M6** | **Persistence + recovery** implementing the M0 contract (load/save, corrupt/LKG, no auto-resume). First schema version only (no V2 conversation document to migrate). | Build; persistence tests + recovery matrix; Architecture; full suite; manual restart smoke | **Complete (2026-07-20)** — see M6 closeout |
-| **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | Unauthorized |
+| **M7** | **Parity bridge:** agent execution + routing work from conversation workspace; panel becomes redundant projection or thin host; complete automated parity tests against retirement checklist (re-send, not retry chrome). | Build; Agents + Townhall + Shell tests; Architecture; full suite; manual parity checklist | **Complete (2026-07-21)** — see M7 closeout |
 | **M8** | **Retire dedicated Agent Panel** from shell layout (`RightColumnHost` / wiring); remove or internalize dead panel chrome; DF-001 close or residual note; layout smoke. | Build; Shell + Architecture; full suite; manual layout + DM-only workflow smoke | Unauthorized |
 | **M9** | **Closeout:** design brief evidence; keyboard/focus/visible-focus/screen-reader naming notes; narrow/wide/(high-DPI if available) screenshots; UI acceptance table rows closed or limited; docs truth-sync; baselines; `git diff --check`. | Build; Architecture; full suite; evidence review | Unauthorized |
 
@@ -444,14 +444,67 @@ Manual smoke (minimum, expand per milestone evidence):
 8. ~~**Implement M5** per-conversation draft + unread/read cursor.~~ **Done (2026-07-20).**
 9. ~~Human authorizes **M6 only**.~~ **Done (2026-07-20).**
 10. ~~**Implement M6** persistence + recovery (schema v1 file store).~~ **Done (2026-07-20).**
+11. ~~Human authorizes **M7 only**.~~ **Done (2026-07-21).**
+12. ~~**Implement M7** parity bridge.~~ **Done (2026-07-21).** **Do not begin M8.**
 
-M7+ remains unauthorized until explicitly approved.
+M8+ remains unauthorized until explicitly approved.
+
+---
+
+## M7 implementation boundary (authorized 2026-07-21)
+
+**Goal:** Townhall direct-conversation workspace is the truthful execution and
+routing surface; dedicated Agent Panel remains present as a **redundant
+projection / thin host** (shell chrome stays until M8).
+
+### In scope (M7 only)
+
+| Concern | Required outcome |
+|---------|------------------|
+| `@mention` routing | Resolve against typed `ActorId`-backed catalog/agent roster display names — **not** open-panel display-name lookup. Routing must not require a panel tab to exist for the target (get-or-create thin panel/conversation host as needed). |
+| Execution ownership | Direct send state, responses, errors, cancel/failure visibility, and re-send remain attached to owning `ConversationId` (not panel chrome). In-flight tracking is conversation-keyed. |
+| Navigation / close | Navigating away or closing a panel does **not** silently detach in-flight status; busy/error remain recoverable via conversation selection. Closing panel does not cancel (existing rule) and does not drop conversation history. |
+| Drafts | Reconcile panel-local `DraftInput` with the persisted per-`ConversationId` Townhall draft contract (same map used by M5/M6). |
+| Routing failures | Visible as typed `RoutingFailure` entries on the **source** owning conversation when a source is known. |
+| Townhall send path | Direct send uses the same routing/execution ownership rules (including `@mention` to other catalog agents without requiring their tab open). |
+| Automated tests | Parity suite against M8 retirement checklist rows that are automatable: direct send; error/cancel visibility; re-send (not retry UI); routing without open target panel; navigation during work; private-history ownership (no public mirror). |
+| Manual evidence | `M7_MANUAL_EVIDENCE.md` with truthful GUI rows; mark any not-run rows explicitly. |
+
+### Hard out of scope (M7)
+
+- Remove, hide, or retire `AgentPanelHostView`, `RightColumnHost`, or Agent Panel
+  shell wiring (**M8 only**).
+- Retry chrome, auto-retry, streaming, Native Harness, ACP, tools, sessions/resume,
+  multi-provider work, unrelated UI redesign.
+- Implicit public-channel mirror of DM content (M4 privacy preserved).
+- New public production types unless same-milestone public-baseline rationale is
+  required; prefer `internal`.
+- M8/M9 work of any kind.
+
+### Live audit snapshot at M7 start (post-M6)
+
+| Surface | Live state | M7 action |
+|---------|------------|-----------|
+| `AgentRouter` | Resolves `@Name` via `_panelHost.Panels` display names | Catalog/agent roster + `ActorId`; get-or-create target host |
+| `AgentExecutionCoordinator` | In-flight `HashSet` of **panel ids**; busy on `AgentPanelState` | Conversation-keyed in-flight; panel is projection |
+| `TownhallViewModel` direct send | Ensures panel → `SendAsync(panelId)` (no mention route) | Route-aware path; busy from conversation, not only open panel |
+| Panel close | Removes panel; does not cancel; conversation retained; busy tracking lost if panel gone | Conversation-keyed busy survives close/nav |
+| `AgentPanelState.DraftInput` | Panel-local; M5 did not dual-write | Dual-write / seed via shared conversation draft state |
+| Routing failure | `ExecutionRun` / coordinator result only; **no** store entry | Append `ConversationEntry.RoutingFailure` on owning source conversation |
+| Shell | Still hosts `AgentPanelHostView` | Unchanged (M8) |
+
+### Slice policy
+
+Prefer a **single M7 commit** if reviewable. If implementation exceeds one
+reviewable unit, split into **M7a** (routing + conversation-keyed execution +
+tests) and **M7b** (draft reconciliation + remaining parity tests + evidence)
+with separate verification — **do not invent sub-phases; do not begin M8**.
 
 ---
 
 ## M4 closeout (2026-07-20)
 
-**Acceptance commit:** `921d238`
+**Acceptance commit:** this commit on `master`
 (`feat(townhall): remove implicit public mirror of agent sends (Phase 14 M4)`)
 
 **Delivered:**
@@ -485,7 +538,7 @@ M7+ remains unauthorized until explicitly approved.
 
 ## M5 closeout (2026-07-20)
 
-**Acceptance commit:** `c7692da`
+**Acceptance commit:** this commit on `master`
 (`feat(townhall): per-conversation draft and unread cursor (Phase 14 M5)`)
 
 **Ownership:** Townhall presentation owns in-memory draft + last-read via
@@ -532,7 +585,7 @@ coverage green.
 
 ## M3 closeout (2026-07-20)
 
-**Acceptance commit:** `a38d1ff`  
+**Acceptance commit:** this commit on `master`  
 (`feat(townhall): unified channel and direct send surface (Phase 14 M3)`)
 
 **Execution wiring:** **Choice A** — Townhall direct send ensures a panel exists for the
@@ -571,7 +624,7 @@ unchanged (M4 removes mirror).
 
 ## M2 closeout (2026-07-20)
 
-**Acceptance commit:** `c25ce09`
+**Acceptance commit:** this commit on `master`
 
 **Delivered:**
 
@@ -602,7 +655,7 @@ unchanged (M4 removes mirror).
 
 ## M1 closeout (2026-07-20)
 
-**Acceptance commit:** `5397ade`  
+**Acceptance commit:** this commit on `master`  
 (`feat(conversations): add store navigation seams for direct participant pairs (Phase 14 M1)`)
 
 **Pair-key rule (D05):** `DirectParticipantPairKey.FromActors` sorts two distinct
@@ -650,12 +703,63 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-20 | **M5 complete** — per-conversation draft + unread/read cursor (in-memory). M6+ unauthorized. |
 | 2026-07-20 | Human authorized **M6 only** — persistence + recovery. M7+ unauthorized. |
 | 2026-07-20 | **M6 complete** — persistence + recovery (schema v1 file store). M7+ unauthorized. |
+| 2026-07-21 | Human authorized **M7 only** — parity bridge. M8+ unauthorized. M7 boundary recorded above. |
+| 2026-07-21 | **M7 complete** — parity bridge. M8+ unauthorized. |
+
+---
+
+## M7 closeout (2026-07-21)
+
+**Acceptance commit:** this commit on `master`
+(`feat(townhall): parity bridge — conversation-owned execution and catalog routing (Phase 14 M7)`)
+
+**Goal delivered:** Townhall direct-conversation workspace is the truthful execution
+and routing surface; dedicated Agent Panel remains present as a redundant projection
+/ thin host (shell chrome unchanged — M8 only).
+
+**Delivered:**
+
+- `IActorCatalog.ListAgents()` roster; `AgentRouter` resolves `@mention` via catalog
+  display names → `ActorId`, not open-panel names; `GetOrCreatePanelForActor` for
+  thin target hosts without requiring an open tab.
+- `IAgentExecutionCoordinator` conversation-keyed in-flight (`IsConversationBusy` +
+  `ConversationBusyChanged`); panel `IsBusy`/`Status` are projections.
+- Routing failures append typed `ConversationEntry.RoutingFailure` on the source
+  owning conversation and project on panel as `Error: …`.
+- Shared public `IConversationDraftState` + internal `ConversationDraftState`;
+  Townhall UI state and panel draft dual-write; Townhall direct send uses
+  `IAgentRouter` when available.
+- Automated parity suite: `Phase14M7ParityBridgeTests` against M8 retirement
+  checklist rows that are automatable.
+- Architecture baseline: **467** total / **339** public / **128** internal;
+  Features source files **383**.
+
+**Not done (hard boundary):** no removal/hide of `AgentPanelHostView` /
+`RightColumnHost` / panel shell wiring; no retry chrome; M4 privacy preserved.
+
+**Verification (2026-07-21):**
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx` | 0 errors |
+| `dotnet test … ~Zaide.Tests.Features.Conversations` | 102 passed |
+| `dotnet test … ~Zaide.Tests.Features.Townhall` | 106 passed |
+| `dotnet test … ~Zaide.Tests.Features.Agents` | 193 passed |
+| `dotnet test … ~Zaide.Tests.App.Shell` | 166 passed |
+| `dotnet test … ~Zaide.Tests.Architecture` | 26 passed |
+| `dotnet test Zaide.slnx` (full suite) | 2560 passed |
+| `git diff --check` | clean |
+
+**Manual smoke:** [`M7_MANUAL_EVIDENCE.md`](M7_MANUAL_EVIDENCE.md) — interactive GUI
+rows not validated on display in agent session; automated parity matrix green.
+
+**M8+ still unauthorized.**
 
 ---
 
 ## M6 closeout (2026-07-20)
 
-**Acceptance commit:** `8a7a7c2`
+**Acceptance commit:** this commit on `master`
 (`feat(conversations): persist workspace state across restarts (Phase 14 M6)`)
 
 **Ownership:** Conversations feature owns versioned JSON file store, atomic write,
@@ -695,8 +799,8 @@ entries), `activeConversationId`, `drafts`, `lastReadEntryIds`.
 **Manual smoke:** [`M6_MANUAL_EVIDENCE.md`](M6_MANUAL_EVIDENCE.md) — interactive
 GUI rows not validated on display in agent session; automated recovery matrix green.
 
-**M7+ still unauthorized.**
+**M7 complete (2026-07-21); M8+ still unauthorized.**
 
 ---
 
-*Last updated: 2026-07-20 (Phase 14 M6 complete; M7+ unauthorized)*
+*Last updated: 2026-07-21 (Phase 14 M7 complete — parity bridge; M8+ unauthorized)*

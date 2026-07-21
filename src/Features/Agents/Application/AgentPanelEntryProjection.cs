@@ -24,6 +24,9 @@ internal static class AgentPanelEntryProjection
             case ConversationEntryKind.ExecutionFailure:
                 line = $"Error: {entry.Content}";
                 return true;
+            case ConversationEntryKind.RoutingFailure:
+                line = $"Error: {entry.Content}";
+                return true;
             default:
                 line = string.Empty;
                 return false;
