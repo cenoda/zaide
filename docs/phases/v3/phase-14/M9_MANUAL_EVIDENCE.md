@@ -56,11 +56,11 @@ injection. Automated unit coverage remains for Enter / Shift+Enter
 
 | Step | Result | Evidence |
 |------|--------|----------|
-| Conversation list selection (pointer + keyboard Enter on Direct) | **Pass** — Direct “Zaide Agent” selected; input placeholder becomes DM `Message...` | OCR of DM screenshots |
+| Conversation list selection (pointer + keyboard Enter on Direct) | **Pass** — Direct “Zaide Agent” selected; header becomes `Zaide Agent`; input placeholder becomes `Direct message with Zaide Agent` | `townhall-dm-default-1280x800.png` |
 | Channel list keyboard Down/Up/Return | **Pass** — channel switch activity observed (`Switched to #…`) | OCR after-send shot |
 | Focus message input | **Pass** — click focus + type accepted | multiline + after-send shots |
-| Enter sends | **Pass** — typed content left the input and appeared in history | `townhall-dm-after-send-1400x900.png` |
-| Shift+Enter newline | **Pass** — two-line draft before send (`m9 keyboard line1` / `line2`) | `townhall-dm-multiline-input-1400x900.png` |
+| Enter sends | **Pass** — typed content left the input and appeared in channel history | `townhall-channel-after-send-1400x900.png` |
+| Shift+Enter newline | **Pass** — two-line draft before send | `townhall-channel-multiline-input-1400x900.png` |
 | Visible focus | **Structural pass / not pixel-asserted** — `ListBox`/`TextBox` focusable; platform focus adorners used; no screenshot pixel proof of ring contrast | Code + interactive use |
 | Accessible names on primary controls | **Pass** (automated + code) | `PrimaryControls_HaveAccessibleNames`; nav lists named since M2 |
 
@@ -79,10 +79,11 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 | File | Purpose |
 |------|---------|
 | `townhall-default-1400x900.png` | Default-ish workspace width (no Agent Panel chrome) |
-| `townhall-dm-default-1400x900.png` | DM workflow — header `Zaide Agent`, placeholder `Direct message with …` (**F1 corrected**) |
-| `townhall-dm-multiline-input-1400x900.png` | Shift+Enter multiline draft in DM input (**F1 corrected**) |
-| `townhall-dm-after-send-1400x900.png` | After Enter send with DM header context (**F1 corrected**) |
-| `townhall-dm-narrow-960x720.png` | Narrow width DM workspace (**F1 corrected**) |
+| `townhall-dm-default-1280x800.png` | Human-supplied F1 acceptance capture: Direct selected, `Zaide Agent` header, matching DM placeholder |
+| `townhall-channel-header-1400x900.png` | Public-channel header and input context |
+| `townhall-channel-multiline-input-1400x900.png` | Shift+Enter multiline draft in channel input |
+| `townhall-channel-after-send-1400x900.png` | After Enter send in public-channel context |
+| `townhall-channel-narrow-960x600.png` | Shell-minimum-width public-channel workspace |
 | `townhall-narrow-800x600.png` | 800×600 crop at shell minimum width (`MinWidth` 960) — **F1 corrected** |
 
 ### Environment rows
@@ -107,7 +108,7 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 | Keyboard-only navigation (list → select → input → send/newline) | **Closed** | Interactive M9 + unit tests; residuals above |
 | Visible focus | **Closed with residual** | Platform focus on focusable chrome; ring contrast not pixel-certified |
 | Screen-reader naming | **Closed best-effort** | Names recorded; no Orca/NVDA session |
-| Narrow / wide / high-DPI evidence | **Closed with env limit** | Default + narrow captured; high-DPI unavailable |
+| Narrow / wide / high-DPI evidence | **Closed with accepted limits** | Default + supported-minimum 960×600 captured; 800×600 is a crop only because shell `MinWidth` is 960; high-DPI unavailable |
 | Design brief vs DESIGN.md | **Closed** | `M9_DESIGN_BRIEF.md` |
 
 ## Cross-checks (must remain true)
@@ -125,6 +126,8 @@ Directory: `docs/phases/v3/phase-14/evidence/m9/`
 - No OS validation outside Linux X11.
 - No live screen-reader product certification.
 - No claim that every visual focus ring meets a measured contrast ratio.
+- No actual 800×600 window validation; shell minimum width is 960 and the
+  800×600 artifact is a crop.
 
 ## Phase disposition
 

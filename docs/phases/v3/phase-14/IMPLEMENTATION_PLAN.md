@@ -189,7 +189,7 @@ M0 adopts or defers each item so M3/M8/M9 scope is not ambiguous:
 | Keyboard-only navigation | **Closed (M9)** with residuals | List → select → input → Enter/Shift+Enter; People open-DM pointer-primary |
 | Visible focus | **Closed (M9)** with residual | Platform focus; ring contrast not pixel-certified |
 | Screen-reader naming | **Closed best-effort (M9)** | Names recorded; no Orca/NVDA session |
-| Narrow / wide / high-DPI evidence | **Closed (M9)** with env limit | Linux default + narrow screenshots; high-DPI **unavailable** (96 DPI) |
+| Narrow / wide / high-DPI evidence | **Closed (M9)** with accepted limits | Linux default + supported-minimum 960×600 screenshots; 800×600 is a crop only because shell `MinWidth` is 960; high-DPI **unavailable** (96 DPI) |
 | Design brief + comparison vs `docs/DESIGN.md` | **Closed (M9)** | `M9_DESIGN_BRIEF.md` |
 
 Items marked **In Phase 14** are phase exit criteria unless M9 records an
@@ -474,7 +474,8 @@ explicit human acceptance** before treating Phase 14 as product-closed.
 - `TownhallChatPanel` conversation header; `TownhallView` binds header and placeholder.
 - Nav list selection sync (`SyncChannelSelection` / `SyncDirectSelection`).
 - Regression tests: `Phase14F1ConversationContextTests` (+5).
-- Corrected Linux evidence: `M9_F1_MANUAL_EVIDENCE.md`; replaced inaccurate M9 DM screenshots.
+- Corrected Linux evidence: `M9_F1_MANUAL_EVIDENCE.md`; added the human-supplied
+  1280×800 DM acceptance capture and relabeled the earlier channel-context captures.
 
 **Verification (2026-07-21):**
 
@@ -749,7 +750,7 @@ indexing; argument order does not create duplicate directs.
 | 2026-07-21 | Human authorized **M9 only** — Phase 14 closeout evidence. No Phase 15. |
 | 2026-07-21 | Preserved M8 closeout “Goal delivered” line repair in working tree before M9 edits. |
 | 2026-07-21 | **M9 complete** — closeout evidence, design brief, keyboard/screenshots, UI lock, docs truth-sync. Phase pending human acceptance. |
-| 2026-07-21 | **F1 complete** — conversation header/input context follows `ActiveConversationId`; corrected M9 DM screenshots. Human acceptance still pending. |
+| 2026-07-21 | **F1 complete** — conversation header/input context follows `ActiveConversationId`; human-supplied DM acceptance capture added and inaccurate screenshot labels corrected. Human acceptance still pending. |
 
 ---
 

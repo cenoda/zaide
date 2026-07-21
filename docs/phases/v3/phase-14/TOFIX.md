@@ -32,5 +32,6 @@ input placeholder to those properties; sync nav list selection.
 
 - [x] Automated regression coverage for channel→DM and DM→channel selection
 - [x] Interactive Linux screenshot with matching DM header/input context
-- [x] Replaced inaccurate M9 DM and 800×600 screenshot evidence
+- [x] Added correct DM evidence; relabeled channel captures; recorded the
+      800×600 artifact honestly as a crop because shell `MinWidth` is 960
 - [x] Re-ran build, focused tests, architecture tests, full suite, `git diff --check`

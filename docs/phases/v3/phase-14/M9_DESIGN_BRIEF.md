@@ -19,12 +19,12 @@ enhancement for glass/blur.
 | DesignSystem tokens / no ad-hoc palette sprawl | Uses `PaletteTokens`, `LayoutTokens`, `TextStyles`, `IconFactory` | **Meets** (one intentional low-alpha white overlay for hover/active rows, consistent with existing shell patterns) |
 | System UI font | No bundled font; platform default | **Meets** |
 | OS-native window chrome | Avalonia `MainWindow` title “Zaide”; no custom window controls | **Meets** |
-| Spacing: ≥16px panel padding, 8px control gaps | Sidebar/chat/input use spacing tokens; layout remains usable at 800×600 | **Meets** (token-based; not a pixel-perfect audit of every edge) |
+| Spacing: ≥16px panel padding, 8px control gaps | Sidebar/chat/input use spacing tokens; shell-minimum 960×600 capture remains usable | **Meets** at the supported minimum (token-based; not a pixel-perfect audit of every edge) |
 | Focus states clear but subtle | ListBox/TextBox use platform focus; primary controls focusable where keyboard path requires | **Meets with residual** — focus ring is platform/theme-dependent; not pixel-asserted in CI |
 | Glass / blur progressive enhancement | Solid dark panel surfaces; no broken blur dependency on Linux | **Intentional limitation** — full glass/vibrant effect is aspirational platform enhancement, not Phase 14 exit |
 | Animation 150–200ms cubic | Send button uses existing `Animations.CreateScaleBounce` pattern | **Meets** for that control; no new animation system |
 | Discord-like composition is scaffolding, not target | Sidebar (People + Channels/Direct) + chat + input; editor remains right column | **Meets intent** — workspace is product-functional, not a Discord clone polish pass |
-| Resize / narrow layout | Screenshots at 1400×900, 960×720, 800×600; no Agent Panel chrome | **Meets** with residual risk on extreme widths |
+| Resize / narrow layout | Screenshots at 1400×900, 1280×800, 960×600, and an 800×600 crop; no Agent Panel chrome | **Accepted limitation** — actual 800×600 window validation is unavailable because shell `MinWidth` is 960; crop is composition evidence only |
 | Screen-reader / semantic controls | Accessible names on channel/direct lists, message input, send, new-message chip, people open-DM rows | **Best-effort meets** — not WCAG certification |
 
 ## Intentional limitations (not defects)
@@ -36,6 +36,8 @@ enhancement for glass/blur.
 5. **Non-virtualized message list** remains — no measured need for virtualization on realistic histories in this phase; residual risk for very large histories.
 6. **Thin non-visual `IAgentPanelHost`** remains for execution seams (DF-001 residual) — not user-facing chrome.
 7. **No streaming / retry / multi-window** presentation — product non-goals.
+8. **No actual 800×600 window validation** — the shell enforces `MinWidth = 960`;
+   the 800×600 artifact is explicitly a crop, not proof of an 800-wide layout.
 
 ## Defects found in M9 closeout
 

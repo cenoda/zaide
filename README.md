@@ -268,8 +268,8 @@ implementations internalized), completing the M11 series. **M12** is complete
 at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
 6.3 is accepted and closed. **Refactor 7** is complete and closed at
 `a7d2887`. **Refactor 8** is complete and closed (M1 through M8; shell layout
-hosts extracted). **Phase 14 M0–M8 are complete** (2026-07-21); **M9+
-unauthorized** until explicitly approved.
+hosts extracted). **Phase 14 M0–M9 and corrective F1 are complete**
+(2026-07-21); **pending explicit human acceptance**. Phase 15 unauthorized.
 
 ## Why "Zaide"
 

@@ -3,7 +3,7 @@
 **Finding:** TOFIX F1 — chat header/input showed `#townhall-main` while an Agent DM was selected  
 **Date:** 2026-07-21  
 **Environment:** Linux desktop, X11 `DISPLAY=:1`, 96×96 DPI  
-**Baseline:** M9 closeout at `e5c26d0`; F1 fix on current branch
+**Baseline:** M9 closeout at `e5c26d0`; F1 fix at `09ba27a`
 
 ## Root cause
 
@@ -41,16 +41,19 @@ New tests: `Phase14F1ConversationContextTests` (channel→DM, DM→channel, head
 
 | Step | Result | Evidence |
 |------|--------|----------|
-| Select Direct “Zaide Agent” | **Pass** — header shows agent name; placeholder `Direct message with Zaide Agent`; `#townhall-main` not active | `townhall-dm-default-1400x900.png` |
+| Select Direct “Zaide Agent” | **Pass** — header shows agent name; placeholder `Direct message with Zaide Agent`; `#townhall-main` not active | `townhall-dm-default-1280x800.png` (human-supplied acceptance capture) |
 | Channel header only on channel select | **Pass** — `#townhall-main` header + `Message #townhall-main` placeholder when channel selected | `townhall-narrow-800x600.png` |
-| Narrow layout | **Pass** — 800×600 crop from minimum-width window (shell `MinWidth` 960) | same |
+| Narrow layout | **Pass at supported minimum** — 960×600 window; 800×600 artifact is a crop, not actual 800-wide validation | `townhall-channel-narrow-960x600.png` + crop |
 
 ### Screenshot notes
 
-- Replaced inaccurate M9 DM shots that still showed `#townhall-main` while Direct was selected.
+- Added a human-supplied 1280×800 DM capture that visibly shows matching Direct selection,
+  `Zaide Agent` header, and DM placeholder.
+- Relabeled the earlier channel-context captures that had inaccurate `townhall-dm-*` names;
+  they are not presented as DM evidence.
 - `townhall-narrow-800x600.png` is an **800×600 crop** of the left workspace at the shell minimum
-  height/width window (`960×600` client geometry) — honest narrow-layout evidence given
-  `MainWindow.MinWidth = 960`.
+  height/width window (`960×600` client geometry). It is composition evidence only;
+  actual 800-wide window behavior is not validated because `MainWindow.MinWidth = 960`.
 
 ## Cross-checks (unchanged)
 
