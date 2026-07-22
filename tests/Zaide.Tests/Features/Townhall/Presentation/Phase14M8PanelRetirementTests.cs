@@ -66,9 +66,11 @@ public sealed class Phase14M8PanelRetirementTests
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var executionService = new StubExecutionService(
-            _ => Task.FromResult(AgentExecutionResult.Success("Assistant reply")));
-        var coordinator = new AgentExecutionCoordinator(host, executionService, store, draftState);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
+            host,
+            _ => Task.FromResult(AgentExecutionResult.Success("Assistant reply")),
+            store,
+            draftState);
         var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
@@ -107,9 +109,9 @@ public sealed class Phase14M8PanelRetirementTests
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var coordinator = AgentExecutionTestSupport.CreateCoordinator(
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
             host,
-            new StubExecutionService(_ => Task.FromResult(AgentExecutionResult.Success("x"))),
+            _ => Task.FromResult(AgentExecutionResult.Success("x")),
             store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,

@@ -139,6 +139,9 @@ public sealed class ArchitectureRatchetTests
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/Program.cs");
         Assert.Contains(live, v => v.RelativePath == "src/App/Composition/App.axaml.cs");
         Assert.DoesNotContain(live, v => v.RelativePath == ArchitectureRatchet.ApplicationShutdownRelativePath);
+        Assert.DoesNotContain(
+            live,
+            v => v.RelativePath == "src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs");
         Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.Equal(2, live.Count);
 

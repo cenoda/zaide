@@ -5,6 +5,10 @@ using ReactiveUI;
 using ReactiveUI.Avalonia.Splat;
 using System;
 using Zaide.App.Composition.Registration;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Contracts;
 
 namespace Zaide.App.Composition;
 class Program
@@ -36,6 +40,13 @@ class Program
 
         services.AddLogging(builder => builder.AddConsole());
     }
+
+    internal static IAgentExecutionCoordinator CreateAgentExecutionCoordinator(IServiceProvider services) =>
+        new AgentExecutionCoordinator(
+            services.GetRequiredService<IAgentPanelHost>(),
+            services.GetRequiredService<IAgentSessionService>(),
+            services.GetRequiredService<IConversationStore>(),
+            services.GetService<IConversationDraftState>());
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()

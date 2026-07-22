@@ -100,4 +100,16 @@ public sealed class AgentExecutionCoordinatorResultTests
         Assert.Equal("Unknown target", result.ErrorMessage);
         Assert.Equal(ExecutionRunOutcome.RoutingFailure, result.Run.Outcome);
     }
+
+    [Fact]
+    public void Rejected_ExposesOnlyRejectionPayload()
+    {
+        var result = AgentExecutionCoordinatorResult.Rejected(
+            CreateRun(ExecutionRunOutcome.Rejected),
+            "busy");
+
+        Assert.Null(result.AssistantResponse);
+        Assert.Equal("busy", result.ErrorMessage);
+        Assert.Equal(ExecutionRunOutcome.Rejected, result.Run.Outcome);
+    }
 }

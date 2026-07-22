@@ -2,11 +2,11 @@
 
 ## Status and authorization
 
-**Phase 15 status:** **M0–M3a accepted (2026-07-22).** M3b and later milestones
-remain unauthorized pending separate explicit authorization.
+**Phase 15 status:** **M0–M3a accepted (2026-07-22).** **M3b-1 implemented, in review (not accepted).**
+M3b-2 and later milestones remain unauthorized pending separate explicit authorization.
 
-**Production authorization:** **M3a GO.** M3b-1/M3b-2, coordinator/router
-cutover, and Phase 15 closeout remain **NO-GO** until separately authorized.
+**Production authorization:** **M3a GO.** **M3b-1 implemented, in review (not accepted).**
+M3b-2 and Phase 15 closeout remain **NO-GO** until separately authorized.
 Phase 16 has not started. Native Harness production implementation and ACP
 integration have not started.
 
@@ -631,6 +631,13 @@ Architecture, full suite, and `git diff --check`.
 **Rollback/commit:** one cutover commit with the legacy conversation projection
 still active: `feat(agents): route execution through agent sessions`.
 
+**M3b-1 status (2026-07-22):** Implemented in review at parent commit
+`24f8b9a6562eaeb577e6320c0ce3a061deea73d6`. Coordinator/router now admit
+through `IAgentSessionService` with session-owned `ExecutionRunId` correlation,
+typed terminal mapping, structured rejection, and temporary
+`AgentPanelDirectConversationWriter` projection. Human acceptance pending.
+M3b-2 remains unauthorized.
+
 ### M3b-2 — Event-to-conversation projection and parity
 
 **Tests first:** exact one-event-to-one-entry mapping, duplicate-event
@@ -851,11 +858,11 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ## Exact next step
 
-1. Phase 15 M0 is accepted.
-2. Stop. Do not start M1a without separate explicit authorization.
+1. Phase 15 M3b-1 is implemented and in human review.
+2. Stop. Do not start M3b-2 without separate explicit authorization.
 3. Phase 16, Native Harness production, and ACP implementation have not
    started.
 
 ---
 
-*Last updated: 2026-07-22 (M3a accepted; M3b unauthorized)*
+*Last updated: 2026-07-22 (M3b-1 implemented, in review; M3b-2 unauthorized)*

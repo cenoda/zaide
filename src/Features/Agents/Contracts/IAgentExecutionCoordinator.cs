@@ -8,7 +8,7 @@ namespace Zaide.Features.Agents.Contracts;
 
 /// <summary>
 /// Orchestration seam for agent send flow.
-/// Composes panel thin-host projection and <see cref="IAgentExecutionService"/>
+/// Composes panel thin-host projection and <see cref="IAgentSessionService"/>
 /// while owning conversation-keyed in-flight state. No View, Townhall, or
 /// provider-platform references.
 /// </summary>
@@ -35,8 +35,8 @@ public interface IAgentExecutionCoordinator
     /// <param name="userMessage">The user message text.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Structured execution result when an attempt is admitted; otherwise
-    /// <see langword="null"/> for no-op paths.
+    /// Structured execution result when an attempt is admitted or rejected;
+    /// otherwise <see langword="null"/> for no-op paths.
     /// </returns>
     Task<AgentExecutionCoordinatorResult?> SendAsync(
         string panelId,

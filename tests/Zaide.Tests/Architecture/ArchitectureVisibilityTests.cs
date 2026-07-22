@@ -200,7 +200,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
-        Assert.Equal(403, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(405, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public sealed class ArchitectureVisibilityTests
     public void M5LegacyAllowlist_ContainsOnlyCompositionLocatorResiduals()
     {
         // Hard boundary: later visibility work must not alter legacy allowlist to pass.
-        // M5 residual: 2 FindingIds (0 NS + 2 LOC) after SourceControlState deletion.
+        // M5 residual: 2 FindingIds (0 NS + 2 LOC).
         Assert.Equal(2, LegacyArchitectureAllowlist.Entries.Count);
         Assert.Equal(2, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
         Assert.Equal(

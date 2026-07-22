@@ -107,11 +107,12 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((6, 0, 6), byNamespace["Zaide.Features.Conversations.Application"]);
         // Phase 14 M6: +8 internal conversation persistence types.
         Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Conversations.Infrastructure"]);
-        Assert.Equal((37, 7, 30), byNamespace["Zaide.Features.Agents.Domain"]);
+        Assert.Equal((38, 7, 31), byNamespace["Zaide.Features.Agents.Domain"]);
         Assert.Equal((5, 3, 2), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
-        Assert.Equal((15, 7, 8), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 15 M3b-1: +1 session coordinator event capture production file.
+        Assert.Equal((16, 7, 9), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Infrastructure"]);
@@ -161,7 +162,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
-        Assert.Equal(448, inventory.SourceFiles.Count);
+        // Phase 15 M3b-1: +2 coordinator session cutover production files.
+        Assert.Equal(450, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -175,7 +177,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
-        Assert.Equal(403, byFolder["Features"]);
+        // Phase 15 M3b-1: +2 coordinator session cutover production files.
+        Assert.Equal(405, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

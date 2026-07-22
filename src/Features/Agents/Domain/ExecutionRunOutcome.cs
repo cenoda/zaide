@@ -8,5 +8,6 @@ public enum ExecutionRunOutcome
     Success,
     RoutingFailure,
     ExecutionFailure,
-    Cancelled
+    Cancelled,
+    Rejected,
 }

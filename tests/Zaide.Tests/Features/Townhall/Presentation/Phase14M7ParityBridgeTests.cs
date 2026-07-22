@@ -36,9 +36,11 @@ public sealed class Phase14M7ParityBridgeTests
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var executionService = new StubExecutionService(
-            handler ?? (_ => Task.FromResult(AgentExecutionResult.Success("Assistant reply"))));
-        var coordinator = new AgentExecutionCoordinator(host, executionService, store, draftState);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
+            host,
+            handler ?? (_ => Task.FromResult(AgentExecutionResult.Success("Assistant reply"))),
+            store,
+            draftState);
         var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
@@ -168,18 +170,18 @@ public sealed class Phase14M7ParityBridgeTests
     [Fact]
     public async Task NavigationDuringWork_KeepsConversationBusyAndHistory()
     {
-        var gate = new TaskCompletionSource<AgentExecutionResult>(
+        var gate = new TaskCompletionSource<string>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var coordinator = new AgentExecutionCoordinator(
+        var (coordinator, backend, _) = AgentExecutionTestSupport.CreateCoordinatorWithFakeBackend(
             host,
-            new StubExecutionService(_ => gate.Task),
             store,
             draftState);
+        backend.SetGatedCompletion(gate, "done after nav");
         var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
@@ -209,7 +211,7 @@ public sealed class Phase14M7ParityBridgeTests
         vm.SelectConversationCommand.Execute(conversationId).Subscribe();
         Assert.True(vm.IsDirectSendBusy);
 
-        gate.SetResult(AgentExecutionResult.Success("done after nav"));
+        gate.SetResult("done after nav");
         await sendTask;
 
         Assert.False(vm.IsDirectSendBusy);
@@ -222,18 +224,18 @@ public sealed class Phase14M7ParityBridgeTests
     [Fact]
     public async Task PanelCloseDuringWork_DoesNotDropInFlightStatusOnConversation()
     {
-        var gate = new TaskCompletionSource<AgentExecutionResult>(
+        var gate = new TaskCompletionSource<string>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var catalog = ConversationsTestSupport.CreateCatalog();
         var store = ConversationsTestSupport.CreateStore();
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var coordinator = new AgentExecutionCoordinator(
+        var (coordinator, backend, _) = AgentExecutionTestSupport.CreateCoordinatorWithFakeBackend(
             host,
-            new StubExecutionService(_ => gate.Task),
             store,
             draftState);
+        backend.SetGatedCompletion(gate, "completed");
         var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
@@ -259,7 +261,7 @@ public sealed class Phase14M7ParityBridgeTests
         Assert.True(coordinator.IsConversationBusy(conversationId));
         Assert.True(vm.IsDirectSendBusy);
 
-        gate.SetResult(AgentExecutionResult.Success("completed"));
+        gate.SetResult("completed");
         await sendTask;
 
         Assert.False(coordinator.IsConversationBusy(conversationId));
@@ -276,11 +278,11 @@ public sealed class Phase14M7ParityBridgeTests
         var draftState = ConversationsTestSupport.CreateDraftState();
         var drafts = new TownhallConversationUiState(draftState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store, draftState);
-        var coordinator = new AgentExecutionCoordinator(
+        var (coordinator, backend, _) = AgentExecutionTestSupport.CreateCoordinatorWithFakeBackend(
             host,
-            new StubExecutionService(_ => Task.FromResult(AgentExecutionResult.Success("x"))),
             store,
             draftState);
+        backend.SetCompletion("x");
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
             store: store,

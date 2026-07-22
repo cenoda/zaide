@@ -244,7 +244,8 @@ public sealed class AgentPanelOutputParityTests : IDisposable
         var first = coordinator.SendAsync(panel.PanelId, "First");
         var second = await coordinator.SendAsync(panel.PanelId, "Second");
 
-        Assert.Null(second);
+        Assert.NotNull(second);
+        Assert.Equal(ExecutionRunOutcome.Rejected, second!.Run.Outcome);
         await first;
 
         Assert.True(store.TryGet(panel.ConversationId, out var conversation));

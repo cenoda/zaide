@@ -18,7 +18,7 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
         services.AddSingleton<IAgentBackend, LegacyOpenAiCompatibleAgentBackend>();
-        services.AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>();
+        services.AddSingleton<IAgentExecutionCoordinator>(Program.CreateAgentExecutionCoordinator);
         services.AddSingleton<MentionParser>();
         services.AddSingleton<IAgentRouter, AgentRouter>();
         services.AddSingleton(_ =>

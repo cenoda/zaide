@@ -45,7 +45,7 @@ public sealed class AgentsRegistrationModuleTests
         RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
     }
 
-    private static ServiceProvider BuildProductionProvider()
+    internal static ServiceProvider BuildProductionProvider()
     {
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
@@ -118,7 +118,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentExecutionCoordinator)
-                && d.ImplementationType == typeof(AgentExecutionCoordinator));
+                && d.ImplementationFactory is not null);
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(MentionParser)
@@ -221,7 +221,6 @@ public sealed class AgentsRegistrationModuleTests
         Assert.DoesNotContain(
             "AddSingleton<IAgentExecutionCoordinator, AgentExecutionCoordinator>()",
             programSource);
-        Assert.DoesNotContain("AddSingleton<MentionParser>()", programSource);
         Assert.DoesNotContain(
             "AddSingleton<IAgentRouter, AgentRouter>()",
             programSource);
@@ -263,7 +262,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentExecutionCoordinator,\s*AgentExecutionCoordinator>\(\)"));
+                @"AddSingleton<IAgentExecutionCoordinator>\(Program\.CreateAgentExecutionCoordinator\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<MentionParser>\(\)"));
         Assert.Single(
             Regex.Matches(

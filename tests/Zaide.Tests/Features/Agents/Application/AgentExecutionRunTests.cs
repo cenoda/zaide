@@ -132,14 +132,19 @@ public sealed class AgentExecutionRunTests : IDisposable
     public async Task SendAsync_CancelledServiceFailure_ReturnsCancelledOutcome()
     {
         var (host, panel, store) = CreateHostWithPanel();
-        var handler = new FaultHandler(new TaskCanceledException("Request was cancelled."));
+        using var cts = new CancellationTokenSource();
+        var handler = new DelayedSuccessHandler(TimeSpan.FromSeconds(5), "never");
         var coordinator = CreateCoordinator(host, store, handler);
 
-        var result = await coordinator.SendAsync(panel.PanelId, "Hello");
+        var sendTask = coordinator.SendAsync(panel.PanelId, "Hello", cts.Token);
+        await Task.Delay(50);
+        cts.Cancel();
+
+        var result = await sendTask;
 
         Assert.NotNull(result);
         Assert.Equal(ExecutionRunOutcome.Cancelled, result!.Run.Outcome);
-        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cancel", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -157,7 +162,7 @@ public sealed class AgentExecutionRunTests : IDisposable
     }
 
     [Fact]
-    public async Task SendAsync_DuplicateInFlight_ReturnsNullWithoutNewRun()
+    public async Task SendAsync_DuplicateInFlight_ReturnsStructuredRejectionWithoutNewRun()
     {
         var (host, panel, store) = CreateHostWithPanel();
         var handler = new DelayedSuccessHandler(TimeSpan.FromMilliseconds(200), "Slow");
@@ -166,7 +171,8 @@ public sealed class AgentExecutionRunTests : IDisposable
         var first = coordinator.SendAsync(panel.PanelId, "First");
         var second = await coordinator.SendAsync(panel.PanelId, "Second");
 
-        Assert.Null(second);
+        Assert.NotNull(second);
+        Assert.Equal(ExecutionRunOutcome.Rejected, second!.Run.Outcome);
         await first;
     }
 

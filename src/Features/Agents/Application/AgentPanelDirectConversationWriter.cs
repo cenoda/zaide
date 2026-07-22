@@ -14,13 +14,31 @@ internal static class AgentPanelDirectConversationWriter
         IConversationStore conversationStore,
         AgentPanelState panel,
         ExecutionRunId runId,
-        string userMessage)
+        string userMessage) =>
+        AppendUserMessage(
+            conversationStore,
+            panel,
+            runId,
+            userMessage,
+            ConversationEntryId.New());
+
+    public static ConversationEntry AppendUserMessage(
+        IConversationStore conversationStore,
+        AgentPanelState panel,
+        ExecutionRunId runId,
+        string userMessage,
+        ConversationEntryId messageEntryId)
     {
         ArgumentNullException.ThrowIfNull(conversationStore);
         ArgumentNullException.ThrowIfNull(panel);
 
+        if (messageEntryId == default)
+        {
+            throw new ArgumentException("Message entry id is required.", nameof(messageEntryId));
+        }
+
         var entry = ConversationEntry.UserChat(
-            ConversationEntryId.New(),
+            messageEntryId,
             ActorId.HumanUser,
             DateTimeOffset.UtcNow,
             userMessage,

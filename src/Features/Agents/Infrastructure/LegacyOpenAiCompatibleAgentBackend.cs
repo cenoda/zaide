@@ -15,7 +15,7 @@ namespace Zaide.Features.Agents.Infrastructure;
 /// </summary>
 internal sealed class LegacyOpenAiCompatibleAgentBackend : IAgentBackend
 {
-    internal const string BackendIdValue = "backend:legacy-openai-compatible";
+    internal const string BackendIdValue = AgentBackendIds.LegacyOpenAiCompatibleValue;
 
     internal const string BackendVersionValue = "legacy-openai-compatible/1";
 

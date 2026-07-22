@@ -58,9 +58,9 @@ public sealed class ConversationPersistenceTests : IDisposable
         var uiState = new TownhallConversationUiState();
         var bridge = new TownhallConversationPersistenceBridge(state, uiState);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
-        var coordinator = AgentExecutionTestSupport.CreateCoordinator(
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
             host,
-            new StubExecutionService(_ => Task.FromResult(AgentExecutionResult.Success("ok"))),
+            _ => Task.FromResult(AgentExecutionResult.Success("ok")),
             store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             state,
@@ -113,9 +113,9 @@ public sealed class ConversationPersistenceTests : IDisposable
         Assert.Equal(ConversationPersistenceLoadResult.Loaded, reloadPersistence.LoadResult);
 
         var reloadHost = ConversationsTestSupport.CreatePanelHost(catalog, reloadStore);
-        var reloadCoordinator = AgentExecutionTestSupport.CreateCoordinator(
+        var reloadCoordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
             reloadHost,
-            new StubExecutionService(_ => Task.FromResult(AgentExecutionResult.Success("ok"))),
+            _ => Task.FromResult(AgentExecutionResult.Success("ok")),
             reloadStore);
         var reloadVm = ConversationsTestSupport.CreateTownhallViewModel(
             reloadState,

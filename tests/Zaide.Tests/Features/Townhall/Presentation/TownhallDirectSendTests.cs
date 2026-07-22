@@ -23,9 +23,10 @@ public sealed class TownhallDirectSendTests
     {
         var store = ConversationsTestSupport.CreateStore();
         var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var executionService = new StubExecutionService(
-            _ => Task.FromResult(AgentExecutionResult.Success("Assistant reply")));
-        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, executionService, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
+            host,
+            _ => Task.FromResult(AgentExecutionResult.Success("Assistant reply")),
+            store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             store: store,
             panelHost: host,
@@ -48,9 +49,9 @@ public sealed class TownhallDirectSendTests
     {
         var store = ConversationsTestSupport.CreateStore();
         var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var gate = new TaskCompletionSource<AgentExecutionResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var executionService = new StubExecutionService(_ => gate.Task);
-        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, executionService, store);
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (coordinator, backend, _) = AgentExecutionTestSupport.CreateCoordinatorWithFakeBackend(host, store);
+        backend.SetGatedCompletion(gate, "done");
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             store: store,
             panelHost: host,
@@ -67,7 +68,7 @@ public sealed class TownhallDirectSendTests
         await vm.SendMessageCommand.Execute().ToTask();
         Assert.Equal("second", vm.DraftText);
 
-        gate.SetResult(AgentExecutionResult.Success("done"));
+        gate.SetResult("done");
         await first;
 
         Assert.False(vm.IsDirectSendBusy);

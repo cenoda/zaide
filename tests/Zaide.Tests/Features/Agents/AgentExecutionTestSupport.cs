@@ -1,6 +1,9 @@
+using System;
+using System.Threading.Tasks;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
@@ -15,11 +18,58 @@ internal static class AgentExecutionTestSupport
     public static AgentExecutionCoordinator CreateCoordinator(
         AgentPanelHost host,
         IAgentExecutionService executionService,
-        IConversationStore? conversationStore = null) =>
-        new(
+        IConversationStore? conversationStore = null,
+        IConversationDraftState? draftState = null)
+    {
+        if (executionService is not AgentExecutionService concrete)
+        {
+            throw new ArgumentException(
+                "Legacy coordinator wiring requires the concrete AgentExecutionService instance.",
+                nameof(executionService));
+        }
+
+        var backend = new LegacyOpenAiCompatibleAgentBackend(concrete);
+        var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        return new AgentExecutionCoordinator(
             host,
-            executionService,
-            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore());
+            session,
+            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            draftState);
+    }
+
+    public static AgentExecutionCoordinator CreateCoordinatorFromHandler(
+        AgentPanelHost host,
+        Func<string, Task<AgentExecutionResult>> handler,
+        IConversationStore? conversationStore = null,
+        IConversationDraftState? draftState = null)
+    {
+        var backend = new ResultMappingAgentBackend(handler);
+        var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        return new AgentExecutionCoordinator(
+            host,
+            session,
+            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            draftState);
+    }
+
+    public static (AgentExecutionCoordinator Coordinator, FakeAgentBackend Backend, IAgentSessionService Session)
+        CreateCoordinatorWithFakeBackend(
+            AgentPanelHost host,
+            IConversationStore? conversationStore = null,
+            IConversationDraftState? draftState = null,
+            AgentBackendId? backendId = null)
+    {
+        var backend = new FakeAgentBackend(
+            backendId ?? AgentBackendId.FromValue(LegacyOpenAiCompatibleAgentBackend.BackendIdValue));
+        var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        var coordinator = new AgentExecutionCoordinator(
+            host,
+            session,
+            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            draftState);
+        return (coordinator, backend, session);
+    }
+
     public static AgentExecutionCoordinatorResult SuccessResult(
         AgentPanelState panel,
         string assistantResponse = "Hello back")
@@ -64,5 +114,20 @@ internal static class AgentExecutionTestSupport
             ExecutionRunOutcome.RoutingFailure);
 
         return AgentExecutionCoordinatorResult.RoutingFailure(run, failureReason);
+    }
+
+    public static AgentExecutionCoordinatorResult RejectedResult(
+        AgentPanelState panel,
+        string rejectionReason = "An active run is already in progress for this conversation.")
+    {
+        var run = new ExecutionRun(
+            ExecutionRunId.New(),
+            panel.ConversationId,
+            ActorId.HumanUser,
+            panel.ActorId,
+            panel.PanelId,
+            ExecutionRunOutcome.Rejected);
+
+        return AgentExecutionCoordinatorResult.Rejected(run, rejectionReason);
     }
 }

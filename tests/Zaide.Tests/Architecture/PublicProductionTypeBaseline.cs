@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (Phase 15 M3a legacy HTTP backend adapter).</summary>
-    public const int TotalTopLevelTypes = 500;
+    /// <summary>Total non-nested, non-compiler-generated production types (Phase 15 M3b-1 session coordinator event capture).</summary>
+    public const int TotalTopLevelTypes = 502;
 
-    /// <summary>Public top-level production type ceiling and baseline count (unchanged; M3a type is internal).</summary>
+    /// <summary>Public top-level production type ceiling and baseline count (unchanged; M3b-1 types are internal).</summary>
     public const int PublicTopLevelTypes = 337;
 
-    /// <summary>Internal top-level production type count (Phase 15 M3a +1 internal infrastructure type).</summary>
-    public const int InternalTopLevelTypes = 163;
+    /// <summary>Internal top-level production type count (Phase 15 M3b-1 +2 internal types: one Application, one Domain).</summary>
+    public const int InternalTopLevelTypes = 165;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

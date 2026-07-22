@@ -83,4 +83,24 @@ public sealed class AgentExecutionCoordinatorResult
 
         return new AgentExecutionCoordinatorResult(run, null, failureReason);
     }
+
+    public static AgentExecutionCoordinatorResult Rejected(ExecutionRun run, string rejectionReason)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+        if (run.Outcome != ExecutionRunOutcome.Rejected)
+        {
+            throw new ArgumentException(
+                "Rejected results require a Rejected run outcome.",
+                nameof(run));
+        }
+
+        if (string.IsNullOrWhiteSpace(rejectionReason))
+        {
+            throw new ArgumentException(
+                "Rejected results require rejection reason text.",
+                nameof(rejectionReason));
+        }
+
+        return new AgentExecutionCoordinatorResult(run, null, rejectionReason);
+    }
 }

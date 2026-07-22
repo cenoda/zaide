@@ -87,9 +87,10 @@ public sealed class TownhallDraftAndUnreadTests
     {
         var store = ConversationsTestSupport.CreateStore();
         var host = ConversationsTestSupport.CreatePanelHost(store: store);
-        var executionService = new StubExecutionService(
-            _ => Task.FromResult(AgentExecutionResult.Success("ok")));
-        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, executionService, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinatorFromHandler(
+            host,
+            _ => Task.FromResult(AgentExecutionResult.Success("ok")),
+            store);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             store: store,
             panelHost: host,

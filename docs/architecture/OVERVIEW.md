@@ -95,8 +95,10 @@ Key target rules (detail in CONVENTIONS):
   lifecycle owner (`AgentSessionService`) over backend-neutral contracts;
   Phase 15 M3a adds `LegacyOpenAiCompatibleAgentBackend` as the first
   `IAgentBackend` implementation, wrapping the existing non-streaming
-  `IAgentExecutionService` HTTP path without duplicating transport; sessions are
-  non-resumable and not persisted.
+  `IAgentExecutionService` HTTP path without duplicating transport; Phase 15
+  M3b-1 routes `AgentExecutionCoordinator`/`AgentRouter` admission through
+  `IAgentSessionService` while `AgentPanelDirectConversationWriter` remains the
+  temporary compatibility projection; sessions are non-resumable and not persisted.
 
 Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
@@ -149,7 +151,7 @@ governed by the root-admission detectors.
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
-| Phase 15 | **M0/M1a/M1b/M2/M3a accepted** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner, and legacy HTTP compatibility backend adapter (`LegacyOpenAiCompatibleAgentBackend`) behind `IAgentBackend`; coordinator/router cutover (M3b) unauthorized |
+| Phase 15 | **M0/M1a/M1b/M2/M3a accepted; M3b-1 in review** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner, legacy HTTP compatibility backend (`LegacyOpenAiCompatibleAgentBackend`), and live coordinator/router session cutover through `IAgentSessionService`; M3b-2 unauthorized |
 
 ---
 
@@ -358,4 +360,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-22 (Phase 15 M3a accepted; M3b unauthorized; production baselines 337 public / 163 internal / 500 total)*
+*Last updated: 2026-07-22 (Phase 15 M3a accepted; M3b-1 in review; production baselines 337 public / 165 internal / 502 total)*
