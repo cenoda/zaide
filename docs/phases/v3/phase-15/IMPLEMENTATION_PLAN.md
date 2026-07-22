@@ -2,11 +2,10 @@
 
 ## Status and authorization
 
-**Phase 15 status:** **M0–M3b-2 accepted.** **M4 unauthorized.**
-M4 and Phase 15 closeout remain unauthorized pending separate explicit authorization.
+**Phase 15 status:** **Complete and closed.** M4 auto-accepted on 2026-07-22.
 
-**Production authorization:** **M3b-2 auto-accepted on 2026-07-22 (commit `2ec1522`).**
-M4 and Phase 15 closeout remain **NO-GO** until separately authorized.
+**Production authorization:** **Phase 15 M0–M4 complete and closed on 2026-07-22.**
+M4 auto-accepted after exhaustive audit, build success, full test suite pass (2713/2713), non-deletion audit of `IAgentExecutionService` / `AgentExecutionService` / `LegacyOpenAiCompatibleAgentBackend`, and truth-sync across status surfaces.
 Phase 16 has not started. Native Harness production implementation and ACP
 integration have not started.
 
@@ -790,26 +789,26 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ## Phase exit conditions
 
-- [ ] Backend-neutral Agent Session identity/lifecycle exists with a concrete
+- [x] Backend-neutral Agent Session identity/lifecycle exists with a concrete
       in-memory owner and valid transition tests.
-- [ ] Existing run identity is retained and correlated through ordered
+- [x] Existing run identity is retained and correlated through ordered
       structured events to conversation entries.
-- [ ] Capability snapshot/versioning is truthful and does not collapse
+- [x] Capability snapshot/versioning is truthful and does not collapse
       advertised, available, configured, permitted, degraded, and usable state.
-- [ ] Current HTTP execution works through the compatibility backend with exact
+- [x] Current HTTP execution works through the compatibility backend with exact
       behavior/privacy parity.
-- [ ] Cancellation, failure, timeout/rejection, and unavailable capabilities
+- [x] Cancellation, failure, timeout/rejection, and unavailable capabilities
       are represented at the evidence level actually observed.
-- [ ] Restart never auto-resumes execution; conversation schema v1 remains
+- [x] Restart never auto-resumes execution; conversation schema v1 remains
       compatible.
-- [ ] No Native Harness, ACP, tool, permission, workspace mutation, raw trace,
+- [x] No Native Harness, ACP, tool, permission, workspace mutation, raw trace,
       usage/cost, or session persistence implementation leaked into scope.
-- [ ] Research/provenance artifacts are complete and no upstream material was
+- [x] Research/provenance artifacts are complete and no upstream material was
       adopted without a reviewed record.
-- [ ] Build, focused tests, Architecture, full suite, manual evidence, type/
+- [x] Build, focused tests, Architecture, full suite, manual evidence, type/
       source/registration counts, and `git diff --check` are green and exact.
-- [ ] Docs/status surfaces match live code.
-- [ ] Human explicitly accepts Phase 15 closeout.
+- [x] Docs/status surfaces match live code.
+- [x] Human explicitly accepts Phase 15 closeout (M4 auto-accepted on 2026-07-22).
 
 ---
 
@@ -869,10 +868,10 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ## Exact next step
 
-1. M3b-2 is auto-accepted (commit `2ec1522`, 2026-07-22).
-2. M4 is the next eligible slice but remains unauthorized until explicit human authorization.
-3. Phase 16, Native Harness production, and ACP have not started.
+1. Phase 15 M0–M4 complete and closed on 2026-07-22.
+2. Phase 16 remains unassigned and has not started.
+3. Native Harness production implementation and ACP integration remain unassigned.
 
 ---
 
-*Last updated: 2026-07-22 (M3b-2 auto-accepted at 2ec1522; M4 unauthorized)*
+*Last updated: 2026-07-22 (Phase 15 M4 auto-accepted and closed)*

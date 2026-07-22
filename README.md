@@ -59,10 +59,8 @@ shell layout hosts extracted; public baseline **339/111/450**). **Phase 14 is
 accepted and closed** (2026-07-21, accepted baseline `67da1394`) — unified
 conversation workspace, schema v1 persistence, Agent Panel retired, F1 corrected,
 and closeout evidence accepted.
-[Phase 15 M0](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is accepted.
-Phase 15 M0–M3b-2 are accepted. M3b-2 was auto-accepted on 2026-07-22 at
-`2ec1522`. M4 remains unauthorized. Phase 15 is not complete or closed.
-Phase 16, Native Harness production, and ACP implementation have not started.
+[Phase 15](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is **complete and closed** (2026-07-22) — backend-neutral session/run/event foundation, legacy HTTP compatibility backend, and M4 closeout audit.
+Phase 16 remains unassigned and has not started.
 
 ## Philosophy
 

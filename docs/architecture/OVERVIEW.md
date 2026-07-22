@@ -34,12 +34,9 @@ and closed. Phase 14 is **accepted and closed (2026-07-21)** at
 [`docs/phases/v3/phase-14/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-14/IMPLEMENTATION_PLAN.md)
 (unified conversation workspace, privacy, draft/unread, schema v1 persistence,
 Agent Panel retired, F1 corrected, closeout evidence accepted at `67da1394`).
-Phase 15 M0–M3b-2 are accepted (M3b-2 auto-accepted on 2026-07-22 at `2ec1522`) at
+Phase 15 is **complete and closed (2026-07-22)** at
 [`docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-15/IMPLEMENTATION_PLAN.md)
-and selects a backend-neutral in-memory Agent Session/run/event foundation
-before the independent Native Harness and ACP backend paths. M4 remains
-unauthorized. Phase 16, Native Harness production, and ACP implementation have
-not started. Non-C# assets remain outside the root-admission ratchet.
+(backend-neutral in-memory Agent Session/run/event foundation, legacy HTTP compatibility backend `LegacyOpenAiCompatibleAgentBackend`, coordinator/router session cutover, sole event projection owner `AgentConversationEventProjection`, and M4 closeout audit). Phase 16, Native Harness production, and ACP implementation have not started. Non-C# assets remain outside the root-admission ratchet.
 
 ---
 
@@ -152,7 +149,7 @@ governed by the root-admission detectors.
 | Refactor 7 | **Complete and closed** (M1 `edc5dac` through M7 `a7d2887`) |
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
-| Phase 15 | **M0/M1a/M1b/M2/M3a/M3b-1/M3b-2 accepted** (2026-07-22, commit `2ec1522`) — backend-neutral session/run/event contracts, in-memory lifecycle owner, legacy HTTP compatibility backend (`LegacyOpenAiCompatibleAgentBackend`), live coordinator/router session cutover, and sole event projection owner (`AgentConversationEventProjection`); M4 unauthorized |
+| Phase 15 | **Complete and closed** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner (`AgentSessionService`), legacy HTTP compatibility backend (`LegacyOpenAiCompatibleAgentBackend`), coordinator/router session cutover, sole event projection owner (`AgentConversationEventProjection`), and M4 closeout audit |
 
 ---
 
@@ -361,4 +358,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-22 (Phase 15 M3b-2 auto-accepted at 2ec1522; M4 unauthorized; production baselines 337 public / 165 internal / 502 total)*
+*Last updated: 2026-07-22 (Phase 15 complete and closed; production baselines 337 public / 165 internal / 502 total)*
