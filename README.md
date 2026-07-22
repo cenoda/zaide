@@ -290,9 +290,9 @@ at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
 `a7d2887`. **Refactor 8** is complete and closed (M1 through M8; shell layout
 hosts extracted). **Phase 14 is accepted and closed** (2026-07-21, accepted
 baseline `67da1394`).
-[Phase 15 M0](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is accepted
-(2026-07-21). M1a and all production milestones remain unauthorized. Phase 16,
-Native Harness production, and ACP implementation have not started.
+[Phase 15 M0–M4](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) are complete
+and closed on 2026-07-22. Phase 16, Native Harness production, and ACP
+implementation have not started.
 
 ## Why "Zaide"
 

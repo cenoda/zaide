@@ -132,10 +132,10 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Phase 14 M8/M9
-closeout: total top-level **463**, public **337**, internal **126**, tracked
-production C# source files **426** (App **41**, UI **4**, Features **381**),
-Composition.Registration modules **12**. FindingIds remaining: exactly **2**
+tracked production **C#** root admission. Live inventory after Phase 15 M4
+closeout: total top-level **502** (public **337**, internal **165**), tracked
+production C# source files **450** (App **41**, UI **4**, Features **405**),
+Registration modules **12**, `AddSingleton` registrations **77**. FindingIds remaining: exactly **2**
 (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate composition-boundary
 residuals. NamespaceDirection allowlist is empty. `ApplicationShutdown` is the
 ordered shutdown owner, not a third locator residual. Non-C# assets are not
@@ -358,4 +358,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-22 (Phase 15 complete and closed; production baselines 337 public / 165 internal / 502 total)*
+*Last updated: 2026-07-22 (Phase 15 M4 complete and closed; production baselines 337 public / 165 internal / 502 total top-level types, 450 tracked production C# source files, 77 AddSingleton registrations across 12 modules)*

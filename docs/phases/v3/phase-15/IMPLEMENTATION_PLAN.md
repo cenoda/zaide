@@ -683,8 +683,8 @@ Full suite 2713 passed) and `git diff --check` passed with 0 build errors.
 Manual evidence recorded for channel send, Agent DM send, failure path, navigation
 in flight, and privacy/no-public-mirror. Configured-endpoint smoke recorded as
 not run because live endpoint credentials were unavailable. Architecture baselines
-reconciled at 337 public / 165 internal / 502 total top-level types, 77 AddSingleton
-registrations, and 12 registration modules. M4 remains unauthorized.
+reconciled at 337 public / 165 internal / 502 total top-level types, 450 tracked production C# files, 77 AddSingleton
+registrations across 12 registration modules. **M4 is complete and closed (2026-07-22).**
 
 ### M4 — Closeout and architecture truth-sync
 
@@ -777,13 +777,11 @@ Do not substitute filtered tests for the full-suite exit gate.
 - [x] Full build/test/architecture baselines recorded.
 - [x] Human accepted this M0 plan on 2026-07-21.
 
-### For authorizing M1a
+### For authorizing M1a through M4 (Historical / Completed)
 
 - [x] M0 accepted by human on 2026-07-21.
-- [ ] Working tree is clean at the accepted M0 boundary.
-- [ ] Human explicitly authorizes **M1a only**.
-
-No later milestone may infer authorization from M0 or M1a acceptance.
+- [x] Working tree is clean at the accepted M0 boundary.
+- [x] M1a explicitly authorized by human; later milestones followed their individually recorded acceptance paths, including auto-acceptance for M3b-2 and M4. At the M3b-2 acceptance boundary, M4 remained unauthorized. M4 was subsequently auto-accepted and Phase 15 closed on 2026-07-22.
 
 ---
 
@@ -808,7 +806,7 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 - [x] Build, focused tests, Architecture, full suite, manual evidence, type/
       source/registration counts, and `git diff --check` are green and exact.
 - [x] Docs/status surfaces match live code.
-- [x] Human explicitly accepts Phase 15 closeout (M4 auto-accepted on 2026-07-22).
+- [x] Phase 15 closeout was accepted through M4 auto-acceptance on 2026-07-22.
 
 ---
 
