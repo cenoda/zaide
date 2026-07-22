@@ -180,22 +180,22 @@ Cleaned up layer boundaries within the single-project structure:
 | Runtime | .NET 10.0 |
 | Platform | Cross-platform (Linux, macOS, Windows) |
 
-## Local Fast Test Feedback
+## Test Execution Modes
 
-Use the opt-in parallel configuration for faster feedback during implementation:
-
-```shell
-dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/fast.runsettings
-```
-
-Run fast mode in an interactive terminal; redirected output can reproduce the
-known parallel-runner hang. This mode uses eight conservative xUnit workers.
-Some Avalonia, PTY, and process-global tests are not parallel-safe, so
-fast-mode failures must be reproduced with the unchanged serial acceptance
-command before being treated as regressions:
+The default test command uses eight conservative xUnit workers for fast
+implementation feedback:
 
 ```shell
 dotnet test Zaide.slnx --no-build
+```
+
+Run fast mode in an interactive terminal; redirected output can reproduce the
+known parallel-runner hang. Some Avalonia, PTY, and process-global tests are
+not parallel-safe. Reproduce fast-mode failures with the opt-in serial
+configuration before treating them as regressions:
+
+```shell
+dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
 ```
 
 ## Roadmap V1 Outcome

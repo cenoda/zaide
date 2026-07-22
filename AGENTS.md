@@ -45,6 +45,17 @@ boundaries explicit:
 - One class per file. File name = class name.
 - MVVM: Views never in Services. Services never in ViewModels.
 
+## Testing
+
+- From Phase 16 onward, use `dotnet test Zaide.slnx --no-build` as the default
+  fast verification command. It runs test collections with eight workers for
+  implementation productivity.
+- Run the fast suite in an interactive terminal. Redirected output can
+  reproduce the known parallel-runner hang.
+- If fast mode fails or hangs, reproduce with the opt-in serial command before
+  treating the result as a regression:
+  `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings`.
+
 ## Planning
 
 - Before coding a phase, create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version.
