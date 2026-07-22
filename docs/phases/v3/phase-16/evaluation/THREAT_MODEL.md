@@ -2,8 +2,9 @@
 
 **Status:** M1 explicitly human-accepted on 2026-07-23. This threat model
 describes required safety properties. Properties marked **unproven** are future
-qualification requirements, not established enforcement facts. **M2a remains
-unauthorized.**
+qualification requirements, not established enforcement facts. **M2a was explicitly
+human-accepted on 2026-07-23** (standalone offline runner contract and
+fake-candidate core). **M2b remains unauthorized.**
 
 ---
 
@@ -196,4 +197,6 @@ fake candidates:
 
 *M1 threat model — human-accepted 2026-07-23. Provider-restricted egress is
 unproven. No candidate has been executed. All security properties are required
-but not yet demonstrated. M2a remains unauthorized.*
+but not yet demonstrated. At the M1 boundary M2a was unauthorized; M2a was
+subsequently authorized and explicitly human-accepted on 2026-07-23. M2b remains
+unauthorized.*

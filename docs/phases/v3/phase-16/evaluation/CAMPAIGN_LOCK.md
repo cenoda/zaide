@@ -1,7 +1,9 @@
 # Phase 16 M1: Campaign Lock
 
 **Status:** M1 explicitly human-accepted on 2026-07-23 (all-blocked candidate
-eligibility lock). **M2a remains unauthorized.**
+eligibility lock). **M2a was explicitly human-accepted on 2026-07-23**
+(standalone offline runner contract and fake-candidate core). **M2b remains
+unauthorized.**
 
 ---
 
@@ -182,5 +184,6 @@ available for independent reconciliation.
 ---
 
 *M1 campaign lock — human-accepted 2026-07-23. All three candidates are blocked
-at M1 for later M3 eligibility. No candidate result has been observed. All
-execution gates remain closed. M2a remains unauthorized.*
+at M1 for later M3 eligibility. No candidate result has been observed. At the
+M1 boundary M2a was unauthorized; M2a was subsequently authorized and explicitly
+human-accepted on 2026-07-23. M2b remains unauthorized.*

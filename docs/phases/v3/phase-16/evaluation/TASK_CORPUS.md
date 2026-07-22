@@ -2,7 +2,9 @@
 
 **Status:** M1 explicitly human-accepted on 2026-07-23. This document locks the
 synthetic task corpus before any candidate result is observed. No task prompt or
-verification script may change after campaign lock. **M2a remains unauthorized.**
+verification script may change after campaign lock. **M2a was explicitly
+human-accepted on 2026-07-23** (standalone offline runner contract and
+fake-candidate core). **M2b remains unauthorized.**
 
 ---
 
@@ -813,5 +815,6 @@ repetitions count.
 ---
 
 *M1 corpus lock — human-accepted 2026-07-23. No candidate result has been
-observed. Held-out content is inaccessible until M4c authorization. M2a remains
-unauthorized.*
+observed. Held-out content is inaccessible until M4c authorization. At the M1
+boundary M2a was unauthorized; M2a was subsequently authorized and explicitly
+human-accepted on 2026-07-23. M2b remains unauthorized.*

@@ -1,6 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path authorized). **M2a and every later milestone remain unauthorized** pending separate explicit authorization.
+**Status:** M0 plan explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path authorized). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. M2a added no production behavior, DI, public production types, upstream artifact acquisition, network access, process launch, or real candidate execution. **M2b and every later milestone remain unauthorized** pending separate explicit authorization.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -237,7 +237,8 @@ identity excludes the candidate instead of being guessed. **Zero** candidates
 are `eligible for later M3 qualification` at this lock; at least two
 independently qualified configurations are **not** currently possible; no
 comparative claim is possible unless two later M3 qualifications actually
-succeed. M2a remains unauthorized.
+succeed. At the M1 boundary M2a remained unauthorized; M2a was subsequently
+authorized and explicitly human-accepted on 2026-07-23. M2b remains unauthorized.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -382,6 +383,8 @@ dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Zaide.Tests.Archi
 **Commit:** one docs-only M1 commit; stop for campaign review.
 
 ### M2a — Runner contract and fake-candidate core
+
+**Status:** explicitly human-accepted on 2026-07-23.
 
 **Goal:** implement the standalone manifest, immutable record, metric validation,
 and deterministic fake-candidate harness without upstream artifacts or network.
@@ -622,7 +625,9 @@ is a scope violation unless the plan is amended and reaccepted.
 
 ### M1 must resolve before M2
 
-M1 answers (docs lock; **human-accepted 2026-07-23**; **M2a unauthorized**):
+M1 answers (docs lock; **human-accepted 2026-07-23**; **M2a unauthorized at the
+M1 boundary** — subsequently authorized and explicitly human-accepted on
+2026-07-23):
 
 - **Eligible artifacts / invocations:** **None.** Qwen Code, OpenCode, and Grok
   Build public source are each **`blocked at M1`**. Observed-but-not-eligible
@@ -683,10 +688,15 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
       2026-07-23** (all three candidates **blocked at M1** for later M3
       eligibility; zero candidates eligible for later M3 qualification; no
       comparative or single-candidate execution path authorized; held-out
-      definition commitments recorded; **M2a unauthorized**).
-- [ ] M2a runner contract/fake core is accepted.
+      definition commitments recorded; **M2a unauthorized at the M1 boundary**
+      — subsequently authorized and human-accepted 2026-07-23).
+- [x] M2a runner contract/fake core was **explicitly human-accepted on
+      2026-07-23** (standalone offline runner contract and deterministic
+      repository-owned fake-candidate core; no production behavior, DI, public
+      production types, upstream artifact acquisition, network access, process
+      launch, or real candidate execution).
 - [ ] M2b isolation, lifecycle, mutation, cancellation, and cleanup proof is
-      accepted.
+      accepted (**unauthorized**).
 - [ ] Every M3 candidate records qualified, excluded, or blocked without guessed
       identities.
 - [ ] M4 follows locked validity rules, or truthfully records why comparison
@@ -754,5 +764,12 @@ with an **all-blocked candidate eligibility** result:
 - no candidate acquisition, installation, execution, or benchmark is
   authorized.
 
-**M2a and every later milestone remain unauthorized.** Native Harness production
+**Human decision (M2a):** Phase 16 M2a was **explicitly human-accepted on
+2026-07-23**. The accepted outcome is the standalone offline runner contract
+and deterministic repository-owned fake-candidate core documented in
+`evaluation/RUNNER_CONTRACT.md`. M2a added no production behavior, DI, public
+production types, upstream artifact acquisition, network access, process launch,
+or real candidate execution.
+
+**M2b and every later milestone remain unauthorized.** Native Harness production
 and ACP implementation remain unauthorized.

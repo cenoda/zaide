@@ -22,5 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Zaide.csproj" />
+    <ProjectReference Include="..\..\tools\Phase16NativeHarnessEvaluation\Phase16NativeHarnessEvaluation.csproj" />
   </ItemGroup>
 </Project>

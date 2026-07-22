@@ -3,8 +3,9 @@
 **Status:** M1 explicitly human-accepted on 2026-07-23. No artifact has been
 acquired, installed, or executed. This document records the accepted M0
 candidate set, M1 primary-source re-verification, and one explicit M1
-disposition per candidate (all three **blocked at M1**). **M2a remains
-unauthorized.**
+disposition per candidate (all three **blocked at M1**). **M2a was explicitly
+human-accepted on 2026-07-23** (standalone offline runner contract and
+fake-candidate core). **M2b remains unauthorized.**
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -396,5 +397,6 @@ for that slice and cannot support comparative claims.
 ---
 
 *M1 artifact disposition lock — human-accepted 2026-07-23. No artifact has been
-acquired. All candidates are blocked at M1. All execution gates remain closed.
-M2a remains unauthorized.*
+acquired. All candidates are blocked at M1. At the M1 boundary M2a was
+unauthorized; M2a was subsequently authorized and explicitly human-accepted on
+2026-07-23. M2b remains unauthorized.*
