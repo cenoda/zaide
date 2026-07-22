@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Phase 15 status:** **M0–M3a accepted (2026-07-22).** **M3b-1 implemented, in review (not accepted).**
+**Phase 15 status:** **M0–M3b-1 accepted.** **M3b-2 unauthorized.**
 M3b-2 and later milestones remain unauthorized pending separate explicit authorization.
 
-**Production authorization:** **M3a GO.** **M3b-1 implemented, in review (not accepted).**
+**Production authorization:** **M3a GO.** **M3b-1 accepted on 2026-07-22 (commit `29f66247`).**
 M3b-2 and Phase 15 closeout remain **NO-GO** until separately authorized.
 Phase 16 has not started. Native Harness production implementation and ACP
 integration have not started.
@@ -600,7 +600,7 @@ path. Expected commit: `feat(agents): adapt legacy HTTP execution as backend`.
 `LegacyOpenAiCompatibleAgentBackend` (`backend:legacy-openai-compatible`),
 typed failure classification in `AgentExecutionService`, versioned capability
 snapshots (including resolution-unavailable truth), attachments unavailable row,
-and DI registration as the sole `IAgentBackend`. M3b remains unauthorized.
+and DI registration as the sole `IAgentBackend`. M3b-1 accepted (2026-07-22 at `29f66247`); M3b-2 remains unauthorized.
 
 ### M3b-1 — Coordinator/router session cutover
 
@@ -858,11 +858,10 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ## Exact next step
 
-1. Phase 15 M3b-1 is implemented and in human review.
-2. Stop. Do not start M3b-2 without separate explicit authorization.
-3. Phase 16, Native Harness production, and ACP implementation have not
-   started.
+1. M3b-1 is accepted (commit `29f66247`, 2026-07-22).
+2. M3b-2 is the next eligible slice but remains unauthorized until explicit human authorization.
+3. Phase 16, Native Harness production, and ACP have not started.
 
 ---
 
-*Last updated: 2026-07-22 (M3b-1 implemented, in review; M3b-2 unauthorized)*
+*Last updated: 2026-07-22 (M3b-1 accepted at 29f66247; M3b-2 unauthorized)*
