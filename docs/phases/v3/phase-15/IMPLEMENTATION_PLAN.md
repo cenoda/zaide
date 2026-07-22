@@ -600,7 +600,7 @@ path. Expected commit: `feat(agents): adapt legacy HTTP execution as backend`.
 `LegacyOpenAiCompatibleAgentBackend` (`backend:legacy-openai-compatible`),
 typed failure classification in `AgentExecutionService`, versioned capability
 snapshots (including resolution-unavailable truth), attachments unavailable row,
-and DI registration as the sole `IAgentBackend`. M3b-1 accepted (2026-07-22 at `29f66247`); M3b-2 remains unauthorized.
+and DI registration as the sole `IAgentBackend`. At the M3a acceptance boundary, M3b-1 and M3b-2 remained unauthorized.
 
 ### M3b-1 — Coordinator/router session cutover
 

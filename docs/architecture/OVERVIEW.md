@@ -95,9 +95,11 @@ Key target rules (detail in CONVENTIONS):
   Phase 15 M3a adds `LegacyOpenAiCompatibleAgentBackend` as the first
   `IAgentBackend` implementation, wrapping the existing non-streaming
   `IAgentExecutionService` HTTP path without duplicating transport; Phase 15
-  M3b-1 routes `AgentExecutionCoordinator`/`AgentRouter` admission through
-  `IAgentSessionService` while `AgentPanelDirectConversationWriter` remains the
-  temporary compatibility projection; sessions are non-resumable and not persisted.
+  M3b-1 routes admission through `IAgentSessionService`; M3b-2 makes
+  `AgentConversationEventProjection` the sole normalized event-to-conversation
+  projection owner; `AgentPanelDirectConversationWriter` was removed only after
+  M3b-2 parity; Townhall continues to observe authoritative `IConversationStore`
+  entries; sessions remain in-memory, non-resumable, and non-persistent.
 
 Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
