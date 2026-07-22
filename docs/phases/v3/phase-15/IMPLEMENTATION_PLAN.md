@@ -2,11 +2,11 @@
 
 ## Status and authorization
 
-**Phase 15 status:** **M0–M3b-1 accepted.** **M3b-2 unauthorized.**
-M3b-2 and later milestones remain unauthorized pending separate explicit authorization.
+**Phase 15 status:** **M0–M3b-2 accepted.** **M4 unauthorized.**
+M4 and Phase 15 closeout remain unauthorized pending separate explicit authorization.
 
-**Production authorization:** **M3a GO.** **M3b-1 accepted on 2026-07-22 (commit `29f66247`).**
-M3b-2 and Phase 15 closeout remain **NO-GO** until separately authorized.
+**Production authorization:** **M3b-2 auto-accepted on 2026-07-22 (commit `2ec1522`).**
+M4 and Phase 15 closeout remain **NO-GO** until separately authorized.
 Phase 16 has not started. Native Harness production implementation and ACP
 integration have not started.
 
@@ -631,12 +631,10 @@ Architecture, full suite, and `git diff --check`.
 **Rollback/commit:** one cutover commit with the legacy conversation projection
 still active: `feat(agents): route execution through agent sessions`.
 
-**M3b-1 status (2026-07-22):** Implemented in review at parent commit
-`24f8b9a6562eaeb577e6320c0ce3a061deea73d6`. Coordinator/router now admit
-through `IAgentSessionService` with session-owned `ExecutionRunId` correlation,
-typed terminal mapping, structured rejection, and temporary
-`AgentPanelDirectConversationWriter` projection. Human acceptance pending.
-M3b-2 remains unauthorized.
+**M3b-1 status (2026-07-22):** Implemented and accepted on 2026-07-22 at commit
+`29f66247`. Coordinator/router admit through `IAgentSessionService` with
+session-owned `ExecutionRunId` correlation, typed terminal mapping, structured
+rejection, and temporary `AgentPanelDirectConversationWriter` projection.
 
 ### M3b-2 — Event-to-conversation projection and parity
 
@@ -675,6 +673,19 @@ manual evidence, and `git diff --check`.
 
 **Rollback/commit:** one projection/parity commit after accepted M3b-1:
 `feat(agents): project session events into conversations`.
+
+**M3b-2 status (2026-07-22):** Implemented and auto-accepted at commit `2ec1522`.
+Sole normalized-event-to-conversation-entry owner `AgentConversationEventProjection`
+subscribes to `AgentEventStream`, projects events into `IConversationStore`, and
+maintains full parity. Legacy `AgentPanelDirectConversationWriter` is removed.
+All automated gates (Conversations 102 passed, Agents 361 passed, Townhall 123
+passed, App Shell 134 passed, Registration/DI 67 passed, Architecture 26 passed,
+Full suite 2713 passed) and `git diff --check` passed with 0 build errors.
+Manual evidence recorded for channel send, Agent DM send, failure path, navigation
+in flight, and privacy/no-public-mirror. Configured-endpoint smoke recorded as
+not run because live endpoint credentials were unavailable. Architecture baselines
+reconciled at 337 public / 165 internal / 502 total top-level types, 77 AddSingleton
+registrations, and 12 registration modules. M4 remains unauthorized.
 
 ### M4 — Closeout and architecture truth-sync
 
@@ -858,10 +869,10 @@ No later milestone may infer authorization from M0 or M1a acceptance.
 
 ## Exact next step
 
-1. M3b-1 is accepted (commit `29f66247`, 2026-07-22).
-2. M3b-2 is the next eligible slice but remains unauthorized until explicit human authorization.
+1. M3b-2 is auto-accepted (commit `2ec1522`, 2026-07-22).
+2. M4 is the next eligible slice but remains unauthorized until explicit human authorization.
 3. Phase 16, Native Harness production, and ACP have not started.
 
 ---
 
-*Last updated: 2026-07-22 (M3b-1 accepted at 29f66247; M3b-2 unauthorized)*
+*Last updated: 2026-07-22 (M3b-2 auto-accepted at 2ec1522; M4 unauthorized)*
