@@ -1,8 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan **explicitly human-accepted on 2026-07-22**. This closes the
-planning gate only. M1 and every later milestone remain unauthorized pending
-separate explicit authorization.
+**Status:** M0 plan explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path authorized). **M2a and every later milestone remain unauthorized** pending separate explicit authorization.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -226,11 +224,20 @@ xAI Grok CLI changelog describes a separate product identity; it is not a
 release, tag, distributed-artifact mapping, service mapping, or model mapping for
 the Grok Build public source unless later primary evidence proves that relation.
 
-No row qualifies an executable. M1 must record immutable artifact URL or
-registry coordinate, checksum, manifest/notices, source-build mapping if known,
-exact invocation, provider identity, service identity, model identity, and
-credential/egress needs.
-Missing required identity excludes the candidate instead of being guessed.
+No row qualifies an executable. **M1 disposition (re-verified
+`2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z`, no acquisition/execution):** all
+three candidates are **`blocked at M1`** for later M3 eligibility. Qwen Code
+`v0.20.1` and OpenCode `v1.18.4` have observed Linux release-archive coordinates
+and official checksum sources, but lack locked provider/service/model identities
+and exact evaluation invocations (and source-build mappings remain unmapped).
+Grok Build public source still has no Git tag/release artifact pin on the
+accepted public-source identity. Full field tables and exclusion rules live in
+`docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md`. Missing required
+identity excludes the candidate instead of being guessed. **Zero** candidates
+are `eligible for later M3 qualification` at this lock; at least two
+independently qualified configurations are **not** currently possible; no
+comparative claim is possible unless two later M3 qualifications actually
+succeed. M2a remains unauthorized.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -615,15 +622,31 @@ is a scope violation unless the plan is amended and reaccepted.
 
 ### M1 must resolve before M2
 
-- Which immutable artifacts, hashes, notices, source mappings, and invocations
-  are eligible?
-- Can at least two candidates qualify without source adoption, unsafe install,
-  or an inferred binary/source mapping?
-- Which provider identity, service identity, and model identity are comparable,
-  with what cost and account isolation?
-- Which synthetic corpus measures harness behavior without held-out leakage?
-- What exactly is success, partial success, unsafe mutation, invalid output,
-  timeout, and cleanup failure?
+M1 answers (docs lock; **human-accepted 2026-07-23**; **M2a unauthorized**):
+
+- **Eligible artifacts / invocations:** **None.** Qwen Code, OpenCode, and Grok
+  Build public source are each **`blocked at M1`**. Observed-but-not-eligible
+  release coordinates for Qwen/OpenCode Linux archives and full missing-fact
+  lists are in `evaluation/CANDIDATE_ARTIFACTS.md`.
+- **Can at least two candidates qualify without source adoption, unsafe install,
+  or an inferred binary/source mapping?** **Not from the current eligibility
+  set.** Zero candidates are `eligible for later M3 qualification`. Comparative
+  claims remain impossible unless two later M3 qualifications actually succeed.
+  Phase 16 is **eligibility-blocked** for multi-candidate comparison at this
+  lock; it is **not** re-scoped to a single-candidate observational path because
+  that path also requires at least one later-eligible, later-qualified
+  candidate.
+- **Provider / service / model comparability:** **Not established.** No campaign
+  provider, service, or model identity is selected for any candidate; cost and
+  account isolation therefore cannot be locked.
+- **Synthetic corpus without held-out leakage:** Locked in
+  `evaluation/TASK_CORPUS.md` (3 pilot + 10 tuning + 10 held-out). Held-out
+  definitions carry reproducible `definition_commitment_sha256` commitments;
+  prompt/script bodies remain access-controlled until M4c and must re-verify
+  against those commitments before release.
+- **Success / invalid / timeout / cleanup:** Locked in `TASK_CORPUS.md`
+  (per-task success criteria, ceilings, invalidation rules) and
+  `CAMPAIGN_LOCK.md` / `THREAT_MODEL.md` (evidence classes, isolation, cleanup).
 
 ### M2b must resolve before M3
 
@@ -656,7 +679,11 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
 ## 11. Exit Conditions
 
 - [x] M0 has explicit human acceptance (2026-07-22).
-- [ ] M1 campaign/artifact/task/threat lock is accepted.
+- [x] M1 campaign/artifact/task/threat lock was **explicitly human-accepted on
+      2026-07-23** (all three candidates **blocked at M1** for later M3
+      eligibility; zero candidates eligible for later M3 qualification; no
+      comparative or single-candidate execution path authorized; held-out
+      definition commitments recorded; **M2a unauthorized**).
 - [ ] M2a runner contract/fake core is accepted.
 - [ ] M2b isolation, lifecycle, mutation, cancellation, and cleanup proof is
       accepted.
@@ -711,11 +738,21 @@ the explicit human M0 acceptance; they do not authorize M1.
 
 ## 13. Acceptance Gate
 
-**Human decision:** Phase 16 M0 was explicitly accepted on 2026-07-22. This
-acceptance closes the planning gate for the selected controlled Native Harness
-evaluation infrastructure and campaign. It does not authorize M1, candidate
-acquisition, installation, execution, benchmarks, tool implementation, or
-production work.
+**Human decision (M0):** Phase 16 M0 was explicitly accepted on 2026-07-22. This
+acceptance closed the planning gate for the selected controlled Native Harness
+evaluation infrastructure and campaign.
 
-**Single proposed next milestone:** M1 — Campaign, artifact, task, and threat
-lock. **M1 remains unauthorized pending separate explicit authorization.**
+**Human decision (M1):** Phase 16 M1 was **explicitly human-accepted on
+2026-07-23**. The accepted outcome is the campaign/artifact/task/threat lock
+with an **all-blocked candidate eligibility** result:
+
+- Qwen Code, OpenCode, and Grok Build public source are each **blocked at M1**
+  (see `evaluation/CANDIDATE_ARTIFACTS.md`);
+- no candidate is `eligible for later M3 qualification`;
+- no comparative claim path and no single-candidate execution path is
+  authorized;
+- no candidate acquisition, installation, execution, or benchmark is
+  authorized.
+
+**M2a and every later milestone remain unauthorized.** Native Harness production
+and ACP implementation remain unauthorized.

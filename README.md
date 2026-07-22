@@ -62,8 +62,12 @@ and closeout evidence accepted.
 [Phase 15](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is **complete and closed** (2026-07-22) — backend-neutral session/run/event foundation, legacy HTTP compatibility backend, and M4 closeout audit.
 [Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md) was **explicitly
 human-accepted on 2026-07-22** for controlled Native Harness evaluation
-infrastructure and campaign. M1 remains unauthorized pending separate explicit
-authorization; Native Harness production and ACP implementation have not started.
+infrastructure and campaign. **M1 was explicitly human-accepted on 2026-07-23**
+with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok
+Build blocked at M1; no candidate eligible for later M3 qualification; no
+comparative or single-candidate execution path authorized). **M2a and later
+milestones remain unauthorized.** Native Harness production and ACP
+implementation have not started.
 
 ## Philosophy
 
@@ -296,8 +300,10 @@ baseline `67da1394`).
 [Phase 15 M0–M4](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) are complete
 and closed on 2026-07-22. [Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
 was explicitly human-accepted on 2026-07-22 for a controlled Native Harness
-evaluation infrastructure and campaign. M1 remains unauthorized pending separate
-explicit authorization; Native Harness production and ACP implementation remain
+evaluation infrastructure and campaign. **M1 was explicitly human-accepted on
+2026-07-23** (all three candidates blocked at M1; no M3-eligible candidate; no
+comparative or single-candidate execution path). **M2a and later milestones
+remain unauthorized.** Native Harness production and ACP implementation remain
 unauthorized.
 
 ## Why "Zaide"
