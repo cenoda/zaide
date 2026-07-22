@@ -107,13 +107,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         var messageEntryId = ConversationEntryId.New();
         using var capture = new AgentSessionCoordinatorEventCapture(
             conversationId,
-            messageEntryId,
-            admittedRunId => AgentPanelDirectConversationWriter.AppendUserMessage(
-                _conversationStore,
-                panel,
-                admittedRunId,
-                userMessage,
-                messageEntryId));
+            messageEntryId);
         capture.Subscribe(_sessionService.Events);
 
         var admittedRunId = default(ExecutionRunId?);
@@ -268,17 +262,6 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             owningRunId: admittedRunId);
         ClearDraft(panel);
 
-        if (!_conversationStore.TryGet(panel.ConversationId, out var conversation)
-            || conversation!.Entries.All(entry => entry.Id != messageEntryId))
-        {
-            AgentPanelDirectConversationWriter.AppendUserMessage(
-                _conversationStore,
-                panel,
-                admittedRunId,
-                userMessage,
-                messageEntryId);
-        }
-
         return await CreateTerminalResultAsync(
             panel,
             snapshot,
@@ -347,11 +330,6 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 if (string.IsNullOrWhiteSpace(assistantText))
                 {
                     const string emptyMessage = "Assistant response was empty.";
-                    AgentPanelDirectConversationWriter.AppendExecutionFailure(
-                        _conversationStore,
-                        panel,
-                        snapshot.RunId,
-                        emptyMessage);
                     ApplyPanelBusyProjection(
                         panel.ConversationId,
                         isBusy: false,
@@ -368,11 +346,6 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                     return AgentExecutionCoordinatorResult.Failure(failureRun, emptyMessage);
                 }
 
-                AgentPanelDirectConversationWriter.AppendAssistantResponse(
-                    _conversationStore,
-                    panel,
-                    snapshot.RunId,
-                    assistantText);
                 ApplyPanelBusyProjection(
                     panel.ConversationId,
                     isBusy: false,
@@ -389,11 +362,6 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                     snapshot.RunId,
                     snapshot.Status,
                     fallback: "Request failed.");
-                AgentPanelDirectConversationWriter.AppendExecutionFailure(
-                    _conversationStore,
-                    panel,
-                    snapshot.RunId,
-                    errorMessage);
                 ApplyPanelBusyProjection(
                     panel.ConversationId,
                     isBusy: false,

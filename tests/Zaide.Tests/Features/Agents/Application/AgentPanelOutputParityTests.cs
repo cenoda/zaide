@@ -456,12 +456,9 @@ public sealed class AgentPanelOutputParityTests : IDisposable
     public void ProductionCoordinator_DoesNotWriteLegacyOutputHistoryStrings()
     {
         var repoRoot = Zaide.Tests.Architecture.ArchitectureInventoryReader.ResolveRepositoryRoot();
-        var writerSource = File.ReadAllText(
-            Path.Combine(repoRoot, "src/Features/Agents/Application/AgentPanelDirectConversationWriter.cs"));
         var coordinatorSource = File.ReadAllText(
             Path.Combine(repoRoot, "src/Features/Agents/Application/AgentExecutionCoordinator.cs"));
 
-        Assert.DoesNotContain("OutputHistory", writerSource, StringComparison.Ordinal);
         Assert.DoesNotContain("OutputHistory", coordinatorSource, StringComparison.Ordinal);
     }
 

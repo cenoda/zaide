@@ -30,10 +30,12 @@ internal static class AgentExecutionTestSupport
 
         var backend = new LegacyOpenAiCompatibleAgentBackend(concrete);
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
+        _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
         return new AgentExecutionCoordinator(
             host,
             session,
-            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            store,
             draftState);
     }
 
@@ -45,10 +47,12 @@ internal static class AgentExecutionTestSupport
     {
         var backend = new ResultMappingAgentBackend(handler);
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
+        _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
         return new AgentExecutionCoordinator(
             host,
             session,
-            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            store,
             draftState);
     }
 
@@ -62,10 +66,12 @@ internal static class AgentExecutionTestSupport
         var backend = new FakeAgentBackend(
             backendId ?? AgentBackendId.FromValue(LegacyOpenAiCompatibleAgentBackend.BackendIdValue));
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
+        var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
+        _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
         var coordinator = new AgentExecutionCoordinator(
             host,
             session,
-            conversationStore ?? Conversations.ConversationsTestSupport.CreateStore(),
+            store,
             draftState);
         return (coordinator, backend, session);
     }

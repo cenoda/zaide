@@ -30,6 +30,7 @@ public sealed class AgentsRegistrationModuleTests
     {
         typeof(AgentEventStream).FullName!,
         typeof(IAgentSessionService).FullName!,
+        typeof(AgentConversationEventProjection).FullName!,
         typeof(IAgentPanelHost).FullName!,
         typeof(IAgentExecutionService).FullName!,
         typeof(IAgentBackend).FullName!,
@@ -83,7 +84,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(9, services.Count);
+        Assert.Equal(10, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -103,6 +104,10 @@ public sealed class AgentsRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(IAgentSessionService)
                 && d.ImplementationType == typeof(AgentSessionService));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(AgentConversationEventProjection)
+                && d.ImplementationType == typeof(AgentConversationEventProjection));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentPanelHost)
@@ -250,6 +255,10 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
+                @"AddSingleton<AgentConversationEventProjection>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
                 @"AddSingleton<IAgentPanelHost,\s*AgentPanelHost>\(\)"));
         Assert.Single(
             Regex.Matches(
@@ -271,7 +280,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(Regex.Matches(moduleSource, @"new HttpClient\(\)"));
         Assert.Contains("TimeSpan.FromSeconds(120)", moduleSource);
 
-        Assert.Equal(9, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(10, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

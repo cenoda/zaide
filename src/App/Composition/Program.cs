@@ -41,12 +41,15 @@ class Program
         services.AddLogging(builder => builder.AddConsole());
     }
 
-    internal static IAgentExecutionCoordinator CreateAgentExecutionCoordinator(IServiceProvider services) =>
-        new AgentExecutionCoordinator(
+    internal static IAgentExecutionCoordinator CreateAgentExecutionCoordinator(IServiceProvider services)
+    {
+        _ = services.GetRequiredService<AgentConversationEventProjection>();
+        return new AgentExecutionCoordinator(
             services.GetRequiredService<IAgentPanelHost>(),
             services.GetRequiredService<IAgentSessionService>(),
             services.GetRequiredService<IConversationStore>(),
             services.GetService<IConversationDraftState>());
+    }
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()

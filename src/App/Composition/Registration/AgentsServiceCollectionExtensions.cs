@@ -15,6 +15,7 @@ internal static class AgentsServiceCollectionExtensions
     {
         services.AddSingleton<AgentEventStream>();
         services.AddSingleton<IAgentSessionService, AgentSessionService>();
+        services.AddSingleton<AgentConversationEventProjection>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
         services.AddSingleton<IAgentBackend, LegacyOpenAiCompatibleAgentBackend>();

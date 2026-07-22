@@ -609,7 +609,7 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         var services = new ServiceCollection();
         services.AddZaideAgents();
 
-        Assert.Equal(9, services.Count);
+        Assert.Equal(10, services.Count);
 
         var backendDescriptors = services
             .Where(d => d.ServiceType == typeof(IAgentBackend))

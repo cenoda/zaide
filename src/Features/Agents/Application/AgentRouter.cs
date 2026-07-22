@@ -165,9 +165,10 @@ public sealed class AgentRouter : IAgentRouter
         // detached store — still return a structured routing-failure result.
         if (_conversationStore.TryGet(sourcePanel.ConversationId, out _))
         {
-            AgentPanelDirectConversationWriter.AppendRoutingFailure(
+            AgentConversationEventProjection.ProjectRoutingFailure(
                 _conversationStore,
-                sourcePanel,
+                sourcePanel.ConversationId,
+                sourcePanel.ActorId,
                 runId,
                 failureReason);
         }
