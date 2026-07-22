@@ -36,7 +36,7 @@ and closed. Phase 14 is **accepted and closed (2026-07-21)** at
 Agent Panel retired, F1 corrected, closeout evidence accepted at `67da1394`).
 Phase 15 is **complete and closed (2026-07-22)** at
 [`docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-15/IMPLEMENTATION_PLAN.md)
-(backend-neutral in-memory Agent Session/run/event foundation, legacy HTTP compatibility backend `LegacyOpenAiCompatibleAgentBackend`, coordinator/router session cutover, sole event projection owner `AgentConversationEventProjection`, and M4 closeout audit). Phase 16, Native Harness production, and ACP implementation have not started. Non-C# assets remain outside the root-admission ratchet.
+(backend-neutral in-memory Agent Session/run/event foundation, legacy HTTP compatibility backend `LegacyOpenAiCompatibleAgentBackend`, coordinator/router session cutover, sole event projection owner `AgentConversationEventProjection`, and M4 closeout audit). [Phase 16 M0](../phases/v3/phase-16/IMPLEMENTATION_PLAN.md) was explicitly human-accepted on 2026-07-22 for controlled Native Harness evaluation infrastructure and campaign. M1 remains unauthorized pending separate explicit authorization; Native Harness production and ACP implementation remain unauthorized. Non-C# assets remain outside the root-admission ratchet.
 
 ---
 

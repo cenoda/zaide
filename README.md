@@ -60,7 +60,10 @@ accepted and closed** (2026-07-21, accepted baseline `67da1394`) — unified
 conversation workspace, schema v1 persistence, Agent Panel retired, F1 corrected,
 and closeout evidence accepted.
 [Phase 15](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is **complete and closed** (2026-07-22) — backend-neutral session/run/event foundation, legacy HTTP compatibility backend, and M4 closeout audit.
-Phase 16 remains unassigned and has not started.
+[Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md) was **explicitly
+human-accepted on 2026-07-22** for controlled Native Harness evaluation
+infrastructure and campaign. M1 remains unauthorized pending separate explicit
+authorization; Native Harness production and ACP implementation have not started.
 
 ## Philosophy
 
@@ -291,8 +294,11 @@ at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
 hosts extracted). **Phase 14 is accepted and closed** (2026-07-21, accepted
 baseline `67da1394`).
 [Phase 15 M0–M4](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) are complete
-and closed on 2026-07-22. Phase 16, Native Harness production, and ACP
-implementation have not started.
+and closed on 2026-07-22. [Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
+was explicitly human-accepted on 2026-07-22 for a controlled Native Harness
+evaluation infrastructure and campaign. M1 remains unauthorized pending separate
+explicit authorization; Native Harness production and ACP implementation remain
+unauthorized.
 
 ## Why "Zaide"
 
