@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="DataSource.Contracts/DataSource.Contracts.csproj" />
+    <Project Path="DataSource.Lib/DataSource.Lib.csproj" />
+    <Project Path="Consumer.A/Consumer.A.csproj" />
+    <Project Path="Consumer.B/Consumer.B.csproj" />
+    <Project Path="Consumer.C/Consumer.C.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="Di.Tests/Di.Tests.csproj" />
+  </Folder>
+</Solution>

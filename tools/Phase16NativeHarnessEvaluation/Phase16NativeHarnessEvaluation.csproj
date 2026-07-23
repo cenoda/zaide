@@ -9,5 +9,13 @@
 
   <ItemGroup>
     <None Include="Probes\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Scripts\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" Exclude="Fixtures/**/workspace/**" />
+    <None Include="Fixtures/**/workspace/**" CopyToOutputDirectory="PreserveNewest" LinkBase="Fixtures" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Fixtures/**" />
+    <EmbeddedResource Remove="Fixtures/**" />
   </ItemGroup>
 </Project>

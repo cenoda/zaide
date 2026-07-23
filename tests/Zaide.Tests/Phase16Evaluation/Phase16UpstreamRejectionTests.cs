@@ -4,15 +4,32 @@ using Xunit;
 
 namespace Zaide.Tests.Phase16Evaluation;
 
+[Collection("Phase16Isolation")]
 public sealed class Phase16UpstreamRejectionTests
 {
+    private static void WithoutQualificationGrant(Action action)
+    {
+        var previous = Environment.GetEnvironmentVariable(Phase16M3QualificationPolicy.QualificationGrantEnvVar);
+        try
+        {
+            Environment.SetEnvironmentVariable(Phase16M3QualificationPolicy.QualificationGrantEnvVar, null);
+            action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Phase16M3QualificationPolicy.QualificationGrantEnvVar, previous);
+        }
+    }
+
     [Theory]
     [InlineData("qwen-code")]
     [InlineData("opencode")]
     [InlineData("grok-build")]
     public void UpstreamGate_RejectsBlockedM1CandidateSlugs(string blockedSlug)
     {
-        var runnerConfig = Phase16TestManifestFactory.CreateRunnerConfig();
+        WithoutQualificationGrant(() =>
+        {
+            var runnerConfig = Phase16TestManifestFactory.CreateRunnerConfig();
         var candidate = Phase16TestManifestFactory.CreateFakeBoundCandidateIdentity();
         var manifest = new Phase16Manifest
         {
@@ -46,11 +63,14 @@ public sealed class Phase16UpstreamRejectionTests
         var ex = Assert.Throws<ManifestValidationException>(() =>
             UpstreamCandidateGate.ValidateExecutionRequestOrThrow(manifest));
         Assert.Contains("blocked at M1", ex.Message, StringComparison.OrdinalIgnoreCase);
+        });
     }
 
     [Fact]
     public void UpstreamGate_RejectsUpstreamExecutionMode()
     {
+        WithoutQualificationGrant(() =>
+        {
         var runnerConfig = Phase16TestManifestFactory.CreateRunnerConfig();
         var manifest = Phase16TestManifestFactory.CreateValidFakeManifest(
             runnerConfig,
@@ -72,11 +92,14 @@ public sealed class Phase16UpstreamRejectionTests
         var ex = Assert.Throws<ManifestValidationException>(() =>
             UpstreamCandidateGate.ValidateExecutionRequestOrThrow(manifest));
         Assert.Contains("fake_repository_owned", ex.Message, StringComparison.Ordinal);
+        });
     }
 
     [Fact]
     public void UpstreamGate_RejectsNetworkAndProcessLaunchFlags()
     {
+        WithoutQualificationGrant(() =>
+        {
         var runnerConfig = Phase16TestManifestFactory.CreateRunnerConfig();
         var baseManifest = Phase16TestManifestFactory.CreateValidFakeManifest(
             runnerConfig,
@@ -117,11 +140,14 @@ public sealed class Phase16UpstreamRejectionTests
         var processEx = Assert.Throws<ManifestValidationException>(() =>
             UpstreamCandidateGate.ValidateExecutionRequestOrThrow(processManifest));
         Assert.Contains("processLaunchEnabled", processEx.Message, StringComparison.Ordinal);
+        });
     }
 
     [Fact]
     public void UpstreamGate_RejectsUpstreamArtifactPath()
     {
+        WithoutQualificationGrant(() =>
+        {
         var runnerConfig = Phase16TestManifestFactory.CreateRunnerConfig();
         var baseManifest = Phase16TestManifestFactory.CreateValidFakeManifest(
             runnerConfig,
@@ -143,5 +169,6 @@ public sealed class Phase16UpstreamRejectionTests
         var ex = Assert.Throws<ManifestValidationException>(() =>
             UpstreamCandidateGate.ValidateExecutionRequestOrThrow(manifest));
         Assert.Contains("upstreamArtifactPath", ex.Message, StringComparison.Ordinal);
+        });
     }
 }

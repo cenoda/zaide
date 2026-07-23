@@ -195,8 +195,9 @@ acquisition-and-inspection **complete** (`M3A_ACQUISITION_EVIDENCE.md`).
 SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
-**Still not authorized:** upstream binary launch, credential
-creation/injection, authenticated provider API calls, comparative claims.
+**Still not authorized:** upstream binary launch (qualification smoke **attempted
+2026-07-23 — NO-GO at credential gate**; see `M3_QUALIFICATION_EVIDENCE.md`),
+authenticated provider API calls, comparative claims.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).

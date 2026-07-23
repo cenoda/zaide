@@ -1,7 +1,11 @@
 # Phase 16 M3 — DNS Binding Gate (Design Lock)
 
-**Status:** **Defined and published 2026-07-23 (docs-only).** This gate locks how
-the future Qwen Code credential-and-execution slice must bind
+**Status:** **Defined and published 2026-07-23 (docs-only).** **First execution
+2026-07-23** under M3 qualification grant (`M3_QUALIFICATION_EVIDENCE.md`):
+host-side resolution, hosts map, and nft rule-text triple-consistency **GO** for
+session `m3q-20260723T113639Z-b1e764d3`; launch blocked at credential gate before
+inner netns probes and Qwen start. This gate locks how the future Qwen Code
+credential-and-execution slice must bind
 `api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
 resolution path. It does **not** authorize credential creation, DNS queries from
 inside a candidate sandbox at definition time, egress reprobes, provider API

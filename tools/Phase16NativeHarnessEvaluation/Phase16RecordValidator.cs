@@ -134,9 +134,7 @@ public static class Phase16RecordValidator
                 $"Record fakeCandidateKind '{record.FakeCandidate.FakeCandidateKind}' is not authorized.");
         }
 
-        if (UpstreamCandidateGate.BlockedCandidateSlugs.Contains(
-                record.Candidate.CandidateSlug,
-                StringComparer.OrdinalIgnoreCase))
+        if (UpstreamCandidateGate.IsBlockedAtM1(record.Candidate.CandidateSlug))
         {
             throw new Phase16RecordValidationException(
                 $"Record candidateSlug '{record.Candidate.CandidateSlug}' is blocked at M1.");
