@@ -124,21 +124,29 @@ later M3 qualification`** on the single-candidate observational path
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked
 at M1**.
 
-M3 additionally requires, per candidate slice:
+**M3a acquisition-and-inspection completed 2026-07-23** under an explicit
+separate grant (`M3A_ACQUISITION_EVIDENCE.md`):
 
-- **M3a (next eligible slice under separate grant):** artifact acquisition and
-  hash verification; tag and in-archive license/notice clearance; resolution of
-  A-02/A-03 from inspection — **no execution** in M3a;
+- pinned archive acquired under phase artifact root only; SHA-256 verified;
+- tag and in-archive `LICENSE` Apache-2.0 (identical); `NOTICE` and
+  `THIRD-PARTY-NOTICES` absent at package root;
+- A-02/A-03 resolved from static inspection;
+- **upstream binary not launched**.
+
+M3 still additionally requires, per candidate slice:
+
+- project-owner C-05 clearance of missing NOTICE/THIRD-PARTY-NOTICES before
+  execution;
 - provider-restricted egress proof per accepted C-01/C-02 design (enforcement
   still unproven);
 - dedicated DeepSeek sub-key and credential injection (separate execution grant);
 - M3 qualification grant and isolation re-check before upstream binary launch.
 
-Automatic progression to M3a acquisition-and-inspection is eligible only after an
-explicit M3a grant; execution gates remain closed until A-02/A-03 and egress
-proof succeed under later grants.
+Next external-side-effect candidates under **separate** grants: egress proof
+(**recommended GO to authorize** per M3a §9.2), then credentials/execution only
+after egress success (**NO-GO until that gate** per M3a §9.3).
 
 ---
 
-*M2b isolation evidence — produced 2026-07-23. Upstream execution remains
-unauthorized.*
+*M2b isolation evidence — produced 2026-07-23. M3a acquisition completed
+2026-07-23 without binary launch. Upstream execution remains unauthorized.*

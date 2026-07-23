@@ -49,8 +49,8 @@ observational campaign-path authorization (C-06).
 | ID | Field | Human-accepted value (2026-07-23) |
 |---|---|---|
 | **A-01** | Immutable artifact identity | Pin `v0.20.1` Linux x86_64 archive: `https://github.com/QwenLM/qwen-code/releases/download/v0.20.1/qwen-code-linux-x64.tar.gz`; SHA-256 `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e` (GitHub asset digest + official `SHA256SUMS` line agree at M1 re-verification). |
-| **A-02** | Post-extract executable path | **`UNRESOLVED`.** Verify only after a **separately authorized M3a acquisition-and-inspection** grant. Do not execute before further approval. |
-| **A-03** | Structured non-interactive argv | **`UNRESOLVED`.** Verify only after separately authorized acquisition; lock full argv (workspace root, prompt mode, turn limit, headless flags, output capture) during inspection. Do not execute before further approval. |
+| **A-02** | Post-extract executable path | M1: **`UNRESOLVED`**. **M3a (2026-07-23): `RESOLVED`** → `qwen-code/bin/qwen` (see `M3A_ACQUISITION_EVIDENCE.md`). Do not execute before further approval. |
+| **A-03** | Structured non-interactive argv | M1: **`UNRESOLVED`**. **M3a (2026-07-23): support surface `RESOLVED`** (headless `-p`/`--prompt` or positional; `--model`, `--output-format`, turn/time caps, `--approval-mode`). Owner must still lock smoke approval-mode/ceilings before execution. |
 | **A-04** | Provider identity | **DeepSeek** |
 | **A-05** | Service endpoint identity | **`https://api.deepseek.com`** (host/path pin; **not** `/v1` suffix) |
 | **A-06** | Model ID | **`deepseek-v4-flash`** |
@@ -59,12 +59,13 @@ observational campaign-path authorization (C-06).
 | **A-09** | Per-candidate account isolation | Per C-04: dedicated Phase 16 DeepSeek sub-key created only after separate execution grant; revoke at M3 completion. |
 | **A-10** | Source-build mapping state | **Explicitly unmapped.** No claim that archive bytes equal tag commit `305b049100606fa093a14b5cd849bff3be16e31a`. |
 | **A-11** | SOURCE_REV | **`UNRESOLVED`** (paired with unmapped A-10) |
-| **A-12** | Archive license/notice boundary | Per C-05: tag `LICENSE` re-check before M3a; mandatory in-archive `LICENSE`/`NOTICE`/`THIRD-PARTY-NOTICES` scan before execution; block on uncertainty. Pre-amendment repo-pin review: Apache-2.0 at tag `v0.20.1`; `NOTICE` absent at tag (404). |
+| **A-12** | Archive license/notice boundary | Per C-05: tag `LICENSE` re-check before M3a; mandatory in-archive `LICENSE`/`NOTICE`/`THIRD-PARTY-NOTICES` scan before execution; block on uncertainty. Pre-amendment: Apache-2.0 at tag `v0.20.1`; `NOTICE` absent at tag (404). **M3a scan:** archive `LICENSE` Apache-2.0 identical to tag; `NOTICE` and `THIRD-PARTY-NOTICES` absent. **Project owner approved the recorded execution license posture on 2026-07-23**; see `M3A_ACQUISITION_EVIDENCE.md` §4. |
 | **A-13** | Egress enforcement/evidence | Allow **only** `api.deepseek.com:443`. All other external hosts, ports, and DNS paths **denied**. Proof design per C-02; enforcement remains **unproven** until a separately authorized egress-proof grant succeeds. |
 
 **M1 disposition after amendment:** **`eligible for later M3 qualification`**
-(single-candidate observational path; invocation fields A-02/A-03 remain
-`UNRESOLVED` until M3a acquisition-and-inspection).
+(single-candidate observational path). Invocation fields A-02/A-03 were
+`UNRESOLVED` at amendment time and were **resolved at M3a (2026-07-23)** from
+inspection without execution (`M3A_ACQUISITION_EVIDENCE.md`).
 
 **Still explicit, not inferred:** binary↔tag-commit provenance; embedded archive
 licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
@@ -74,14 +75,14 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 
 ## 4. External-Side-Effect Gates (not authorized by this amendment)
 
-| Side effect | Required separate grant |
-|---|---|
-| Download/extract pinned Qwen Code archive | M3a acquisition-and-inspection grant |
-| Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant |
-| Run egress proof (allowed + blocked destinations) | Egress proof grant (after tooling, if needed) |
-| Create DeepSeek sub-key / inject credential | Execution grant (after A-02/A-03 locked) |
-| Provider API calls | Execution grant + cost tracking |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution |
+| Side effect | Required separate grant | Status after M3a (2026-07-23) |
+|---|---|---|
+| Download/extract pinned Qwen Code archive | M3a acquisition-and-inspection grant | **Done** under M3a grant |
+| Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant | Not authorized |
+| Run egress proof (allowed + blocked destinations) | Egress proof grant (after tooling, if needed) | Not authorized; M3a recommends **GO to authorize** when human grants |
+| Create DeepSeek sub-key / inject credential | Execution grant (after A-02/A-03 locked) | Not authorized; **NO-GO** until egress + execution grant |
+| Provider API calls | Execution grant + cost tracking | Not authorized |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution | Not authorized; A-02/A-03 resolved but launch still blocked |
 
 ---
 
@@ -95,6 +96,8 @@ Updated disposition and campaign-path records:
 
 ---
 
-*M1 amendment — human-accepted 2026-07-23. Docs-only. No artifact acquired, no
-network egress proof executed, no credentials created, no upstream binary
-launched.*
+*M1 amendment — human-accepted 2026-07-23. Docs-only at acceptance. Subsequent
+M3a acquisition-and-inspection (2026-07-23) under a separate grant acquired the
+pinned archive outside the repository and resolved A-02/A-03 without launching
+the binary (`M3A_ACQUISITION_EVIDENCE.md`). No network egress proof executed, no
+credentials created, no upstream binary launched.*

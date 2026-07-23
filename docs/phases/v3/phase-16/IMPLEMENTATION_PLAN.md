@@ -1,6 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3 execution remains blocked** until separate grants for M3a acquisition-and-inspection, egress proof, credentials, and qualification; comparative campaign rules remain unchanged.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 execution remains blocked** pending separate grants for egress proof, credentials, and qualification; comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -447,10 +447,12 @@ milestone; stop if its eligibility or an external-side-effect gate blocks it.
 
 **Goal:** in separate slices, acquire, hash, license-check, isolate, and perform
 one predeclared smoke task for candidates that become eligible. Qwen Code alone is
-eligible for later M3a qualification on the accepted single-candidate observational
-path; M3a itself remains blocked pending separate external-side-effect grants.
-OpenCode and Grok Build remain blocked at M1. A Grok Build distributed artifact
-must be independently identified and mapped before its slice can execute.
+eligible for later M3 qualification on the accepted single-candidate observational
+path. **M3a acquisition-and-inspection completed 2026-07-23**
+(`evaluation/M3A_ACQUISITION_EVIDENCE.md`); smoke execution remains blocked
+pending egress proof, credentials, and a qualification grant. OpenCode and Grok
+Build remain blocked at M1. A Grok Build distributed
+artifact must be independently identified and mapped before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
 accepted artifact root. No upstream source enters the repository.
@@ -632,10 +634,10 @@ M1 answers (docs lock; **human-accepted 2026-07-23**; **M1 amendment
 human-accepted 2026-07-23**):
 
 - **Eligible artifacts / invocations:** **Qwen Code only** — **`eligible for
-  later M3 qualification`** on single-candidate observational path; post-extract
-  path and argv (**A-02/A-03**) remain `UNRESOLVED` until M3a
-  acquisition-and-inspection. OpenCode and Grok Build remain **`blocked at
-  M1`**. Full records in `evaluation/CANDIDATE_ARTIFACTS.md` and
+  later M3 qualification`** on single-candidate observational path; **A-02/A-03
+  resolved at M3a (2026-07-23)** from inspection without execution
+  (`evaluation/M3A_ACQUISITION_EVIDENCE.md`). OpenCode and Grok Build remain
+  **`blocked at M1`**. Full records in `evaluation/CANDIDATE_ARTIFACTS.md` and
   `evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 - **Can at least two candidates qualify without source adoption, unsafe install,
   or an inferred binary/source mapping?** **Not from the current eligibility
@@ -784,15 +786,18 @@ single-candidate observational** path was **explicitly human-accepted on
 - single-candidate observational path authorized; comparative rules unchanged;
 - provider configuration locked to DeepSeek / `https://api.deepseek.com` /
   `deepseek-v4-flash`;
-- A-02/A-03 remain `UNRESOLVED` until separately authorized M3a
-  acquisition-and-inspection;
-- **does not** authorize acquisition, egress tooling install, credentials,
+- A-02/A-03 remained `UNRESOLVED` until separately authorized M3a
+  acquisition-and-inspection (completed 2026-07-23);
+- **did not** authorize acquisition, egress tooling install, credentials,
   provider API calls, or upstream execution.
 
 **M2b was completed and accepted on 2026-07-23** (repository-owned isolation,
 lifecycle, mutation, cancellation, and cleanup evidence in
 `evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types,
-upstream acquisition, network access, or real candidate execution). **M3
-execution is blocked**, not next eligible: Qwen Code eligibility unlock does not
-authorize M3a acquisition, egress proof, credentials, or binary launch without
-separate grants.
+upstream acquisition, network access, or real candidate execution).
+
+**M3a acquisition-and-inspection was completed on 2026-07-23** under an
+explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned
+archive acquired outside the repository, SHA-256 verified, licenses scanned,
+A-02/A-03 resolved; binary not launched. **M3 execution remains blocked** for
+egress proof, credentials, and qualification grants.

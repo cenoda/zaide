@@ -70,6 +70,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a smoke cost ceiling | USD 1 |
 | Phase 16 cumulative API cap | USD 3 (later authorization may define a new cap) |
 | Execution | **Not authorized** by the amendment; requires separate M3 grants |
+| M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
+| Next external grants | Egress proof (recommended GO to authorize); execution remains **NO-GO** until egress proof, credentials, and qualification grant |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 

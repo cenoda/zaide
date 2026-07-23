@@ -4,17 +4,23 @@
 (human-accepted 2026-07-23):** Qwen Code is **`eligible for later M3
 qualification`** on the single-candidate observational path
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build public source
-remain **`blocked at M1`**. No artifact has been acquired, installed, or
-executed. **M2a was explicitly human-accepted on 2026-07-23** (standalone
-offline runner contract and fake-candidate core). **M2b was completed on
-2026-07-23** (`ISOLATION_EVIDENCE.md`).
+remain **`blocked at M1`**. **M2a was explicitly human-accepted on 2026-07-23**
+(standalone offline runner contract and fake-candidate core). **M2b was
+completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`). **M3a
+acquisition-and-inspection was completed on 2026-07-23** under a separate
+explicit grant (`M3A_ACQUISITION_EVIDENCE.md`): pinned archive downloaded to
+the phase artifact root (not the Zaide repository), SHA-256 verified, tag and
+in-archive licenses scanned, A-02/A-03 resolved from static inspection.
+**Upstream binary was not launched.** Egress proof, credentials, and
+execution remain unauthorized.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
 metadata, official README/LICENSE text at pinned refs, official documentation
-HTML, and the official Qwen `SHA256SUMS` text listing. **No candidate package
-was downloaded for install, no binary was executed, no repository was cloned,
-and no benchmark was run.**
+HTML, and the official Qwen `SHA256SUMS` text listing. M1 itself downloaded no
+candidate package. **M3a (2026-07-23)** later acquired only the pinned Linux
+x64 archive and `SHA256SUMS` under the phase artifact root; no binary was
+executed, no install-script pipe was used, and no benchmark was run.
 
 ---
 
@@ -110,31 +116,39 @@ quality claims.
 | `NOTICE` at tag `v0.20.1` | Absent (HTTP 404) |
 | README at tag `v0.20.1` | Present; documents multi-protocol providers and usage forms |
 
-**Pinned immutable artifact (A-01; not acquired):**
+**Pinned immutable artifact (A-01; acquired at M3a 2026-07-23):**
 
 - URL:
   `https://github.com/QwenLM/qwen-code/releases/download/v0.20.1/qwen-code-linux-x64.tar.gz`
 - SHA-256 (human-accepted pin):
   `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e`
-- Official checksum sources agreeing at M1 re-verification:
+- Official checksum sources agreeing at M1 re-verification and M3a re-query:
   - Release asset digest reported by GitHub API:
     `sha256:2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e`
   - Official release file
     `https://github.com/QwenLM/qwen-code/releases/download/v0.20.1/SHA256SUMS`
     line:
     `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e  qwen-code-linux-x64.tar.gz`
-- **Checksum plan under M3a grant:** download the archive and `SHA256SUMS`;
-  verify `sha256sum -c` against the pinned line above. Do not execute until
-  A-02/A-03 are resolved and a further execution grant is issued.
+- **M3a verification:** downloaded archive + `SHA256SUMS` under
+  `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/download/`;
+  computed SHA-256 **matches pin**; `sha256sum -c` **OK**. Full record:
+  `M3A_ACQUISITION_EVIDENCE.md`. **Do not execute** until owner license
+  clearance, egress proof, credentials, and a further execution grant.
 
 **License / notices review route (A-12 / C-05):**
 
 - Final approver: **project owner**
-- Before M3a acquisition: re-check `LICENSE` at tag `v0.20.1` (Apache-2.0)
-- Before execution: scan acquired archive `LICENSE`, `NOTICE`, and
-  `THIRD-PARTY-NOTICES`; **block on uncertainty**
-- Repository `NOTICE` at tag: absent (404 at M1 re-verification)
-- In-archive notice scan: **not performed** (no download)
+- Before M3a acquisition: re-check `LICENSE` at tag `v0.20.1` (Apache-2.0) —
+  **done at M3a** (HTTP 200; Apache-2.0 text)
+- M3a in-archive scan:
+  - `LICENSE`: **present**, Apache-2.0, **identical** to tag `LICENSE`
+  - `NOTICE`: **absent** (matches tag 404)
+  - `THIRD-PARTY-NOTICES`: **absent** at package root; many per-dependency
+    licenses exist under `node/` and `lib/`
+- **Project-owner C-05 clearance (2026-07-23):** approved the recorded execution
+  license posture (Apache-2.0 root license, absent root `NOTICE` /
+  `THIRD-PARTY-NOTICES`, and present per-dependency license files). See
+  `M3A_ACQUISITION_EVIDENCE.md` §4.
 
 **Locked provider configuration (M1 amendment 2026-07-23):**
 
@@ -158,35 +172,36 @@ quality claims.
 - Auth configuration: interactive `/auth` and official Authentication /
   Model Providers docs (multi-provider)
 
-### 4.3 Fields still UNRESOLVED (execution-blocked)
+### 4.3 Field resolution after M3a (execution still blocked)
 
-| Field | M1 state | Resolution gate |
+| Field | State after M3a (2026-07-23) | Resolution gate / notes |
 |---|---|---|
-| **Post-extract executable path (A-02)** | `UNRESOLVED` | M3a acquisition-and-inspection grant only; no execution before further approval |
-| **Structured non-interactive argv (A-03)** | `UNRESOLVED` | Lock during M3a inspection; no execution before further approval |
+| **Post-extract executable path (A-02)** | **`RESOLVED`:** `qwen-code/bin/qwen` (shell launcher → bundled `node/bin/node` + `lib/cli-entry.js`) | Static inspection only; binary not executed |
+| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface):** headless via `-p`/`--prompt` or positional prompt; `--model`, `--output-format`, `--max-session-turns`, `--max-wall-time`, `--approval-mode` / `--yolo`; workspace = process CWD | Full smoke argv policy (approval mode, ceilings) still needs owner lock before execution grant; see `M3A_ACQUISITION_EVIDENCE.md` §6 |
 | **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
-| **Protocol / SDK** | `UNRESOLVED` | Not separately pinned at M1 amendment |
+| **Protocol / SDK** | Partially observed | DeepSeek preset uses OpenAI-compatible protocol; not a separate product pin |
 | **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |
 
-### 4.4 M1 disposition
+### 4.4 Disposition after M3a
 
 **`eligible for later M3 qualification`** (single-candidate observational path;
-M1 amendment human-accepted 2026-07-23).
+M1 amendment human-accepted 2026-07-23). **Not qualified.** M3a
+acquisition-and-inspection **complete** (`M3A_ACQUISITION_EVIDENCE.md`).
 
-**Authorized path:** docs-only eligibility for a future **M3a
-acquisition-and-inspection** slice under separate grant. **Not authorized
-now:** download, extract-for-run, egress proof execution, credential creation,
-provider API calls, or upstream binary launch.
+**Completed under M3a grant:** download and extract under phase artifact root;
+SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
+from inspection.
 
-**Execution remains blocked until:** A-02 and A-03 are resolved from acquired
-archive inspection; tag and in-archive license/notice clearance per C-05;
-provider-restricted egress proof per C-01/C-02; dedicated sub-key per C-04;
-and a separate M3 qualification / execution grant.
+**Still not authorized:** upstream binary launch, egress proof tooling/run,
+credential creation/injection, provider API calls, comparative claims.
+
+**Execution remains blocked until:** provider-restricted egress proof per
+C-01/C-02; dedicated sub-key per C-04; owner-locked smoke argv policy; isolation
+re-check; and a separate M3 qualification / execution grant.
 
 **Exclusion rules (locked while not qualified at M3):**
 
-- No extract-for-run or execution of Qwen Code artifacts without M3a grant and
-  subsequent execution grant
+- No execution of Qwen Code artifacts without a subsequent execution grant
 - No use of install-script pipes (`curl | bash`) for this campaign
 - No ambient user API keys, `~/.config` credentials, or browser OAuth sessions
 - No substitution of npm `@latest` / Homebrew floating packages for the pinned
@@ -410,19 +425,20 @@ remain closed until separate M3 grants. Future paths:
 
 ---
 
-## 9. Pre-Acquisition Verification Gate (future M3 slices)
+## 9. Pre-Acquisition Verification Gate (M3a completed)
 
-Before any Qwen Code artifact is acquired under a future M3a grant, the M1
-amendment eligibility record must be in place (it is, 2026-07-23). The M3a slice
-must re-verify checksum, tag `LICENSE`, and in-archive license/notice contents;
-resolve A-02/A-03 from inspection; and must **not** execute the upstream binary
-until a further execution grant. OpenCode and Grok Build remain ineligible. A
-candidate that cannot be resolved at M3 is recorded as **blocked** for that slice
-and cannot support comparative claims.
+M1 amendment eligibility was in place before M3a. **M3a (2026-07-23)**
+re-verified checksum, tag `LICENSE`, and in-archive license/notice contents;
+resolved A-02/A-03 from inspection; and did **not** execute the upstream binary.
+Remaining execution gates are egress proof, credentials, and a separate qualification grant
+(`M3A_ACQUISITION_EVIDENCE.md` §9). OpenCode and Grok Build remain ineligible.
+A candidate that cannot complete later M3 gates is recorded as **blocked** for
+that slice and cannot support comparative claims.
 
 ---
 
 *M1 artifact disposition — human-accepted 2026-07-23; M1 amendment for Qwen
-Code observational path human-accepted 2026-07-23. No artifact acquired. Qwen
-Code eligible for later M3 qualification; OpenCode and Grok Build blocked at M1.
-M2b completed 2026-07-23.*
+Code observational path human-accepted 2026-07-23. M3a acquisition-and-inspection
+completed 2026-07-23 (artifact under phase root only; binary not launched).
+Qwen Code eligible for later M3 qualification but not qualified; OpenCode and
+Grok Build blocked at M1. M2b completed 2026-07-23.*
