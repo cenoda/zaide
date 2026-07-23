@@ -3,9 +3,11 @@
 **Status:** **Defined and published 2026-07-23 (docs-only).** **First execution
 2026-07-23** under M3 qualification grants (`M3_QUALIFICATION_EVIDENCE.md`):
 host-side resolution, hosts map, and nft rule-text triple-consistency **GO** for
-sessions `m3q-20260723T113639Z-b1e764d3` and `m3q-20260723T121356Z-1d1e7154`;
-first attempt blocked at credential gate; authorized retry blocked at netns egress
-attach before inner probes and Qwen start. This gate locks how the future Qwen Code
+sessions `m3q-20260723T113639Z-b1e764d3`, `m3q-20260723T121356Z-1d1e7154`, and
+`m3q-20260723T131730Z-1c8c982f`; first attempt blocked at credential gate;
+second blocked at netns egress attach before inner probes; third reached inner
+egress reprobes **GO** but Qwen Bubblewrap launch failed before upstream start.
+This gate locks how the future Qwen Code
 credential-and-execution slice must bind
 `api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
 resolution path. It does **not** authorize credential creation, DNS queries from
@@ -299,7 +301,7 @@ If any step fails, **do not** proceed to step 8–9.
 | M3 egress proof (C-01/C-02 / A-13) | **Complete 2026-07-23** | Reuse architecture; do **not** rerun proof grant |
 | M3a license clearance (C-05 / A-12) | **Owner approved 2026-07-23** | Not a launch blocker |
 | A-02 / A-03 invocation | **Resolved at M3a** | Still require owner argv lock before step 9 |
-| DNS binding | **Defined here; not yet executed** | Mandatory at first launch |
+| DNS binding | **Executed 2026-07-23** (sessions above) | Mandatory at first launch |
 
 ---
 

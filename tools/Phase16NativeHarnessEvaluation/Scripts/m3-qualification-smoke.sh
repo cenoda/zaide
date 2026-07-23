@@ -264,6 +264,7 @@ bwrap \
   --ro-bind / / \
   --bind "$PHASE16_WORKSPACE" "$PHASE16_WORKSPACE" \
   --bind "$SANDBOX_HOME" "$SANDBOX_HOME" \
+  --tmpfs /etc \
   --ro-bind "$PHASE16_HOSTS_FILE" /etc/hosts \
   --ro-bind "$PHASE16_RESOLV_EMPTY" /etc/resolv.conf \
   --dev /dev --proc /proc \
@@ -282,6 +283,10 @@ bwrap \
 QWEN_EC=$?
 set -e
 echo "qwen_exit=$QWEN_EC" > "$PHASE16_RUN_DIR/qwen-result.env"
+if [ "$QWEN_EC" -ne 0 ]; then
+  echo "qwen_launch_failed exit=$QWEN_EC" > "$PHASE16_RUN_DIR/fatal.txt"
+  exit 4
+fi
 
 for stream in qwen.stdout qwen.stderr; do
   sed -E 's/sk-[A-Za-z0-9_-]+/[REDACTED]/g' "$PHASE16_RUN_DIR/$stream" > "$PHASE16_RUN_DIR/${stream}.redacted" || true
@@ -388,6 +393,10 @@ cp "$RUN_DIR/netns-session.env" "$SESSION_ROOT/netns-session.env" 2>/dev/null ||
 
 if [ -f "$RUN_DIR/fatal.txt" ]; then
   stop_with "$(cat "$RUN_DIR/fatal.txt")"
+fi
+if [ -f "$RUN_DIR/qwen-result.env" ]; then
+  QWEN_EXIT="$(awk -F= '$1=="qwen_exit"{print $2}' "$RUN_DIR/qwen-result.env")"
+  [ "${QWEN_EXIT:-1}" -eq 0 ] || stop_with "qwen launch failed exit=${QWEN_EXIT:-unknown}"
 fi
 [ "$INNER_EC" -eq 0 ] || stop_with "inner qualification failed exit=$INNER_EC"
 
