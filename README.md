@@ -65,7 +65,7 @@ human-accepted on 2026-07-22** for controlled Native Harness evaluation
 infrastructure and campaign. **M1 was explicitly human-accepted on 2026-07-23**
 with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok
 Build blocked at M1; no candidate eligible for later M3 qualification; no
-comparative or single-candidate execution path eligible). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and deterministic repository-owned fake-candidate core; no production behavior, upstream artifact acquisition, network access, process launch, or real candidate execution). **M2b is next eligible under automatic progression; later milestones remain gated by their required technical, security, provenance, and external-side-effect checks.** Native Harness production and ACP implementation have not started.
+comparative or single-candidate execution path eligible). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and deterministic repository-owned fake-candidate core; no production behavior, upstream artifact acquisition, network access, process launch, or real candidate execution). **M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence in `docs/phases/v3/phase-16/evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates. Native Harness production and ACP implementation have not started.
 
 ## Philosophy
 
@@ -300,7 +300,7 @@ and closed on 2026-07-22. [Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_P
 was explicitly human-accepted on 2026-07-22 for a controlled Native Harness
 evaluation infrastructure and campaign. **M1 was explicitly human-accepted on
 2026-07-23** (all three candidates blocked at M1; no M3-eligible candidate; no
-comparative or single-candidate execution path). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and fake-candidate core; no production behavior or upstream execution). **M2b is next eligible under automatic progression; later milestones remain gated by their required technical, security, provenance, and external-side-effect checks.** Native Harness production and ACP implementation remain subject to their own gates.
+comparative or single-candidate execution path). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and fake-candidate core; no production behavior or upstream execution). **M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates. Native Harness production and ACP implementation remain subject to their own gates.
 
 ## Why "Zaide"
 

@@ -776,7 +776,4 @@ and deterministic repository-owned fake-candidate core documented in
 production types, upstream artifact acquisition, network access, process launch,
 or real candidate execution.
 
-**M2b is the next eligible milestone under automatic progression.** Later work
-remains subject to its predecessor gates; Native Harness production and ACP
-implementation additionally require all applicable external-side-effect,
-security, provenance, and eligibility gates to pass.
+**M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence in `evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates.
