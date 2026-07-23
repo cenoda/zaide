@@ -1,6 +1,11 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 egress proof completed on 2026-07-23** under an explicit separate grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): provider-restricted egress for `api.deepseek.com:443` only proven with repository-controlled probe (allow PASS, non-allowlisted block PASS); no credentials, no authenticated API, no upstream binary launch. **M3 execution remains blocked** pending separate grants for credentials and qualification; comparative campaign rules remain unchanged.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 egress proof completed on 2026-07-23** under an explicit separate grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): provider-restricted egress for `api.deepseek.com:443` only proven with repository-controlled probe (allow PASS, non-allowlisted block PASS); no credentials, no authenticated API, no upstream binary launch. **M3 DNS binding gate defined and published on 2026-07-23** (docs-only;
+`evaluation/M3_DNS_BINDING_GATE.md`): deterministic sandbox-only resolution for
+`api.deepseek.com`, hosts injection, nft parity, TLS/SNI preservation, and
+pre-launch stop conditions. **M3 execution remains blocked** pending separate
+grants for credentials, DNS-binding execution at launch, and qualification;
+comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -232,7 +237,8 @@ No row qualifies an executable. **M1 disposition (re-verified
 OpenCode and Grok Build public source remain **`blocked at M1`**. **M1 amendment
 (2026-07-23):** Qwen Code is **`eligible for later M3 qualification`** on the
 single-candidate observational path with DeepSeek provider configuration; A-02/A-03
-invocation fields remain `UNRESOLVED` until M3a acquisition-and-inspection.
+invocation fields **resolved at M3a (2026-07-23)** from inspection without
+execution (`evaluation/M3A_ACQUISITION_EVIDENCE.md`).
 Full field tables and exclusion rules live in
 `docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md` and
 `evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. **One** candidate is eligible;
@@ -273,12 +279,16 @@ revisions. Phase 16 cannot become an ACP experiment.
   temporary-filesystem `/bin/true` proof succeeded.
 - Docker CLI `29.6.1` exists, but daemon access is unavailable to the current
   user. Podman is absent.
-- `slirp4netns`, `pasta`, and `socat` are absent. Safe provider-backed egress is
-  unresolved.
+- At M0, `slirp4netns`, `pasta`, and `socat` were absent. **M3 egress proof
+  (2026-07-23)** later proved provider-restricted egress for
+  `api.deepseek.com:443` with `slirp4netns` and `socat` already present (no
+  package install). **`M3_DNS_BINDING_GATE.md` (2026-07-23)** locks how future
+  execution must bind a freshly verified IPv4 via sandbox-only `/etc/hosts` and
+  matching nft allowlist without ambient candidate DNS.
 
 The harmless Bubblewrap proof is not candidate execution and does not qualify a
-campaign. No candidate runs until a later milestone proves complete isolation
-and egress.
+campaign. No candidate runs until isolation, egress, DNS binding at launch, and
+remaining execution gates pass.
 
 ### 6.2 Trust and permission boundary
 
@@ -451,8 +461,10 @@ one predeclared smoke task for candidates that become eligible. Qwen Code alone 
 eligible for later M3 qualification on the accepted single-candidate observational
 path. **M3a acquisition-and-inspection completed 2026-07-23**
 (`evaluation/M3A_ACQUISITION_EVIDENCE.md`). **M3 egress proof completed
-2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). Smoke execution remains
-blocked pending credentials and a qualification grant. OpenCode and Grok
+2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate
+defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke execution
+remains blocked pending credentials, DNS-binding execution at launch, and a
+qualification grant. OpenCode and Grok
 Build remain blocked at M1. A Grok Build distributed
 artifact must be independently identified and mapped before its slice can execute.
 
@@ -472,10 +484,10 @@ dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Zaide.Tests.Featu
 git diff --check
 ```
 
-Each slice remains ineligible until artifact, license, isolation, egress,
-credential, provider identity, service identity, model identity, cost ceiling,
-and cleanup requirements pass. A failure excludes or makes the candidate
-observational; it never relaxes the gate.
+Each slice remains ineligible until artifact, license, isolation, egress, DNS
+binding at launch, credential, provider identity, service identity, model
+identity, cost ceiling, and cleanup requirements pass. A failure excludes or
+makes the candidate observational; it never relaxes the gate.
 
 **Commit:** one commit each for M3a, M3b, and M3c; stop after each.
 
@@ -667,6 +679,9 @@ human-accepted 2026-07-23**):
 - How is provider-only egress constrained and evidenced with current host tools?
   **Proven 2026-07-23** for `api.deepseek.com:443` only
   (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`).
+- How is allowlisted DNS prevented inside the candidate sandbox?
+  **Defined 2026-07-23** — sandbox-only `/etc/hosts` + nft IPv4 parity
+  (`evaluation/M3_DNS_BINDING_GATE.md`); execution at launch remains gated.
 - How are descendant termination and orphan absence proven for every launch mode?
   **Yes (M2b).**
 - Where do raw artifacts live, what is the quota, and how are they disposed of?
@@ -683,7 +698,8 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
 - Bubblewrap full network isolation works. Provider-restricted egress for
   `api.deepseek.com:443` was proven on 2026-07-23 under a separate grant
   (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`); real-candidate launch must reuse
-  equivalent enforcement.
+  equivalent enforcement and execute the DNS binding gate immediately before
+  launch (`evaluation/M3_DNS_BINDING_GATE.md`).
 - Docker daemon access is unavailable and Podman is absent; neither is assumed.
 - Provider nondeterminism, rate limits, service changes, and cost limit causal
   comparison even with a controlled runner.
@@ -813,4 +829,6 @@ A-02/A-03 resolved; binary not launched.
 grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): allowlisted
 `api.deepseek.com:443` HTTPS succeeded without credentials; non-allowlisted
 HTTPS destinations were blocked; evidence under the phase artifact root.
-**M3 execution remains blocked** for credentials and qualification grants.
+**M3 DNS binding gate defined 2026-07-23**
+(`evaluation/M3_DNS_BINDING_GATE.md`). **M3 execution remains blocked** for
+credentials, DNS-binding execution at launch, and qualification grants.

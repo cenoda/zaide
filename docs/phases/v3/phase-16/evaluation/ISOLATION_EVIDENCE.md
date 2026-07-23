@@ -135,19 +135,22 @@ separate grant (`M3A_ACQUISITION_EVIDENCE.md`):
 
 M3 still additionally requires, per candidate slice:
 
-- project-owner C-05 clearance of missing NOTICE/THIRD-PARTY-NOTICES before
-  execution (**owner approved recorded posture 2026-07-23** per M3a);
+- project-owner C-05 clearance (**complete — owner approved recorded posture
+  2026-07-23** per M3a);
 - provider-restricted egress proof per accepted C-01/C-02 design
   (**complete 2026-07-23** — `M3_EGRESS_PROOF_EVIDENCE.md`);
+- DNS binding execution at launch per A-14 (**design complete 2026-07-23** —
+  `M3_DNS_BINDING_GATE.md`; mandatory immediately before first launch);
 - dedicated DeepSeek sub-key and credential injection (separate execution grant);
 - M3 qualification grant and isolation re-check before upstream binary launch.
 
 Next external-side-effect candidate under a **separate** grant:
 credential-and-execution (**GO to authorize** when human grants; still
-**NO-GO** to perform until that grant + remaining argv/cost/isolation gates).
+**NO-GO** to perform until that grant + DNS binding execution + remaining
+argv/cost/isolation gates).
 
 ---
 
 *M2b isolation evidence — produced 2026-07-23. M3a acquisition completed
-2026-07-23 without binary launch. M3 egress proof completed 2026-07-23.
-Upstream execution remains unauthorized.*
+2026-07-23 without binary launch. M3 egress proof completed 2026-07-23. M3 DNS
+binding gate defined 2026-07-23. Upstream execution remains unauthorized.*

@@ -72,7 +72,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | Execution | **Not authorized** by the amendment; requires separate M3 grants |
 | M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
-| Next external grants | Credential-and-execution (**GO to authorize** when human grants; still **NO-GO** to perform until that grant + remaining gates) |
+| M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
+| Next external grants | Credential-and-execution (**GO to authorize** when human grants; still **NO-GO** to perform until that grant + DNS binding execution + remaining gates) |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
@@ -135,7 +136,9 @@ to specific provider API endpoints while denying all other traffic — is
 | Allowlist (C-02 / A-13) | **`api.deepseek.com:443` only** |
 | Proof requirements | Allowlisted success, non-allowlisted block, logs under phase artifact root |
 | Proof status (2026-07-23) | **GO** — allow HTTPS PASS (unauthenticated 401); block PASS; evidence retained |
-| Enforcement for later trials | Reuse equivalent netns + allowlist architecture; not host-wide unrestricted egress |
+| Enforcement for later trials | Reuse equivalent netns + allowlist architecture; execute DNS binding gate at launch (`M3_DNS_BINDING_GATE.md`); not host-wide unrestricted egress |
+| DNS inside candidate sandbox | **Forbidden** — sandbox-only `/etc/hosts` (or equivalent) with single verified IPv4; no ambient resolver |
+| TLS / SNI | `https://api.deepseek.com` with full certificate hostname validation; no bypass |
 | Default without provider egress configured | Default-deny full network isolation (`--unshare-net` or equivalent) |
 
 Host tooling at proof time: Bubblewrap `0.11.2`, `slirp4netns` 1.3.4, and
@@ -144,7 +147,8 @@ install was required under C-01(b); only ephemeral netns configuration was
 applied.
 
 A Qwen Code trial requiring live DeepSeek access still requires a **separate
-credential-and-execution grant** (and remaining argv/cost/isolation gates).
+credential-and-execution grant**, **DNS binding execution at launch** (A-14),
+and remaining argv/cost/isolation gates.
 
 ---
 
@@ -204,4 +208,5 @@ available for independent reconciliation.
 
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
 amendment human-accepted 2026-07-23. No candidate result observed. M2b
-completed 2026-07-23. M3 egress proof completed 2026-07-23.*
+completed 2026-07-23. M3 egress proof completed 2026-07-23. M3 DNS binding
+gate defined 2026-07-23.*

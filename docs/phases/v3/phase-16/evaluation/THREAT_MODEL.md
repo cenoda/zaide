@@ -4,8 +4,9 @@
 (2026-07-23) records accepted egress and credential design for Qwen Code
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). **M3 egress proof (2026-07-23)**
 proved provider-restricted egress for `api.deepseek.com:443` only
-(`M3_EGRESS_PROOF_EVIDENCE.md`). Credential injection and upstream execution
-remain unauthorized. **M2a was explicitly human-accepted on 2026-07-23**
+(`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined (2026-07-23)**
+(`M3_DNS_BINDING_GATE.md`). Credential injection and upstream execution remain
+unauthorized. **M2a was explicitly human-accepted on 2026-07-23**
 (standalone offline runner contract and fake-candidate core). **M2b was
 completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`).
 
@@ -68,8 +69,30 @@ absent; no package install was required for this proof). `pasta` still absent.
 Docker daemon and Podman remain unavailable and unused.
 
 **Remaining rule:** real-candidate trials that need provider access must reuse
-equivalent allowlist enforcement. Default-deny full isolation remains the
-fallback when provider egress is not configured for a trial.
+equivalent allowlist enforcement **and** execute the DNS binding gate
+(`M3_DNS_BINDING_GATE.md`) immediately before launch. Default-deny full
+isolation remains the fallback when provider egress is not configured for a
+trial.
+
+### 2.1 DNS Binding — DEFINED (2026-07-23)
+
+**Status:** Design locked in `M3_DNS_BINDING_GATE.md`. **Not yet executed.**
+
+Candidate sandboxes must **not** use ambient DNS. Before upstream launch under
+the credential-and-execution grant:
+
+1. Resolve `api.deepseek.com` **once** on the host (`getent ahostsv4` or
+   approved fallback); require **exactly one** IPv4 answer.
+2. Inject a sandbox-only `/etc/hosts` line mapping that IPv4 to
+   `api.deepseek.com` (read-only bind; no inherited host hosts/resolv.conf).
+3. Apply in-netns nft allowlist for **TCP/443 to that IPv4/32 only**; verify
+   `FRESH_IPV4 == HOSTS_IPV4 == NFT_IPV4`.
+4. Preserve HTTPS URL `https://api.deepseek.com` and full TLS hostname/SNI
+   validation — no certificate bypass.
+5. **STOP** on multiple A records, resolution failure, hosts/nft mismatch, or
+   successful non-allowlisted DNS/connect probes from the sandbox.
+
+All non-allowlisted DNS and network paths remain **denied**.
 
 ---
 
@@ -203,5 +226,5 @@ fake candidates:
 
 *M1 threat model — human-accepted 2026-07-23; Qwen Code observational amendment
 2026-07-23. Provider-restricted egress design accepted; enforcement proven
-2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). No candidate executed. M2b
-completed 2026-07-23.*
+2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). DNS binding gate defined 2026-07-23
+(`M3_DNS_BINDING_GATE.md`). No candidate executed. M2b completed 2026-07-23.*

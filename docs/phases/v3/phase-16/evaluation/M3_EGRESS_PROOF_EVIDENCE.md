@@ -150,14 +150,18 @@ this docs record.
 
 A-13 enforcement is **proven for this host proof architecture** (ephemeral
 netns + slirp4netns + nft allowlist). Later real-candidate launch must reuse
-equivalent allowlist enforcement, not host-wide unrestricted egress.
+equivalent allowlist enforcement **and** execute the DNS binding gate
+(`M3_DNS_BINDING_GATE.md`) immediately before launch, not host-wide
+unrestricted egress.
 
 ### 6.2 Later credential-and-execution grant
 
 **GO to authorize when the human issues that grant.**
 
 Egress is no longer a blocker for authorizing the next external-side-effect
-grant. That grant still must separately cover:
+grant. License clearance (C-05) is **complete** (owner approved 2026-07-23).
+DNS binding design is **complete** (`M3_DNS_BINDING_GATE.md`). That grant still
+must separately cover:
 
 1. Create a **dedicated Phase 16 DeepSeek sub-key** only (C-04 / A-09); never
    ambient `~/.config` credentials.
@@ -168,7 +172,8 @@ grant. That grant still must separately cover:
 4. Isolation re-check before first upstream process launch
    (`processLaunchEnabled` remains denied until qualification grant).
 5. USD 1 M3 smoke cost ceiling and USD 3 cumulative cap tracking (C-03 / A-08).
-6. Reuse provider-restricted egress enforcement equivalent to this proof.
+6. Reuse provider-restricted egress enforcement equivalent to this proof **and**
+   execute DNS binding per `M3_DNS_BINDING_GATE.md` §8 immediately before launch.
 
 **Until that grant is issued and those gates pass:** do **not** create
 credentials, do **not** call authenticated provider APIs, and do **not** launch
@@ -185,6 +190,7 @@ Qwen Code. Candidate remains **`eligible for later M3 qualification`** but
 - `CAMPAIGN_LOCK.md` — campaign path and egress design
 - `ISOLATION_EVIDENCE.md` — M2b isolation; egress was unproven until this record
 - `CANDIDATE_ARTIFACTS.md` — A-13 field
+- `M3_DNS_BINDING_GATE.md` — DNS binding gate for candidate launch
 - `IMPLEMENTATION_PLAN.md` — phase status
 
 ---

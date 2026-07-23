@@ -12,7 +12,8 @@ explicit grant (`M3A_ACQUISITION_EVIDENCE.md`): pinned archive downloaded to
 the phase artifact root (not the Zaide repository), SHA-256 verified, tag and
 in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 **Upstream binary was not launched.** **M3 egress proof was completed on
-2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). Credentials and execution remain
+2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
+2026-07-23** (`M3_DNS_BINDING_GATE.md`). Credentials and execution remain
 unauthorized.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
@@ -133,8 +134,8 @@ quality claims.
 - **M3a verification:** downloaded archive + `SHA256SUMS` under
   `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/download/`;
   computed SHA-256 **matches pin**; `sha256sum -c` **OK**. Full record:
-  `M3A_ACQUISITION_EVIDENCE.md`. **Do not execute** until egress proof,
-  credentials, and a further execution grant.
+  `M3A_ACQUISITION_EVIDENCE.md`. **Do not execute** until DNS binding at
+  launch, credentials, and a further execution grant.
 
 **License / notices review route (A-12 / C-05):**
 
@@ -163,6 +164,7 @@ quality claims.
 | Campaign cumulative cap (C-03) | USD 3 (later authorization may define a new cap) |
 | Account isolation (A-09 / C-04) | Dedicated Phase 16 DeepSeek sub-key after separate execution grant; never `~/.config` credentials; revoke at M3 completion |
 | Egress allowlist (A-13 / C-02) | `api.deepseek.com:443` only; all other external hosts, ports, and DNS paths denied; **enforcement proven 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
+| DNS binding at launch (A-14) | **Defined 2026-07-23** (`M3_DNS_BINDING_GATE.md`): host-side single-IPv4 resolution; sandbox-only `/etc/hosts`; nft parity; no ambient candidate DNS; TLS/SNI preserved; **not yet executed** |
 | Source-build mapping (A-10) | **Explicitly unmapped** |
 | SOURCE_REV (A-11) | **`UNRESOLVED`** |
 
@@ -199,9 +201,10 @@ creation/injection, authenticated provider API calls, comparative claims.
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
-**Execution remains blocked until:** dedicated sub-key per C-04; owner-locked
-smoke argv policy; isolation re-check; reuse of egress allowlist enforcement;
-and a separate M3 credential / qualification / execution grant.
+**Execution remains blocked until:** DNS binding execution at launch (A-14);
+dedicated sub-key per C-04; owner-locked smoke argv policy; isolation re-check;
+reuse of egress allowlist enforcement; and a separate M3 credential /
+qualification / execution grant.
 
 **Exclusion rules (locked while not qualified at M3):**
 
@@ -434,9 +437,10 @@ remain closed until separate M3 grants. Future paths:
 M1 amendment eligibility was in place before M3a. **M3a (2026-07-23)**
 re-verified checksum, tag `LICENSE`, and in-archive license/notice contents;
 resolved A-02/A-03 from inspection; and did **not** execute the upstream binary.
-Remaining execution gates are credentials and a separate qualification grant
-(`M3A_ACQUISITION_EVIDENCE.md` §9; egress complete per
-`M3_EGRESS_PROOF_EVIDENCE.md`). OpenCode and Grok Build remain ineligible.
+Remaining execution gates are DNS binding at launch, credentials, and a separate
+qualification grant (`M3A_ACQUISITION_EVIDENCE.md` §9; egress complete per
+`M3_EGRESS_PROOF_EVIDENCE.md`; DNS gate defined per
+`M3_DNS_BINDING_GATE.md`). OpenCode and Grok Build remain ineligible.
 A candidate that cannot complete later M3 gates is recorded as **blocked** for
 that slice and cannot support comparative claims.
 
@@ -445,6 +449,7 @@ that slice and cannot support comparative claims.
 *M1 artifact disposition — human-accepted 2026-07-23; M1 amendment for Qwen
 Code observational path human-accepted 2026-07-23. M3a acquisition-and-inspection
 completed 2026-07-23 (artifact under phase root only; binary not launched).
-M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`).
-Qwen Code eligible for later M3 qualification but not qualified; OpenCode and
+M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
+binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Qwen Code eligible
+for later M3 qualification but not qualified; OpenCode and
 Grok Build blocked at M1. M2b completed 2026-07-23.*

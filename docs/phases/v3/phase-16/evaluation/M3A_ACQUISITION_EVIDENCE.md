@@ -290,8 +290,10 @@ phase artifact root. No package install was required.
 ### 9.3 Later credential / execution / M3 qualification grant
 
 **GO to authorize when the human issues that grant.** Egress is no longer a
-blocker. Execution remains **NO-GO to perform** until all of the following are
-satisfied under that separate grant:
+blocker. License clearance (C-05) is **complete** (owner approved 2026-07-23).
+DNS binding design is **complete** (`M3_DNS_BINDING_GATE.md`). Execution
+remains **NO-GO to perform** until all of the following are satisfied under
+that separate grant:
 
 1. **Egress proof success** for `api.deepseek.com:443` only (C-01/C-02) —
    **done 2026-07-23**.
@@ -304,7 +306,9 @@ satisfied under that separate grant:
    remains denied until qualification grant).
 5. **USD 1 M3 smoke cost ceiling** and USD 3 cumulative cap tracking.
 6. Reuse of provider-restricted egress enforcement equivalent to the egress
-   proof architecture.
+   proof architecture **and** immediate DNS binding execution at launch (A-14)
+   per `M3_DNS_BINDING_GATE.md` §8 (host-side re-resolution, sandbox-only
+   `/etc/hosts`, nft IPv4 parity, pre-launch stop conditions).
 
 Until those gates pass, the candidate remains
 **`eligible for later M3 qualification`** but **not qualified**, and must not
@@ -317,6 +321,8 @@ be launched.
 - `M1_AMENDMENT_QWEN_OBSERVATIONAL.md` — observational path and A-01…A-13
 - `CANDIDATE_ARTIFACTS.md` §4 — disposition and field updates
 - `ISOLATION_EVIDENCE.md` §7 — M3 eligibility
+- `M3_EGRESS_PROOF_EVIDENCE.md` — egress complete
+- `M3_DNS_BINDING_GATE.md` — DNS binding gate for launch
 - `CAMPAIGN_LOCK.md` — campaign path
 - `RUNNER_CONTRACT.md` — artifact root
 - `IMPLEMENTATION_PLAN.md` — phase status
@@ -325,5 +331,6 @@ be launched.
 
 *M3a acquisition-and-inspection evidence — produced 2026-07-23 under explicit
 M3a grant. Upstream binary not launched. Subsequent M3 egress proof completed
-2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). Credentials and execution remain
+2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS binding gate defined
+2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and execution remain
 unauthorized until a separate grant.*

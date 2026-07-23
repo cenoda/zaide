@@ -61,6 +61,7 @@ observational campaign-path authorization (C-06).
 | **A-11** | SOURCE_REV | **`UNRESOLVED`** (paired with unmapped A-10) |
 | **A-12** | Archive license/notice boundary | Per C-05: tag `LICENSE` re-check before M3a; mandatory in-archive `LICENSE`/`NOTICE`/`THIRD-PARTY-NOTICES` scan before execution; block on uncertainty. Pre-amendment: Apache-2.0 at tag `v0.20.1`; `NOTICE` absent at tag (404). **M3a scan:** archive `LICENSE` Apache-2.0 identical to tag; `NOTICE` and `THIRD-PARTY-NOTICES` absent. **Project owner approved the recorded execution license posture on 2026-07-23**; see `M3A_ACQUISITION_EVIDENCE.md` §4. |
 | **A-13** | Egress enforcement/evidence | Allow **only** `api.deepseek.com:443`. All other external hosts, ports, and DNS paths **denied**. Proof design per C-02; **enforcement proven 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). Later launch must reuse equivalent allowlist enforcement. |
+| **A-14** | DNS binding at launch | **Defined 2026-07-23** (`M3_DNS_BINDING_GATE.md`). Host-side resolution immediately before launch; sandbox-only `/etc/hosts` (or equivalent) maps exactly one verified IPv4 for `api.deepseek.com`; nft allowlist must match hosts IP; **no ambient DNS** inside candidate sandbox; TLS/SNI hostname validation preserved. **Not yet executed** — mandatory under credential-and-execution grant. |
 
 **M1 disposition after amendment:** **`eligible for later M3 qualification`**
 (single-candidate observational path). Invocation fields A-02/A-03 were
@@ -81,8 +82,9 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant | **Done** under egress-proof grant: inventory only; **no package install** (`slirp4netns`/`socat` already present); ephemeral netns config only |
 | Run egress proof (allowed + blocked destinations) | Egress proof grant | **Done** — **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
 | Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Not authorized; **GO to authorize** when human grants; still **NO-GO** to perform |
+| DNS binding execution at launch (A-14) | Credential-and-execution grant | **Design GO** (`M3_DNS_BINDING_GATE.md`); **execution NO-GO** until grant |
 | Provider API calls | Execution grant + cost tracking | Not authorized |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution | Not authorized; A-02/A-03 resolved, egress proven, but launch still blocked |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Not authorized; A-02/A-03 resolved, egress proven, DNS gate defined, launch still blocked |
 
 ---
 
@@ -102,5 +104,5 @@ pinned archive outside the repository and resolved A-02/A-03 without launching
 the binary (`M3A_ACQUISITION_EVIDENCE.md`). Subsequent M3 egress proof
 (2026-07-23) under a separate grant proved `api.deepseek.com:443` allowlisted
 HTTPS and blocked non-allowlisted destinations (`M3_EGRESS_PROOF_EVIDENCE.md`).
-No credentials created, no authenticated API spend, no upstream binary
-launched.*
+M3 DNS binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). No credentials
+created, no authenticated API spend, no upstream binary launched.
