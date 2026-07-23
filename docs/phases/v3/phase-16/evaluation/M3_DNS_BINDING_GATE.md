@@ -1,18 +1,16 @@
 # Phase 16 M3 — DNS Binding Gate (Design Lock)
 
-**Status:** **Defined and published 2026-07-23 (docs-only).** **First execution
-2026-07-23** under M3 qualification grants (`M3_QUALIFICATION_EVIDENCE.md`):
-host-side resolution, hosts map, and nft rule-text triple-consistency **GO** for
-sessions `m3q-20260723T113639Z-b1e764d3`, `m3q-20260723T121356Z-1d1e7154`, and
-`m3q-20260723T131730Z-1c8c982f`; first attempt blocked at credential gate;
-second blocked at netns egress attach before inner probes; third reached inner
-egress reprobes **GO** but Qwen Bubblewrap launch failed before upstream start.
-This gate locks how the future Qwen Code
+**Status:** **Defined and published 2026-07-23 (docs-only).** **Executed under
+M3 qualification sessions** (`M3_QUALIFICATION_EVIDENCE.md`), including latest
+`m3q-20260723T151512Z-6996af5f`: host-side resolution, hosts map, nft
+rule-text triple-consistency, and inner allow/block egress reprobes **GO**
+(`BOUND_IPV4=3.173.21.63`, `BINDING_VERDICT=GO`). Earlier sessions also
+recorded host-side binding GO before stopping at credential, slirp attach, or
+Bubblewrap resolv failures. This gate locks how the Qwen Code
 credential-and-execution slice must bind
 `api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
-resolution path. It does **not** authorize credential creation, DNS queries from
-inside a candidate sandbox at definition time, egress reprobes, provider API
-calls, or upstream binary launch.
+resolution path. It does **not** by itself authorize credentials, provider API
+spend, or declare M3 qualification complete.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain blocked
@@ -301,7 +299,7 @@ If any step fails, **do not** proceed to step 8–9.
 | M3 egress proof (C-01/C-02 / A-13) | **Complete 2026-07-23** | Reuse architecture; do **not** rerun proof grant |
 | M3a license clearance (C-05 / A-12) | **Owner approved 2026-07-23** | Not a launch blocker |
 | A-02 / A-03 invocation | **Resolved at M3a** | Still require owner argv lock before step 9 |
-| DNS binding | **Executed 2026-07-23** (sessions above) | Mandatory at first launch |
+| DNS binding | **Executed** (sessions in `M3_QUALIFICATION_EVIDENCE.md`, including `m3q-20260723T151512Z-6996af5f` **GO**) | Mandatory at each launch |
 
 ---
 

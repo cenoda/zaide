@@ -1,35 +1,39 @@
 # Phase 16 M3 — Qualification Smoke Evidence (TC-T01)
 
-**Status:** **NO-GO** — authorized fresh retry (2026-07-23) stopped at Qwen
-Bubblewrap launch after DNS binding, slirp4netns attach, and egress reprobes
-**passed**. Pre-launch gates (A-14 DNS binding, isolation re-check, one-shot
-credential load, balance pre-check) **passed**. **slirp4netns** host-visible
-`UNSHARE_PID` attach **passed** (`sent tapfd` confirmed). Inner egress reprobes
-**passed** (allowlisted TLS reachability, non-allowlisted block). Qwen Code
-**attempted** but **failed to start** inside Bubblewrap:
-`/etc/resolv.conf` bind rejected over the host symlink (exit **1**); TC-T01
-rename **not performed**. Provider spend **USD 0** (balance unchanged at USD
-3.98). Orchestrator initially recorded a false **GO** (inner script did not
-gate on `qwen_exit`); repository fix applied post-session. **No** comparative
-or quality claims.
+**Status:** **NO-GO** — authorized fresh retry (2026-07-24 / session UTC
+2026-07-23) stopped after Qwen Code **started** inside Bubblewrap and exited
+immediately with an auth-configuration error. Pre-launch gates (A-14 DNS
+binding, isolation re-check, one-shot credential load, balance pre-check,
+slirp4netns host-PID attach, inner egress reprobes) **passed**. Bubblewrap
+`--tmpfs /etc` hosts/resolv bind **passed** (prior resolv-symlink failure
+cleared). Qwen process **ran** and emitted JSON
+`error_during_execution`: *No auth type is selected* (missing `--auth-type` /
+settings). **0** model turns, **0** tokens, TC-T01 rename **not performed**.
+Provider spend **USD 0.00** (balance before USD 3.98; post-balance unavailable
+after one-shot key deletion; usage proves no API spend). **No** comparative or
+quality claims.
 
-**Prior attempts (same day, exhausted grants):**
+**Prior attempts (exhausted grants; not this session):**
 
 1. Session `m3q-20260723T113639Z-b1e764d3` — **NO-GO** at credential gate
    (one-shot file absent). DNS binding + isolation **GO**; Qwen not launched.
 2. Session `m3q-20260723T121356Z-1d1e7154` — **NO-GO** at slirp4netns attach
    (inner PID `1` bug); credential consumed; Qwen not launched.
+3. Session `m3q-20260723T131730Z-1c8c982f` — **NO-GO** at Bubblewrap
+   `/etc/resolv.conf` symlink bind; DNS/slirp/egress **GO**; Qwen not started.
+4. Session `m3q-20260723T151034Z-71eea5e4` — same-day partial run (not this
+   grant); same auth-type failure pattern recorded under artifact root.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`).
 
-**Session ID (this grant):** `m3q-20260723T131730Z-1c8c982f`
+**Session ID (this grant):** `m3q-20260723T151512Z-6996af5f`
 
 **Artifact root (outside Zaide repository):**
 
 ```text
-/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260723T131730Z-1c8c982f/
-/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260723T131730Z-1c8c982f/
+/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260723T151512Z-6996af5f/
+/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260723T151512Z-6996af5f/
 ```
 
 ---
@@ -39,17 +43,18 @@ or quality claims.
 | Authorized in this grant | Performed |
 |---|---|
 | Execute DNS binding gate immediately before launch | **Yes** |
-| slirp4netns attach via host-visible `UNSHARE_PID` | **Yes** — `sent tapfd` confirmed |
+| slirp4netns attach via host-visible `UNSHARE_PID` | **Yes** — `sent tapfd` / `received tapfd` confirmed |
 | Inner egress reprobe (allow + block) | **Yes** |
 | Bubblewrap isolation re-check | **Yes** |
 | Materialize TC-T01 synthetic workspace | **Yes** |
-| Read dedicated one-shot sub-key via orchestrator only | **Yes** — file consumed and deleted |
-| Launch Qwen Code (TC-T01, plan mode, JSON, 5 turns, 60s) | **Attempted** — Bubblewrap launch **FAIL** |
-| USD 1 smoke / USD 3 cumulative spend | **Not incurred** (balance unchanged) |
+| Read dedicated one-shot sub-key via orchestrator only | **Yes** — file consumed and deleted (mode was `600`) |
+| Inject only `DEEPSEEK_API_KEY` (no `~/.config` / ambient) | **Yes** |
+| Launch Qwen Code (TC-T01, plan mode, JSON, 5 turns, 60s) | **Yes (process started)** — auth config **FAIL** |
+| USD 1 smoke / USD 3 cumulative spend | **Not incurred** (0 tokens; spend USD 0.00) |
 
 | Forbidden | Status |
 |---|---|
-| Second attempt / retry | **Not performed** (this grant exhausted) |
+| Second attempt / retry under this grant | **Not performed** |
 | M4 / comparative / quality claims | **Not performed** |
 | `src/` production changes | **Not performed** |
 | Credential value in evidence or git | **Not performed** |
@@ -70,24 +75,25 @@ or quality claims.
 | TC-T01 workspace | materialized under artifact root | **PASS** |
 | Bubblewrap isolation pre-check | workspace write + host write denial | **PASS** |
 | Dedicated sub-key (C-04 / A-09) | one-shot file mode `600`, consumed after read | **PASS** |
-| Balance / cost tracking | DeepSeek `/user/balance` | **PASS** — USD 3.98 before/after |
-| slirp4netns attach | host-visible `UNSHARE_PID` + tapfd handoff | **PASS** — `unshare_pid=1993783`, `sent tapfd` |
-| Inner egress reprobe | allowlisted TLS + non-allowlisted block | **PASS** |
-| Qwen Bubblewrap launch | sandbox hosts + no ambient DNS | **FAIL** — `qwen_exit=1` |
-| TC-T01 task completion | `FetchData` → `RetrieveData` rename | **Not reached** — workspace unchanged |
+| Balance / cost tracking | DeepSeek `/user/balance` | **PASS** — USD **3.98** before |
+| slirp4netns attach | host-visible `UNSHARE_PID` + tapfd handoff | **PASS** — `unshare_pid=2033305` |
+| Inner egress reprobe | allowlisted TLS + non-allowlisted block | **PASS** — allow HTTP 401 body; block curl exit 28 |
+| Bubblewrap `/etc` setup | `--tmpfs /etc` + ro-bind hosts + resolv-empty | **PASS** (process entered sandbox) |
+| Qwen headless run | TC-T01, `--approval-mode plan`, JSON, 5 turns, 60s | **FAIL** — `qwen_exit=1` auth type not selected |
+| TC-T01 task completion | `FetchData` → `RetrieveData` rename | **FAIL** — workspace still has `FetchData` only |
 
 **DNS binding execution verdict:** **GO** (A-14 sequence complete; `BINDING_VERDICT=GO`).
 
-**Qualification verdict:** **NO-GO** — upstream binary did not run successfully;
-task not observed.
+**Qualification verdict:** **NO-GO** — upstream binary started but did not
+authenticate; task not observed; no verified workspace change.
 
 ---
 
-## 3. Locked Smoke argv (attempted)
+## 3. Locked Smoke argv (executed)
 
 Executable (pinned): `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/inspect/qwen-code/bin/qwen`
 
-Policy-locked tail (owner grant 2026-07-23):
+Policy-locked tail (owner grant; committed orchestrator):
 
 ```text
 --approval-mode plan
@@ -101,6 +107,9 @@ Prompt source: materialized `TC-T01` prompt (rename `FetchData` → `RetrieveDat
 
 Exact argv recorded under session artifact root (`exact-argv.txt`).
 
+**Missing relative to M3a support surface:** `--auth-type` was **not** present
+in the committed smoke argv. Qwen rejected non-interactive start for that reason.
+
 ---
 
 ## 4. Key Lifecycle (no value disclosed)
@@ -109,106 +118,136 @@ Exact argv recorded under session artifact root (`exact-argv.txt`).
 |---|---|
 | `key_source` | `phase16_one_shot_file` |
 | `key_file_path` | `/tmp/phase16-artifacts/phase-16/credentials/subkey.once` |
+| Pre-run metadata only | mode `600`, size `36` bytes (value never inspected/logged) |
 | Credential material persisted | **NO** |
 | `file_consumed` | **YES** — absent after orchestrator read |
 | `value_disclosed` | **NO** |
-| Platform-key disposition | **Revoked by project owner after this NO-GO**; do not reuse |
-| Stop reason | `qwen_launch_failed exit=1` (Bubblewrap `/etc/resolv.conf` bind) |
+| Ambient / `~/.config` credentials | **Not read** |
+| Stop reason | `qwen_auth_type_not_selected exit=1` |
 
 ---
 
 ## 5. Commands Ledger (excerpt)
 
 ```text
-m3q-20260723T131730Z-1c8c982f step=tool_inventory exit=0
-m3q-20260723T131730Z-1c8c982f step=qwen_binary_present exit=0
-m3q-20260723T131730Z-1c8c982f step=dns_resolution exit=0
-m3q-20260723T131730Z-1c8c982f step=dns_triple_consistency exit=0
-m3q-20260723T131730Z-1c8c982f step=materialize_tc_t01 exit=0
-m3q-20260723T131730Z-1c8c982f step=isolation_bwrap_precheck exit=0
-m3q-20260723T131730Z-1c8c982f step=credential_load_one_shot exit=0
-m3q-20260723T131730Z-1c8c982f step=balance_before exit=0
-m3q-20260723T131730Z-1c8c982f step=slirp4netns_attach exit=0
-m3q-20260723T131730Z-1c8c982f step=inner_qualification exit=0
-m3q-20260723T131730Z-1c8c982f step=balance_after exit=0
-(truthful stop: qwen_exit=1 — orchestrator qwen-exit gate added post-session)
+m3q-20260723T151512Z-6996af5f step=tool_inventory exit=0
+m3q-20260723T151512Z-6996af5f step=qwen_binary_present exit=0
+m3q-20260723T151512Z-6996af5f step=dns_resolution exit=0
+m3q-20260723T151512Z-6996af5f step=dns_triple_consistency exit=0
+m3q-20260723T151512Z-6996af5f step=materialize_tc_t01 exit=0
+m3q-20260723T151512Z-6996af5f step=isolation_bwrap_precheck exit=0
+m3q-20260723T151512Z-6996af5f step=credential_load_one_shot exit=0
+m3q-20260723T151512Z-6996af5f step=balance_before exit=0
+m3q-20260723T151512Z-6996af5f step=slirp4netns_attach exit=0
+m3q-20260723T151512Z-6996af5f step=inner_qualification exit=4
+m3q-20260723T151512Z-6996af5f step=balance_after exit=skipped note=skipped_key_consumed_usage_zero
 ```
 
 Full ledger under session artifact root.
 
 ---
 
-## 6. Root Cause and Orchestrator Fixes
+## 6. Qwen Result (redacted)
 
-### 6.1 slirp4netns host PID (prior attempt — fixed before this grant)
+JSON result (from `qwen.stdout`; no credential material):
 
-Prior retry used inner PID-namespace `1` instead of host-visible
-`unshare --fork` PID. This grant used `$UNSHARE_PID`; slirp attach **passed**.
-
-### 6.2 Bubblewrap `/etc/resolv.conf` symlink overlay (this attempt)
-
-Host `/etc/resolv.conf` is a symlink to `/run/systemd/resolve/stub-resolv.conf`.
-Bubblewrap `--ro-bind` of the sandbox `resolv-empty.txt` over that symlink
-failed:
-
-```text
-bwrap: Can't create file at /etc/resolv.conf: No such file or directory
+```json
+[{
+  "type": "result",
+  "subtype": "error_during_execution",
+  "is_error": true,
+  "duration_ms": 0,
+  "duration_api_ms": 0,
+  "num_turns": 0,
+  "usage": { "input_tokens": 0, "output_tokens": 0 },
+  "error": {
+    "message": "No auth type is selected. Please configure an auth type (e.g. via settings or `--auth-type`) before running in non-interactive mode."
+  }
+}]
 ```
 
-**Repository fix (post-session, for future grants):** add `--tmpfs /etc` before
-hosts/resolv binds in the Qwen Bubblewrap invocation.
-
-### 6.3 Missing Qwen exit gate (this attempt)
-
-The inner script continued after `qwen_exit=1`, causing a false orchestrator
-**GO**. **Repository fix (post-session):** inner script writes `fatal.txt` and
-exits non-zero on Qwen failure; outer script re-checks `qwen-result.env`.
+`qwen_exit=1`. Orchestrator exit gate treated this as fatal (**NO-GO**).
 
 ---
 
-## 7. Spend
+## 7. Root Cause
+
+### 7.1 Cleared blockers (prior grants / this grant)
+
+| Prior failure | This grant |
+|---|---|
+| slirp4netns host PID | **PASS** (`UNSHARE_PID` / `sent tapfd`) |
+| Bubblewrap `/etc/resolv.conf` symlink | **PASS** (`--tmpfs /etc` + ro-bind resolv-empty) |
+| DNS triple-consistency / egress | **PASS** |
+
+### 7.2 Auth type not selected (this grant)
+
+Qwen Code v0.20.1 requires an explicit non-interactive auth configuration.
+The committed smoke orchestrator injects `DEEPSEEK_API_KEY` only and does **not**
+pass `--auth-type` (M3a support surface lists
+`--auth-type` ∈ {`openai`,`anthropic`,`qwen-oauth`,`gemini`,`vertex-ai`};
+DeepSeek is OpenAI-compatible). With no auth type, the binary exits before any
+provider call.
+
+**Future grant requirements (out of scope; not applied under this grant):**
+
+1. New dedicated one-shot sub-key (this key consumed).
+2. Owner-locked argv must include a verified auth path that remains within
+   A-07 (`DEEPSEEK_API_KEY` only) — e.g. `--auth-type openai` and any required
+   base-URL/model wiring that does not reintroduce ambient credentials.
+3. Re-prove TC-T01 workspace rename + build/test after a successful Qwen exit.
+
+---
+
+## 8. Spend
 
 | Metric | Value |
 |---|---|
 | Balance before | USD 3.98 |
-| Balance after | USD 3.98 |
+| Balance after | **Unavailable** (one-shot key deleted before host post-balance; no second credential) |
+| Qwen usage | `input_tokens=0`, `output_tokens=0`, `duration_api_ms=0` |
 | Session smoke spend | **USD 0.00** |
 | Phase 16 cumulative spend | **USD 0.00** (under USD 3 cap) |
 | M3 smoke cap (USD 1) | **Not approached** |
 
+Spend basis: auth error before any model API turn; zero token usage.
+
 ---
 
-## 8. GO / NO-GO
+## 9. GO / NO-GO
 
-### 8.1 This qualification attempt
+### 9.1 This qualification attempt
 
 **NO-GO.** DNS binding, slirp4netns attach, egress reprobes, isolation
-re-check, and credential gate **passed**. Qwen Code **failed to launch**
-(Bubblewrap resolv.conf bind). TC-T01 **not executed**. Provider spend:
-**USD 0**.
+re-check, credential gate, and Bubblewrap `/etc` setup **passed**. Qwen Code
+**started** and **failed auth configuration** (`qwen_exit=1`). TC-T01 **not
+executed**; workspace still contains `FetchData` (no `RetrieveData` rename).
+Provider spend: **USD 0.00**.
 
 Candidate remains **`eligible for later M3 qualification`** but **not
 qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
-### 8.2 Future retry requirements (out of scope)
+### 9.2 Future retry requirements (out of scope)
 
-1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file (prior
-   key consumed).
+1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Orchestrator must include host-PID slirp attach, `--tmpfs /etc` resolv bind,
-   and Qwen exit gating (committed in this slice).
+3. Orchestrator must pass a verified non-interactive auth configuration
+   compatible with A-07 (`DEEPSEEK_API_KEY` only) in addition to host-PID
+   slirp attach, `--tmpfs /etc`, and Qwen exit gating.
+4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 
 ---
 
-## 9. Cross-References
+## 10. Cross-References
 
 - `M3_DNS_BINDING_GATE.md` — binding rules executed for session above
-- `M3A_ACQUISITION_EVIDENCE.md` — pinned binary (launch attempted, failed)
+- `M3A_ACQUISITION_EVIDENCE.md` — pinned binary; `--auth-type` support surface
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture
 - `TASK_CORPUS.md` — TC-T01 definition
 - `IMPLEMENTATION_PLAN.md` — phase status
 
 ---
 
-*M3 qualification smoke evidence — 2026-07-23. Observational only. NO-GO at
-Qwen Bubblewrap launch. slirp4netns host-PID attach proven. No provider spend.*
+*M3 qualification smoke evidence — session `m3q-20260723T151512Z-6996af5f`.
+Observational only. NO-GO at Qwen auth-type configuration. Pre-launch DNS,
+slirp, egress, and Bubblewrap `/etc` GO. No provider spend. TC-T01 incomplete.*

@@ -73,8 +73,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke (2026-07-23) | **Three attempts — all NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): (1) credential gate; (2) slirp4netns host-PID bug; (3) DNS/slirp/egress **GO**, Qwen Bubblewrap resolv bind **NO-GO**; Qwen never launched successfully; provider spend **USD 0** |
-| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; orchestrator must include host-PID slirp attach, `--tmpfs /etc`, and Qwen exit gate |
+| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): prior attempts (credential; slirp host-PID; resolv bind); fresh session `m3q-20260723T151512Z-6996af5f` — DNS/slirp/egress/tmpfs **GO**, Qwen **started** then **auth-type missing** (`qwen_exit=1`, 0 tokens); TC-T01 incomplete; provider spend **USD 0.00** |
+| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; orchestrator must include host-PID slirp attach, `--tmpfs /etc`, Qwen exit gate, and a verified non-interactive **auth-type** path under A-07 (`DEEPSEEK_API_KEY` only) |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
@@ -208,6 +208,7 @@ available for independent reconciliation.
 ---
 
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
-amendment human-accepted 2026-07-23. No candidate result observed. M2b
-completed 2026-07-23. M3 egress proof completed 2026-07-23. M3 DNS binding
-gate defined 2026-07-23.*
+amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
+completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
+qualification smoke session `m3q-20260723T151512Z-6996af5f` NO-GO at Qwen
+auth-type; TC-T01 incomplete; spend USD 0.00.*

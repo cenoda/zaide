@@ -13,8 +13,9 @@ the phase artifact root (not the Zaide repository), SHA-256 verified, tag and
 in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 **Upstream binary was not launched.** **M3 egress proof was completed on
 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
-2026-07-23** (`M3_DNS_BINDING_GATE.md`). Credentials and execution remain
-unauthorized.
+2026-07-23** (`M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
+(`m3q-20260723T151512Z-6996af5f`) **NO-GO** at Qwen auth-type; candidate still
+**not qualified** (`M3_QUALIFICATION_EVIDENCE.md`).
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -195,17 +196,19 @@ acquisition-and-inspection **complete** (`M3A_ACQUISITION_EVIDENCE.md`).
 SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
-**Still not authorized:** upstream binary launch (qualification smoke **attempted
-2026-07-23 — NO-GO at credential gate**; see `M3_QUALIFICATION_EVIDENCE.md`),
-authenticated provider API calls, comparative claims.
+**Qualification smoke status:** attempted under separate grants; latest session
+`m3q-20260723T151512Z-6996af5f` **NO-GO** (Qwen auth type not selected; TC-T01
+incomplete; spend USD 0.00) — see `M3_QUALIFICATION_EVIDENCE.md`. Candidate
+remains **not qualified**. Authenticated model spend and comparative claims
+remain unauthorized.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
-**Execution remains blocked until:** DNS binding execution at launch (A-14);
-dedicated sub-key per C-04; owner-locked smoke argv policy; isolation re-check;
-reuse of egress allowlist enforcement; and a separate M3 credential /
-qualification / execution grant.
+**Re-qualification still requires:** new dedicated sub-key (C-04); separate M3
+qualification grant; owner-locked smoke argv including verified non-interactive
+auth path under A-07; isolation re-check; DNS binding at launch (A-14); egress
+allowlist reuse; verified TC-T01 workspace change.
 
 **Exclusion rules (locked while not qualified at M3):**
 
@@ -449,8 +452,10 @@ that slice and cannot support comparative claims.
 
 *M1 artifact disposition — human-accepted 2026-07-23; M1 amendment for Qwen
 Code observational path human-accepted 2026-07-23. M3a acquisition-and-inspection
-completed 2026-07-23 (artifact under phase root only; binary not launched).
+completed 2026-07-23 (artifact under phase root only; binary not launched at M3a).
 M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
-binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Qwen Code eligible
-for later M3 qualification but not qualified; OpenCode and
-Grok Build blocked at M1. M2b completed 2026-07-23.*
+binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
+qualification smoke `m3q-20260723T151512Z-6996af5f` NO-GO at Qwen auth-type;
+TC-T01 incomplete; spend USD 0.00. Qwen Code remains eligible for later M3
+qualification but not qualified; OpenCode and Grok Build blocked at M1. M2b
+completed 2026-07-23.*

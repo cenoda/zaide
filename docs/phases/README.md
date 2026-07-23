@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14 accepted and closed** (2026-07-21; accepted baseline `67da1394`) — **Phase 15 complete and closed** (2026-07-22) — **Phase 16 M0/M1/M2a/M2b complete**; Qwen Code eligible for later observational M3 qualification, while M3 execution remains blocked pending separate grants |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14 accepted and closed** (2026-07-21; accepted baseline `67da1394`) — **Phase 15 complete and closed** (2026-07-22) — **Phase 16 M0/M1/M2a/M2b complete**; Qwen Code eligible for later observational M3 qualification; latest M3 smoke **NO-GO** (auth-type; not qualified) |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
@@ -32,9 +32,10 @@ on 2026-07-23** (standalone offline runner contract and fake-candidate core; no
 production behavior or upstream execution). **M2b was completed and accepted on
 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and
 cleanup evidence; no production behavior, DI, public types, upstream acquisition,
-network access, or real candidate execution). **M3 execution remains blocked**
-pending separate grants for Qwen Code acquisition-and-inspection, egress proof,
-credentials, and qualification.
+network access, or real candidate execution). M3a/egress/DNS gates completed;
+**latest M3 qualification smoke** (`m3q-20260723T151512Z-6996af5f`) **NO-GO** at
+Qwen auth-type; TC-T01 incomplete; spend USD 0.00; candidate still **not
+qualified**.
 
 ## Archive Policy
 

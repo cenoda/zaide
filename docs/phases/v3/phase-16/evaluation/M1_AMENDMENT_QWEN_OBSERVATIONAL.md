@@ -84,7 +84,7 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Not authorized; **GO to authorize** when human grants; still **NO-GO** to perform |
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Design GO** (`M3_DNS_BINDING_GATE.md`); **execution NO-GO** until grant |
 | Provider API calls | Execution grant + cost tracking | Not authorized |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Not authorized; A-02/A-03 resolved, egress proven, DNS gate defined, launch still blocked |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260723T151512Z-6996af5f` started Qwen then **NO-GO** (auth type not selected); TC-T01 incomplete; see `M3_QUALIFICATION_EVIDENCE.md` |
 
 ---
 
