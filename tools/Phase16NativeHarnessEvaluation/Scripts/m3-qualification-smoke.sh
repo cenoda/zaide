@@ -150,8 +150,7 @@ KEY_LIFECYCLE="$SESSION_ROOT/key-lifecycle.env"
   echo "key_source=phase16_one_shot_file"
   echo "key_file_path=$SUBKEY_ONCE"
   echo "created_at_utc="
-  echo "key_prefix="
-  echo "revoked_at_utc="
+  echo "one_shot_file_deleted_at_utc="
   echo "value_disclosed=NO"
 } > "$KEY_LIFECYCLE"
 
@@ -162,13 +161,11 @@ DEEPSEEK_API_KEY="$(tr -d '\r\n' < "$SUBKEY_ONCE")"
 rm -f "$SUBKEY_ONCE"
 sync
 [ -n "$DEEPSEEK_API_KEY" ] || stop_with "sub-key one-shot file was empty"
-KEY_PREFIX="${DEEPSEEK_API_KEY:0:8}..."
 {
   echo "key_source=phase16_one_shot_file"
   echo "key_file_path=$SUBKEY_ONCE"
   echo "created_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "key_prefix=$KEY_PREFIX"
-  echo "revoked_at_utc="
+  echo "one_shot_file_deleted_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "value_disclosed=NO"
 } > "$KEY_LIFECYCLE"
 log_step "credential_load_one_shot" 0
@@ -375,8 +372,7 @@ log_step "balance_after" "$BALANCE_AFTER_EC"
 
 {
   echo "revoke_attempted=console_required"
-  echo "revoked_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "key_prefix=$KEY_PREFIX"
+  echo "one_shot_file_deleted_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } >> "$KEY_LIFECYCLE"
 
 ORPHAN="NO"

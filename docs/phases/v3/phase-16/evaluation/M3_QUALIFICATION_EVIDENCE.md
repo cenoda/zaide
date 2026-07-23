@@ -94,9 +94,10 @@ Prompt source: materialized `TC-T01` prompt (rename `FetchData` → `RetrieveDat
 |---|---|
 | `key_source` | `phase16_one_shot_file` |
 | `key_file_path` | `/tmp/phase16-artifacts/phase-16/credentials/subkey.once` |
-| `key_prefix` | `sk-2c72f...` (redacted) |
+| Credential material persisted | **NO** |
 | `file_consumed` | **YES** — absent after orchestrator read |
 | `value_disclosed` | `NO` |
+| Platform-key disposition | **Revoked by project owner after this NO-GO**; do not reuse |
 | Stop reason | `tap0_missing` (slirp4netns host PID resolution) |
 
 ---
