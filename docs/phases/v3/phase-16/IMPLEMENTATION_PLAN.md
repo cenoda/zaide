@@ -1,6 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. A **proposed, unaccepted** M3 unblock amendment package exists at `evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md` (post-M2b NO-GO preflight; docs-only; no execution authorized). Under the repository-wide automatic-progression policy, **M3 remains blocked** until that proposal (or a successor) is human-accepted, every listed external-side-effect gate passes, and independent provenance and security requirements are satisfied; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3 execution remains blocked** until separate grants for M3a acquisition-and-inspection, egress proof, credentials, and qualification; comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -228,21 +228,17 @@ release, tag, distributed-artifact mapping, service mapping, or model mapping fo
 the Grok Build public source unless later primary evidence proves that relation.
 
 No row qualifies an executable. **M1 disposition (re-verified
-`2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z`, no acquisition/execution):** all
-three candidates are **`blocked at M1`** for later M3 eligibility. Qwen Code
-`v0.20.1` and OpenCode `v1.18.4` have observed Linux release-archive coordinates
-and official checksum sources, but lack locked provider/service/model identities
-and exact evaluation invocations (and source-build mappings remain unmapped).
-Grok Build public source still has no Git tag/release artifact pin on the
-accepted public-source identity. Full field tables and exclusion rules live in
-`docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md`. Missing required
-identity excludes the candidate instead of being guessed. **Zero** candidates
-are `eligible for later M3 qualification` at this lock; at least two
-independently qualified configurations are **not** currently possible; no
-comparative claim is possible unless two later M3 qualifications actually
-succeed. At the M1 boundary M2a remained unauthorized; M2a was subsequently
-completed, and M2b was subsequently completed on 2026-07-23. M3 is currently blocked
-pending acceptance of the M3 unblock amendment proposal (`evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md`).
+`2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z`, no acquisition/execution):**
+OpenCode and Grok Build public source remain **`blocked at M1`**. **M1 amendment
+(2026-07-23):** Qwen Code is **`eligible for later M3 qualification`** on the
+single-candidate observational path with DeepSeek provider configuration; A-02/A-03
+invocation fields remain `UNRESOLVED` until M3a acquisition-and-inspection.
+Full field tables and exclusion rules live in
+`docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md` and
+`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. **One** candidate is eligible;
+comparative claims remain impossible unless two later M3 qualifications actually
+succeed. M2a and M2b were completed on 2026-07-23. **M3 execution remains
+blocked** pending separate M3a, egress-proof, credential, and qualification grants.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -450,8 +446,10 @@ milestone; stop if its eligibility or an external-side-effect gate blocks it.
 ### M3a / M3b / M3c — Candidate qualification and one-task smoke
 
 **Goal:** in separate slices, acquire, hash, license-check, isolate, and perform
-one predeclared smoke task for Qwen Code, OpenCode, and Grok Build. M1 sets the
-order; ordering does not imply preference. A Grok Build distributed artifact
+one predeclared smoke task for candidates that become eligible. Qwen Code alone is
+eligible for later M3a qualification on the accepted single-candidate observational
+path; M3a itself remains blocked pending separate external-side-effect grants.
+OpenCode and Grok Build remain blocked at M1. A Grok Build distributed artifact
 must be independently identified and mapped before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
@@ -630,25 +628,25 @@ is a scope violation unless the plan is amended and reaccepted.
 
 ### M1 must resolve before M2
 
-M1 answers (docs lock; **human-accepted 2026-07-23**; **M2a unauthorized at the
-M1 boundary** — subsequently authorized and explicitly human-accepted on
-2026-07-23):
+M1 answers (docs lock; **human-accepted 2026-07-23**; **M1 amendment
+human-accepted 2026-07-23**):
 
-- **Eligible artifacts / invocations:** **None.** Qwen Code, OpenCode, and Grok
-  Build public source are each **`blocked at M1`**. Observed-but-not-eligible
-  release coordinates for Qwen/OpenCode Linux archives and full missing-fact
-  lists are in `evaluation/CANDIDATE_ARTIFACTS.md`.
+- **Eligible artifacts / invocations:** **Qwen Code only** — **`eligible for
+  later M3 qualification`** on single-candidate observational path; post-extract
+  path and argv (**A-02/A-03**) remain `UNRESOLVED` until M3a
+  acquisition-and-inspection. OpenCode and Grok Build remain **`blocked at
+  M1`**. Full records in `evaluation/CANDIDATE_ARTIFACTS.md` and
+  `evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 - **Can at least two candidates qualify without source adoption, unsafe install,
   or an inferred binary/source mapping?** **Not from the current eligibility
-  set.** Zero candidates are `eligible for later M3 qualification`. Comparative
-  claims remain impossible unless two later M3 qualifications actually succeed.
-  Phase 16 is **eligibility-blocked** for multi-candidate comparison at this
-  lock; it is **not** re-scoped to a single-candidate observational path because
-  that path also requires at least one later-eligible, later-qualified
-  candidate.
-- **Provider / service / model comparability:** **Not established.** No campaign
-  provider, service, or model identity is selected for any candidate; cost and
-  account isolation therefore cannot be locked.
+  set.** One candidate is eligible; comparative claims remain impossible unless
+  two later M3 qualifications actually succeed. Phase 16 is re-scoped to
+  **single-candidate observational** for Qwen Code only; causal comparative
+  campaign remains blocked.
+- **Provider / service / model comparability:** **Established for Qwen Code
+  observational path only** — DeepSeek, `https://api.deepseek.com`,
+  `deepseek-v4-flash`; cost and account isolation locked per M1 amendment.
+  OpenCode and Grok Build have no campaign provider configuration.
 - **Synthetic corpus without held-out leakage:** Locked in
   `evaluation/TASK_CORPUS.md` (3 pilot + 10 tuning + 10 held-out). Held-out
   definitions carry reproducible `definition_commitment_sha256` commitments;
@@ -776,10 +774,25 @@ and deterministic repository-owned fake-candidate core documented in
 production types, upstream artifact acquisition, network access, process launch,
 or real candidate execution.
 
-**M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence in `evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates.
+**Human decision (M1 amendment):** Phase 16 M1 amendment for **Qwen Code
+single-candidate observational** path was **explicitly human-accepted on
+2026-07-23** (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`):
 
-**Proposed, unaccepted gate (M3 unblock):** `evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md`
-records the post-M2b NO-GO preflight and the minimum explicit human decisions
-required to make one candidate eligibility path reviewable. **Not accepted.**
-Acceptance does not authorize acquisition, credentials, provider access, or
-execution. Comparative campaign rules remain unchanged unless separately amended.
+- accepts `M3_UNBLOCK_AMENDMENT_PROPOSAL.md` as the amendment vehicle;
+- Qwen Code → **`eligible for later M3 qualification`** (observational only);
+- OpenCode and Grok Build remain **blocked at M1**;
+- single-candidate observational path authorized; comparative rules unchanged;
+- provider configuration locked to DeepSeek / `https://api.deepseek.com` /
+  `deepseek-v4-flash`;
+- A-02/A-03 remain `UNRESOLVED` until separately authorized M3a
+  acquisition-and-inspection;
+- **does not** authorize acquisition, egress tooling install, credentials,
+  provider API calls, or upstream execution.
+
+**M2b was completed and accepted on 2026-07-23** (repository-owned isolation,
+lifecycle, mutation, cancellation, and cleanup evidence in
+`evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types,
+upstream acquisition, network access, or real candidate execution). **M3
+execution is blocked**, not next eligible: Qwen Code eligibility unlock does not
+authorize M3a acquisition, egress proof, credentials, or binary launch without
+separate grants.

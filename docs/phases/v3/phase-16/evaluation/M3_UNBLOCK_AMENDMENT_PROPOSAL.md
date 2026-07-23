@@ -1,11 +1,13 @@
 # Phase 16 M3 Unblock — Amendment Proposal (NOT ACCEPTED)
 
-**Status:** **Proposed, unaccepted.** This document is a docs-only amendment
-proposal. It does **not** accept any decision, authorize M3 acquisition or
-execution, use credentials, access provider services, install host tooling, or
-weaken the M1/M0 eligibility lock. **M3 remains blocked** until a human
-explicitly accepts this proposal (or a successor) **and** every external-side-effect
-gate listed below.
+**Status:** **Accepted as the amendment vehicle on 2026-07-23.** Human-accepted
+decisions for Qwen Code single-candidate observational unblock are recorded in
+[`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`](./M1_AMENDMENT_QWEN_OBSERVATIONAL.md).
+This proposal document remains the preflight and decision checklist reference.
+Acceptance does **not** authorize M3 acquisition, egress tooling installation,
+credential creation, provider API calls, or upstream execution. **M3 remains
+blocked** until every external-side-effect gate listed below receives a separate
+grant.
 
 **Preflight basis:** Post-M2b NO-GO preflight completed **2026-07-23** (docs-only
 synthesis; no artifact acquisition, no process launch, no network egress to
@@ -240,4 +242,6 @@ The preflight and this proposal **do not** establish:
 
 ---
 
-*Proposed 2026-07-23. Not human-accepted. M3 remains blocked.*
+*Proposed 2026-07-23. Accepted as amendment vehicle 2026-07-23 via
+`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. M3 execution remains blocked pending
+separate grants.*

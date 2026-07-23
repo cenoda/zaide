@@ -1,9 +1,11 @@
 # Phase 16 M1: Campaign Lock
 
-**Status:** M1 explicitly human-accepted on 2026-07-23 (all-blocked candidate
-eligibility lock). **M2a was explicitly human-accepted on 2026-07-23**
-(standalone offline runner contract and fake-candidate core). **M2b remains
-unauthorized.**
+**Status:** M1 explicitly human-accepted on 2026-07-23. **M1 amendment
+(human-accepted 2026-07-23):** single-candidate observational path authorized
+for Qwen Code only (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). Comparative rules
+unchanged. **M2a was explicitly human-accepted on 2026-07-23** (standalone
+offline runner contract and fake-candidate core). **M2b was completed on
+2026-07-23** (`ISOLATION_EVIDENCE.md`).
 
 ---
 
@@ -33,29 +35,43 @@ comparative claim under that method; it does not mean any candidate is
 preferred, rejected, or equivalent. The campaign records what happened; M5
 interprets it with explicit limitations.
 
-### 1.3 M1 Campaign Eligibility Outcome (locked)
+### 1.3 M1 Campaign Eligibility Outcome (locked + amended 2026-07-23)
 
 Source of truth for per-candidate disposition:
 [`CANDIDATE_ARTIFACTS.md`](./CANDIDATE_ARTIFACTS.md). M1 re-verification window:
 `2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z` (UTC). No artifact was acquired
 or executed.
 
-| Campaign question | Locked M1 answer |
+| Campaign question | Answer after M1 amendment (2026-07-23) |
 |---|---|
-| Candidates `eligible for later M3 qualification` | **None.** Qwen Code, OpenCode, and Grok Build public source are each **`blocked at M1`** |
+| Candidates `eligible for later M3 qualification` | **Qwen Code only.** OpenCode and Grok Build public source remain **`blocked at M1`** |
 | Are at least two independently qualified configurations currently possible? | **No** |
-| Comparative claim possible at M1? | **No** |
-| Single-candidate observational path currently authorized? | **No.** That path still requires at least one later eligibility unblock and a successful M3 qualification |
-| Phase 16 comparative evaluation status | **Blocked** until eligibility and qualification conditions change under later authorization |
+| Comparative claim possible now? | **No** |
+| Single-candidate observational path authorized? | **Yes — Qwen Code only** (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`) |
+| Phase 16 comparative evaluation status | **Blocked** for causal comparative claims until ≥2 M3 qualifications succeed |
 | When may a comparative claim become possible? | Only if **two** later M3 qualifications actually succeed under identical environmental rules |
 
-**Interpretation:** M1 locks the campaign rules and records that the accepted
-candidate set is **not currently eligible** for later M3 qualification.
-Phase 16 is **not** re-scoped to a single-candidate observational campaign at
-this lock; it is **eligibility-blocked** for multi-candidate comparison, with
-future observational or comparative paths contingent on later unblocking and
-qualification facts. No comparative claim is possible unless two later M3
-qualifications actually succeed.
+**Interpretation:** M1 locks comparative rules. The 2026-07-23 amendment
+authorizes a **single-candidate observational path** for Qwen Code with
+DeepSeek provider configuration. No comparative superiority or quality claim may
+be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
+
+### 1.4 Single-Candidate Observational Path (authorized 2026-07-23)
+
+| Property | Locked value |
+|---|---|
+| Candidate | Qwen Code (`qwen-code`) only |
+| Evidence class | **Observational** only |
+| Comparative claims | **Forbidden** |
+| Quality / superiority claims | **Forbidden** |
+| Provider | DeepSeek |
+| Service | `https://api.deepseek.com` |
+| Model | `deepseek-v4-flash` |
+| M3a smoke cost ceiling | USD 1 |
+| Phase 16 cumulative API cap | USD 3 (later authorization may define a new cap) |
+| Execution | **Not authorized** by the amendment; requires separate M3 grants |
+
+Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
 ---
 
@@ -104,7 +120,16 @@ Trials are categorized into three mutually exclusive evidence classes:
 
 Provider-restricted egress — the ability to allow outbound network access only
 to specific provider API endpoints while denying all other traffic — is
-**explicitly unproven at M1**.
+**explicitly unproven on the host** as of M2b (`ISOLATION_EVIDENCE.md` §6).
+
+**Human-accepted design (M1 amendment 2026-07-23; enforcement still unproven):**
+
+| Property | Value |
+|---|---|
+| Posture (C-01) | **(b) Provider-restricted egress proof path** — separate host-tooling grant required before proof |
+| Allowlist (C-02 / A-13) | **`api.deepseek.com:443` only** |
+| Proof requirements | Allowlisted success, non-allowlisted block, logs preserved under phase artifact root |
+| Default until proof | Default-deny full network isolation (`--unshare-net` or equivalent) |
 
 The M0 substrate audit recorded:
 
@@ -113,19 +138,10 @@ The M0 substrate audit recorded:
 - `slirp4netns`, `pasta`, and `socat` are absent.
 - Docker daemon access is unavailable; Podman is absent.
 
-**M1 does not assert provider-restricted egress as an established enforcement
-fact.** It is a future qualification requirement that must be proven during M2b
-(isolation proof) before any candidate executes. M2b must either:
-
-- Demonstrate provider-only egress with current host tools and a reproducible
-  proof, OR
-- Record that provider-restricted egress cannot be enforced on the current
-  substrate and classify all trials as observational with explicit egress
-  limitations.
-
-Until M2b resolves this, the campaign plan assumes default-deny network
-isolation (`--unshare-net` or equivalent) with no provider access. A candidate
-that requires network access cannot execute until egress is proven.
+M2b proved default-deny isolation mechanics with repository-owned fake probes
+only. **Provider-restricted egress enforcement is not established.** A Qwen Code
+trial requiring live DeepSeek access cannot execute until egress proof succeeds
+under a separately authorized grant.
 
 ---
 
@@ -183,7 +199,6 @@ available for independent reconciliation.
 
 ---
 
-*M1 campaign lock — human-accepted 2026-07-23. All three candidates are blocked
-at M1 for later M3 eligibility. No candidate result has been observed. At the
-M1 boundary M2a was unauthorized; M2a was subsequently authorized and explicitly
-human-accepted on 2026-07-23. M2b remains unauthorized.*
+*M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
+amendment human-accepted 2026-07-23. No candidate result observed. M2b
+completed 2026-07-23.*

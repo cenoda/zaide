@@ -4,7 +4,8 @@
 M2a outcome is the standalone offline runner contract and deterministic
 repository-owned fake-candidate core. M2a added no production behavior, DI,
 public production types, upstream artifact acquisition, network access, process
-launch, or real candidate execution. **M2b remains unauthorized.**
+launch, or real candidate execution. **M2b was completed on 2026-07-23**
+(`ISOLATION_EVIDENCE.md`).
 
 This document defines the standalone, offline-only evaluation runner contract
 implemented under `tools/Phase16NativeHarnessEvaluation/`. It does not authorize
@@ -170,7 +171,8 @@ Manifest or record validation fails closed with explicit errors when:
 - `executionMode` is not `fake_repository_owned` at M2a
 - `networkEnabled`, `processLaunchEnabled`, or `upstreamArtifactPath` request
   forbidden capabilities
-- `candidateSlug` is `qwen-code`, `opencode`, or `grok-build` (blocked at M1)
+- `candidateSlug` is `opencode` or `grok-build` (**blocked at M1**), or
+  `qwen-code` requesting forbidden capabilities before M3 qualification
 - Metric fields are negative or malformed
 - Record fields do not exactly match manifest binding (schema label, execution
   mode, complete candidate identity, complete fake-candidate identity, runner
@@ -285,5 +287,6 @@ These checks apply before any fake or real execution path.
 
 ---
 
-*M2a runner contract — explicitly human-accepted 2026-07-23. M2b remains
-unauthorized.*
+*M2a runner contract — explicitly human-accepted 2026-07-23. M2b completed
+2026-07-23. Qwen Code eligible for later M3 qualification; upstream execution
+not authorized until M3 qualification grant.*

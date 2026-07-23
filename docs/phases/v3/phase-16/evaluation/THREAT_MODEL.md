@@ -1,10 +1,12 @@
 # Phase 16 M1: Threat Model
 
-**Status:** M1 explicitly human-accepted on 2026-07-23. This threat model
-describes required safety properties. Properties marked **unproven** are future
-qualification requirements, not established enforcement facts. **M2a was explicitly
-human-accepted on 2026-07-23** (standalone offline runner contract and
-fake-candidate core). **M2b remains unauthorized.**
+**Status:** M1 explicitly human-accepted on 2026-07-23. M1 amendment
+(2026-07-23) records accepted egress and credential design for Qwen Code
+(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`); enforcement remains **unproven**.
+Properties marked **unproven** are future qualification requirements, not
+established enforcement facts. **M2a was explicitly human-accepted on
+2026-07-23** (standalone offline runner contract and fake-candidate core).
+**M2b was completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`).
 
 ---
 
@@ -41,7 +43,9 @@ and license do not confer trust. Candidates must never receive direct access to:
 
 ## 2. Provider-Restricted Egress — UNPROVEN
 
-**Status at M1: Unproven.**
+**Status at M2b: Unproven on host.** Human-accepted design at M1 amendment
+2026-07-23: allow **`api.deepseek.com:443` only**; prove allowlisted success and
+non-allowlisted block; preserve logs (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md` C-01/C-02).
 
 The M0 substrate audit established that Bubblewrap `0.11.2` is installed and
 that full network isolation (`--unshare-net`) works. The following are absent
@@ -77,6 +81,10 @@ isolation. Candidates requiring network access cannot execute.
   configurations, candidate workspaces, or runner state.
 - Evaluation runs use **phase-specific, least-privilege, allowlisted, and
   independently revocable** credentials.
+- **M1 amendment (2026-07-23):** dedicated Phase 16 DeepSeek sub-key created
+  only after separate execution grant; never `~/.config` or ambient credentials;
+  sandbox allowlist permits **only** `DEEPSEEK_API_KEY`; revoke at M3
+  completion; never persist credential values in logs or evidence.
 - Credentials are injected as temporary scoped environment variables for the
   duration of a single trial only.
 - Credential values are redacted from all logs, ledger entries, and output
@@ -195,8 +203,6 @@ fake candidates:
 
 ---
 
-*M1 threat model — human-accepted 2026-07-23. Provider-restricted egress is
-unproven. No candidate has been executed. All security properties are required
-but not yet demonstrated. At the M1 boundary M2a was unauthorized; M2a was
-subsequently authorized and explicitly human-accepted on 2026-07-23. M2b remains
-unauthorized.*
+*M1 threat model — human-accepted 2026-07-23; Qwen Code observational amendment
+2026-07-23. Provider-restricted egress design accepted; enforcement unproven. No
+candidate executed. M2b completed 2026-07-23.*

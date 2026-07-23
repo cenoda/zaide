@@ -118,18 +118,25 @@ No locked M0/M1 boundary was weakened to produce this evidence.
 
 ## 7. M3 Eligibility Assessment
 
-**M3 remains blocked.** M2b proves repository-owned isolation mechanics only.
+**M3 execution remains blocked.** M2b proves repository-owned isolation
+mechanics only. M1 amendment (2026-07-23) made **Qwen Code** **`eligible for
+later M3 qualification`** on the single-candidate observational path
+(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked
+at M1**.
+
 M3 additionally requires, per candidate slice:
 
-- artifact acquisition and hash verification,
-- license clearance,
-- provider/service/model identity lock,
-- credential and egress gates,
-- and M1 eligibility unblock (currently **zero** candidates are `eligible for
-  later M3 qualification`).
+- **M3a (next eligible slice under separate grant):** artifact acquisition and
+  hash verification; tag and in-archive license/notice clearance; resolution of
+  A-02/A-03 from inspection — **no execution** in M3a;
+- provider-restricted egress proof per accepted C-01/C-02 design (enforcement
+  still unproven);
+- dedicated DeepSeek sub-key and credential injection (separate execution grant);
+- M3 qualification grant and isolation re-check before upstream binary launch.
 
-Automatic progression stops at M3 until those independent provenance, security,
-and external-side-effect gates are genuinely satisfied.
+Automatic progression to M3a acquisition-and-inspection is eligible only after an
+explicit M3a grant; execution gates remain closed until A-02/A-03 and egress
+proof succeed under later grants.
 
 ---
 

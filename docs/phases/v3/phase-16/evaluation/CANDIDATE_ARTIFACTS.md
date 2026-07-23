@@ -1,11 +1,13 @@
 # Phase 16 M1: Candidate Artifacts
 
-**Status:** M1 explicitly human-accepted on 2026-07-23. No artifact has been
-acquired, installed, or executed. This document records the accepted M0
-candidate set, M1 primary-source re-verification, and one explicit M1
-disposition per candidate (all three **blocked at M1**). **M2a was explicitly
-human-accepted on 2026-07-23** (standalone offline runner contract and
-fake-candidate core). **M2b remains unauthorized.**
+**Status:** M1 explicitly human-accepted on 2026-07-23. **M1 amendment
+(human-accepted 2026-07-23):** Qwen Code is **`eligible for later M3
+qualification`** on the single-candidate observational path
+(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build public source
+remain **`blocked at M1`**. No artifact has been acquired, installed, or
+executed. **M2a was explicitly human-accepted on 2026-07-23** (standalone
+offline runner contract and fake-candidate core). **M2b was completed on
+2026-07-23** (`ISOLATION_EVIDENCE.md`).
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -55,9 +57,12 @@ the following are actually established from primary official evidence at M1:
 
 If any item is missing, the disposition is **`blocked at M1`**. `UNRESOLVED`
 fields are allowed only when paired with that blocked disposition and a
-concrete missing-evidence reason. **Eligibility is not qualification:** even an
-eligible candidate remains non-executable until its M3 slice succeeds under
-later authorization. No candidate is eligible at this M1 lock (see §4–§6).
+concrete missing-evidence reason, **except** where an explicit M1 amendment
+records accepted `UNRESOLVED` invocation fields deferred to a separately
+authorized M3a acquisition-and-inspection slice (see §4 and
+`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). **Eligibility is not qualification:**
+even an eligible candidate remains non-executable until its M3 slice succeeds
+under later authorization.
 
 ---
 
@@ -69,13 +74,17 @@ carried forward. M1 re-checks primary sources and records disposition.
 
 | Candidate | M0 public source | M1 disposition |
 |---|---|---|
-| A — Qwen Code | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) | **blocked at M1** |
+| A — Qwen Code | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) | **eligible for later M3 qualification** (single-candidate observational; M1 amendment 2026-07-23) |
 | B — OpenCode | [anomalyco/opencode](https://github.com/anomalyco/opencode) | **blocked at M1** |
 | C — Grok Build (public source) | [xai-org/grok-build](https://github.com/xai-org/grok-build) | **blocked at M1** |
 
 ---
 
-## 4. Candidate A: Qwen Code — **blocked at M1**
+## 4. Candidate A: Qwen Code — **eligible for later M3 qualification**
+
+**Campaign configuration:** single-candidate observational path only (M1
+amendment 2026-07-23; `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). No comparative or
+quality claims.
 
 ### 4.1 M0 identities carried forward
 
@@ -101,77 +110,88 @@ carried forward. M1 re-checks primary sources and records disposition.
 | `NOTICE` at tag `v0.20.1` | Absent (HTTP 404) |
 | README at tag `v0.20.1` | Present; documents multi-protocol providers and usage forms |
 
-**Immutable artifact coordinate observed for Linux x86_64 evaluation host
-(not acquired):**
+**Pinned immutable artifact (A-01; not acquired):**
 
 - URL:
   `https://github.com/QwenLM/qwen-code/releases/download/v0.20.1/qwen-code-linux-x64.tar.gz`
-- Official checksum sources (agreeing on this filename):
+- SHA-256 (human-accepted pin):
+  `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e`
+- Official checksum sources agreeing at M1 re-verification:
   - Release asset digest reported by GitHub API:
     `sha256:2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e`
   - Official release file
     `https://github.com/QwenLM/qwen-code/releases/download/v0.20.1/SHA256SUMS`
     line:
     `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e  qwen-code-linux-x64.tar.gz`
-- **Checksum plan if later authorized to acquire:** download the archive and
-  `SHA256SUMS` under a future M3 grant; verify
-  `sha256sum -c` against the pinned line above; do not execute until M3
-  qualification completes.
+- **Checksum plan under M3a grant:** download the archive and `SHA256SUMS`;
+  verify `sha256sum -c` against the pinned line above. Do not execute until
+  A-02/A-03 are resolved and a further execution grant is issued.
 
-**License / notices review route (docs-only at M1):**
+**License / notices review route (A-12 / C-05):**
 
-- Primary: `LICENSE` at tag `v0.20.1` (Apache-2.0)
-- Repository license metadata: Apache-2.0
-- `NOTICE` file: not present at the pinned tag (404)
-- Pre-acquisition review must still inspect the acquired archive’s embedded
-  license/notice files when an M3 acquisition grant exists. That archive review
-  has **not** been performed (no download).
+- Final approver: **project owner**
+- Before M3a acquisition: re-check `LICENSE` at tag `v0.20.1` (Apache-2.0)
+- Before execution: scan acquired archive `LICENSE`, `NOTICE`, and
+  `THIRD-PARTY-NOTICES`; **block on uncertainty**
+- Repository `NOTICE` at tag: absent (404 at M1 re-verification)
+- In-archive notice scan: **not performed** (no download)
 
-**Documented usage forms (not a locked evaluation invocation):**
+**Locked provider configuration (M1 amendment 2026-07-23):**
+
+| Field | Value |
+|---|---|
+| Provider (A-04) | DeepSeek |
+| Service (A-05) | `https://api.deepseek.com` |
+| Model (A-06) | `deepseek-v4-flash` |
+| Credential (A-07) | Sandbox allowlist: `DEEPSEEK_API_KEY` only; never log or persist credential values |
+| M3a smoke cost ceiling (A-08) | USD 1 |
+| Campaign cumulative cap (C-03) | USD 3 (later authorization may define a new cap) |
+| Account isolation (A-09 / C-04) | Dedicated Phase 16 DeepSeek sub-key after separate execution grant; never `~/.config` credentials; revoke at M3 completion |
+| Egress allowlist (A-13 / C-02) | `api.deepseek.com:443` only; all other external hosts, ports, and DNS paths denied; proof design accepted; enforcement **unproven** until separate grant |
+| Source-build mapping (A-10) | **Explicitly unmapped** |
+| SOURCE_REV (A-11) | **`UNRESOLVED`** |
+
+**Documented usage forms (not the locked evaluation invocation):**
 
 - Interactive: `qwen`
 - Headless form documented in README: `qwen -p "..."`
 - Auth configuration: interactive `/auth` and official Authentication /
   Model Providers docs (multi-provider)
 
-### 4.3 Fields still UNRESOLVED (each blocks eligibility)
+### 4.3 Fields still UNRESOLVED (execution-blocked)
 
-| Field | M1 state | Concrete missing evidence |
+| Field | M1 state | Resolution gate |
 |---|---|---|
-| **SOURCE_REV** | `UNRESOLVED` | No build-manifest SOURCE_REV mapping for the distributed archive was verified |
-| **Source-build mapping** | `UNRESOLVED` (state: unmapped) | No primary evidence maps `qwen-code-linux-x64.tar.gz` bytes to tag commit `305b0491…` or to a build recipe hash |
-| **Exact evaluation invocation** | `UNRESOLVED` | No pinned post-extract executable path + full structured argv for Phase 16 trials (workspace root, non-interactive flags, output mode, turn limits). README usage forms are not a campaign argv lock |
-| **Provider** | `UNRESOLVED` | Official docs describe multiple providers (OpenAI / Anthropic / Gemini / Qwen / third-party / local). **No single campaign provider was selected at M1** |
-| **Service** | `UNRESOLVED` | No exact API endpoint/gateway identity selected for the campaign configuration |
-| **Model** | `UNRESOLVED` | No exact model identifier selected for the campaign configuration |
-| **Protocol / SDK** | `UNRESOLVED` | Multi-protocol product; no single wire/SDK path selected for evaluation |
-| **Credential / egress needs** | `UNRESOLVED` | Cannot lock least-privilege credential or provider-only egress allowlist without selected provider/service |
-| **Product / changelog** | `UNRESOLVED` as separate product pin | Release notes exist on the GitHub Release; no separate product identity was selected beyond tag `v0.20.1` |
+| **Post-extract executable path (A-02)** | `UNRESOLVED` | M3a acquisition-and-inspection grant only; no execution before further approval |
+| **Structured non-interactive argv (A-03)** | `UNRESOLVED` | Lock during M3a inspection; no execution before further approval |
+| **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
+| **Protocol / SDK** | `UNRESOLVED` | Not separately pinned at M1 amendment |
+| **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |
 
 ### 4.4 M1 disposition
 
-**`blocked at M1`**
+**`eligible for later M3 qualification`** (single-candidate observational path;
+M1 amendment human-accepted 2026-07-23).
 
-**Missing facts that prevent `eligible for later M3 qualification`:** exact
-provider, service, and model identities; exact evaluation invocation argv;
-verified source-build mapping; credential/egress requirements bound to a
-selected configuration.
+**Authorized path:** docs-only eligibility for a future **M3a
+acquisition-and-inspection** slice under separate grant. **Not authorized
+now:** download, extract-for-run, egress proof execution, credential creation,
+provider API calls, or upstream binary launch.
 
-**Consequence for later qualification:** Candidate A **must not** enter M3a
-acquisition or execution while this disposition stands. Unblocking requires a
-docs-only M1 amendment or a later authorized identity-lock update that
-establishes every §2 item from primary evidence **before** any M3 grant.
-Artifact URL and checksum sources observed above do **not** alone confer
-eligibility.
+**Execution remains blocked until:** A-02 and A-03 are resolved from acquired
+archive inspection; tag and in-archive license/notice clearance per C-05;
+provider-restricted egress proof per C-01/C-02; dedicated sub-key per C-04;
+and a separate M3 qualification / execution grant.
 
-**Exclusion rules (locked while blocked):**
+**Exclusion rules (locked while not qualified at M3):**
 
-- No download, install, extract-for-run, or execution of Qwen Code artifacts
+- No extract-for-run or execution of Qwen Code artifacts without M3a grant and
+  subsequent execution grant
 - No use of install-script pipes (`curl | bash`) for this campaign
-- No ambient user API keys or browser OAuth sessions
+- No ambient user API keys, `~/.config` credentials, or browser OAuth sessions
 - No substitution of npm `@latest` / Homebrew floating packages for the pinned
   release coordinate
-- Missing identities are recorded, not guessed
+- Missing or deferred fields are recorded, not guessed
 
 ---
 
@@ -347,8 +367,10 @@ scripts must not be treated as the Grok Build public-source artifact pin.
 1. **No substitutions.** The M0-accepted set remains Qwen Code, OpenCode, and
    Grok Build public source.
 2. **No inferred mappings.** If a field cannot be verified from primary official
-   evidence with a timestamp, it is `UNRESOLVED` and contributes to **blocked
-   at M1**.
+   evidence with a timestamp, it is `UNRESOLVED`. For candidates **`blocked at
+   M1`**, unresolved fields contribute to that disposition. For Qwen Code
+   post-amendment, accepted `UNRESOLVED` invocation fields (A-02/A-03) defer to
+   M3a acquisition-and-inspection under separate grant.
 3. **Distinct fields preserved.** Public HEAD, release/tag, tag commit, release
    metadata target, SOURCE_REV, distributed artifact, product/changelog,
    provider, service, model, and protocol/SDK remain separate.
@@ -356,47 +378,51 @@ scripts must not be treated as the Grok Build public-source artifact pin.
    x.ai CLI install/changelog surfaces remain distinct without proven mapping.
 5. **Blocked ≠ hidden.** Blocked candidates remain visible in the ledger and
    docs; they do not silently drop.
-6. **No candidate is eligible for later M3 qualification at this M1 lock.**
-   No candidate is authorized to be acquired or executed.
+6. **Eligibility after M1 amendment (2026-07-23):** Qwen Code is **`eligible
+   for later M3 qualification`** on the single-candidate observational path.
+   OpenCode and Grok Build remain **`blocked at M1`**. No candidate is qualified
+   or authorized for execution.
 
 ---
 
-## 8. Campaign-Level Eligibility Outcome (M1)
+## 8. Campaign-Level Eligibility Outcome (M1 + amendment)
 
-| Question | M1 answer |
+| Question | Answer after M1 amendment (2026-07-23) |
 |---|---|
-| How many candidates are `eligible for later M3 qualification`? | **Zero** (A, B, and C are each **blocked at M1**) |
-| Are at least two independently qualified configurations currently possible? | **No.** Qualification has not started; eligibility for later M3 is absent for all three |
-| Is Phase 16 limited to a future single-candidate observational path? | **Not at this lock.** A single-candidate observational path would require at least one later eligibility unblock + successful M3 qualification. That condition is **not** met now |
-| Is Phase 16 blocked entirely for comparative evaluation? | **Yes for comparative claims.** With zero eligible candidates, the campaign cannot plan two qualified configurations |
-| When may comparative claims appear? | **Never**, unless **two** later M3 qualifications actually succeed under identical environmental rules. Eligibility alone is insufficient |
+| How many candidates are `eligible for later M3 qualification`? | **One** — Qwen Code (Candidate A). OpenCode and Grok Build remain **`blocked at M1`** |
+| Is the single-candidate observational path authorized? | **Yes**, for Qwen Code only (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`; C-06) |
+| Are at least two independently qualified configurations currently possible? | **No.** Qualification has not started |
+| Is Phase 16 blocked entirely for comparative evaluation? | **Yes for comparative claims.** One eligible candidate is insufficient for causal comparison |
+| When may comparative claims appear? | Only if **two** later M3 qualifications actually succeed under identical environmental rules |
 
-**Summary disposition:** Phase 16 M1 locks a **blocked multi-candidate set**:
-artifact and checksum *observations* exist for Qwen Code and OpenCode release
-archives, but **no candidate meets the full eligibility bar**. Execution gates
-remain closed. Future paths:
+**Summary disposition:** Phase 16 operates on a **single-candidate observational
+path** for Qwen Code. Comparative campaign remains blocked. Execution gates
+remain closed until separate M3 grants. Future paths:
 
-1. **Comparative campaign** — only if ≥2 candidates later become eligible and
-   then independently qualify at M3.
-2. **Single-candidate observational path** — only if exactly one candidate later
-   becomes eligible and qualifies at M3; still **no comparative claim**.
-3. **Fully blocked evaluation** — if zero candidates ever qualify; Phase 16 may
-   still close with runner/isolation evidence and a no-candidate recommendation.
+1. **Qwen Code observational qualification** — M3a acquisition-and-inspection,
+   then M3 qualification under separate grants; evidence class **observational**
+   only; no comparative or quality claims.
+2. **Comparative campaign** — only if a second candidate later becomes eligible
+   and both independently qualify at M3.
+3. **Fully blocked evaluation for comparison** — if Qwen Code fails M3 or no
+   second candidate ever qualifies; Phase 16 may still close with runner/isolation
+   evidence and limitations recorded.
 
 ---
 
 ## 9. Pre-Acquisition Verification Gate (future M3 slices)
 
-Before any candidate artifact is acquired under a future grant, **every** §2
-eligibility item must already be recorded as established (eligibility
-unblocked), and the M3 slice must still re-verify checksum, license/notice
-contents inside the artifact, isolation, egress, credentials, cost ceiling, and
-cleanup. A candidate that cannot be resolved at M3 is recorded as **blocked**
-for that slice and cannot support comparative claims.
+Before any Qwen Code artifact is acquired under a future M3a grant, the M1
+amendment eligibility record must be in place (it is, 2026-07-23). The M3a slice
+must re-verify checksum, tag `LICENSE`, and in-archive license/notice contents;
+resolve A-02/A-03 from inspection; and must **not** execute the upstream binary
+until a further execution grant. OpenCode and Grok Build remain ineligible. A
+candidate that cannot be resolved at M3 is recorded as **blocked** for that slice
+and cannot support comparative claims.
 
 ---
 
-*M1 artifact disposition lock — human-accepted 2026-07-23. No artifact has been
-acquired. All candidates are blocked at M1. At the M1 boundary M2a was
-unauthorized; M2a was subsequently authorized and explicitly human-accepted on
-2026-07-23. M2b remains unauthorized.*
+*M1 artifact disposition — human-accepted 2026-07-23; M1 amendment for Qwen
+Code observational path human-accepted 2026-07-23. No artifact acquired. Qwen
+Code eligible for later M3 qualification; OpenCode and Grok Build blocked at M1.
+M2b completed 2026-07-23.*
