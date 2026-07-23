@@ -8,6 +8,7 @@ public static class FakeCandidateRegistry
         {
             "echo" => FakeCandidateKind.Echo,
             "metric_snapshot" => FakeCandidateKind.MetricSnapshot,
+            "sandbox_probe" => FakeCandidateKind.SandboxProbe,
             _ => throw new ManifestValidationException($"Unknown fakeCandidateKind '{fakeCandidateKind}'."),
         };
     }

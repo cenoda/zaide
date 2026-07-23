@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Phase16NativeHarnessEvaluation;
 
 namespace Zaide.Tests.Phase16Evaluation;
@@ -45,6 +46,44 @@ internal static class Phase16TestManifestFactory
             FakeCandidateVersion = "1.0.0",
             FakeCandidateKind = "echo",
         };
+    }
+
+    public static FakeCandidateIdentity CreateSandboxProbeFakeCandidate(string probeId)
+    {
+        return new FakeCandidateIdentity
+        {
+            FakeCandidateId = probeId,
+            FakeCandidateVersion = "1.0.0",
+            FakeCandidateKind = "sandbox_probe",
+        };
+    }
+
+    public static Phase16Manifest CreateSandboxProbeManifest(
+        Phase16RunnerConfig runnerConfig,
+        string fixtureHash,
+        string probeId,
+        string taskId = "TC-FAKE-ISOLATION")
+    {
+        return new Phase16Manifest
+        {
+            ManifestSchemaVersion = RunnerContractVersion.ManifestSchemaVersion,
+            RunnerConfigHash = Phase16RunnerConfigHasher.ComputeHash(runnerConfig),
+            FixtureHash = fixtureHash,
+            TaskId = taskId,
+            ExecutionMode = CandidateExecutionMode.FakeRepositoryOwned,
+            Candidate = CreateFakeBoundCandidateIdentity(),
+            FakeCandidate = CreateSandboxProbeFakeCandidate(probeId),
+            NetworkEnabled = false,
+            ProcessLaunchEnabled = false,
+            UpstreamArtifactPath = null,
+        };
+    }
+
+    public static string CreateTempArtifactRoot()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"phase16-artifacts-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return path;
     }
 
     public static Phase16Manifest CreateValidFakeManifest(

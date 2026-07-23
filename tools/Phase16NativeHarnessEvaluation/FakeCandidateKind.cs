@@ -4,4 +4,5 @@ public enum FakeCandidateKind
 {
     Echo = 0,
     MetricSnapshot = 1,
+    SandboxProbe = 2,
 }

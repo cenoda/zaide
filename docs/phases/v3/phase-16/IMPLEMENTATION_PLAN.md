@@ -1,6 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. M2a added no production behavior, DI, public production types, upstream artifact acquisition, network access, process launch, or real candidate execution. Under the repository-wide automatic-progression policy, **M2b is the next eligible milestone**; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. Under the repository-wide automatic-progression policy, **M3 remains blocked** until independent provenance, security, and external-side-effect gates pass; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -700,8 +700,8 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
       repository-owned fake-candidate core; no production behavior, DI, public
       production types, upstream artifact acquisition, network access, process
       launch, or real candidate execution).
-- [ ] M2b isolation, lifecycle, mutation, cancellation, and cleanup proof is
-      complete (next eligible milestone under automatic progression).
+- [x] M2b isolation, lifecycle, mutation, cancellation, and cleanup proof is
+      complete (2026-07-23; see `evaluation/ISOLATION_EVIDENCE.md`).
 - [ ] Every M3 candidate records qualified, excluded, or blocked without guessed
       identities.
 - [ ] M4 follows locked validity rules, or truthfully records why comparison

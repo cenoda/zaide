@@ -14,17 +14,18 @@ public static class UpstreamCandidateGate
         if (manifest.ExecutionMode != CandidateExecutionMode.FakeRepositoryOwned)
         {
             throw new ManifestValidationException(
-                "Only fake_repository_owned execution is authorized at M2a; upstream_candidate is blocked.");
+                "Only fake_repository_owned execution is authorized; upstream_candidate is blocked.");
         }
 
         if (manifest.NetworkEnabled)
         {
-            throw new ManifestValidationException("networkEnabled must be false for M2a offline fake runs.");
+            throw new ManifestValidationException("networkEnabled must be false for repository-owned fake runs.");
         }
 
         if (manifest.ProcessLaunchEnabled)
         {
-            throw new ManifestValidationException("processLaunchEnabled must be false for M2a offline fake runs.");
+            throw new ManifestValidationException(
+                "processLaunchEnabled must be false in manifests; sandbox launch remains runner-owned.");
         }
 
         if (!string.IsNullOrWhiteSpace(manifest.UpstreamArtifactPath))

@@ -13,11 +13,16 @@ public sealed class Phase16EvaluationRunner
 
     public Phase16Record RunFakeTrial(Phase16Manifest manifest)
     {
+        Phase16CleanupGate.EnsureNotBlockedOrThrow();
         Phase16ManifestValidator.ValidateOrThrow(manifest, _runnerConfig);
         UpstreamCandidateGate.ValidateExecutionRequestOrThrow(manifest);
 
         var fakeResult = FakeCandidateRunner.RunOffline(
-            new FakeCandidateRunRequest { Manifest = manifest },
+            new FakeCandidateRunRequest
+            {
+                Manifest = manifest,
+                RunnerConfig = _runnerConfig,
+            },
             _runnerConfig);
 
         var sequence = _recordStore.Count;

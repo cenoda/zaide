@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Phase16NativeHarnessEvaluation</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Probes\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

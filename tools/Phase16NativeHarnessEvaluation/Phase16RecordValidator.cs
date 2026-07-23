@@ -4,7 +4,7 @@ namespace Phase16NativeHarnessEvaluation;
 
 public static class Phase16RecordValidator
 {
-    private static readonly string[] AllowedFakeCandidateKinds = ["echo", "metric_snapshot"];
+    private static readonly string[] AllowedFakeCandidateKinds = ["echo", "metric_snapshot", "sandbox_probe"];
 
     public static void ValidateStructureOrThrow(Phase16Record record)
     {
@@ -62,7 +62,7 @@ public static class Phase16RecordValidator
         }
 
         ValidateCaptureLimitsOrThrow(record);
-        ValidateM2aInvariantsOrThrow(record);
+        ValidateM2RecordInvariantsOrThrow(record);
     }
 
     public static void ValidateManifestBindingOrThrow(Phase16Record record, Phase16Manifest manifest)
@@ -111,7 +111,7 @@ public static class Phase16RecordValidator
         }
     }
 
-    private static void ValidateM2aInvariantsOrThrow(Phase16Record record)
+    private static void ValidateM2RecordInvariantsOrThrow(Phase16Record record)
     {
         if (!string.Equals(
                 record.ManifestSchemaVersion,
@@ -125,13 +125,13 @@ public static class Phase16RecordValidator
         if (!string.Equals(record.ExecutionMode, "fake_repository_owned", StringComparison.Ordinal))
         {
             throw new Phase16RecordValidationException(
-                "Record executionMode must be 'fake_repository_owned' at M2a.");
+                "Record executionMode must be 'fake_repository_owned'.");
         }
 
         if (!AllowedFakeCandidateKinds.Contains(record.FakeCandidate.FakeCandidateKind, StringComparer.Ordinal))
         {
             throw new Phase16RecordValidationException(
-                $"Record fakeCandidateKind '{record.FakeCandidate.FakeCandidateKind}' is not authorized at M2a.");
+                $"Record fakeCandidateKind '{record.FakeCandidate.FakeCandidateKind}' is not authorized.");
         }
 
         if (UpstreamCandidateGate.BlockedCandidateSlugs.Contains(
@@ -142,16 +142,27 @@ public static class Phase16RecordValidator
                 $"Record candidateSlug '{record.Candidate.CandidateSlug}' is blocked at M1.");
         }
 
-        if (record.InvalidationReasons.Count > 0)
+        if (string.Equals(record.EvidenceClass, "invalid", StringComparison.Ordinal))
         {
-            throw new Phase16RecordValidationException(
-                "Record invalidationReasons must be empty for valid M2a fake-run records.");
+            if (record.InvalidationReasons.Count == 0)
+            {
+                throw new Phase16RecordValidationException(
+                    "Record evidenceClass 'invalid' requires non-empty invalidationReasons.");
+            }
+
+            return;
         }
 
         if (!string.Equals(record.EvidenceClass, "observational", StringComparison.Ordinal))
         {
             throw new Phase16RecordValidationException(
-                "Record evidenceClass must be 'observational' for valid M2a fake-run records.");
+                "Record evidenceClass must be 'observational' or 'invalid'.");
+        }
+
+        if (record.InvalidationReasons.Count > 0)
+        {
+            throw new Phase16RecordValidationException(
+                "Record invalidationReasons must be empty for observational records.");
         }
     }
 

@@ -12,6 +12,7 @@ public static class FakeCandidateRunner
         {
             FakeCandidateKind.Echo => EchoFakeCandidate.Run(request),
             FakeCandidateKind.MetricSnapshot => MetricSnapshotFakeCandidate.Run(request),
+            FakeCandidateKind.SandboxProbe => SandboxProbeFakeCandidate.Run(request),
             _ => throw new ManifestValidationException($"Unsupported fake candidate kind '{kind}'."),
         };
     }
