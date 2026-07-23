@@ -33,6 +33,17 @@ boundaries explicit:
   onward, every sub-phase owns its own independent `M0`; do not use the
   umbrella phase's M0 as a substitute.
 - Prefer one clear commit at each milestone or milestone-slice boundary.
+- Once work on a phase, sub-phase, or refactor has been authorized, advance to
+  the next planned milestone automatically when its predecessor's required
+  verification is GO. Do not wait for a separate approval message. Preserve a
+  single reviewable commit per milestone by default; split only when an
+  independently reversible or reviewable boundary requires it.
+- Stop and request user direction only for a failed or incomplete gate, a
+  material scope/plan conflict, an external side effect (including credentials,
+  paid services, upstream acquisition/execution, or network egress), a
+  destructive or irreversible action, or a decision the plan leaves open.
+  Automatic progression never waives a milestone's technical eligibility,
+  security, provenance, or evidence requirements.
 - Independently implemented refactors also require their own M0. Decimal
   refactor-family members such as `6.1`/`6.2`/`6.3` are independent refactors,
   not milestones or feature sub-phases; each owns its own plan and rollback

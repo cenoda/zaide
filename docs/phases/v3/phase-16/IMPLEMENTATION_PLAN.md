@@ -1,6 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path authorized). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. M2a added no production behavior, DI, public production types, upstream artifact acquisition, network access, process launch, or real candidate execution. **M2b and every later milestone remain unauthorized** pending separate explicit authorization.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. M2a added no production behavior, DI, public production types, upstream artifact acquisition, network access, process launch, or real candidate execution. Under the repository-wide automatic-progression policy, **M2b is the next eligible milestone**; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -74,9 +74,12 @@ prerequisite.
 
 ## 2. Authorization Boundary
 
-M0 acceptance would authorize only this milestone sequence and its decision
-gates. It would not authorize all milestones at once. Each milestone or slice
-requires explicit authorization and one reviewable commit.
+M0 acceptance authorizes this milestone sequence and its decision gates.
+After a milestone's required verification is GO, agents advance automatically
+to the next eligible milestone and retain one reviewable commit per milestone
+or slice. Automatic progression does not waive technical eligibility, security,
+provenance, evidence, or external-side-effect gates; it stops for a failed or
+incomplete gate, a material scope conflict, or a user decision.
 
 ### In scope after M0 acceptance
 
@@ -238,7 +241,8 @@ are `eligible for later M3 qualification` at this lock; at least two
 independently qualified configurations are **not** currently possible; no
 comparative claim is possible unless two later M3 qualifications actually
 succeed. At the M1 boundary M2a remained unauthorized; M2a was subsequently
-authorized and explicitly human-accepted on 2026-07-23. M2b remains unauthorized.
+authorized and explicitly human-accepted on 2026-07-23. M2b is now the next
+eligible milestone under the repository-wide automatic-progression policy.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -440,7 +444,8 @@ git diff --check
 Run the full suite interactively with the default eight-worker configuration.
 Use `--settings tests/Zaide.Tests/slow.runsettings` only after a failure or hang.
 
-**Commit:** one M2b commit; stop for security proof review.
+**Commit:** one M2b commit. On GO, advance automatically to the next eligible
+milestone; stop if its eligibility or an external-side-effect gate blocks it.
 
 ### M3a / M3b / M3c — Candidate qualification and one-task smoke
 
@@ -465,9 +470,9 @@ dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Zaide.Tests.Featu
 git diff --check
 ```
 
-Each slice remains unauthorized until artifact, license, isolation, egress,
+Each slice remains ineligible until artifact, license, isolation, egress,
 credential, provider identity, service identity, model identity, cost ceiling,
-and cleanup receive human review. A failure excludes or makes the candidate
+and cleanup requirements pass. A failure excludes or makes the candidate
 observational; it never relaxes the gate.
 
 **Commit:** one commit each for M3a, M3b, and M3c; stop after each.
@@ -696,7 +701,7 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
       production types, upstream artifact acquisition, network access, process
       launch, or real candidate execution).
 - [ ] M2b isolation, lifecycle, mutation, cancellation, and cleanup proof is
-      accepted (**unauthorized**).
+      complete (next eligible milestone under automatic progression).
 - [ ] Every M3 candidate records qualified, excluded, or blocked without guessed
       identities.
 - [ ] M4 follows locked validity rules, or truthfully records why comparison
@@ -771,5 +776,7 @@ and deterministic repository-owned fake-candidate core documented in
 production types, upstream artifact acquisition, network access, process launch,
 or real candidate execution.
 
-**M2b and every later milestone remain unauthorized.** Native Harness production
-and ACP implementation remain unauthorized.
+**M2b is the next eligible milestone under automatic progression.** Later work
+remains subject to its predecessor gates; Native Harness production and ACP
+implementation additionally require all applicable external-side-effect,
+security, provenance, and eligibility gates to pass.
