@@ -71,7 +71,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | Phase 16 cumulative API cap | USD 3 (later authorization may define a new cap) |
 | Execution | **Not authorized** by the amendment; requires separate M3 grants |
 | M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
-| Next external grants | Egress proof (recommended GO to authorize); execution remains **NO-GO** until egress proof, credentials, and qualification grant |
+| M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
+| Next external grants | Credential-and-execution (**GO to authorize** when human grants; still **NO-GO** to perform until that grant + remaining gates) |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
@@ -122,28 +123,28 @@ Trials are categorized into three mutually exclusive evidence classes:
 
 Provider-restricted egress — the ability to allow outbound network access only
 to specific provider API endpoints while denying all other traffic — is
-**explicitly unproven on the host** as of M2b (`ISOLATION_EVIDENCE.md` §6).
+**proven on the host as of M3 egress proof 2026-07-23**
+(`M3_EGRESS_PROOF_EVIDENCE.md`). M2b had left it unproven
+(`ISOLATION_EVIDENCE.md` §6 historical note).
 
-**Human-accepted design (M1 amendment 2026-07-23; enforcement still unproven):**
+**Human-accepted design (M1 amendment 2026-07-23) and proof status:**
 
 | Property | Value |
 |---|---|
-| Posture (C-01) | **(b) Provider-restricted egress proof path** — separate host-tooling grant required before proof |
+| Posture (C-01) | **(b) Provider-restricted egress proof path** |
 | Allowlist (C-02 / A-13) | **`api.deepseek.com:443` only** |
-| Proof requirements | Allowlisted success, non-allowlisted block, logs preserved under phase artifact root |
-| Default until proof | Default-deny full network isolation (`--unshare-net` or equivalent) |
+| Proof requirements | Allowlisted success, non-allowlisted block, logs under phase artifact root |
+| Proof status (2026-07-23) | **GO** — allow HTTPS PASS (unauthenticated 401); block PASS; evidence retained |
+| Enforcement for later trials | Reuse equivalent netns + allowlist architecture; not host-wide unrestricted egress |
+| Default without provider egress configured | Default-deny full network isolation (`--unshare-net` or equivalent) |
 
-The M0 substrate audit recorded:
+Host tooling at proof time: Bubblewrap `0.11.2`, `slirp4netns` 1.3.4, and
+`socat` present; `pasta` still absent; Docker daemon/Podman unused. No package
+install was required under C-01(b); only ephemeral netns configuration was
+applied.
 
-- Bubblewrap `0.11.2` installed; a harmless `--unshare-all`, read-only-host,
-  temporary-filesystem `/bin/true` proof succeeded.
-- `slirp4netns`, `pasta`, and `socat` are absent.
-- Docker daemon access is unavailable; Podman is absent.
-
-M2b proved default-deny isolation mechanics with repository-owned fake probes
-only. **Provider-restricted egress enforcement is not established.** A Qwen Code
-trial requiring live DeepSeek access cannot execute until egress proof succeeds
-under a separately authorized grant.
+A Qwen Code trial requiring live DeepSeek access still requires a **separate
+credential-and-execution grant** (and remaining argv/cost/isolation gates).
 
 ---
 
@@ -203,4 +204,4 @@ available for independent reconciliation.
 
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
 amendment human-accepted 2026-07-23. No candidate result observed. M2b
-completed 2026-07-23.*
+completed 2026-07-23. M3 egress proof completed 2026-07-23.*

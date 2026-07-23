@@ -281,32 +281,30 @@ findings recorded.
 
 ### 9.2 Later provider-restricted egress-proof grant (C-01/C-02)
 
-**GO to authorize when the human issues that grant.**
+**GO — complete (2026-07-23).** See `M3_EGRESS_PROOF_EVIDENCE.md`.
 
-Rationale:
-
-- Artifact identity and extract layout are fixed; egress proof does not require
-  launching Qwen Code.
-- Host still lacks proven allowlisted egress tooling (`slirp4netns` / `pasta` /
-  `socat` previously absent per M2b).
-- Proof must still demonstrate allowlisted `api.deepseek.com:443` success,
-  non-allowlisted block, and logs under the phase artifact root.
-- This recommendation is **not** an egress-proof grant and does **not** install
-  tooling.
+Allowlisted `api.deepseek.com:443` HTTPS succeeded (unauthenticated);
+non-allowlisted HTTPS destinations were blocked; evidence preserved under the
+phase artifact root. No package install was required.
 
 ### 9.3 Later credential / execution / M3 qualification grant
 
-**NO-GO until all of the following are satisfied under separate grants:**
+**GO to authorize when the human issues that grant.** Egress is no longer a
+blocker. Execution remains **NO-GO to perform** until all of the following are
+satisfied under that separate grant:
 
-1. **Egress proof success** for `api.deepseek.com:443` only (C-01/C-02).
-3. **Dedicated Phase 16 DeepSeek sub-key** creation and sandbox injection of
+1. **Egress proof success** for `api.deepseek.com:443` only (C-01/C-02) —
+   **done 2026-07-23**.
+2. **Dedicated Phase 16 DeepSeek sub-key** creation and sandbox injection of
    `DEEPSEEK_API_KEY` only (C-04 / A-07); never ambient credentials.
-4. **Owner lock of remaining argv policy:** non-interactive
+3. **Owner lock of remaining argv policy:** non-interactive
    `--approval-mode` (or explicit rejection of `yolo` without sandbox),
    turn/time ceilings from `TASK_CORPUS`, output format, and smoke task id.
-5. **Isolation re-check** before first process launch (`processLaunchEnabled`
+4. **Isolation re-check** before first process launch (`processLaunchEnabled`
    remains denied until qualification grant).
-6. **USD 1 M3a smoke cost ceiling** and USD 3 cumulative cap tracking.
+5. **USD 1 M3 smoke cost ceiling** and USD 3 cumulative cap tracking.
+6. Reuse of provider-restricted egress enforcement equivalent to the egress
+   proof architecture.
 
 Until those gates pass, the candidate remains
 **`eligible for later M3 qualification`** but **not qualified**, and must not
@@ -326,5 +324,6 @@ be launched.
 ---
 
 *M3a acquisition-and-inspection evidence — produced 2026-07-23 under explicit
-M3a grant. Upstream binary not launched. Egress proof, credentials, and
-execution remain unauthorized.*
+M3a grant. Upstream binary not launched. Subsequent M3 egress proof completed
+2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). Credentials and execution remain
+unauthorized until a separate grant.*

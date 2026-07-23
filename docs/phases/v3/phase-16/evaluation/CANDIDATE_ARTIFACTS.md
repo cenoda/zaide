@@ -11,8 +11,9 @@ acquisition-and-inspection was completed on 2026-07-23** under a separate
 explicit grant (`M3A_ACQUISITION_EVIDENCE.md`): pinned archive downloaded to
 the phase artifact root (not the Zaide repository), SHA-256 verified, tag and
 in-archive licenses scanned, A-02/A-03 resolved from static inspection.
-**Upstream binary was not launched.** Egress proof, credentials, and
-execution remain unauthorized.
+**Upstream binary was not launched.** **M3 egress proof was completed on
+2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). Credentials and execution remain
+unauthorized.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -132,8 +133,8 @@ quality claims.
 - **M3a verification:** downloaded archive + `SHA256SUMS` under
   `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/download/`;
   computed SHA-256 **matches pin**; `sha256sum -c` **OK**. Full record:
-  `M3A_ACQUISITION_EVIDENCE.md`. **Do not execute** until owner license
-  clearance, egress proof, credentials, and a further execution grant.
+  `M3A_ACQUISITION_EVIDENCE.md`. **Do not execute** until egress proof,
+  credentials, and a further execution grant.
 
 **License / notices review route (A-12 / C-05):**
 
@@ -161,7 +162,7 @@ quality claims.
 | M3a smoke cost ceiling (A-08) | USD 1 |
 | Campaign cumulative cap (C-03) | USD 3 (later authorization may define a new cap) |
 | Account isolation (A-09 / C-04) | Dedicated Phase 16 DeepSeek sub-key after separate execution grant; never `~/.config` credentials; revoke at M3 completion |
-| Egress allowlist (A-13 / C-02) | `api.deepseek.com:443` only; all other external hosts, ports, and DNS paths denied; proof design accepted; enforcement **unproven** until separate grant |
+| Egress allowlist (A-13 / C-02) | `api.deepseek.com:443` only; all other external hosts, ports, and DNS paths denied; **enforcement proven 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
 | Source-build mapping (A-10) | **Explicitly unmapped** |
 | SOURCE_REV (A-11) | **`UNRESOLVED`** |
 
@@ -192,12 +193,15 @@ acquisition-and-inspection **complete** (`M3A_ACQUISITION_EVIDENCE.md`).
 SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
-**Still not authorized:** upstream binary launch, egress proof tooling/run,
-credential creation/injection, provider API calls, comparative claims.
+**Still not authorized:** upstream binary launch, credential
+creation/injection, authenticated provider API calls, comparative claims.
 
-**Execution remains blocked until:** provider-restricted egress proof per
-C-01/C-02; dedicated sub-key per C-04; owner-locked smoke argv policy; isolation
-re-check; and a separate M3 qualification / execution grant.
+**Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
+egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
+
+**Execution remains blocked until:** dedicated sub-key per C-04; owner-locked
+smoke argv policy; isolation re-check; reuse of egress allowlist enforcement;
+and a separate M3 credential / qualification / execution grant.
 
 **Exclusion rules (locked while not qualified at M3):**
 
@@ -430,8 +434,9 @@ remain closed until separate M3 grants. Future paths:
 M1 amendment eligibility was in place before M3a. **M3a (2026-07-23)**
 re-verified checksum, tag `LICENSE`, and in-archive license/notice contents;
 resolved A-02/A-03 from inspection; and did **not** execute the upstream binary.
-Remaining execution gates are egress proof, credentials, and a separate qualification grant
-(`M3A_ACQUISITION_EVIDENCE.md` §9). OpenCode and Grok Build remain ineligible.
+Remaining execution gates are credentials and a separate qualification grant
+(`M3A_ACQUISITION_EVIDENCE.md` §9; egress complete per
+`M3_EGRESS_PROOF_EVIDENCE.md`). OpenCode and Grok Build remain ineligible.
 A candidate that cannot complete later M3 gates is recorded as **blocked** for
 that slice and cannot support comparative claims.
 
@@ -440,5 +445,6 @@ that slice and cannot support comparative claims.
 *M1 artifact disposition — human-accepted 2026-07-23; M1 amendment for Qwen
 Code observational path human-accepted 2026-07-23. M3a acquisition-and-inspection
 completed 2026-07-23 (artifact under phase root only; binary not launched).
+M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`).
 Qwen Code eligible for later M3 qualification but not qualified; OpenCode and
 Grok Build blocked at M1. M2b completed 2026-07-23.*

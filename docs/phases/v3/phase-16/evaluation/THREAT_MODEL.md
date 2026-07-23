@@ -2,11 +2,12 @@
 
 **Status:** M1 explicitly human-accepted on 2026-07-23. M1 amendment
 (2026-07-23) records accepted egress and credential design for Qwen Code
-(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`); enforcement remains **unproven**.
-Properties marked **unproven** are future qualification requirements, not
-established enforcement facts. **M2a was explicitly human-accepted on
-2026-07-23** (standalone offline runner contract and fake-candidate core).
-**M2b was completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`).
+(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). **M3 egress proof (2026-07-23)**
+proved provider-restricted egress for `api.deepseek.com:443` only
+(`M3_EGRESS_PROOF_EVIDENCE.md`). Credential injection and upstream execution
+remain unauthorized. **M2a was explicitly human-accepted on 2026-07-23**
+(standalone offline runner contract and fake-candidate core). **M2b was
+completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`).
 
 ---
 
@@ -41,37 +42,34 @@ and license do not confer trust. Candidates must never receive direct access to:
 
 ---
 
-## 2. Provider-Restricted Egress — UNPROVEN
+## 2. Provider-Restricted Egress — PROVEN (2026-07-23)
 
-**Status at M2b: Unproven on host.** Human-accepted design at M1 amendment
+**Status:** **Proven on host under M3 egress-proof grant**
+(`M3_EGRESS_PROOF_EVIDENCE.md`). Human-accepted design at M1 amendment
 2026-07-23: allow **`api.deepseek.com:443` only**; prove allowlisted success and
 non-allowlisted block; preserve logs (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md` C-01/C-02).
 
-The M0 substrate audit established that Bubblewrap `0.11.2` is installed and
-that full network isolation (`--unshare-net`) works. The following are absent
-from the host:
+**Proof architecture (ephemeral; no durable host firewall change):**
 
-- `slirp4netns`
-- `pasta`
-- `socat`
-- Docker daemon access
-- Podman
+1. user+net namespace via `unshare`
+2. user-mode networking via `slirp4netns`
+3. in-netns `nftables` default-deny with TCP/443 allowlist to resolved
+   `api.deepseek.com` IPv4 only
+4. repository-controlled `curl` HTTPS probes (no credentials)
 
-Provider-restricted egress — allowing outbound HTTPS only to specific,
-allowlisted provider API endpoints while denying all other traffic — **cannot
-currently be enforced** with the available host tools. This is a future
-qualification requirement for M2b.
+**Proof results:** allowlisted HTTPS to `api.deepseek.com` succeeded
+(unauthenticated HTTP 401); non-allowlisted HTTPS destinations timed out /
+were dropped. Evidence under
+`/tmp/phase16-artifacts/phase-16/records/egress-proof/`.
 
-M2b must either:
+**Host tooling at proof time:** Bubblewrap 0.11.2, `slirp4netns` 1.3.4, and
+`socat` 1.8.1.3 present (M0/M2b had recorded `slirp4netns`/`socat`/`pasta`
+absent; no package install was required for this proof). `pasta` still absent.
+Docker daemon and Podman remain unavailable and unused.
 
-1. Demonstrate provider-only egress with a reproducible, tool-verified proof
-   (e.g., a rootless network namespace with a proxy or firewall rule that passes
-   an allowlisted request and blocks a non-allowlisted request), OR
-2. Record that provider-restricted egress cannot be enforced and classify all
-   trials as observational with explicit egress limitations.
-
-Until M2b resolves this, the threat model assumes default-deny full network
-isolation. Candidates requiring network access cannot execute.
+**Remaining rule:** real-candidate trials that need provider access must reuse
+equivalent allowlist enforcement. Default-deny full isolation remains the
+fallback when provider egress is not configured for a trial.
 
 ---
 
@@ -204,5 +202,6 @@ fake candidates:
 ---
 
 *M1 threat model — human-accepted 2026-07-23; Qwen Code observational amendment
-2026-07-23. Provider-restricted egress design accepted; enforcement unproven. No
-candidate executed. M2b completed 2026-07-23.*
+2026-07-23. Provider-restricted egress design accepted; enforcement proven
+2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). No candidate executed. M2b
+completed 2026-07-23.*

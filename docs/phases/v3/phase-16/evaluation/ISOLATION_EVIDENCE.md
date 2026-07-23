@@ -14,7 +14,7 @@ authorize upstream candidate execution.
 | Bubblewrap | `/usr/bin/bwrap` version 0.11.2 |
 | .NET SDK | 10.0.109 |
 | Sandbox backend | Bubblewrap `--unshare-all`, `--die-with-parent`, `--ro-bind / /`, explicit `--bind` writable roots only |
-| Provider-restricted egress | **Not proven** (see §6) |
+| Provider-restricted egress | **Proven 2026-07-23** for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`; see §6) |
 
 ---
 
@@ -107,8 +107,8 @@ re-run passed in both default parallel and serial modes (**2788/2788**).
 
 | Limitation | M2b disposition |
 |---|---|
-| Provider-restricted egress | **Still unproven.** Host lacks `slirp4netns`, `pasta`, and `socat`; Docker daemon and Podman are unavailable. Bubblewrap proves default-deny full network isolation (`--unshare-all` includes network namespace) but not allowlisted provider HTTPS. |
-| Upstream candidate execution | **Still forbidden.** M1 all-blocked eligibility unchanged. |
+| Provider-restricted egress | **Proven 2026-07-23** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`): ephemeral unshare netns + `slirp4netns` + nft allowlist for `api.deepseek.com:443` only; allow HTTPS PASS; non-allowlisted block PASS. M2b-era host lacked proven allowlist tooling; by egress-proof time `slirp4netns`/`socat` were already present (no install). `pasta` still absent. Docker daemon/Podman unused. Real-candidate launch must reuse equivalent enforcement. |
+| Upstream candidate execution | **Still forbidden** without credential + qualification grants. |
 | Real candidate process launch | **Still forbidden.** Manifest `processLaunchEnabled` remains denied; Bubblewrap launch is runner-owned for repository fake probes only. |
 | Production reuse | **Not authorized.** Evaluation controls remain phase-owned. |
 
@@ -136,17 +136,18 @@ separate grant (`M3A_ACQUISITION_EVIDENCE.md`):
 M3 still additionally requires, per candidate slice:
 
 - project-owner C-05 clearance of missing NOTICE/THIRD-PARTY-NOTICES before
-  execution;
-- provider-restricted egress proof per accepted C-01/C-02 design (enforcement
-  still unproven);
+  execution (**owner approved recorded posture 2026-07-23** per M3a);
+- provider-restricted egress proof per accepted C-01/C-02 design
+  (**complete 2026-07-23** — `M3_EGRESS_PROOF_EVIDENCE.md`);
 - dedicated DeepSeek sub-key and credential injection (separate execution grant);
 - M3 qualification grant and isolation re-check before upstream binary launch.
 
-Next external-side-effect candidates under **separate** grants: egress proof
-(**recommended GO to authorize** per M3a §9.2), then credentials/execution only
-after egress success (**NO-GO until that gate** per M3a §9.3).
+Next external-side-effect candidate under a **separate** grant:
+credential-and-execution (**GO to authorize** when human grants; still
+**NO-GO** to perform until that grant + remaining argv/cost/isolation gates).
 
 ---
 
 *M2b isolation evidence — produced 2026-07-23. M3a acquisition completed
-2026-07-23 without binary launch. Upstream execution remains unauthorized.*
+2026-07-23 without binary launch. M3 egress proof completed 2026-07-23.
+Upstream execution remains unauthorized.*
