@@ -241,8 +241,8 @@ are `eligible for later M3 qualification` at this lock; at least two
 independently qualified configurations are **not** currently possible; no
 comparative claim is possible unless two later M3 qualifications actually
 succeed. At the M1 boundary M2a remained unauthorized; M2a was subsequently
-authorized and explicitly human-accepted on 2026-07-23. M2b is now the next
-eligible milestone under the repository-wide automatic-progression policy.
+completed, and M2b was subsequently completed on 2026-07-23. M3 is currently blocked
+pending acceptance of the M3 unblock amendment proposal (`evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md`).
 
 ### 5.2 ACP is independently verified and deferred
 
