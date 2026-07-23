@@ -1,22 +1,27 @@
 # Phase 16 M3 — Qualification Smoke Evidence (TC-T01)
 
-**Status:** **NO-GO** — single qualification attempt stopped at credential gate
-(2026-07-23). Pre-launch DNS binding, workspace materialization, and Bubblewrap
-isolation pre-check **passed**. **No** DeepSeek sub-key provisioning path was
-available without reading ambient, personal, or `~/.config` credentials.
-**No** Qwen Code launch, **no** authenticated provider spend, **no** comparative
-or quality claims.
+**Status:** **NO-GO** — authorized retry (2026-07-23) stopped at netns egress
+gate after credential consumption. Pre-launch DNS binding, workspace
+materialization, Bubblewrap isolation re-check, one-shot credential load, and
+balance pre-check **passed**. **slirp4netns** attach failed because the
+orchestrator passed inner PID-namespace `1` instead of the host-visible
+`unshare --fork` PID; **tap0** never appeared. **No** Qwen Code launch, **no**
+authenticated provider spend (balance unchanged), **no** comparative or quality
+claims.
+
+**Prior attempt (same day, different grant):** session `m3q-20260723T113639Z-b1e764d3`
+stopped at credential gate (one-shot file absent). See §8.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`).
 
-**Session ID:** `m3q-20260723T113639Z-b1e764d3`
+**Session ID (this grant):** `m3q-20260723T121356Z-1d1e7154`
 
 **Artifact root (outside Zaide repository):**
 
 ```text
-/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260723T113639Z-b1e764d3/
-/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260723T113639Z-b1e764d3/
+/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260723T121356Z-1d1e7154/
+/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260723T121356Z-1d1e7154/
 ```
 
 ---
@@ -25,17 +30,17 @@ or quality claims.
 
 | Authorized in this grant | Performed |
 |---|---|
-| Execute DNS binding gate immediately before launch | **Yes** (host resolution, hosts map, nft rule text, triple-consistency) |
-| Recreate netns + slirp4netns + nft architecture (orchestrator ready) | **Prepared** (inner script; not reached — credential gate blocked) |
-| Bubblewrap isolation re-check | **Yes** (writable workspace + host write denial) |
+| Execute DNS binding gate immediately before launch | **Yes** |
+| Recreate netns + slirp4netns + nft architecture | **Attempted** — slirp4netns attach **FAIL** (host PID resolution bug) |
+| Bubblewrap isolation re-check | **Yes** |
 | Materialize TC-T01 synthetic workspace | **Yes** |
-| Create dedicated Phase 16 DeepSeek sub-key | **No** — no programmatic DeepSeek key API; no authorized one-shot provisioning file present |
-| Inject `DEEPSEEK_API_KEY` / launch Qwen Code | **Not performed** |
-| USD 1 smoke / USD 3 cumulative spend | **Not incurred** (no balance-bearing API use) |
+| Read dedicated one-shot sub-key via orchestrator only | **Yes** — file consumed and deleted |
+| Inject `DEEPSEEK_API_KEY` / launch Qwen Code | **Not performed** (egress gate blocked before launch) |
+| USD 1 smoke / USD 3 cumulative spend | **Not incurred** (balance unchanged) |
 
 | Forbidden | Status |
 |---|---|
-| Second attempt / retry | **Not performed** |
+| Second attempt / retry | **Not performed** (this grant exhausted) |
 | `src/` production changes | **Not performed** |
 | Credential value in evidence or git | **Not performed** |
 | Comparative / quality claims | **Not made** |
@@ -55,12 +60,13 @@ or quality claims.
 | Triple consistency (D-05) | FRESH/HOSTS/NFT IPv4 equal | **PASS** — `CONSISTENT=YES` |
 | TC-T01 workspace | materialized under artifact root | **PASS** |
 | Bubblewrap isolation pre-check | workspace write + host write denial | **PASS** |
-| Dedicated sub-key (C-04 / A-09) | one-shot file at `credentials/subkey.once` | **FAIL** — file absent |
-| Balance / cost tracking | DeepSeek `/user/balance` | **Not reached** |
-| Egress reprobe + Qwen launch | netns inner script | **Not reached** |
+| Dedicated sub-key (C-04 / A-09) | one-shot file mode `600`, consumed after read | **PASS** |
+| Balance / cost tracking | DeepSeek `/user/balance` | **PASS** — USD 3.98 before/after (no spend) |
+| slirp4netns attach | host-visible netns PID + tapfd handoff | **FAIL** — PID `1` used; `/proc/1/ns/net: Permission denied` |
+| Egress reprobe + Qwen launch | netns inner script | **Not reached** — `tap0_missing` |
 
 **DNS binding execution verdict:** pre-credential steps **GO**; overall launch
-**NO-GO** because credential gate failed before steps 5–9.
+**NO-GO** because netns egress attach failed before inner probes and Qwen start.
 
 ---
 
@@ -86,65 +92,95 @@ Prompt source: materialized `TC-T01` prompt (rename `FetchData` → `RetrieveDat
 
 | Field | Recorded value |
 |---|---|
-| `key_source` | `phase16_one_shot_file` (expected) |
+| `key_source` | `phase16_one_shot_file` |
 | `key_file_path` | `/tmp/phase16-artifacts/phase-16/credentials/subkey.once` |
-| `key_prefix` | *(empty — key not loaded)* |
+| `key_prefix` | `sk-2c72f...` (redacted) |
+| `file_consumed` | **YES** — absent after orchestrator read |
 | `value_disclosed` | `NO` |
-| Stop reason | `no dedicated Phase16 DeepSeek sub-key one-shot file` |
-
-DeepSeek platform keys are created manually at `platform.deepseek.com`; Phase 16
-requires a **dedicated** key delivered via the one-shot file (never `~/.config`
-or ambient credentials).
+| Stop reason | `tap0_missing` (slirp4netns host PID resolution) |
 
 ---
 
 ## 5. Commands Ledger (excerpt)
 
 ```text
-m3q-20260723T113639Z-b1e764d3 step=tool_inventory exit=0
-m3q-20260723T113639Z-b1e764d3 step=qwen_binary_present exit=0
-m3q-20260723T113639Z-b1e764d3 step=dns_resolution exit=0
-m3q-20260723T113639Z-b1e764d3 step=dns_triple_consistency exit=0
-m3q-20260723T113639Z-b1e764d3 step=materialize_tc_t01 exit=0
-m3q-20260723T113639Z-b1e764d3 step=isolation_bwrap_precheck exit=0
-(stop before credential_load_one_shot)
+m3q-20260723T121356Z-1d1e7154 step=tool_inventory exit=0
+m3q-20260723T121356Z-1d1e7154 step=qwen_binary_present exit=0
+m3q-20260723T121356Z-1d1e7154 step=dns_resolution exit=0
+m3q-20260723T121356Z-1d1e7154 step=dns_triple_consistency exit=0
+m3q-20260723T121356Z-1d1e7154 step=materialize_tc_t01 exit=0
+m3q-20260723T121356Z-1d1e7154 step=isolation_bwrap_precheck exit=0
+m3q-20260723T121356Z-1d1e7154 step=credential_load_one_shot exit=0
+m3q-20260723T121356Z-1d1e7154 step=balance_before exit=0
+m3q-20260723T121356Z-1d1e7154 step=slirp4netns_attach exit=0
+m3q-20260723T121356Z-1d1e7154 step=inner_qualification exit=2
+m3q-20260723T121356Z-1d1e7154 step=balance_after exit=0
+(stop: tap0_missing)
 ```
 
 Full ledger under session artifact root.
 
 ---
 
-## 6. GO / NO-GO
+## 6. Root Cause and Orchestrator Fix
 
-### 6.1 This qualification attempt
+The inner script wrote `$$` (PID `1` inside the `--pid` namespace) to
+`/tmp/phase16-ns-pid`. The host passed that value to `slirp4netns`, which
+attempted `/proc/1/ns/net` and failed. M3 egress proof used the host-visible
+`unshare --fork` child PID instead (`host_ns_pid=1937523` in egress-proof
+`session.env`).
 
-**NO-GO.** Pre-launch DNS binding and isolation re-check passed. Credential
-creation/injection could not proceed without an authorized dedicated sub-key
-provisioning path. Qwen Code was **not** launched. Provider spend: **USD 0**.
-
-Candidate remains **`eligible for later M3 qualification`** but **not
-qualified**. Do **not** proceed to M4 or a second smoke under this grant.
-
-### 6.2 Retry requirements (out of scope for this slice)
-
-1. Human creates a dedicated DeepSeek API key at `platform.deepseek.com` (label
-   e.g. `phase16-m3-smoke`).
-2. Write the key **once** to `/tmp/phase16-artifacts/phase-16/credentials/subkey.once`
-   (mode `600`); the orchestrator deletes the file immediately after read.
-3. Re-issue a **new** qualification grant for a **new** session ID (this grant
-   authorized exactly one attempt).
+Repository fix (post-attempt, for future grants): `m3-qualification-smoke.sh`
+now uses `$UNSHARE_PID` for `slirp4netns`, waits for inner ready, and confirms
+`sent tapfd` in slirp stderr before proceeding.
 
 ---
 
-## 7. Cross-References
+## 7. GO / NO-GO
+
+### 7.1 This qualification attempt
+
+**NO-GO.** DNS binding, isolation re-check, and credential gate passed.
+Netns egress attach failed; Qwen Code was **not** launched. Provider spend:
+**USD 0** (balance unchanged at USD 3.98).
+
+Candidate remains **`eligible for later M3 qualification`** but **not
+qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
+
+### 7.2 Future retry requirements (out of scope)
+
+1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file (prior
+   key consumed).
+2. Re-issue a **new** qualification grant with a **new** session ID.
+3. Orchestrator host-PID fix must be present (committed in this slice).
+
+---
+
+## 8. Prior Attempt (credential gate, same day)
+
+Session `m3q-20260723T113639Z-b1e764d3` — **NO-GO** at credential gate
+(one-shot file absent). DNS binding + isolation pre-check **GO**; Qwen not
+launched; provider spend **USD 0**.
+
+Artifact root:
+
+```text
+/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260723T113639Z-b1e764d3/
+/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260723T113639Z-b1e764d3/
+```
+
+---
+
+## 9. Cross-References
 
 - `M3_DNS_BINDING_GATE.md` — binding rules executed for session above
 - `M3A_ACQUISITION_EVIDENCE.md` — pinned binary (not launched here)
-- `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture reused by orchestrator
+- `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture (host PID pattern)
 - `TASK_CORPUS.md` — TC-T01 definition
 - `IMPLEMENTATION_PLAN.md` — phase status
 
 ---
 
 *M3 qualification smoke evidence — 2026-07-23. Observational only. NO-GO at
-credential gate. No upstream launch. No provider spend.*
+netns egress gate after credential consumption. No upstream launch. No provider
+spend.*

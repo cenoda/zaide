@@ -3,12 +3,14 @@
 **Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 egress proof completed on 2026-07-23** under an explicit separate grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): provider-restricted egress for `api.deepseek.com:443` only proven with repository-controlled probe (allow PASS, non-allowlisted block PASS); no credentials, no authenticated API, no upstream binary launch. **M3 DNS binding gate defined and published on 2026-07-23** (docs-only;
 `evaluation/M3_DNS_BINDING_GATE.md`): deterministic sandbox-only resolution for
 `api.deepseek.com`, hosts injection, nft parity, TLS/SNI preservation, and
-pre-launch stop conditions. **M3 qualification smoke attempted 2026-07-23**
-(`evaluation/M3_QUALIFICATION_EVIDENCE.md`): DNS binding execution and isolation
-re-check **GO**; credential gate **NO-GO** (no dedicated sub-key provisioning
-path); Qwen Code **not launched**; provider spend **USD 0**. Candidate remains
-**not qualified**. **Do not retry** under the same grant. Comparative campaign
-rules remain unchanged.
+pre-launch stop conditions. **M3 qualification smoke attempted twice on 2026-07-23**
+(`evaluation/M3_QUALIFICATION_EVIDENCE.md`): (1) DNS binding + isolation **GO**,
+credential gate **NO-GO** (no one-shot file); (2) authorized retry — DNS,
+isolation, credential, and balance pre-check **GO**; netns `slirp4netns` attach
+**NO-GO** (host PID resolution bug); Qwen Code **not launched** on either
+attempt; provider spend **USD 0**. Orchestrator host-PID fix committed for
+future grants. Candidate remains **not qualified**. **Do not retry** under
+either grant. Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform

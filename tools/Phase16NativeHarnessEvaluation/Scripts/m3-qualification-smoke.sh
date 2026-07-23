@@ -321,19 +321,40 @@ rm -f /tmp/phase16-ns-pid /tmp/phase16-ns-ready
 unshare --user --map-root-user --net --mount --fork --pid --mount-proc bash "$INNER" \
   >"$RUN_DIR/unshare.stdout" 2>"$RUN_DIR/unshare.stderr" &
 UNSHARE_PID=$!
-NSPID=""
+# slirp4netns requires the host-visible PID from unshare --fork, not inner $$ (PID ns = 1).
+NSPID="$UNSHARE_PID"
+{
+  echo "unshare_pid=$UNSHARE_PID"
+  echo "host_ns_pid=$NSPID"
+} > "$RUN_DIR/netns-session.env"
 for _ in $(seq 1 100); do
-  if [ -f /tmp/phase16-ns-pid ]; then
-    NSPID="$(cat /tmp/phase16-ns-pid)"
+  if [ -f /tmp/phase16-ns-ready ]; then
     break
   fi
   sleep 0.1
 done
-[ -n "$NSPID" ] || stop_with "failed to obtain netns pid for slirp4netns"
+[ -f /tmp/phase16-ns-ready ] || stop_with "inner netns never signaled ready for slirp4netns"
 slirp4netns --configure --mtu=65520 --disable-host-loopback "$NSPID" tap0 \
   >"$RUN_DIR/slirp4netns.stdout" 2>"$RUN_DIR/slirp4netns.stderr" &
 SLIRP_PID=$!
-log_step "slirp4netns_attach" 0
+SLIRP_ATTACH_EC=1
+for _ in $(seq 1 30); do
+  if [ -s "$RUN_DIR/slirp4netns.stderr" ]; then
+    if grep -q 'sent tapfd' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
+      SLIRP_ATTACH_EC=0
+      break
+    fi
+    if grep -qE 'failed|Permission denied' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
+      stop_with "slirp4netns attach failed (see slirp4netns.stderr)"
+    fi
+  fi
+  if ! kill -0 "$SLIRP_PID" 2>/dev/null; then
+    stop_with "slirp4netns exited before attach completed"
+  fi
+  sleep 0.1
+done
+log_step "slirp4netns_attach" "$SLIRP_ATTACH_EC"
+[ "$SLIRP_ATTACH_EC" -eq 0 ] || stop_with "slirp4netns attach did not confirm tapfd handoff"
 
 set +e
 wait "$UNSHARE_PID"
@@ -367,7 +388,7 @@ cp "$DNS_ROOT/consistency-check.env" "$SESSION_ROOT/dns-consistency.env"
 cp "$RUN_DIR/exact-argv.txt" "$SESSION_ROOT/exact-argv.txt" 2>/dev/null || true
 cp "$RUN_DIR/qwen-result.env" "$SESSION_ROOT/qwen-result.env" 2>/dev/null || true
 cp "$RUN_DIR/verify-result.env" "$SESSION_ROOT/verify-result.env" 2>/dev/null || true
-cp "$KEY_LIFECYCLE" "$SESSION_ROOT/key-lifecycle.env"
+cp "$RUN_DIR/netns-session.env" "$SESSION_ROOT/netns-session.env" 2>/dev/null || true
 
 if [ -f "$RUN_DIR/fatal.txt" ]; then
   stop_with "$(cat "$RUN_DIR/fatal.txt")"

@@ -73,8 +73,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke (2026-07-23) | **Attempted — NO-GO** at credential gate (`M3_QUALIFICATION_EVIDENCE.md`); DNS binding + isolation pre-check GO; Qwen not launched |
-| Next external grants | New qualification grant + dedicated sub-key one-shot file if retry is authorized separately |
+| M3 qualification smoke (2026-07-23) | **Two attempts — both NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): (1) credential gate — one-shot file absent; (2) authorized retry — DNS/isolation/credential **GO**, slirp4netns host-PID bug **NO-GO**; Qwen not launched either attempt |
+| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; orchestrator host-PID fix required |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
