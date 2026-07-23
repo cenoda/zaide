@@ -74,7 +74,8 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
 | M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): prior attempts (credential; slirp host-PID; resolv bind); fresh session `m3q-20260723T151512Z-6996af5f` — DNS/slirp/egress/tmpfs **GO**, Qwen **started** then **auth-type missing** (`qwen_exit=1`, 0 tokens); TC-T01 incomplete; provider spend **USD 0.00** |
-| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; orchestrator must include host-PID slirp attach, `--tmpfs /etc`, Qwen exit gate, and a verified non-interactive **auth-type** path under A-07 (`DEEPSEEK_API_KEY` only) |
+| M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static-only lock for `--auth-type openai`, `--openai-base-url https://api.deepseek.com`, and workspace `modelProviders` `DEEPSEEK_API_KEY` wiring; **not** a qualification retry |
+| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; orchestrator now includes verified non-interactive auth argv + modelProviders wiring under A-07 (`DEEPSEEK_API_KEY` only), plus host-PID slirp attach, `--tmpfs /etc`, and Qwen exit gate |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 

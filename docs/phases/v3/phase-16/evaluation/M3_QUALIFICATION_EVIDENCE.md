@@ -193,8 +193,10 @@ provider call.
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. Owner-locked argv must include a verified auth path that remains within
-   A-07 (`DEEPSEEK_API_KEY` only) — e.g. `--auth-type openai` and any required
-   base-URL/model wiring that does not reintroduce ambient credentials.
+   A-07 (`DEEPSEEK_API_KEY` only) — **remediated 2026-07-24**
+   (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): `--auth-type openai`,
+   `--openai-base-url https://api.deepseek.com`, and workspace `modelProviders`
+   entry with `envKey: DEEPSEEK_API_KEY` for `deepseek-v4-flash`.
 3. Re-prove TC-T01 workspace rename + build/test after a successful Qwen exit.
 
 ---
@@ -233,7 +235,9 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 2. Re-issue a **new** qualification grant with a **new** session ID.
 3. Orchestrator must pass a verified non-interactive auth configuration
    compatible with A-07 (`DEEPSEEK_API_KEY` only) in addition to host-PID
-   slirp attach, `--tmpfs /etc`, and Qwen exit gating.
+   slirp attach, `--tmpfs /etc`, and Qwen exit gating — **argv/modelProviders
+   contract remediated 2026-07-24** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`;
+   not a qualification retry).
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 
 ---

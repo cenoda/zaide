@@ -243,6 +243,10 @@ PROMPT_TEXT="$(tr -d '\r' < "$PHASE16_PROMPT_FILE")"
   echo "$PHASE16_QWEN_BIN"
   echo "-p"
   echo "$PROMPT_TEXT"
+  echo "--auth-type"
+  echo "openai"
+  echo "--openai-base-url"
+  echo "https://api.deepseek.com"
   echo "--approval-mode"
   echo "plan"
   echo "--model"
@@ -274,6 +278,8 @@ bwrap \
   --setenv DEEPSEEK_API_KEY "$DEEPSEEK_API_KEY" \
   -- "$PHASE16_QWEN_BIN" \
     -p "$PROMPT_TEXT" \
+    --auth-type openai \
+    --openai-base-url https://api.deepseek.com \
     --approval-mode plan \
     --model deepseek-v4-flash \
     --output-format json \

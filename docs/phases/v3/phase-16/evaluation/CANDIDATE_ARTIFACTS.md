@@ -15,7 +15,9 @@ in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
 2026-07-23** (`M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
 (`m3q-20260723T151512Z-6996af5f`) **NO-GO** at Qwen auth-type; candidate still
-**not qualified** (`M3_QUALIFICATION_EVIDENCE.md`).
+**not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3 auth-configuration
+remediation (2026-07-24)** locked argv + `modelProviders` wiring
+(`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`); **not** a qualification retry.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents

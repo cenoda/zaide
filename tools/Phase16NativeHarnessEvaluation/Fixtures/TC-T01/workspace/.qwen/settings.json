@@ -1,0 +1,11 @@
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "deepseek-v4-flash",
+        "envKey": "DEEPSEEK_API_KEY",
+        "baseUrl": "https://api.deepseek.com"
+      }
+    ]
+  }
+}

@@ -10,7 +10,11 @@ DNS binding, host-PID slirp attach, egress reprobes, isolation, one-shot
 credential, and Bubblewrap `--tmpfs /etc` **GO**; Qwen **started** then
 **NO-GO** (`qwen_exit=1`, auth type not selected; 0 turns/tokens); TC-T01
 rename **not** verified; provider spend **USD 0.00**. Candidate remains **not
-qualified**. **Do not retry** under this grant. Comparative campaign rules
+qualified**. **Do not retry** under this grant. **M3 auth-configuration
+remediation completed 2026-07-24** (`evaluation/M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`):
+static-only contract lock for `--auth-type openai`, `--openai-base-url
+https://api.deepseek.com`, and workspace `modelProviders` `DEEPSEEK_API_KEY`
+wiring — **not** a qualification retry. Comparative campaign rules
 remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness

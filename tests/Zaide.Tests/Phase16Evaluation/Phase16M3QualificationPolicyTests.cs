@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Phase16NativeHarnessEvaluation;
 using Xunit;
 
@@ -7,35 +8,47 @@ namespace Zaide.Tests.Phase16Evaluation;
 public sealed class Phase16M3QualificationPolicyTests
 {
     [Fact]
+    public void BuildLockedSmokeArgvTail_IncludesDeepSeekOpenAiCompatibleAuth()
+    {
+        var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail().ToArray();
+
+        Assert.Equal("openai", argv[Array.IndexOf(argv, "--auth-type") + 1]);
+        Assert.Equal(
+            "https://api.deepseek.com",
+            argv[Array.IndexOf(argv, "--openai-base-url") + 1]);
+        Assert.Equal("deepseek-v4-flash", argv[Array.IndexOf(argv, "--model") + 1]);
+    }
+
+    [Fact]
     public void ValidateSmokeArgvOrThrow_AcceptsLockedPolicy()
     {
-        var argv = new[]
-        {
-            "--approval-mode", "plan",
-            "--model", "deepseek-v4-flash",
-            "--output-format", "json",
-            "--max-session-turns", "5",
-            "--max-wall-time", "60s",
-        };
+        var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail().ToArray();
 
         Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(argv);
     }
 
     [Fact]
-    public void ValidateSmokeArgvOrThrow_RejectsMismatchedApprovalMode()
+    public void ValidateSmokeArgvOrThrow_RejectsMissingAuthType()
     {
-        var argv = new[]
-        {
-            "--approval-mode", "yolo",
-            "--model", "deepseek-v4-flash",
-            "--output-format", "json",
-            "--max-session-turns", "5",
-            "--max-wall-time", "60s",
-        };
+        var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail()
+            .Skip(2)
+            .ToArray();
 
         var ex = Assert.Throws<ManifestValidationException>(() =>
             Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(argv));
-        Assert.Contains("index 1", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("shorter than the locked policy", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidateSmokeArgvOrThrow_RejectsMismatchedApprovalMode()
+    {
+        var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail()
+            .Select((value, index) => index == 5 ? "yolo" : value)
+            .ToArray();
+
+        var ex = Assert.Throws<ManifestValidationException>(() =>
+            Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(argv));
+        Assert.Contains("index 5", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

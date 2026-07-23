@@ -212,6 +212,12 @@ Optional flags for later qualification (still not executed): `--bare`,
 `--safe-mode`, candidate `--sandbox` only if isolation design requires it in
 addition to host Bubblewrap.
 
+**Remediation (2026-07-24, static only; not executed):** non-interactive DeepSeek
+path under A-07 requires `--auth-type openai`, `--openai-base-url
+https://api.deepseek.com`, and workspace `modelProviders.openai[]` with
+`envKey: DEEPSEEK_API_KEY` for `deepseek-v4-flash`
+(`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`).
+
 ### 6.3 Credential / provider surface observed (static; not injected)
 
 DeepSeek provider preset in bundled code (`packages/core/src/providers/presets/deepseek.ts` via chunk):
