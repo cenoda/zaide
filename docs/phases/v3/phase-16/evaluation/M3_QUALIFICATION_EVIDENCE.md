@@ -1,32 +1,44 @@
 # Phase 16 M3 — Qualification Smoke Evidence (TC-T01)
 
-**Status:** **NO-GO** — authorized fresh qualification retry session
-`m3q-20260724T075320Z-939e94cf` (exactly one; new session ID generated and
-recorded before launch). Completed fresh-session/DNS/slirp/inner-allow-block
-egress preflight **before** reading one-shot credential. Launched Qwen Code
-**exactly once** under the locked write-capable contract
-(`--approval-mode yolo`, **24** turns, **240s** wall, remediated auth, fixed
-parent-shell reap path, deterministic post-session finalization). Qwen performed
-the TC-T01 `FetchData` → `RetrieveData` rename (host-side counts `FetchData=0`,
-`RetrieveData=11`; host `dotnet build` / `dotnet test` exit 0) but exited **53**
-(`FatalTurnLimitedError`: max session turns). Dual GO criteria require **Qwen
-exit 0 and** verified rename; exit 53 forces **NO-GO**. Balance-before USD
-**3.94**; balance-after USD **3.94**; session smoke spend **USD 0.00**. Bounded
-reap recorded real inner exit **4**; full finalization **completed**
-(balance-after, workspace-result.env, cleanup.env). **No** second attempt.
-**No** M4. **No** comparative or quality claims.
+**Status:** **NO-GO** — authorized extended single-smoke qualification retry
+session `m3q-20260724T081819Z-7db401c3` (exactly one fresh provider-launch
+session; new session ID generated and recorded at orchestrator start). Completed
+fresh-session/DNS/slirp/inner-allow-block egress preflight **before** reading
+the dedicated one-shot credential. Launched Qwen Code **exactly once** under the
+locked extended write-capable contract (`--approval-mode yolo`, **240** turns,
+**800s** wall, remediated auth, fixed parent-shell reap path, deterministic
+post-session finalization, **880s** outer budget). Qwen performed the TC-T01
+`FetchData` → `RetrieveData` rename (host-side counts `FetchData=0`,
+`RetrieveData=11`; host `dotnet build` / `dotnet test` exit 0) but exited **55**
+(`FatalBudgetExceededError`: wall-clock budget of 800s exceeded). Dual GO
+criteria require **Qwen exit 0 and** verified rename; exit 55 forces **NO-GO**.
+Balance-before USD **3.93**; balance-after USD **3.89**; session smoke spend
+**USD 0.04**. Bounded reap recorded real inner exit **4** (`inner_wait_elapsed_sec=809`;
+overall **880s** not hit as outer timeout). Full finalization **completed**
+(balance-after, workspace-result.env, cleanup.env). **No** second provider
+attempt. **No** M4. **No** comparative or quality claims. Extended single-smoke
+exception for one future retry is **consumed** by this session.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`).
 
-**Session ID (this grant):** `m3q-20260724T075320Z-939e94cf`
+**Session ID (this grant):** `m3q-20260724T081819Z-7db401c3`
 
 **Artifact root (outside Zaide repository):**
 
 ```text
-/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260724T075320Z-939e94cf/
-/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260724T075320Z-939e94cf/
+/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260724T081819Z-7db401c3/
+/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260724T081819Z-7db401c3/
 ```
+
+**Non-authoritative concurrent abort (same grant window; no key / no launch):**
+
+- Session `m3q-20260724T081851Z-6f4918b3` — preflight **GO**, then **NO-GO** at
+  credential gate (`subkey.once` already absent because session
+  `m3q-20260724T081819Z-7db401c3` had consumed it).
+  `provider_launch_attempted=NO`, `candidate_execution=NO`,
+  `key_consumed=NO`, `qwen_exit_source=none`. Not a second provider attempt and
+  not a substitute for this session’s result.
 
 **Prior attempts (exhausted grants; not this session):**
 
@@ -64,12 +76,16 @@ reap recorded real inner exit **4**; full finalization **completed**
     **24**-turn / **120s** wall: preflight GO before credential; yolo; rename
     verified; **`qwen_exit=55`** (wall 120s); balance-before USD 3.95 (after
     unavailable); inner exit 4; finalization incomplete (sticky `set -e`). See
-    historical section §13. Active wall later raised to **240s** (future-policy
-    only; not a retry).
+    historical section §13.
+11. Session `m3q-20260724T075320Z-939e94cf` — **NO-GO** under then-locked
+    **24**-turn / **240s** wall: preflight GO before credential; yolo; rename
+    verified; **`qwen_exit=53`** (turn limit); balance 3.94→3.94 (delta 0.00);
+    inner exit 4; finalization complete. See historical section §14. Extended
+    single-smoke policy (240/800s) followed as future-policy remediation only.
 
 **Consumed-but-unlaunched operator event (separate grant; no session record):**
 
-11. ~2026-07-24T06:31:49Z — authorized fresh **24-turn** grant consumed a new
+12. ~2026-07-24T06:31:49Z — authorized fresh **24-turn** grant consumed a new
     one-shot sub-key but **did not** create a matching `m3-qualification`
     session artifact and **did not** launch Qwen. Reporting incorrectly reused
     historical session `m3q-20260724T060109Z-45dd1c5f` / `qwen_exit=53`.
@@ -82,20 +98,20 @@ reap recorded real inner exit **4**; full finalization **completed**
 | Authorized in this grant | Performed |
 |---|---|
 | Execute DNS binding gate immediately before launch | **Yes** |
-| slirp4netns attach via host-visible `UNSHARE_PID` | **Yes** — `sent tapfd` confirmed |
+| slirp4netns attach via host-visible `UNSHARE_PID` | **Yes** — tapfd handoff |
 | Inner egress reprobe (allow + block) | **Yes** (preflight before credential; also inside launch netns) |
 | Bubblewrap isolation re-check | **Yes** |
 | Materialize TC-T01 synthetic workspace | **Yes** |
 | Read dedicated one-shot sub-key via orchestrator only | **Yes** — mode `600`, size `36` bytes; consumed and deleted after preflight |
 | Inject only `DEEPSEEK_API_KEY` (no `~/.config` / ambient) | **Yes** |
-| Launch Qwen Code (TC-T01, yolo, JSON, 24 turns, **240s**) | **Yes — once** — locked auth + write-capable argv; `qwen_exit=53` |
-| USD 1 smoke / USD 3 cumulative spend | Caps **not breached**; balance-before/after USD **3.94** / **3.94**; delta **USD 0.00** |
+| Launch Qwen Code (TC-T01, yolo, JSON, **240** turns, **800s**) | **Yes — once** — locked auth + write-capable argv; `qwen_exit=55` |
+| USD 1 smoke / USD 3 cumulative spend | Caps **not breached**; balance-before/after USD **3.93** / **3.89**; delta **USD 0.04** |
 | Verify TC-T01 `FetchData` → `RetrieveData` | **Yes** (host-side) — rename verified; build/test 0 |
-| Bounded post-exit reap/finalization (fixed parent-shell path) | **Yes** — real inner exit **4**; balance-after, workspace-result, cleanup recorded |
+| Bounded post-exit reap/finalization (fixed parent-shell path; 880s outer) | **Yes** — real inner exit **4**; elapsed **809s**; balance-after, workspace-result, cleanup recorded |
 
 | Forbidden | Status |
 |---|---|
-| Second attempt / retry under this grant | **Not performed** |
+| Second provider attempt / retry under this grant | **Not performed** (concurrent abort `m3q-20260724T081851Z-6f4918b3` had no key and no launch) |
 | M4 / comparative / quality claims | **Not performed** |
 | `src/` production changes | **Not performed** |
 | Credential value in evidence or git | **Not performed** |
@@ -116,18 +132,18 @@ reap recorded real inner exit **4**; full finalization **completed**
 | TC-T01 workspace | materialized under artifact root | **PASS** |
 | Bubblewrap isolation pre-check | workspace write + host write denial | **PASS** |
 | Dedicated sub-key (C-04 / A-09) | one-shot file mode `600`, size `36`, consumed after preflight | **PASS** |
-| Balance / cost tracking | DeepSeek `/user/balance` before + after | **PASS** — USD **3.94** before; USD **3.94** after |
+| Balance / cost tracking | DeepSeek `/user/balance` before + after | **PASS** — USD **3.93** before; USD **3.89** after |
 | slirp4netns attach | host-visible `UNSHARE_PID` + tapfd handoff | **PASS** |
-| Inner egress preflight | allowlisted TLS + non-allowlisted block | **PASS** — allow body `Authentication Fails (governor)`; block curl exit 28 (timeout) |
+| Inner egress preflight | allowlisted TLS + non-allowlisted block | **PASS** |
 | Bubblewrap `/etc` setup | `--tmpfs /etc` + ro-bind hosts + resolv-empty | **PASS** (process entered sandbox) |
-| Qwen headless run | TC-T01, locked auth argv, yolo, JSON, 24 turns, **240s** | **FAIL exit** — `qwen_exit=53` turn limit (`FatalTurnLimitedError`) |
+| Qwen headless run | TC-T01, locked auth argv, yolo, JSON, **240** turns, **800s** | **FAIL exit** — `qwen_exit=55` wall budget (`FatalBudgetExceededError`) |
 | TC-T01 task completion | `FetchData` → `RetrieveData` rename | **PASS** (host) — `FetchData` count 0; `RetrieveData` count 11; host build/test 0 |
 | Orchestrator finalization | post-balance, workspace, cleanup | **PASS** — all recorded after non-zero Qwen |
 
 **DNS binding execution verdict:** **GO** (A-14 sequence complete through
 triple-consistency and inner allow/block preflight; `BOUND_IPV4=3.173.21.63`;
 operator-finalized `BINDING_VERDICT=GO` after script stopped on non-zero Qwen
-exit before writing the DNS GO line; `BINDING_VERDICT=PENDING` remains on disk).
+exit before writing the DNS GO line).
 
 **Qualification verdict:** **NO-GO** — verified TC-T01 rename is insufficient
 when Qwen exit is not 0.
@@ -139,7 +155,7 @@ when Qwen exit is not 0.
 Executable (pinned): `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/inspect/qwen-code/bin/qwen`
 
 Argv tail **executed in this session** (locked `Phase16M3QualificationPolicy` +
-orchestrator wall-time / write-capable / finalization remediations):
+extended single-smoke / write-capable / finalization remediations):
 
 ```text
 --auth-type openai
@@ -147,8 +163,8 @@ orchestrator wall-time / write-capable / finalization remediations):
 --approval-mode yolo
 --model deepseek-v4-flash
 --output-format json
---max-session-turns 24
---max-wall-time 240s
+--max-session-turns 240
+--max-wall-time 800s
 ```
 
 Environment allowlist: **`DEEPSEEK_API_KEY` only** (A-07). Workspace fixture
@@ -160,12 +176,16 @@ Prompt source: materialized `TC-T01` prompt (rename `FetchData` → `RetrieveDat
 
 Exact argv recorded under the session artifact root (`exact-argv.txt`).
 
+**Note:** `summary.env` still emits a stale `locked_max_session_turns=24` field
+from the orchestrator header; **authoritative ceilings for this session are the
+exact argv** (**240** / **800s**) and committed policy.
+
 **Auth remediation status:** auth-type failure mode remains **cleared**.
 **Write-capable remediation status:** `--approval-mode yolo` used as locked.
-**Wall-time remediation status:** active lock **240s** used for this session.
-Failure mode for **this** session is **turn-limit exit 53**
-(`FatalTurnLimitedError` at 24 turns) after verified rename — not wall-budget
-exit 55, not auth-type missing, not plan-only.
+**Extended single-smoke policy status:** active lock **240** turns / **800s**
+wall used for this session. Failure mode for **this** session is **wall-budget
+exit 55** (`FatalBudgetExceededError` at 800s) after verified rename — not
+turn-limit exit 53, not auth-type missing, not plan-only.
 
 ---
 
@@ -175,46 +195,46 @@ exit 55, not auth-type missing, not plan-only.
 |---|---|
 | `key_source` | `phase16_one_shot_file` |
 | `key_file_path` | `/tmp/phase16-artifacts/phase-16/credentials/subkey.once` |
-| Pre-run metadata only | mode `600`, size `36` bytes (value never inspected/logged by operator) |
+| Pre-run metadata only | mode `600`, size `36` bytes (value never inspected/logged by operator in evidence) |
 | Credential material persisted | **NO** |
 | `file_consumed` | **YES** — absent after orchestrator read |
 | `value_disclosed` | **NO** |
 | Ambient / `~/.config` credentials | **Not read** |
-| Stop reason | `qwen_launch_failed exit=53` (orchestrator fatal.txt / `stop_with`) |
+| Stop reason | `qwen_launch_failed exit=55` (orchestrator fatal.txt / `stop_with`) |
 
 ---
 
 ## 5. Commands Ledger (excerpt)
 
 ```text
-m3q-20260724T075320Z-939e94cf step=tool_inventory exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=qwen_binary_present exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=dns_resolution exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=dns_triple_consistency exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=materialize_tc_t01 exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=isolation_bwrap_precheck exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=slirp4netns_attach exit=0 utc=2026-07-24T07:53:20Z
-m3q-20260724T075320Z-939e94cf step=egress_preflight exit=0 utc=2026-07-24T07:53:29Z
-m3q-20260724T075320Z-939e94cf step=credential_load_one_shot exit=0 utc=2026-07-24T07:53:29Z
-m3q-20260724T075320Z-939e94cf step=balance_before exit=0 utc=2026-07-24T07:53:29Z
-m3q-20260724T075320Z-939e94cf step=slirp4netns_attach exit=0 utc=2026-07-24T07:53:29Z
-m3q-20260724T075320Z-939e94cf step=inner_qualification exit=4 utc=2026-07-24T07:55:10Z
-m3q-20260724T075320Z-939e94cf step=balance_after exit=0 utc=2026-07-24T07:55:10Z
-m3q-20260724T075320Z-939e94cf step=workspace_tc_t01_check exit=0 utc=2026-07-24T07:55:10Z
+m3q-20260724T081819Z-7db401c3 step=tool_inventory exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=qwen_binary_present exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=dns_resolution exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=dns_triple_consistency exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=materialize_tc_t01 exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=isolation_bwrap_precheck exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=slirp4netns_attach exit=0 utc=2026-07-24T08:18:19Z
+m3q-20260724T081819Z-7db401c3 step=egress_preflight exit=0 utc=2026-07-24T08:18:28Z
+m3q-20260724T081819Z-7db401c3 step=credential_load_one_shot exit=0 utc=2026-07-24T08:18:28Z
+m3q-20260724T081819Z-7db401c3 step=balance_before exit=0 utc=2026-07-24T08:18:28Z
+m3q-20260724T081819Z-7db401c3 step=slirp4netns_attach exit=0 utc=2026-07-24T08:18:28Z
+m3q-20260724T081819Z-7db401c3 step=inner_qualification exit=4 utc=2026-07-24T08:31:57Z
+m3q-20260724T081819Z-7db401c3 step=balance_after exit=0 utc=2026-07-24T08:31:58Z
+m3q-20260724T081819Z-7db401c3 step=workspace_tc_t01_check exit=0 utc=2026-07-24T08:31:58Z
 ```
 
 `inner_qualification` exit **4** is the real unshare/inner script exit after
-Qwen non-zero (`qwen_exit=53` → inner `exit 4`). Parent-shell
+Qwen non-zero (`qwen_exit=55` → inner `exit 4`). Parent-shell
 `wait_inner_with_reap_budget` recorded `inner_wait_status=exited` /
-`inner_wait_exit=4` / `inner_wait_elapsed_sec=101` without inventing bash
-**127**. Outer overall budget (320s) and post-qwen budget (45s) were **not**
-hit.
+`inner_wait_exit=4` / `inner_wait_elapsed_sec=809` without inventing bash
+**127**. Outer overall budget (**880s**) and post-qwen budget (45s) were **not**
+hit as timeout causes; Qwen’s own **800s** wall was hit.
 
 ---
 
 ## 6. Qwen Result (redacted)
 
-`run/qwen-result.env`: `qwen_exit=53`
+`run/qwen-result.env`: `qwen_exit=55`
 
 `run/qwen.stdout`: empty (0 bytes)
 
@@ -223,9 +243,9 @@ hit.
 | Field | Value |
 |---|---|
 | YOLO headless warning | Present (host Bubblewrap is campaign isolation; Qwen’s own sandbox unset) |
-| Error type | **`FatalTurnLimitedError`** |
-| Message | Reached max session turns for this session. Increase the number of turns by specifying maxSessionTurns in settings.json. |
-| Code | **53** |
+| Error type | **`FatalBudgetExceededError`** |
+| Message | Run aborted: wall-clock budget of 800s exceeded (`--max-wall-time`). |
+| Code | **55** |
 
 Workspace verification after exit (host-side; orchestrator
 `workspace-result.env` **written**):
@@ -260,33 +280,31 @@ operator build/test cover the rename outcome.
 | Bubblewrap `/etc/resolv.conf` symlink | **PASS** (`--tmpfs /etc` + ro-bind resolv-empty) |
 | DNS triple-consistency / egress | **PASS** (preflight before credential) |
 | Plan-only without mutation | **Cleared** — write-capable `--approval-mode yolo`; rename verified |
-| Wall-budget exit 55 under 120s | **Not this session** — active **240s** wall; failure is turn-limit exit 53 |
+| Turn-limit exit 53 under 24 turns | **Not this session** — active **240** turns; failure is wall-budget exit 55 |
 | Orchestrator post-exit hang / synthetic 127 | **Cleared** — same-shell wait; real inner exit **4** recorded |
 | Post-session finalization after non-zero Qwen | **Cleared** — balance-after / workspace / cleanup completed |
 
-### 7.2 Turn-limit exit 53 after verified TC-T01 mutation (this grant)
+### 7.2 Wall-budget exit 55 after verified TC-T01 mutation (this grant)
 
 Qwen Code v0.20.1 under locked yolo mode mutated the TC-T01 workspace to the
 required rename (host: `FetchData` 0 / `RetrieveData` 11; build/test 0), but the
-process then aborted with **`FatalTurnLimitedError`** because the locked
-**24**-turn session ceiling was reached (`qwen_exit=53`). Dual GO criteria
+process then aborted with **`FatalBudgetExceededError`** because the locked
+**800s** wall-time ceiling was reached (`qwen_exit=55`). Dual GO criteria
 require **both** Qwen exit 0 **and** verified rename; therefore the session is
 **NO-GO** despite the verified workspace change.
 
-Timing evidence rules out outer orchestrator budgets and wall time as the
-exit-53 cause:
+Timing evidence:
 
 | Budget | Configured | Observed |
 |---|---|---|
-| Qwen `--max-session-turns` | **24** | **Hit** — `FatalTurnLimitedError` code 53 |
-| Qwen `--max-wall-time` | **240s** | **Not hit** — no `FatalBudgetExceededError` |
-| Inner overall wait | **320s** | Not hit — `inner_wait_status=exited`, elapsed **101s** |
+| Qwen `--max-session-turns` | **240** | **Not hit** — no `FatalTurnLimitedError` |
+| Qwen `--max-wall-time` | **800s** | **Hit** — `FatalBudgetExceededError` code 55 |
+| Inner overall wait | **880s** | Not hit as outer timeout — `inner_wait_status=exited`, elapsed **809s** |
 | Post-qwen verify | **45s** | Not hit — status is not `post_qwen_budget_exceeded` |
 
-This is a **Qwen turn-limit** failure against locked GO rules, not a wall-time,
-auth, DNS, egress, or plan-mode failure. No second attempt was authorized under
-this grant to raise turns or re-run. **24-turn / 240s policy was unchanged**
-by this session.
+This is a **Qwen wall-time** failure against locked GO rules, not a turn-limit,
+auth, DNS, egress, or plan-mode failure. No second provider attempt was
+authorized under this grant. The extended single-smoke exception is **consumed**.
 
 ### 7.3 Bounded reaping and finalization (this grant)
 
@@ -296,8 +314,8 @@ and recorded:
 ```text
 inner_wait_status=exited
 inner_wait_exit=4
-inner_wait_elapsed_sec=101
-inner_overall_timeout_sec=320
+inner_wait_elapsed_sec=809
+inner_overall_timeout_sec=880
 post_qwen_verify_budget_sec=45
 inner_reaped_exit=
 ```
@@ -312,18 +330,17 @@ finalization remediation). Balance-after, workspace-result, cleanup.env, and
 
 | Artifact | Result |
 |---|---|
-| `balance-after.json` | USD **3.94** (exit 0) |
+| `balance-after.json` | USD **3.89** (exit 0) |
 | `workspace-result.env` | `tc_t01_rename_verified=YES` |
 | `cleanup.env` | `orphan_detected=NO`, `cleanup_status=reaped` |
-| `summary.env` | `QUALIFICATION_VERDICT=NO-GO`, `STOP_REASON=qwen_launch_failed exit=53` |
+| `summary.env` | `QUALIFICATION_VERDICT=NO-GO`, `STOP_REASON=qwen_launch_failed exit=55` |
 
 **Future grant requirements (out of scope; not applied under this grant):**
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Keep locked write-capable yolo + **240** turns + **800s** wall + fixed
-   reap/finalization path (active policy per `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`;
-   extended single-smoke exception for **one** retry only).
+3. Explicit human decision on any further ceiling change; this grant’s extended
+   single-smoke exception is exhausted.
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. Preserve session records outside `/tmp` before any host reboot.
 
@@ -333,11 +350,11 @@ finalization remediation). Balance-after, workspace-result, cleanup.env, and
 
 | Metric | Value |
 |---|---|
-| Balance before | USD **3.94** |
-| Balance after | USD **3.94** |
-| Session smoke spend (USD) | **0.00** (balance delta) |
+| Balance before | USD **3.93** |
+| Balance after | USD **3.89** |
+| Session smoke spend (USD) | **0.04** (balance delta) |
 | Prior campaign ledger | **USD 0.01** (prior sessions) |
-| Phase 16 cumulative spend (ledger) | **USD 0.01** (unchanged; this session delta 0.00) |
+| Phase 16 cumulative spend (ledger) | **USD 0.05** (0.01 + 0.04) |
 | M3 smoke cap (USD 1) / campaign cap (USD 3) | **Not breached** |
 
 Spend basis: authenticated DeepSeek `/user/balance` before and after under the
@@ -352,29 +369,27 @@ JSON (stdout empty).
 
 **NO-GO.** Fresh-session, DNS binding, slirp4netns attach, inner egress
 reprobes (allow+block), isolation pre-check, credential gate (after preflight),
-Bubblewrap `/etc` setup, locked auth argv, write-capable yolo mode, **24** turns
-/**240s** wall argv **passed**. Key read once and deleted immediately after
+Bubblewrap `/etc` setup, locked auth argv, write-capable yolo mode, **240** turns
+/**800s** wall argv **passed**. Key read once and deleted immediately after
 preflight; only `DEEPSEEK_API_KEY` injected. Qwen Code **started exactly once**,
 performed the rename `FetchData` → `RetrieveData` (host verified: counts 0/11;
-build/test 0), then exited **53** on turn limit. Dual GO criteria fail on
-non-zero exit. Spend: balance-before/after USD 3.94 / 3.94; delta **USD 0.00**.
-Post-launch reap recorded real inner exit **4**. Orchestrator finalization
-**completed** (balance-after, workspace, cleanup).
+build/test 0), then exited **55** on wall budget. Dual GO criteria fail on
+non-zero exit. Spend: balance-before/after USD 3.93 / 3.89; delta **USD 0.04**.
+Post-launch reap recorded real inner exit **4** (elapsed 809s / outer 880s).
+Orchestrator finalization **completed** (balance-after, workspace, cleanup).
 
 Candidate remains **`eligible for later M3 qualification`** but **not
-qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
+qualified**. Do **not** proceed to M4. Do **not** retry under this grant. The
+extended single-smoke exception is **consumed**.
 
 ### 9.2 Future retry requirements (out of scope for this evidence file)
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Keep locked write-capable `--approval-mode yolo` + **240** turns + **800s**
-   wall + fixed reap/finalization path (active policy per
-   `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`; extended
-   single-smoke exception for **one** retry only).
+3. Any further ceiling change requires a new explicit human decision (this
+   grant’s one extended retry is exhausted).
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
-5. **No second attempt** was authorized or performed under this grant. **No retry**
-   occurred in the extended single-smoke policy slice.
+5. **No second provider attempt** was authorized or performed under this grant.
 
 ---
 
@@ -385,8 +400,8 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 - `M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md` — argv/modelProviders contract used
 - `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` — write-capable argv + reap path
 - `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — prior 120s wall + same-shell reap
-- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — then-active 240s wall used by this session
-- `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md` — later active 240-turn / 800s wall (future-policy; not a retry)
+- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — prior 240s wall policy
+- `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md` — active 240-turn / 800s wall used by this session
 - `M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md` — sticky set -e finalization fix exercised successfully here
 - `M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md` — fresh session ID + preflight-before-credential
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture
@@ -423,15 +438,28 @@ Prior authorized fresh write-capable yolo session under then-locked **24** turns
 /**120s** wall: preflight GO before credential; Qwen once; TC-T01 rename
 **verified**; **`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s);
 balance-before USD 3.95 (after unavailable); inner exit 4; finalization
-incomplete (sticky `set -e`). Active wall later raised to **240s**; finalization
-path remediated afterward. Session remains historical **NO-GO**. Superseded as
-**latest** by `m3q-20260724T075320Z-939e94cf` under this grant.
+incomplete (sticky `set -e`). Active wall later raised; finalization path
+remediated afterward. Session remains historical **NO-GO**.
 
 ---
 
-*M3 qualification smoke evidence — session `m3q-20260724T075320Z-939e94cf`.
-Observational only. Exactly one fresh M3 retry. NO-GO: Qwen exit 53 (turn limit
-24) after verified TC-T01 rename. Preflight GO before credential; key
-consumed+deleted post-preflight only. 24 turns/240s/yolo. Finalization complete
-(balance delta USD 0.00; cleanup reaped). No second attempt. No M4. No
+## 14. Historical note — session `m3q-20260724T075320Z-939e94cf`
+
+Prior authorized fresh write-capable yolo session under then-locked **24** turns
+/**240s** wall: preflight GO before credential; Qwen once; TC-T01 rename
+**verified**; **`qwen_exit=53`** (`FatalTurnLimitedError` turn limit);
+balance-before/after USD **3.94** / **3.94** (delta **USD 0.00**); inner exit 4;
+finalization **completed**. Extended single-smoke policy (240 turns / 800s wall)
+followed as future-policy remediation only (not a retry). Session remains
+historical **NO-GO**. Superseded as **latest** by
+`m3q-20260724T081819Z-7db401c3` under this grant.
+
+---
+
+*M3 qualification smoke evidence — session `m3q-20260724T081819Z-7db401c3`.
+Observational only. Exactly one fresh extended single-smoke M3 retry. NO-GO:
+Qwen exit 55 (wall 800s) after verified TC-T01 rename. Preflight GO before
+credential; key consumed+deleted post-preflight only. 240 turns/800s/yolo/880s
+outer. Finalization complete (balance delta USD 0.04; cleanup reaped). Extended
+single-smoke exception consumed. No second provider attempt. No M4. No
 comparative or quality claims.*

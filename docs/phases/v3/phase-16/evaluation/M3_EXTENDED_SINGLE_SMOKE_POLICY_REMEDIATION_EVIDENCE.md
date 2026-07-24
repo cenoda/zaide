@@ -113,4 +113,6 @@ Qualification smoke execution remains **out of scope**.
 *M3 extended single-smoke policy remediation — repository wiring complete;
 not a qualification retry; historical session
 m3q-20260724T075320Z-939e94cf remains NO-GO at its then-locked 24-turn /
-240s wall. A future retry still requires a new one-shot key and explicit grant.*
+240s wall. The authorized one future retry was later executed as session
+`m3q-20260724T081819Z-7db401c3` (NO-GO, exit 55 at 800s wall) and the
+exception is consumed; see `M3_QUALIFICATION_EVIDENCE.md`.*

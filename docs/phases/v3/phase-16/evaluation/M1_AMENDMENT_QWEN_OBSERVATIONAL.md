@@ -82,10 +82,10 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant | **Done** under egress-proof grant: inventory only; **no package install** (`slirp4netns`/`socat` already present); ephemeral netns config only |
 | Run egress proof (allowed + blocked destinations) | Egress proof grant | **Done** — **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
 | Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Performed under latest qualification grant only via one-shot file → `DEEPSEEK_API_KEY`; consumed; value not disclosed |
-| DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T075320Z-939e94cf`); design remains `M3_DNS_BINDING_GATE.md` |
-| Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance-before/after USD 3.94 / 3.94; delta USD 0.00); finalization completed |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T075320Z-939e94cf` launched Qwen once under yolo (then-locked **24** turns / **240s** wall); TC-T01 rename verified; **`qwen_exit=53`** turn limit; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. **No second attempt** under that grant. |
-| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are **240** turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative (extended single-smoke exception for **one** future retry). Latest smoke `m3q-20260724T075320Z-939e94cf` executed under then-locked **24**-turn / **240s** wall. See `CAMPAIGN_LOCK.md` §1.4 for active policy. |
+| DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T081819Z-7db401c3`); design remains `M3_DNS_BINDING_GATE.md` |
+| Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance-before/after USD 3.93 / 3.89; delta USD 0.04); finalization completed |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T081819Z-7db401c3` launched Qwen once under yolo (locked **240** turns / **800s** wall); TC-T01 rename verified; **`qwen_exit=55`** wall budget; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. Extended single-smoke exception **consumed**. **No second provider attempt** under that grant. |
+| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are **240** turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative. Latest smoke `m3q-20260724T081819Z-7db401c3` executed under that lock (exit 55). Prior historical `m3q-20260724T075320Z-939e94cf` under then-locked **24**/ **240s**. See `CAMPAIGN_LOCK.md` §1.4 for active policy. |
 
 ---
 
@@ -116,13 +116,12 @@ write-capable yolo / USD 1 / USD 3 on 2026-07-24; wall later raised to
 turns for the session below; historical 12-turn session records preserved
 unchanged. **Extended single-smoke policy remediation (2026-07-24)** raised
 active policy to **240** turns / **800s** wall for **one** future retry
-(`M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`; not a qualification
-retry).
-Latest qualification smoke `m3q-20260724T075320Z-939e94cf` **NO-GO** (rename
-verified; exit 53 at then-locked 24-turn ceiling under 240s wall; finalization
-complete; spend delta USD 0.00). Post-session finalization remediation
+(`M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`; not itself a
+qualification retry). That authorized retry was later executed as session
+`m3q-20260724T081819Z-7db401c3` **NO-GO** (rename verified; exit 55 at locked
+800s wall; finalization complete; spend delta USD 0.04); exception **consumed**.
+Post-session finalization remediation
 (`M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) was exercised
-successfully on this session. Active policy is **240 turns / 800s wall**
-(extended single-smoke exception). No retry in policy slice.
-Prior historical `m3q-20260724T072341Z-8f567943` (exit 55, then-120s wall).
+successfully on this session. Active policy remains **240 turns / 800s wall**.
+Prior historical `m3q-20260724T075320Z-939e94cf` (exit 53, then-24/240s).
 No credentials created under recovery; recovery did not launch the binary.

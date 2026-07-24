@@ -31,20 +31,20 @@ re-scanned licenses, and re-extracted for static inspection only
 (credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
 ceiling; plan-only exit 0 without rename; yolo rename verified with exit 55 at
 historical 60s wall; 12-turn exit 53; 24/120s exit 55 with incomplete
-finalization). **Latest authorized retry session
-`m3q-20260724T075320Z-939e94cf` (exactly one fresh, new ID pre-recorded):**
+finalization; 24/240s exit 53). **Latest authorized extended single-smoke retry
+session `m3q-20260724T081819Z-7db401c3` (exactly one fresh provider launch):**
 DNS/slirp/inner-egress preflight **GO** before credential; write-capable **yolo**;
-locked **24** turns / **240s** wall; Qwen launched **once**; TC-T01 rename
-**verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0) but
-**`qwen_exit=53`** (`FatalTurnLimitedError` turn limit) → dual GO **NO-GO**;
-balance-before/after USD **3.94** / **3.94** (delta **USD 0.00**); fixed
-parent-shell reap recorded real inner exit **4**; finalization **completed**
-(balance-after, workspace, cleanup). Candidate remains **not qualified**.
-**Active** locked smoke ceilings: max **240** session turns, **800s** wall-time,
-**USD 1** smoke / **USD 3** cumulative (extended single-smoke exception for **one**
-future retry; not authorization for multiple attempts). **M3 fresh-session eligibility
-remediation (2026-07-24)** and **M3 post-session finalization remediation
-(2026-07-24)**
+locked **240** turns / **800s** wall (outer **880s**); Qwen launched **once**;
+TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0)
+but **`qwen_exit=55`** (`FatalBudgetExceededError` wall 800s) → dual GO **NO-GO**;
+balance-before/after USD **3.93** / **3.89** (delta **USD 0.04**); fixed
+parent-shell reap recorded real inner exit **4** (elapsed **809s**); finalization
+**completed** (balance-after, workspace, cleanup). Extended single-smoke exception
+**consumed**. Candidate remains **not qualified**. **Active** locked smoke
+ceilings remain max **240** session turns, **800s** wall-time, **USD 1** smoke /
+**USD 3** cumulative (exception for one retry is exhausted; not authorization for
+further attempts). **M3 fresh-session eligibility remediation (2026-07-24)** and
+**M3 post-session finalization remediation (2026-07-24)**
 (`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) were
 exercised by this session (finalization path ran after non-zero Qwen).
 Comparative campaign rules remain unchanged.
@@ -288,12 +288,12 @@ comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
-qualification smoke** (`m3q-20260724T075320Z-939e94cf`) **NO-GO**: write-capable
-yolo under then-locked **24** turns / **240s** wall; TC-T01 rename verified but
-`qwen_exit=53` (turn limit); spend delta USD 0.00; finalization complete;
-candidate still **not qualified**. **Active** policy **240 turns / 800s wall**
-(extended single-smoke exception for one future retry). Prior historical
-`m3q-20260724T072341Z-8f567943` (24/120s, exit 55).
+qualification smoke** (`m3q-20260724T081819Z-7db401c3`) **NO-GO**: write-capable
+yolo under locked **240** turns / **800s** wall; TC-T01 rename verified but
+`qwen_exit=55` (wall 800s); spend delta USD 0.04; finalization complete;
+extended single-smoke exception **consumed**; candidate still **not qualified**.
+**Active** policy remains **240 turns / 800s wall**. Prior historical
+`m3q-20260724T075320Z-939e94cf` (24/240s, exit 53).
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -898,7 +898,9 @@ historical 120s/60s session records unchanged; not a qualification retry.
 to **240** turns / **800s** wall (`evaluation/M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`);
 overall inner budget **880s**; explicitly approved **one** future qualification
 retry only; historical 24/240s session `m3q-20260724T075320Z-939e94cf`
-unchanged; not a qualification retry.
+unchanged; not itself a qualification retry. That authorized retry was later
+executed as session `m3q-20260724T081819Z-7db401c3` (**NO-GO**, exit 55) and the
+exception is **consumed**.
 **M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn
 ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
 and docs; historical 12-turn session records preserved unchanged; not a
@@ -906,8 +908,8 @@ qualification retry (superseded as active lock by extended single-smoke policy).
 **M3 fresh-session eligibility remediation (2026-07-24)** fixed orchestrator
 ordering (egress preflight before credential), fresh-session execution/evidence
 contract, and consumed-but-unlaunched recording; not a qualification retry.
-**Latest M3 qualification smoke** (`m3q-20260724T072341Z-8f567943`) executed
-preflight then one Qwen launch under write-capable yolo (24 / then-locked
-**120s**); rename **verified** but **NO-GO** on `qwen_exit=55` (wall 120s);
-finalization incomplete; candidate still **not qualified**. Session remains
-historical NO-GO under its then-locked 120s wall.
+**Latest M3 qualification smoke** (`m3q-20260724T081819Z-7db401c3`) executed
+preflight then one Qwen launch under write-capable yolo (**240** / **800s**);
+rename **verified** but **NO-GO** on `qwen_exit=55` (wall 800s); spend delta
+USD 0.04; finalization complete; candidate still **not qualified**. Extended
+single-smoke exception **consumed**.
