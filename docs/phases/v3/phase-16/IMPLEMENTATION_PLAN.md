@@ -19,10 +19,12 @@ acquisition-and-inspection-only grant recreated
 `SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and re-extracted for
 static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1); **no**
 Qwen/Node launch, **no** credentials, **no** API calls, **no** qualification
-retry. **Human decision (2026-07-24; not an execution grant):** a future
-separately authorized M3 retry **may** use max **12** session turns; **60s**
-wall-time and **USD 1** smoke / **USD 3** cumulative caps remain unchanged.
-Comparative campaign rules remain unchanged.
+retry. **12-turn policy alignment (2026-07-24; not an execution grant):**
+repository qualification policy and orchestrator argv locked to max **12**
+session turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative;
+DeepSeek auth, DNS binding, egress, TC-T01-only, and credential restrictions
+preserved. **No** qualification retry under alignment. Comparative campaign
+rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -264,9 +266,10 @@ succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof wer
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry). **Latest M3 qualification smoke**
 (`m3q-20260723T164355Z-c421b379`) **NO-GO** at Qwen max-session-turns
-(`qwen_exit=53`); TC-T01 incomplete; spend not measured; candidate still **not
-qualified**. Future max-session-turns ceiling of **12** recorded for a possible
-later retry; not an execution grant.
+(`qwen_exit=53` under then-locked 5-turn ceiling); TC-T01 incomplete; spend not
+measured; candidate still **not qualified**. Repository smoke policy aligned to
+**12** turns / **60s** / **USD 1** / **USD 3** on 2026-07-24 (policy-only; not
+an execution grant; no retry).
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -486,10 +489,11 @@ path. **M3a acquisition-and-inspection completed 2026-07-23**
 completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
 execution remains blocked pending a **new** qualification grant, credentials,
-and DNS-binding execution at launch. Future retry **may** use max **12** session
-turns if separately authorized; **60s** / **USD 1** / **USD 3** caps unchanged.
-OpenCode and Grok Build remain blocked at M1. A Grok Build distributed
-artifact must be independently identified and mapped before its slice can execute.
+and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
+2026-07-24): max **12** session turns, **60s** wall-time, **USD 1** smoke /
+**USD 3** cumulative — policy-only until a separate execution grant. OpenCode
+and Grok Build remain blocked at M1. A Grok Build distributed artifact must be
+independently identified and mapped before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
 accepted artifact root. No upstream source enters the repository.
@@ -858,8 +862,9 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 **M3 DNS binding gate defined 2026-07-23**
 (`evaluation/M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
 (`m3q-20260723T164355Z-c421b379`) executed DNS binding, remediated auth argv,
-and one Qwen launch, then **NO-GO** at max-session-turns (`qwen_exit=53`);
-TC-T01 incomplete; spend not measured; candidate still **not qualified**.
-**Human decision 2026-07-24 (policy only; not executed):** a future separately
-authorized M3 retry may use max **12** session turns; **60s** wall-time and
-**USD 1** smoke / **USD 3** cumulative caps unchanged.
+and one Qwen launch, then **NO-GO** at max-session-turns (`qwen_exit=53` under
+then-locked 5-turn ceiling); TC-T01 incomplete; spend not measured; candidate
+still **not qualified**. **12-turn policy alignment 2026-07-24 (policy only;
+not executed):** repository smoke policy locked to max **12** session turns,
+**60s** wall-time, **USD 1** smoke / **USD 3** cumulative; not an execution
+grant; no qualification retry under alignment.

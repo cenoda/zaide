@@ -9,6 +9,8 @@ public static class Phase16M3QualificationPolicy
     public const string AllowedAuthType = "openai";
     public const string AllowedServiceUrl = "https://api.deepseek.com";
     public const string AllowedCredentialEnvVar = "DEEPSEEK_API_KEY";
+    public const int MaxSessionTurns = 12;
+    public const string MaxWallTime = "60s";
     public const decimal SmokeSpendCapUsd = 1m;
     public const decimal CampaignSpendCapUsd = 3m;
 
@@ -21,8 +23,8 @@ public static class Phase16M3QualificationPolicy
             "--approval-mode", "plan",
             "--model", AllowedModel,
             "--output-format", "json",
-            "--max-session-turns", "5",
-            "--max-wall-time", "60s",
+            "--max-session-turns", MaxSessionTurns.ToString(),
+            "--max-wall-time", MaxWallTime,
         ];
     }
 

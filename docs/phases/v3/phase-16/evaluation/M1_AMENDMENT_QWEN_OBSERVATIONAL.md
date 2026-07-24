@@ -85,7 +85,7 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Design GO** (`M3_DNS_BINDING_GATE.md`); **execution NO-GO** until grant |
 | Provider API calls | Execution grant + cost tracking | Not authorized |
 | Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260723T164355Z-c421b379` launched Qwen once then **NO-GO** (`qwen_exit=53` max session turns); TC-T01 incomplete; see `M3_QUALIFICATION_EVIDENCE.md`. **No retry** under 2026-07-24 M3a recovery. |
-| Future max-session-turns ceiling (policy only) | Separate qualification grant if retry is re-authorized | Human decision **2026-07-24:** next possible retry **may** use **12** turns; **60s** wall-time and **USD 1 / USD 3** spend caps **unchanged**. **Not** an execution grant; **not** applied. |
+| Locked max-session-turns / wall-time / spend ceilings (policy only) | Separate qualification grant if retry is re-authorized | Policy alignment **2026-07-24:** locked smoke ceilings are **12** turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative. **Not** an execution grant; no qualification retry under alignment. |
 
 ---
 
@@ -107,6 +107,7 @@ after `/tmp` wipe (inspection only; no qualification retry). Subsequent M3
 egress proof (2026-07-23) under a separate grant proved `api.deepseek.com:443`
 allowlisted HTTPS and blocked non-allowlisted destinations
 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS binding gate defined 2026-07-23
-(`M3_DNS_BINDING_GATE.md`). Future 12-turn ceiling recorded 2026-07-24 for a
-possible later retry; not an execution grant. No credentials created under
-recovery; no authenticated API spend; no upstream binary launched under recovery.
+(`M3_DNS_BINDING_GATE.md`). Repository smoke policy aligned to 12 turns / 60s
+/ USD 1 / USD 3 on 2026-07-24; policy-only; not an execution grant. No
+credentials created under recovery; no authenticated API spend; no upstream
+binary launched under recovery or policy alignment.

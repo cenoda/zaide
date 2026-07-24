@@ -17,6 +17,28 @@ public sealed class Phase16M3QualificationPolicyTests
             "https://api.deepseek.com",
             argv[Array.IndexOf(argv, "--openai-base-url") + 1]);
         Assert.Equal("deepseek-v4-flash", argv[Array.IndexOf(argv, "--model") + 1]);
+        Assert.Equal(
+            Phase16M3QualificationPolicy.MaxSessionTurns.ToString(),
+            argv[Array.IndexOf(argv, "--max-session-turns") + 1]);
+        Assert.Equal(
+            Phase16M3QualificationPolicy.MaxWallTime,
+            argv[Array.IndexOf(argv, "--max-wall-time") + 1]);
+        Assert.Equal(12, Phase16M3QualificationPolicy.MaxSessionTurns);
+        Assert.Equal("60s", Phase16M3QualificationPolicy.MaxWallTime);
+        Assert.Equal(1m, Phase16M3QualificationPolicy.SmokeSpendCapUsd);
+        Assert.Equal(3m, Phase16M3QualificationPolicy.CampaignSpendCapUsd);
+    }
+
+    [Fact]
+    public void ValidateSmokeArgvOrThrow_RejectsLegacyFiveTurnCeiling()
+    {
+        var locked = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail().ToArray();
+        var turnValueIndex = Array.IndexOf(locked, "--max-session-turns") + 1;
+        locked[turnValueIndex] = "5";
+
+        var ex = Assert.Throws<ManifestValidationException>(() =>
+            Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(locked));
+        Assert.Contains("expected '12'", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

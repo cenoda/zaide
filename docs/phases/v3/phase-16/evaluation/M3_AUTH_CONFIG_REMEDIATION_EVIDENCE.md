@@ -56,11 +56,15 @@ recorded separately. Policy-locked tail:
 --approval-mode plan
 --model deepseek-v4-flash
 --output-format json
---max-session-turns 5
+--max-session-turns 12
 --max-wall-time 60s
 ```
 
-Environment allowlist (unchanged): **`DEEPSEEK_API_KEY` only**.
+**Turn ceiling note:** remediation originally locked auth argv with
+`--max-session-turns 5`. Repository policy was later aligned to **12** turns
+(human-approved 2026-07-24 policy alignment; **not** a qualification retry).
+**60s** wall-time and **USD 1** smoke / **USD 3** cumulative caps remain
+unchanged. Environment allowlist (unchanged): **`DEEPSEEK_API_KEY` only**.
 
 ### 2.2 Locked workspace modelProviders wiring (fixture)
 

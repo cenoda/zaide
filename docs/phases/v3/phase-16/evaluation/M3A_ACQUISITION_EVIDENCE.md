@@ -91,12 +91,11 @@ execution grant and **not** a qualification retry.
 (`summary.env`, `SHA256SUMS`, `computed-sha256.txt`, `tag-LICENSE`,
 `archive-LICENSE`, `tar-listing.txt`).
 
-**Human policy note recorded with recovery (not applied; no retry):** if a
-**future** M3 qualification grant is issued separately, the next possible
-retry **may** use `--max-session-turns 12`. The **60-second** wall-time limit
-and **USD 1** smoke / **USD 3** cumulative caps remain **unchanged**. That
-ceiling is **not** an execution authorization and was **not** used under this
-recovery grant.
+**Human policy note recorded with recovery (updated by later alignment):**
+repository smoke policy was subsequently aligned to `--max-session-turns 12`,
+**60-second** wall-time, **USD 1** smoke / **USD 3** cumulative (2026-07-24
+policy-only slice). That alignment is **not** an execution authorization and
+was **not** a qualification retry under this recovery grant.
 
 **License posture:** no new uncertainty relative to the 2026-07-23 owner-approved
 C-05 posture (Apache-2.0 root license identical to tag; absent root `NOTICE` /
@@ -250,16 +249,20 @@ Argument vector (structured; no shell interpolation):
 ```text
 -p
 <smoke-prompt>
+--auth-type
+openai
+--openai-base-url
+https://api.deepseek.com
+--approval-mode
+plan
 --model
 deepseek-v4-flash
 --output-format
 json
 --max-session-turns
-<N from TASK_CORPUS ceiling>
+12
 --max-wall-time
-<T from TASK_CORPUS ceiling>
---approval-mode
-<owner-chosen non-interactive mode; not locked in M3a>
+60s
 ```
 
 Optional flags for later qualification (still not executed): `--bare`,
@@ -399,6 +402,6 @@ M3a grant; recovery re-acquisition 2026-07-24 after `/tmp` wipe under a separate
 acquisition-and-inspection-only grant. Upstream binary not launched. Subsequent
 M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and
-execution remain unauthorized until a separate grant. Future max-session-turns
-ceiling of 12 recorded for a possible later retry; not used; no qualification
-retry under recovery.*
+execution remain unauthorized until a separate grant. Repository smoke policy
+later aligned to 12 turns / 60s / USD 1 / USD 3 (policy-only); not used under
+recovery; no qualification retry under recovery or alignment.*

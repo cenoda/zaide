@@ -254,7 +254,7 @@ PROMPT_TEXT="$(tr -d '\r' < "$PHASE16_PROMPT_FILE")"
   echo "--output-format"
   echo "json"
   echo "--max-session-turns"
-  echo "5"
+  echo "12"
   echo "--max-wall-time"
   echo "60s"
 } > "$PHASE16_RUN_DIR/exact-argv.txt"
@@ -283,7 +283,7 @@ bwrap \
     --approval-mode plan \
     --model deepseek-v4-flash \
     --output-format json \
-    --max-session-turns 5 \
+    --max-session-turns 12 \
     --max-wall-time 60s \
   > "$PHASE16_RUN_DIR/qwen.stdout" 2> "$PHASE16_RUN_DIR/qwen.stderr"
 QWEN_EC=$?

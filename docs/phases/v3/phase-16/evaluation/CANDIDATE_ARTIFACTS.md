@@ -21,9 +21,9 @@ in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`). **M3a recovery re-acquisition
 (2026-07-24)** after `/tmp` wipe re-verified hash and licenses and re-extracted
 for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1); **not** a
-qualification retry. Human decision: next **possible** retry may use max
-**12** session turns; **60s** / **USD 1** / **USD 3** caps unchanged; **not**
-an execution grant.
+qualification retry. **12-turn policy alignment (2026-07-24):** locked smoke
+ceilings are max **12** session turns, **60s** wall-time, **USD 1** smoke /
+**USD 3** cumulative; **not** an execution grant; no retry under alignment.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -190,7 +190,7 @@ quality claims.
 | Field | State after M3a (2026-07-23) | Resolution gate / notes |
 |---|---|---|
 | **Post-extract executable path (A-02)** | **`RESOLVED`:** `qwen-code/bin/qwen` (shell launcher → bundled `node/bin/node` + `lib/cli-entry.js`) | Static inspection only; binary not executed |
-| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface):** headless via `-p`/`--prompt` or positional prompt; `--model`, `--output-format`, `--max-session-turns`, `--max-wall-time`, `--approval-mode` / `--yolo`; workspace = process CWD | Full smoke argv policy (approval mode, ceilings) still needs owner lock before execution grant; see `M3A_ACQUISITION_EVIDENCE.md` §6 |
+| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 12`, `60s`, plan mode, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6 and policy alignment 2026-07-24 |
 | **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
 | **Protocol / SDK** | Partially observed | DeepSeek preset uses OpenAI-compatible protocol; not a separate product pin |
 | **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |
@@ -217,8 +217,8 @@ egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
 **Re-qualification still requires:** new dedicated sub-key (C-04); separate M3
 qualification grant; owner-locked smoke argv including verified non-interactive
-auth path under A-07 (future retry **may** use `--max-session-turns 12`; keep
-60s wall-time and USD 1/USD 3 caps); isolation re-check; DNS binding at launch
+auth path under A-07 (`--max-session-turns 12`, 60s wall-time, USD 1/USD 3
+caps — policy aligned 2026-07-24); isolation re-check; DNS binding at launch
 (A-14); egress allowlist reuse; verified TC-T01 workspace change.
 
 **Exclusion rules (locked while not qualified at M3):**
@@ -467,8 +467,9 @@ completed 2026-07-23 (artifact under phase root only; binary not launched at M3a
 recovery re-acquisition 2026-07-24 after `/tmp` wipe (inspection only). M3
 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
-qualification smoke `m3q-20260723T164355Z-c421b379` NO-GO at max-session-turns;
-TC-T01 incomplete; spend not measured. Future 12-turn ceiling recorded for a
-possible later retry; not an execution grant; no retry under recovery. Qwen Code
-remains eligible for later M3 qualification but not qualified; OpenCode and Grok
-Build blocked at M1. M2b completed 2026-07-23.*
+qualification smoke `m3q-20260723T164355Z-c421b379` NO-GO at max-session-turns
+(then-locked 5-turn ceiling); TC-T01 incomplete; spend not measured. Repository
+smoke policy aligned to 12 turns / 60s / USD 1 / USD 3 on 2026-07-24;
+policy-only; not an execution grant; no retry under recovery or alignment.
+Qwen Code remains eligible for later M3 qualification but not qualified;
+OpenCode and Grok Build blocked at M1. M2b completed 2026-07-23.*

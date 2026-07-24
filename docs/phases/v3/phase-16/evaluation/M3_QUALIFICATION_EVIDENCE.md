@@ -50,11 +50,12 @@ Code v0.20.1 archive was re-downloaded and re-extracted under
 (`M3A_ACQUISITION_EVIDENCE.md` §1.1). **No** Qwen launch, **no** credentials,
 **no** API calls, and **no** new qualification session under that grant.
 
-**Future retry policy note (human decision 2026-07-24; not applied here):** a
-later separately authorized M3 qualification retry **may** use
-`--max-session-turns 12`. The **60s** wall-time limit and **USD 1** smoke /
-**USD 3** cumulative caps remain **unchanged**. This document does **not**
-authorize that retry.
+**Policy alignment note (2026-07-24; not a retry under this evidence):**
+repository smoke policy and orchestrator argv were later aligned to
+`--max-session-turns 12` with **60s** wall-time, **USD 1** smoke, and **USD 3**
+cumulative caps. That alignment is **policy-only**; this document still records
+the historical session that executed under the then-locked **5**-turn ceiling.
+This document does **not** authorize a new qualification retry.
 
 ---
 
@@ -117,7 +118,8 @@ workspace change not verified.
 
 Executable (pinned): `/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/inspect/qwen-code/bin/qwen`
 
-Policy-locked tail (committed orchestrator + `Phase16M3QualificationPolicy`):
+Argv tail **executed in this session** (then-locked orchestrator +
+`Phase16M3QualificationPolicy`; historical record):
 
 ```text
 --auth-type openai
@@ -129,6 +131,9 @@ Policy-locked tail (committed orchestrator + `Phase16M3QualificationPolicy`):
 --max-wall-time 60s
 ```
 
+**Current repository policy (post 2026-07-24 alignment; not used by this
+session):** same auth/model/output/wall-time fields; `--max-session-turns 12`.
+
 Environment allowlist: **`DEEPSEEK_API_KEY` only** (A-07). Workspace fixture
 included `.qwen/settings.json` `modelProviders.openai[]` with
 `envKey: DEEPSEEK_API_KEY` and `baseUrl: https://api.deepseek.com` for
@@ -137,7 +142,8 @@ included `.qwen/settings.json` `modelProviders.openai[]` with
 Prompt source: materialized `TC-T01` prompt (rename `FetchData` → `RetrieveData`).
 
 Exact argv was recorded under the session artifact root (`exact-argv.txt`) and
-inspected before reboot; content matched the locked contract above.
+inspected before reboot; content matched the **then-locked** 5-turn contract
+above.
 
 **Auth remediation vs prior session:** prior session
 `m3q-20260723T151512Z-6996af5f` failed with “No auth type is selected.” This
@@ -221,9 +227,11 @@ Orchestrator exit gate treats non-zero Qwen exit as fatal (**NO-GO**).
 ### 7.2 Turn limit before verified TC-T01 completion (this grant)
 
 Qwen Code v0.20.1 exited with `FatalTurnLimitedError` / code **53** after
-reaching `--max-session-turns 5` (locked smoke ceiling). Empty stdout provided
-no parseable token/turn usage object. Workspace inspection after exit showed
-**no** `FetchData` → `RetrieveData` rename.
+reaching `--max-session-turns 5` (then-locked smoke ceiling for this session).
+Empty stdout provided no parseable token/turn usage object. Workspace
+inspection after exit showed **no** `FetchData` → `RetrieveData` rename.
+Repository policy was later aligned to **12** turns without re-running this
+session.
 
 ### 7.3 Orchestrator hang after Qwen exit (process hygiene)
 
@@ -237,10 +245,10 @@ deadlock and wiped `/tmp` artifacts.
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. **Human-approved (2026-07-24) future turn ceiling:** next possible retry
-   **may** use `--max-session-turns 12` (was 5 in this session). **60s**
-   wall-time and **USD 1 / USD 3** spend caps **unchanged**. Not applied; not
-   an execution grant.
+3. **Locked smoke ceilings (policy aligned 2026-07-24):** next authorized retry
+   uses `--max-session-turns 12` (this session used **5**), `--max-wall-time
+   60s`, **USD 1** smoke / **USD 3** cumulative. Policy alignment is **not**
+   an execution grant and did **not** re-run this session.
 4. Fix orchestrator post-child reaping / hang so post-balance and summary
    finalization always run after Qwen exit.
 5. Preserve session records outside `/tmp` before any host reboot (M3a
@@ -282,12 +290,13 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. If authorized, smoke argv **may** use `--max-session-turns 12` (human
-   decision 2026-07-24); keep `--max-wall-time 60s` and spend caps unchanged.
+3. Smoke argv uses locked ceilings: `--max-session-turns 12`,
+   `--max-wall-time 60s`, **USD 1** smoke / **USD 3** cumulative (policy
+   alignment 2026-07-24; not an execution grant by itself).
 4. Optionally harden orchestrator wait/reap and durable evidence paths.
 5. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
-6. **No retry has been authorized or performed** as of the 2026-07-24 M3a
-   recovery grant.
+6. **No retry has been authorized or performed** as of the 2026-07-24 policy
+   alignment or M3a recovery grant.
 
 ---
 
@@ -303,9 +312,10 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 ---
 
 *M3 qualification smoke evidence — session `m3q-20260723T164355Z-c421b379`.
-Observational only. NO-GO at Qwen max-session-turns (exit 53). Pre-launch DNS,
-slirp, egress, Bubblewrap `/etc`, and remediated auth GO. TC-T01 incomplete.
-Artifacts lost on host reboot after orchestrator hang; values from pre-reboot
-operator inspection. No second attempt. M3a tree re-acquired 2026-07-24 for
-inspection only; future 12-turn ceiling recorded but not used; no qualification
-retry under recovery.*
+Observational only. NO-GO at Qwen max-session-turns (exit 53 under then-locked
+5-turn ceiling). Pre-launch DNS, slirp, egress, Bubblewrap `/etc`, and
+remediated auth GO. TC-T01 incomplete. Artifacts lost on host reboot after
+orchestrator hang; values from pre-reboot operator inspection. No second
+attempt. M3a tree re-acquired 2026-07-24 for inspection only. Repository
+policy later aligned to 12 turns / 60s / USD 1 / USD 3 (policy-only); no
+qualification retry under recovery or alignment.*
