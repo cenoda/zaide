@@ -10,11 +10,11 @@ block planning an independent production Native Harness or ACP phase.
 
 ## Current work
 
-- [ ] Define the post-Phase-16 V3 roadmap continuation before starting a new
-      V3 implementation phase. This is roadmap work, not a Phase 16 retry.
+- [x] Define the post-Phase-16 V3 roadmap continuation before starting a new
+      V3 implementation phase. This was accepted on 2026-07-24.
 
 ## Next task
 
-Draft and review the V3 continuation with explicit phase outcomes, order, and
-dependencies. Do not resume candidate qualification under Phase 16 unless a
-future roadmap decision assigns that work again.
+Prepare the Phase 17 implementation plan for the agent action control plane and
+workspace-mutation boundary. Do not resume candidate qualification under Phase
+16 unless a future roadmap decision assigns that work again.
