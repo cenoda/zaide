@@ -1,53 +1,6 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 egress proof completed on 2026-07-23** under an explicit separate grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): provider-restricted egress for `api.deepseek.com:443` only proven with repository-controlled probe (allow PASS, non-allowlisted block PASS); no credentials, no authenticated API, no upstream binary launch. **M3 DNS binding gate defined and published on 2026-07-23** (docs-only;
-`evaluation/M3_DNS_BINDING_GATE.md`): deterministic sandbox-only resolution for
-`api.deepseek.com`, hosts injection, nft parity, TLS/SNI preservation, and
-pre-launch stop conditions. **M3 auth-configuration remediation completed
-2026-07-24** (`evaluation/M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): locked
-`--auth-type openai`, `--openai-base-url https://api.deepseek.com`, and
-workspace `modelProviders` `DEEPSEEK_API_KEY` wiring. **M3 write-capable
-qualification remediation (2026-07-24)**
-(`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`) locked
-`--approval-mode yolo` and post-exit reap/finalization. **M3 wall-time + exit-reap remediation (2026-07-24)**
-(`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`) raised the smoke
-wall lock from 60s to **120s** and fixed same-shell wait/reap so inner exit is
-not bash **127**. **M3 wall-time 240s future-policy remediation (2026-07-24)**
-(`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`) raised the
-**active** wall lock to **240s** (overall inner budget **320s**); historical
-120s/60s session records unchanged; not a qualification retry. **M3 extended
-single-smoke policy remediation (2026-07-24)**
-(`evaluation/M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`) raised
-the **active** lock to **240** turns / **800s** wall (overall inner budget
-**880s**); explicitly approved **one** future qualification retry only;
-historical 24/240s session `m3q-20260724T075320Z-939e94cf` unchanged; not a
-qualification retry. **M3a recovery
-re-acquisition (2026-07-24)** under a separate
-acquisition-and-inspection-only grant recreated `/tmp/phase16-artifacts/phase-16/`,
-re-downloaded the pinned archive and `SHA256SUMS`, re-verified SHA-256,
-re-scanned licenses, and re-extracted for static inspection only
-(`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1). **M3 qualification smoke**
-(`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior attempts **NO-GO**
-(credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
-ceiling; plan-only exit 0 without rename; yolo rename verified with exit 55 at
-historical 60s wall; 12-turn exit 53; 24/120s exit 55 with incomplete
-finalization; 24/240s exit 53). **Latest authorized extended single-smoke retry
-session `m3q-20260724T081819Z-7db401c3` (exactly one fresh provider launch):**
-DNS/slirp/inner-egress preflight **GO** before credential; write-capable **yolo**;
-locked **240** turns / **800s** wall (outer **880s**); Qwen launched **once**;
-TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0)
-but **`qwen_exit=55`** (`FatalBudgetExceededError` wall 800s) → dual GO **NO-GO**;
-balance-before/after USD **3.93** / **3.89** (delta **USD 0.04**); fixed
-parent-shell reap recorded real inner exit **4** (elapsed **809s**); finalization
-**completed** (balance-after, workspace, cleanup). Extended single-smoke exception
-**consumed**. Candidate remains **not qualified**. **Active** locked smoke
-ceilings remain max **240** session turns, **800s** wall-time, **USD 1** smoke /
-**USD 3** cumulative (exception for one retry is exhausted; not authorization for
-further attempts). **M3 fresh-session eligibility remediation (2026-07-24)** and
-**M3 post-session finalization remediation (2026-07-24)**
-(`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) were
-exercised by this session (finalization path ran after non-zero Qwen).
-Comparative campaign rules remain unchanged.
+**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. A **proposed, unaccepted** M3 unblock amendment package exists at `evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md` (post-M2b NO-GO preflight; docs-only; no execution authorized). Under the repository-wide automatic-progression policy, **M3 remains blocked** until that proposal (or a successor) is human-accepted, every listed external-side-effect gate passes, and independent provenance and security requirements are satisfied; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -275,25 +228,21 @@ release, tag, distributed-artifact mapping, service mapping, or model mapping fo
 the Grok Build public source unless later primary evidence proves that relation.
 
 No row qualifies an executable. **M1 disposition (re-verified
-`2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z`, no acquisition/execution):**
-OpenCode and Grok Build public source remain **`blocked at M1`**. **M1 amendment
-(2026-07-23):** Qwen Code is **`eligible for later M3 qualification`** on the
-single-candidate observational path with DeepSeek provider configuration; A-02/A-03
-invocation fields **resolved at M3a (2026-07-23)** from inspection without
-execution (`evaluation/M3A_ACQUISITION_EVIDENCE.md`).
-Full field tables and exclusion rules live in
-`docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md` and
-`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. **One** candidate is eligible;
-comparative claims remain impossible unless two later M3 qualifications actually
-succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
-completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
-after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
-qualification smoke** (`m3q-20260724T081819Z-7db401c3`) **NO-GO**: write-capable
-yolo under locked **240** turns / **800s** wall; TC-T01 rename verified but
-`qwen_exit=55` (wall 800s); spend delta USD 0.04; finalization complete;
-extended single-smoke exception **consumed**; candidate still **not qualified**.
-**Active** policy remains **240 turns / 800s wall**. Prior historical
-`m3q-20260724T075320Z-939e94cf` (24/240s, exit 53).
+`2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z`, no acquisition/execution):** all
+three candidates are **`blocked at M1`** for later M3 eligibility. Qwen Code
+`v0.20.1` and OpenCode `v1.18.4` have observed Linux release-archive coordinates
+and official checksum sources, but lack locked provider/service/model identities
+and exact evaluation invocations (and source-build mappings remain unmapped).
+Grok Build public source still has no Git tag/release artifact pin on the
+accepted public-source identity. Full field tables and exclusion rules live in
+`docs/phases/v3/phase-16/evaluation/CANDIDATE_ARTIFACTS.md`. Missing required
+identity excludes the candidate instead of being guessed. **Zero** candidates
+are `eligible for later M3 qualification` at this lock; at least two
+independently qualified configurations are **not** currently possible; no
+comparative claim is possible unless two later M3 qualifications actually
+succeed. At the M1 boundary M2a remained unauthorized; M2a was subsequently
+completed, and M2b was subsequently completed on 2026-07-23. M3 is currently blocked
+pending acceptance of the M3 unblock amendment proposal (`evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md`).
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -327,16 +276,12 @@ revisions. Phase 16 cannot become an ACP experiment.
   temporary-filesystem `/bin/true` proof succeeded.
 - Docker CLI `29.6.1` exists, but daemon access is unavailable to the current
   user. Podman is absent.
-- At M0, `slirp4netns`, `pasta`, and `socat` were absent. **M3 egress proof
-  (2026-07-23)** later proved provider-restricted egress for
-  `api.deepseek.com:443` with `slirp4netns` and `socat` already present (no
-  package install). **`M3_DNS_BINDING_GATE.md` (2026-07-23)** locks how future
-  execution must bind a freshly verified IPv4 via sandbox-only `/etc/hosts` and
-  matching nft allowlist without ambient candidate DNS.
+- `slirp4netns`, `pasta`, and `socat` are absent. Safe provider-backed egress is
+  unresolved.
 
 The harmless Bubblewrap proof is not candidate execution and does not qualify a
-campaign. No candidate runs until isolation, egress, DNS binding at launch, and
-remaining execution gates pass.
+campaign. No candidate runs until a later milestone proves complete isolation
+and egress.
 
 ### 6.2 Trust and permission boundary
 
@@ -505,23 +450,9 @@ milestone; stop if its eligibility or an external-side-effect gate blocks it.
 ### M3a / M3b / M3c — Candidate qualification and one-task smoke
 
 **Goal:** in separate slices, acquire, hash, license-check, isolate, and perform
-one predeclared smoke task for candidates that become eligible. Qwen Code alone is
-eligible for later M3 qualification on the accepted single-candidate observational
-path. **M3a acquisition-and-inspection completed 2026-07-23**
-(`evaluation/M3A_ACQUISITION_EVIDENCE.md`); **recovery re-acquisition completed
-2026-07-24** after `/tmp` wipe (inspection only; no retry). **M3 egress proof
-completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
-binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
-execution remains separately gated. Locked smoke ceilings (policy aligned
-2026-07-24; wall raised 60s→120s→240s; turns raised 12→24→**240** after
-exit-53 evidence; extended single-smoke exception 2026-07-24): max **240**
-session turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative.
-The authorized one extended retry was executed as session
-`m3q-20260724T081819Z-7db401c3` (**NO-GO**, exit 55) and that exception is
-**consumed**; any further retry requires a new explicit grant + one-shot key.
-OpenCode and Grok Build remain blocked at M1.
-A Grok Build distributed artifact must be independently identified and mapped
-before its slice can execute.
+one predeclared smoke task for Qwen Code, OpenCode, and Grok Build. M1 sets the
+order; ordering does not imply preference. A Grok Build distributed artifact
+must be independently identified and mapped before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
 accepted artifact root. No upstream source enters the repository.
@@ -539,10 +470,10 @@ dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Zaide.Tests.Featu
 git diff --check
 ```
 
-Each slice remains ineligible until artifact, license, isolation, egress, DNS
-binding at launch, credential, provider identity, service identity, model
-identity, cost ceiling, and cleanup requirements pass. A failure excludes or
-makes the candidate observational; it never relaxes the gate.
+Each slice remains ineligible until artifact, license, isolation, egress,
+credential, provider identity, service identity, model identity, cost ceiling,
+and cleanup requirements pass. A failure excludes or makes the candidate
+observational; it never relaxes the gate.
 
 **Commit:** one commit each for M3a, M3b, and M3c; stop after each.
 
@@ -699,25 +630,25 @@ is a scope violation unless the plan is amended and reaccepted.
 
 ### M1 must resolve before M2
 
-M1 answers (docs lock; **human-accepted 2026-07-23**; **M1 amendment
-human-accepted 2026-07-23**):
+M1 answers (docs lock; **human-accepted 2026-07-23**; **M2a unauthorized at the
+M1 boundary** — subsequently authorized and explicitly human-accepted on
+2026-07-23):
 
-- **Eligible artifacts / invocations:** **Qwen Code only** — **`eligible for
-  later M3 qualification`** on single-candidate observational path; **A-02/A-03
-  resolved at M3a (2026-07-23)** from inspection without execution
-  (`evaluation/M3A_ACQUISITION_EVIDENCE.md`). OpenCode and Grok Build remain
-  **`blocked at M1`**. Full records in `evaluation/CANDIDATE_ARTIFACTS.md` and
-  `evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
+- **Eligible artifacts / invocations:** **None.** Qwen Code, OpenCode, and Grok
+  Build public source are each **`blocked at M1`**. Observed-but-not-eligible
+  release coordinates for Qwen/OpenCode Linux archives and full missing-fact
+  lists are in `evaluation/CANDIDATE_ARTIFACTS.md`.
 - **Can at least two candidates qualify without source adoption, unsafe install,
   or an inferred binary/source mapping?** **Not from the current eligibility
-  set.** One candidate is eligible; comparative claims remain impossible unless
-  two later M3 qualifications actually succeed. Phase 16 is re-scoped to
-  **single-candidate observational** for Qwen Code only; causal comparative
-  campaign remains blocked.
-- **Provider / service / model comparability:** **Established for Qwen Code
-  observational path only** — DeepSeek, `https://api.deepseek.com`,
-  `deepseek-v4-flash`; cost and account isolation locked per M1 amendment.
-  OpenCode and Grok Build have no campaign provider configuration.
+  set.** Zero candidates are `eligible for later M3 qualification`. Comparative
+  claims remain impossible unless two later M3 qualifications actually succeed.
+  Phase 16 is **eligibility-blocked** for multi-candidate comparison at this
+  lock; it is **not** re-scoped to a single-candidate observational path because
+  that path also requires at least one later-eligible, later-qualified
+  candidate.
+- **Provider / service / model comparability:** **Not established.** No campaign
+  provider, service, or model identity is selected for any candidate; cost and
+  account isolation therefore cannot be locked.
 - **Synthetic corpus without held-out leakage:** Locked in
   `evaluation/TASK_CORPUS.md` (3 pilot + 10 tuning + 10 held-out). Held-out
   definitions carry reproducible `definition_commitment_sha256` commitments;
@@ -730,17 +661,10 @@ human-accepted 2026-07-23**):
 ### M2b must resolve before M3
 
 - Can the chosen substrate enforce exact writable mounts and default-deny host
-  access for every candidate? **Yes (M2b).**
+  access for every candidate?
 - How is provider-only egress constrained and evidenced with current host tools?
-  **Proven 2026-07-23** for `api.deepseek.com:443` only
-  (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`).
-- How is allowlisted DNS prevented inside the candidate sandbox?
-  **Defined 2026-07-23** — sandbox-only `/etc/hosts` + nft IPv4 parity
-  (`evaluation/M3_DNS_BINDING_GATE.md`); execution at launch remains gated.
 - How are descendant termination and orphan absence proven for every launch mode?
-  **Yes (M2b).**
 - Where do raw artifacts live, what is the quota, and how are they disposed of?
-  **Artifact root + retention/disposal locked in campaign/threat docs.**
 
 Any answer that weakens a locked boundary requires an amended, reaccepted M0.
 
@@ -750,11 +674,8 @@ Any answer that weakens a locked boundary requires an amended, reaccepted M0.
 
 - M0 installed or executed no candidate; no artifact is qualified.
 - Repository metadata does not prove published binary-to-source mapping.
-- Bubblewrap full network isolation works. Provider-restricted egress for
-  `api.deepseek.com:443` was proven on 2026-07-23 under a separate grant
-  (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`); real-candidate launch must reuse
-  equivalent enforcement and execute the DNS binding gate immediately before
-  launch (`evaluation/M3_DNS_BINDING_GATE.md`).
+- Bubblewrap full network isolation works, but provider-restricted egress is not
+  proven.
 - Docker daemon access is unavailable and Podman is absent; neither is assumed.
 - Provider nondeterminism, rate limits, service changes, and cost limit causal
   comparison even with a controlled runner.
@@ -855,63 +776,10 @@ and deterministic repository-owned fake-candidate core documented in
 production types, upstream artifact acquisition, network access, process launch,
 or real candidate execution.
 
-**Human decision (M1 amendment):** Phase 16 M1 amendment for **Qwen Code
-single-candidate observational** path was **explicitly human-accepted on
-2026-07-23** (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`):
+**M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence in `evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates.
 
-- accepts `M3_UNBLOCK_AMENDMENT_PROPOSAL.md` as the amendment vehicle;
-- Qwen Code → **`eligible for later M3 qualification`** (observational only);
-- OpenCode and Grok Build remain **blocked at M1**;
-- single-candidate observational path authorized; comparative rules unchanged;
-- provider configuration locked to DeepSeek / `https://api.deepseek.com` /
-  `deepseek-v4-flash`;
-- A-02/A-03 remained `UNRESOLVED` until separately authorized M3a
-  acquisition-and-inspection (completed 2026-07-23);
-- **did not** authorize acquisition, egress tooling install, credentials,
-  provider API calls, or upstream execution.
-
-**M2b was completed and accepted on 2026-07-23** (repository-owned isolation,
-lifecycle, mutation, cancellation, and cleanup evidence in
-`evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types,
-upstream acquisition, network access, or real candidate execution).
-
-**M3a acquisition-and-inspection was completed on 2026-07-23** under an
-explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned
-archive acquired outside the repository, SHA-256 verified, licenses scanned,
-A-02/A-03 resolved; binary not launched. **M3a recovery re-acquisition was
-completed on 2026-07-24** after host reboot wiped `/tmp/phase16-artifacts`
-(same pin/hash/license results; extract for inspection only; binary/Node not
-launched; no qualification retry).
-
-**M3 egress proof was completed on 2026-07-23** under an explicit separate
-grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): allowlisted
-`api.deepseek.com:443` HTTPS succeeded without credentials; non-allowlisted
-HTTPS destinations were blocked; evidence under the phase artifact root.
-**M3 DNS binding gate defined 2026-07-23**
-(`evaluation/M3_DNS_BINDING_GATE.md`). **M3 write-capable remediation (2026-07-24)** locked `--approval-mode yolo`
-and post-exit reaping
-(`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **M3 wall-time +
-exit-reap remediation (2026-07-24)** raised wall 60s→**120s** and fixed
-same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).
-**M3 wall-time 240s future-policy remediation (2026-07-24)** raised active wall
-to **240s** (`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`);
-historical 120s/60s session records unchanged; not a qualification retry.
-**M3 extended single-smoke policy remediation (2026-07-24)** raised active lock
-to **240** turns / **800s** wall (`evaluation/M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`);
-overall inner budget **880s**; explicitly approved **one** future qualification
-retry only; historical 24/240s session `m3q-20260724T075320Z-939e94cf`
-unchanged; not itself a qualification retry. That authorized retry was later
-executed as session `m3q-20260724T081819Z-7db401c3` (**NO-GO**, exit 55) and the
-exception is **consumed**.
-**M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn
-ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
-and docs; historical 12-turn session records preserved unchanged; not a
-qualification retry (superseded as active lock by extended single-smoke policy).
-**M3 fresh-session eligibility remediation (2026-07-24)** fixed orchestrator
-ordering (egress preflight before credential), fresh-session execution/evidence
-contract, and consumed-but-unlaunched recording; not a qualification retry.
-**Latest M3 qualification smoke** (`m3q-20260724T081819Z-7db401c3`) executed
-preflight then one Qwen launch under write-capable yolo (**240** / **800s**);
-rename **verified** but **NO-GO** on `qwen_exit=55` (wall 800s); spend delta
-USD 0.04; finalization complete; candidate still **not qualified**. Extended
-single-smoke exception **consumed**.
+**Proposed, unaccepted gate (M3 unblock):** `evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md`
+records the post-M2b NO-GO preflight and the minimum explicit human decisions
+required to make one candidate eligibility path reviewable. **Not accepted.**
+Acceptance does not authorize acquisition, credentials, provider access, or
+execution. Comparative campaign rules remain unchanged unless separately amended.

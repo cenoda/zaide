@@ -1,13 +1,11 @@
 # Phase 16 M3 Unblock — Amendment Proposal (NOT ACCEPTED)
 
-**Status:** **Accepted as the amendment vehicle on 2026-07-23.** Human-accepted
-decisions for Qwen Code single-candidate observational unblock are recorded in
-[`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`](./M1_AMENDMENT_QWEN_OBSERVATIONAL.md).
-This proposal document remains the preflight and decision checklist reference.
-Acceptance does **not** authorize M3 acquisition, egress tooling installation,
-credential creation, provider API calls, or upstream execution. **M3 remains
-blocked** until every external-side-effect gate listed below receives a separate
-grant.
+**Status:** **Proposed, unaccepted.** This document is a docs-only amendment
+proposal. It does **not** accept any decision, authorize M3 acquisition or
+execution, use credentials, access provider services, install host tooling, or
+weaken the M1/M0 eligibility lock. **M3 remains blocked** until a human
+explicitly accepts this proposal (or a successor) **and** every external-side-effect
+gate listed below.
 
 **Preflight basis:** Post-M2b NO-GO preflight completed **2026-07-23** (docs-only
 synthesis; no artifact acquisition, no process launch, no network egress to
@@ -16,21 +14,16 @@ providers). Sources: `CANDIDATE_ARTIFACTS.md`, `ISOLATION_EVIDENCE.md`,
 
 ---
 
-## 1. NO-GO Preflight Outcome (historical — 2026-07-23 pre-amendment)
+## 1. NO-GO Preflight Outcome
 
-**Superseded by subsequent grants.** M1 amendment, M3a, M3 egress proof, and
-M3 DNS binding gate publication updated the live gate table. This section
-records the pre-amendment preflight only.
-
-| Gate | Preflight result (historical) | Live status after subsequent grants |
+| Gate | Preflight result | Evidence |
 |---|---|---|
-| M1 eligibility | **NO-GO** — zero candidates eligible | **Qwen Code eligible** (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`) |
-| M2b isolation mechanics | **GO** | **GO** (`ISOLATION_EVIDENCE.md` §3) |
-| Provider-restricted egress | **NO-GO** — not proven on current host | **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`, 2026-07-23) |
-| DNS binding at launch | (not assessed at preflight) | **Design GO** (`M3_DNS_BINDING_GATE.md`, 2026-07-23); execution gated |
-| Comparative campaign path | **NO-GO** | **NO-GO** (unchanged; requires ≥2 qualifications) |
-| Single-candidate observational path | **NO-GO** | **Authorized for Qwen Code only** |
-| Upstream acquisition / execution | **NO-GO** | M3a **complete**; execution **still NO-GO** |
+| M1 eligibility | **NO-GO** — zero candidates `eligible for later M3 qualification` | All three blocked at M1 (`CANDIDATE_ARTIFACTS.md` §4–§6) |
+| M2b isolation mechanics | **GO** — repository-owned fake probes | `ISOLATION_EVIDENCE.md` §3 |
+| Provider-restricted egress | **NO-GO** — not proven on current host | `ISOLATION_EVIDENCE.md` §6; `THREAT_MODEL.md` §2 |
+| Comparative campaign path | **NO-GO** — requires ≥2 later M3 qualifications | `CAMPAIGN_LOCK.md` §1.1 |
+| Single-candidate observational path | **NO-GO** — not authorized; requires ≥1 eligibility unblock + M3 qualification | `CAMPAIGN_LOCK.md` §1.3 |
+| Upstream acquisition / execution | **NO-GO** — forbidden under current locks | M1 human acceptance 2026-07-23 |
 
 **Preflight conclusion:** M3 qualification cannot be authorized for any candidate.
 The minimum unblock path is a **narrow M1 amendment** that locks one candidate's
@@ -238,9 +231,8 @@ The preflight and this proposal **do not** establish:
 4. Any single provider/service/model configuration shared across Qwen Code,
    OpenCode, or Grok Build (comparability is a **later** campaign design choice,
    not assumed).
-5. Provider-restricted egress enforceability on the current host — **proven
-   2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`); DNS binding at launch defined
-   2026-07-23 (`M3_DNS_BINDING_GATE.md`).
+5. Provider-restricted egress enforceability on the current host without
+   additional tooling or observational downgrade.
 6. Post-extract executable layout for any Linux archive (not observed without
    acquisition).
 7. Embedded license/notice completeness inside any distributed archive (not
@@ -248,7 +240,4 @@ The preflight and this proposal **do not** establish:
 
 ---
 
-*Proposed 2026-07-23. Accepted as amendment vehicle 2026-07-23 via
-`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. M3a, M3 egress proof, and M3 DNS binding
-gate publication completed under separate grants. M3 execution remains blocked
-pending credential-and-execution grant and DNS binding execution at launch.*
+*Proposed 2026-07-23. Not human-accepted. M3 remains blocked.*

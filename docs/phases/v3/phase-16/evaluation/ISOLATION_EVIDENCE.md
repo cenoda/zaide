@@ -14,7 +14,7 @@ authorize upstream candidate execution.
 | Bubblewrap | `/usr/bin/bwrap` version 0.11.2 |
 | .NET SDK | 10.0.109 |
 | Sandbox backend | Bubblewrap `--unshare-all`, `--die-with-parent`, `--ro-bind / /`, explicit `--bind` writable roots only |
-| Provider-restricted egress | **Proven 2026-07-23** for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`; see §6) |
+| Provider-restricted egress | **Not proven** (see §6) |
 
 ---
 
@@ -107,8 +107,8 @@ re-run passed in both default parallel and serial modes (**2788/2788**).
 
 | Limitation | M2b disposition |
 |---|---|
-| Provider-restricted egress | **Proven 2026-07-23** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`): ephemeral unshare netns + `slirp4netns` + nft allowlist for `api.deepseek.com:443` only; allow HTTPS PASS; non-allowlisted block PASS. M2b-era host lacked proven allowlist tooling; by egress-proof time `slirp4netns`/`socat` were already present (no install). `pasta` still absent. Docker daemon/Podman unused. Real-candidate launch must reuse equivalent enforcement. |
-| Upstream candidate execution | **Still forbidden** without credential + qualification grants. |
+| Provider-restricted egress | **Still unproven.** Host lacks `slirp4netns`, `pasta`, and `socat`; Docker daemon and Podman are unavailable. Bubblewrap proves default-deny full network isolation (`--unshare-all` includes network namespace) but not allowlisted provider HTTPS. |
+| Upstream candidate execution | **Still forbidden.** M1 all-blocked eligibility unchanged. |
 | Real candidate process launch | **Still forbidden.** Manifest `processLaunchEnabled` remains denied; Bubblewrap launch is runner-owned for repository fake probes only. |
 | Production reuse | **Not authorized.** Evaluation controls remain phase-owned. |
 
@@ -118,39 +118,20 @@ No locked M0/M1 boundary was weakened to produce this evidence.
 
 ## 7. M3 Eligibility Assessment
 
-**M3 execution remains blocked.** M2b proves repository-owned isolation
-mechanics only. M1 amendment (2026-07-23) made **Qwen Code** **`eligible for
-later M3 qualification`** on the single-candidate observational path
-(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked
-at M1**.
+**M3 remains blocked.** M2b proves repository-owned isolation mechanics only.
+M3 additionally requires, per candidate slice:
 
-**M3a acquisition-and-inspection completed 2026-07-23** under an explicit
-separate grant (`M3A_ACQUISITION_EVIDENCE.md`):
+- artifact acquisition and hash verification,
+- license clearance,
+- provider/service/model identity lock,
+- credential and egress gates,
+- and M1 eligibility unblock (currently **zero** candidates are `eligible for
+  later M3 qualification`).
 
-- pinned archive acquired under phase artifact root only; SHA-256 verified;
-- tag and in-archive `LICENSE` Apache-2.0 (identical); `NOTICE` and
-  `THIRD-PARTY-NOTICES` absent at package root;
-- A-02/A-03 resolved from static inspection;
-- **upstream binary not launched**.
-
-M3 still additionally requires, per candidate slice:
-
-- project-owner C-05 clearance (**complete — owner approved recorded posture
-  2026-07-23** per M3a);
-- provider-restricted egress proof per accepted C-01/C-02 design
-  (**complete 2026-07-23** — `M3_EGRESS_PROOF_EVIDENCE.md`);
-- DNS binding execution at launch per A-14 (**design complete 2026-07-23** —
-  `M3_DNS_BINDING_GATE.md`; mandatory immediately before first launch);
-- dedicated DeepSeek sub-key and credential injection (separate execution grant);
-- M3 qualification grant and isolation re-check before upstream binary launch.
-
-Next external-side-effect candidate under a **separate** grant:
-credential-and-execution (**GO to authorize** when human grants; still
-**NO-GO** to perform until that grant + DNS binding execution + remaining
-argv/cost/isolation gates).
+Automatic progression stops at M3 until those independent provenance, security,
+and external-side-effect gates are genuinely satisfied.
 
 ---
 
-*M2b isolation evidence — produced 2026-07-23. M3a acquisition completed
-2026-07-23 without binary launch. M3 egress proof completed 2026-07-23. M3 DNS
-binding gate defined 2026-07-23. Upstream execution remains unauthorized.*
+*M2b isolation evidence — produced 2026-07-23. Upstream execution remains
+unauthorized.*

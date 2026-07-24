@@ -1,14 +1,10 @@
 # Phase 16 M1: Threat Model
 
-**Status:** M1 explicitly human-accepted on 2026-07-23. M1 amendment
-(2026-07-23) records accepted egress and credential design for Qwen Code
-(`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). **M3 egress proof (2026-07-23)**
-proved provider-restricted egress for `api.deepseek.com:443` only
-(`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined (2026-07-23)**
-(`M3_DNS_BINDING_GATE.md`). Credential injection and upstream execution remain
-unauthorized. **M2a was explicitly human-accepted on 2026-07-23**
-(standalone offline runner contract and fake-candidate core). **M2b was
-completed on 2026-07-23** (`ISOLATION_EVIDENCE.md`).
+**Status:** M1 explicitly human-accepted on 2026-07-23. This threat model
+describes required safety properties. Properties marked **unproven** are future
+qualification requirements, not established enforcement facts. **M2a was explicitly
+human-accepted on 2026-07-23** (standalone offline runner contract and
+fake-candidate core). **M2b remains unauthorized.**
 
 ---
 
@@ -43,56 +39,35 @@ and license do not confer trust. Candidates must never receive direct access to:
 
 ---
 
-## 2. Provider-Restricted Egress — PROVEN (2026-07-23)
+## 2. Provider-Restricted Egress — UNPROVEN
 
-**Status:** **Proven on host under M3 egress-proof grant**
-(`M3_EGRESS_PROOF_EVIDENCE.md`). Human-accepted design at M1 amendment
-2026-07-23: allow **`api.deepseek.com:443` only**; prove allowlisted success and
-non-allowlisted block; preserve logs (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md` C-01/C-02).
+**Status at M1: Unproven.**
 
-**Proof architecture (ephemeral; no durable host firewall change):**
+The M0 substrate audit established that Bubblewrap `0.11.2` is installed and
+that full network isolation (`--unshare-net`) works. The following are absent
+from the host:
 
-1. user+net namespace via `unshare`
-2. user-mode networking via `slirp4netns`
-3. in-netns `nftables` default-deny with TCP/443 allowlist to resolved
-   `api.deepseek.com` IPv4 only
-4. repository-controlled `curl` HTTPS probes (no credentials)
+- `slirp4netns`
+- `pasta`
+- `socat`
+- Docker daemon access
+- Podman
 
-**Proof results:** allowlisted HTTPS to `api.deepseek.com` succeeded
-(unauthenticated HTTP 401); non-allowlisted HTTPS destinations timed out /
-were dropped. Evidence under
-`/tmp/phase16-artifacts/phase-16/records/egress-proof/`.
+Provider-restricted egress — allowing outbound HTTPS only to specific,
+allowlisted provider API endpoints while denying all other traffic — **cannot
+currently be enforced** with the available host tools. This is a future
+qualification requirement for M2b.
 
-**Host tooling at proof time:** Bubblewrap 0.11.2, `slirp4netns` 1.3.4, and
-`socat` 1.8.1.3 present (M0/M2b had recorded `slirp4netns`/`socat`/`pasta`
-absent; no package install was required for this proof). `pasta` still absent.
-Docker daemon and Podman remain unavailable and unused.
+M2b must either:
 
-**Remaining rule:** real-candidate trials that need provider access must reuse
-equivalent allowlist enforcement **and** execute the DNS binding gate
-(`M3_DNS_BINDING_GATE.md`) immediately before launch. Default-deny full
-isolation remains the fallback when provider egress is not configured for a
-trial.
+1. Demonstrate provider-only egress with a reproducible, tool-verified proof
+   (e.g., a rootless network namespace with a proxy or firewall rule that passes
+   an allowlisted request and blocks a non-allowlisted request), OR
+2. Record that provider-restricted egress cannot be enforced and classify all
+   trials as observational with explicit egress limitations.
 
-### 2.1 DNS Binding — DEFINED (2026-07-23)
-
-**Status:** Design locked in `M3_DNS_BINDING_GATE.md`. **Not yet executed.**
-
-Candidate sandboxes must **not** use ambient DNS. Before upstream launch under
-the credential-and-execution grant:
-
-1. Resolve `api.deepseek.com` **once** on the host (`getent ahostsv4` or
-   approved fallback); require **exactly one** IPv4 answer.
-2. Inject a sandbox-only `/etc/hosts` line mapping that IPv4 to
-   `api.deepseek.com` (read-only bind; no inherited host hosts/resolv.conf).
-3. Apply in-netns nft allowlist for **TCP/443 to that IPv4/32 only**; verify
-   `FRESH_IPV4 == HOSTS_IPV4 == NFT_IPV4`.
-4. Preserve HTTPS URL `https://api.deepseek.com` and full TLS hostname/SNI
-   validation — no certificate bypass.
-5. **STOP** on multiple A records, resolution failure, hosts/nft mismatch, or
-   successful non-allowlisted DNS/connect probes from the sandbox.
-
-All non-allowlisted DNS and network paths remain **denied**.
+Until M2b resolves this, the threat model assumes default-deny full network
+isolation. Candidates requiring network access cannot execute.
 
 ---
 
@@ -102,10 +77,6 @@ All non-allowlisted DNS and network paths remain **denied**.
   configurations, candidate workspaces, or runner state.
 - Evaluation runs use **phase-specific, least-privilege, allowlisted, and
   independently revocable** credentials.
-- **M1 amendment (2026-07-23):** dedicated Phase 16 DeepSeek sub-key created
-  only after separate execution grant; never `~/.config` or ambient credentials;
-  sandbox allowlist permits **only** `DEEPSEEK_API_KEY`; revoke at M3
-  completion; never persist credential values in logs or evidence.
 - Credentials are injected as temporary scoped environment variables for the
   duration of a single trial only.
 - Credential values are redacted from all logs, ledger entries, and output
@@ -224,7 +195,8 @@ fake candidates:
 
 ---
 
-*M1 threat model — human-accepted 2026-07-23; Qwen Code observational amendment
-2026-07-23. Provider-restricted egress design accepted; enforcement proven
-2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). DNS binding gate defined 2026-07-23
-(`M3_DNS_BINDING_GATE.md`). No candidate executed. M2b completed 2026-07-23.*
+*M1 threat model — human-accepted 2026-07-23. Provider-restricted egress is
+unproven. No candidate has been executed. All security properties are required
+but not yet demonstrated. At the M1 boundary M2a was unauthorized; M2a was
+subsequently authorized and explicitly human-accepted on 2026-07-23. M2b remains
+unauthorized.*

@@ -1,13 +1,10 @@
 # Phase 16 M1: Task Corpus
 
-**Status:** M1 explicitly human-accepted on 2026-07-23. M1 amendment
-(2026-07-23) authorizes single-candidate observational evaluation for Qwen Code
-only when M3 qualification succeeds under separate grants. This document locks
-the synthetic task corpus before any candidate result is observed. No task prompt
-or verification script may change after campaign lock. **M2a was explicitly
+**Status:** M1 explicitly human-accepted on 2026-07-23. This document locks the
+synthetic task corpus before any candidate result is observed. No task prompt or
+verification script may change after campaign lock. **M2a was explicitly
 human-accepted on 2026-07-23** (standalone offline runner contract and
-fake-candidate core). **M2b was completed on 2026-07-23**
-(`ISOLATION_EVIDENCE.md`).
+fake-candidate core). **M2b remains unauthorized.**
 
 ---
 
@@ -817,5 +814,7 @@ repetitions count.
 
 ---
 
-*M1 corpus lock — human-accepted 2026-07-23; Qwen Code observational amendment
-2026-07-23. No candidate result observed. M2b completed 2026-07-23.*
+*M1 corpus lock — human-accepted 2026-07-23. No candidate result has been
+observed. Held-out content is inaccessible until M4c authorization. At the M1
+boundary M2a was unauthorized; M2a was subsequently authorized and explicitly
+human-accepted on 2026-07-23. M2b remains unauthorized.*

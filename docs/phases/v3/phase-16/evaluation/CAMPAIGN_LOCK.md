@@ -1,11 +1,9 @@
 # Phase 16 M1: Campaign Lock
 
-**Status:** M1 explicitly human-accepted on 2026-07-23. **M1 amendment
-(human-accepted 2026-07-23):** single-candidate observational path authorized
-for Qwen Code only (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). Comparative rules
-unchanged. **M2a was explicitly human-accepted on 2026-07-23** (standalone
-offline runner contract and fake-candidate core). **M2b was completed on
-2026-07-23** (`ISOLATION_EVIDENCE.md`).
+**Status:** M1 explicitly human-accepted on 2026-07-23 (all-blocked candidate
+eligibility lock). **M2a was explicitly human-accepted on 2026-07-23**
+(standalone offline runner contract and fake-candidate core). **M2b remains
+unauthorized.**
 
 ---
 
@@ -35,58 +33,29 @@ comparative claim under that method; it does not mean any candidate is
 preferred, rejected, or equivalent. The campaign records what happened; M5
 interprets it with explicit limitations.
 
-### 1.3 M1 Campaign Eligibility Outcome (locked + amended 2026-07-23)
+### 1.3 M1 Campaign Eligibility Outcome (locked)
 
 Source of truth for per-candidate disposition:
 [`CANDIDATE_ARTIFACTS.md`](./CANDIDATE_ARTIFACTS.md). M1 re-verification window:
 `2026-07-22T15:19:00Z`–`2026-07-22T15:20:57Z` (UTC). No artifact was acquired
 or executed.
 
-| Campaign question | Answer after M1 amendment (2026-07-23) |
+| Campaign question | Locked M1 answer |
 |---|---|
-| Candidates `eligible for later M3 qualification` | **Qwen Code only.** OpenCode and Grok Build public source remain **`blocked at M1`** |
+| Candidates `eligible for later M3 qualification` | **None.** Qwen Code, OpenCode, and Grok Build public source are each **`blocked at M1`** |
 | Are at least two independently qualified configurations currently possible? | **No** |
-| Comparative claim possible now? | **No** |
-| Single-candidate observational path authorized? | **Yes — Qwen Code only** (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`) |
-| Phase 16 comparative evaluation status | **Blocked** for causal comparative claims until ≥2 M3 qualifications succeed |
+| Comparative claim possible at M1? | **No** |
+| Single-candidate observational path currently authorized? | **No.** That path still requires at least one later eligibility unblock and a successful M3 qualification |
+| Phase 16 comparative evaluation status | **Blocked** until eligibility and qualification conditions change under later authorization |
 | When may a comparative claim become possible? | Only if **two** later M3 qualifications actually succeed under identical environmental rules |
 
-**Interpretation:** M1 locks comparative rules. The 2026-07-23 amendment
-authorizes a **single-candidate observational path** for Qwen Code with
-DeepSeek provider configuration. No comparative superiority or quality claim may
-be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
-
-### 1.4 Single-Candidate Observational Path (authorized 2026-07-23)
-
-| Property | Locked value |
-|---|---|
-| Candidate | Qwen Code (`qwen-code`) only |
-| Evidence class | **Observational** only |
-| Comparative claims | **Forbidden** |
-| Quality / superiority claims | **Forbidden** |
-| Provider | DeepSeek |
-| Service | `https://api.deepseek.com` |
-| Model | `deepseek-v4-flash` |
-| M3a smoke cost ceiling | USD 1 |
-| Phase 16 cumulative API cap | USD 3 (later authorization may define a new cap) |
-| Execution | **Not authorized** by the amendment; requires separate M3 grants |
-| M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
-| M3a recovery re-acquisition (2026-07-24) | **Complete** under separate acquisition-and-inspection-only grant after `/tmp` wipe (`M3A_ACQUISITION_EVIDENCE.md` §1.1); pinned archive + SHA256SUMS re-downloaded; SHA-256 match; licenses re-scanned; extract for static inspection only; binary/Node **not** launched; **no** qualification retry |
-| M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
-| M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized fresh session `m3q-20260724T081819Z-7db401c3` — preflight (DNS/slirp/inner egress) **GO** before credential read+delete; write-capable `--approval-mode yolo`; Qwen **once** under locked **240** turns / **800s** wall (outer **880s**); TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0); **`qwen_exit=55`** (`FatalBudgetExceededError` wall 800s) → dual GO fails; balance-before/after USD **3.93** / **3.89** (delta **USD 0.04**); fixed parent reap recorded real inner exit **4** (elapsed **809s**); full finalization **completed**. Extended single-smoke exception **consumed**. Prior historical `m3q-20260724T075320Z-939e94cf` (24/240s, exit 53). **Active policy remains 240 turns / 800s wall** (no further retry authorized by the prior exception). |
-| M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; auth-type failure mode remains cleared |
-| M3 write-capable remediation (2026-07-24) | **Complete** (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`): locked `--approval-mode yolo` + post-exit reap/finalization used by latest smoke; remediation itself was not a qualification retry |
-| M3 wall-time + exit-reap remediation (2026-07-24) | **Complete** (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`): raised lock from 60s → **120s**; same-shell wait/reap so inner exit is not bash **127**; exercised by later smokes (`inner_wait_exit=4`); not a qualification retry. Superseded as **active** wall by 240s future-policy remediation |
-| M3 wall-time 240s future-policy remediation (2026-07-24) | **Complete** (`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`): active lock **`--max-wall-time 240s`** (was 120s); overall inner budget **320s**; historical 120s/60s session records unchanged; not a qualification retry. Superseded as **active** wall/turn lock by extended single-smoke policy remediation |
-| M3 extended single-smoke policy remediation (2026-07-24) | **Complete** (`M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`): active lock **`--max-session-turns 240`**, **`--max-wall-time 800s`** (was 24/240s); overall inner budget **880s**; explicitly approved **one** future qualification retry only; that retry was later executed as session `m3q-20260724T081819Z-7db401c3` (**NO-GO**, exit 55) and the exception is **consumed** |
-| M3 fresh-session eligibility remediation (2026-07-24) | **Complete** (`M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md`): egress preflight before credential; fresh session ID per grant; historical NO-GO informative only; consumed-but-unlaunched records `no candidate launch / no provider execution`; not a qualification retry |
-| M3 post-session finalization remediation (2026-07-24) | **Complete** (`M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`): `launch_netns_inner` always returns 0 and publishes `INNER_WAIT_EXIT` so sticky bash `set -e` cannot skip balance-after/workspace/cleanup after non-zero Qwen; diagnosed from `m3q-20260724T072341Z-8f567943`; not a qualification retry; finalization path preserved under extended single-smoke policy |
-| Locked smoke turn / time / spend ceilings | `--max-session-turns 240`, `--max-wall-time 800s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Latest smoke (`m3q-20260724T081819Z-7db401c3`) ran under 240/800s (exit 55; spend delta USD 0.04; cumulative ledger USD 0.05). Prior historical `m3q-20260724T075320Z-939e94cf` under then-24/240s (exit 53). Prior `m3q-20260724T072341Z-8f567943` under then-24/120s (exit 55). Prior `m3q-20260724T060109Z-45dd1c5f` under then-12/120s. Historical `m3q-20260724T054307Z-481ad1de` used 60s/12 (unchanged). |
-| Locked smoke approval mode | `--approval-mode yolo` (auto-approve all tools; host Bubblewrap required). Used by latest write-capable smoke |
-| Next external grants | Any further retry requires a **new** explicit human grant + **new** dedicated sub-key one-shot file; the prior extended single-smoke exception is **consumed**. Keep write-capable lock + current ceilings + fixed reap/finalization path unless a new decision changes them; GO only on exit 0 **and** verified TC-T01 rename |
-
-Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
+**Interpretation:** M1 locks the campaign rules and records that the accepted
+candidate set is **not currently eligible** for later M3 qualification.
+Phase 16 is **not** re-scoped to a single-candidate observational campaign at
+this lock; it is **eligibility-blocked** for multi-candidate comparison, with
+future observational or comparative paths contingent on later unblocking and
+qualification facts. No comparative claim is possible unless two later M3
+qualifications actually succeed.
 
 ---
 
@@ -135,31 +104,28 @@ Trials are categorized into three mutually exclusive evidence classes:
 
 Provider-restricted egress — the ability to allow outbound network access only
 to specific provider API endpoints while denying all other traffic — is
-**proven on the host as of M3 egress proof 2026-07-23**
-(`M3_EGRESS_PROOF_EVIDENCE.md`). M2b had left it unproven
-(`ISOLATION_EVIDENCE.md` §6 historical note).
+**explicitly unproven at M1**.
 
-**Human-accepted design (M1 amendment 2026-07-23) and proof status:**
+The M0 substrate audit recorded:
 
-| Property | Value |
-|---|---|
-| Posture (C-01) | **(b) Provider-restricted egress proof path** |
-| Allowlist (C-02 / A-13) | **`api.deepseek.com:443` only** |
-| Proof requirements | Allowlisted success, non-allowlisted block, logs under phase artifact root |
-| Proof status (2026-07-23) | **GO** — allow HTTPS PASS (unauthenticated 401); block PASS; evidence retained |
-| Enforcement for later trials | Reuse equivalent netns + allowlist architecture; execute DNS binding gate at launch (`M3_DNS_BINDING_GATE.md`); not host-wide unrestricted egress |
-| DNS inside candidate sandbox | **Forbidden** — sandbox-only `/etc/hosts` (or equivalent) with single verified IPv4; no ambient resolver |
-| TLS / SNI | `https://api.deepseek.com` with full certificate hostname validation; no bypass |
-| Default without provider egress configured | Default-deny full network isolation (`--unshare-net` or equivalent) |
+- Bubblewrap `0.11.2` installed; a harmless `--unshare-all`, read-only-host,
+  temporary-filesystem `/bin/true` proof succeeded.
+- `slirp4netns`, `pasta`, and `socat` are absent.
+- Docker daemon access is unavailable; Podman is absent.
 
-Host tooling at proof time: Bubblewrap `0.11.2`, `slirp4netns` 1.3.4, and
-`socat` present; `pasta` still absent; Docker daemon/Podman unused. No package
-install was required under C-01(b); only ephemeral netns configuration was
-applied.
+**M1 does not assert provider-restricted egress as an established enforcement
+fact.** It is a future qualification requirement that must be proven during M2b
+(isolation proof) before any candidate executes. M2b must either:
 
-A Qwen Code trial requiring live DeepSeek access still requires a **separate
-credential-and-execution grant**, **DNS binding execution at launch** (A-14),
-and remaining argv/cost/isolation gates.
+- Demonstrate provider-only egress with current host tools and a reproducible
+  proof, OR
+- Record that provider-restricted egress cannot be enforced on the current
+  substrate and classify all trials as observational with explicit egress
+  limitations.
+
+Until M2b resolves this, the campaign plan assumes default-deny network
+isolation (`--unshare-net` or equivalent) with no provider access. A candidate
+that requires network access cannot execute until egress is proven.
 
 ---
 
@@ -217,13 +183,7 @@ available for independent reconciliation.
 
 ---
 
-*M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
-amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
-completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
-qualification smoke session `m3q-20260724T081819Z-7db401c3` (fresh extended
-single-smoke retry, one only) NO-GO: 240-turn / 800s; Qwen exit 55 (wall) after
-verified rename; preflight before key; finalization complete; spend delta
-USD 0.04; inner exit 4 (elapsed 809s). Extended single-smoke exception
-**consumed**. Prior historical `m3q-20260724T075320Z-939e94cf` (24/240s, exit 53).
-**Active policy remains 240 turns / 800s wall**. Candidate remains not
-qualified. No second provider attempt under that grant. No M4.*
+*M1 campaign lock — human-accepted 2026-07-23. All three candidates are blocked
+at M1 for later M3 eligibility. No candidate result has been observed. At the
+M1 boundary M2a was unauthorized; M2a was subsequently authorized and explicitly
+human-accepted on 2026-07-23. M2b remains unauthorized.*
