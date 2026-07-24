@@ -647,6 +647,12 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
             ConversationEntryId.New(),
             messageText);
 
+    private static AgentBackendExecutionContext CreateContext(string messageText) =>
+        new(CreateRequest(messageText), new UnavailableAgentActionBroker());
+
+    private static AgentBackendExecutionContext CreateContext(AgentBackendRequest request) =>
+        new(request, new UnavailableAgentActionBroker());
+
     private LegacyOpenAiCompatibleAgentBackend CreateBackend(AgentExecutionService executionService) =>
         new(executionService);
 
@@ -704,9 +710,9 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         string messageText,
         CancellationToken cancellationToken = default)
     {
-        var request = CreateRequest(messageText);
+        var context = CreateContext(messageText);
         var events = new List<AgentBackendEvent>();
-        await foreach (var backendEvent in backend.ExecuteAsync(request, cancellationToken)
+        await foreach (var backendEvent in backend.ExecuteAsync(context, cancellationToken)
                            .ConfigureAwait(false))
         {
             events.Add(backendEvent);
@@ -729,8 +735,9 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         AgentBackendRequest request,
         CancellationToken cancellationToken = default)
     {
+        var context = CreateContext(request);
         var events = new List<AgentBackendEvent>();
-        await foreach (var backendEvent in backend.ExecuteAsync(request, cancellationToken)
+        await foreach (var backendEvent in backend.ExecuteAsync(context, cancellationToken)
                            .ConfigureAwait(false))
         {
             events.Add(backendEvent);

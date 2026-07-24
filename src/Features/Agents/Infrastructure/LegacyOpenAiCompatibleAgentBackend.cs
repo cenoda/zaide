@@ -68,10 +68,11 @@ internal sealed class LegacyOpenAiCompatibleAgentBackend : IAgentBackend
     }
 
     public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
-        AgentBackendRequest request,
+        AgentBackendExecutionContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(context);
+        var request = context.Request;
 
         AgentExecutionResult? result = null;
         AgentBackendEvent? faultEvent = null;

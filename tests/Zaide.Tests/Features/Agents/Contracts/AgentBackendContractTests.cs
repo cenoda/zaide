@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Domain;
@@ -28,8 +29,42 @@ public sealed class AgentBackendContractTests
         Assert.True(typeof(IAsyncEnumerable<AgentBackendEvent>).IsAssignableFrom(execute!.ReturnType));
 
         var parameters = execute.GetParameters();
-        Assert.Equal(typeof(AgentBackendRequest), parameters[0].ParameterType);
+        Assert.Equal(typeof(AgentBackendExecutionContext), parameters[0].ParameterType);
         Assert.Equal(typeof(CancellationToken), parameters[1].ParameterType);
+    }
+
+    [Fact]
+    public void IAgentActionBroker_ExposesRunScopedRequestAsync()
+    {
+        var brokerType = typeof(IAgentActionBroker);
+        Assert.True(brokerType.IsInterface);
+
+        var requestAsync = brokerType.GetMethod(nameof(IAgentActionBroker.RequestAsync));
+        Assert.NotNull(requestAsync);
+        Assert.Equal(typeof(ValueTask<AgentActionResult>), requestAsync!.ReturnType);
+
+        var parameters = requestAsync.GetParameters();
+        Assert.Equal(typeof(AgentActionPayload), parameters[0].ParameterType);
+        Assert.Equal(typeof(string), parameters[1].ParameterType);
+        Assert.Equal(typeof(CancellationToken), parameters[2].ParameterType);
+    }
+
+    [Fact]
+    public void AgentBackendExecutionContext_CarriesRequestAndBroker()
+    {
+        var request = new AgentBackendRequest(
+            AgentSessionId.New(),
+            ExecutionRunId.New(),
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("alpha"),
+            ConversationEntryId.New(),
+            "hello");
+        var broker = new UnavailableAgentActionBroker();
+        var context = new AgentBackendExecutionContext(request, broker);
+
+        Assert.Equal(request, context.Request);
+        Assert.Same(broker, context.Actions);
     }
 
     [Fact]

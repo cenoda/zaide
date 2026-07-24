@@ -17,6 +17,6 @@ internal interface IAgentBackend
     AgentCapabilitySnapshot CapabilitySnapshot { get; }
 
     IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
-        AgentBackendRequest request,
+        AgentBackendExecutionContext context,
         CancellationToken cancellationToken);
 }

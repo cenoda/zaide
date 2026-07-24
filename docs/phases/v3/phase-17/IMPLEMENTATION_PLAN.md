@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Phase 17 status:** M0 accepted on 2026-07-24. M1 is authorized as the next
-bounded implementation milestone and has not started.
+**Phase 17 status:** M0 accepted on 2026-07-24. M1 complete on 2026-07-24. M2 is
+authorized as the next bounded implementation milestone.
 
-**Authorized work:** M1 contracts and deterministic state only. M2 and later
+**Authorized work:** M2 workspace capture and bounded reads only. M3 and later
 milestones remain gated by predecessor completion and the repository's
 automatic progression and stop rules.
 

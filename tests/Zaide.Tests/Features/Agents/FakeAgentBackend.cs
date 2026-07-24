@@ -83,9 +83,10 @@ internal sealed class FakeAgentBackend : IAgentBackend
     }
 
     public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
-        AgentBackendRequest request,
+        AgentBackendExecutionContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(context);
         ExecuteCallCount++;
         if (_plans.Count == 0)
         {
