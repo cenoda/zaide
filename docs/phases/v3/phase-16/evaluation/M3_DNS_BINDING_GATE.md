@@ -2,13 +2,14 @@
 
 **Status:** **Defined and published 2026-07-23 (docs-only).** **Executed under
 M3 qualification sessions** (`M3_QUALIFICATION_EVIDENCE.md`), including latest
-`m3q-20260723T151512Z-6996af5f`: host-side resolution, hosts map, nft
+`m3q-20260723T164355Z-c421b379`: host-side resolution, hosts map, nft
 rule-text triple-consistency, and inner allow/block egress reprobes **GO**
-(`BOUND_IPV4=3.173.21.63`, `BINDING_VERDICT=GO`). Earlier sessions also
-recorded host-side binding GO before stopping at credential, slirp attach, or
-Bubblewrap resolv failures. This gate locks how the Qwen Code
-credential-and-execution slice must bind
-`api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
+(`BOUND_IPV4=3.173.21.63`, `CONSISTENT=YES`). Orchestrator hang prevented the
+end-of-run `BINDING_VERDICT=GO` file write; binding sequence itself still
+passed before Qwen launch. Earlier sessions also recorded host-side binding GO
+before stopping at credential, slirp attach, Bubblewrap resolv, or auth-type
+failures. This gate locks how the Qwen Code credential-and-execution slice must
+bind `api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
 resolution path. It does **not** by itself authorize credentials, provider API
 spend, or declare M3 qualification complete.
 
@@ -299,7 +300,7 @@ If any step fails, **do not** proceed to step 8–9.
 | M3 egress proof (C-01/C-02 / A-13) | **Complete 2026-07-23** | Reuse architecture; do **not** rerun proof grant |
 | M3a license clearance (C-05 / A-12) | **Owner approved 2026-07-23** | Not a launch blocker |
 | A-02 / A-03 invocation | **Resolved at M3a** | Still require owner argv lock before step 9 |
-| DNS binding | **Executed** (sessions in `M3_QUALIFICATION_EVIDENCE.md`, including `m3q-20260723T151512Z-6996af5f` **GO**) | Mandatory at each launch |
+| DNS binding | **Executed** (sessions in `M3_QUALIFICATION_EVIDENCE.md`, including `m3q-20260723T164355Z-c421b379` binding sequence **GO**) | Mandatory at each launch |
 
 ---
 

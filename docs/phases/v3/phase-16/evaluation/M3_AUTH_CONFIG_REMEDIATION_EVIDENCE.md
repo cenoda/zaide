@@ -6,9 +6,11 @@ injection, or deletion; **no** API calls, egress reprobe, Qwen launch,
 artifact acquisition, M4 work, or comparative/quality claims; **not** a
 qualification retry.
 
-**Prior qualification verdict (unchanged):** session
-`m3q-20260723T151512Z-6996af5f` remains **NO-GO** at auth-type
-(`M3_QUALIFICATION_EVIDENCE.md`).
+**Prior qualification at remediation time:** session
+`m3q-20260723T151512Z-6996af5f` was **NO-GO** at auth-type. **Post-remediation
+qualification (separate grant):** session `m3q-20260723T164355Z-c421b379`
+used this locked argv/modelProviders contract and was **NO-GO** at Qwen max
+session turns (`qwen_exit=53`); see `M3_QUALIFICATION_EVIDENCE.md`.
 
 ---
 

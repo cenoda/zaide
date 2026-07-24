@@ -3,18 +3,17 @@
 **Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock; **M1 amendment (human-accepted 2026-07-23)** unblocked Qwen Code for the single-candidate observational path only (`evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain **blocked at M1**. **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. The M3 unblock amendment proposal was accepted as the amendment vehicle on 2026-07-23. **M3a acquisition-and-inspection completed on 2026-07-23** under an explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned Qwen Code v0.20.1 Linux x64 archive acquired under the phase artifact root only, SHA-256 verified, licenses scanned, A-02/A-03 resolved from inspection; **upstream binary not launched**. **M3 egress proof completed on 2026-07-23** under an explicit separate grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): provider-restricted egress for `api.deepseek.com:443` only proven with repository-controlled probe (allow PASS, non-allowlisted block PASS); no credentials, no authenticated API, no upstream binary launch. **M3 DNS binding gate defined and published on 2026-07-23** (docs-only;
 `evaluation/M3_DNS_BINDING_GATE.md`): deterministic sandbox-only resolution for
 `api.deepseek.com`, hosts injection, nft parity, TLS/SNI preservation, and
-pre-launch stop conditions. **M3 qualification smoke** (`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior
-2026-07-23 attempts **NO-GO** (credential gate; slirp host-PID bug; Bubblewrap
-resolv bind). **Authorized fresh retry session `m3q-20260723T151512Z-6996af5f`:**
-DNS binding, host-PID slirp attach, egress reprobes, isolation, one-shot
-credential, and Bubblewrap `--tmpfs /etc` **GO**; Qwen **started** then
-**NO-GO** (`qwen_exit=1`, auth type not selected; 0 turns/tokens); TC-T01
-rename **not** verified; provider spend **USD 0.00**. Candidate remains **not
-qualified**. **Do not retry** under this grant. **M3 auth-configuration
-remediation completed 2026-07-24** (`evaluation/M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`):
-static-only contract lock for `--auth-type openai`, `--openai-base-url
-https://api.deepseek.com`, and workspace `modelProviders` `DEEPSEEK_API_KEY`
-wiring — **not** a qualification retry. Comparative campaign rules
+pre-launch stop conditions. **M3 auth-configuration remediation completed
+2026-07-24** (`evaluation/M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): locked
+`--auth-type openai`, `--openai-base-url https://api.deepseek.com`, and
+workspace `modelProviders` `DEEPSEEK_API_KEY` wiring. **M3 qualification smoke**
+(`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior 2026-07-23 attempts **NO-GO**
+(credential; slirp host-PID; resolv bind; auth-type). **Authorized post-remediation
+session `m3q-20260723T164355Z-c421b379`:** DNS/slirp/egress/tmpfs/auth argv **GO**;
+Qwen launched **once** then **NO-GO** (`qwen_exit=53`, max session turns);
+TC-T01 rename **not** verified; spend **not measured** (orchestrator hung before
+post-balance; `/tmp` artifacts lost on host reboot). Candidate remains **not
+qualified**. **Do not retry** under this grant. Comparative campaign rules
 remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
@@ -255,8 +254,9 @@ Full field tables and exclusion rules live in
 comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **Latest M3 qualification smoke**
-(`m3q-20260723T151512Z-6996af5f`) **NO-GO** at Qwen auth-type; TC-T01 incomplete;
-spend USD 0.00; candidate still **not qualified**.
+(`m3q-20260723T164355Z-c421b379`) **NO-GO** at Qwen max-session-turns
+(`qwen_exit=53`); TC-T01 incomplete; spend not measured; candidate still **not
+qualified**.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -842,6 +842,6 @@ grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): allowlisted
 HTTPS destinations were blocked; evidence under the phase artifact root.
 **M3 DNS binding gate defined 2026-07-23**
 (`evaluation/M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
-(`m3q-20260723T151512Z-6996af5f`) executed DNS binding and Qwen start, then
-**NO-GO** at auth-type; TC-T01 incomplete; spend USD 0.00; candidate still **not
-qualified**.
+(`m3q-20260723T164355Z-c421b379`) executed DNS binding, remediated auth argv,
+and one Qwen launch, then **NO-GO** at max-session-turns (`qwen_exit=53`);
+TC-T01 incomplete; spend not measured; candidate still **not qualified**.
