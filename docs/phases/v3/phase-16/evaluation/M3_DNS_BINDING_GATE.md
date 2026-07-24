@@ -2,7 +2,7 @@
 
 **Status:** **Defined and published 2026-07-23 (docs-only).** **Executed under
 M3 qualification sessions** (`M3_QUALIFICATION_EVIDENCE.md`), including latest
-`m3q-20260724T060109Z-45dd1c5f`: host-side resolution, hosts map, nft
+`m3q-20260724T075320Z-939e94cf`: host-side resolution, hosts map, nft
 rule-text triple-consistency, and inner allow/block egress reprobes **GO**
 (`BOUND_IPV4=3.173.21.63`, `CONSISTENT=YES`; operator-finalized
 `BINDING_VERDICT=GO` after script stopped on Qwen exit 53 before writing DNS

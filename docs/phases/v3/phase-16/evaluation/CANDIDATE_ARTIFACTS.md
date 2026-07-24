@@ -25,12 +25,14 @@ future-policy remediation (2026-07-24)** raised the **active** wall lock to
 120s/60s session records unchanged; not a qualification retry. **M3a recovery
 re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and licenses
 and re-extracted for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
-**Latest M3 qualification smoke** (`m3q-20260724T072341Z-8f567943`) **NO-GO**:
-write-capable yolo under **24** turns / then-locked **120s** wall; TC-T01
-rename verified but `qwen_exit=55` (wall 120s); preflight before key; candidate
-still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). Session remains
-historical NO-GO. Locked smoke ceilings (active): max **24** session turns,
-**240s** wall-time, **USD 1** smoke / **USD 3** cumulative.
+**Latest M3 qualification smoke** (`m3q-20260724T075320Z-939e94cf`) **NO-GO**:
+write-capable yolo under locked **24** turns / **240s** wall; TC-T01 rename
+verified but `qwen_exit=53` (turn limit); preflight before key; finalization
+complete; spend delta USD 0.00; candidate still **not qualified**
+(`M3_QUALIFICATION_EVIDENCE.md`). Prior historical
+`m3q-20260724T072341Z-8f567943` (24/120s, exit 55). Locked smoke ceilings
+(active): max **24** session turns, **240s** wall-time, **USD 1** smoke /
+**USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -213,10 +215,11 @@ SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
-`m3q-20260724T072341Z-8f567943` **NO-GO** (write-capable yolo; **24** turns /
-then-locked **120s** wall; TC-T01 rename verified; `qwen_exit=55` wall limit) —
-see `M3_QUALIFICATION_EVIDENCE.md`. Session remains historical NO-GO; active
-future policy is **240s** wall.
+`m3q-20260724T075320Z-939e94cf` **NO-GO** (write-capable yolo; **24** turns /
+**240s** wall; TC-T01 rename verified; `qwen_exit=53` turn limit; finalization
+complete; spend delta USD 0.00) — see `M3_QUALIFICATION_EVIDENCE.md`. Prior
+historical `m3q-20260724T072341Z-8f567943` (24/120s, exit 55). Active policy
+is **24** turns / **240s** wall.
 Candidate remains **not qualified**. Comparative claims remain forbidden.
 **No second attempt** under that grant.
 
@@ -474,9 +477,9 @@ completed 2026-07-23 (artifact under phase root only; binary not launched at M3a
 recovery re-acquisition 2026-07-24 after `/tmp` wipe (inspection only). M3
 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
-qualification smoke `m3q-20260724T072341Z-8f567943` NO-GO: write-capable yolo
-under 24 turns / then-locked 120s wall; TC-T01 rename verified but
-`qwen_exit=55` (wall 120s); remains historical NO-GO. Active smoke wall
+qualification smoke `m3q-20260724T075320Z-939e94cf` NO-GO: write-capable yolo
+under 24 turns / 240s wall; TC-T01 rename verified but `qwen_exit=53` (turn
+limit); finalization complete; spend delta USD 0.00. Active smoke wall
 **240s** (`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`). Qwen Code remains
 eligible for later M3 qualification but not qualified; OpenCode and Grok Build
 blocked at M1. M2b completed 2026-07-23.*

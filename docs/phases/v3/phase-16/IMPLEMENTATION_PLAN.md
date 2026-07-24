@@ -24,24 +24,23 @@ re-scanned licenses, and re-extracted for static inspection only
 (`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior attempts **NO-GO**
 (credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
 ceiling; plan-only exit 0 without rename; yolo rename verified with exit 55 at
-historical 60s wall). **Latest authorized retry session
-`m3q-20260724T072341Z-8f567943` (exactly one fresh, new ID pre-recorded;
-remains historical NO-GO):**
+historical 60s wall; 12-turn exit 53; 24/120s exit 55 with incomplete
+finalization). **Latest authorized retry session
+`m3q-20260724T075320Z-939e94cf` (exactly one fresh, new ID pre-recorded):**
 DNS/slirp/inner-egress preflight **GO** before credential; write-capable **yolo**;
-then-locked **24** turns / **120s** wall; Qwen launched **once**; TC-T01 rename
+locked **24** turns / **240s** wall; Qwen launched **once**; TC-T01 rename
 **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0) but
-**`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s) → dual GO **NO-GO**;
-balance-before USD 3.95 (after unavailable); fixed parent-shell reap recorded
-real inner exit **4**; finalization incomplete (sticky `set -e` + non-zero
-`return` from `launch_netns_inner`). Candidate remains **not qualified**.
+**`qwen_exit=53`** (`FatalTurnLimitedError` turn limit) → dual GO **NO-GO**;
+balance-before/after USD **3.94** / **3.94** (delta **USD 0.00**); fixed
+parent-shell reap recorded real inner exit **4**; finalization **completed**
+(balance-after, workspace, cleanup). Candidate remains **not qualified**.
 **Active** locked smoke ceilings: max **24** session turns, **240s** wall-time,
-**USD 1** smoke / **USD 3** cumulative (USD caps and turns unchanged). **M3
-fresh-session eligibility remediation (2026-07-24)** preceded this grant. **M3
-post-session finalization remediation (2026-07-24)**
-(`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) fixed
-deterministic balance-after/workspace/cleanup after non-zero Qwen; not a retry;
-finalization path preserved under the 240s policy. Comparative campaign rules
-remain unchanged.
+**USD 1** smoke / **USD 3** cumulative. **M3 fresh-session eligibility
+remediation (2026-07-24)** and **M3 post-session finalization remediation
+(2026-07-24)**
+(`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) were
+exercised by this session (finalization path ran after non-zero Qwen).
+Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -282,12 +281,11 @@ comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
-qualification smoke** (`m3q-20260724T072341Z-8f567943`) **NO-GO**: write-capable
-yolo 24/then-locked-120s; remains historical NO-GO; active wall now **240s**.
-Prior `m3q-20260724T060109Z-45dd1c5f` under locked **12** turns / **120s** wall
-verified TC-T01 rename but `qwen_exit=53` (turn limit); spend balance delta USD
-0.00; fixed parent-shell reap recorded real inner exit 4; candidate still
-**not qualified**.
+qualification smoke** (`m3q-20260724T075320Z-939e94cf`) **NO-GO**: write-capable
+yolo under locked **24** turns / **240s** wall; TC-T01 rename verified but
+`qwen_exit=53` (turn limit); spend delta USD 0.00; finalization complete;
+candidate still **not qualified**. Prior historical
+`m3q-20260724T072341Z-8f567943` (24/120s, exit 55).
 
 ### 5.2 ACP is independently verified and deferred
 
