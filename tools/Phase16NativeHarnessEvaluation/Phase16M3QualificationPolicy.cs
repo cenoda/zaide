@@ -18,7 +18,13 @@ public static class Phase16M3QualificationPolicy
     /// </summary>
     public const string AllowedApprovalMode = "yolo";
     public const int MaxSessionTurns = 12;
-    public const string MaxWallTime = "60s";
+    /// <summary>
+    /// Locked Qwen <c>--max-wall-time</c> for TC-T01 qualification smoke.
+    /// Raised from historical <c>60s</c> (session
+    /// <c>m3q-20260724T054307Z-481ad1de</c> exited 55 after verified rename)
+    /// to <c>120s</c> by human decision; historical session records stay at 60s.
+    /// </summary>
+    public const string MaxWallTime = "120s";
     public const decimal SmokeSpendCapUsd = 1m;
     public const decimal CampaignSpendCapUsd = 3m;
 

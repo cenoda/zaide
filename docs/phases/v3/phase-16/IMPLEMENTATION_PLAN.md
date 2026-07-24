@@ -14,18 +14,21 @@ smoke** (`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior attempts **NO-GO**
 (credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
 ceiling; plan-only exit 0 without rename). **Latest authorized retry session
 `m3q-20260724T054307Z-481ad1de`:** DNS/slirp/egress/tmpfs/auth argv **GO**;
-write-capable **yolo**; locked **12** turns / **60s**; Qwen launched **once**;
-TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test
-0) but **`qwen_exit=55`** (`FatalBudgetExceededError` wall 60s) → dual GO
-**NO-GO**; spend balance delta **USD 0.00**; post-exit finalization completed
-without hang. Candidate remains **not qualified**. **M3a recovery
-re-acquisition (2026-07-24)** under a separate acquisition-and-inspection-only
-grant recreated `/tmp/phase16-artifacts/phase-16/`, re-downloaded the pinned
-archive and `SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and
-re-extracted for static inspection only
-(`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1). Locked smoke ceilings remain
-max **12** session turns, **60s** wall-time, **USD 1** smoke / **USD 3**
-cumulative. Comparative campaign rules remain unchanged.
+write-capable **yolo**; locked **12** turns / **60s** (session-time wall);
+Qwen launched **once**; TC-T01 rename **verified** (`FetchData` 0 /
+`RetrieveData` 11; host build/test 0) but **`qwen_exit=55`**
+(`FatalBudgetExceededError` wall 60s) → dual GO **NO-GO**; spend balance delta
+**USD 0.00**; post-exit finalization completed without hang. Candidate remains
+**not qualified**. **M3 wall-time + exit-reap remediation (2026-07-24)**
+(`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`) raised the active
+smoke wall lock to **120s** and fixed same-shell wait/reap so inner exit is not
+bash **127**; not a qualification retry. **M3a recovery re-acquisition
+(2026-07-24)** under a separate acquisition-and-inspection-only grant recreated
+`/tmp/phase16-artifacts/phase-16/`, re-downloaded the pinned archive and
+`SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and re-extracted for
+static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1). Locked
+smoke ceilings (active): max **12** session turns, **120s** wall-time, **USD 1**
+smoke / **USD 3** cumulative. Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -267,8 +270,10 @@ succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof wer
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
 qualification smoke** (`m3q-20260724T054307Z-481ad1de`) **NO-GO**: write-capable
-yolo path verified TC-T01 rename but `qwen_exit=55` (60s wall); spend balance
-delta USD 0.00; candidate still **not qualified**.
+yolo path verified TC-T01 rename but `qwen_exit=55` (historical 60s wall);
+spend balance delta USD 0.00; candidate still **not qualified**. Active smoke
+wall remediated to **120s** with same-shell reap fix
+(`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -489,10 +494,11 @@ completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
 execution remains blocked pending a **new** qualification grant, credentials,
 and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
-2026-07-24): max **12** session turns, **60s** wall-time, **USD 1** smoke /
-**USD 3** cumulative — policy-only until a separate execution grant. OpenCode
-and Grok Build remain blocked at M1. A Grok Build distributed artifact must be
-independently identified and mapped before its slice can execute.
+2026-07-24; wall raised same day after exit-55 evidence): max **12** session
+turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative — policy-only
+until a separate execution grant. OpenCode and Grok Build remain blocked at M1.
+A Grok Build distributed artifact must be independently identified and mapped
+before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
 accepted artifact root. No upstream source enters the repository.
@@ -863,7 +869,8 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 and post-exit reaping
 (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **Latest M3
 qualification smoke** (`m3q-20260724T054307Z-481ad1de`) executed DNS binding,
-write-capable yolo argv (12 turns / 60s), and one Qwen launch; TC-T01 rename
-**verified** but **NO-GO** on `qwen_exit=55` (wall budget); spend balance
-delta USD 0.00; post-exit finalization completed; candidate still **not
-qualified**.
+write-capable yolo argv (12 turns / historical 60s wall), and one Qwen launch;
+TC-T01 rename **verified** but **NO-GO** on `qwen_exit=55` (wall budget);
+spend balance delta USD 0.00; post-exit finalization completed; candidate still
+**not qualified**. Active smoke wall later remediated to **120s** with
+same-shell reap fix (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).

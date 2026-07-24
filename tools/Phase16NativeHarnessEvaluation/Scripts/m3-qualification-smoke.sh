@@ -20,13 +20,18 @@ PROMPT_FILE="$PHASE_ROOT/tuning/TC-T01/prompt-$SESSION_ID.md"
 SUBKEY_ONCE="${PHASE16_DEEPSEEK_SUBKEY_ONCE:-$CRED_DIR/subkey.once}"
 EXAMPLE_BLOCK_IP="93.184.216.34"
 STOP_REASON=""
-# Overall inner budget: DNS probes + Qwen wall (60s) + bounded verify + slack.
+# Overall inner budget: DNS/egress probes + Qwen wall (120s) + post-qwen verify + slack.
 # Must finish well under any external safety wrapper so post-balance always runs.
-INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-120}"
+INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-200}"
 # After qwen-result.env appears, allow this many extra seconds for verify then reap.
 POST_QWEN_VERIFY_BUDGET_SEC="${PHASE16_POST_QWEN_VERIFY_BUDGET_SEC:-45}"
 UNSHARE_PID=""
 SLIRP_PID=""
+# Captured when force_reap reaps the unshare child so a later wait does not
+# replace the real exit with bash 127 ("pid is not a child of this shell").
+INNER_REAPED_EXIT=""
+INNER_WAIT_STATUS=""
+INNER_WAIT_EXIT=""
 
 log_step() {
   local step="$1"
@@ -46,6 +51,7 @@ stop_with() {
 
 # Kill/reap unshare + slirp4netns so finalization (balance-after, workspace
 # verify, cleanup) always runs after Qwen exit or timeout. Idempotent.
+# Must run in the same shell that started the background jobs (not a subshell).
 force_reap_children() {
   local reason="${1:-unspecified}"
   local reap_utc
@@ -78,15 +84,52 @@ force_reap_children() {
     kill -KILL "$SLIRP_PID" 2>/dev/null || true
   fi
   if [ -n "${UNSHARE_PID:-}" ]; then
-    wait "$UNSHARE_PID" 2>/dev/null || true
+    local unshare_wait_ec=0
+    set +e
+    wait "$UNSHARE_PID" 2>/dev/null
+    unshare_wait_ec=$?
+    set -e
+    # bash wait returns 127 when the pid is not a child (already reaped).
+    # Keep the first real child exit; never overwrite it with 127.
+    if [ "$unshare_wait_ec" -ne 127 ]; then
+      INNER_REAPED_EXIT="$unshare_wait_ec"
+      echo "force_reap_unshare_exit=$unshare_wait_ec" >> "$RUN_DIR/reap.env" 2>/dev/null || true
+    else
+      echo "force_reap_unshare_wait=not_a_child" >> "$RUN_DIR/reap.env" 2>/dev/null || true
+    fi
   fi
   if [ -n "${SLIRP_PID:-}" ]; then
     wait "$SLIRP_PID" 2>/dev/null || true
   fi
 }
 
-# Bounded wait for unshare: returns when process exits, or when qwen-result.env
-# is present and post-qwen budget elapses, or overall timeout. Never hangs.
+# Resolve the unshare child exit without inventing a synthetic status.
+# Prefer a successful wait(2) result from this shell; fall back to a prior
+# force_reap capture. Never treat bash 127 ("not a child") as the child exit.
+resolve_unshare_exit_code() {
+  local wait_ec=0
+  set +e
+  wait "$UNSHARE_PID" 2>/dev/null
+  wait_ec=$?
+  set -e
+  if [ "$wait_ec" -ne 127 ]; then
+    echo "$wait_ec"
+    return 0
+  fi
+  if [ -n "${INNER_REAPED_EXIT:-}" ]; then
+    echo "$INNER_REAPED_EXIT"
+    return 0
+  fi
+  # Last resort: process is gone and no captured wait status. Return empty so
+  # caller records an explicit missing-status rather than bash 127.
+  echo ""
+  return 0
+}
+
+# Bounded wait for unshare: sets INNER_WAIT_STATUS / INNER_WAIT_EXIT when the
+# process exits, or when qwen-result.env is present and post-qwen budget elapses,
+# or overall timeout. Never hangs. Must NOT run under command substitution —
+# wait only works for children of this shell (not a $(...) subshell).
 wait_inner_with_reap_budget() {
   local start_epoch
   start_epoch="$(date +%s)"
@@ -94,17 +137,22 @@ wait_inner_with_reap_budget() {
   local status="running"
   local exit_code=""
 
+  INNER_WAIT_STATUS="running"
+  INNER_WAIT_EXIT=""
+
   while true; do
     local now elapsed
     now="$(date +%s)"
     elapsed=$((now - start_epoch))
 
     if ! kill -0 "$UNSHARE_PID" 2>/dev/null; then
-      set +e
-      wait "$UNSHARE_PID"
-      exit_code=$?
-      set -e
-      status="exited"
+      exit_code="$(resolve_unshare_exit_code)"
+      if [ -n "$exit_code" ]; then
+        status="exited"
+      else
+        status="exited_status_unavailable"
+        exit_code=""
+      fi
       break
     fi
 
@@ -116,16 +164,26 @@ wait_inner_with_reap_budget() {
       local post=$((now - qwen_seen_epoch))
       if [ "$post" -ge "$POST_QWEN_VERIFY_BUDGET_SEC" ]; then
         status="post_qwen_budget_exceeded"
-        exit_code=124
         force_reap_children "post_qwen_verify_budget"
+        # Prefer the real reaped child exit over a synthetic timeout code when
+        # the process actually exited during the post-qwen budget window.
+        if [ -n "${INNER_REAPED_EXIT:-}" ]; then
+          exit_code="$INNER_REAPED_EXIT"
+        else
+          exit_code=124
+        fi
         break
       fi
     fi
 
     if [ "$elapsed" -ge "$INNER_OVERALL_TIMEOUT_SEC" ]; then
       status="overall_timeout"
-      exit_code=124
       force_reap_children "overall_inner_timeout"
+      if [ -n "${INNER_REAPED_EXIT:-}" ]; then
+        exit_code="$INNER_REAPED_EXIT"
+      else
+        exit_code=124
+      fi
       break
     fi
 
@@ -144,15 +202,15 @@ wait_inner_with_reap_budget() {
 
   {
     echo "inner_wait_status=$status"
-    echo "inner_wait_exit=${exit_code:-}"
+    echo "inner_wait_exit=${exit_code}"
     echo "inner_wait_elapsed_sec=$(( $(date +%s) - start_epoch ))"
     echo "inner_overall_timeout_sec=$INNER_OVERALL_TIMEOUT_SEC"
     echo "post_qwen_verify_budget_sec=$POST_QWEN_VERIFY_BUDGET_SEC"
+    echo "inner_reaped_exit=${INNER_REAPED_EXIT:-}"
   } >> "$RUN_DIR/reap.env"
 
-  # shellcheck disable=SC2034
   INNER_WAIT_STATUS="$status"
-  echo "${exit_code:-1}"
+  INNER_WAIT_EXIT="${exit_code}"
 }
 
 record_workspace_tc_t01_result() {
@@ -394,7 +452,7 @@ PROMPT_TEXT="$(tr -d '\r' < "$PHASE16_PROMPT_FILE")"
   echo "--max-session-turns"
   echo "12"
   echo "--max-wall-time"
-  echo "60s"
+  echo "120s"
 } > "$PHASE16_RUN_DIR/exact-argv.txt"
 
 SANDBOX_HOME="$PHASE16_WORKSPACE/.sandbox-home"
@@ -422,7 +480,7 @@ bwrap \
     --model deepseek-v4-flash \
     --output-format json \
     --max-session-turns 12 \
-    --max-wall-time 60s \
+    --max-wall-time 120s \
   > "$PHASE16_RUN_DIR/qwen.stdout" 2> "$PHASE16_RUN_DIR/qwen.stderr"
 QWEN_EC=$?
 set -e
@@ -509,9 +567,17 @@ log_step "slirp4netns_attach" "$SLIRP_ATTACH_EC"
 [ "$SLIRP_ATTACH_EC" -eq 0 ] || stop_with "slirp4netns attach did not confirm tapfd handoff"
 
 # Bounded wait/reap: never hang after Qwen exit or overall budget.
+# Call wait_inner in this shell (not $(...)) so wait can reap the real child.
 set +e
-INNER_EC="$(wait_inner_with_reap_budget)"
+wait_inner_with_reap_budget
 set -e
+# Prefer a concrete wait/reap exit. Empty means status was unavailable (do not
+# invent bash 127). Ledger still records INNER_WAIT_STATUS from reap.env.
+if [ -n "${INNER_WAIT_EXIT}" ]; then
+  INNER_EC="$INNER_WAIT_EXIT"
+else
+  INNER_EC="1"
+fi
 log_step "inner_qualification" "$INNER_EC"
 
 # --- Always-run finalization path (balance, workspace, cleanup) ---

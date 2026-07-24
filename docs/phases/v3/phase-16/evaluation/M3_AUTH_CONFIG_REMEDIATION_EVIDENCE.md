@@ -62,14 +62,17 @@ recorded separately. Policy-locked tail:
 --model deepseek-v4-flash
 --output-format json
 --max-session-turns 12
---max-wall-time 60s
+--max-wall-time 120s
 ```
 
 **Turn ceiling note:** remediation originally locked auth argv with
 `--max-session-turns 5`. Repository policy was later aligned to **12** turns
 (human-approved 2026-07-24 policy alignment; **not** a qualification retry).
-**60s** wall-time and **USD 1** smoke / **USD 3** cumulative caps remain
-unchanged. Environment allowlist (unchanged): **`DEEPSEEK_API_KEY` only**.
+**Wall-time note:** auth remediation originally documented **60s**; active lock
+is **120s** after wall-time + reap remediation
+(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **USD 1** smoke / **USD 3**
+cumulative caps remain unchanged. Environment allowlist (unchanged):
+**`DEEPSEEK_API_KEY` only**.
 
 **Approval-mode note:** this auth remediation originally shipped with
 `--approval-mode plan`. **Write-capable remediation (2026-07-24)** replaced

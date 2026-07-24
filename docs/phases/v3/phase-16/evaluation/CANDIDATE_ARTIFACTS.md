@@ -18,12 +18,15 @@ argv + `modelProviders` wiring and `--approval-mode yolo` with post-exit
 reaping (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`,
 `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **Latest M3 qualification smoke**
 (`m3q-20260724T054307Z-481ad1de`) **NO-GO**: write-capable yolo verified TC-T01
-rename but `qwen_exit=55` (60s wall); spend balance delta USD 0.00; candidate
-still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3a recovery
+rename but `qwen_exit=55` (historical 60s wall); spend balance delta USD 0.00;
+candidate still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3
+wall-time + exit-reap remediation (2026-07-24)** raised the active smoke wall
+lock to **120s** and fixed same-shell wait/reap
+(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **M3a recovery
 re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and licenses
 and re-extracted for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
-Locked smoke ceilings: max **12** session turns, **60s** wall-time, **USD 1**
-smoke / **USD 3** cumulative.
+Locked smoke ceilings (active): max **12** session turns, **120s** wall-time,
+**USD 1** smoke / **USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -190,7 +193,7 @@ quality claims.
 | Field | State after M3a (2026-07-23) | Resolution gate / notes |
 |---|---|---|
 | **Post-extract executable path (A-02)** | **`RESOLVED`:** `qwen-code/bin/qwen` (shell launcher → bundled `node/bin/node` + `lib/cli-entry.js`) | Static inspection only; binary not executed |
-| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 12`, `60s`, `--approval-mode yolo` write-capable, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6 and `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` |
+| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 12`, `120s`, `--approval-mode yolo` write-capable, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6, `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`, and `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` |
 | **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
 | **Protocol / SDK** | Partially observed | DeepSeek preset uses OpenAI-compatible protocol; not a separate product pin |
 | **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |

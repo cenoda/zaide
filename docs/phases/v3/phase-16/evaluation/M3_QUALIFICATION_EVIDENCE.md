@@ -254,12 +254,11 @@ path still completed finalization (balance-after exit 0, workspace check,
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Owner decision on wall-time ceiling vs dual GO criteria if rename already
-   verified under non-zero exit (out of scope here).
-4. Optional: treat inner wait 127 after clean child exit as non-fatal in ledger
-   only (finalization already works).
-5. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
-6. Preserve session records outside `/tmp` before any host reboot.
+3. Use active locked wall **120s** and same-shell reap path
+   (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`); this session’s **60s** /
+   exit-127 ledger remain historical.
+4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
+5. Preserve session records outside `/tmp` before any host reboot.
 
 ---
 

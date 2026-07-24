@@ -85,7 +85,7 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T054307Z-481ad1de`); design remains `M3_DNS_BINDING_GATE.md` |
 | Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance before/after); session balance delta USD 0.00 |
 | Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T054307Z-481ad1de` launched Qwen once under yolo; TC-T01 rename verified; **`qwen_exit=55`** wall 60s; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. **No second attempt** under that grant. |
-| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Locked smoke ceilings are **12** turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative; used by session `m3q-20260724T054307Z-481ad1de`. |
+| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are **12** turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Historical session `m3q-20260724T054307Z-481ad1de` used **60s**. |
 
 ---
 
@@ -107,7 +107,10 @@ after `/tmp` wipe (inspection only; no qualification retry). Subsequent M3
 egress proof (2026-07-23) under a separate grant proved `api.deepseek.com:443`
 allowlisted HTTPS and blocked non-allowlisted destinations
 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS binding gate defined 2026-07-23
-(`M3_DNS_BINDING_GATE.md`). Repository smoke policy aligned to 12 turns / 60s
-/ USD 1 / USD 3 and write-capable yolo on 2026-07-24. Latest qualification
-smoke `m3q-20260724T054307Z-481ad1de` **NO-GO** (rename verified; exit 55).
-No credentials created under recovery; recovery did not launch the binary.
+(`M3_DNS_BINDING_GATE.md`). Repository smoke policy aligned to 12 turns /
+write-capable yolo / USD 1 / USD 3 on 2026-07-24; active wall later raised to
+**120s** with same-shell reap fix
+(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Latest qualification smoke
+`m3q-20260724T054307Z-481ad1de` **NO-GO** (rename verified; exit 55 at
+historical 60s wall). No credentials created under recovery; recovery did not
+launch the binary.

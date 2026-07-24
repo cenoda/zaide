@@ -15,7 +15,10 @@ Qwen. A **later** authorized write-capable smoke
    **write-capable** mode inside the already locked Bubblewrap sandbox,
    instead of plan-only mode.
 3. USD **1** smoke, USD **3** cumulative, **12** turns, and **60s** wall-time
-   limits remain locked.
+   limits remained locked **for this write-capable slice**. A later human
+   decision raised the **active** wall lock to **120s** and fixed exit reaping
+   (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`); historical session records
+   keep **60s**.
 
 ---
 
@@ -70,12 +73,17 @@ the forbidden dual-flag combination):
 --max-wall-time 60s
 ```
 
-| Property | Locked value |
+*(Active post-remediation wall is **120s** — see
+`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`. The block above is the
+write-capable-slice lock as shipped and used by session
+`m3q-20260724T054307Z-481ad1de`.)*
+
+| Property | Locked value (this slice) |
 |---|---|
 | Approval mode | **`yolo`** via `--approval-mode yolo` (not boolean `--yolo`) |
 | Host isolation | Existing Bubblewrap sandbox (unchanged) |
 | Credential env allowlist | `DEEPSEEK_API_KEY` only (A-07; unchanged) |
-| Turn / wall / spend ceilings | **12** / **60s** / **USD 1** smoke / **USD 3** cumulative |
+| Turn / wall / spend ceilings | **12** / **60s** (this slice; active wall later **120s**) / **USD 1** smoke / **USD 3** cumulative |
 | GO criteria | Qwen exit **0** **and** verified TC-T01 `FetchData` → `RetrieveData` |
 
 Headless YOLO emits a safety warning when Qwen’s own sandbox is unset; Phase 16

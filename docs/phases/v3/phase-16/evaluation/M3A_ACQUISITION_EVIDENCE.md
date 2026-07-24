@@ -93,9 +93,11 @@ execution grant and **not** a qualification retry.
 
 **Human policy note recorded with recovery (updated by later alignment):**
 repository smoke policy was subsequently aligned to `--max-session-turns 12`,
-**60-second** wall-time, **USD 1** smoke / **USD 3** cumulative (2026-07-24
-policy-only slice). That alignment is **not** an execution authorization and
-was **not** a qualification retry under this recovery grant.
+then **60s** and later **120s** wall-time, **USD 1** smoke / **USD 3**
+cumulative (2026-07-24 policy-only slices; see
+`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` for the active **120s** lock).
+That alignment is **not** an execution authorization and was **not** a
+qualification retry under this recovery grant.
 
 **License posture:** no new uncertainty relative to the 2026-07-23 owner-approved
 C-05 posture (Apache-2.0 root license identical to tag; absent root `NOTICE` /
@@ -262,7 +264,7 @@ json
 --max-session-turns
 12
 --max-wall-time
-60s
+120s
 ```
 
 Optional flags for later qualification (still not executed): `--bare`,
@@ -408,5 +410,6 @@ acquisition-and-inspection-only grant. Upstream binary not launched. Subsequent
 M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and
 execution remain unauthorized until a separate grant. Repository smoke policy
-later aligned to 12 turns / 60s / USD 1 / USD 3 (policy-only); not used under
+later aligned to 12 turns / 120s wall / USD 1 / USD 3 (policy-only; active wall
+after 2026-07-24 wall/reap remediation); not used under
 recovery; no qualification retry under recovery or alignment.*
