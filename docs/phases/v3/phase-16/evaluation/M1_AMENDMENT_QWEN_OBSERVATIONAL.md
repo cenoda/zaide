@@ -78,13 +78,14 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 
 | Side effect | Required separate grant | Status after M3 egress proof (2026-07-23) |
 |---|---|---|
-| Download/extract pinned Qwen Code archive | M3a acquisition-and-inspection grant | **Done** under M3a grant |
+| Download/extract pinned Qwen Code archive | M3a acquisition-and-inspection grant | **Done** under M3a grant (2026-07-23); **re-done** under recovery grant (2026-07-24) after `/tmp` wipe — inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1) |
 | Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant | **Done** under egress-proof grant: inventory only; **no package install** (`slirp4netns`/`socat` already present); ephemeral netns config only |
 | Run egress proof (allowed + blocked destinations) | Egress proof grant | **Done** — **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
 | Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Not authorized; **GO to authorize** when human grants; still **NO-GO** to perform |
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Design GO** (`M3_DNS_BINDING_GATE.md`); **execution NO-GO** until grant |
 | Provider API calls | Execution grant + cost tracking | Not authorized |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260723T164355Z-c421b379` launched Qwen once then **NO-GO** (`qwen_exit=53` max session turns); TC-T01 incomplete; see `M3_QUALIFICATION_EVIDENCE.md` |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260723T164355Z-c421b379` launched Qwen once then **NO-GO** (`qwen_exit=53` max session turns); TC-T01 incomplete; see `M3_QUALIFICATION_EVIDENCE.md`. **No retry** under 2026-07-24 M3a recovery. |
+| Future max-session-turns ceiling (policy only) | Separate qualification grant if retry is re-authorized | Human decision **2026-07-24:** next possible retry **may** use **12** turns; **60s** wall-time and **USD 1 / USD 3** spend caps **unchanged**. **Not** an execution grant; **not** applied. |
 
 ---
 
@@ -101,8 +102,11 @@ Updated disposition and campaign-path records:
 *M1 amendment — human-accepted 2026-07-23. Docs-only at acceptance. Subsequent
 M3a acquisition-and-inspection (2026-07-23) under a separate grant acquired the
 pinned archive outside the repository and resolved A-02/A-03 without launching
-the binary (`M3A_ACQUISITION_EVIDENCE.md`). Subsequent M3 egress proof
-(2026-07-23) under a separate grant proved `api.deepseek.com:443` allowlisted
-HTTPS and blocked non-allowlisted destinations (`M3_EGRESS_PROOF_EVIDENCE.md`).
-M3 DNS binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). No credentials
-created, no authenticated API spend, no upstream binary launched.
+the binary (`M3A_ACQUISITION_EVIDENCE.md`). Recovery re-acquisition 2026-07-24
+after `/tmp` wipe (inspection only; no qualification retry). Subsequent M3
+egress proof (2026-07-23) under a separate grant proved `api.deepseek.com:443`
+allowlisted HTTPS and blocked non-allowlisted destinations
+(`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS binding gate defined 2026-07-23
+(`M3_DNS_BINDING_GATE.md`). Future 12-turn ceiling recorded 2026-07-24 for a
+possible later retry; not an execution grant. No credentials created under
+recovery; no authenticated API spend; no upstream binary launched under recovery.

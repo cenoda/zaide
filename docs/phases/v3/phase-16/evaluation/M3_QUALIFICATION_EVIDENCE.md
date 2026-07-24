@@ -44,6 +44,18 @@ fatal.txt, balance-before, workspace `FetchData`/`RetrieveData` counts). No
 durable off-`/tmp` copy was retained. Values below are operator-captured from
 that inspection, not a re-run.
 
+**Artifact recovery (2026-07-24; not a qualification retry):** the pinned Qwen
+Code v0.20.1 archive was re-downloaded and re-extracted under
+`/tmp/phase16-artifacts/phase-16/` for static inspection only
+(`M3A_ACQUISITION_EVIDENCE.md` §1.1). **No** Qwen launch, **no** credentials,
+**no** API calls, and **no** new qualification session under that grant.
+
+**Future retry policy note (human decision 2026-07-24; not applied here):** a
+later separately authorized M3 qualification retry **may** use
+`--max-session-turns 12`. The **60s** wall-time limit and **USD 1** smoke /
+**USD 3** cumulative caps remain **unchanged**. This document does **not**
+authorize that retry.
+
 ---
 
 ## 1. Scope and Non-Effects
@@ -225,11 +237,14 @@ deadlock and wiped `/tmp` artifacts.
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Re-evaluate turn/time ceilings vs TC-T01 complexity if still plan-mode
-   locked; do not silently raise caps without owner lock.
+3. **Human-approved (2026-07-24) future turn ceiling:** next possible retry
+   **may** use `--max-session-turns 12` (was 5 in this session). **60s**
+   wall-time and **USD 1 / USD 3** spend caps **unchanged**. Not applied; not
+   an execution grant.
 4. Fix orchestrator post-child reaping / hang so post-balance and summary
    finalization always run after Qwen exit.
-5. Preserve session records outside `/tmp` before any host reboot.
+5. Preserve session records outside `/tmp` before any host reboot (M3a
+   acquisition tree re-hydrated 2026-07-24; prior session files remain lost).
 6. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 
 ---
@@ -267,8 +282,12 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Optionally harden orchestrator wait/reap and durable evidence paths.
-4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
+3. If authorized, smoke argv **may** use `--max-session-turns 12` (human
+   decision 2026-07-24); keep `--max-wall-time 60s` and spend caps unchanged.
+4. Optionally harden orchestrator wait/reap and durable evidence paths.
+5. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
+6. **No retry has been authorized or performed** as of the 2026-07-24 M3a
+   recovery grant.
 
 ---
 
@@ -287,4 +306,6 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 Observational only. NO-GO at Qwen max-session-turns (exit 53). Pre-launch DNS,
 slirp, egress, Bubblewrap `/etc`, and remediated auth GO. TC-T01 incomplete.
 Artifacts lost on host reboot after orchestrator hang; values from pre-reboot
-operator inspection. No second attempt.*
+operator inspection. No second attempt. M3a tree re-acquired 2026-07-24 for
+inspection only; future 12-turn ceiling recorded but not used; no qualification
+retry under recovery.*

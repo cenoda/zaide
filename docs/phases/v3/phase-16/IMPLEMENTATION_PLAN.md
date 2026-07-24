@@ -13,8 +13,16 @@ session `m3q-20260723T164355Z-c421b379`:** DNS/slirp/egress/tmpfs/auth argv **GO
 Qwen launched **once** then **NO-GO** (`qwen_exit=53`, max session turns);
 TC-T01 rename **not** verified; spend **not measured** (orchestrator hung before
 post-balance; `/tmp` artifacts lost on host reboot). Candidate remains **not
-qualified**. **Do not retry** under this grant. Comparative campaign rules
-remain unchanged.
+qualified**. **M3a recovery re-acquisition (2026-07-24)** under a separate
+acquisition-and-inspection-only grant recreated
+`/tmp/phase16-artifacts/phase-16/`, re-downloaded the pinned archive and
+`SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and re-extracted for
+static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1); **no**
+Qwen/Node launch, **no** credentials, **no** API calls, **no** qualification
+retry. **Human decision (2026-07-24; not an execution grant):** a future
+separately authorized M3 retry **may** use max **12** session turns; **60s**
+wall-time and **USD 1** smoke / **USD 3** cumulative caps remain unchanged.
+Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -253,10 +261,12 @@ Full field tables and exclusion rules live in
 `evaluation/M1_AMENDMENT_QWEN_OBSERVATIONAL.md`. **One** candidate is eligible;
 comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
-completed on 2026-07-23.** **Latest M3 qualification smoke**
+completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
+after `/tmp` wipe (inspection only; no retry). **Latest M3 qualification smoke**
 (`m3q-20260723T164355Z-c421b379`) **NO-GO** at Qwen max-session-turns
 (`qwen_exit=53`); TC-T01 incomplete; spend not measured; candidate still **not
-qualified**.
+qualified**. Future max-session-turns ceiling of **12** recorded for a possible
+later retry; not an execution grant.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -471,12 +481,14 @@ milestone; stop if its eligibility or an external-side-effect gate blocks it.
 one predeclared smoke task for candidates that become eligible. Qwen Code alone is
 eligible for later M3 qualification on the accepted single-candidate observational
 path. **M3a acquisition-and-inspection completed 2026-07-23**
-(`evaluation/M3A_ACQUISITION_EVIDENCE.md`). **M3 egress proof completed
-2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate
-defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke execution
-remains blocked pending credentials, DNS-binding execution at launch, and a
-qualification grant. OpenCode and Grok
-Build remain blocked at M1. A Grok Build distributed
+(`evaluation/M3A_ACQUISITION_EVIDENCE.md`); **recovery re-acquisition completed
+2026-07-24** after `/tmp` wipe (inspection only; no retry). **M3 egress proof
+completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
+binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
+execution remains blocked pending a **new** qualification grant, credentials,
+and DNS-binding execution at launch. Future retry **may** use max **12** session
+turns if separately authorized; **60s** / **USD 1** / **USD 3** caps unchanged.
+OpenCode and Grok Build remain blocked at M1. A Grok Build distributed
 artifact must be independently identified and mapped before its slice can execute.
 
 **Planned paths:** Phase 16 tool/test/docs plus external artifacts under the
@@ -834,7 +846,10 @@ upstream acquisition, network access, or real candidate execution).
 **M3a acquisition-and-inspection was completed on 2026-07-23** under an
 explicit separate grant (`evaluation/M3A_ACQUISITION_EVIDENCE.md`): pinned
 archive acquired outside the repository, SHA-256 verified, licenses scanned,
-A-02/A-03 resolved; binary not launched.
+A-02/A-03 resolved; binary not launched. **M3a recovery re-acquisition was
+completed on 2026-07-24** after host reboot wiped `/tmp/phase16-artifacts`
+(same pin/hash/license results; extract for inspection only; binary/Node not
+launched; no qualification retry).
 
 **M3 egress proof was completed on 2026-07-23** under an explicit separate
 grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): allowlisted
@@ -845,3 +860,6 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 (`m3q-20260723T164355Z-c421b379`) executed DNS binding, remediated auth argv,
 and one Qwen launch, then **NO-GO** at max-session-turns (`qwen_exit=53`);
 TC-T01 incomplete; spend not measured; candidate still **not qualified**.
+**Human decision 2026-07-24 (policy only; not executed):** a future separately
+authorized M3 retry may use max **12** session turns; **60s** wall-time and
+**USD 1** smoke / **USD 3** cumulative caps unchanged.

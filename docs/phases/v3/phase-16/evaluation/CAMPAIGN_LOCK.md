@@ -71,11 +71,13 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | Phase 16 cumulative API cap | USD 3 (later authorization may define a new cap) |
 | Execution | **Not authorized** by the amendment; requires separate M3 grants |
 | M3a acquisition (2026-07-23) | **Complete** under separate grant (`M3A_ACQUISITION_EVIDENCE.md`); A-02/A-03 resolved; binary not launched |
+| M3a recovery re-acquisition (2026-07-24) | **Complete** under separate acquisition-and-inspection-only grant after `/tmp` wipe (`M3A_ACQUISITION_EVIDENCE.md` §1.1); pinned archive + SHA256SUMS re-downloaded; SHA-256 match; licenses re-scanned; extract for static inspection only; binary/Node **not** launched; **no** qualification retry |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
 | M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260723T164355Z-c421b379` — DNS/slirp/egress/tmpfs/auth argv **GO**; Qwen **once** then **`qwen_exit=53`** (`FatalTurnLimitedError` max turns); TC-T01 incomplete (`FetchData` remains); spend **not measured** (post-balance hung; `/tmp` artifacts lost on reboot). Prior sessions: credential; slirp host-PID; resolv bind; auth-type missing |
 | M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; cleared prior auth-type failure mode |
-| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; address turn-ceiling vs TC-T01 and orchestrator post-exit hang/reap if re-authorized |
+| Future retry turn ceiling (human decision 2026-07-24; **not executed**) | Next **possible** M3 qualification retry **may** use `--max-session-turns 12`. **60s** wall-time, **USD 1** smoke, and **USD 3** cumulative caps **unchanged**. This is **not** an execution grant; **no retry occurred** under the M3a recovery grant |
+| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; may apply the approved 12-turn ceiling only under that grant; address orchestrator post-exit hang/reap if re-authorized |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
@@ -212,4 +214,7 @@ available for independent reconciliation.
 amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
 completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
 qualification smoke session `m3q-20260723T164355Z-c421b379` NO-GO at Qwen
-max-session-turns (`qwen_exit=53`); TC-T01 incomplete; spend not measured.*
+max-session-turns (`qwen_exit=53`); TC-T01 incomplete; spend not measured. M3a
+artifact tree re-acquired 2026-07-24 after `/tmp` wipe (inspection only; no
+retry). Future max-session-turns ceiling of 12 approved for a possible later
+retry; not an execution grant; not used.*

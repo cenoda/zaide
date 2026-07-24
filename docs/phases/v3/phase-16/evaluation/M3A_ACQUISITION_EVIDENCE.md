@@ -1,10 +1,13 @@
 # Phase 16 M3a — Qwen Code Acquisition and Inspection Evidence
 
 **Status:** Completed under explicit human M3a acquisition-and-inspection grant
-(2026-07-23). **Scope limited to download, hash verification, tag and in-archive
-license/notice scan, and static layout/argv inspection.** No upstream binary
-launch, no egress tooling install, no credentials, no provider API calls, no
-production code change, no commit/push.
+(2026-07-23). **Recovery re-acquisition (2026-07-24)** under a separate
+acquisition-and-inspection-only grant after host reboot wiped
+`/tmp/phase16-artifacts`. **Scope limited to download, hash verification, tag
+and in-archive license/notice scan, and static layout/argv inspection.** No
+upstream binary launch, no Node launch, no egress tooling install, no
+credentials, no provider API calls, no production code change. **No M3
+qualification retry was performed under the recovery grant.**
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain blocked
@@ -17,7 +20,8 @@ at M1.
   artifacts/qwen-code/v0.20.1/
     download/          # pinned archive + SHA256SUMS + tag LICENSE re-check
     inspect/qwen-code/ # extract for inspection only
-  records/m3a/         # durable hashes, listings, license copies, summary
+  records/m3a/         # original 2026-07-23 durable record (lost on reboot)
+  records/m3a-recovery/ # 2026-07-24 recovery hashes, listings, license copies, summary
 ```
 
 Runner default when `PHASE16_ARTIFACT_ROOT` is unset:
@@ -42,11 +46,61 @@ Runner default when `PHASE16_ARTIFACT_ROOT` is unset:
 | Forbidden in this grant | Status |
 |---|---|
 | Launch upstream Qwen Code binary | **Not performed** |
+| Launch bundled Node or any upstream binary | **Not performed** |
 | Install egress tooling (`slirp4netns`, `pasta`, `socat`, …) | **Not performed** |
 | Create or inject credentials | **Not performed** |
 | Call DeepSeek / any provider API | **Not performed** |
-| Modify production code | **Not performed** |
-| Commit or push | **Not performed** |
+| Modify production code / tests / network settings | **Not performed** |
+| M3 qualification retry / smoke execution | **Not performed** |
+
+---
+
+## 1.1 Recovery re-acquisition after `/tmp` wipe (2026-07-24)
+
+**Reason:** host reboot wiped `/tmp/phase16-artifacts` after the latest M3
+qualification session hang (see `M3_QUALIFICATION_EVIDENCE.md`).
+
+**Grant scope:** acquisition-and-inspection only. Explicitly **not** an
+execution grant and **not** a qualification retry.
+
+| Field | Value |
+|---|---|
+| Recovery UTC | `2026-07-24T03:44:16Z` (summary timestamp) |
+| Artifact root recreated | `/tmp/phase16-artifacts/phase-16/` (outside Zaide repository) |
+| Downloaded archive | `qwen-code-linux-x64.tar.gz` (pinned v0.20.1 Linux x64 only) |
+| Checksum source | official release `SHA256SUMS` |
+| Size | 82,048,902 bytes |
+| Computed SHA-256 | `2ec957bc79afb4722d08af55bfdfce86f2c5c8cb3dcda27f95324206e9c4026e` |
+| Pinned match | **YES** |
+| `sha256sum -c` (linux-x64 line) | **OK** |
+| Tag `LICENSE` | Apache-2.0; SHA-256 `55367b61ccd2a016a0159ad886bd66a3ee6cb5e873d0c75c803c897dd245b075` |
+| Tag `NOTICE` | Absent (HTTP 404) |
+| Archive `LICENSE` | Apache-2.0; **identical** to tag (`55367b61…`) |
+| Archive `NOTICE` / `THIRD-PARTY-NOTICES` | **Absent** (same as 2026-07-23) |
+| Executable (A-02) | `qwen-code/bin/qwen` present at absolute path below; **not executed** |
+| Binary / Node / API / credentials | **None** |
+
+**Absolute executable path after recovery extract:**
+
+```text
+/tmp/phase16-artifacts/phase-16/artifacts/qwen-code/v0.20.1/inspect/qwen-code/bin/qwen
+```
+
+**Durable recovery evidence (non-secret):**
+`/tmp/phase16-artifacts/phase-16/records/m3a-recovery/`
+(`summary.env`, `SHA256SUMS`, `computed-sha256.txt`, `tag-LICENSE`,
+`archive-LICENSE`, `tar-listing.txt`).
+
+**Human policy note recorded with recovery (not applied; no retry):** if a
+**future** M3 qualification grant is issued separately, the next possible
+retry **may** use `--max-session-turns 12`. The **60-second** wall-time limit
+and **USD 1** smoke / **USD 3** cumulative caps remain **unchanged**. That
+ceiling is **not** an execution authorization and was **not** used under this
+recovery grant.
+
+**License posture:** no new uncertainty relative to the 2026-07-23 owner-approved
+C-05 posture (Apache-2.0 root license identical to tag; absent root `NOTICE` /
+`THIRD-PARTY-NOTICES`).
 
 ---
 
@@ -264,14 +318,19 @@ commit). A-11 `SOURCE_REV` remains **`UNRESOLVED`**.
 
 | Path | Content |
 |---|---|
-| `records/m3a/summary.env` | Timestamp, hashes, path, license flags, `binary_executed=NO` |
-| `records/m3a/SHA256SUMS` | Official release checksum file |
-| `records/m3a/tag-LICENSE` | Tag LICENSE re-check copy |
-| `records/m3a/archive-LICENSE` | In-archive LICENSE copy |
-| `records/m3a/tar-listing.txt` | Full archive member list (6822 entries) |
-| `records/m3a/cli-options-excerpt.js.txt` | Yargs option registration excerpt |
-| `artifacts/qwen-code/v0.20.1/download/` | Archive + SHA256SUMS + tag LICENSE |
-| `artifacts/qwen-code/v0.20.1/inspect/` | Extract tree for inspection |
+| `records/m3a/summary.env` | Original 2026-07-23 timestamp, hashes, path, license flags, `binary_executed=NO` (**lost on reboot**) |
+| `records/m3a/SHA256SUMS` | Official release checksum file (**lost on reboot**) |
+| `records/m3a/tag-LICENSE` | Tag LICENSE re-check copy (**lost on reboot**) |
+| `records/m3a/archive-LICENSE` | In-archive LICENSE copy (**lost on reboot**) |
+| `records/m3a/tar-listing.txt` | Full archive member list (6822 entries) (**lost on reboot**) |
+| `records/m3a/cli-options-excerpt.js.txt` | Yargs option registration excerpt (**lost on reboot**) |
+| `records/m3a-recovery/summary.env` | **2026-07-24 recovery:** hashes, paths, license flags, `binary_executed=NO`, `qualification_retry_performed=NO` |
+| `records/m3a-recovery/SHA256SUMS` | Official release checksum file (re-downloaded) |
+| `records/m3a-recovery/tag-LICENSE` | Tag LICENSE re-check copy |
+| `records/m3a-recovery/archive-LICENSE` | In-archive LICENSE copy |
+| `records/m3a-recovery/tar-listing.txt` | Full archive member list (6822 entries) |
+| `artifacts/qwen-code/v0.20.1/download/` | Archive + SHA256SUMS + tag LICENSE (re-created 2026-07-24) |
+| `artifacts/qwen-code/v0.20.1/inspect/` | Extract tree for inspection (re-created 2026-07-24) |
 
 **No upstream bytes under the Zaide git worktree.**
 
@@ -336,7 +395,10 @@ be launched.
 ---
 
 *M3a acquisition-and-inspection evidence — produced 2026-07-23 under explicit
-M3a grant. Upstream binary not launched. Subsequent M3 egress proof completed
-2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS binding gate defined
-2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and execution remain
-unauthorized until a separate grant.*
+M3a grant; recovery re-acquisition 2026-07-24 after `/tmp` wipe under a separate
+acquisition-and-inspection-only grant. Upstream binary not launched. Subsequent
+M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
+binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and
+execution remain unauthorized until a separate grant. Future max-session-turns
+ceiling of 12 recorded for a possible later retry; not used; no qualification
+retry under recovery.*
