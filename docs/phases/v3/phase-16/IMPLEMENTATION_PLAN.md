@@ -512,12 +512,14 @@ path. **M3a acquisition-and-inspection completed 2026-07-23**
 2026-07-24** after `/tmp` wipe (inspection only; no retry). **M3 egress proof
 completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
-execution remains blocked pending a **new** qualification grant, credentials,
-and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
+execution remains separately gated. Locked smoke ceilings (policy aligned
 2026-07-24; wall raised 60s→120s→240s; turns raised 12→24→**240** after
 exit-53 evidence; extended single-smoke exception 2026-07-24): max **240**
-session turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative —
-policy-only until a separate execution grant authorizes **one** extended retry. OpenCode and Grok Build remain blocked at M1.
+session turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative.
+The authorized one extended retry was executed as session
+`m3q-20260724T081819Z-7db401c3` (**NO-GO**, exit 55) and that exception is
+**consumed**; any further retry requires a new explicit grant + one-shot key.
+OpenCode and Grok Build remain blocked at M1.
 A Grok Build distributed artifact must be independently identified and mapped
 before its slice can execute.
 
