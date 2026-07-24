@@ -15,28 +15,40 @@ namespace Zaide.Tests.Phase16Evaluation;
 public sealed class Phase16M3QualificationSmokeOrchestratorTests
 {
     [Fact]
-    public void SmokeOrchestrator_LocksOneHundredTwentySecondWallTimeArgv()
+    public void SmokeOrchestrator_LocksTwoHundredFortySecondWallTimeArgv()
     {
         var script = File.ReadAllText(ResolveSmokeScriptPath());
 
         Assert.Contains("--max-wall-time", script, StringComparison.Ordinal);
-        Assert.Contains("120s", script, StringComparison.Ordinal);
-        Assert.Equal("120s", Phase16M3QualificationPolicy.MaxWallTime);
+        Assert.Contains("240s", script, StringComparison.Ordinal);
+        Assert.Equal("240s", Phase16M3QualificationPolicy.MaxWallTime);
 
-        // Active wall-time argv must be 120s (exact-argv record and bwrap launch).
+        // Active wall-time argv must be 240s (exact-argv record and bwrap launch).
         Assert.Matches(
-            new Regex("echo\\s+\"--max-wall-time\"\\s*\\n\\s*echo\\s+\"120s\"", RegexOptions.Multiline),
+            new Regex("echo\\s+\"--max-wall-time\"\\s*\\n\\s*echo\\s+\"240s\"", RegexOptions.Multiline),
             script);
         Assert.Matches(
-            new Regex(@"--max-wall-time\s+120s", RegexOptions.Multiline),
+            new Regex(@"--max-wall-time\s+240s", RegexOptions.Multiline),
             script);
 
-        // Do not leave a live 60s wall-time ceiling in the orchestrator.
+        // Overall inner budget must accommodate 240s Qwen wall + probes + verify.
+        Assert.Contains(
+            "INNER_OVERALL_TIMEOUT_SEC=\"${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-320}\"",
+            script,
+            StringComparison.Ordinal);
+
+        // Do not leave a live 60s or 120s wall-time ceiling in the orchestrator.
         Assert.DoesNotMatch(
             new Regex(@"--max-wall-time\s+60s", RegexOptions.Multiline),
             script);
         Assert.DoesNotMatch(
+            new Regex(@"--max-wall-time\s+120s", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
             new Regex("echo\\s+\"60s\"", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
+            new Regex("echo\\s+\"120s\"", RegexOptions.Multiline),
             script);
     }
 

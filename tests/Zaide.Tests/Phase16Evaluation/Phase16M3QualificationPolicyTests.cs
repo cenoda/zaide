@@ -28,13 +28,14 @@ public sealed class Phase16M3QualificationPolicyTests
             Phase16M3QualificationPolicy.MaxWallTime,
             argv[Array.IndexOf(argv, "--max-wall-time") + 1]);
         Assert.Equal(24, Phase16M3QualificationPolicy.MaxSessionTurns);
-        Assert.Equal("120s", Phase16M3QualificationPolicy.MaxWallTime);
+        Assert.Equal("240s", Phase16M3QualificationPolicy.MaxWallTime);
         Assert.Equal(1m, Phase16M3QualificationPolicy.SmokeSpendCapUsd);
         Assert.Equal(3m, Phase16M3QualificationPolicy.CampaignSpendCapUsd);
         Assert.DoesNotContain("--yolo", argv);
         Assert.DoesNotContain("-y", argv);
         Assert.DoesNotContain("plan", argv);
         Assert.DoesNotContain("60s", argv);
+        Assert.DoesNotContain("120s", argv);
     }
 
     [Fact]
@@ -58,7 +59,19 @@ public sealed class Phase16M3QualificationPolicyTests
 
         var ex = Assert.Throws<ManifestValidationException>(() =>
             Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(locked));
-        Assert.Contains("expected '120s'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("expected '240s'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidateSmokeArgvOrThrow_RejectsLegacyOneHundredTwentySecondWallTime()
+    {
+        var locked = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail().ToArray();
+        var wallValueIndex = Array.IndexOf(locked, "--max-wall-time") + 1;
+        locked[wallValueIndex] = "120s";
+
+        var ex = Assert.Throws<ManifestValidationException>(() =>
+            Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(locked));
+        Assert.Contains("expected '240s'", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

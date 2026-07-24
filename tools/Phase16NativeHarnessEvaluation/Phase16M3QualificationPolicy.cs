@@ -22,9 +22,12 @@ public static class Phase16M3QualificationPolicy
     /// Locked Qwen <c>--max-wall-time</c> for TC-T01 qualification smoke.
     /// Raised from historical <c>60s</c> (session
     /// <c>m3q-20260724T054307Z-481ad1de</c> exited 55 after verified rename)
-    /// to <c>120s</c> by human decision; historical session records stay at 60s.
+    /// to <c>120s</c>, then to <c>240s</c> by human decision after session
+    /// <c>m3q-20260724T072341Z-8f567943</c> exited 55 at the then-locked 120s
+    /// wall despite verified rename. Historical session records stay at the
+    /// wall used for that run (60s / 120s).
     /// </summary>
-    public const string MaxWallTime = "120s";
+    public const string MaxWallTime = "240s";
     public const decimal SmokeSpendCapUsd = 1m;
     public const decimal CampaignSpendCapUsd = 3m;
 

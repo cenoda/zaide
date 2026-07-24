@@ -1,9 +1,14 @@
 # Phase 16 M3 — Wall-Time (120s) and Exit-Reaping Remediation Evidence
 
 **Status:** **Complete (remediation only)** — repository policy, smoke
-orchestrator, focused tests, and active campaign docs updated. Remediation
-itself did **not** create credentials, launch Qwen/Node, call APIs, reprobe
-egress, or run an M3 retry / M4 work.
+orchestrator, focused tests, and campaign docs updated for the 60s→120s slice.
+Remediation itself did **not** create credentials, launch Qwen/Node, call APIs,
+reprobe egress, or run an M3 retry / M4 work.
+
+**Active wall supersession:** a later future-policy remediation raised the
+**active** wall lock to **240s**
+(`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`). This document remains
+the historical record of the 120s + same-shell reap slice.
 
 **Human decisions (this slice):**
 

@@ -158,10 +158,13 @@ Exact argv recorded under the session artifact root (`exact-argv.txt`).
 
 **Auth remediation status:** auth-type failure mode remains **cleared**.
 **Write-capable remediation status:** `--approval-mode yolo` used as locked.
-**Wall-time remediation status:** active lock **120s** used (historical prior
-yolo session used 60s). Failure mode for **this** session is **wall-budget exit
-55** (`FatalBudgetExceededError` at 120s) after verified rename — not turn-limit
-exit 53, not auth-type missing, not plan-only.
+**Wall-time remediation status:** then-active lock **120s** used for this
+session (historical prior yolo session used 60s). Failure mode for **this**
+session is **wall-budget exit 55** (`FatalBudgetExceededError` at 120s) after
+verified rename — not turn-limit exit 53, not auth-type missing, not plan-only.
+A later future-policy remediation raised the **active** wall to **240s**
+(`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`); this session record is
+unchanged and remains NO-GO.
 
 ---
 
@@ -282,8 +285,9 @@ Timing evidence rules out outer orchestrator budgets as the exit-55 cause:
 
 This is a **Qwen wall-time** failure against locked GO rules, not a turn-limit,
 auth, DNS, egress, or plan-mode failure. No second attempt was authorized under
-this grant to raise wall time or re-run. **24-turn / 120s policy unchanged** by
-the later finalization remediation.
+this grant to raise wall time or re-run. **24-turn / 120s policy was unchanged**
+by the later finalization remediation; a subsequent future-policy slice raised
+the **active** wall to **240s** without reclassifying this session.
 
 ### 7.3 Bounded reaping OK; finalization aborted (this grant)
 
@@ -315,9 +319,10 @@ qualification retry).
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Keep locked write-capable yolo + **24** turns + **120s** wall + fixed reap
-   path + fixed finalization path unless a separate human decision amends
-   ceilings.
+3. Keep locked write-capable yolo + **24** turns + **240s** wall (active
+   future-policy after this session’s 120s exit-55; see
+   `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`) + fixed reap path +
+   fixed finalization path unless a separate human decision amends ceilings.
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. Preserve session records outside `/tmp` before any host reboot.
 
@@ -362,8 +367,9 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Keep locked write-capable `--approval-mode yolo` + **120s** wall + fixed
-   reap path unless a separate human decision amends ceilings.
+3. Keep locked write-capable `--approval-mode yolo` + **240s** wall (active
+   future-policy; this session used then-locked **120s**) + fixed reap path
+   unless a separate human decision amends ceilings.
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. **No second attempt** was authorized or performed under this grant.
 
@@ -375,7 +381,8 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 - `M3A_ACQUISITION_EVIDENCE.md` — pinned binary; auth support surface
 - `M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md` — argv/modelProviders contract used
 - `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` — write-capable argv + reap path
-- `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — 120s wall + same-shell reap
+- `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — then 120s wall + same-shell reap
+- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — later active 240s future-policy (not a retry)
 - `M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md` — sticky set -e finalization fix after this session
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture
 - `TASK_CORPUS.md` — TC-T01 definition

@@ -10,9 +10,13 @@ workspace `modelProviders` `DEEPSEEK_API_KEY` wiring. **M3 write-capable
 qualification remediation (2026-07-24)**
 (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`) locked
 `--approval-mode yolo` and post-exit reap/finalization. **M3 wall-time + exit-reap remediation (2026-07-24)**
-(`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`) raised the active
-smoke wall lock to **120s** and fixed same-shell wait/reap so inner exit is not
-bash **127**. **M3a recovery re-acquisition (2026-07-24)** under a separate
+(`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`) raised the smoke
+wall lock from 60s to **120s** and fixed same-shell wait/reap so inner exit is
+not bash **127**. **M3 wall-time 240s future-policy remediation (2026-07-24)**
+(`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`) raised the
+**active** wall lock to **240s** (overall inner budget **320s**); historical
+120s/60s session records unchanged; not a qualification retry. **M3a recovery
+re-acquisition (2026-07-24)** under a separate
 acquisition-and-inspection-only grant recreated `/tmp/phase16-artifacts/phase-16/`,
 re-downloaded the pinned archive and `SHA256SUMS`, re-verified SHA-256,
 re-scanned licenses, and re-extracted for static inspection only
@@ -21,21 +25,23 @@ re-scanned licenses, and re-extracted for static inspection only
 (credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
 ceiling; plan-only exit 0 without rename; yolo rename verified with exit 55 at
 historical 60s wall). **Latest authorized retry session
-`m3q-20260724T072341Z-8f567943` (exactly one fresh, new ID pre-recorded):**
+`m3q-20260724T072341Z-8f567943` (exactly one fresh, new ID pre-recorded;
+remains historical NO-GO):**
 DNS/slirp/inner-egress preflight **GO** before credential; write-capable **yolo**;
-locked **24** turns / **120s** wall; Qwen launched **once**; TC-T01 rename
+then-locked **24** turns / **120s** wall; Qwen launched **once**; TC-T01 rename
 **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0) but
 **`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s) → dual GO **NO-GO**;
 balance-before USD 3.95 (after unavailable); fixed parent-shell reap recorded
 real inner exit **4**; finalization incomplete (sticky `set -e` + non-zero
 `return` from `launch_netns_inner`). Candidate remains **not qualified**.
-**Active** locked smoke ceilings: max **24** session turns, **120s** wall-time,
-**USD 1** smoke / **USD 3** cumulative (unchanged). **M3 fresh-session
-eligibility remediation (2026-07-24)** preceded this grant. **M3 post-session
-finalization remediation (2026-07-24)**
+**Active** locked smoke ceilings: max **24** session turns, **240s** wall-time,
+**USD 1** smoke / **USD 3** cumulative (USD caps and turns unchanged). **M3
+fresh-session eligibility remediation (2026-07-24)** preceded this grant. **M3
+post-session finalization remediation (2026-07-24)**
 (`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) fixed
-deterministic balance-after/workspace/cleanup after non-zero Qwen; not a retry.
-Comparative campaign rules remain unchanged.
+deterministic balance-after/workspace/cleanup after non-zero Qwen; not a retry;
+finalization path preserved under the 240s policy. Comparative campaign rules
+remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -276,10 +282,12 @@ comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
-qualification smoke** (`m3q-20260724T072341Z-8f567943`) **NO-GO**: write-capable yolo 24/120; prior was 12-turn exit-53.
-yolo path under locked **12** turns / **120s** wall verified TC-T01 rename but
-`qwen_exit=53` (turn limit); spend balance delta USD 0.00; fixed parent-shell
-reap recorded real inner exit 4; candidate still **not qualified**.
+qualification smoke** (`m3q-20260724T072341Z-8f567943`) **NO-GO**: write-capable
+yolo 24/then-locked-120s; remains historical NO-GO; active wall now **240s**.
+Prior `m3q-20260724T060109Z-45dd1c5f` under locked **12** turns / **120s** wall
+verified TC-T01 rename but `qwen_exit=53` (turn limit); spend balance delta USD
+0.00; fixed parent-shell reap recorded real inner exit 4; candidate still
+**not qualified**.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -500,9 +508,9 @@ completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
 execution remains blocked pending a **new** qualification grant, credentials,
 and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
-2026-07-24; wall raised same day after exit-55 evidence; turns raised to **24**
-on 2026-07-24 after exit-53 evidence): max **24** session
-turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative — policy-only
+2026-07-24; wall raised 60s→120s then **240s** after exit-55 evidence; turns
+raised to **24** on 2026-07-24 after exit-53 evidence): max **24** session
+turns, **240s** wall-time, **USD 1** smoke / **USD 3** cumulative — policy-only
 until a separate execution grant. OpenCode and Grok Build remain blocked at M1.
 A Grok Build distributed artifact must be independently identified and mapped
 before its slice can execute.
@@ -875,8 +883,11 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 (`evaluation/M3_DNS_BINDING_GATE.md`). **M3 write-capable remediation (2026-07-24)** locked `--approval-mode yolo`
 and post-exit reaping
 (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **M3 wall-time +
-exit-reap remediation (2026-07-24)** raised active wall to **120s** and fixed
+exit-reap remediation (2026-07-24)** raised wall 60s→**120s** and fixed
 same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).
+**M3 wall-time 240s future-policy remediation (2026-07-24)** raised active wall
+to **240s** (`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`);
+historical 120s/60s session records unchanged; not a qualification retry.
 **M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn
 ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
 and docs; historical 12-turn session records preserved unchanged; not a
@@ -885,6 +896,7 @@ qualification retry.
 ordering (egress preflight before credential), fresh-session execution/evidence
 contract, and consumed-but-unlaunched recording; not a qualification retry.
 **Latest M3 qualification smoke** (`m3q-20260724T072341Z-8f567943`) executed
-preflight then one Qwen launch under write-capable yolo (24 / **120s**); rename
-**verified** but **NO-GO** on `qwen_exit=55` (wall); finalization incomplete;
-candidate still **not qualified**.
+preflight then one Qwen launch under write-capable yolo (24 / then-locked
+**120s**); rename **verified** but **NO-GO** on `qwen_exit=55` (wall 120s);
+finalization incomplete; candidate still **not qualified**. Session remains
+historical NO-GO under its then-locked 120s wall.

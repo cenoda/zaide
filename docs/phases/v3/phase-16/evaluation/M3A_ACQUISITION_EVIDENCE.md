@@ -93,11 +93,12 @@ execution grant and **not** a qualification retry.
 
 **Human policy note recorded with recovery (updated by later alignment):**
 repository smoke policy was subsequently aligned to `--max-session-turns 12`,
-then **60s** and later **120s** wall-time, **USD 1** smoke / **USD 3**
-cumulative (2026-07-24 policy-only slices; see
-`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` for the active **120s** lock).
-Subsequently turns were raised to **24** (2026-07-24 human decision; see
-`CAMPAIGN_LOCK.md`).
+then **60s**, **120s**, and later **240s** wall-time, **USD 1** smoke /
+**USD 3** cumulative (2026-07-24 policy-only slices; see
+`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` for the active **240s**
+lock; prior 120s remediation
+`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Subsequently turns were
+raised to **24** (2026-07-24 human decision; see `CAMPAIGN_LOCK.md`).
 That alignment is **not** an execution authorization and was **not** a
 qualification retry under this recovery grant.
 
@@ -412,7 +413,7 @@ acquisition-and-inspection-only grant. Upstream binary not launched. Subsequent
 M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and
 execution remain unauthorized until a separate grant. Repository smoke policy
-later aligned to 12 turns / 120s wall / USD 1 / USD 3 (policy-only; active wall
-after 2026-07-24 wall/reap remediation), then **24** turns (2026-07-24 human
-decision; see `CAMPAIGN_LOCK.md`); not used under
-recovery; no qualification retry under recovery or alignment.*
+later aligned to 12 turns / 120s wall / USD 1 / USD 3 (policy-only), then **24**
+turns, then active wall **240s** (2026-07-24 human decisions; see
+`CAMPAIGN_LOCK.md` and `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`); not
+used under recovery; no qualification retry under recovery or alignment.*

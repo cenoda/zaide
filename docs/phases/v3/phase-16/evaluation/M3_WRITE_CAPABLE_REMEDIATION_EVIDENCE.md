@@ -18,9 +18,10 @@ verified rename under **120s** wall).
    instead of plan-only mode.
 3. USD **1** smoke, USD **3** cumulative, **12** turns, and **60s** wall-time
    limits remained locked **for this write-capable slice**. Later human decisions
-   raised the **active** turn ceiling to **24** and wall lock to **120s**
-   (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`; see `CAMPAIGN_LOCK.md`);
-   historical session records keep **12** turns / **60s** wall.
+   raised the **active** turn ceiling to **24** and wall lock to **120s** then
+   **240s** (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`,
+   `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`; see `CAMPAIGN_LOCK.md`);
+   historical session records keep the turns/wall used for that run.
 
 ---
 
@@ -75,8 +76,8 @@ the forbidden dual-flag combination):
 --max-wall-time 60s
 ```
 
-*(Active post-remediation turn ceiling is **24**; wall is **120s** — see
-`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` and `CAMPAIGN_LOCK.md`. The
+*(Active post-remediation turn ceiling is **24**; wall is **240s** — see
+`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` and `CAMPAIGN_LOCK.md`. The
 block above is the write-capable-slice lock as shipped and used by session
 `m3q-20260724T054307Z-481ad1de` with historical 12 turns / 60s wall.)*
 
@@ -85,7 +86,7 @@ block above is the write-capable-slice lock as shipped and used by session
 | Approval mode | **`yolo`** via `--approval-mode yolo` (not boolean `--yolo`) |
 | Host isolation | Existing Bubblewrap sandbox (unchanged) |
 | Credential env allowlist | `DEEPSEEK_API_KEY` only (A-07; unchanged) |
-| Turn / wall / spend ceilings | **24** (active; historical slice was **12**) / **60s** (this slice; active wall later **120s**) / **USD 1** smoke / **USD 3** cumulative |
+| Turn / wall / spend ceilings | **24** (active; historical slice was **12**) / **60s** (this slice; active wall later **240s**) / **USD 1** smoke / **USD 3** cumulative |
 | GO criteria | Qwen exit **0** **and** verified TC-T01 `FetchData` → `RetrieveData` |
 
 Headless YOLO emits a safety warning when Qwen’s own sandbox is unset; Phase 16

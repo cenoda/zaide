@@ -19,7 +19,7 @@ reprobe egress, acquire artifacts, or run an M3 retry / M4 work.
 | Fix orchestrator so finalization is deterministic after every current-session outcome | **Yes** |
 | Focused regression tests for the discovered failure path | **Yes** |
 | Update Phase 16 evidence/status docs; keep session **NO-GO** | **Yes** |
-| Change 24-turn or 120s policy | **No** |
+| Change 24-turn or 120s policy (this slice) | **No** — later 240s future-policy remediation is separate |
 | Qualification retry / credential / Qwen launch / M4 | **No** |
 
 ---
@@ -129,7 +129,7 @@ File: `tools/Phase16NativeHarnessEvaluation/Scripts/m3-qualification-smoke.sh`
 | Egress preflight status | `EGRESS_PREFLIGHT_EC="${INNER_WAIT_EXIT:-1}"` (not `$?`) |
 | Post-launch marking | If `qwen-result.env` exists → `CANDIDATE_EXECUTION=YES` / `QWEN_EXIT_SOURCE=current_run_dir` even when exit ≠ 0 |
 | Finalization path | Unchanged order; now **reachable** after non-zero Qwen/unshare: balance-after attempt, workspace-result, cleanup.env, then stop/NO-GO as appropriate |
-| Policy ceilings | **Unchanged** — 24 turns / 120s wall / USD 1 smoke / USD 3 cumulative |
+| Policy ceilings | **Unchanged by this slice** — then 24 turns / 120s wall / USD 1 smoke / USD 3 cumulative (active wall later **240s**; see `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`) |
 
 ---
 
@@ -155,8 +155,10 @@ git diff --check
 
 - Session `m3q-20260724T072341Z-8f567943` remains **NO-GO**.
 - Verified TC-T01 rename is **not** qualification success (dual GO requires Qwen exit 0 **and** rename).
-- No second attempt, no M4, no policy change to 24/120s without a separate human decision.
+- No second attempt, no M4 under this slice. A later separate human decision
+  raised the **active** wall to **240s** (future-policy only; not a retry).
 - Candidate remains **eligible for later M3 qualification** but **not qualified**.
+- Session remains historical NO-GO at its then-locked 120s wall.
 
 ---
 
@@ -164,8 +166,9 @@ git diff --check
 
 - `M3_QUALIFICATION_EVIDENCE.md` — session evidence (NO-GO exit 55)
 - `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — prior 120s + same-shell reap (127 fix)
+- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — later active wall 240s (future-policy)
 - `M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md` — preflight-before-key; fresh ID
-- `CAMPAIGN_LOCK.md` — active 24/120s locks
+- `CAMPAIGN_LOCK.md` — active 24/240s locks
 - `IMPLEMENTATION_PLAN.md` — phase status
 
 ---
