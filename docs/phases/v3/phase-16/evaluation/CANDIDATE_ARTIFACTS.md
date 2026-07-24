@@ -13,19 +13,17 @@ the phase artifact root (not the Zaide repository), SHA-256 verified, tag and
 in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 **Upstream binary was not launched.** **M3 egress proof was completed on
 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
-2026-07-23** (`M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
-(`m3q-20260724T035603Z-2c06e1a4`) **NO-GO**: Qwen exit 0 in plan mode without
-verified TC-T01 rename; spend owner-reported less than USD 0.01; candidate
-still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3
-auth-configuration remediation (2026-07-24)** locked auth argv +
-`modelProviders` wiring (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`). **M3
-write-capable remediation (2026-07-24)** locks `--approval-mode yolo` and
-orchestrator post-exit reaping for a future retry only
-(`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`); not a qualification retry. **M3a
-recovery re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and
-licenses and re-extracted for inspection only before the plan-mode retry
-(`M3A_ACQUISITION_EVIDENCE.md` §1.1). Locked smoke ceilings: max **12** session
-turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative.
+2026-07-23** (`M3_DNS_BINDING_GATE.md`). **M3 auth-configuration / write-capable remediations (2026-07-24)** locked auth
+argv + `modelProviders` wiring and `--approval-mode yolo` with post-exit
+reaping (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`,
+`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **Latest M3 qualification smoke**
+(`m3q-20260724T054307Z-481ad1de`) **NO-GO**: write-capable yolo verified TC-T01
+rename but `qwen_exit=55` (60s wall); spend balance delta USD 0.00; candidate
+still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3a recovery
+re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and licenses
+and re-extracted for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
+Locked smoke ceilings: max **12** session turns, **60s** wall-time, **USD 1**
+smoke / **USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -208,20 +206,18 @@ SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
-`m3q-20260724T035603Z-2c06e1a4` **NO-GO** (Qwen `qwen_exit=0` in plan mode;
-TC-T01 incomplete — `FetchData` remains; spend owner-reported less than
-USD 0.01) — see `M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not
-qualified**. Comparative claims remain forbidden. **No second attempt** under
-that grant.
+`m3q-20260724T054307Z-481ad1de` **NO-GO** (write-capable yolo; TC-T01 rename
+verified; `qwen_exit=55` wall 60s; spend balance delta USD 0.00) — see
+`M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not qualified**.
+Comparative claims remain forbidden. **No second attempt** under that grant.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
 **Re-qualification still requires:** new dedicated sub-key (C-04); separate M3
-qualification grant; use locked write-capable `--approval-mode yolo` + reap
-fix (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`); isolation re-check; DNS
-binding at launch (A-14); egress allowlist reuse; verified TC-T01 workspace
-change for GO.
+qualification grant; keep locked write-capable `--approval-mode yolo` + reap
+fix; isolation re-check; DNS binding at launch (A-14); egress allowlist
+reuse; dual GO = Qwen exit 0 **and** verified TC-T01 workspace change.
 
 **Exclusion rules (locked while not qualified at M3):**
 
@@ -469,9 +465,7 @@ completed 2026-07-23 (artifact under phase root only; binary not launched at M3a
 recovery re-acquisition 2026-07-24 after `/tmp` wipe (inspection only). M3
 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
-qualification smoke `m3q-20260723T164355Z-c421b379` NO-GO at max-session-turns
-(then-locked 5-turn ceiling); TC-T01 incomplete; spend not measured. Repository
-smoke policy aligned to 12 turns / 60s / USD 1 / USD 3 on 2026-07-24;
-policy-only; not an execution grant; no retry under recovery or alignment.
-Qwen Code remains eligible for later M3 qualification but not qualified;
-OpenCode and Grok Build blocked at M1. M2b completed 2026-07-23.*
+qualification smoke `m3q-20260724T054307Z-481ad1de` NO-GO: write-capable yolo
+verified TC-T01 rename but `qwen_exit=55` (60s wall); spend balance delta
+USD 0.00. Qwen Code remains eligible for later M3 qualification but not
+qualified; OpenCode and Grok Build blocked at M1. M2b completed 2026-07-23.*

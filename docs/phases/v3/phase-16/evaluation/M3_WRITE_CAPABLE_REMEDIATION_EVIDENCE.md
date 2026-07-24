@@ -2,9 +2,10 @@
 
 **Status:** **Complete (remediation only)** — static inspection of pinned Qwen
 Code v0.20.1 under the phase artifact root; repository policy/orchestrator/
-tests/docs updated for a **future** TC-T01 retry. **No** credential creation,
-reading, injection, or deletion; **no** Qwen/Node launch; **no** API calls;
-**no** egress reprobe; **no** qualification retry; **no** M4.
+tests/docs updated. Remediation itself did **not** create credentials or launch
+Qwen. A **later** authorized write-capable smoke
+(`m3q-20260724T054307Z-481ad1de`) used this lock and is recorded in
+`M3_QUALIFICATION_EVIDENCE.md` (**NO-GO** on exit 55 after verified rename).
 
 **Human decisions (this slice):**
 

@@ -13,8 +13,9 @@ used this locked argv/modelProviders contract and was **NO-GO** at Qwen max
 session turns under the then-locked 5-turn ceiling (`qwen_exit=53`). Latest
 session `m3q-20260724T035603Z-2c06e1a4` used the locked 12-turn contract with
 the same auth wiring and cleared the auth-type failure mode (`qwen_exit=0`
-plan-only); overall qualification still **NO-GO** on TC-T01 rename — see
-`M3_QUALIFICATION_EVIDENCE.md`.
+plan-only). Latest session `m3q-20260724T054307Z-481ad1de` used write-capable
+yolo + the same auth wiring; TC-T01 rename verified but **`qwen_exit=55`**
+(wall 60s); overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`.
 
 ---
 
