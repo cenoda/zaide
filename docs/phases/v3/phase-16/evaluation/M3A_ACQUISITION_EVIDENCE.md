@@ -413,5 +413,6 @@ M3 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Credentials and
 execution remain unauthorized until a separate grant. Repository smoke policy
 later aligned to 12 turns / 120s wall / USD 1 / USD 3 (policy-only; active wall
-after 2026-07-24 wall/reap remediation); not used under
+after 2026-07-24 wall/reap remediation), then **24** turns (2026-07-24 human
+decision; see `CAMPAIGN_LOCK.md`); not used under
 recovery; no qualification retry under recovery or alignment.*

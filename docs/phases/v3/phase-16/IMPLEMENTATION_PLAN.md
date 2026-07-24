@@ -27,9 +27,10 @@ write-capable **yolo**; locked **12** turns / **120s** wall; Qwen launched
 build/test 0) but **`qwen_exit=53`** (`FatalTurnLimitedError` 12-turn ceiling)
 → dual GO **NO-GO**; spend balance delta **USD 0.00**; fixed parent-shell reap
 recorded real inner exit **4** (not bash 127); post-exit finalization completed
-without hang. Candidate remains **not qualified**. Locked smoke ceilings
-(active): max **12** session turns, **120s** wall-time, **USD 1** smoke /
-**USD 3** cumulative. Comparative campaign rules remain unchanged.
+without hang. Candidate remains **not qualified**. **Active** locked smoke ceilings
+: max **24** session turns, **120s** wall-time, **USD 1** smoke /
+**USD 3** cumulative (24-turn ceiling authorized for future retry; historical
+12-turn session records preserved). Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -869,7 +870,6 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 (`evaluation/M3_DNS_BINDING_GATE.md`). **M3 write-capable remediation (2026-07-24)** locked `--approval-mode yolo`
 and post-exit reaping
 (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **M3 wall-time +
-**M3 wall-time +
 exit-reap remediation (2026-07-24)** raised active wall to **120s** and fixed
 same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).
 **M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn

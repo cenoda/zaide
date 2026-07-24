@@ -85,7 +85,7 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T060109Z-45dd1c5f`); design remains `M3_DNS_BINDING_GATE.md` |
 | Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance before/after); session balance delta USD 0.00 |
 | Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T060109Z-45dd1c5f` launched Qwen once under yolo (12 turns / 120s); TC-T01 rename verified; **`qwen_exit=53`** turn limit; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. **No second attempt** under that grant. |
-| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are **12** turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Latest smoke used **120s**. Historical session `m3q-20260724T054307Z-481ad1de` used **60s**. |
+| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are now **24** turns (raised 2026-07-24), **120s** wall-time, **USD 1** smoke / **USD 3** cumulative. The latest smoke `m3q-20260724T060109Z-45dd1c5f` executed under the then-locked **12**-turn ceiling / **120s** wall. Historical session `m3q-20260724T054307Z-481ad1de` used **60s** wall. See `CAMPAIGN_LOCK.md` §1.4 for active policy. |
 
 ---
 
@@ -110,7 +110,9 @@ allowlisted HTTPS and blocked non-allowlisted destinations
 (`M3_DNS_BINDING_GATE.md`). Repository smoke policy aligned to 12 turns /
 write-capable yolo / USD 1 / USD 3 on 2026-07-24; active wall later raised to
 **120s** with same-shell reap fix
-(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Latest qualification smoke
+(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **24-turn ceiling
+remediation (2026-07-24)** raised active policy to **24** turns for future
+retry; historical 12-turn session records preserved unchanged. Latest qualification smoke
 `m3q-20260724T060109Z-45dd1c5f` **NO-GO** (rename verified; exit 53 at locked
 12-turn ceiling under 120s wall). No credentials created under recovery;
 recovery did not launch the binary.
