@@ -60,12 +60,11 @@ accepted and closed** (2026-07-21, accepted baseline `67da1394`) — unified
 conversation workspace, schema v1 persistence, Agent Panel retired, F1 corrected,
 and closeout evidence accepted.
 [Phase 15](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is **complete and closed** (2026-07-22) — backend-neutral session/run/event foundation, legacy HTTP compatibility backend, and M4 closeout audit.
-[Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md) was **explicitly
-human-accepted on 2026-07-22** for controlled Native Harness evaluation
-infrastructure and campaign. **M1 was explicitly human-accepted on 2026-07-23**
-with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok
-Build blocked at M1; no candidate eligible for later M3 qualification; no
-comparative or single-candidate execution path eligible). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and deterministic repository-owned fake-candidate core; no production behavior, upstream artifact acquisition, network access, process launch, or real candidate execution). **M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence in `docs/phases/v3/phase-16/evaluation/ISOLATION_EVIDENCE.md`; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates. Native Harness production and ACP implementation have not started.
+[Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md) (controlled Native
+Harness evaluation) is **parked** after M0/M1/M2a/M2b; the Qwen observational
+path was reverted. Current Phase 16 work state is
+[`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
+Harness production and ACP implementation have not started.
 
 ## Philosophy
 
@@ -295,12 +294,11 @@ at `d4d1470` (67-row lifetime ownership map). **M13** is complete, and Refactor
 `a7d2887`. **Refactor 8** is complete and closed (M1 through M8; shell layout
 hosts extracted). **Phase 14 is accepted and closed** (2026-07-21, accepted
 baseline `67da1394`).
-[Phase 15 M0–M4](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) are complete
-and closed on 2026-07-22. [Phase 16 M0](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
-was explicitly human-accepted on 2026-07-22 for a controlled Native Harness
-evaluation infrastructure and campaign. **M1 was explicitly human-accepted on
-2026-07-23** (all three candidates blocked at M1; no M3-eligible candidate; no
-comparative or single-candidate execution path). **M2a was explicitly human-accepted on 2026-07-23** (standalone offline runner contract and fake-candidate core; no production behavior or upstream execution). **M2b was completed and accepted on 2026-07-23** (repository-owned isolation, lifecycle, mutation, cancellation, and cleanup evidence; no production behavior, DI, public types, upstream acquisition, network access, or real candidate execution). **M3 is blocked**, not next eligible: all candidates remain blocked by the M1 eligibility lock plus per-candidate provenance, security, credential/egress, and external-side-effect gates. Native Harness production and ACP implementation remain subject to their own gates.
+[Phase 15](docs/phases/v3/phase-15/IMPLEMENTATION_PLAN.md) is complete and
+closed on 2026-07-22. [Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
+is parked after controlled evaluation work; current state is
+[`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
+Harness production and ACP implementation remain later independent outcomes.
 
 ## Why "Zaide"
 

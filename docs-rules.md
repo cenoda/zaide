@@ -138,8 +138,8 @@ evidence, or commit mechanics.
 # Phase N: [Title] — Implementation Plan
 
 ## Pre-Implementation Verification
-- [ ] Library/tool understanding confirmed
-- [ ] Minimal proof-of-concept works
+- [ ] Live seams verified against current code
+- [ ] Minimal proof-of-concept works when the plan depends on an unproven API or library
 - [ ] Dependencies verified compatible
 
 ## Scope
@@ -361,8 +361,16 @@ Stop work and ask when:
 1. Architecture change — modifying interfaces or DI setup
 2. New dependency — adding a NuGet package not in `LIBRARIES.md`
 3. Phase boundary — about to start a new phase or refactor
-4. Build failure — can't fix in 2 attempts
-5. Convention conflict — existing code violates `CONVENTIONS.md`
+4. Failed verification that cannot be fixed without a material plan change
+5. External side effect — credentials, paid services, upstream acquisition or
+   execution, or network egress
+6. Destructive or irreversible action
+7. Convention conflict — existing code violates `CONVENTIONS.md`
+8. Open decision that materially changes the work
+
+Do not invent extra approval gates for routine milestone progression, status
+wording, or documentation bookkeeping. Do not require a separate human
+"understanding confirmation" before continuing planned work.
 
 ---
 
