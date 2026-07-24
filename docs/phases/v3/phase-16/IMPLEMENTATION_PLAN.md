@@ -13,16 +13,20 @@ ceiling). **Latest authorized retry session `m3q-20260724T035603Z-2c06e1a4`:**
 DNS/slirp/egress/tmpfs/auth argv **GO**; locked **12** turns / **60s** /
 remediated auth; Qwen launched **once** then **`qwen_exit=0`** in
 `--approval-mode plan` (plan-only; 0 lines changed); TC-T01 rename **not**
-verified (`FetchData` remains); spend **not measured** (post-balance
-unavailable after orchestrator external timeout). Candidate remains **not
-qualified**. **M3a recovery re-acquisition (2026-07-24)** under a separate
-acquisition-and-inspection-only grant recreated
+verified (`FetchData` remains); spend **owner-reported less than USD 0.01**
+(post-balance unavailable after orchestrator external timeout). Candidate
+remains **not qualified**. **M3 write-capable qualification remediation
+(2026-07-24)** (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`): future
+TC-T01 retry locks `--approval-mode yolo` (sandboxed write-capable; not
+plan-only); orchestrator post-Qwen reap/finalization hardened; **not** a
+qualification retry. **M3a recovery re-acquisition (2026-07-24)** under a
+separate acquisition-and-inspection-only grant recreated
 `/tmp/phase16-artifacts/phase-16/`, re-downloaded the pinned archive and
 `SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and re-extracted for
 static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1) before
-this retry. Locked smoke ceilings remain max **12** session turns, **60s**
-wall-time, **USD 1** smoke / **USD 3** cumulative. Comparative campaign rules
-remain unchanged.
+the plan-mode retry. Locked smoke ceilings remain max **12** session turns,
+**60s** wall-time, **USD 1** smoke / **USD 3** cumulative. Comparative campaign
+rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -264,8 +268,10 @@ succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof wer
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
 qualification smoke** (`m3q-20260724T035603Z-2c06e1a4`) **NO-GO**: Qwen exit 0
-in plan mode without verified TC-T01 rename; spend not measured; candidate still
-**not qualified**.
+in plan mode without verified TC-T01 rename; spend owner-reported less than
+USD 0.01; candidate still **not qualified**. **Write-capable remediation
+(2026-07-24)** locks `--approval-mode yolo` + post-exit reaping for a future
+retry only.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -859,5 +865,9 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 (`evaluation/M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
 (`m3q-20260724T035603Z-2c06e1a4`) executed DNS binding, locked 12-turn/60s
 auth argv, and one Qwen launch; **NO-GO** because plan-mode exit 0 left
-`FetchData` unchanged (no `RetrieveData`); spend not measured after orchestrator
-external timeout; candidate still **not qualified**.
+`FetchData` unchanged (no `RetrieveData`); spend owner-reported less than
+USD 0.01 after orchestrator external timeout; candidate still **not qualified**.
+**M3 write-capable remediation (2026-07-24)** locks `--approval-mode yolo` and
+hardens post-exit reaping for a future retry only
+(`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`); not a qualification
+retry.

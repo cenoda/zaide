@@ -20,6 +20,13 @@ PROMPT_FILE="$PHASE_ROOT/tuning/TC-T01/prompt-$SESSION_ID.md"
 SUBKEY_ONCE="${PHASE16_DEEPSEEK_SUBKEY_ONCE:-$CRED_DIR/subkey.once}"
 EXAMPLE_BLOCK_IP="93.184.216.34"
 STOP_REASON=""
+# Overall inner budget: DNS probes + Qwen wall (60s) + bounded verify + slack.
+# Must finish well under any external safety wrapper so post-balance always runs.
+INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-120}"
+# After qwen-result.env appears, allow this many extra seconds for verify then reap.
+POST_QWEN_VERIFY_BUDGET_SEC="${PHASE16_POST_QWEN_VERIFY_BUDGET_SEC:-45}"
+UNSHARE_PID=""
+SLIRP_PID=""
 
 log_step() {
   local step="$1"
@@ -29,11 +36,142 @@ log_step() {
 
 stop_with() {
   STOP_REASON="$1"
+  force_reap_children "stop_with"
   echo "STOP_REASON=$STOP_REASON" >> "$SESSION_ROOT/summary.env"
   echo "QUALIFICATION_VERDICT=NO-GO" >> "$SESSION_ROOT/summary.env"
   echo "session_end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SESSION_ROOT/summary.env"
   echo "M3 qualification STOP: $STOP_REASON" >&2
   exit 1
+}
+
+# Kill/reap unshare + slirp4netns so finalization (balance-after, workspace
+# verify, cleanup) always runs after Qwen exit or timeout. Idempotent.
+force_reap_children() {
+  local reason="${1:-unspecified}"
+  local reap_utc
+  reap_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  {
+    echo "reap_reason=$reason"
+    echo "reap_utc=$reap_utc"
+  } >> "$RUN_DIR/reap.env" 2>/dev/null || true
+
+  if [ -n "${SLIRP_PID:-}" ] && kill -0 "$SLIRP_PID" 2>/dev/null; then
+    kill -TERM "$SLIRP_PID" 2>/dev/null || true
+  fi
+  if [ -n "${UNSHARE_PID:-}" ] && kill -0 "$UNSHARE_PID" 2>/dev/null; then
+    # unshare --fork: signal the host-visible child (process group leader).
+    kill -TERM -- "-$UNSHARE_PID" 2>/dev/null || kill -TERM "$UNSHARE_PID" 2>/dev/null || true
+  fi
+  # Brief grace, then SIGKILL if still alive.
+  local _i
+  for _i in 1 2 3 4 5; do
+    local still=0
+    if [ -n "${UNSHARE_PID:-}" ] && kill -0 "$UNSHARE_PID" 2>/dev/null; then still=1; fi
+    if [ -n "${SLIRP_PID:-}" ] && kill -0 "$SLIRP_PID" 2>/dev/null; then still=1; fi
+    [ "$still" -eq 0 ] && break
+    sleep 0.2
+  done
+  if [ -n "${UNSHARE_PID:-}" ] && kill -0 "$UNSHARE_PID" 2>/dev/null; then
+    kill -KILL -- "-$UNSHARE_PID" 2>/dev/null || kill -KILL "$UNSHARE_PID" 2>/dev/null || true
+  fi
+  if [ -n "${SLIRP_PID:-}" ] && kill -0 "$SLIRP_PID" 2>/dev/null; then
+    kill -KILL "$SLIRP_PID" 2>/dev/null || true
+  fi
+  if [ -n "${UNSHARE_PID:-}" ]; then
+    wait "$UNSHARE_PID" 2>/dev/null || true
+  fi
+  if [ -n "${SLIRP_PID:-}" ]; then
+    wait "$SLIRP_PID" 2>/dev/null || true
+  fi
+}
+
+# Bounded wait for unshare: returns when process exits, or when qwen-result.env
+# is present and post-qwen budget elapses, or overall timeout. Never hangs.
+wait_inner_with_reap_budget() {
+  local start_epoch
+  start_epoch="$(date +%s)"
+  local qwen_seen_epoch=""
+  local status="running"
+  local exit_code=""
+
+  while true; do
+    local now elapsed
+    now="$(date +%s)"
+    elapsed=$((now - start_epoch))
+
+    if ! kill -0 "$UNSHARE_PID" 2>/dev/null; then
+      set +e
+      wait "$UNSHARE_PID"
+      exit_code=$?
+      set -e
+      status="exited"
+      break
+    fi
+
+    if [ -f "$RUN_DIR/qwen-result.env" ]; then
+      if [ -z "$qwen_seen_epoch" ]; then
+        qwen_seen_epoch="$now"
+        echo "qwen_result_observed_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$RUN_DIR/reap.env"
+      fi
+      local post=$((now - qwen_seen_epoch))
+      if [ "$post" -ge "$POST_QWEN_VERIFY_BUDGET_SEC" ]; then
+        status="post_qwen_budget_exceeded"
+        exit_code=124
+        force_reap_children "post_qwen_verify_budget"
+        break
+      fi
+    fi
+
+    if [ "$elapsed" -ge "$INNER_OVERALL_TIMEOUT_SEC" ]; then
+      status="overall_timeout"
+      exit_code=124
+      force_reap_children "overall_inner_timeout"
+      break
+    fi
+
+    sleep 0.25
+  done
+
+  # Ensure slirp is reaped even on clean unshare exit.
+  if [ -n "${SLIRP_PID:-}" ]; then
+    if kill -0 "$SLIRP_PID" 2>/dev/null; then
+      kill -TERM "$SLIRP_PID" 2>/dev/null || true
+      sleep 0.2
+      kill -KILL "$SLIRP_PID" 2>/dev/null || true
+    fi
+    wait "$SLIRP_PID" 2>/dev/null || true
+  fi
+
+  {
+    echo "inner_wait_status=$status"
+    echo "inner_wait_exit=${exit_code:-}"
+    echo "inner_wait_elapsed_sec=$(( $(date +%s) - start_epoch ))"
+    echo "inner_overall_timeout_sec=$INNER_OVERALL_TIMEOUT_SEC"
+    echo "post_qwen_verify_budget_sec=$POST_QWEN_VERIFY_BUDGET_SEC"
+  } >> "$RUN_DIR/reap.env"
+
+  # shellcheck disable=SC2034
+  INNER_WAIT_STATUS="$status"
+  echo "${exit_code:-1}"
+}
+
+record_workspace_tc_t01_result() {
+  local fetch_count retrieve_count verified
+  # Host-side check on the bound workspace (does not require inner process).
+  fetch_count="$(grep -R --include='*.cs' -F 'FetchData' "$WORKSPACE" 2>/dev/null | wc -l | tr -d ' ')"
+  retrieve_count="$(grep -R --include='*.cs' -F 'RetrieveData' "$WORKSPACE" 2>/dev/null | wc -l | tr -d ' ')"
+  verified=NO
+  if [ "${fetch_count:-0}" -eq 0 ] && [ "${retrieve_count:-0}" -gt 0 ]; then
+    verified=YES
+  fi
+  {
+    echo "fetchdata_count=${fetch_count:-0}"
+    echo "retrievedata_count=${retrieve_count:-0}"
+    echo "tc_t01_rename_verified=$verified"
+    echo "workspace_check_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  } > "$RUN_DIR/workspace-result.env"
+  cp "$RUN_DIR/workspace-result.env" "$SESSION_ROOT/workspace-result.env" 2>/dev/null || true
+  echo "$verified"
 }
 
 mkdir -p "$SESSION_ROOT" "$DNS_ROOT" "$PROBE_DIR" "$RUN_DIR" "$CRED_DIR" "$(dirname "$WORKSPACE")"
@@ -248,7 +386,7 @@ PROMPT_TEXT="$(tr -d '\r' < "$PHASE16_PROMPT_FILE")"
   echo "--openai-base-url"
   echo "https://api.deepseek.com"
   echo "--approval-mode"
-  echo "plan"
+  echo "yolo"
   echo "--model"
   echo "deepseek-v4-flash"
   echo "--output-format"
@@ -280,7 +418,7 @@ bwrap \
     -p "$PROMPT_TEXT" \
     --auth-type openai \
     --openai-base-url https://api.deepseek.com \
-    --approval-mode plan \
+    --approval-mode yolo \
     --model deepseek-v4-flash \
     --output-format json \
     --max-session-turns 12 \
@@ -288,6 +426,8 @@ bwrap \
   > "$PHASE16_RUN_DIR/qwen.stdout" 2> "$PHASE16_RUN_DIR/qwen.stderr"
 QWEN_EC=$?
 set -e
+# Write qwen-result.env immediately so the outer orchestrator can observe exit
+# even if post-Qwen verify hangs and is later reaped.
 echo "qwen_exit=$QWEN_EC" > "$PHASE16_RUN_DIR/qwen-result.env"
 if [ "$QWEN_EC" -ne 0 ]; then
   echo "qwen_launch_failed exit=$QWEN_EC" > "$PHASE16_RUN_DIR/fatal.txt"
@@ -298,10 +438,13 @@ for stream in qwen.stdout qwen.stderr; do
   sed -E 's/sk-[A-Za-z0-9_-]+/[REDACTED]/g' "$PHASE16_RUN_DIR/$stream" > "$PHASE16_RUN_DIR/${stream}.redacted" || true
 done
 
+# Bounded post-Qwen verify (host may also reap on budget; do not hang forever).
 set +e
-( cd "$PHASE16_WORKSPACE" && dotnet build Tuning.T01.slnx --no-incremental > "$PHASE16_RUN_DIR/verify-build.log" 2>&1 )
+timeout 40s bash -c 'cd "$0" && dotnet build Tuning.T01.slnx --no-incremental' "$PHASE16_WORKSPACE" \
+  > "$PHASE16_RUN_DIR/verify-build.log" 2>&1
 BUILD_EC=$?
-( cd "$PHASE16_WORKSPACE" && dotnet test Tuning.T01.slnx --no-build >> "$PHASE16_RUN_DIR/verify-build.log" 2>&1 )
+timeout 40s bash -c 'cd "$0" && dotnet test Tuning.T01.slnx --no-build' "$PHASE16_WORKSPACE" \
+  >> "$PHASE16_RUN_DIR/verify-build.log" 2>&1
 TEST_EC=$?
 set -e
 {
@@ -309,7 +452,7 @@ set -e
   echo "test_exit=$TEST_EC"
 } > "$PHASE16_RUN_DIR/verify-result.env"
 
-sleep 0.5
+sleep 0.2
 EOS
 chmod +x "$INNER"
 
@@ -326,6 +469,7 @@ export PHASE16_NFT_SCRIPT="$ROOT/Scripts/apply_allowlist_nft.sh"
 export DEEPSEEK_API_KEY
 
 rm -f /tmp/phase16-ns-pid /tmp/phase16-ns-ready
+: > "$RUN_DIR/reap.env"
 unshare --user --map-root-user --net --mount --fork --pid --mount-proc bash "$INNER" \
   >"$RUN_DIR/unshare.stdout" 2>"$RUN_DIR/unshare.stderr" &
 UNSHARE_PID=$!
@@ -364,13 +508,13 @@ done
 log_step "slirp4netns_attach" "$SLIRP_ATTACH_EC"
 [ "$SLIRP_ATTACH_EC" -eq 0 ] || stop_with "slirp4netns attach did not confirm tapfd handoff"
 
+# Bounded wait/reap: never hang after Qwen exit or overall budget.
 set +e
-wait "$UNSHARE_PID"
-INNER_EC=$?
-wait "$SLIRP_PID" 2>/dev/null || true
+INNER_EC="$(wait_inner_with_reap_budget)"
 set -e
 log_step "inner_qualification" "$INNER_EC"
 
+# --- Always-run finalization path (balance, workspace, cleanup) ---
 set +e
 curl -sS --max-time 15 \
   -H "Authorization: Bearer ${DEEPSEEK_API_KEY}" \
@@ -384,32 +528,77 @@ log_step "balance_after" "$BALANCE_AFTER_EC"
 {
   echo "revoke_attempted=console_required"
   echo "one_shot_file_deleted_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "balance_after_exit=$BALANCE_AFTER_EC"
 } >> "$KEY_LIFECYCLE"
 
 ORPHAN="NO"
-pgrep -af "qwen-code.*workspace-$SESSION_ID" >/dev/null 2>&1 && ORPHAN="YES" || true
-echo "orphan_detected=$ORPHAN" > "$RUN_DIR/cleanup.env"
+pgrep -af "qwen|bwrap|unshare" 2>/dev/null | grep -F "workspace-$SESSION_ID" >/dev/null 2>&1 && ORPHAN="YES" || true
+{
+  echo "orphan_detected=$ORPHAN"
+  echo "cleanup_status=reaped"
+  echo "cleanup_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$RUN_DIR/cleanup.env"
 rm -f /tmp/phase16-ns-pid /tmp/phase16-ns-ready
+
+# Host-side TC-T01 workspace result (independent of inner hang/reap).
+TC_T01_VERIFIED="$(record_workspace_tc_t01_result)"
+log_step "workspace_tc_t01_check" 0
 
 cp "$DNS_ROOT/consistency-check.env" "$SESSION_ROOT/dns-consistency.env"
 cp "$RUN_DIR/exact-argv.txt" "$SESSION_ROOT/exact-argv.txt" 2>/dev/null || true
 cp "$RUN_DIR/qwen-result.env" "$SESSION_ROOT/qwen-result.env" 2>/dev/null || true
 cp "$RUN_DIR/verify-result.env" "$SESSION_ROOT/verify-result.env" 2>/dev/null || true
 cp "$RUN_DIR/netns-session.env" "$SESSION_ROOT/netns-session.env" 2>/dev/null || true
+cp "$RUN_DIR/reap.env" "$SESSION_ROOT/reap.env" 2>/dev/null || true
+cp "$RUN_DIR/cleanup.env" "$SESSION_ROOT/cleanup.env" 2>/dev/null || true
+cp "$RUN_DIR/balance-after.json" "$SESSION_ROOT/balance-after.json" 2>/dev/null || true
+cp "$RUN_DIR/balance-before.json" "$SESSION_ROOT/balance-before.json" 2>/dev/null || true
 
 if [ -f "$RUN_DIR/fatal.txt" ]; then
   stop_with "$(cat "$RUN_DIR/fatal.txt")"
 fi
+
+QWEN_EXIT=""
 if [ -f "$RUN_DIR/qwen-result.env" ]; then
   QWEN_EXIT="$(awk -F= '$1=="qwen_exit"{print $2}' "$RUN_DIR/qwen-result.env")"
-  [ "${QWEN_EXIT:-1}" -eq 0 ] || stop_with "qwen launch failed exit=${QWEN_EXIT:-unknown}"
+else
+  stop_with "qwen_result_missing_after_inner_wait"
 fi
-[ "$INNER_EC" -eq 0 ] || stop_with "inner qualification failed exit=$INNER_EC"
+[ "${QWEN_EXIT:-1}" -eq 0 ] || stop_with "qwen launch failed exit=${QWEN_EXIT:-unknown}"
+
+# GO requires Qwen exit 0 AND verified TC-T01 workspace rename (write-capable path).
+if [ "$TC_T01_VERIFIED" != "YES" ]; then
+  echo "BINDING_VERDICT=GO" >> "$DNS_ROOT/summary.env"
+  {
+    echo "QUALIFICATION_VERDICT=NO-GO"
+    echo "STOP_REASON=tc_t01_workspace_change_not_verified"
+    echo "qwen_exit=$QWEN_EXIT"
+    echo "tc_t01_rename_verified=$TC_T01_VERIFIED"
+    echo "balance_after_exit=$BALANCE_AFTER_EC"
+    echo "session_end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "evidence_class=observational"
+    echo "comparative_claims=FORBIDDEN"
+  } >> "$SESSION_ROOT/summary.env"
+  log_step "qualification_verdict_nogo_workspace" 1
+  echo "M3 qualification NO-GO (workspace): $SESSION_ID" >&2
+  echo "SESSION_ID=$SESSION_ID"
+  exit 1
+fi
+
+# Inner non-zero after forced reap is acceptable if Qwen+workspace already OK,
+# but clean exit is preferred; record status and continue to GO only when verified.
+if [ "$INNER_EC" -ne 0 ] && [ "$INNER_EC" -ne 124 ]; then
+  # Unexpected inner failure after verified rename: still observational caution.
+  stop_with "inner qualification failed exit=$INNER_EC after verified workspace"
+fi
 
 echo "BINDING_VERDICT=GO" >> "$DNS_ROOT/summary.env"
 {
   echo "QUALIFICATION_VERDICT=GO"
   echo "STOP_REASON="
+  echo "qwen_exit=$QWEN_EXIT"
+  echo "tc_t01_rename_verified=YES"
+  echo "balance_after_exit=$BALANCE_AFTER_EC"
   echo "session_end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "evidence_class=observational"
   echo "comparative_claims=FORBIDDEN"

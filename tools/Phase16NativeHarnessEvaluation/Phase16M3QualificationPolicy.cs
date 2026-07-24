@@ -9,6 +9,14 @@ public static class Phase16M3QualificationPolicy
     public const string AllowedAuthType = "openai";
     public const string AllowedServiceUrl = "https://api.deepseek.com";
     public const string AllowedCredentialEnvVar = "DEEPSEEK_API_KEY";
+    /// <summary>
+    /// Write-capable non-interactive mode for mutation-required TC-T01 smoke.
+    /// Locked to <c>yolo</c> after static inspection of pinned Qwen Code v0.20.1
+    /// (<c>--approval-mode</c> choices include <c>yolo</c> = auto-approve all tools;
+    /// prefer <c>--approval-mode yolo</c> over boolean <c>--yolo</c>/<c>-y</c>).
+    /// Host Bubblewrap sandbox remains mandatory; this is not plan-only.
+    /// </summary>
+    public const string AllowedApprovalMode = "yolo";
     public const int MaxSessionTurns = 12;
     public const string MaxWallTime = "60s";
     public const decimal SmokeSpendCapUsd = 1m;
@@ -20,7 +28,7 @@ public static class Phase16M3QualificationPolicy
         [
             "--auth-type", AllowedAuthType,
             "--openai-base-url", AllowedServiceUrl,
-            "--approval-mode", "plan",
+            "--approval-mode", AllowedApprovalMode,
             "--model", AllowedModel,
             "--output-format", "json",
             "--max-session-turns", MaxSessionTurns.ToString(),

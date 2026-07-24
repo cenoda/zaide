@@ -15,14 +15,17 @@ in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
 2026-07-23** (`M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
 (`m3q-20260724T035603Z-2c06e1a4`) **NO-GO**: Qwen exit 0 in plan mode without
-verified TC-T01 rename; candidate still **not qualified**
-(`M3_QUALIFICATION_EVIDENCE.md`). **M3 auth-configuration remediation
-(2026-07-24)** locked argv + `modelProviders` wiring
-(`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`). **M3a recovery re-acquisition
-(2026-07-24)** after `/tmp` wipe re-verified hash and licenses and re-extracted
-for inspection only before the retry (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
-Locked smoke ceilings: max **12** session turns, **60s** wall-time, **USD 1**
-smoke / **USD 3** cumulative.
+verified TC-T01 rename; spend owner-reported less than USD 0.01; candidate
+still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3
+auth-configuration remediation (2026-07-24)** locked auth argv +
+`modelProviders` wiring (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`). **M3
+write-capable remediation (2026-07-24)** locks `--approval-mode yolo` and
+orchestrator post-exit reaping for a future retry only
+(`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`); not a qualification retry. **M3a
+recovery re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and
+licenses and re-extracted for inspection only before the plan-mode retry
+(`M3A_ACQUISITION_EVIDENCE.md` §1.1). Locked smoke ceilings: max **12** session
+turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -189,7 +192,7 @@ quality claims.
 | Field | State after M3a (2026-07-23) | Resolution gate / notes |
 |---|---|---|
 | **Post-extract executable path (A-02)** | **`RESOLVED`:** `qwen-code/bin/qwen` (shell launcher → bundled `node/bin/node` + `lib/cli-entry.js`) | Static inspection only; binary not executed |
-| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 12`, `60s`, plan mode, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6 and policy alignment 2026-07-24 |
+| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 12`, `60s`, `--approval-mode yolo` write-capable, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6 and `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` |
 | **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
 | **Protocol / SDK** | Partially observed | DeepSeek preset uses OpenAI-compatible protocol; not a separate product pin |
 | **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |
@@ -206,18 +209,19 @@ from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
 `m3q-20260724T035603Z-2c06e1a4` **NO-GO** (Qwen `qwen_exit=0` in plan mode;
-TC-T01 incomplete — `FetchData` remains; spend not measured) — see
-`M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not qualified**.
-Comparative claims remain forbidden. **No second attempt** under that grant.
+TC-T01 incomplete — `FetchData` remains; spend owner-reported less than
+USD 0.01) — see `M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not
+qualified**. Comparative claims remain forbidden. **No second attempt** under
+that grant.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
 **Re-qualification still requires:** new dedicated sub-key (C-04); separate M3
-qualification grant; owner decision on plan-mode vs mutation-required TC-T01 GO
-criteria; isolation re-check; DNS binding at launch (A-14); egress allowlist
-reuse; verified TC-T01 workspace change; optionally orchestrator post-exit
-reap hardening.
+qualification grant; use locked write-capable `--approval-mode yolo` + reap
+fix (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`); isolation re-check; DNS
+binding at launch (A-14); egress allowlist reuse; verified TC-T01 workspace
+change for GO.
 
 **Exclusion rules (locked while not qualified at M3):**
 

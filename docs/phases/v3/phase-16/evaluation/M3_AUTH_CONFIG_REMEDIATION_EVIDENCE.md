@@ -57,7 +57,7 @@ recorded separately. Policy-locked tail:
 ```text
 --auth-type openai
 --openai-base-url https://api.deepseek.com
---approval-mode plan
+--approval-mode yolo
 --model deepseek-v4-flash
 --output-format json
 --max-session-turns 12
@@ -69,6 +69,12 @@ recorded separately. Policy-locked tail:
 (human-approved 2026-07-24 policy alignment; **not** a qualification retry).
 **60s** wall-time and **USD 1** smoke / **USD 3** cumulative caps remain
 unchanged. Environment allowlist (unchanged): **`DEEPSEEK_API_KEY` only**.
+
+**Approval-mode note:** this auth remediation originally shipped with
+`--approval-mode plan`. **Write-capable remediation (2026-07-24)** replaced
+plan-only with `--approval-mode yolo` for mutation-required TC-T01 future
+retry (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). Auth-type / base-url /
+modelProviders contract is unchanged.
 
 ### 2.2 Locked workspace modelProviders wiring (fixture)
 

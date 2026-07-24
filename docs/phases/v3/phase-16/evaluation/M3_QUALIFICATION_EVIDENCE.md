@@ -258,14 +258,15 @@ qualification technical result: TC-T01 was already unverified.
 | Metric | Value |
 |---|---|
 | Balance before | USD **3.98** |
-| Balance after | **Unavailable** (orchestrator timed out before post-balance; key file already deleted) |
+| Balance after | **Unavailable** from orchestrator (timed out before post-balance; key file already deleted) |
 | Qwen usage object | input **160876**, output **3044**, cache_read **128640**, total **163920**; no USD field in result |
-| Session smoke spend (USD) | **Not measured** (cannot invent delta without post-balance or provider console) |
-| Phase 16 cumulative spend (ledger) | Prior measured **USD 0.00**; this session’s USD delta **unproven** (`campaign-spend.env` notes `UNKNOWN_SESSION_DELTA`) |
-| M3 smoke cap (USD 1) / campaign cap (USD 3) | **Not proven breached** from available measurements; exact delta unknown without provider console |
+| Session smoke spend (USD) | **less than USD 0.01** — **owner-reported** for session `m3q-20260724T035603Z-2c06e1a4` (not a more precise invented figure; post-balance unavailable from hung orchestrator) |
+| Phase 16 cumulative spend (ledger) | Prior measured **USD 0.00**; this session owner-reported **less than USD 0.01** (no finer ledger amount) |
+| M3 smoke cap (USD 1) / campaign cap (USD 3) | **Not breached** at owner-reported precision (less than USD 0.01 ≪ USD 1 / USD 3) |
 
-Spend basis: pre-balance + token counts only. No credential material recorded.
-Operator must not invent a spend figure.
+Spend basis: pre-balance + token counts + **project-owner confirmation** that
+session cost was **less than USD 0.01**. Do not invent a more precise USD
+value. No credential material recorded.
 
 ---
 
@@ -283,12 +284,16 @@ measured** (post-balance unavailable).
 Candidate remains **`eligible for later M3 qualification`** but **not
 qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
-### 9.2 Future retry requirements (out of scope)
+### 9.2 Future retry requirements (out of scope for this evidence file)
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Owner decision on approval-mode vs mutation-required GO criteria for TC-T01.
-4. Optionally harden orchestrator wait/reap and durable evidence paths.
+3. **Owner decision recorded (2026-07-24 write-capable remediation):** future
+   TC-T01 retry may use locked sandboxed write-capable mode
+   `--approval-mode yolo` (not plan-only); GO still requires verified TC-T01
+   rename — see `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`.
+4. Orchestrator post-child reaping/finalization hardened in the same remediation
+   slice (not executed as a retry under this grant).
 5. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 6. **No second attempt** was authorized or performed under this grant.
 
@@ -299,6 +304,8 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 - `M3_DNS_BINDING_GATE.md` — binding rules executed for session above
 - `M3A_ACQUISITION_EVIDENCE.md` — pinned binary; auth support surface
 - `M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md` — argv/modelProviders contract used
+- `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` — write-capable argv + reap fix
+  (remediation only; not a retry)
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture
 - `TASK_CORPUS.md` — TC-T01 definition
 - `IMPLEMENTATION_PLAN.md` — phase status

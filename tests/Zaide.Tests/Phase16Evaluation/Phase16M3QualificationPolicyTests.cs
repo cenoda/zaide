@@ -16,6 +16,10 @@ public sealed class Phase16M3QualificationPolicyTests
         Assert.Equal(
             "https://api.deepseek.com",
             argv[Array.IndexOf(argv, "--openai-base-url") + 1]);
+        Assert.Equal(
+            Phase16M3QualificationPolicy.AllowedApprovalMode,
+            argv[Array.IndexOf(argv, "--approval-mode") + 1]);
+        Assert.Equal("yolo", argv[Array.IndexOf(argv, "--approval-mode") + 1]);
         Assert.Equal("deepseek-v4-flash", argv[Array.IndexOf(argv, "--model") + 1]);
         Assert.Equal(
             Phase16M3QualificationPolicy.MaxSessionTurns.ToString(),
@@ -27,6 +31,9 @@ public sealed class Phase16M3QualificationPolicyTests
         Assert.Equal("60s", Phase16M3QualificationPolicy.MaxWallTime);
         Assert.Equal(1m, Phase16M3QualificationPolicy.SmokeSpendCapUsd);
         Assert.Equal(3m, Phase16M3QualificationPolicy.CampaignSpendCapUsd);
+        Assert.DoesNotContain("--yolo", argv);
+        Assert.DoesNotContain("-y", argv);
+        Assert.DoesNotContain("plan", argv);
     }
 
     [Fact]
@@ -62,10 +69,23 @@ public sealed class Phase16M3QualificationPolicyTests
     }
 
     [Fact]
+    public void ValidateSmokeArgvOrThrow_RejectsLegacyPlanApprovalMode()
+    {
+        var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail()
+            .Select((value, index) => index == 5 ? "plan" : value)
+            .ToArray();
+
+        var ex = Assert.Throws<ManifestValidationException>(() =>
+            Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(argv));
+        Assert.Contains("index 5", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("expected 'yolo'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ValidateSmokeArgvOrThrow_RejectsMismatchedApprovalMode()
     {
         var argv = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail()
-            .Select((value, index) => index == 5 ? "yolo" : value)
+            .Select((value, index) => index == 5 ? "auto-edit" : value)
             .ToArray();
 
         var ex = Assert.Throws<ManifestValidationException>(() =>

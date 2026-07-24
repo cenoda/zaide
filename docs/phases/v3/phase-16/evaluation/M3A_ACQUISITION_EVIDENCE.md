@@ -254,7 +254,7 @@ openai
 --openai-base-url
 https://api.deepseek.com
 --approval-mode
-plan
+yolo
 --model
 deepseek-v4-flash
 --output-format
@@ -274,6 +274,11 @@ path under A-07 requires `--auth-type openai`, `--openai-base-url
 https://api.deepseek.com`, and workspace `modelProviders.openai[]` with
 `envKey: DEEPSEEK_API_KEY` for `deepseek-v4-flash`
 (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`).
+
+**Write-capable remediation (2026-07-24, static only; not executed):** locked
+approval mode for mutation-required TC-T01 is `--approval-mode yolo` (not
+plan-only; not boolean `--yolo` combined with `--approval-mode`). See
+`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`.
 
 ### 6.3 Credential / provider surface observed (static; not injected)
 
