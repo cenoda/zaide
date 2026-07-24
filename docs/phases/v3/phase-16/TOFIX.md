@@ -15,6 +15,6 @@ block planning an independent production Native Harness or ACP phase.
 
 ## Next task
 
-Prepare the Phase 17 implementation plan for the agent action control plane and
-workspace-mutation boundary. Do not resume candidate qualification under Phase
-16 unless a future roadmap decision assigns that work again.
+Phase 17 M0 was accepted on 2026-07-24. Continue with Phase 17 M1 as tracked in
+`../phase-17/TOFIX.md`. Do not resume candidate qualification under Phase 16
+unless a future roadmap decision assigns that work again.

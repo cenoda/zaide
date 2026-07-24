@@ -42,7 +42,10 @@ projection owner, and M4 closeout audit). **Phase 16** (controlled Native
 Harness evaluation) is **parked** after M0/M1/M2a/M2b; current work state is
 [`docs/phases/v3/phase-16/TOFIX.md`](../phases/v3/phase-16/TOFIX.md). Native
 Harness production and ACP remain later independent outcomes. Non-C# assets
-remain outside the root-admission ratchet.
+remain outside the root-admission ratchet. **Phase 17 M0 is accepted
+(2026-07-24)** at
+[`docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-17/IMPLEMENTATION_PLAN.md);
+M1 action contracts and deterministic state are the current bounded task.
 
 ---
 
