@@ -74,11 +74,11 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a recovery re-acquisition (2026-07-24) | **Complete** under separate acquisition-and-inspection-only grant after `/tmp` wipe (`M3A_ACQUISITION_EVIDENCE.md` §1.1); pinned archive + SHA256SUMS re-downloaded; SHA-256 match; licenses re-scanned; extract for static inspection only; binary/Node **not** launched; **no** qualification retry |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260724T054307Z-481ad1de` — DNS/slirp/egress/tmpfs/auth argv **GO**; write-capable `--approval-mode yolo`; Qwen **once** under locked **12** turns / **60s**; TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0); **`qwen_exit=55`** (`FatalBudgetExceededError` wall 60s) → dual GO fails; spend balance delta **USD 0.00** (3.97→3.97); post-exit reap/finalization completed. Prior sessions: plan-only exit 0 without rename; credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn ceiling |
+| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260724T060109Z-45dd1c5f` — DNS/slirp/egress/tmpfs/auth argv **GO**; write-capable `--approval-mode yolo`; Qwen **once** under locked **12** turns / **120s**; TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0); **`qwen_exit=53`** (`FatalTurnLimitedError` 12-turn ceiling) → dual GO fails; spend balance delta **USD 0.00** (3.96→3.96); fixed parent-shell reap recorded real inner exit **4** (not bash 127); post-exit finalization completed. Prior: `m3q-20260724T054307Z-481ad1de` rename verified / exit 55 at historical 60s wall; plan-only; credential; slirp; resolv; auth-type; max-turns under 5-turn ceiling |
 | M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; auth-type failure mode remains cleared |
 | M3 write-capable remediation (2026-07-24) | **Complete** (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`): locked `--approval-mode yolo` + post-exit reap/finalization used by latest smoke; remediation itself was not a qualification retry |
-| M3 wall-time + exit-reap remediation (2026-07-24) | **Complete** (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`): active lock **`--max-wall-time 120s`** (was 60s); same-shell wait/reap so inner exit is not bash **127**; not a qualification retry |
-| Locked smoke turn / time / spend ceilings | `--max-session-turns 12`, `--max-wall-time 120s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Historical session `m3q-20260724T054307Z-481ad1de` used **60s** (unchanged record) |
+| M3 wall-time + exit-reap remediation (2026-07-24) | **Complete** (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`): active lock **`--max-wall-time 120s`** (was 60s); same-shell wait/reap so inner exit is not bash **127**; exercised by latest smoke (`inner_wait_exit=4`); not a qualification retry |
+| Locked smoke turn / time / spend ceilings | `--max-session-turns 12`, `--max-wall-time 120s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Latest smoke used **120s**. Historical session `m3q-20260724T054307Z-481ad1de` used **60s** (unchanged record) |
 | Locked smoke approval mode | `--approval-mode yolo` (auto-approve all tools; host Bubblewrap required). Used by latest write-capable smoke |
 | Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; keep write-capable lock + **120s** wall + fixed reap path; GO only on exit 0 **and** verified TC-T01 rename |
 
@@ -216,9 +216,8 @@ available for independent reconciliation.
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
 amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
 completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
-qualification smoke session `m3q-20260724T054307Z-481ad1de` NO-GO: write-capable
-yolo path verified TC-T01 rename but Qwen exit 55 (historical 60s wall); spend
-balance delta USD 0.00; post-exit finalization completed. Active smoke ceiling
-remediated to **120s** wall + fixed same-shell reap
-(`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Candidate remains not
-qualified. No second attempt under that grant. No M4.*
+qualification smoke session `m3q-20260724T060109Z-45dd1c5f` NO-GO: write-capable
+yolo path under locked **12** turns / **120s** wall verified TC-T01 rename but
+Qwen exit 53 (turn limit); spend balance delta USD 0.00; fixed parent-shell
+reap recorded real inner exit 4; post-exit finalization completed. Candidate
+remains not qualified. No second attempt under that grant. No M4.*

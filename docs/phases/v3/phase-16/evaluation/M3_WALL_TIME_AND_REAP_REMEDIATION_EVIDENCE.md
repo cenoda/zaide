@@ -135,5 +135,15 @@ Qualification smoke execution remains **out of scope**.
 
 ---
 
-*M3 wall-time (120s) and exit-reaping remediation — repository wiring only; not
-a qualification retry.*
+**Post-remediation exercise (separate grant):** session
+`m3q-20260724T060109Z-45dd1c5f` ran with locked **120s** wall argv and the fixed
+parent-shell reap path. Ledger recorded `inner_wait_status=exited` /
+`inner_wait_exit=4` (real unshare/inner exit after `qwen_exit=53`) without
+synthetic bash **127**. Qualification overall remained **NO-GO** on turn limit
+after verified rename (`M3_QUALIFICATION_EVIDENCE.md`).
+
+---
+
+*M3 wall-time (120s) and exit-reaping remediation — repository wiring complete;
+later exercised by session `m3q-20260724T060109Z-45dd1c5f` (not a second
+remediation attempt).*

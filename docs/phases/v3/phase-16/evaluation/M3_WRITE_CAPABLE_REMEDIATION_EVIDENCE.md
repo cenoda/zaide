@@ -3,9 +3,11 @@
 **Status:** **Complete (remediation only)** — static inspection of pinned Qwen
 Code v0.20.1 under the phase artifact root; repository policy/orchestrator/
 tests/docs updated. Remediation itself did **not** create credentials or launch
-Qwen. A **later** authorized write-capable smoke
-(`m3q-20260724T054307Z-481ad1de`) used this lock and is recorded in
-`M3_QUALIFICATION_EVIDENCE.md` (**NO-GO** on exit 55 after verified rename).
+Qwen. Later authorized write-capable smokes used this lock and are recorded in
+`M3_QUALIFICATION_EVIDENCE.md`: `m3q-20260724T054307Z-481ad1de` (**NO-GO** on
+exit 55 / 60s wall after verified rename); latest
+`m3q-20260724T060109Z-45dd1c5f` (**NO-GO** on exit 53 / 12-turn ceiling after
+verified rename under **120s** wall).
 
 **Human decisions (this slice):**
 

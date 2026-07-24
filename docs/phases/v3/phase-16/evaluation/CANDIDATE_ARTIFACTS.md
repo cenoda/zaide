@@ -16,17 +16,18 @@ in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 2026-07-23** (`M3_DNS_BINDING_GATE.md`). **M3 auth-configuration / write-capable remediations (2026-07-24)** locked auth
 argv + `modelProviders` wiring and `--approval-mode yolo` with post-exit
 reaping (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`,
-`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **Latest M3 qualification smoke**
-(`m3q-20260724T054307Z-481ad1de`) **NO-GO**: write-capable yolo verified TC-T01
-rename but `qwen_exit=55` (historical 60s wall); spend balance delta USD 0.00;
-candidate still **not qualified** (`M3_QUALIFICATION_EVIDENCE.md`). **M3
-wall-time + exit-reap remediation (2026-07-24)** raised the active smoke wall
-lock to **120s** and fixed same-shell wait/reap
+`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **M3 wall-time + exit-reap
+remediation (2026-07-24)** raised the active smoke wall lock to **120s** and
+fixed same-shell wait/reap
 (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **M3a recovery
 re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and licenses
 and re-extracted for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
-Locked smoke ceilings (active): max **12** session turns, **120s** wall-time,
-**USD 1** smoke / **USD 3** cumulative.
+**Latest M3 qualification smoke** (`m3q-20260724T060109Z-45dd1c5f`) **NO-GO**:
+write-capable yolo under locked **12** turns / **120s** wall verified TC-T01
+rename but `qwen_exit=53` (turn limit); spend balance delta USD 0.00; fixed
+parent-shell reap recorded real inner exit 4; candidate still **not qualified**
+(`M3_QUALIFICATION_EVIDENCE.md`). Locked smoke ceilings (active): max **12**
+session turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -209,10 +210,11 @@ SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
-`m3q-20260724T054307Z-481ad1de` **NO-GO** (write-capable yolo; TC-T01 rename
-verified; `qwen_exit=55` wall 60s; spend balance delta USD 0.00) — see
-`M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not qualified**.
-Comparative claims remain forbidden. **No second attempt** under that grant.
+`m3q-20260724T060109Z-45dd1c5f` **NO-GO** (write-capable yolo; **12** turns /
+**120s** wall; TC-T01 rename verified; `qwen_exit=53` turn limit; spend balance
+delta USD 0.00; real inner exit 4) — see `M3_QUALIFICATION_EVIDENCE.md`.
+Candidate remains **not qualified**. Comparative claims remain forbidden.
+**No second attempt** under that grant.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
@@ -468,7 +470,8 @@ completed 2026-07-23 (artifact under phase root only; binary not launched at M3a
 recovery re-acquisition 2026-07-24 after `/tmp` wipe (inspection only). M3
 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
-qualification smoke `m3q-20260724T054307Z-481ad1de` NO-GO: write-capable yolo
-verified TC-T01 rename but `qwen_exit=55` (60s wall); spend balance delta
-USD 0.00. Qwen Code remains eligible for later M3 qualification but not
-qualified; OpenCode and Grok Build blocked at M1. M2b completed 2026-07-23.*
+qualification smoke `m3q-20260724T060109Z-45dd1c5f` NO-GO: write-capable yolo
+under 12 turns / 120s wall verified TC-T01 rename but `qwen_exit=53` (turn
+limit); spend balance delta USD 0.00; fixed parent-shell reap real inner exit
+4. Qwen Code remains eligible for later M3 qualification but not qualified;
+OpenCode and Grok Build blocked at M1. M2b completed 2026-07-23.*
