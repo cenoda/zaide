@@ -8,9 +8,13 @@ qualification retry.
 
 **Prior qualification at remediation time:** session
 `m3q-20260723T151512Z-6996af5f` was **NO-GO** at auth-type. **Post-remediation
-qualification (separate grant):** session `m3q-20260723T164355Z-c421b379`
+qualifications (separate grants):** session `m3q-20260723T164355Z-c421b379`
 used this locked argv/modelProviders contract and was **NO-GO** at Qwen max
-session turns (`qwen_exit=53`); see `M3_QUALIFICATION_EVIDENCE.md`.
+session turns under the then-locked 5-turn ceiling (`qwen_exit=53`). Latest
+session `m3q-20260724T035603Z-2c06e1a4` used the locked 12-turn contract with
+the same auth wiring and cleared the auth-type failure mode (`qwen_exit=0`
+plan-only); overall qualification still **NO-GO** on TC-T01 rename — see
+`M3_QUALIFICATION_EVIDENCE.md`.
 
 ---
 

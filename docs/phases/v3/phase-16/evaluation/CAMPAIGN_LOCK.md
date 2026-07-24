@@ -74,10 +74,10 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a recovery re-acquisition (2026-07-24) | **Complete** under separate acquisition-and-inspection-only grant after `/tmp` wipe (`M3A_ACQUISITION_EVIDENCE.md` §1.1); pinned archive + SHA256SUMS re-downloaded; SHA-256 match; licenses re-scanned; extract for static inspection only; binary/Node **not** launched; **no** qualification retry |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260723T164355Z-c421b379` — DNS/slirp/egress/tmpfs/auth argv **GO**; Qwen **once** then **`qwen_exit=53`** (`FatalTurnLimitedError` max turns); TC-T01 incomplete (`FetchData` remains); spend **not measured** (post-balance hung; `/tmp` artifacts lost on reboot). Prior sessions: credential; slirp host-PID; resolv bind; auth-type missing |
-| M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; cleared prior auth-type failure mode |
-| Locked smoke turn / time / spend ceilings (policy alignment 2026-07-24; **not an execution grant**) | `--max-session-turns 12`, `--max-wall-time 60s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Applied to repository policy + orchestrator argv surfaces only; **no** qualification retry executed under this alignment |
-| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; uses the locked 12-turn / 60s / USD 1 / USD 3 ceilings; address orchestrator post-exit hang/reap if re-authorized |
+| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260724T035603Z-2c06e1a4` — DNS/slirp/egress/tmpfs/auth argv **GO**; Qwen **once** under locked **12** turns / **60s** with remediated auth; **`qwen_exit=0`** in `--approval-mode plan` (plan-only; 0 lines changed); TC-T01 incomplete (`FetchData` count 11; `RetrieveData` count 0); spend **not measured** (post-balance unavailable after orchestrator external timeout). Prior sessions: credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn ceiling |
+| M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; auth-type failure mode remains cleared |
+| Locked smoke turn / time / spend ceilings | `--max-session-turns 12`, `--max-wall-time 60s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Used by session `m3q-20260724T035603Z-2c06e1a4` |
+| Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; resolve plan-mode vs mutation-required TC-T01 GO criteria; address orchestrator post-exit hang/reap |
 
 Full decision record: `M1_AMENDMENT_QWEN_OBSERVATIONAL.md`.
 
@@ -213,9 +213,7 @@ available for independent reconciliation.
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
 amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
 completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
-qualification smoke session `m3q-20260723T164355Z-c421b379` NO-GO at Qwen
-max-session-turns (`qwen_exit=53` under then-locked 5-turn ceiling); TC-T01
-incomplete; spend not measured. M3a artifact tree re-acquired 2026-07-24 after
-`/tmp` wipe (inspection only; no retry). Repository smoke policy aligned to
-12 turns / 60s / USD 1 / USD 3 on 2026-07-24; policy-only; not an execution
-grant; no qualification retry under alignment.*
+qualification smoke session `m3q-20260724T035603Z-2c06e1a4` NO-GO: Qwen exit 0
+in plan mode without verified TC-T01 rename; spend not measured; orchestrator
+external timeout after launch. Candidate remains not qualified. No second
+attempt under that grant. No M4.*

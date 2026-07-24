@@ -14,16 +14,15 @@ in-archive licenses scanned, A-02/A-03 resolved from static inspection.
 **Upstream binary was not launched.** **M3 egress proof was completed on
 2026-07-23** (`M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS binding gate defined
 2026-07-23** (`M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
-(`m3q-20260723T164355Z-c421b379`) **NO-GO** at Qwen max-session-turns
-(`qwen_exit=53`); candidate still **not qualified**
+(`m3q-20260724T035603Z-2c06e1a4`) **NO-GO**: Qwen exit 0 in plan mode without
+verified TC-T01 rename; candidate still **not qualified**
 (`M3_QUALIFICATION_EVIDENCE.md`). **M3 auth-configuration remediation
 (2026-07-24)** locked argv + `modelProviders` wiring
 (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`). **M3a recovery re-acquisition
 (2026-07-24)** after `/tmp` wipe re-verified hash and licenses and re-extracted
-for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1); **not** a
-qualification retry. **12-turn policy alignment (2026-07-24):** locked smoke
-ceilings are max **12** session turns, **60s** wall-time, **USD 1** smoke /
-**USD 3** cumulative; **not** an execution grant; no retry under alignment.
+for inspection only before the retry (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
+Locked smoke ceilings: max **12** session turns, **60s** wall-time, **USD 1**
+smoke / **USD 3** cumulative.
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -206,20 +205,19 @@ SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
-`m3q-20260723T164355Z-c421b379` **NO-GO** (Qwen `qwen_exit=53` max session
-turns; TC-T01 incomplete; spend not measured) — see
+`m3q-20260724T035603Z-2c06e1a4` **NO-GO** (Qwen `qwen_exit=0` in plan mode;
+TC-T01 incomplete — `FetchData` remains; spend not measured) — see
 `M3_QUALIFICATION_EVIDENCE.md`. Candidate remains **not qualified**.
-Authenticated model spend and comparative claims remain unauthorized. **No
-retry** under the 2026-07-24 M3a recovery grant.
+Comparative claims remain forbidden. **No second attempt** under that grant.
 
 **Completed under M3 egress-proof grant (2026-07-23):** provider-restricted
 egress for `api.deepseek.com:443` only (`M3_EGRESS_PROOF_EVIDENCE.md`).
 
 **Re-qualification still requires:** new dedicated sub-key (C-04); separate M3
-qualification grant; owner-locked smoke argv including verified non-interactive
-auth path under A-07 (`--max-session-turns 12`, 60s wall-time, USD 1/USD 3
-caps — policy aligned 2026-07-24); isolation re-check; DNS binding at launch
-(A-14); egress allowlist reuse; verified TC-T01 workspace change.
+qualification grant; owner decision on plan-mode vs mutation-required TC-T01 GO
+criteria; isolation re-check; DNS binding at launch (A-14); egress allowlist
+reuse; verified TC-T01 workspace change; optionally orchestrator post-exit
+reap hardening.
 
 **Exclusion rules (locked while not qualified at M3):**
 

@@ -81,11 +81,11 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | Download/extract pinned Qwen Code archive | M3a acquisition-and-inspection grant | **Done** under M3a grant (2026-07-23); **re-done** under recovery grant (2026-07-24) after `/tmp` wipe — inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1) |
 | Install/configure egress tooling (`slirp4netns`, `pasta`, `socat`, or equivalent) | C-01(b) host-tooling grant | **Done** under egress-proof grant: inventory only; **no package install** (`slirp4netns`/`socat` already present); ephemeral netns config only |
 | Run egress proof (allowed + blocked destinations) | Egress proof grant | **Done** — **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
-| Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Not authorized; **GO to authorize** when human grants; still **NO-GO** to perform |
-| DNS binding execution at launch (A-14) | Credential-and-execution grant | **Design GO** (`M3_DNS_BINDING_GATE.md`); **execution NO-GO** until grant |
-| Provider API calls | Execution grant + cost tracking | Not authorized |
-| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260723T164355Z-c421b379` launched Qwen once then **NO-GO** (`qwen_exit=53` max session turns); TC-T01 incomplete; see `M3_QUALIFICATION_EVIDENCE.md`. **No retry** under 2026-07-24 M3a recovery. |
-| Locked max-session-turns / wall-time / spend ceilings (policy only) | Separate qualification grant if retry is re-authorized | Policy alignment **2026-07-24:** locked smoke ceilings are **12** turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative. **Not** an execution grant; no qualification retry under alignment. |
+| Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Performed under latest qualification grant only via one-shot file → `DEEPSEEK_API_KEY`; consumed; value not disclosed |
+| DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T035603Z-2c06e1a4`); design remains `M3_DNS_BINDING_GATE.md` |
+| Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance pre-check); post-balance unavailable |
+| Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T035603Z-2c06e1a4` launched Qwen once; **`qwen_exit=0`** plan-only; TC-T01 incomplete; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. **No second attempt** under that grant. |
+| Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Locked smoke ceilings are **12** turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative; used by session `m3q-20260724T035603Z-2c06e1a4`. |
 
 ---
 

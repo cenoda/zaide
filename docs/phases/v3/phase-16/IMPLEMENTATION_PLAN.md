@@ -8,23 +8,21 @@ pre-launch stop conditions. **M3 auth-configuration remediation completed
 `--auth-type openai`, `--openai-base-url https://api.deepseek.com`, and
 workspace `modelProviders` `DEEPSEEK_API_KEY` wiring. **M3 qualification smoke**
 (`evaluation/M3_QUALIFICATION_EVIDENCE.md`): prior 2026-07-23 attempts **NO-GO**
-(credential; slirp host-PID; resolv bind; auth-type). **Authorized post-remediation
-session `m3q-20260723T164355Z-c421b379`:** DNS/slirp/egress/tmpfs/auth argv **GO**;
-Qwen launched **once** then **NO-GO** (`qwen_exit=53`, max session turns);
-TC-T01 rename **not** verified; spend **not measured** (orchestrator hung before
-post-balance; `/tmp` artifacts lost on host reboot). Candidate remains **not
+(credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
+ceiling). **Latest authorized retry session `m3q-20260724T035603Z-2c06e1a4`:**
+DNS/slirp/egress/tmpfs/auth argv **GO**; locked **12** turns / **60s** /
+remediated auth; Qwen launched **once** then **`qwen_exit=0`** in
+`--approval-mode plan` (plan-only; 0 lines changed); TC-T01 rename **not**
+verified (`FetchData` remains); spend **not measured** (post-balance
+unavailable after orchestrator external timeout). Candidate remains **not
 qualified**. **M3a recovery re-acquisition (2026-07-24)** under a separate
 acquisition-and-inspection-only grant recreated
 `/tmp/phase16-artifacts/phase-16/`, re-downloaded the pinned archive and
 `SHA256SUMS`, re-verified SHA-256, re-scanned licenses, and re-extracted for
-static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1); **no**
-Qwen/Node launch, **no** credentials, **no** API calls, **no** qualification
-retry. **12-turn policy alignment (2026-07-24; not an execution grant):**
-repository qualification policy and orchestrator argv locked to max **12**
-session turns, **60s** wall-time, **USD 1** smoke / **USD 3** cumulative;
-DeepSeek auth, DNS binding, egress, TC-T01-only, and credential restrictions
-preserved. **No** qualification retry under alignment. Comparative campaign
-rules remain unchanged.
+static inspection only (`evaluation/M3A_ACQUISITION_EVIDENCE.md` §1.1) before
+this retry. Locked smoke ceilings remain max **12** session turns, **60s**
+wall-time, **USD 1** smoke / **USD 3** cumulative. Comparative campaign rules
+remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -264,12 +262,10 @@ Full field tables and exclusion rules live in
 comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
-after `/tmp` wipe (inspection only; no retry). **Latest M3 qualification smoke**
-(`m3q-20260723T164355Z-c421b379`) **NO-GO** at Qwen max-session-turns
-(`qwen_exit=53` under then-locked 5-turn ceiling); TC-T01 incomplete; spend not
-measured; candidate still **not qualified**. Repository smoke policy aligned to
-**12** turns / **60s** / **USD 1** / **USD 3** on 2026-07-24 (policy-only; not
-an execution grant; no retry).
+after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
+qualification smoke** (`m3q-20260724T035603Z-2c06e1a4`) **NO-GO**: Qwen exit 0
+in plan mode without verified TC-T01 rename; spend not measured; candidate still
+**not qualified**.
 
 ### 5.2 ACP is independently verified and deferred
 
@@ -861,10 +857,7 @@ grant (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`): allowlisted
 HTTPS destinations were blocked; evidence under the phase artifact root.
 **M3 DNS binding gate defined 2026-07-23**
 (`evaluation/M3_DNS_BINDING_GATE.md`). **Latest M3 qualification smoke**
-(`m3q-20260723T164355Z-c421b379`) executed DNS binding, remediated auth argv,
-and one Qwen launch, then **NO-GO** at max-session-turns (`qwen_exit=53` under
-then-locked 5-turn ceiling); TC-T01 incomplete; spend not measured; candidate
-still **not qualified**. **12-turn policy alignment 2026-07-24 (policy only;
-not executed):** repository smoke policy locked to max **12** session turns,
-**60s** wall-time, **USD 1** smoke / **USD 3** cumulative; not an execution
-grant; no qualification retry under alignment.
+(`m3q-20260724T035603Z-2c06e1a4`) executed DNS binding, locked 12-turn/60s
+auth argv, and one Qwen launch; **NO-GO** because plan-mode exit 0 left
+`FetchData` unchanged (no `RetrieveData`); spend not measured after orchestrator
+external timeout; candidate still **not qualified**.

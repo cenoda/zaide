@@ -2,16 +2,15 @@
 
 **Status:** **Defined and published 2026-07-23 (docs-only).** **Executed under
 M3 qualification sessions** (`M3_QUALIFICATION_EVIDENCE.md`), including latest
-`m3q-20260723T164355Z-c421b379`: host-side resolution, hosts map, nft
+`m3q-20260724T035603Z-2c06e1a4`: host-side resolution, hosts map, nft
 rule-text triple-consistency, and inner allow/block egress reprobes **GO**
-(`BOUND_IPV4=3.173.21.63`, `CONSISTENT=YES`). Orchestrator hang prevented the
-end-of-run `BINDING_VERDICT=GO` file write; binding sequence itself still
-passed before Qwen launch. Earlier sessions also recorded host-side binding GO
-before stopping at credential, slirp attach, Bubblewrap resolv, or auth-type
-failures. This gate locks how the Qwen Code credential-and-execution slice must
-bind `api.deepseek.com` to a single verified IPv4 address inside a sandbox-only
-resolution path. It does **not** by itself authorize credentials, provider API
-spend, or declare M3 qualification complete.
+(`BOUND_IPV4=3.173.21.63`, `CONSISTENT=YES`; operator-finalized
+`BINDING_VERDICT=GO` after orchestrator external timeout). Earlier sessions also
+recorded host-side binding GO before stopping at credential, slirp attach,
+Bubblewrap resolv, auth-type, or turn-limit failures. This gate locks how the
+Qwen Code credential-and-execution slice must bind `api.deepseek.com` to a
+single verified IPv4 address inside a sandbox-only resolution path. It does
+**not** by itself declare M3 qualification complete.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`). OpenCode and Grok Build remain blocked
