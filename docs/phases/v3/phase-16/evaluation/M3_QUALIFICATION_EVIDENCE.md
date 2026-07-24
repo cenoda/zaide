@@ -112,7 +112,7 @@ rename. **No** second attempt. **No** M4. **No** comparative or quality claims.
 | TC-T01 workspace | materialized under artifact root | **PASS** |
 | Bubblewrap isolation pre-check | workspace write + host write denial | **PASS** |
 | Dedicated sub-key (C-04 / A-09) | one-shot file mode `600`, size `36`, consumed after read | **PASS** |
-| Balance / cost tracking | DeepSeek `/user/balance` before | **PASS** — USD **3.96** before |
+| Balance / cost tracking | DeepSeek `/user/balance` before | **PASS** — USD **3.95** before |
 | slirp4netns attach | host-visible `UNSHARE_PID` + tapfd handoff | **PASS** (`sent tapfd=5 for tap0`) |
 | Inner egress reprobe | allowlisted TLS + non-allowlisted block | **PASS** — allow body `Authentication Fails (governor)`; block curl exit 28 (timeout) |
 | Bubblewrap `/etc` setup | `--tmpfs /etc` + ro-bind hosts + resolv-empty | **PASS** (process entered sandbox) |
@@ -159,9 +159,9 @@ Exact argv recorded under the session artifact root (`exact-argv.txt`).
 **Auth remediation status:** auth-type failure mode remains **cleared**.
 **Write-capable remediation status:** `--approval-mode yolo` used as locked.
 **Wall-time remediation status:** active lock **120s** used (historical prior
-yolo session used 60s). Failure mode for this session is **max-session-turns
-exit 53 after verified rename**, not auth-type missing, not plan-only, and not
-wall-budget exit 55.
+yolo session used 60s). Failure mode for **this** session is **wall-budget exit
+55** (`FatalBudgetExceededError` at 120s) after verified rename — not turn-limit
+exit 53, not auth-type missing, not plan-only.
 
 ---
 
@@ -176,38 +176,43 @@ wall-budget exit 55.
 | `file_consumed` | **YES** — absent after orchestrator read |
 | `value_disclosed` | **NO** |
 | Ambient / `~/.config` credentials | **Not read** |
-| Stop reason | `qwen_launch_failed exit=53` (orchestrator label; root cause turn limit) |
+| Stop reason | `qwen_launch_failed exit=55` (orchestrator fatal.txt; root cause wall 120s). Full `stop_with` summary append did not run because finalization aborted (see §7.3) |
 
 ---
 
 ## 5. Commands Ledger (excerpt)
 
 ```text
-m3q-20260724T060109Z-45dd1c5f step=tool_inventory exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=qwen_binary_present exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=dns_resolution exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=dns_triple_consistency exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=materialize_tc_t01 exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=isolation_bwrap_precheck exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=credential_load_one_shot exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=balance_before exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=slirp4netns_attach exit=0 utc=2026-07-24T06:01:09Z
-m3q-20260724T060109Z-45dd1c5f step=inner_qualification exit=4 utc=2026-07-24T06:02:04Z
-m3q-20260724T060109Z-45dd1c5f step=balance_after exit=0 utc=2026-07-24T06:02:04Z
-m3q-20260724T060109Z-45dd1c5f step=workspace_tc_t01_check exit=0 utc=2026-07-24T06:02:04Z
+m3q-20260724T072341Z-8f567943 step=tool_inventory exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=qwen_binary_present exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=dns_resolution exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=dns_triple_consistency exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=materialize_tc_t01 exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=isolation_bwrap_precheck exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=slirp4netns_attach exit=0 utc=2026-07-24T07:23:41Z
+m3q-20260724T072341Z-8f567943 step=egress_preflight exit=0 utc=2026-07-24T07:23:50Z
+m3q-20260724T072341Z-8f567943 step=credential_load_one_shot exit=0 utc=2026-07-24T07:23:50Z
+m3q-20260724T072341Z-8f567943 step=balance_before exit=0 utc=2026-07-24T07:23:50Z
+m3q-20260724T072341Z-8f567943 step=slirp4netns_attach exit=0 utc=2026-07-24T07:23:50Z
+m3q-20260724T072341Z-8f567943 step=inner_qualification exit=4 utc=2026-07-24T07:25:59Z
 ```
 
+**No** `balance_after` or `workspace_tc_t01_check` ledger lines — finalization
+did not run (see §7.3).
+
 `inner_qualification` exit **4** is the real unshare/inner script exit after
-Qwen non-zero (`qwen_exit=53` → inner `exit 4`). Parent-shell
+Qwen non-zero (`qwen_exit=55` → inner `exit 4`). Parent-shell
 `wait_inner_with_reap_budget` recorded `inner_wait_status=exited` /
-`inner_wait_exit=4` without inventing bash **127**. Elapsed ~55s (well under
-200s overall budget). Finalization ran immediately afterward.
+`inner_wait_exit=4` / `inner_wait_elapsed_sec=129` without inventing bash
+**127**. Outer overall budget (200s) and post-qwen budget (45s) were **not**
+hit (`inner_wait_status` is not `overall_timeout` or
+`post_qwen_budget_exceeded`).
 
 ---
 
 ## 6. Qwen Result (redacted)
 
-`run/qwen-result.env`: `qwen_exit=53`
+`run/qwen-result.env`: `qwen_exit=55`
 
 `run/qwen.stdout`: empty (0 bytes)
 
@@ -216,17 +221,18 @@ Qwen non-zero (`qwen_exit=53` → inner `exit 4`). Parent-shell
 | Field | Value |
 |---|---|
 | YOLO headless warning | Present (host Bubblewrap is campaign isolation; Qwen’s own sandbox unset) |
-| Error type | `FatalTurnLimitedError` |
-| Message | Reached max session turns for this session. Increase the number of turns by specifying maxSessionTurns in settings.json. |
-| Code | **53** |
+| Error type | **`FatalBudgetExceededError`** |
+| Message | Run aborted: wall-clock budget of 120s exceeded (`--max-wall-time`). |
+| Code | **55** |
 
-Workspace verification after exit (orchestrator host-side):
+Workspace verification after exit (host-side; orchestrator
+`workspace-result.env` **not** written because finalization aborted):
 
 | Check | Value |
 |---|---|
 | `FetchData` occurrences in `*.cs` | **0** |
 | `RetrieveData` occurrences in `*.cs` | **11** |
-| `tc_t01_rename_verified` | **YES** |
+| `tc_t01_rename_verified` | **YES** (host counts; dual GO still fails on exit ≠ 0) |
 
 Post-session host verify (operator; not a second Qwen launch):
 
@@ -250,25 +256,36 @@ operator build/test cover the rename outcome.
 | Auth type not selected | **Cleared** — `--auth-type openai` + `--openai-base-url` + modelProviders present |
 | slirp4netns host PID | **PASS** (`UNSHARE_PID` / tapfd) |
 | Bubblewrap `/etc/resolv.conf` symlink | **PASS** (`--tmpfs /etc` + ro-bind resolv-empty) |
-| DNS triple-consistency / egress | **PASS** |
+| DNS triple-consistency / egress | **PASS** (preflight before credential) |
 | Plan-only without mutation | **Cleared** — write-capable `--approval-mode yolo`; rename verified |
-| Wall-time exit 55 at 60s | **Cleared as failure mode** — active lock **120s**; this session did not hit wall budget |
-| Orchestrator post-exit hang / synthetic 127 | **Cleared** — same-shell wait/reap; real inner exit **4**; finalization completed |
+| Turn-limit exit 53 under 12 turns | **Not this session** — active **24** turns; failure is wall 120s exit 55 |
+| Orchestrator post-exit hang / synthetic 127 | **Cleared for reaping** — same-shell wait; real inner exit **4** recorded |
+| Post-session finalization after non-zero Qwen | **Failed this session** — see §7.3; remediated afterward (not a retry) |
 
-### 7.2 Max-session-turns exit 53 after verified TC-T01 mutation (this grant)
+### 7.2 Wall-budget exit 55 after verified TC-T01 mutation (this grant)
 
 Qwen Code v0.20.1 under locked yolo mode mutated the TC-T01 workspace to the
-required rename and completed the functional outcome (build/test green), but the
-process then aborted with **`FatalTurnLimitedError`** because the locked
-**12**-turn session ceiling was reached (`qwen_exit=53`). Dual GO criteria for
-this campaign require **both** Qwen exit 0 **and** verified rename; therefore
-the session is **NO-GO** despite the verified workspace change.
+required rename (host: `FetchData` 0 / `RetrieveData` 11; build/test 0), but the
+process then aborted with **`FatalBudgetExceededError`** because the locked
+**120-second** wall-time ceiling was exceeded (`qwen_exit=55`; message:
+wall-clock budget of 120s exceeded via `--max-wall-time`). Dual GO criteria
+require **both** Qwen exit 0 **and** verified rename; therefore the session is
+**NO-GO** despite the verified workspace change.
 
-This is a **process exit / turn-limit** failure against locked GO rules, not an
-auth, DNS, egress, wall-time, or plan-mode failure. No second attempt was
-authorized under this grant to raise turns or re-run.
+Timing evidence rules out outer orchestrator budgets as the exit-55 cause:
 
-### 7.3 Bounded reaping note (fixed path exercised)
+| Budget | Configured | Observed |
+|---|---|---|
+| Qwen `--max-wall-time` | **120s** | **Hit** — `FatalBudgetExceededError` code 55 |
+| Inner overall wait | **200s** | Not hit — `inner_wait_status=exited`, elapsed **129s** |
+| Post-qwen verify | **45s** | Not hit — status is not `post_qwen_budget_exceeded` |
+
+This is a **Qwen wall-time** failure against locked GO rules, not a turn-limit,
+auth, DNS, egress, or plan-mode failure. No second attempt was authorized under
+this grant to raise wall time or re-run. **24-turn / 120s policy unchanged** by
+the later finalization remediation.
+
+### 7.3 Bounded reaping OK; finalization aborted (this grant)
 
 `wait_inner_with_reap_budget` ran in the **parent shell** (not under `$(...)`)
 and recorded:
@@ -276,22 +293,31 @@ and recorded:
 ```text
 inner_wait_status=exited
 inner_wait_exit=4
-inner_wait_elapsed_sec=55
-cleanup_status=reaped
-orphan_detected=NO
+inner_wait_elapsed_sec=129
+inner_overall_timeout_sec=200
+post_qwen_verify_budget_sec=45
+inner_reaped_exit=
 ```
 
 Real unshare/inner exit **4** was preserved (inner script exits 4 when Qwen
-non-zero). No synthetic bash **127**. Finalization (balance-after exit 0,
-workspace check, cleanup) completed without hang.
+non-zero). No synthetic bash **127**.
+
+**Finalization gap:** after logging `inner_qualification exit=4`,
+`launch_netns_inner` did `set -e` then `return 4`. On Bash 5.x the function’s
+`set -e` becomes sticky when the call completes; a non-zero return aborts the
+**entire** orchestrator shell even though the caller used `set +e`. Therefore
+balance-after, workspace-result, cleanup.env, and `stop_with` summary append
+never ran. Diagnosis and fix:
+`M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md` (repository only; not a
+qualification retry).
 
 **Future grant requirements (out of scope; not applied under this grant):**
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Keep locked write-capable yolo + **120s** wall + fixed reap path; turn ceiling
-   raised to **24** by human decision (2026-07-24 authorization; see
-   `CAMPAIGN_LOCK.md`).
+3. Keep locked write-capable yolo + **24** turns + **120s** wall + fixed reap
+   path + fixed finalization path unless a separate human decision amends
+   ceilings.
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. Preserve session records outside `/tmp` before any host reboot.
 
@@ -301,17 +327,16 @@ workspace check, cleanup) completed without hang.
 
 | Metric | Value |
 |---|---|
-| Balance before | USD **3.96** |
-| Balance after | USD **3.96** |
-| Session smoke spend (USD) | **0.00** from balance delta (before = after at API precision) |
+| Balance before | USD **3.95** |
+| Balance after | **Unavailable** (finalization aborted; no `balance-after.json`) |
+| Session smoke spend (USD) | **Unknown from balance delta** (after missing). Caps not known to be breached from before alone (3.95 within prior context) |
 | Prior campaign ledger | **USD 0.01** (prior sessions) |
-| Phase 16 cumulative spend (ledger) | **USD 0.01** after this session (delta 0.00 added) |
-| M3 smoke cap (USD 1) / campaign cap (USD 3) | **Not breached** |
+| Phase 16 cumulative spend (ledger) | Unchanged at last recorded ledger (no after measurement this session) |
+| M3 smoke cap (USD 1) / campaign cap (USD 3) | **Not known to be breached**; after unavailable |
 
-Spend basis: authenticated DeepSeek `/user/balance` before and after under the
-same one-shot key in memory. No credential material recorded. No USD field from
-Qwen JSON (stdout empty).
-
+Spend basis: authenticated DeepSeek `/user/balance` **before** under the
+one-shot key in memory. Balance-after was not executed. No credential material
+recorded. No USD field from Qwen JSON (stdout empty).
 ---
 
 ## 9. GO / NO-GO
@@ -351,6 +376,7 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 - `M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md` — argv/modelProviders contract used
 - `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` — write-capable argv + reap path
 - `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — 120s wall + same-shell reap
+- `M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md` — sticky set -e finalization fix after this session
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture
 - `TASK_CORPUS.md` — TC-T01 definition
 - `IMPLEMENTATION_PLAN.md` — phase status

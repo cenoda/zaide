@@ -277,6 +277,13 @@ record_workspace_tc_t01_result() {
 
 # Launch an inner script under unshare+slirp4netns and bounded wait/reap.
 # Must run in the parent shell (wait is not valid under command substitution).
+#
+# Contract: always return 0 after publishing status in INNER_WAIT_EXIT.
+# Never `return <non-zero>` after re-enabling `set -e` inside this function.
+# Bash 5.x defers a function-local `set -e` until the call returns; a non-zero
+# return then aborts the whole shell even when the caller used `set +e`, which
+# skipped balance-after / workspace / cleanup after qwen_exit=55 (session
+# m3q-20260724T072341Z-8f567943).
 launch_netns_inner() {
   local inner_script="$1"
   local ledger_step="$2"
@@ -305,7 +312,10 @@ launch_netns_inner() {
   done
   if [ ! -f /tmp/phase16-ns-ready ]; then
     echo "inner netns never signaled ready for slirp4netns" > "$RUN_DIR/fatal.txt"
-    return 1
+    INNER_WAIT_STATUS="launch_failed"
+    INNER_WAIT_EXIT=1
+    log_step "$ledger_step" 1
+    return 0
   fi
   slirp4netns --configure --mtu=65520 --disable-host-loopback "$NSPID" tap0 \
     >"$RUN_DIR/slirp4netns.stdout" 2>"$RUN_DIR/slirp4netns.stderr" &
@@ -319,30 +329,46 @@ launch_netns_inner() {
       fi
       if grep -qE 'failed|Permission denied' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
         echo "slirp4netns attach failed (see slirp4netns.stderr)" > "$RUN_DIR/fatal.txt"
-        return 1
+        INNER_WAIT_STATUS="slirp_attach_failed"
+        INNER_WAIT_EXIT=1
+        log_step "slirp4netns_attach" 1
+        log_step "$ledger_step" 1
+        return 0
       fi
     fi
     if ! kill -0 "$SLIRP_PID" 2>/dev/null; then
       echo "slirp4netns exited before attach completed" > "$RUN_DIR/fatal.txt"
-      return 1
+      INNER_WAIT_STATUS="slirp_exited_early"
+      INNER_WAIT_EXIT=1
+      log_step "slirp4netns_attach" 1
+      log_step "$ledger_step" 1
+      return 0
     fi
     sleep 0.1
   done
   log_step "slirp4netns_attach" "$slirp_attach_ec"
   if [ "$slirp_attach_ec" -ne 0 ]; then
     echo "slirp4netns attach did not confirm tapfd handoff" > "$RUN_DIR/fatal.txt"
-    return 1
+    INNER_WAIT_STATUS="slirp_attach_timeout"
+    INNER_WAIT_EXIT=1
+    log_step "$ledger_step" 1
+    return 0
   fi
 
+  # Wait/reap in this shell. Keep errexit off for the remainder of the function
+  # so a non-zero child status cannot sticky-abort the parent (see contract).
   set +e
   wait_inner_with_reap_budget
-  set -e
   local inner_ec=1
   if [ -n "${INNER_WAIT_EXIT}" ]; then
     inner_ec="$INNER_WAIT_EXIT"
+  else
+    INNER_WAIT_EXIT=1
+    inner_ec=1
   fi
   log_step "$ledger_step" "$inner_ec"
-  return "$inner_ec"
+  # Always return 0: real unshare/inner status is INNER_WAIT_EXIT only.
+  return 0
 }
 
 run_egress_preflight() {
@@ -526,7 +552,8 @@ export PHASE16_NFT_SCRIPT="$ROOT/Scripts/apply_allowlist_nft.sh"
 # --- Egress preflight (no credential; abort before key consumption) ---
 set +e
 run_egress_preflight
-EGRESS_PREFLIGHT_EC=$?
+# launch_netns_inner always returns 0; real status is INNER_WAIT_EXIT.
+EGRESS_PREFLIGHT_EC="${INNER_WAIT_EXIT:-1}"
 set -e
 if [ "$EGRESS_PREFLIGHT_EC" -ne 0 ]; then
   if [ -f "$RUN_DIR/fatal.txt" ]; then
@@ -719,15 +746,21 @@ export DEEPSEEK_API_KEY
 
 set +e
 launch_netns_inner "$INNER" "inner_qualification"
-INNER_EC=$?
+# launch_netns_inner always returns 0 after wait/reap (or launch failure).
+# Real unshare/inner status lives only in INNER_WAIT_EXIT — never rely on $?
+# from the function after a non-zero child (bash sticky set -e abort; session
+# m3q-20260724T072341Z-8f567943 lost balance-after for this reason).
+INNER_EC="${INNER_WAIT_EXIT:-1}"
 set -e
-if [ "$INNER_EC" -ne 0 ] && [ -f "$RUN_DIR/qwen-result.env" ]; then
+if [ -f "$RUN_DIR/qwen-result.env" ]; then
   CANDIDATE_EXECUTION=YES
   QWEN_EXIT_SOURCE=current_run_dir
 fi
 record_execution_state
 
 # --- Always-run finalization path (balance, workspace, cleanup) ---
+# Must run after every current-session outcome: Qwen exit 0/non-zero, unshare
+# non-zero, outer reap timeout, or launch failure after key consumption.
 set +e
 curl -sS --max-time 15 \
   -H "Authorization: Bearer ${DEEPSEEK_API_KEY}" \

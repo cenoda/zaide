@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14 accepted and closed** (2026-07-21; accepted baseline `67da1394`) — **Phase 15 complete and closed** (2026-07-22) — **Phase 16 M0/M1/M2a/M2b complete**; Qwen Code eligible for later observational M3 qualification; latest M3 smoke **NO-GO** (`m3q-20260724T060109Z-45dd1c5f`: rename verified, `qwen_exit=53` turn limit under 12/120s; not qualified) |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14 accepted and closed** (2026-07-21; accepted baseline `67da1394`) — **Phase 15 complete and closed** (2026-07-22) — **Phase 16 M0/M1/M2a/M2b complete**; Qwen Code eligible for later observational M3 qualification; latest M3 smoke **NO-GO** (`m3q-20260724T072341Z-8f567943`: rename verified, `qwen_exit=55` wall 120s under 24/120s; finalization incomplete; not qualified) |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The

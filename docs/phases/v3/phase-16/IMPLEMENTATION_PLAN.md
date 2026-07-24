@@ -27,11 +27,15 @@ locked **24** turns / **120s** wall; Qwen launched **once**; TC-T01 rename
 **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0) but
 **`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s) → dual GO **NO-GO**;
 balance-before USD 3.95 (after unavailable); fixed parent-shell reap recorded
-real inner exit **4**; finalization incomplete. Candidate remains **not
-qualified**. **Active** locked smoke ceilings: max **24** session turns,
-**120s** wall-time, **USD 1** smoke / **USD 3** cumulative. **M3 fresh-session
-eligibility remediation (2026-07-24)** followed for this grant. Comparative
-campaign rules remain unchanged.
+real inner exit **4**; finalization incomplete (sticky `set -e` + non-zero
+`return` from `launch_netns_inner`). Candidate remains **not qualified**.
+**Active** locked smoke ceilings: max **24** session turns, **120s** wall-time,
+**USD 1** smoke / **USD 3** cumulative (unchanged). **M3 fresh-session
+eligibility remediation (2026-07-24)** preceded this grant. **M3 post-session
+finalization remediation (2026-07-24)**
+(`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) fixed
+deterministic balance-after/workspace/cleanup after non-zero Qwen; not a retry.
+Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform

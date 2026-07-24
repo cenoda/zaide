@@ -83,7 +83,7 @@ licenses; wire protocol/SDK pin; separate product/changelog identity beyond tag
 | Run egress proof (allowed + blocked destinations) | Egress proof grant | **Done** — **GO** (`M3_EGRESS_PROOF_EVIDENCE.md`) |
 | Create DeepSeek sub-key / inject credential | Credential-and-execution grant | Performed under latest qualification grant only via one-shot file → `DEEPSEEK_API_KEY`; consumed; value not disclosed |
 | DNS binding execution at launch (A-14) | Credential-and-execution grant | **Executed GO** on latest smoke (`m3q-20260724T072341Z-8f567943`); design remains `M3_DNS_BINDING_GATE.md` |
-| Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance before/after); session balance delta USD 0.00 |
+| Provider API calls | Execution grant + cost tracking | Performed once under latest smoke (authenticated Qwen run + balance-before USD 3.95); balance-after unavailable (finalization abort); see finalization remediation |
 | Launch upstream Qwen Code binary | M3 qualification grant + isolation re-check + A-02/A-03 resolution + A-14 binding | Latest smoke session `m3q-20260724T072341Z-8f567943` launched Qwen once under yolo (24 turns / 120s); TC-T01 rename verified; **`qwen_exit=55`** wall limit; overall **NO-GO** — see `M3_QUALIFICATION_EVIDENCE.md`. **No second attempt** under that grant. |
 | Locked max-session-turns / wall-time / spend ceilings | Qualification grant | Active locked smoke ceilings are now **24** turns (raised 2026-07-24), **120s** wall-time, **USD 1** smoke / **USD 3** cumulative. The latest smoke `m3q-20260724T072341Z-8f567943` executed under active **24**-turn / **120s** wall. See `CAMPAIGN_LOCK.md` §1.4 for active policy. |
 
@@ -113,6 +113,9 @@ write-capable yolo / USD 1 / USD 3 on 2026-07-24; active wall later raised to
 (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **24-turn ceiling
 remediation (2026-07-24)** raised active policy to **24** turns for future
 retry; historical 12-turn session records preserved unchanged. Latest qualification smoke
-`m3q-20260724T072341Z-8f567943` **NO-GO** (rename verified; exit 55 at 120s wall).
-Prior historical `m3q-20260724T060109Z-45dd1c5f` (exit 53, 12-turn). No credentials created under recovery;
-recovery did not launch the binary.
+`m3q-20260724T072341Z-8f567943` **NO-GO** (rename verified; exit 55 at 120s wall;
+finalization incomplete). Post-session finalization remediation
+(`M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) fixed sticky `set -e`
+abort after non-zero Qwen; not a retry; 24/120s policy unchanged. Prior
+historical `m3q-20260724T060109Z-45dd1c5f` (exit 53, 12-turn). No credentials
+created under recovery; recovery did not launch the binary.
