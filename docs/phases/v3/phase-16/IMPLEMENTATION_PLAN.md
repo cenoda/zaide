@@ -30,7 +30,11 @@ recorded real inner exit **4** (not bash 127); post-exit finalization completed
 without hang. Candidate remains **not qualified**. **Active** locked smoke ceilings
 : max **24** session turns, **120s** wall-time, **USD 1** smoke /
 **USD 3** cumulative (24-turn ceiling authorized for future retry; historical
-12-turn session records preserved). Comparative campaign rules remain unchanged.
+12-turn session records preserved). **M3 fresh-session eligibility remediation
+(2026-07-24)** ensures each grant evaluates a new session ID, defers credential
+consumption until after egress preflight, and forbids substituting historical
+`qwen_exit` for the current session (`evaluation/M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md`).
+Comparative campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -876,6 +880,9 @@ same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`
 ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
 and docs; historical 12-turn session records preserved unchanged; not a
 qualification retry.
+**M3 fresh-session eligibility remediation (2026-07-24)** fixed orchestrator
+ordering (egress preflight before credential), fresh-session execution/evidence
+contract, and consumed-but-unlaunched recording; not a qualification retry.
 **Latest M3 qualification smoke** (`m3q-20260724T060109Z-45dd1c5f`) executed
 DNS binding, write-capable yolo argv (12 turns / **120s** wall), and one Qwen
 launch; TC-T01 rename **verified** but **NO-GO** on `qwen_exit=53` (turn limit);

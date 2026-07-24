@@ -28,6 +28,11 @@ public static class Phase16M3QualificationPolicy
     public const decimal SmokeSpendCapUsd = 1m;
     public const decimal CampaignSpendCapUsd = 3m;
 
+    /// <summary>
+    /// Fresh-session eligibility rules live in <see cref="Phase16M3FreshSessionPolicy"/>.
+    /// Each grant must evaluate a new session; historical records are informative only.
+    /// </summary>
+
     public static IReadOnlyList<string> BuildLockedSmokeArgvTail()
     {
         return

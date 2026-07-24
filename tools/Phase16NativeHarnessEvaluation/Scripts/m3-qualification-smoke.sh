@@ -20,6 +20,9 @@ PROMPT_FILE="$PHASE_ROOT/tuning/TC-T01/prompt-$SESSION_ID.md"
 SUBKEY_ONCE="${PHASE16_DEEPSEEK_SUBKEY_ONCE:-$CRED_DIR/subkey.once}"
 EXAMPLE_BLOCK_IP="93.184.216.34"
 STOP_REASON=""
+KEY_CONSUMED=NO
+PROVIDER_LAUNCH_ATTEMPTED=NO
+CANDIDATE_EXECUTION=NO
 # Overall inner budget: DNS/egress probes + Qwen wall (120s) + post-qwen verify + slack.
 # Must finish well under any external safety wrapper so post-balance always runs.
 INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-200}"
@@ -39,14 +42,54 @@ log_step() {
   printf '%s step=%s exit=%s utc=%s\n' "$SESSION_ID" "$step" "$code" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SESSION_ROOT/commands-ledger.txt"
 }
 
+record_execution_state() {
+  {
+    echo "provider_launch_attempted=$PROVIDER_LAUNCH_ATTEMPTED"
+    echo "candidate_execution=$CANDIDATE_EXECUTION"
+    echo "key_consumed=$KEY_CONSUMED"
+    echo "qwen_exit_source=${QWEN_EXIT_SOURCE:-none}"
+    echo "provider_execution_label=${PROVIDER_EXECUTION_LABEL:-}"
+    echo "execution_state_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  } > "$SESSION_ROOT/execution.env"
+}
+
 stop_with() {
   STOP_REASON="$1"
   force_reap_children "stop_with"
+  record_execution_state
   echo "STOP_REASON=$STOP_REASON" >> "$SESSION_ROOT/summary.env"
   echo "QUALIFICATION_VERDICT=NO-GO" >> "$SESSION_ROOT/summary.env"
   echo "session_end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SESSION_ROOT/summary.env"
   echo "M3 qualification STOP: $STOP_REASON" >&2
   exit 1
+}
+
+# Key was consumed but Qwen never launched. Must not reuse a historical qwen_exit.
+stop_with_no_provider_execution() {
+  PROVIDER_LAUNCH_ATTEMPTED=NO
+  CANDIDATE_EXECUTION=NO
+  QWEN_EXIT_SOURCE=none
+  PROVIDER_EXECUTION_LABEL="no candidate launch / no provider execution"
+  STOP_REASON="$1"
+  force_reap_children "stop_with_no_provider_execution"
+  record_execution_state
+  echo "STOP_REASON=$STOP_REASON" >> "$SESSION_ROOT/summary.env"
+  echo "QUALIFICATION_VERDICT=NO-GO" >> "$SESSION_ROOT/summary.env"
+  echo "provider_launch_attempted=NO" >> "$SESSION_ROOT/summary.env"
+  echo "candidate_execution=NO" >> "$SESSION_ROOT/summary.env"
+  echo "qwen_exit_source=none" >> "$SESSION_ROOT/summary.env"
+  echo "provider_execution_label=no candidate launch / no provider execution" >> "$SESSION_ROOT/summary.env"
+  echo "session_end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SESSION_ROOT/summary.env"
+  echo "M3 qualification STOP (no provider execution): $STOP_REASON" >&2
+  exit 1
+}
+
+resolve_current_session_qwen_exit() {
+  if [ ! -f "$RUN_DIR/qwen-result.env" ]; then
+    echo ""
+    return 0
+  fi
+  awk -F= '$1=="qwen_exit"{print $2}' "$RUN_DIR/qwen-result.env"
 }
 
 # Kill/reap unshare + slirp4netns so finalization (balance-after, workspace
@@ -232,14 +275,143 @@ record_workspace_tc_t01_result() {
   echo "$verified"
 }
 
+# Launch an inner script under unshare+slirp4netns and bounded wait/reap.
+# Must run in the parent shell (wait is not valid under command substitution).
+launch_netns_inner() {
+  local inner_script="$1"
+  local ledger_step="$2"
+
+  INNER_REAPED_EXIT=""
+  INNER_WAIT_STATUS=""
+  INNER_WAIT_EXIT=""
+  UNSHARE_PID=""
+  SLIRP_PID=""
+
+  rm -f /tmp/phase16-ns-pid /tmp/phase16-ns-ready
+  : > "$RUN_DIR/reap.env"
+  unshare --user --map-root-user --net --mount --fork --pid --mount-proc bash "$inner_script" \
+    >"$RUN_DIR/unshare.stdout" 2>"$RUN_DIR/unshare.stderr" &
+  UNSHARE_PID=$!
+  NSPID="$UNSHARE_PID"
+  {
+    echo "unshare_pid=$UNSHARE_PID"
+    echo "host_ns_pid=$NSPID"
+  } > "$RUN_DIR/netns-session.env"
+  for _ in $(seq 1 100); do
+    if [ -f /tmp/phase16-ns-ready ]; then
+      break
+    fi
+    sleep 0.1
+  done
+  if [ ! -f /tmp/phase16-ns-ready ]; then
+    echo "inner netns never signaled ready for slirp4netns" > "$RUN_DIR/fatal.txt"
+    return 1
+  fi
+  slirp4netns --configure --mtu=65520 --disable-host-loopback "$NSPID" tap0 \
+    >"$RUN_DIR/slirp4netns.stdout" 2>"$RUN_DIR/slirp4netns.stderr" &
+  SLIRP_PID=$!
+  local slirp_attach_ec=1
+  for _ in $(seq 1 30); do
+    if [ -s "$RUN_DIR/slirp4netns.stderr" ]; then
+      if grep -q 'sent tapfd' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
+        slirp_attach_ec=0
+        break
+      fi
+      if grep -qE 'failed|Permission denied' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
+        echo "slirp4netns attach failed (see slirp4netns.stderr)" > "$RUN_DIR/fatal.txt"
+        return 1
+      fi
+    fi
+    if ! kill -0 "$SLIRP_PID" 2>/dev/null; then
+      echo "slirp4netns exited before attach completed" > "$RUN_DIR/fatal.txt"
+      return 1
+    fi
+    sleep 0.1
+  done
+  log_step "slirp4netns_attach" "$slirp_attach_ec"
+  if [ "$slirp_attach_ec" -ne 0 ]; then
+    echo "slirp4netns attach did not confirm tapfd handoff" > "$RUN_DIR/fatal.txt"
+    return 1
+  fi
+
+  set +e
+  wait_inner_with_reap_budget
+  set -e
+  local inner_ec=1
+  if [ -n "${INNER_WAIT_EXIT}" ]; then
+    inner_ec="$INNER_WAIT_EXIT"
+  fi
+  log_step "$ledger_step" "$inner_ec"
+  return "$inner_ec"
+}
+
+run_egress_preflight() {
+  local inner_egress="$RUN_DIR/inner_egress_preflight.sh"
+  cat > "$inner_egress" <<'EOS'
+#!/usr/bin/env bash
+set -euo pipefail
+export PATH=/usr/bin:/bin
+: "${PHASE16_RUN_DIR:?}"
+: "${PHASE16_PROBE_DIR:?}"
+: "${PHASE16_BOUND_IPV4:?}"
+: "${PHASE16_EXAMPLE_BLOCK_IP:?}"
+: "${PHASE16_NFT_SCRIPT:?}"
+
+ip link set lo up
+echo ready > /tmp/phase16-ns-ready
+for i in $(seq 1 150); do
+  if ip link show tap0 >/dev/null 2>&1 && ip -4 addr show tap0 2>/dev/null | grep -q 'inet '; then
+    break
+  fi
+  sleep 0.1
+done
+if ! ip link show tap0 >/dev/null 2>&1; then
+  echo "tap0_missing" > "$PHASE16_RUN_DIR/fatal.txt"
+  exit 2
+fi
+
+"$PHASE16_NFT_SCRIPT" "$PHASE16_BOUND_IPV4" > "$PHASE16_RUN_DIR/nft-ruleset.txt"
+
+set +e
+curl -sS --http1.1 --proto '=https' --tlsv1.2 --max-time 12 --connect-timeout 8 \
+  --resolve "example.com:443:${PHASE16_EXAMPLE_BLOCK_IP}" \
+  -o "$PHASE16_PROBE_DIR/block.body" "https://example.com/" \
+  >"$PHASE16_PROBE_DIR/block.curl" 2>"$PHASE16_PROBE_DIR/block.err"
+BLOCK_EC=$?
+curl -sS --http1.1 --proto '=https' --tlsv1.2 --max-time 15 --connect-timeout 10 \
+  --resolve "api.deepseek.com:443:${PHASE16_BOUND_IPV4}" \
+  -o "$PHASE16_PROBE_DIR/allow.body" "https://api.deepseek.com/" \
+  >"$PHASE16_PROBE_DIR/allow.curl" 2>"$PHASE16_PROBE_DIR/allow.err"
+ALLOW_EC=$?
+set -e
+if [ "$ALLOW_EC" -ne 0 ] || [ "$BLOCK_EC" -eq 0 ]; then
+  echo "egress_probe_failed allow=$ALLOW_EC block=$BLOCK_EC" > "$PHASE16_RUN_DIR/fatal.txt"
+  exit 3
+fi
+echo "egress_preflight=GO" > "$PHASE16_RUN_DIR/egress-preflight.env"
+exit 0
+EOS
+  chmod +x "$inner_egress"
+  launch_netns_inner "$inner_egress" "egress_preflight"
+}
+
 mkdir -p "$SESSION_ROOT" "$DNS_ROOT" "$PROBE_DIR" "$RUN_DIR" "$CRED_DIR" "$(dirname "$WORKSPACE")"
 chmod 700 "$CRED_DIR" "$SESSION_ROOT" "$DNS_ROOT"
 : > "$SESSION_ROOT/commands-ledger.txt"
+rm -f "$RUN_DIR/qwen-result.env" "$RUN_DIR/exact-argv.txt" "$RUN_DIR/fatal.txt"
+PROVIDER_LAUNCH_ATTEMPTED=NO
+CANDIDATE_EXECUTION=NO
+QWEN_EXIT_SOURCE=none
+PROVIDER_EXECUTION_LABEL=""
+record_execution_state
 {
   echo "SESSION_ID=$SESSION_ID"
   echo "TASK_ID=TC-T01"
   echo "CANDIDATE_SLUG=qwen-code"
   echo "EVIDENCE_CLASS=observational"
+  echo "fresh_session=YES"
+  echo "prior_session_verdict_reused=NO"
+  echo "locked_max_session_turns=24"
   echo "session_start_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "grant_env=${PHASE16_M3_QUALIFICATION_GRANT:-unset}"
 } > "$SESSION_ROOT/summary.env"
@@ -340,6 +512,30 @@ set -e
 log_step "isolation_bwrap_precheck" "$BWRAP_EC"
 [ "$BWRAP_EC" -eq 0 ] || stop_with "bubblewrap isolation pre-check failed exit=$BWRAP_EC"
 
+export PHASE16_RUN_DIR="$RUN_DIR"
+export PHASE16_PROBE_DIR="$PROBE_DIR"
+export PHASE16_BOUND_IPV4="$BOUND_IPV4"
+export PHASE16_EXAMPLE_BLOCK_IP="$EXAMPLE_BLOCK_IP"
+export PHASE16_HOSTS_FILE="$HOSTS_FILE"
+export PHASE16_RESOLV_EMPTY="$DNS_ROOT/resolv-empty.txt"
+export PHASE16_QWEN_BIN="$QWEN_BIN"
+export PHASE16_WORKSPACE="$WORKSPACE"
+export PHASE16_PROMPT_FILE="$PROMPT_FILE"
+export PHASE16_NFT_SCRIPT="$ROOT/Scripts/apply_allowlist_nft.sh"
+
+# --- Egress preflight (no credential; abort before key consumption) ---
+set +e
+run_egress_preflight
+EGRESS_PREFLIGHT_EC=$?
+set -e
+if [ "$EGRESS_PREFLIGHT_EC" -ne 0 ]; then
+  if [ -f "$RUN_DIR/fatal.txt" ]; then
+    stop_with "$(cat "$RUN_DIR/fatal.txt")"
+  fi
+  stop_with "egress preflight failed exit=$EGRESS_PREFLIGHT_EC"
+fi
+log_step "egress_preflight" 0
+
 # --- Credential gate: dedicated one-shot sub-key (never ~/.config / ambient) ---
 KEY_LIFECYCLE="$SESSION_ROOT/key-lifecycle.env"
 {
@@ -356,7 +552,8 @@ fi
 DEEPSEEK_API_KEY="$(tr -d '\r\n' < "$SUBKEY_ONCE")"
 rm -f "$SUBKEY_ONCE"
 sync
-[ -n "$DEEPSEEK_API_KEY" ] || stop_with "sub-key one-shot file was empty"
+[ -n "$DEEPSEEK_API_KEY" ] || stop_with_no_provider_execution "sub-key one-shot file was empty"
+KEY_CONSUMED=YES
 {
   echo "key_source=phase16_one_shot_file"
   echo "key_file_path=$SUBKEY_ONCE"
@@ -365,8 +562,9 @@ sync
   echo "value_disclosed=NO"
 } > "$KEY_LIFECYCLE"
 log_step "credential_load_one_shot" 0
+record_execution_state
 
-# --- Cost tracking pre-check ---
+# --- Cost tracking pre-check (requires consumed key) ---
 PRIOR_SPEND="0.00"
 PRIOR_SPEND_FILE="$PHASE_ROOT/records/campaign-spend.env"
 if [ -f "$PRIOR_SPEND_FILE" ]; then
@@ -381,9 +579,12 @@ curl -sS --max-time 15 \
 BALANCE_BEFORE_EC=$?
 set -e
 log_step "balance_before" "$BALANCE_BEFORE_EC"
-[ "$BALANCE_BEFORE_EC" -eq 0 ] || stop_with "balance pre-check failed; cannot prove cost tracking"
+[ "$BALANCE_BEFORE_EC" -eq 0 ] || stop_with_no_provider_execution "balance pre-check failed; cannot prove cost tracking"
 
-# --- Inner netns proof + Qwen launch (credential via env; never written to disk) ---
+# --- Inner netns + Qwen launch (credential via env; never written to disk) ---
+PROVIDER_LAUNCH_ATTEMPTED=YES
+rm -f "$RUN_DIR/qwen-result.env"
+record_execution_state
 INNER="$RUN_DIR/inner_qualification.sh"
 cat > "$INNER" <<'EOS'
 #!/usr/bin/env bash
@@ -514,71 +715,17 @@ sleep 0.2
 EOS
 chmod +x "$INNER"
 
-export PHASE16_RUN_DIR="$RUN_DIR"
-export PHASE16_PROBE_DIR="$PROBE_DIR"
-export PHASE16_BOUND_IPV4="$BOUND_IPV4"
-export PHASE16_EXAMPLE_BLOCK_IP="$EXAMPLE_BLOCK_IP"
-export PHASE16_HOSTS_FILE="$HOSTS_FILE"
-export PHASE16_RESOLV_EMPTY="$DNS_ROOT/resolv-empty.txt"
-export PHASE16_QWEN_BIN="$QWEN_BIN"
-export PHASE16_WORKSPACE="$WORKSPACE"
-export PHASE16_PROMPT_FILE="$PROMPT_FILE"
-export PHASE16_NFT_SCRIPT="$ROOT/Scripts/apply_allowlist_nft.sh"
 export DEEPSEEK_API_KEY
 
-rm -f /tmp/phase16-ns-pid /tmp/phase16-ns-ready
-: > "$RUN_DIR/reap.env"
-unshare --user --map-root-user --net --mount --fork --pid --mount-proc bash "$INNER" \
-  >"$RUN_DIR/unshare.stdout" 2>"$RUN_DIR/unshare.stderr" &
-UNSHARE_PID=$!
-# slirp4netns requires the host-visible PID from unshare --fork, not inner $$ (PID ns = 1).
-NSPID="$UNSHARE_PID"
-{
-  echo "unshare_pid=$UNSHARE_PID"
-  echo "host_ns_pid=$NSPID"
-} > "$RUN_DIR/netns-session.env"
-for _ in $(seq 1 100); do
-  if [ -f /tmp/phase16-ns-ready ]; then
-    break
-  fi
-  sleep 0.1
-done
-[ -f /tmp/phase16-ns-ready ] || stop_with "inner netns never signaled ready for slirp4netns"
-slirp4netns --configure --mtu=65520 --disable-host-loopback "$NSPID" tap0 \
-  >"$RUN_DIR/slirp4netns.stdout" 2>"$RUN_DIR/slirp4netns.stderr" &
-SLIRP_PID=$!
-SLIRP_ATTACH_EC=1
-for _ in $(seq 1 30); do
-  if [ -s "$RUN_DIR/slirp4netns.stderr" ]; then
-    if grep -q 'sent tapfd' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
-      SLIRP_ATTACH_EC=0
-      break
-    fi
-    if grep -qE 'failed|Permission denied' "$RUN_DIR/slirp4netns.stderr" 2>/dev/null; then
-      stop_with "slirp4netns attach failed (see slirp4netns.stderr)"
-    fi
-  fi
-  if ! kill -0 "$SLIRP_PID" 2>/dev/null; then
-    stop_with "slirp4netns exited before attach completed"
-  fi
-  sleep 0.1
-done
-log_step "slirp4netns_attach" "$SLIRP_ATTACH_EC"
-[ "$SLIRP_ATTACH_EC" -eq 0 ] || stop_with "slirp4netns attach did not confirm tapfd handoff"
-
-# Bounded wait/reap: never hang after Qwen exit or overall budget.
-# Call wait_inner in this shell (not $(...)) so wait can reap the real child.
 set +e
-wait_inner_with_reap_budget
+launch_netns_inner "$INNER" "inner_qualification"
+INNER_EC=$?
 set -e
-# Prefer a concrete wait/reap exit. Empty means status was unavailable (do not
-# invent bash 127). Ledger still records INNER_WAIT_STATUS from reap.env.
-if [ -n "${INNER_WAIT_EXIT}" ]; then
-  INNER_EC="$INNER_WAIT_EXIT"
-else
-  INNER_EC="1"
+if [ "$INNER_EC" -ne 0 ] && [ -f "$RUN_DIR/qwen-result.env" ]; then
+  CANDIDATE_EXECUTION=YES
+  QWEN_EXIT_SOURCE=current_run_dir
 fi
-log_step "inner_qualification" "$INNER_EC"
+record_execution_state
 
 # --- Always-run finalization path (balance, workspace, cleanup) ---
 set +e
@@ -621,15 +768,22 @@ cp "$RUN_DIR/balance-after.json" "$SESSION_ROOT/balance-after.json" 2>/dev/null 
 cp "$RUN_DIR/balance-before.json" "$SESSION_ROOT/balance-before.json" 2>/dev/null || true
 
 if [ -f "$RUN_DIR/fatal.txt" ]; then
+  if [ "$KEY_CONSUMED" = "YES" ] && [ "$CANDIDATE_EXECUTION" != "YES" ]; then
+    stop_with_no_provider_execution "$(cat "$RUN_DIR/fatal.txt")"
+  fi
   stop_with "$(cat "$RUN_DIR/fatal.txt")"
 fi
 
-QWEN_EXIT=""
-if [ -f "$RUN_DIR/qwen-result.env" ]; then
-  QWEN_EXIT="$(awk -F= '$1=="qwen_exit"{print $2}' "$RUN_DIR/qwen-result.env")"
-else
+QWEN_EXIT="$(resolve_current_session_qwen_exit)"
+if [ -z "$QWEN_EXIT" ]; then
+  if [ "$KEY_CONSUMED" = "YES" ] && [ "$PROVIDER_LAUNCH_ATTEMPTED" = "YES" ]; then
+    stop_with_no_provider_execution "qwen_result_missing_after_inner_wait"
+  fi
   stop_with "qwen_result_missing_after_inner_wait"
 fi
+QWEN_EXIT_SOURCE=current_run_dir
+CANDIDATE_EXECUTION=YES
+record_execution_state
 [ "${QWEN_EXIT:-1}" -eq 0 ] || stop_with "qwen launch failed exit=${QWEN_EXIT:-unknown}"
 
 # GO requires Qwen exit 0 AND verified TC-T01 workspace rename (write-capable path).

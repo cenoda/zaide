@@ -56,6 +56,14 @@ synthetic bash **127**); balance-after, workspace-result, and cleanup recorded.
    (ledger `inner_qualification` exit **127** from subshell wait defect later
    remediated). See historical section §12.
 
+**Consumed-but-unlaunched operator event (separate grant; no session record):**
+
+9. ~2026-07-24T06:31:49Z — authorized fresh **24-turn** grant consumed a new
+   one-shot sub-key but **did not** create a matching `m3-qualification`
+   session artifact and **did not** launch Qwen. Reporting incorrectly reused
+   historical session `m3q-20260724T060109Z-45dd1c5f` / `qwen_exit=53`.
+   Remediation: `M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md`.
+
 ---
 
 ## 1. Scope and Non-Effects

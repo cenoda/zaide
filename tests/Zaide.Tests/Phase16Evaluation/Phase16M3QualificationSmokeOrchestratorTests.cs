@@ -92,6 +92,28 @@ public sealed class Phase16M3QualificationSmokeOrchestratorTests
     }
 
     [Fact]
+    public void SmokeOrchestrator_DoesNotReadHistoricalQwenResultFromOtherSessions()
+    {
+        var script = File.ReadAllText(ResolveSmokeScriptPath());
+
+        Assert.Contains("resolve_current_session_qwen_exit", script, StringComparison.Ordinal);
+        Assert.Contains("rm -f \"$RUN_DIR/qwen-result.env\"", script, StringComparison.Ordinal);
+        Assert.Contains("prior_session_verdict_reused=NO", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("m3q-20260724T060109Z-45dd1c5f", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SmokeOrchestrator_RunsEgressPreflightBeforeCredentialLoad()
+    {
+        var script = File.ReadAllText(ResolveSmokeScriptPath());
+
+        Assert.Contains("run_egress_preflight", script, StringComparison.Ordinal);
+        var credentialLine = script.IndexOf("DEEPSEEK_API_KEY=\"$(tr -d", StringComparison.Ordinal);
+        var egressLine = script.IndexOf("run_egress_preflight", StringComparison.Ordinal);
+        Assert.True(egressLine >= 0 && credentialLine > egressLine);
+    }
+
+    [Fact]
     public void WaitInner_InSameShell_RecordsRealChildExitNotBash127()
     {
         // Mirrors the fixed contract: start a background job, wait in the same
