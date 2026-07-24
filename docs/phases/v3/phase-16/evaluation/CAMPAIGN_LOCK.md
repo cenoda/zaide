@@ -74,12 +74,12 @@ be derived from this path. OpenCode and Grok Build remain eligibility-blocked.
 | M3a recovery re-acquisition (2026-07-24) | **Complete** under separate acquisition-and-inspection-only grant after `/tmp` wipe (`M3A_ACQUISITION_EVIDENCE.md` §1.1); pinned archive + SHA256SUMS re-downloaded; SHA-256 match; licenses re-scanned; extract for static inspection only; binary/Node **not** launched; **no** qualification retry |
 | M3 egress proof (2026-07-23) | **Complete** under separate grant (`M3_EGRESS_PROOF_EVIDENCE.md`); `api.deepseek.com:443` allow PASS; non-allowlisted block PASS |
 | M3 DNS binding gate (2026-07-23) | **Design complete** (`M3_DNS_BINDING_GATE.md`); execution at launch required under credential-and-execution grant |
-| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized session `m3q-20260724T060109Z-45dd1c5f` — DNS/slirp/egress/tmpfs/auth argv **GO**; write-capable `--approval-mode yolo`; Qwen **once** under then-locked **12** turns / **120s**; TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0); **`qwen_exit=53`** (`FatalTurnLimitedError` then-locked 12-turn ceiling) → dual GO fails; spend balance delta **USD 0.00** (3.96→3.96); fixed parent-shell reap recorded real inner exit **4** (not bash 127); post-exit finalization completed. **Active policy is 24 turns for future retry** (see `Locked smoke turn / time / spend ceilings` row below). Prior: `m3q-20260724T054307Z-481ad1de` rename verified / exit 55 at historical 60s wall; plan-only; credential; slirp; resolv; auth-type; max-turns under 5-turn ceiling |
+| M3 qualification smoke | **NO-GO** (`M3_QUALIFICATION_EVIDENCE.md`): latest authorized fresh session `m3q-20260724T072341Z-8f567943` — preflight (DNS/slirp/inner egress) **GO** before credential read+delete; write-capable `--approval-mode yolo`; Qwen **once** under **24** turns / **120s**; TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0); **`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s) → dual GO fails; balance-before USD 3.95 (after unavailable); fixed parent reap recorded real inner exit **4**; full finalization incomplete. Prior latest `m3q-20260724T060109Z-45dd1c5f` (12-turn, exit 53). Active policy 24 turns / 120s. |
 | M3 auth-configuration remediation (2026-07-24) | **Complete** (`M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md`): static lock used by latest smoke; auth-type failure mode remains cleared |
 | M3 write-capable remediation (2026-07-24) | **Complete** (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`): locked `--approval-mode yolo` + post-exit reap/finalization used by latest smoke; remediation itself was not a qualification retry |
 | M3 wall-time + exit-reap remediation (2026-07-24) | **Complete** (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`): active lock **`--max-wall-time 120s`** (was 60s); same-shell wait/reap so inner exit is not bash **127**; exercised by latest smoke (`inner_wait_exit=4`); not a qualification retry |
 | M3 fresh-session eligibility remediation (2026-07-24) | **Complete** (`M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md`): egress preflight before credential; fresh session ID per grant; historical NO-GO informative only; consumed-but-unlaunched records `no candidate launch / no provider execution`; not a qualification retry |
-| Locked smoke turn / time / spend ceilings | `--max-session-turns 24`, `--max-wall-time 120s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Latest smoke (`m3q-20260724T060109Z-45dd1c5f`) executed under the then-locked **12**-turn ceiling / **120s** wall. Active policy now **24** turns / **120s** wall for any future retry. Historical session `m3q-20260724T054307Z-481ad1de` used **60s** wall and **12**-turn ceiling (unchanged records). |
+| Locked smoke turn / time / spend ceilings | `--max-session-turns 24`, `--max-wall-time 120s`, smoke **USD 1**, Phase 16 cumulative **USD 3**. Latest smoke (`m3q-20260724T072341Z-8f567943`) under active 24/120s. Prior `m3q-20260724T060109Z-45dd1c5f` under then-12/120s. Historical `m3q-20260724T054307Z-481ad1de` used 60s/12 (unchanged). |
 | Locked smoke approval mode | `--approval-mode yolo` (auto-approve all tools; host Bubblewrap required). Used by latest write-capable smoke |
 | Next external grants | New qualification grant + **new** dedicated sub-key one-shot file if retry is authorized separately; keep write-capable lock + **24** turns + **120s** wall + fixed reap path; GO only on exit 0 **and** verified TC-T01 rename |
 
@@ -217,8 +217,8 @@ available for independent reconciliation.
 *M1 campaign lock — human-accepted 2026-07-23; Qwen Code observational-path
 amendment human-accepted 2026-07-23. M2b completed 2026-07-23. M3 egress proof
 completed 2026-07-23. M3 DNS binding gate defined 2026-07-23. Latest M3
-qualification smoke session `m3q-20260724T060109Z-45dd1c5f` NO-GO: 12-turn
-ceiling / 120s wall (then-locked); Qwen exit 53 after verified TC-T01 rename;
-spend balance delta USD 0.00; fixed parent-shell reap real inner exit 4.
-**Active policy now 24 turns / 120s wall for future retry.**
-Candidate remains not qualified. No second attempt under that grant. No M4.*
+qualification smoke session `m3q-20260724T072341Z-8f567943` (fresh, one only)
+NO-GO: 24-turn / 120s; Qwen exit 55 after verified rename; preflight before key;
+finalization incomplete; inner exit 4. Prior `m3q-20260724T060109Z-45dd1c5f`.
+**Active policy 24 turns / 120s wall.**
+Candidate remains not qualified. No second attempt. No M4.*

@@ -21,20 +21,17 @@ re-scanned licenses, and re-extracted for static inspection only
 (credential; slirp host-PID; resolv bind; auth-type; max-turns under 5-turn
 ceiling; plan-only exit 0 without rename; yolo rename verified with exit 55 at
 historical 60s wall). **Latest authorized retry session
-`m3q-20260724T060109Z-45dd1c5f`:** DNS/slirp/egress/tmpfs/auth argv **GO**;
-write-capable **yolo**; locked **12** turns / **120s** wall; Qwen launched
-**once**; TC-T01 rename **verified** (`FetchData` 0 / `RetrieveData` 11; host
-build/test 0) but **`qwen_exit=53`** (`FatalTurnLimitedError` 12-turn ceiling)
-→ dual GO **NO-GO**; spend balance delta **USD 0.00**; fixed parent-shell reap
-recorded real inner exit **4** (not bash 127); post-exit finalization completed
-without hang. Candidate remains **not qualified**. **Active** locked smoke ceilings
-: max **24** session turns, **120s** wall-time, **USD 1** smoke /
-**USD 3** cumulative (24-turn ceiling authorized for future retry; historical
-12-turn session records preserved). **M3 fresh-session eligibility remediation
-(2026-07-24)** ensures each grant evaluates a new session ID, defers credential
-consumption until after egress preflight, and forbids substituting historical
-`qwen_exit` for the current session (`evaluation/M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md`).
-Comparative campaign rules remain unchanged.
+`m3q-20260724T072341Z-8f567943` (exactly one fresh, new ID pre-recorded):**
+DNS/slirp/inner-egress preflight **GO** before credential; write-capable **yolo**;
+locked **24** turns / **120s** wall; Qwen launched **once**; TC-T01 rename
+**verified** (`FetchData` 0 / `RetrieveData` 11; host build/test 0) but
+**`qwen_exit=55`** (`FatalBudgetExceededError` wall 120s) → dual GO **NO-GO**;
+balance-before USD 3.95 (after unavailable); fixed parent-shell reap recorded
+real inner exit **4**; finalization incomplete. Candidate remains **not
+qualified**. **Active** locked smoke ceilings: max **24** session turns,
+**120s** wall-time, **USD 1** smoke / **USD 3** cumulative. **M3 fresh-session
+eligibility remediation (2026-07-24)** followed for this grant. Comparative
+campaign rules remain unchanged.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -275,7 +272,7 @@ comparative claims remain impossible unless two later M3 qualifications actually
 succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof were
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
-qualification smoke** (`m3q-20260724T060109Z-45dd1c5f`) **NO-GO**: write-capable
+qualification smoke** (`m3q-20260724T072341Z-8f567943`) **NO-GO**: write-capable yolo 24/120; prior was 12-turn exit-53.
 yolo path under locked **12** turns / **120s** wall verified TC-T01 rename but
 `qwen_exit=53` (turn limit); spend balance delta USD 0.00; fixed parent-shell
 reap recorded real inner exit 4; candidate still **not qualified**.
@@ -883,8 +880,7 @@ qualification retry.
 **M3 fresh-session eligibility remediation (2026-07-24)** fixed orchestrator
 ordering (egress preflight before credential), fresh-session execution/evidence
 contract, and consumed-but-unlaunched recording; not a qualification retry.
-**Latest M3 qualification smoke** (`m3q-20260724T060109Z-45dd1c5f`) executed
-DNS binding, write-capable yolo argv (12 turns / **120s** wall), and one Qwen
-launch; TC-T01 rename **verified** but **NO-GO** on `qwen_exit=53` (turn limit);
-spend balance delta USD 0.00; fixed parent-shell reap recorded real inner exit
-4; post-exit finalization completed; candidate still **not qualified**.
+**Latest M3 qualification smoke** (`m3q-20260724T072341Z-8f567943`) executed
+preflight then one Qwen launch under write-capable yolo (24 / **120s**); rename
+**verified** but **NO-GO** on `qwen_exit=55` (wall); finalization incomplete;
+candidate still **not qualified**.

@@ -1,29 +1,32 @@
 # Phase 16 M3 — Qualification Smoke Evidence (TC-T01)
 
 **Status:** **NO-GO** — authorized fresh qualification retry session
-`m3q-20260724T060109Z-45dd1c5f` completed pre-launch gates and launched Qwen
-Code **exactly once** under the locked write-capable contract
-(`--approval-mode yolo`, 12 turns, **120s** wall, remediated auth, fixed
-same-shell reap path). Qwen performed the TC-T01 `FetchData` → `RetrieveData`
+`m3q-20260724T072341Z-8f567943` (exactly one; new session ID generated and
+recorded before launch). Completed fresh-session/DNS/slirp/inner-allow-block
+egress preflight **before** reading one-shot credential. Launched Qwen Code
+**exactly once** under the locked write-capable contract
+(`--approval-mode yolo`, 24 turns, **120s** wall, remediated auth, fixed
+parent-shell reap path). Qwen performed the TC-T01 `FetchData` → `RetrieveData`
 rename (host-side counts `FetchData=0`, `RetrieveData=11`; host `dotnet build` /
-`dotnet test` exit 0) but exited **53** (`FatalTurnLimitedError`: max session
-turns under locked **12**). Dual GO criteria require **Qwen exit 0 and**
-verified rename; exit 53 alone forces **NO-GO**. Session smoke spend from
-balance delta **USD 0.00** (before and after both **USD 3.96**). Bounded
-post-exit reap/finalization **ran** with real unshare/inner exit **4** (not
-synthetic bash **127**); balance-after, workspace-result, and cleanup recorded.
-**No** second attempt. **No** M4. **No** comparative or quality claims.
+`dotnet test` exit 0) but exited **55** (`FatalBudgetExceededError`: wall 120s).
+Dual GO criteria require **Qwen exit 0 and** verified rename; exit 55 forces
+**NO-GO**. Balance-before **USD 3.95**; balance-after and delta unavailable
+(finalization path not reached). Bounded reap recorded real inner exit **4**;
+orchestrator finalization (balance-after, workspace-result.env, cleanup.env)
+**not reached** (return non-zero under set -e inside launch_netns_inner aborted
+post-launch steps; latent in committed fixed path). Host verification confirms
+rename. **No** second attempt. **No** M4. **No** comparative or quality claims.
 
 **Campaign path:** single-candidate observational only
 (`M1_AMENDMENT_QWEN_OBSERVATIONAL.md`).
 
-**Session ID (this grant):** `m3q-20260724T060109Z-45dd1c5f`
+**Session ID (this grant):** `m3q-20260724T072341Z-8f567943`
 
 **Artifact root (outside Zaide repository):**
 
 ```text
-/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260724T060109Z-45dd1c5f/
-/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260724T060109Z-45dd1c5f/
+/tmp/phase16-artifacts/phase-16/records/m3-qualification/m3q-20260724T072341Z-8f567943/
+/tmp/phase16-artifacts/phase-16/records/dns-binding/m3q-20260724T072341Z-8f567943/
 ```
 
 **Prior attempts (exhausted grants; not this session):**
@@ -49,12 +52,16 @@ synthetic bash **127**); balance-after, workspace-result, and cleanup recorded.
    changed; TC-T01 incomplete; spend owner-reported less than USD 0.01;
    orchestrator external timeout before post-balance. Write-capable
    remediation followed (`M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`).
-8. Session `m3q-20260724T054307Z-481ad1de` — **NO-GO** under write-capable yolo
-   with historical **60s** wall: DNS/slirp/egress/tmpfs/auth argv **GO**;
-   TC-T01 rename **verified**; **`qwen_exit=55`** (`FatalBudgetExceededError`
-   wall 60s); spend balance delta **USD 0.00**; post-exit finalization ran
-   (ledger `inner_qualification` exit **127** from subshell wait defect later
-   remediated). See historical section §12.
+ 8. Session `m3q-20260724T054307Z-481ad1de` — **NO-GO** under write-capable yolo
+    with historical **60s** wall: DNS/slirp/egress/tmpfs/auth argv **GO**;
+    TC-T01 rename **verified**; **`qwen_exit=55`** (`FatalBudgetExceededError`
+    wall 60s); spend balance delta **USD 0.00**; post-exit finalization ran
+    (ledger `inner_qualification` exit **127** from subshell wait defect later
+    remediated). See historical section §12.
+ 9. Session `m3q-20260724T060109Z-45dd1c5f` — **NO-GO** (prior latest): 12-turn
+    (then active); DNS/slirp/egress GO; yolo; rename verified; `qwen_exit=53`
+    (turn limit); delta USD 0.00; finalization ran with inner 4. Now superseded
+    by fresh 24-turn retry below.
 
 **Consumed-but-unlaunched operator event (separate grant; no session record):**
 
@@ -77,10 +84,10 @@ synthetic bash **127**); balance-after, workspace-result, and cleanup recorded.
 | Materialize TC-T01 synthetic workspace | **Yes** |
 | Read dedicated one-shot sub-key via orchestrator only | **Yes** — mode `600`, size `36` bytes; consumed and deleted |
 | Inject only `DEEPSEEK_API_KEY` (no `~/.config` / ambient) | **Yes** |
-| Launch Qwen Code (TC-T01, yolo, JSON, 12 turns, **120s**) | **Yes — once** — locked auth + write-capable argv; `qwen_exit=53` |
-| USD 1 smoke / USD 3 cumulative spend | Caps **not breached**; session balance delta **USD 0.00** |
-| Verify TC-T01 `FetchData` → `RetrieveData` | **Yes** — rename verified; host build/test exit 0 |
-| Bounded post-exit reap/finalization (fixed parent-shell path) | **Yes** — real inner exit **4**; balance-after, workspace-result, cleanup |
+| Launch Qwen Code (TC-T01, yolo, JSON, 24 turns, **120s**) | **Yes — once** — locked auth + write-capable argv; `qwen_exit=55` |
+| USD 1 smoke / USD 3 cumulative spend | Caps **not breached**; balance-before USD 3.95; after unavailable (finalization skipped) |
+| Verify TC-T01 `FetchData` → `RetrieveData` | **Yes** (host-side) — rename verified; build/test 0 |
+| Bounded post-exit reap/finalization (fixed parent-shell path) | Partial: real inner exit **4** recorded; full finalization (balance-after, workspace-result, cleanup) **not reached** (return under set -e in launch func) |
 
 | Forbidden | Status |
 |---|---|
@@ -109,9 +116,9 @@ synthetic bash **127**); balance-after, workspace-result, and cleanup recorded.
 | slirp4netns attach | host-visible `UNSHARE_PID` + tapfd handoff | **PASS** (`sent tapfd=5 for tap0`) |
 | Inner egress reprobe | allowlisted TLS + non-allowlisted block | **PASS** — allow body `Authentication Fails (governor)`; block curl exit 28 (timeout) |
 | Bubblewrap `/etc` setup | `--tmpfs /etc` + ro-bind hosts + resolv-empty | **PASS** (process entered sandbox) |
-| Qwen headless run | TC-T01, locked auth argv, yolo, JSON, 12 turns, **120s** | **FAIL exit** — `qwen_exit=53` turn limit (`FatalTurnLimitedError`) |
-| TC-T01 task completion | `FetchData` → `RetrieveData` rename | **PASS** — `FetchData` count 0; `RetrieveData` count 11; host build/test 0 |
-| Orchestrator finalization | post-balance, workspace, cleanup | **PASS** — completed without hang (`balance_after` exit 0; `cleanup_status=reaped`; `orphan_detected=NO`) |
+| Qwen headless run | TC-T01, locked auth argv, yolo, JSON, 24 turns, **120s** | **FAIL exit** — `qwen_exit=55` wall limit (`FatalBudgetExceededError`) |
+| TC-T01 task completion | `FetchData` → `RetrieveData` rename | **PASS** (host) — `FetchData` count 0; `RetrieveData` count 11; host build/test 0 |
+| Orchestrator finalization | post-balance, workspace, cleanup | **INCOMPLETE** — inner exit 4 recorded; balance-after/verify/cleanup not executed (script aborted at non-zero return under set -e inside launch_netns_inner) |
 
 **DNS binding execution verdict:** **GO** (A-14 sequence complete through
 triple-consistency and inner allow/block reprobes; `BOUND_IPV4=3.173.21.63`;
@@ -136,7 +143,7 @@ orchestrator wall-time / write-capable remediations):
 --approval-mode yolo
 --model deepseek-v4-flash
 --output-format json
---max-session-turns 12
+--max-session-turns 24
 --max-wall-time 120s
 ```
 
@@ -311,14 +318,17 @@ Qwen JSON (stdout empty).
 
 ### 9.1 This qualification attempt
 
-**NO-GO.** DNS binding, slirp4netns attach, egress reprobes, isolation
-re-check, credential gate, Bubblewrap `/etc` setup, locked auth argv,
-write-capable yolo mode, **120s** wall argv, and fixed parent-shell reaping
-**passed**. Qwen Code **started once**, **renamed** `FetchData` →
-`RetrieveData` (verified; host build/test green), then exited **53** on the
-locked **12**-turn ceiling. Dual GO criteria fail on non-zero exit. Spend:
-**USD 0.00** session balance delta; caps not breached. Post-exit
-reap/finalization completed with real exit **4** (not synthetic 127).
+**NO-GO.** Fresh-session, DNS binding, slirp4netns attach, inner egress
+reprobes (allow+block), isolation pre-check, credential gate (after preflight),
+Bubblewrap `/etc` setup, locked auth argv, write-capable yolo mode, **24** turns
+/**120s** wall argv **passed**. Key read once and deleted immediately after
+preflight; only `DEEPSEEK_API_KEY` injected. Qwen Code **started exactly once**,
+performed the rename `FetchData` → `RetrieveData` (host verified: counts 0/11;
+build/test 0), then exited **55** on wall budget. Dual GO criteria fail on
+non-zero exit. Spend: balance-before USD 3.95; after unavailable (finalization
+not reached). Post-launch reap recorded real inner exit **4**. Orchestrator
+finalization skipped due to non-zero return under set -e inside
+launch_netns_inner (return aborts before caller finalization code).
 
 Candidate remains **`eligible for later M3 qualification`** but **not
 qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
@@ -366,13 +376,12 @@ DNS/slirp/egress/tmpfs/auth argv **GO**; Qwen once; TC-T01 rename **verified**
 (3.97→3.97); ledger `inner_qualification` exit **127** (subshell wait defect;
 finalization still ran). Wall raised to **120s** and reaping fixed afterward
 (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). Superseded as **latest** by
-`m3q-20260724T060109Z-45dd1c5f` under this grant (120s wall; exit 53 turn limit).
+`m3q-20260724T060109Z-45dd1c5f` under prior grant (120s wall; exit 53 turn limit).
 
 ---
 
-*M3 qualification smoke evidence — session `m3q-20260724T060109Z-45dd1c5f`.
-Observational only. NO-GO: Qwen exit 53 (12-turn ceiling) after verified TC-T01
-rename (`RetrieveData` present; host build/test green). Pre-launch DNS, slirp,
-egress, Bubblewrap `/etc`, locked auth, yolo path, 120s wall argv, and fixed
-parent-shell reaping GO. Post-exit finalization completed with real inner exit 4.
-No second attempt. No M4. No comparative or quality claims.*
+*M3 qualification smoke evidence — session `m3q-20260724T072341Z-8f567943`.
+Observational only. Exactly one fresh M3 retry. NO-GO: Qwen exit 55 (wall 120s)
+after verified TC-T01 rename. Preflight GO before credential; key consumed+deleted
+post-preflight only. 24 turns/120s/yolo. inner exit 4 recorded; finalization
+incomplete. No second attempt. No M4. No comparative or quality claims.*
