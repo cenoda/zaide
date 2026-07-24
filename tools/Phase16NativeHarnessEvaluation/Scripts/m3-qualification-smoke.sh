@@ -23,9 +23,9 @@ STOP_REASON=""
 KEY_CONSUMED=NO
 PROVIDER_LAUNCH_ATTEMPTED=NO
 CANDIDATE_EXECUTION=NO
-# Overall inner budget: DNS/egress probes + Qwen wall (240s) + post-qwen verify + slack.
+# Overall inner budget: DNS/egress probes + Qwen wall (800s) + post-qwen verify + slack.
 # Must finish well under any external safety wrapper so post-balance always runs.
-INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-320}"
+INNER_OVERALL_TIMEOUT_SEC="${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-880}"
 # After qwen-result.env appears, allow this many extra seconds for verify then reap.
 POST_QWEN_VERIFY_BUDGET_SEC="${PHASE16_POST_QWEN_VERIFY_BUDGET_SEC:-45}"
 UNSHARE_PID=""
@@ -678,9 +678,9 @@ PROMPT_TEXT="$(tr -d '\r' < "$PHASE16_PROMPT_FILE")"
   echo "--output-format"
   echo "json"
   echo "--max-session-turns"
-  echo "24"
+  echo "240"
   echo "--max-wall-time"
-  echo "240s"
+  echo "800s"
 } > "$PHASE16_RUN_DIR/exact-argv.txt"
 
 SANDBOX_HOME="$PHASE16_WORKSPACE/.sandbox-home"
@@ -707,8 +707,8 @@ bwrap \
     --approval-mode yolo \
     --model deepseek-v4-flash \
     --output-format json \
-    --max-session-turns 24 \
-    --max-wall-time 240s \
+    --max-session-turns 240 \
+    --max-wall-time 800s \
   > "$PHASE16_RUN_DIR/qwen.stdout" 2> "$PHASE16_RUN_DIR/qwen.stderr"
 QWEN_EC=$?
 set -e

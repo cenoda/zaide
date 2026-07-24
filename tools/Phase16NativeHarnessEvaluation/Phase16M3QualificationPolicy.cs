@@ -17,17 +17,27 @@ public static class Phase16M3QualificationPolicy
     /// Host Bubblewrap sandbox remains mandatory; this is not plan-only.
     /// </summary>
     public const string AllowedApprovalMode = "yolo";
-    public const int MaxSessionTurns = 24;
+    /// <summary>
+    /// Locked Qwen <c>--max-session-turns</c> for TC-T01 qualification smoke.
+    /// Raised from historical <c>12</c> and <c>24</c> after session
+    /// <c>m3q-20260724T075320Z-939e94cf</c> exited 53 at the then-locked
+    /// 24-turn ceiling despite verified rename. Historical session records stay
+    /// at the turn ceiling used for that run (12 / 24).
+    /// </summary>
+    public const int MaxSessionTurns = 240;
     /// <summary>
     /// Locked Qwen <c>--max-wall-time</c> for TC-T01 qualification smoke.
     /// Raised from historical <c>60s</c> (session
     /// <c>m3q-20260724T054307Z-481ad1de</c> exited 55 after verified rename)
-    /// to <c>120s</c>, then to <c>240s</c> by human decision after session
+    /// to <c>120s</c>, then to <c>240s</c> after session
     /// <c>m3q-20260724T072341Z-8f567943</c> exited 55 at the then-locked 120s
-    /// wall despite verified rename. Historical session records stay at the
-    /// wall used for that run (60s / 120s).
+    /// wall, then to <c>800s</c> by human decision for one future extended
+    /// single-smoke qualification retry after session
+    /// <c>m3q-20260724T075320Z-939e94cf</c> exited 53 at the then-locked
+    /// 24-turn ceiling under 240s wall. Historical session records stay at the
+    /// wall used for that run (60s / 120s / 240s).
     /// </summary>
-    public const string MaxWallTime = "240s";
+    public const string MaxWallTime = "800s";
     public const decimal SmokeSpendCapUsd = 1m;
     public const decimal CampaignSpendCapUsd = 3m;
 

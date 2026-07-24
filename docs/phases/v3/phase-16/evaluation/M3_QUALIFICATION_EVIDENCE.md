@@ -321,8 +321,9 @@ finalization remediation). Balance-after, workspace-result, cleanup.env, and
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Keep locked write-capable yolo + **24** turns + **240s** wall + fixed
-   reap/finalization path unless a separate human decision amends ceilings.
+3. Keep locked write-capable yolo + **240** turns + **800s** wall + fixed
+   reap/finalization path (active policy per `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`;
+   extended single-smoke exception for **one** retry only).
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. Preserve session records outside `/tmp` before any host reboot.
 
@@ -367,11 +368,13 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 
 1. Human provisions a **new** dedicated DeepSeek sub-key one-shot file.
 2. Re-issue a **new** qualification grant with a **new** session ID.
-3. Keep locked write-capable `--approval-mode yolo` + **24** turns + **240s**
-   wall + fixed reap/finalization path unless a separate human decision amends
-   ceilings.
+3. Keep locked write-capable `--approval-mode yolo` + **240** turns + **800s**
+   wall + fixed reap/finalization path (active policy per
+   `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`; extended
+   single-smoke exception for **one** retry only).
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
-5. **No second attempt** was authorized or performed under this grant.
+5. **No second attempt** was authorized or performed under this grant. **No retry**
+   occurred in the extended single-smoke policy slice.
 
 ---
 
@@ -382,7 +385,8 @@ qualified**. Do **not** proceed to M4. Do **not** retry under this grant.
 - `M3_AUTH_CONFIG_REMEDIATION_EVIDENCE.md` — argv/modelProviders contract used
 - `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md` — write-capable argv + reap path
 - `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` — prior 120s wall + same-shell reap
-- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — active 240s wall used by this session
+- `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` — then-active 240s wall used by this session
+- `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md` — later active 240-turn / 800s wall (future-policy; not a retry)
 - `M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md` — sticky set -e finalization fix exercised successfully here
 - `M3_FRESH_SESSION_ELIGIBILITY_REMEDIATION_EVIDENCE.md` — fresh session ID + preflight-before-credential
 - `M3_EGRESS_PROOF_EVIDENCE.md` — egress architecture

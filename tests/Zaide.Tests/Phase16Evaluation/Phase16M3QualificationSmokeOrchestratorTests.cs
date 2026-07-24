@@ -15,29 +15,29 @@ namespace Zaide.Tests.Phase16Evaluation;
 public sealed class Phase16M3QualificationSmokeOrchestratorTests
 {
     [Fact]
-    public void SmokeOrchestrator_LocksTwoHundredFortySecondWallTimeArgv()
+    public void SmokeOrchestrator_LocksEightHundredSecondWallTimeArgv()
     {
         var script = File.ReadAllText(ResolveSmokeScriptPath());
 
         Assert.Contains("--max-wall-time", script, StringComparison.Ordinal);
-        Assert.Contains("240s", script, StringComparison.Ordinal);
-        Assert.Equal("240s", Phase16M3QualificationPolicy.MaxWallTime);
+        Assert.Contains("800s", script, StringComparison.Ordinal);
+        Assert.Equal("800s", Phase16M3QualificationPolicy.MaxWallTime);
 
-        // Active wall-time argv must be 240s (exact-argv record and bwrap launch).
+        // Active wall-time argv must be 800s (exact-argv record and bwrap launch).
         Assert.Matches(
-            new Regex("echo\\s+\"--max-wall-time\"\\s*\\n\\s*echo\\s+\"240s\"", RegexOptions.Multiline),
+            new Regex("echo\\s+\"--max-wall-time\"\\s*\\n\\s*echo\\s+\"800s\"", RegexOptions.Multiline),
             script);
         Assert.Matches(
-            new Regex(@"--max-wall-time\s+240s", RegexOptions.Multiline),
+            new Regex(@"--max-wall-time\s+800s", RegexOptions.Multiline),
             script);
 
-        // Overall inner budget must accommodate 240s Qwen wall + probes + verify.
+        // Overall inner budget must accommodate 800s Qwen wall + probes + verify.
         Assert.Contains(
-            "INNER_OVERALL_TIMEOUT_SEC=\"${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-320}\"",
+            "INNER_OVERALL_TIMEOUT_SEC=\"${PHASE16_INNER_OVERALL_TIMEOUT_SEC:-880}\"",
             script,
             StringComparison.Ordinal);
 
-        // Do not leave a live 60s or 120s wall-time ceiling in the orchestrator.
+        // Do not leave a live 60s, 120s, or 240s wall-time ceiling in the orchestrator.
         Assert.DoesNotMatch(
             new Regex(@"--max-wall-time\s+60s", RegexOptions.Multiline),
             script);
@@ -45,36 +45,48 @@ public sealed class Phase16M3QualificationSmokeOrchestratorTests
             new Regex(@"--max-wall-time\s+120s", RegexOptions.Multiline),
             script);
         Assert.DoesNotMatch(
+            new Regex(@"--max-wall-time\s+240s", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
             new Regex("echo\\s+\"60s\"", RegexOptions.Multiline),
             script);
         Assert.DoesNotMatch(
             new Regex("echo\\s+\"120s\"", RegexOptions.Multiline),
             script);
+        Assert.DoesNotMatch(
+            new Regex("echo\\s+\"240s\"", RegexOptions.Multiline),
+            script);
     }
 
     [Fact]
-    public void SmokeOrchestrator_LocksTwentyFourTurnArgv()
+    public void SmokeOrchestrator_LocksTwoHundredFortyTurnArgv()
     {
         var script = File.ReadAllText(ResolveSmokeScriptPath());
 
         Assert.Contains("--max-session-turns", script, StringComparison.Ordinal);
-        Assert.Contains("24", script, StringComparison.Ordinal);
-        Assert.Equal(24, Phase16M3QualificationPolicy.MaxSessionTurns);
+        Assert.Contains("240", script, StringComparison.Ordinal);
+        Assert.Equal(240, Phase16M3QualificationPolicy.MaxSessionTurns);
 
-        // Active turn argv must be 24 (exact-argv record and bwrap launch).
+        // Active turn argv must be 240 (exact-argv record and bwrap launch).
         Assert.Matches(
-            new Regex("echo\\s+\"--max-session-turns\"\\s*\\n\\s*echo\\s+\"24\"", RegexOptions.Multiline),
+            new Regex("echo\\s+\"--max-session-turns\"\\s*\\n\\s*echo\\s+\"240\"", RegexOptions.Multiline),
             script);
         Assert.Matches(
-            new Regex(@"--max-session-turns\s+24", RegexOptions.Multiline),
+            new Regex(@"--max-session-turns\s+240\b", RegexOptions.Multiline),
             script);
 
-        // Do not leave a 12-turn ceiling in the orchestrator.
+        // Do not leave a 12- or 24-turn ceiling in the orchestrator.
         Assert.DoesNotMatch(
             new Regex(@"--max-session-turns\s+12\b", RegexOptions.Multiline),
             script);
         Assert.DoesNotMatch(
+            new Regex(@"--max-session-turns\s+24\b", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
             new Regex("echo\\s+\"12\"", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
+            new Regex("echo\\s+\"24\"", RegexOptions.Multiline),
             script);
     }
 

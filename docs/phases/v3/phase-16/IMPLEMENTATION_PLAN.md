@@ -15,7 +15,13 @@ wall lock from 60s to **120s** and fixed same-shell wait/reap so inner exit is
 not bash **127**. **M3 wall-time 240s future-policy remediation (2026-07-24)**
 (`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`) raised the
 **active** wall lock to **240s** (overall inner budget **320s**); historical
-120s/60s session records unchanged; not a qualification retry. **M3a recovery
+120s/60s session records unchanged; not a qualification retry. **M3 extended
+single-smoke policy remediation (2026-07-24)**
+(`evaluation/M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`) raised
+the **active** lock to **240** turns / **800s** wall (overall inner budget
+**880s**); explicitly approved **one** future qualification retry only;
+historical 24/240s session `m3q-20260724T075320Z-939e94cf` unchanged; not a
+qualification retry. **M3a recovery
 re-acquisition (2026-07-24)** under a separate
 acquisition-and-inspection-only grant recreated `/tmp/phase16-artifacts/phase-16/`,
 re-downloaded the pinned archive and `SHA256SUMS`, re-verified SHA-256,
@@ -34,8 +40,9 @@ locked **24** turns / **240s** wall; Qwen launched **once**; TC-T01 rename
 balance-before/after USD **3.94** / **3.94** (delta **USD 0.00**); fixed
 parent-shell reap recorded real inner exit **4**; finalization **completed**
 (balance-after, workspace, cleanup). Candidate remains **not qualified**.
-**Active** locked smoke ceilings: max **24** session turns, **240s** wall-time,
-**USD 1** smoke / **USD 3** cumulative. **M3 fresh-session eligibility
+**Active** locked smoke ceilings: max **240** session turns, **800s** wall-time,
+**USD 1** smoke / **USD 3** cumulative (extended single-smoke exception for **one**
+future retry; not authorization for multiple attempts). **M3 fresh-session eligibility
 remediation (2026-07-24)** and **M3 post-session finalization remediation
 (2026-07-24)**
 (`evaluation/M3_POST_SESSION_FINALIZATION_REMEDIATION_EVIDENCE.md`) were
@@ -282,9 +289,10 @@ succeed. M2a and M2b were completed on 2026-07-23. **M3a and M3 egress proof wer
 completed on 2026-07-23.** **M3a recovery re-acquisition completed 2026-07-24**
 after `/tmp` wipe (inspection only; no retry at recovery time). **Latest M3
 qualification smoke** (`m3q-20260724T075320Z-939e94cf`) **NO-GO**: write-capable
-yolo under locked **24** turns / **240s** wall; TC-T01 rename verified but
+yolo under then-locked **24** turns / **240s** wall; TC-T01 rename verified but
 `qwen_exit=53` (turn limit); spend delta USD 0.00; finalization complete;
-candidate still **not qualified**. Prior historical
+candidate still **not qualified**. **Active** policy **240 turns / 800s wall**
+(extended single-smoke exception for one future retry). Prior historical
 `m3q-20260724T072341Z-8f567943` (24/120s, exit 55).
 
 ### 5.2 ACP is independently verified and deferred
@@ -506,10 +514,10 @@ completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
 execution remains blocked pending a **new** qualification grant, credentials,
 and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
-2026-07-24; wall raised 60s→120s then **240s** after exit-55 evidence; turns
-raised to **24** on 2026-07-24 after exit-53 evidence): max **24** session
-turns, **240s** wall-time, **USD 1** smoke / **USD 3** cumulative — policy-only
-until a separate execution grant. OpenCode and Grok Build remain blocked at M1.
+2026-07-24; wall raised 60s→120s→240s; turns raised 12→24→**240** after
+exit-53 evidence; extended single-smoke exception 2026-07-24): max **240**
+session turns, **800s** wall-time, **USD 1** smoke / **USD 3** cumulative —
+policy-only until a separate execution grant authorizes **one** extended retry. OpenCode and Grok Build remain blocked at M1.
 A Grok Build distributed artifact must be independently identified and mapped
 before its slice can execute.
 
@@ -886,10 +894,15 @@ same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`
 **M3 wall-time 240s future-policy remediation (2026-07-24)** raised active wall
 to **240s** (`evaluation/M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`);
 historical 120s/60s session records unchanged; not a qualification retry.
+**M3 extended single-smoke policy remediation (2026-07-24)** raised active lock
+to **240** turns / **800s** wall (`evaluation/M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`);
+overall inner budget **880s**; explicitly approved **one** future qualification
+retry only; historical 24/240s session `m3q-20260724T075320Z-939e94cf`
+unchanged; not a qualification retry.
 **M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn
 ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
 and docs; historical 12-turn session records preserved unchanged; not a
-qualification retry.
+qualification retry (superseded as active lock by extended single-smoke policy).
 **M3 fresh-session eligibility remediation (2026-07-24)** fixed orchestrator
 ordering (egress preflight before credential), fresh-session execution/evidence
 contract, and consumed-but-unlaunched recording; not a qualification retry.

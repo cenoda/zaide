@@ -22,17 +22,21 @@ same-shell wait/reap
 (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`). **M3 wall-time 240s
 future-policy remediation (2026-07-24)** raised the **active** wall lock to
 **240s** (`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`); historical
-120s/60s session records unchanged; not a qualification retry. **M3a recovery
+120s/60s session records unchanged; not a qualification retry. **M3 extended
+single-smoke policy remediation (2026-07-24)** raised the **active** lock to
+**240** turns / **800s** wall (`M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`);
+explicitly approved **one** future retry only; historical 24/240s session
+unchanged; not a qualification retry. **M3a recovery
 re-acquisition (2026-07-24)** after `/tmp` wipe re-verified hash and licenses
 and re-extracted for inspection only (`M3A_ACQUISITION_EVIDENCE.md` §1.1).
 **Latest M3 qualification smoke** (`m3q-20260724T075320Z-939e94cf`) **NO-GO**:
-write-capable yolo under locked **24** turns / **240s** wall; TC-T01 rename
+write-capable yolo under then-locked **24** turns / **240s** wall; TC-T01 rename
 verified but `qwen_exit=53` (turn limit); preflight before key; finalization
 complete; spend delta USD 0.00; candidate still **not qualified**
 (`M3_QUALIFICATION_EVIDENCE.md`). Prior historical
 `m3q-20260724T072341Z-8f567943` (24/120s, exit 55). Locked smoke ceilings
-(active): max **24** session turns, **240s** wall-time, **USD 1** smoke /
-**USD 3** cumulative.
+(active): max **240** session turns, **800s** wall-time, **USD 1** smoke /
+**USD 3** cumulative (extended single-smoke exception for one future retry).
 
 **M1 source re-verification window:** `2026-07-22T15:19:00Z` through
 `2026-07-22T15:20:57Z` (UTC). Methods: GitHub REST API release/ref/contents
@@ -199,7 +203,7 @@ quality claims.
 | Field | State after M3a (2026-07-23) | Resolution gate / notes |
 |---|---|---|
 | **Post-extract executable path (A-02)** | **`RESOLVED`:** `qwen-code/bin/qwen` (shell launcher → bundled `node/bin/node` + `lib/cli-entry.js`) | Static inspection only; binary not executed |
-| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 24`, `240s`, `--approval-mode yolo` write-capable, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6, `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`, `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`, and `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md` |
+| **Structured non-interactive argv (A-03)** | **`RESOLVED` (support surface + locked smoke policy):** headless via `-p`/`--prompt` or positional prompt; auth/model/output/approval/ceilings locked in `Phase16M3QualificationPolicy` / orchestrator (`--max-session-turns 240`, `800s`, `--approval-mode yolo` write-capable, DeepSeek OpenAI-compatible auth); workspace = process CWD | Execution still requires a separate qualification grant + credentials + DNS/egress gates; see `M3A_ACQUISITION_EVIDENCE.md` §6, `M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`, `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`, `M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`, and `M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md` |
 | **SOURCE_REV (A-11)** | `UNRESOLVED` | Accepted paired with unmapped A-10; not inferred |
 | **Protocol / SDK** | Partially observed | DeepSeek preset uses OpenAI-compatible protocol; not a separate product pin |
 | **Product / changelog** | Tag `v0.20.1` only | Separate product/changelog surface not mapped beyond release tag |
@@ -215,11 +219,11 @@ SHA-256 pin verification; tag + in-archive `LICENSE` scan; A-02/A-03 resolution
 from inspection.
 
 **Qualification smoke status:** attempted under separate grants; latest session
-`m3q-20260724T075320Z-939e94cf` **NO-GO** (write-capable yolo; **24** turns /
+`m3q-20260724T075320Z-939e94cf` **NO-GO** (write-capable yolo; then-locked **24** turns /
 **240s** wall; TC-T01 rename verified; `qwen_exit=53` turn limit; finalization
 complete; spend delta USD 0.00) — see `M3_QUALIFICATION_EVIDENCE.md`. Prior
 historical `m3q-20260724T072341Z-8f567943` (24/120s, exit 55). Active policy
-is **24** turns / **240s** wall.
+is **240** turns / **800s** wall (extended single-smoke exception for one future retry).
 Candidate remains **not qualified**. Comparative claims remain forbidden.
 **No second attempt** under that grant.
 
@@ -478,8 +482,9 @@ recovery re-acquisition 2026-07-24 after `/tmp` wipe (inspection only). M3
 egress proof completed 2026-07-23 (`M3_EGRESS_PROOF_EVIDENCE.md`). M3 DNS
 binding gate defined 2026-07-23 (`M3_DNS_BINDING_GATE.md`). Latest M3
 qualification smoke `m3q-20260724T075320Z-939e94cf` NO-GO: write-capable yolo
-under 24 turns / 240s wall; TC-T01 rename verified but `qwen_exit=53` (turn
-limit); finalization complete; spend delta USD 0.00. Active smoke wall
-**240s** (`M3_WALL_TIME_240S_POLICY_REMEDIATION_EVIDENCE.md`). Qwen Code remains
+under then-locked 24 turns / 240s wall; TC-T01 rename verified but `qwen_exit=53`
+(turn limit); finalization complete; spend delta USD 0.00. Active smoke policy
+**240 turns / 800s wall** (`M3_EXTENDED_SINGLE_SMOKE_POLICY_REMEDIATION_EVIDENCE.md`;
+extended single-smoke exception for one future retry). Qwen Code remains
 eligible for later M3 qualification but not qualified; OpenCode and Grok Build
 blocked at M1. M2b completed 2026-07-23.*
