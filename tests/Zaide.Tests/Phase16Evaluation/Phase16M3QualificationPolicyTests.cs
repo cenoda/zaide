@@ -27,7 +27,7 @@ public sealed class Phase16M3QualificationPolicyTests
         Assert.Equal(
             Phase16M3QualificationPolicy.MaxWallTime,
             argv[Array.IndexOf(argv, "--max-wall-time") + 1]);
-        Assert.Equal(12, Phase16M3QualificationPolicy.MaxSessionTurns);
+        Assert.Equal(24, Phase16M3QualificationPolicy.MaxSessionTurns);
         Assert.Equal("120s", Phase16M3QualificationPolicy.MaxWallTime);
         Assert.Equal(1m, Phase16M3QualificationPolicy.SmokeSpendCapUsd);
         Assert.Equal(3m, Phase16M3QualificationPolicy.CampaignSpendCapUsd);
@@ -38,15 +38,15 @@ public sealed class Phase16M3QualificationPolicyTests
     }
 
     [Fact]
-    public void ValidateSmokeArgvOrThrow_RejectsLegacyFiveTurnCeiling()
+    public void ValidateSmokeArgvOrThrow_RejectsLegacyTwelveTurnCeiling()
     {
         var locked = Phase16M3QualificationPolicy.BuildLockedSmokeArgvTail().ToArray();
         var turnValueIndex = Array.IndexOf(locked, "--max-session-turns") + 1;
-        locked[turnValueIndex] = "5";
+        locked[turnValueIndex] = "12";
 
         var ex = Assert.Throws<ManifestValidationException>(() =>
             Phase16M3QualificationPolicy.ValidateSmokeArgvOrThrow(locked));
-        Assert.Contains("expected '12'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("expected '24'", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

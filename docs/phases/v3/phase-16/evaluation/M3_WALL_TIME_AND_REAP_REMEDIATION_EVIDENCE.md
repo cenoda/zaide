@@ -24,7 +24,7 @@ egress, or run an M3 retry / M4 work.
 | Update every active policy/orchestrator/test/doc surface from 60s → 120s | **Yes** |
 | Preserve historical 60s session records unchanged | **Yes** |
 | Diagnose and fix post-exit `pid not a child` (127) reaping/status collection | **Yes** |
-| Preserve other locks (TC-T01, yolo, auth, DNS, egress, key lifecycle, 12 turns, USD caps) | **Yes** |
+| Preserve other locks (TC-T01, yolo, auth, DNS, egress, key lifecycle, 12 turns, USD caps) | **Yes** — 24-turn ceiling applied separately (2026-07-24; see `CAMPAIGN_LOCK.md`) |
 | Focused regression tests for 120s argv + reaping behavior | **Yes** |
 | Qualification retry / credential / Qwen launch / M4 | **No** |
 
@@ -40,14 +40,18 @@ Locked smoke argv tail (policy + orchestrator):
 --approval-mode yolo
 --model deepseek-v4-flash
 --output-format json
---max-session-turns 12
+--max-session-turns 24
 --max-wall-time 120s
 ```
+
+*(Prior 12-turn ceiling was active when this remediation was written; a later
+human decision raised the **active** turn ceiling to **24** — see
+`CAMPAIGN_LOCK.md`. Historical session records keep **12**.)*
 
 | Property | Locked value |
 |---|---|
 | Wall time | **`120s`** via `--max-wall-time 120s` |
-| Session turns | **12** (unchanged) |
+| Session turns | **24** (was 12; see §2 turn-ceiling note above) |
 | Smoke / cumulative spend | **USD 1** / **USD 3** (unchanged) |
 | Approval mode | **`yolo`** (unchanged) |
 | Task / candidate | **TC-T01** / **qwen-code** only (unchanged) |

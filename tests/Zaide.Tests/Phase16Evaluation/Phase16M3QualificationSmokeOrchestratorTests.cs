@@ -41,6 +41,32 @@ public sealed class Phase16M3QualificationSmokeOrchestratorTests
     }
 
     [Fact]
+    public void SmokeOrchestrator_LocksTwentyFourTurnArgv()
+    {
+        var script = File.ReadAllText(ResolveSmokeScriptPath());
+
+        Assert.Contains("--max-session-turns", script, StringComparison.Ordinal);
+        Assert.Contains("24", script, StringComparison.Ordinal);
+        Assert.Equal(24, Phase16M3QualificationPolicy.MaxSessionTurns);
+
+        // Active turn argv must be 24 (exact-argv record and bwrap launch).
+        Assert.Matches(
+            new Regex("echo\\s+\"--max-session-turns\"\\s*\\n\\s*echo\\s+\"24\"", RegexOptions.Multiline),
+            script);
+        Assert.Matches(
+            new Regex(@"--max-session-turns\s+24", RegexOptions.Multiline),
+            script);
+
+        // Do not leave a 12-turn ceiling in the orchestrator.
+        Assert.DoesNotMatch(
+            new Regex(@"--max-session-turns\s+12\b", RegexOptions.Multiline),
+            script);
+        Assert.DoesNotMatch(
+            new Regex("echo\\s+\"12\"", RegexOptions.Multiline),
+            script);
+    }
+
+    [Fact]
     public void SmokeOrchestrator_DoesNotWaitInnerUnderCommandSubstitution()
     {
         var script = File.ReadAllText(ResolveSmokeScriptPath());

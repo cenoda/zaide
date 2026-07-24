@@ -274,8 +274,9 @@ workspace check, cleanup) completed without hang.
 
 1. New dedicated one-shot sub-key (this key consumed).
 2. New qualification grant + new session ID.
-3. Keep locked write-capable yolo + **120s** wall + fixed reap path; any turn
-   ceiling change requires a separate human decision (not applied here).
+3. Keep locked write-capable yolo + **120s** wall + fixed reap path; turn ceiling
+   raised to **24** by human decision (2026-07-24 authorization; see
+   `CAMPAIGN_LOCK.md`).
 4. Gate **GO** only on Qwen exit 0 **and** verified TC-T01 workspace change.
 5. Preserve session records outside `/tmp` before any host reboot.
 

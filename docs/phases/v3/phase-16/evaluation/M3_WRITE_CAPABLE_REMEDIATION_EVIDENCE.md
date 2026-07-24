@@ -17,10 +17,10 @@ verified rename under **120s** wall).
    **write-capable** mode inside the already locked Bubblewrap sandbox,
    instead of plan-only mode.
 3. USD **1** smoke, USD **3** cumulative, **12** turns, and **60s** wall-time
-   limits remained locked **for this write-capable slice**. A later human
-   decision raised the **active** wall lock to **120s** and fixed exit reaping
-   (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`); historical session records
-   keep **60s**.
+   limits remained locked **for this write-capable slice**. Later human decisions
+   raised the **active** turn ceiling to **24** and wall lock to **120s**
+   (`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`; see `CAMPAIGN_LOCK.md`);
+   historical session records keep **12** turns / **60s** wall.
 
 ---
 
@@ -71,21 +71,21 @@ the forbidden dual-flag combination):
 --approval-mode yolo
 --model deepseek-v4-flash
 --output-format json
---max-session-turns 12
+--max-session-turns 24
 --max-wall-time 60s
 ```
 
-*(Active post-remediation wall is **120s** — see
-`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`. The block above is the
-write-capable-slice lock as shipped and used by session
-`m3q-20260724T054307Z-481ad1de`.)*
+*(Active post-remediation turn ceiling is **24**; wall is **120s** — see
+`M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` and `CAMPAIGN_LOCK.md`. The
+block above is the write-capable-slice lock as shipped and used by session
+`m3q-20260724T054307Z-481ad1de` with historical 12 turns / 60s wall.)*
 
 | Property | Locked value (this slice) |
 |---|---|
 | Approval mode | **`yolo`** via `--approval-mode yolo` (not boolean `--yolo`) |
 | Host isolation | Existing Bubblewrap sandbox (unchanged) |
 | Credential env allowlist | `DEEPSEEK_API_KEY` only (A-07; unchanged) |
-| Turn / wall / spend ceilings | **12** / **60s** (this slice; active wall later **120s**) / **USD 1** smoke / **USD 3** cumulative |
+| Turn / wall / spend ceilings | **24** (active; historical slice was **12**) / **60s** (this slice; active wall later **120s**) / **USD 1** smoke / **USD 3** cumulative |
 | GO criteria | Qwen exit **0** **and** verified TC-T01 `FetchData` → `RetrieveData` |
 
 Headless YOLO emits a safety warning when Qwen’s own sandbox is unset; Phase 16

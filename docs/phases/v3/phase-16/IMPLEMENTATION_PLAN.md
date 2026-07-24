@@ -494,7 +494,8 @@ completed 2026-07-23** (`evaluation/M3_EGRESS_PROOF_EVIDENCE.md`). **M3 DNS
 binding gate defined 2026-07-23** (`evaluation/M3_DNS_BINDING_GATE.md`). Smoke
 execution remains blocked pending a **new** qualification grant, credentials,
 and DNS-binding execution at launch. Locked smoke ceilings (policy aligned
-2026-07-24; wall raised same day after exit-55 evidence): max **12** session
+2026-07-24; wall raised same day after exit-55 evidence; turns raised to **24**
+on 2026-07-24 after exit-53 evidence): max **24** session
 turns, **120s** wall-time, **USD 1** smoke / **USD 3** cumulative — policy-only
 until a separate execution grant. OpenCode and Grok Build remain blocked at M1.
 A Grok Build distributed artifact must be independently identified and mapped
@@ -868,8 +869,13 @@ HTTPS destinations were blocked; evidence under the phase artifact root.
 (`evaluation/M3_DNS_BINDING_GATE.md`). **M3 write-capable remediation (2026-07-24)** locked `--approval-mode yolo`
 and post-exit reaping
 (`evaluation/M3_WRITE_CAPABLE_REMEDIATION_EVIDENCE.md`). **M3 wall-time +
+**M3 wall-time +
 exit-reap remediation (2026-07-24)** raised active wall to **120s** and fixed
 same-shell wait/reap (`evaluation/M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md`).
+**M3 24-turn ceiling remediation (2026-07-24)** raised active session-turn
+ceiling to **24** (`--max-session-turns 24`) in policy, orchestrator, tests,
+and docs; historical 12-turn session records preserved unchanged; not a
+qualification retry.
 **Latest M3 qualification smoke** (`m3q-20260724T060109Z-45dd1c5f`) executed
 DNS binding, write-capable yolo argv (12 turns / **120s** wall), and one Qwen
 launch; TC-T01 rename **verified** but **NO-GO** on `qwen_exit=53` (turn limit);

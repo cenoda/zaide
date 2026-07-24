@@ -17,7 +17,7 @@ public static class Phase16M3QualificationPolicy
     /// Host Bubblewrap sandbox remains mandatory; this is not plan-only.
     /// </summary>
     public const string AllowedApprovalMode = "yolo";
-    public const int MaxSessionTurns = 12;
+    public const int MaxSessionTurns = 24;
     /// <summary>
     /// Locked Qwen <c>--max-wall-time</c> for TC-T01 qualification smoke.
     /// Raised from historical <c>60s</c> (session

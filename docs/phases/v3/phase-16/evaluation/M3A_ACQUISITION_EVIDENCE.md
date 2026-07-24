@@ -96,6 +96,8 @@ repository smoke policy was subsequently aligned to `--max-session-turns 12`,
 then **60s** and later **120s** wall-time, **USD 1** smoke / **USD 3**
 cumulative (2026-07-24 policy-only slices; see
 `M3_WALL_TIME_AND_REAP_REMEDIATION_EVIDENCE.md` for the active **120s** lock).
+Subsequently turns were raised to **24** (2026-07-24 human decision; see
+`CAMPAIGN_LOCK.md`).
 That alignment is **not** an execution authorization and was **not** a
 qualification retry under this recovery grant.
 
