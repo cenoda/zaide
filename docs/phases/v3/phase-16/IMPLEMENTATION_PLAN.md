@@ -1,6 +1,10 @@
 # Phase 16: Controlled Native Harness Evaluation
 
-**Status:** M0 plan was explicitly human-accepted on 2026-07-22. **M1 was explicitly human-accepted on 2026-07-23** with an all-blocked candidate eligibility lock (Qwen Code, OpenCode, and Grok Build blocked at M1; no candidate eligible for later M3 qualification; no comparative or single-candidate execution path is eligible). **M2a was explicitly human-accepted on 2026-07-23** for the standalone offline runner contract and deterministic repository-owned fake-candidate core. **M2b was completed on 2026-07-23** for repository-owned Bubblewrap isolation, lifecycle, mutation, and cleanup proof (`evaluation/ISOLATION_EVIDENCE.md`). M2a/M2b added no production behavior, DI, public production types, upstream artifact acquisition, network access, or real candidate execution. A **proposed, unaccepted** M3 unblock amendment package exists at `evaluation/M3_UNBLOCK_AMENDMENT_PROPOSAL.md` (post-M2b NO-GO preflight; docs-only; no execution authorized). Under the repository-wide automatic-progression policy, **M3 remains blocked** until that proposal (or a successor) is human-accepted, every listed external-side-effect gate passes, and independent provenance and security requirements are satisfied; later milestones may advance only when their predecessor gates and all technical, security, provenance, and external-side-effect requirements are satisfied.
+**Historical status:** M0 was accepted on 2026-07-22; M1, M2a, and M2b are
+completed historical work. The later Qwen observational qualification path was
+reverted; see `REVERT_LOG.md`. **Current work state and next task:**
+[`TOFIX.md`](TOFIX.md). This plan remains the historical scope and milestone
+record; it does not authorize a Phase 16 retry.
 
 **Selected outcome:** establish controlled, reproducible Native Harness
 evaluation infrastructure and run a provenance-cleared campaign that can inform
@@ -118,8 +122,9 @@ Audit date: **2026-07-22**.
   after `git fetch --prune origin`.
 - Baseline commit: `docs: finalize Phase 15 closeout and authorization history`
   (`2026-07-22T17:33:14+09:00`).
-- Phase 15 M0 through M4 are recorded complete and closed. Its exit checklist is
-  closed, no Phase 15 `TOFIX.md` exists, and the folder contains only the plan
+- Phase 15 M0 through M4 are recorded complete and closed. At this M0 audit,
+  no Phase 15 `TOFIX.md` existed; the phase-local tracker was added later by
+  the documentation ownership reset. The folder then contained only the plan
   and three accepted research records.
 
 This proposal is bound to that checkout. Later sessions stop and re-audit if the

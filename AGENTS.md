@@ -16,38 +16,27 @@ Short rules for AI assistants working on Zaide.
 - Docs live in `docs/`. See `docs-rules.md` for the full structure and update triggers.
 - Keep docs in sync with code. If they disagree, fix the docs.
 - Write docs as you go — not after.
+- Treat the phase or refactor `TOFIX.md` as the current work board and normal
+  work-report surface. Update a roadmap only when a phase outcome, ordering, or
+  dependency changes; do not duplicate routine progress there.
 
 Before planning or implementing a phase, read `docs-rules.md`. Keep these
 boundaries explicit:
 
-- A phase is a roadmap-level outcome and normally contains at least three
-  milestones.
-- A sub-phase is a planning/ownership subdivision inside a phase; it is not a
-  milestone and must not be used as a synonym for one.
-- A milestone is a bounded, independently verifiable unit normally owned by
-  one agent session. If it is too large, split it into milestone slices such
-  as `M2a`/`M2b`, not into an incorrectly named sub-phase.
-- M0 is mandatory and comes first in every independently implemented phase or
-  sub-phase. It is the planning gate for live-code verification, scope,
-  boundaries, dependencies, and concrete test commands. From Phase 8.3
-  onward, every sub-phase owns its own independent `M0`; do not use the
-  umbrella phase's M0 as a substitute.
-- Prefer one clear commit at each milestone or milestone-slice boundary.
-- Once work on a phase, sub-phase, or refactor has been authorized, advance to
-  the next planned milestone automatically when its predecessor's required
-  verification is GO. Do not wait for a separate approval message. Preserve a
-  single reviewable commit per milestone by default; split only when an
-  independently reversible or reviewable boundary requires it.
-- Stop and request user direction only for a failed or incomplete gate, a
-  material scope/plan conflict, an external side effect (including credentials,
-  paid services, upstream acquisition/execution, or network egress), a
-  destructive or irreversible action, or a decision the plan leaves open.
-  Automatic progression never waives a milestone's technical eligibility,
-  security, provenance, or evidence requirements.
-- Independently implemented refactors also require their own M0. Decimal
-  refactor-family members such as `6.1`/`6.2`/`6.3` are independent refactors,
-  not milestones or feature sub-phases; each owns its own plan and rollback
-  boundary. An umbrella brief does not authorize implementation.
+- A phase is a roadmap-level outcome. A roadmap owns phase goals, order, and
+  dependencies.
+- A plan owns milestone goals, implementation scope, and verification. A
+  milestone is a meaningful, independently testable outcome, not a progress
+  report.
+- Use a sub-phase when a phase is too large to design, test, and implement as
+  one coherent concern. Do not create sub-phases merely to split verification
+  or documentation work.
+- Prefer one reviewable commit for one coherent implementation outcome. Include
+  its ordinary documentation updates in that commit; make a separate docs-only
+  commit only when no implementation changes belong with it.
+- Stop for a failed verification, material scope conflict, external side
+  effect, destructive action, or an open decision that materially changes the
+  work.
 
 ## Code
 

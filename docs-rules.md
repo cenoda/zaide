@@ -24,11 +24,11 @@ docs/
 │   └── vN/
 │       └── phase-N/
 │           ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
-│           └── TOFIX.md                 # Code quality issues found in review
+│           └── TOFIX.md                 # Current work board and phase report
 ├── refactor/            # Foundation-level refactoring (structural, not feature)
 │   └── refactor-N/
 │       ├── IMPLEMENTATION_PLAN.md   # Plan before coding (use template)
-│       └── TOFIX.md                 # Code quality issues found in review
+│       └── TOFIX.md                 # Current work board and refactor report
 ├── issues/
 │   ├── open/            # Active issues (ISSUE-###-short-name.md)
 │   ├── closed/          # Resolved issues (moved here)
@@ -56,14 +56,14 @@ Create these folders/files when first needed — not all at once.
 | Trigger | Update |
 |---------|--------|
 | Defining a successor roadmap | Create `docs/roadmap/VN.md`; preserve completed roadmap records |
-| Completing a phase checklist item | Mark `[x]` in the current version's roadmap file |
+| Completing a planned implementation item | Update the current phase or refactor `TOFIX.md`; update the roadmap only if the phase outcome, order, or dependency changed |
 | Adding a NuGet package | Add entry to `docs/LIBRARIES.md` |
 | Changing architecture (DI, interfaces, new subsystem) | Update `docs/architecture/` |
 | Starting a new phase | Create `docs/phases/vN/phase-N/IMPLEMENTATION_PLAN.md` in the current roadmap version |
-| Finding a code quality issue during review | Add to `docs/phases/vN/phase-N/TOFIX.md` |
+| Reporting current phase work, a review finding, a blocker, or the next task | Update `docs/phases/vN/phase-N/TOFIX.md` |
 | Starting a new refactor | Create `docs/refactor/refactor-N/IMPLEMENTATION_PLAN.md` |
-| Completing a refactor milestone | Mark `[x]` in refactor plan |
-| Finding a code quality issue during refactor | Add to `docs/refactor/refactor-N/TOFIX.md` |
+| Completing a refactor implementation item | Update the current refactor `TOFIX.md` |
+| Reporting current refactor work, a review finding, a blocker, or the next task | Update `docs/refactor/refactor-N/TOFIX.md` |
 | Fixing a convention or adopting a new one | Update `docs/CONVENTIONS.md` |
 | Changing UI design rules or patterns | Update `docs/DESIGN.md` |
 | Bug not fixed in 2 attempts | Create issue in `docs/issues/open/` |
@@ -86,41 +86,43 @@ repurpose a completed roadmap file when defining a successor.
 
 Every phase gets an `IMPLEMENTATION_PLAN.md` before coding starts.
 
+### Document ownership
+
+Each document has one job. Do not copy a current status, policy value, or task
+list into several documents merely for visibility.
+
+| Document | Owns | Update when |
+|----------|------|-------------|
+| Roadmap | Phase outcomes, order, dependencies, and product direction | A phase-level decision changes |
+| `IMPLEMENTATION_PLAN.md` | Milestone goals, implementation scope, and verification | The phase plan is created or its approved implementation boundary changes |
+| `TOFIX.md` | Current work, findings, blockers, completed work, and the next task | Normal work reporting or review changes the current phase/refactor state |
+| Evidence or revert record | Historical facts needed to support a completed decision | A durable external, manual, security, or rollback record is required |
+
+Completed phase and refactor documents remain in their versioned folders as
+historical records. Do not delete or rewrite that history merely because the
+active work has moved on.
+
 ### Phase, sub-phase, and milestone boundaries
 
 These terms are not interchangeable:
 
-- **Phase** — a roadmap-level outcome. A phase normally contains at least
-  three milestones. A phase may be divided into sub-phases when it contains
-  multiple independently owned concerns.
-- **Sub-phase** — a planning and ownership subdivision inside a phase. It has
-  its own scope and plan when needed, but it is not a synonym for a milestone
-  and must not be used to describe one implementation session.
-- **Milestone** — the smallest independently verifiable implementation unit,
-  normally sized for one agent session. It has an explicit scope, test gate,
-  and completion condition.
+- **Phase** — a roadmap-level outcome. The roadmap defines its goal, order,
+  and dependencies.
+- **Sub-phase** — a coherent feature concern inside a phase, used when the
+  phase is too large to design, test, and implement as one unit. It is not a
+  label for a verification pass or a documentation-only split.
+- **Milestone** — a meaningful implementation outcome inside a plan. The plan
+  defines its goal, scope, test gate, and completion condition.
 
-The first milestone of every independently implemented phase or sub-phase is
-**M0**. M0 is the most important planning gate: it must verify the live-code
-seams, lock scope and boundaries, identify the milestones and their
-dependencies, and define concrete verification commands before production
-implementation begins. M0 may be documentation-only unless the plan
-explicitly says otherwise.
+Every independently implemented phase or sub-phase starts with an **M0** plan
+that verifies live seams, locks its scope and boundaries, identifies milestone
+goals and dependencies, and names concrete verification commands. M0 may be
+documentation-only. Preserve historical numbering in completed plans.
 
-When a phase has sub-phases, the sub-phase plan owns its own milestone sequence
-and its own M0. The umbrella phase plan may record cross-cutting decisions and
-dependencies, but must not make one sub-phase's implementation milestones look
-like umbrella-owned milestones. Existing plans may retain their historical
-numbering; do not rewrite completed history merely to apply this rule.
-
-For Zaide, this independent numbering rule applies from **Phase 8.3 onward**.
-Phase 8.1 and Phase 8.2 retain the already-published Phase 8 umbrella
-milestone numbering as historical records.
-
-If a milestone is too large for one agent session, split it into separately
-named milestone slices (for example `M2a` and `M2b`) before continuing. Do not
-relabel those slices as sub-phases. Each slice must have its own bounded scope,
-verification gate, and handoff/commit point.
+If a milestone cannot be designed, tested, and implemented as one coherent
+outcome, divide the parent phase into sub-phases around the actual feature
+concerns before implementation. Do not create slices solely for status,
+evidence, or commit mechanics.
 
 ### Rules:
 1. **Verify against live code** — design docs go stale. Check `src/` before claiming a seam exists.
@@ -128,7 +130,7 @@ verification gate, and handoff/commit point.
 3. **Build for this phase only (YAGNI)** — no abstractions for a future phase's need.
 4. **Prefer documented limitations over edge-case code** — keep a "Phase N Limitations" section.
 5. **Make gates verifiable** — entry/exit conditions must be checkable commands, not vibes.
-6. **One concern per milestone** — each milestone should be independently testable and session-sized.
+6. **One coherent outcome per milestone** — each milestone should be independently testable and meaningful to review.
 
 ### Implementation Plan Template:
 
@@ -264,13 +266,20 @@ Same format as §3 Revert Log Template, but saved to
 
 ## 5. TOFIX Convention
 
-Each phase or refactor has a `TOFIX.md` that tracks code quality issues
-found during review.
+Each phase or refactor has a `TOFIX.md`. It is the current work board and the
+normal work-report surface for that phase or refactor, not only a list of code
+quality defects.
 
-- **Before starting work on a phase**, read its `TOFIX.md` and address open items first.
-- **After a review session**, add new findings with a clear description and fix hint.
-- **When an item is fixed**, mark it `[x]`.
-- **Do not move to the next phase** while any `TOFIX.md` item is unchecked.
+- **Before starting work**, read the local `TOFIX.md` for the current state,
+  blockers, and next task.
+- **After work or review**, update it with completed work, findings, blockers,
+  and the next task in concise language.
+- **When an item is fixed**, mark it `[x]` or move it to a short completed
+  section. Keep only useful recent history there; Git and the phase documents
+  preserve the full record.
+- **Unchecked items are not automatically global blockers.** State whether an
+  item blocks the current phase, is intentionally deferred, or belongs to a
+  later phase.
 
 ---
 
@@ -452,12 +461,14 @@ and tells future agents that `dynamic` is acceptable.
 `MainWindow.axaml.cs` must not grow 40-line inline dialog factories. Every
 dialog gets its own file (View + ViewModel if needed), even if it's simple.
 
-### 12f. Commit at milestone boundaries
+### 12f. Commit coherent outcomes
 
-Strongly prefer one commit per milestone (or per milestone slice). Do not batch
-unrelated milestones into one commit (for example `M1-M3`). Each commit should
-leave the repository verifiably green and make the milestone boundary obvious;
-this keeps rollback and review local to the affected unit.
+Prefer one commit for one coherent implementation outcome. Include the normal
+plan and `TOFIX.md` updates with its code and tests. Do not create separate
+commits solely for status synchronization, evidence wording, or a policy value
+that belongs to the same implementation outcome. Use a docs-only commit when
+the documentation change is independently meaningful and has no implementation
+change to accompany it.
 
 ### 12g. Plan-required tests must exist
 
