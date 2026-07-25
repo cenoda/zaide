@@ -2,11 +2,13 @@
 
 ## Status and authorization
 
-**Phase 17 status:** M0 accepted on 2026-07-24. M1 corrective work is in progress
-after audit blockers on thread-safe admission and canonical command
-fingerprints. M2 is not authorized until corrected M1 receives GO.
+**Phase 17 status:** M0 accepted on 2026-07-24. M1 (action/workspace identity,
+taxonomy, policy, immutable proposals, budgets, deterministic state) received GO
+and is complete. M2 (canonical workspace capture and bounded read-only file
+access) is authorized and implemented on 2026-07-25. M3 is not authorized until
+M2 receives GO.
 
-**Authorized work:** Corrected M1 contracts and deterministic state only. M2 and
+**Authorized work:** M2 canonical workspace capture and bounded reads. M3 and
 later milestones remain gated by predecessor completion and the repository's
 automatic progression and stop rules.
 

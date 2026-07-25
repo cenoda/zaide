@@ -201,7 +201,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
-        Assert.Equal(450, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 17 M2: +6 workspace-scope, read-result, read-port, and read-adapter files.
+        Assert.Equal(456, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

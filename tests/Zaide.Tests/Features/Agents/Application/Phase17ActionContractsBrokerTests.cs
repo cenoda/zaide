@@ -316,17 +316,25 @@ public sealed class Phase17ActionContractsBrokerTests
 
     private static ContractAgentActionBroker CreateBroker(
         AgentActionRunSlotTracker runSlot,
-        AgentActionCorrelationRegistry correlationRegistry) =>
-        new(
+        AgentActionCorrelationRegistry correlationRegistry)
+    {
+        var scope = new WorkspaceActionScope(
+            WorkspaceIdentity.New(),
+            WorkspaceGeneration.Initial,
+            System.IO.Path.GetTempPath());
+
+        return new(
             AgentSessionId.New(),
             ExecutionRunId.New(),
             ConversationId.NewDirect(),
             ActorId.HumanUser,
             ActorId.PanelSeed("alpha"),
             AgentBackendId.FromValue("backend:test"),
-            WorkspaceIdentity.New(),
-            WorkspaceGeneration.Initial,
+            scope,
+            new FakeWorkspaceActionAuthority(scope),
+            new CountingAgentFileReader(),
             new FakeTrustedCommandResolver(),
             runSlot,
             correlationRegistry);
+    }
 }

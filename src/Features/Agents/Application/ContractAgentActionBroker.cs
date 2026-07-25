@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Features.Agents.Application;
@@ -19,8 +20,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly ActorId _initiatingActorId;
     private readonly ActorId _targetActorId;
     private readonly AgentBackendId _backendId;
-    private readonly WorkspaceIdentity _workspaceIdentity;
-    private readonly WorkspaceGeneration _workspaceGeneration;
+    private readonly WorkspaceActionScope _workspaceScope;
+    private readonly IWorkspaceActionAuthority _workspaceAuthority;
+    private readonly IAgentFileReader _fileReader;
     private readonly IAgentCommandResolver _commandResolver;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
@@ -36,8 +38,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         ActorId initiatingActorId,
         ActorId targetActorId,
         AgentBackendId backendId,
-        WorkspaceIdentity workspaceIdentity,
-        WorkspaceGeneration workspaceGeneration,
+        WorkspaceActionScope workspaceScope,
+        IWorkspaceActionAuthority workspaceAuthority,
+        IAgentFileReader fileReader,
         IAgentCommandResolver commandResolver,
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry)
@@ -72,24 +75,15 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             throw new ArgumentException("Backend id is required.", nameof(backendId));
         }
 
-        if (workspaceIdentity == default)
-        {
-            throw new ArgumentException("Workspace identity is required.", nameof(workspaceIdentity));
-        }
-
-        if (workspaceGeneration == default)
-        {
-            throw new ArgumentException("Workspace generation is required.", nameof(workspaceGeneration));
-        }
-
         _sessionId = sessionId;
         _runId = runId;
         _conversationId = conversationId;
         _initiatingActorId = initiatingActorId;
         _targetActorId = targetActorId;
         _backendId = backendId;
-        _workspaceIdentity = workspaceIdentity;
-        _workspaceGeneration = workspaceGeneration;
+        _workspaceScope = workspaceScope ?? throw new ArgumentNullException(nameof(workspaceScope));
+        _workspaceAuthority = workspaceAuthority ?? throw new ArgumentNullException(nameof(workspaceAuthority));
+        _fileReader = fileReader ?? throw new ArgumentNullException(nameof(fileReader));
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
@@ -135,8 +129,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 _initiatingActorId,
                 _targetActorId,
                 _backendId,
-                _workspaceIdentity,
-                _workspaceGeneration,
+                _workspaceScope.Identity,
+                _workspaceScope.Generation,
                 _commandResolver,
                 payload);
         }
@@ -340,15 +334,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     break;
 
                 case AgentActionPermissionClassification.AllowedByLockedPolicy:
-                    lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
-                    lifecycle.TransitionTo(AgentActionStatus.Executing);
-                    lifecycle.TransitionTo(AgentActionStatus.Failed);
-                    terminalResult = new AgentActionResult(
-                        request.ActionId,
-                        request.AttemptId,
-                        AgentActionResultKind.Failed,
-                        AgentActionFailureKind.ExecutionFailed,
-                        "Workspace read execution is not available in Phase 17 M1.");
+                    terminalResult = ExecuteAllowedRead(request, lifecycle, cancellationToken);
                     break;
 
                 default:
@@ -387,6 +373,70 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
         return ValueTask.FromResult(terminalResult!);
     }
+
+    private AgentActionResult ExecuteAllowedRead(
+        AgentActionRequest request,
+        AgentActionLifecycleState lifecycle,
+        CancellationToken cancellationToken)
+    {
+        lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+
+        // Re-resolve authoritative workspace state immediately before execution.
+        // A workspace close/switch (generation change) revokes stale authority.
+        if (!_workspaceAuthority.IsCurrent(_workspaceScope))
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Revoked,
+                AgentActionFailureKind.StaleWorkspace,
+                "Workspace generation changed before the read executed.");
+        }
+
+        if (request.Payload is not AgentReadFileActionPayload readPayload)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Executing);
+            lifecycle.TransitionTo(AgentActionStatus.Failed);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Failed,
+                AgentActionFailureKind.InvalidRequest,
+                "Only a read request is allowed by locked policy.");
+        }
+
+        lifecycle.TransitionTo(AgentActionStatus.Executing);
+
+        var readResult = _fileReader.Read(_workspaceScope, readPayload.Path, cancellationToken);
+        var (resultKind, failureKind) = MapReadOutcome(readResult.Outcome);
+
+        lifecycle.TransitionTo(resultKind switch
+        {
+            AgentActionResultKind.Succeeded => AgentActionStatus.Succeeded,
+            AgentActionResultKind.Cancelled => AgentActionStatus.Cancelled,
+            _ => AgentActionStatus.Failed,
+        });
+
+        return new AgentActionResult(
+            request.ActionId,
+            request.AttemptId,
+            resultKind,
+            failureKind,
+            readResult.Summary);
+    }
+
+    private static (AgentActionResultKind ResultKind, AgentActionFailureKind? FailureKind) MapReadOutcome(
+        AgentFileReadOutcome outcome) =>
+        outcome switch
+        {
+            AgentFileReadOutcome.Succeeded => (AgentActionResultKind.Succeeded, (AgentActionFailureKind?)null),
+            AgentFileReadOutcome.Cancelled => (AgentActionResultKind.Cancelled, AgentActionFailureKind.Indeterminate),
+            AgentFileReadOutcome.TooLarge => (AgentActionResultKind.Failed, AgentActionFailureKind.BudgetExceeded),
+            AgentFileReadOutcome.PathEscaped => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            AgentFileReadOutcome.NotRegularFile => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
+        };
 
     private static AgentActionResult CreateDeniedResult(
         AgentActionPayload payload,
