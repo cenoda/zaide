@@ -34,9 +34,37 @@ cancellation preservation, atomic decision lifecycle). M3 received GO on
 - [x] Implement M4: immutable create/replace/delete file proposals, bounded diff/summary presentation, stale-base detection, and explicit accept/deny flow. Proposal creation remains non-mutating.
 - [x] M4 corrective pass #1: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding.
 - [x] M4 corrective pass #2: restore predecessor broker/test seams; create proposals accept only confirmed `NotFound`; reject indeterminate target inspection; stale-base revalidation for create races (including non-regular and unreadable targets); path-aware synthetic reader test doubles.
+- [x] M4 corrective pass #3: move stale-base revalidation ahead of the final atomic `TryConsume()` authorization step; prove stale create/replace/delete proposals remain `Published`, fresh proposals consume exactly once, and concurrent stale/allow races cannot consume a stale proposal.
 - [ ] M4 awaiting re-audit. Do not authorize M5 prematurely.
 
 Manual preview evidence recorded in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+
+## M4 corrective pass #3 (2026-07-25)
+
+Corrects the permission lifecycle ordering in `ContractAgentActionBroker`.
+
+- File proposal validation still checks fingerprint, classification, expiry,
+  workspace freshness, and proposal/base binding before authorization.
+- File create/replace/delete stale-base revalidation now runs immediately before
+  `AgentPermissionDecision.TryConsume()`.
+- `TryConsume()` is the final authorization step. A stale proposal returns
+  `Revoked` with `StaleBaseRevision` and leaves the published decision
+  unconsumed.
+- Create admission remains `NotFound`-only and all indeterminate target states
+  remain fail-closed.
+- Regression coverage proves stale create, replace, and delete rejection does
+  not consume; fresh proposals consume exactly once; and a concurrent
+  stale/allow race cannot consume the stale proposal.
+
+### Gate results (M4 corrective pass #3)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| Phase 17/Architecture targeted filters | pass, 220/220 |
+| Full fast suite | pass, 2985/2985 |
+| Serial fallback | not needed |
+| `git diff --check` | pass, clean |
 
 ## M4 corrective pass #2 (2026-07-25)
 

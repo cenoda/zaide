@@ -548,24 +548,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                             break;
                         }
 
-                        // Published → Consumed transition, enforced atomically on
-                        // the decision itself after all validation passed. A
-                        // decision that is no longer Published (already consumed,
-                        // or holding a forged terminal status) cannot authorize.
-                        if (!decision.TryConsume())
-                        {
-                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
-                            lifecycle.TransitionTo(AgentActionStatus.Denied);
-                            terminalResult = new AgentActionResult(
-                                request.ActionId,
-                                request.AttemptId,
-                                AgentActionResultKind.Denied,
-                                AgentActionFailureKind.PermissionDenied,
-                                "Permission decision could not be consumed (Published → Consumed transition failed).");
-                            break;
-                        }
-
-                        // M4: Stale-base revalidation before decision consumption.
+                        // M4: Stale-base revalidation is the final validation step
+                        // before decision consumption. A stale proposal must leave
+                        // its published decision available for reconciliation or a
+                        // fresh authorization attempt.
                         if (fileProposal is not null && IsFileActionPayload(request.Payload))
                         {
                             if (IsFileProposalStaleBeforeConsumption(fileProposal, cancellationToken))
@@ -579,6 +565,23 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                                     "Base content changed before permission decision could be applied (stale base detected).");
                                 break;
                             }
+                        }
+
+                        // Published → Consumed is the final authorization step,
+                        // enforced atomically on the decision itself after every
+                        // validation has passed. A decision that is no longer
+                        // Published cannot authorize execution.
+                        if (!decision.TryConsume())
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Permission decision could not be consumed (Published → Consumed transition failed).");
+                            break;
                         }
 
                         lifecycle.TransitionTo(AgentActionStatus.PermissionGranted);

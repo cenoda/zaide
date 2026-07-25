@@ -13,7 +13,10 @@ flow. Proposal creation remains non-mutating. M4 received an initial
 implementation on 2026-07-25 and completed a corrective pass on 2026-07-25
 that restores predecessor broker/test seams while preserving fail-closed create
 inspection (`NotFound` only), stale-base revalidation for create races, and
-proposal/fingerprint/base-revision binding; awaiting re-audit.
+proposal/fingerprint/base-revision binding. A second corrective pass on
+2026-07-25 corrected the permission lifecycle ordering so stale-base
+revalidation completes before the final atomic decision consumption; awaiting
+re-audit.
 
 **Authorized work:** M4 corrective pass only (complete; awaiting re-audit).
 M5 and later milestones remain gated by M4 GO and the repository's automatic

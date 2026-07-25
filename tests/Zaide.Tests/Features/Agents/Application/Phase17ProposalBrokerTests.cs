@@ -629,6 +629,135 @@ public sealed class Phase17ProposalBrokerTests
         Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
     }
 
+    [Fact]
+    public async Task CreateStaleBase_DoesNotConsumePublishedDecision()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            ConfirmedAbsentTarget,
+            AgentFileReadResult.Success(
+                "appeared",
+                AgentContentRevision.FromUtf8Text("appeared"),
+                byteLength: 8));
+        var review = new CapturingAllowingPermissionReviewService();
+        var result = await CreateBroker(reader, review).RequestAsync(
+            new AgentCreateFileActionPayload(
+                AgentWorkspaceRelativePath.Normalize("create-stale.txt"),
+                "content"),
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+        Assert.Equal(AgentPermissionDecisionStatus.Published, review.Decision!.Status);
+    }
+
+    [Fact]
+    public async Task ReplaceStaleBase_DoesNotConsumePublishedDecision()
+    {
+        var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
+            AgentFileReadResult.Success(
+                "changed",
+                AgentContentRevision.FromUtf8Text("changed"),
+                byteLength: 7));
+        var review = new CapturingAllowingPermissionReviewService();
+        var result = await CreateBroker(reader, review).RequestAsync(
+            new AgentReplaceFileActionPayload(
+                AgentWorkspaceRelativePath.Normalize("replace-stale.txt"),
+                baseRevision,
+                "replacement"),
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+        Assert.Equal(AgentPermissionDecisionStatus.Published, review.Decision!.Status);
+    }
+
+    [Fact]
+    public async Task DeleteStaleBase_DoesNotConsumePublishedDecision()
+    {
+        var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
+            AgentFileReadResult.Success(
+                "changed",
+                AgentContentRevision.FromUtf8Text("changed"),
+                byteLength: 7));
+        var review = new CapturingAllowingPermissionReviewService();
+        var result = await CreateBroker(reader, review).RequestAsync(
+            new AgentDeleteFileActionPayload(
+                AgentWorkspaceRelativePath.Normalize("delete-stale.txt"),
+                baseRevision),
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+        Assert.Equal(AgentPermissionDecisionStatus.Published, review.Decision!.Status);
+    }
+
+    [Fact]
+    public async Task FreshProposal_ConsumesDecisionExactlyOnce()
+    {
+        var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4));
+        var review = new CapturingAllowingPermissionReviewService();
+        var result = await CreateBroker(reader, review).RequestAsync(
+            new AgentReplaceFileActionPayload(
+                AgentWorkspaceRelativePath.Normalize("fresh.txt"),
+                baseRevision,
+                "replacement"),
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Succeeded, result.ResultKind);
+        Assert.Equal(AgentPermissionDecisionStatus.Consumed, review.Decision!.Status);
+        Assert.False(review.Decision.TryConsume());
+    }
+
+    [Fact]
+    public async Task ConcurrentStaleAndAllowRaces_StaleProposalCannotConsumeDecision()
+    {
+        var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        var staleReader = new GateReader(
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
+            AgentFileReadResult.Success(
+                "changed",
+                AgentContentRevision.FromUtf8Text("changed"),
+                byteLength: 7));
+        var allowReader = new CountingAgentFileReader();
+        allowReader.EnqueueReads(
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
+            AgentFileReadResult.Success("base", baseRevision, byteLength: 4));
+        var review = new CapturingAllowingPermissionReviewService();
+        var runId = ExecutionRunId.New();
+        var staleBroker = CreateBroker(staleReader, review, runId);
+        var allowBroker = CreateBroker(allowReader, review, runId);
+        var payload = new AgentReplaceFileActionPayload(
+            AgentWorkspaceRelativePath.Normalize("concurrent.txt"),
+            baseRevision,
+            "replacement");
+
+        var staleTask = Task.Run(() => staleBroker.RequestAsync(payload, null, CancellationToken.None).AsTask());
+        await staleReader.RevalidationStarted.Task;
+        var allowResult = await allowBroker.RequestAsync(payload, null, CancellationToken.None);
+        staleReader.Release();
+        var staleResult = await staleTask;
+
+        Assert.Equal(AgentActionResultKind.Revoked, staleResult.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, staleResult.FailureKind);
+        Assert.Equal(AgentActionResultKind.Succeeded, allowResult.ResultKind);
+        Assert.Equal(AgentPermissionDecisionStatus.Consumed, review.Decision!.Status);
+    }
+
     private sealed class AllowingPermissionReviewService : IAgentPermissionReviewService
     {
         public ValueTask<AgentPermissionDecision> RequestDecisionAsync(
@@ -646,13 +775,76 @@ public sealed class Phase17ProposalBrokerTests
                 true));
     }
 
+    private sealed class CapturingAllowingPermissionReviewService : IAgentPermissionReviewService
+    {
+        private readonly object _gate = new();
+
+        public AgentPermissionDecision? Decision { get; private set; }
+
+        public ValueTask<AgentPermissionDecision> RequestDecisionAsync(
+            AgentActionRequest request,
+            AgentActionDisplaySummary displaySummary,
+            WorkspaceActionScope? workspaceScope,
+            CancellationToken cancellationToken)
+        {
+            lock (_gate)
+            {
+                Decision ??= new AgentPermissionDecision(
+                    AgentPermissionDecisionId.New(),
+                    request.Fingerprint,
+                    AgentActionPermissionClassification.RequiresUserDecision,
+                    AgentPermissionDecisionStatus.Published,
+                    DateTimeOffset.UtcNow,
+                    DateTimeOffset.UtcNow.AddMinutes(5),
+                    true);
+                return ValueTask.FromResult(Decision);
+            }
+        }
+    }
+
+    private sealed class GateReader : IAgentFileReader
+    {
+        private readonly AgentFileReadResult _initial;
+        private readonly AgentFileReadResult _revalidation;
+        private readonly TaskCompletionSource<bool> _release =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _readCount;
+
+        public GateReader(AgentFileReadResult initial, AgentFileReadResult revalidation)
+        {
+            _initial = initial;
+            _revalidation = revalidation;
+        }
+
+        public TaskCompletionSource<bool> RevalidationStarted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public AgentFileReadResult Read(
+            WorkspaceActionScope scope,
+            AgentWorkspaceRelativePath path,
+            CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _readCount) == 2)
+            {
+                RevalidationStarted.TrySetResult(true);
+                _release.Task.GetAwaiter().GetResult();
+                return _revalidation;
+            }
+
+            return _initial;
+        }
+
+        public void Release() => _release.TrySetResult(true);
+    }
+
     private ContractAgentActionBroker CreateBroker(
         IAgentFileReader reader,
-        IAgentPermissionReviewService? permissionReviewService = null)
+        IAgentPermissionReviewService? permissionReviewService = null,
+        ExecutionRunId? runId = null)
     {
         return new ContractAgentActionBroker(
             AgentSessionId.New(),
-            ExecutionRunId.New(),
+            runId ?? ExecutionRunId.New(),
             ConversationId.NewDirect(),
             ActorId.HumanUser,
             ActorId.PanelSeed("agent-target"),
