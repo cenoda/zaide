@@ -10,6 +10,8 @@ using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.App.Composition;
 public partial class App : Application
@@ -71,6 +73,17 @@ public partial class App : Application
             {
                 ViewModel = vm,
             };
+
+            // Phase 17 M3: attach the permission review surface to the owned
+            // main window so user review (Allow/Deny) is reachable in
+            // production. Without an owner the presenter fails closed and
+            // requests are rejected as PermissionUnavailable.
+            var permissionPresenter = CompositionRoot.Services
+                .GetRequiredService<IAgentPermissionDialogPresenter>();
+            if (permissionPresenter is PermissionReviewDialogPresenter reviewDialogPresenter)
+            {
+                reviewDialogPresenter.SetOwner(desktop.MainWindow);
+            }
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

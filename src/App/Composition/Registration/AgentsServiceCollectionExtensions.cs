@@ -30,6 +30,14 @@ internal static class AgentsServiceCollectionExtensions
             return client;
         });
 
+        // Phase 17 M3: permission review surface.
+        // App.OnFrameworkInitializationCompleted attaches the owner main
+        // window to the presenter singleton after the window is created;
+        // until an owner is attached the presenter fails closed
+        // (PermissionUnavailable).
+        services.AddSingleton<IAgentPermissionDialogPresenter, PermissionReviewDialogPresenter>();
+        services.AddSingleton<IAgentPermissionReviewService, InteractiveAgentPermissionReviewService>();
+
         return services;
     }
 }

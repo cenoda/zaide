@@ -38,6 +38,9 @@ public sealed class AgentsRegistrationModuleTests
         typeof(MentionParser).FullName!,
         typeof(IAgentRouter).FullName!,
         typeof(HttpClient).FullName!,
+        // Phase 17 M3: permission review surface.
+        typeof(IAgentPermissionDialogPresenter).FullName!,
+        typeof(IAgentPermissionReviewService).FullName!,
     };
 
 
@@ -78,13 +81,13 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideAgents_RegistersExactlyNinePlannedServices()
+    public void AddZaideAgents_RegistersExactlyThePlannedServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(10, services.Count);
+        Assert.Equal(12, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -137,6 +140,18 @@ public sealed class AgentsRegistrationModuleTests
             d => d.ServiceType == typeof(HttpClient)
                 && d.ImplementationFactory is not null
                 && d.ImplementationType is null);
+
+        // Phase 17 M3: permission review surface. The shell attaches the
+        // owner window to the presenter singleton after the main window is
+        // created (see AppSource_AttachesPermissionPresenterOwnerToMainWindow).
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentPermissionDialogPresenter)
+                && d.ImplementationType == typeof(PermissionReviewDialogPresenter));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentPermissionReviewService)
+                && d.ImplementationType == typeof(InteractiveAgentPermissionReviewService));
     }
 
     [Fact]
@@ -187,6 +202,32 @@ public sealed class AgentsRegistrationModuleTests
         var httpClient2 = provider.GetRequiredService<HttpClient>();
         Assert.Same(httpClient1, httpClient2);
         Assert.Equal(TimeSpan.FromSeconds(120), httpClient1.Timeout);
+
+        // Phase 17 M3: production DI produces the interactive review service
+        // connected to the single owned dialog presenter instance.
+        var reviewService1 = provider.GetRequiredService<IAgentPermissionReviewService>();
+        var reviewService2 = provider.GetRequiredService<IAgentPermissionReviewService>();
+        Assert.Same(reviewService1, reviewService2);
+        Assert.IsType<InteractiveAgentPermissionReviewService>(reviewService1);
+
+        var presenter1 = provider.GetRequiredService<IAgentPermissionDialogPresenter>();
+        var presenter2 = provider.GetRequiredService<IAgentPermissionDialogPresenter>();
+        Assert.Same(presenter1, presenter2);
+        Assert.IsType<PermissionReviewDialogPresenter>(presenter1);
+    }
+
+    [Fact]
+    public void AppSource_AttachesPermissionPresenterOwnerToMainWindow()
+    {
+        // Phase 17 M3: the shell must attach the owned main window to the
+        // permission review presenter so the Allow path is reachable in
+        // production; absent an owner the presenter fails closed.
+        var appSource = ReadRepoFile("src/App/Composition/App.axaml.cs");
+
+        Assert.Contains(
+            "GetRequiredService<IAgentPermissionDialogPresenter>()",
+            appSource);
+        Assert.Contains(".SetOwner(desktop.MainWindow)", appSource);
     }
 
     [Fact]
@@ -237,7 +278,7 @@ public sealed class AgentsRegistrationModuleTests
     }
 
     [Fact]
-    public void AgentsModuleSource_ContainsExactlyTheNinePlannedRegistrations()
+    public void AgentsModuleSource_ContainsExactlyThePlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs");
@@ -280,7 +321,17 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(Regex.Matches(moduleSource, @"new HttpClient\(\)"));
         Assert.Contains("TimeSpan.FromSeconds(120)", moduleSource);
 
-        Assert.Equal(10, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        // Phase 17 M3: permission review surface registrations.
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentPermissionDialogPresenter,\s*PermissionReviewDialogPresenter>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
+
+        Assert.Equal(12, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

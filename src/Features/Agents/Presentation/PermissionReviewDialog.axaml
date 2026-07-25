@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:Zaide.Features.Agents.Application"
+        x:Class="Zaide.Features.Agents.Presentation.PermissionReviewDialog"
+        x:DataType="app:PermissionReviewViewModel"
+        Title="Agent Action Permission Review"
+        Width="600" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        ShowInTaskbar="False">
+
+    <StackPanel x:Name="RootPanel" Spacing="{StaticResource SpacingLg}" Margin="20">
+        <TextBlock Text="Agent Action Permission Review"
+                   FontWeight="Bold"
+                   FontSize="16" />
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="{Binding ScopeText}" FontWeight="Bold" Foreground="OrangeRed" />
+            <TextBlock Text="{Binding InitiatingActorId, StringFormat='Initiating Actor: {0}'}" />
+            <TextBlock Text="{Binding TargetActorId, StringFormat='Target Actor: {0}'}" />
+            <TextBlock Text="{Binding BackendId, StringFormat='Backend: {0}'}" />
+            <TextBlock Text="{Binding RunId, StringFormat='Correlated Run: {0}'}" />
+            <TextBlock Text="{Binding ActionKind, StringFormat='Action Kind: {0}'}" />
+            <TextBlock Text="{Binding TargetText, StringFormat='Normalized Target: {0}'}" />
+            <TextBlock Text="{Binding NormalizedPathText, StringFormat='Workspace-Relative Path: {0}'}" />
+            <TextBlock Text="{Binding ResolvedPathText, StringFormat='Resolved Absolute Path: {0}'}" />
+        </StackPanel>
+
+        <ScrollViewer Height="120" BorderBrush="Gray" BorderThickness="1" Padding="8">
+            <TextBlock Text="{Binding DisplaySummaryText}" TextWrapping="Wrap" />
+        </ScrollViewer>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="{StaticResource SpacingSm}">
+            <Button x:Name="AllowButton"
+                    Content="Allow"
+                    Width="100"
+                    Command="{Binding AllowCommand}"
+                    Focusable="True"
+                    AutomationProperties.Name="Allow Action" />
+            <Button x:Name="DenyButton"
+                    Content="Deny"
+                    Width="100"
+                    Command="{Binding DenyCommand}"
+                    Focusable="True"
+                    IsCancel="True"
+                    AutomationProperties.Name="Deny Action" />
+        </StackPanel>
+    </StackPanel>
+</Window>

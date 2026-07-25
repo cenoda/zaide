@@ -115,19 +115,22 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((74, 7, 67), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
-        Assert.Equal((9, 3, 6), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
+        Assert.Equal((11, 3, 8), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
         // Phase 17 M1: +9 action contract application services and brokers.
-        Assert.Equal((25, 7, 18), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 17 M3: +2 internal permission review view model and service.
+        Assert.Equal((27, 7, 20), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
         // Phase 17 M2: +1 internal WorkspaceFileReader read adapter.
         Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
-        Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
+        Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 

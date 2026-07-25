@@ -7,9 +7,10 @@ M2 (canonical workspace capture and bounded read-only file access) was
 implemented on 2026-07-25, completed four corrective passes, and received GO on
 2026-07-25. M3 is now authorized.
 
-**Authorized work:** M2 canonical workspace capture and bounded reads. M3 and
-later milestones remain gated by predecessor completion and the repository's
-automatic progression and stop rules.
+**Authorized work:** M3 permission classification, immutable decision lifecycle,
+revocation, exact-request fingerprint binding, and minimal Zaide-owned visible
+review surface. M4 and later milestones remain gated by predecessor
+completion and the repository's automatic progression and stop rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,

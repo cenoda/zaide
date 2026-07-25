@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Domain;
 
@@ -6,9 +7,15 @@ namespace Zaide.Features.Agents.Domain;
 
 /// <summary>
 /// One permission decision bound to a single immutable request fingerprint.
+/// All fields except <see cref="Status"/> are immutable; the status advances
+/// only through the atomic <see cref="TryConsume"/> transition
+/// (Published → Consumed) so one decision can authorize at most one
+/// execution.
 /// </summary>
 internal sealed class AgentPermissionDecision
 {
+    private int _status;
+
     public AgentPermissionDecision(
         AgentPermissionDecisionId decisionId,
         AgentActionRequestFingerprint requestFingerprint,
@@ -56,7 +63,7 @@ internal sealed class AgentPermissionDecision
         DecisionId = decisionId;
         RequestFingerprint = requestFingerprint;
         Classification = classification;
-        Status = status;
+        _status = (int)status;
         PublishedAtUtc = publishedAtUtc;
         ExpiresAtUtc = expiresAtUtc;
         IsAllow = isAllow;
@@ -68,7 +75,24 @@ internal sealed class AgentPermissionDecision
 
     public AgentActionPermissionClassification Classification { get; }
 
-    public AgentPermissionDecisionStatus Status { get; }
+    public AgentPermissionDecisionStatus Status =>
+        (AgentPermissionDecisionStatus)Volatile.Read(ref _status);
+
+    /// <summary>
+    /// Atomically transitions the decision from
+    /// <see cref="AgentPermissionDecisionStatus.Published"/> to
+    /// <see cref="AgentPermissionDecisionStatus.Consumed"/>. Returns
+    /// <c>false</c> when the decision is not currently Published — already
+    /// consumed, denied, revoked, or expired — so a decision can never
+    /// authorize more than one execution and no terminal status can be
+    /// consumed.
+    /// </summary>
+    public bool TryConsume() =>
+        Interlocked.CompareExchange(
+            ref _status,
+            (int)AgentPermissionDecisionStatus.Consumed,
+            (int)AgentPermissionDecisionStatus.Published)
+        == (int)AgentPermissionDecisionStatus.Published;
 
     public DateTimeOffset PublishedAtUtc { get; }
 

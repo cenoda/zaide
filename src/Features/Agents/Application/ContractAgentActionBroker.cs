@@ -29,6 +29,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly IAgentCommandResolver _commandResolver;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
+    private readonly IAgentPermissionReviewService _permissionReviewService;
     private readonly object _admissionGate = new();
     private volatile bool _revoked;
 
@@ -51,7 +52,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         IAgentFileReader fileReader,
         IAgentCommandResolver commandResolver,
         AgentActionRunSlotTracker runSlot,
-        AgentActionCorrelationRegistry correlationRegistry)
+        AgentActionCorrelationRegistry correlationRegistry,
+        IAgentPermissionReviewService? permissionReviewService = null)
     {
         if (sessionId == default)
         {
@@ -102,6 +104,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
+        _permissionReviewService = permissionReviewService ?? new InteractiveAgentPermissionReviewService();
     }
 
     public void Revoke()
@@ -110,7 +113,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _correlationRegistry.Revoke();
     }
 
-    public ValueTask<AgentActionResult> RequestAsync(
+    public async ValueTask<AgentActionResult> RequestAsync(
         AgentActionPayload payload,
         string? correlationKey,
         CancellationToken cancellationToken)
@@ -119,28 +122,28 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
         if (_revoked)
         {
-            return ValueTask.FromResult(CreateDeniedResult(
+            return CreateDeniedResult(
                 payload,
                 AgentActionFailureKind.BrokerRevoked,
-                "Action broker authority was revoked."));
+                "Action broker authority was revoked.");
         }
 
         ArgumentNullException.ThrowIfNull(payload);
         if (!AgentActionPayload.MatchesKind(payload.Kind, payload))
         {
-            return ValueTask.FromResult(CreateDeniedResult(
+            return CreateDeniedResult(
                 payload,
                 AgentActionFailureKind.InvalidRequest,
-                "Action payload kind is inconsistent."));
+                "Action payload kind is inconsistent.");
         }
 
         // No workspace open: all action requests are rejected before composition.
         if (_workspaceScope is null)
         {
-            return ValueTask.FromResult(CreateDeniedResult(
+            return CreateDeniedResult(
                 payload,
                 AgentActionFailureKind.NoWorkspace,
-                "No workspace is open. Action requests require an active workspace."));
+                "No workspace is open. Action requests require an active workspace.");
         }
 
         AgentActionRequest request;
@@ -160,10 +163,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         }
         catch (Exception exception)
         {
-            return ValueTask.FromResult(CreateDeniedResult(
+            return CreateDeniedResult(
                 payload,
                 AgentActionFailureKind.InvalidRequest,
-                exception.Message));
+                exception.Message);
         }
 
         AgentActionCorrelationKey? parsedCorrelationKey = null;
@@ -175,12 +178,12 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             }
             catch (Exception exception)
             {
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     request.ActionId,
                     request.AttemptId,
                     AgentActionResultKind.Denied,
                     AgentActionFailureKind.InvalidRequest,
-                    exception.Message));
+                    exception.Message);
             }
         }
 
@@ -192,7 +195,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     request.Fingerprint,
                     out var mismatch))
             {
-                return ValueTask.FromResult(mismatch!);
+                return mismatch!;
             }
 
             if (_correlationRegistry.TryGetTerminalResult(
@@ -200,7 +203,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     request.Fingerprint,
                     out var replay))
             {
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     replay!.ActionId,
                     replay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
@@ -208,7 +211,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     replay.Summary,
                     content: replay.Content,
                     revision: replay.Revision,
-                    byteLength: replay.ByteLength));
+                    byteLength: replay.ByteLength);
             }
 
             if (_correlationRegistry.TryWaitForInFlightReplay(
@@ -220,10 +223,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 if (inFlightReplay!.ResultKind == AgentActionResultKind.Denied
                     && inFlightReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return ValueTask.FromResult(inFlightReplay);
+                    return inFlightReplay;
                 }
 
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     inFlightReplay.ActionId,
                     inFlightReplay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
@@ -231,26 +234,26 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     inFlightReplay.Summary,
                     content: inFlightReplay.Content,
                     revision: inFlightReplay.Revision,
-                    byteLength: inFlightReplay.ByteLength));
+                    byteLength: inFlightReplay.ByteLength);
             }
 
             // Cancellation or revocation occurred during wait.
             if (cancellationToken.IsCancellationRequested)
             {
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     request.ActionId,
                     request.AttemptId,
                     AgentActionResultKind.Cancelled,
                     AgentActionFailureKind.Indeterminate,
-                    "Action request was cancelled while waiting for an in-flight correlation."));
+                    "Action request was cancelled while waiting for an in-flight correlation.");
             }
 
             if (_correlationRegistry.IsRevoked)
             {
-                return ValueTask.FromResult(CreateDeniedResult(
+                return CreateDeniedResult(
                     payload,
                     AgentActionFailureKind.BrokerRevoked,
-                    "Correlation registry was revoked while waiting for in-flight action."));
+                    "Correlation registry was revoked while waiting for in-flight action.");
             }
         }
 
@@ -264,7 +267,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         request.Fingerprint,
                         out var mismatch))
                 {
-                    return ValueTask.FromResult(mismatch!);
+                    return mismatch!;
                 }
 
                 if (_correlationRegistry.TryGetTerminalResult(
@@ -272,7 +275,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         request.Fingerprint,
                         out var replay))
                 {
-                    return ValueTask.FromResult(new AgentActionResult(
+                    return new AgentActionResult(
                         replay!.ActionId,
                         replay.AttemptId,
                         AgentActionResultKind.DuplicateReplay,
@@ -280,7 +283,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         replay.Summary,
                         content: replay.Content,
                         revision: replay.Revision,
-                        byteLength: replay.ByteLength));
+                        byteLength: replay.ByteLength);
                 }
             }
 
@@ -305,10 +308,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 if (reservedReplay!.ResultKind == AgentActionResultKind.Denied
                     && reservedReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return ValueTask.FromResult(reservedReplay);
+                    return reservedReplay;
                 }
 
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     reservedReplay.ActionId,
                     reservedReplay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
@@ -316,25 +319,25 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     reservedReplay.Summary,
                     content: reservedReplay.Content,
                     revision: reservedReplay.Revision,
-                    byteLength: reservedReplay.ByteLength));
+                    byteLength: reservedReplay.ByteLength);
             }
 
             if (cancellationToken.IsCancellationRequested)
             {
-                return ValueTask.FromResult(new AgentActionResult(
+                return new AgentActionResult(
                     request.ActionId,
                     request.AttemptId,
                     AgentActionResultKind.Cancelled,
                     AgentActionFailureKind.Indeterminate,
-                    "Action request was cancelled while waiting for a run slot."));
+                    "Action request was cancelled while waiting for a run slot.");
             }
 
-            return ValueTask.FromResult(new AgentActionResult(
+            return new AgentActionResult(
                 request.ActionId,
                 request.AttemptId,
                 AgentActionResultKind.Denied,
                 AgentActionFailureKind.ConcurrentActionRejected,
-                "Only one non-terminal action is allowed per run."));
+                "Only one non-terminal action is allowed per run.");
         }
 
         try
@@ -358,16 +361,180 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     break;
 
                 case AgentActionPermissionClassification.RequiresUserDecision:
-                    lifecycle.TransitionTo(AgentActionStatus.AwaitingPermissionDecision);
-                    lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
-                    lifecycle.TransitionTo(AgentActionStatus.Denied);
-                    terminalResult = new AgentActionResult(
-                        request.ActionId,
-                        request.AttemptId,
-                        AgentActionResultKind.Denied,
-                        AgentActionFailureKind.PermissionUnavailable,
-                        "Permission review is not available in Phase 17 M1.");
-                    break;
+                    {
+                        lifecycle.TransitionTo(AgentActionStatus.AwaitingPermissionDecision);
+
+                        if (_initiatingActorId == _targetActorId || _backendId == default)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PolicyDenied,
+                                "Backend self-approval is rejected.");
+                            break;
+                        }
+
+                        if (!_workspaceAuthority.IsCurrent(_workspaceScope))
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Revoked,
+                                AgentActionFailureKind.StaleWorkspace,
+                                "Workspace generation or root changed while awaiting permission decision.");
+                            break;
+                        }
+
+                        AgentPermissionDecision decision;
+                        try
+                        {
+                            var displaySummary = AgentActionDisplaySummaryBuilder.Build(request.Payload);
+                            decision = await _permissionReviewService.RequestDecisionAsync(
+                                request,
+                                displaySummary,
+                                _workspaceScope,
+                                cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.Cancelled);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Cancelled,
+                                AgentActionFailureKind.Indeterminate,
+                                "Permission review was cancelled.");
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionUnavailable,
+                                "Permission review service failed or UI is unavailable (fail closed).");
+                            break;
+                        }
+
+                        // --- Decision validation ---
+
+                        if (decision.RequestFingerprint != request.Fingerprint)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Decision fingerprint does not match request fingerprint.");
+                            break;
+                        }
+
+                        if (decision.Classification != AgentActionPermissionClassification.RequiresUserDecision)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Decision classification is not RequiresUserDecision.");
+                            break;
+                        }
+
+                        // Only Published (allowed) or Denied (rejected/dismissed) are
+                        // valid terminal states from the review service.  Forged statuses
+                        // such as Consumed, Revoked, or Expired are rejected.
+                        if (decision.Status != AgentPermissionDecisionStatus.Published
+                            && decision.Status != AgentPermissionDecisionStatus.Denied)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                $"Decision status {decision.Status} is not a valid initial status.");
+                            break;
+                        }
+
+                        if (DateTimeOffset.UtcNow > decision.ExpiresAtUtc)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionExpired,
+                                "Permission decision has expired.");
+                            break;
+                        }
+
+                        if (!_workspaceAuthority.IsCurrent(_workspaceScope))
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Revoked,
+                                AgentActionFailureKind.StaleWorkspace,
+                                "Workspace generation changed before permission decision could be applied.");
+                            break;
+                        }
+
+                        if (!decision.IsAllow || decision.Status == AgentPermissionDecisionStatus.Denied)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Action permission was denied or dismissed by the user.");
+                            break;
+                        }
+
+                        // Published → Consumed transition, enforced atomically on
+                        // the decision itself after all validation passed. A
+                        // decision that is no longer Published (already consumed,
+                        // or holding a forged terminal status) cannot authorize.
+                        if (!decision.TryConsume())
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Permission decision could not be consumed (Published → Consumed transition failed).");
+                            break;
+                        }
+
+                        lifecycle.TransitionTo(AgentActionStatus.PermissionGranted);
+                        lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+                        lifecycle.TransitionTo(AgentActionStatus.Executing);
+                        lifecycle.TransitionTo(AgentActionStatus.Succeeded);
+
+                        terminalResult = new AgentActionResult(
+                            request.ActionId,
+                            request.AttemptId,
+                            AgentActionResultKind.Succeeded,
+                            null,
+                            $"Action {request.Payload.Kind} approved by user decision and authorized.");
+                        break;
+                    }
 
                 case AgentActionPermissionClassification.AllowedByLockedPolicy:
                     terminalResult = ExecuteAllowedRead(request, lifecycle, cancellationToken);
@@ -407,7 +574,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             }
         }
 
-        return ValueTask.FromResult(terminalResult!);
+        return terminalResult!;
     }
 
     private AgentActionResult ExecuteAllowedRead(

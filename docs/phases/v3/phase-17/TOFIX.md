@@ -10,17 +10,100 @@ M1 and M2 received GO. M2 was implemented on 2026-07-25 and completed four
 corrective passes (broker admission capture, canonical root revalidation, read
 result preservation, production IWorkspaceActionAuthority with event-driven
 generation and mandatory root identity, fail-closed for relative paths).
-M2 closeout is complete and M3 is now authorized.
+M2 closeout is complete.
+
+M3 was implemented on 2026-07-25, received NO-GO on first audit, and completed
+one corrective pass (production review-surface wiring, exact path display,
+cancellation preservation, atomic decision lifecycle). M3 awaits re-audit.
 
 ## Current work
 
 - [x] Create, audit, amend, and accept the Phase 17 implementation plan.
 - [x] Complete M1 contracts and deterministic state (GO).
 - [x] Complete M2 canonical workspace capture and bounded read-only file access.
+- [ ] Implement M3 permission classification, immutable decision lifecycle, revocation, exact-request fingerprint binding, and visible review surface (implemented; awaiting re-audit after corrective pass #1).
+- [x] M3 corrective pass #1: production review-surface wiring, exact path display, cancellation preservation, atomic Published → Consumed lifecycle.
 - [x] M2 corrective pass #1: broker admission capture, canonical root revalidation, read result preservation.
 - [x] M2 corrective pass #2: production IWorkspaceActionAuthority, mandatory root filesystem identity, DI wiring.
 - [x] M2 corrective pass #3: event-driven generation, thread-safe full-state IsCurrent, direct authority tests.
 - [x] M2 corrective pass #4: fail-closed for relative paths (".", "src") before realpath/stat.
+
+## M3 corrective pass #1 (2026-07-25)
+
+Resolves the four NO-GO audit blockers. Manual review evidence is recorded in
+`M3_PERMISSION_REVIEW_EVIDENCE.md`.
+
+### 1. Production wiring of the review surface
+
+- **DI registration.** `AddZaideAgents` registers
+  `IAgentPermissionDialogPresenter → PermissionReviewDialogPresenter` and
+  `IAgentPermissionReviewService → InteractiveAgentPermissionReviewService`
+  as singletons (12 module registrations total).
+- **Owner attachment.** `App.OnFrameworkInitializationCompleted` attaches
+  `desktop.MainWindow` to the presenter singleton via `SetOwner` after the
+  main window is created, making the Allow path reachable in production.
+- **Fail-closed UI absence.** A missing presenter or missing owner window
+  throws instead of fabricating a user denial; the broker classifies both as
+  `PermissionUnavailable`. The presenter dispatch was also fixed to await the
+  dialog task instead of blocking on `Task.Result` on the UI thread.
+- **Tests added:** service-invokes-presenter, broker allow-path through the
+  real service, no-presenter/no-owner/broker fail-closed, DI resolution and
+  App-source owner-attachment assertions.
+
+### 2. Exact path display
+
+- `PermissionReviewViewModel.ResolvedPathText` now resolves against
+  `WorkspaceActionScope.CapturedCanonicalRoot` (not `RootPath`) and
+  re-validates containment beneath the captured canonical root before
+  displaying the absolute path. Missing scope or unconfirmed containment
+  displays an explicit fail-closed marker instead of silently falling back
+  to the relative path.
+- **Tests added:** exact assertions for both `NormalizedPathText` and
+  `ResolvedPathText`, missing-scope marker, containment-withheld marker.
+
+### 3. Cancellation preservation
+
+- `InteractiveAgentPermissionReviewService` no longer catches any exception:
+  `OperationCanceledException` propagates so broker results remain
+  `Cancelled`; presenter failures propagate so results are
+  `PermissionUnavailable`.
+- `PermissionReviewDialogPresenter` registers the cancellation token while
+  the dialog is open; cancellation completes the pending decision as
+  cancelled before closing the dialog, so deny-on-dismiss cannot masquerade
+  as a user denial.
+- **Tests added:** cancellation-during-dialog at the service level and
+  through the broker (`Cancelled`, not `PermissionDenied`).
+
+### 4. Atomic decision lifecycle and classification
+
+- `AgentPermissionDecision` status is now advanced only by the new
+  `TryConsume()` — an `Interlocked.CompareExchange` transition
+  Published → Consumed — so one decision authorizes at most one execution.
+- The broker validates, in order: exact fingerprint binding, expected
+  `RequiresUserDecision` classification, initial status (`Published` or
+  `Denied` only; `Consumed`/`Revoked`/`Expired` rejected even with
+  `IsAllow = true`), expiry, workspace freshness, `IsAllow`, and finally the
+  atomic consume.
+- `PermissionReviewViewModel` resolution is single-shot (first of
+  Allow/Deny/dismiss wins), removing the duplicate click/command resolution
+  paths in the dialog code-behind.
+- **Tests added:** forged `Denied` + `IsAllow = true`, TryConsume
+  exactly-once/non-published/concurrent-racers, broker consumes the issued
+  decision, replayed consumed decision cannot authorize again.
+
+### Gate results (M3 corrective pass #1)
+
+| Gate | Result |
+|------|--------|
+| Build | pass, 0 errors |
+| `Phase17Permission` | 36/36 pass |
+| `Phase17ActionContracts` | 50/50 pass |
+| `Phase17WorkspaceRead` | 39/39 pass |
+| `Phase17WorkspaceAuthority` | 21/21 pass |
+| Architecture | 26/26 pass |
+| Full suite (fast) | 2936/2937; 1 fd-count flake in `Restart_DoesNotLeakFileDescriptors` under the parallel runner only (passes in isolation and serially; pre-existing, unrelated to M3) |
+| Full suite (slow.runsettings) | 2936/2937; only the pre-existing Phase 16 flake `LaunchAsync_CancellationTerminatesProcessTree` failed (passes in isolation; known from M2 gates) |
+| `git diff --check` | clean |
 
 ## M2 corrective pass #1 (2026-07-25)
 
@@ -264,8 +347,14 @@ read executor and workspace authority are exercised by focused tests and
 remain wired into the live run boundary in M8. The production
 `WorkspaceActionAuthority` is registered in DI; actual broker wiring is M8.
 
+## Scope boundaries observed (M3)
+
+M3 and its corrective pass did not implement mutation, command execution,
+document reconciliation, Agent event/Townhall integration, Native Harness,
+ACP, or any Phase 16 / Phase 18 work. The production execution path still
+uses `UnavailableAgentActionBroker`; live broker wiring remains M8.
+
 ## Next task
 
-M3 is now authorized: implement Phase 17 M3 only — permission classification,
-decision lifecycle, revocation, exact-request fingerprints, and a minimal
-visible review surface, per the plan's M3 section.
+M3 corrective pass #1 is complete; request M3 re-audit. M4 (non-mutating
+change proposals) remains blocked until M3 receives GO.
