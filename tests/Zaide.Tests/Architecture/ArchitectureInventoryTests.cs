@@ -61,7 +61,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((5, 2, 3), byNamespace["Zaide.Features.Workspace.Domain"]);
         // Phase 17 M2: +1 internal IWorkspaceActionAuthority.
         Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Workspace.Contracts"]);
-        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Workspace.Infrastructure"]);
+        // Phase 17 M2 corrective: +1 internal WorkspaceActionAuthority.
+        Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Workspace.Infrastructure"]);
         Assert.Equal((3, 2, 1), byNamespace["Zaide.Features.Workspace.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
@@ -173,8 +174,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
-        // Phase 17 M2: +6 workspace-scope, read-result, read-port, and read-adapter files.
-        Assert.Equal(501, inventory.SourceFiles.Count);
+        // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
+        Assert.Equal(502, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -190,8 +191,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
-        // Phase 17 M2: +6 workspace-scope, read-result, read-port, and read-adapter files.
-        Assert.Equal(456, byFolder["Features"]);
+        // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
+        Assert.Equal(457, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

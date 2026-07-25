@@ -12,6 +12,7 @@ internal static class WorkspaceServiceCollectionExtensions
     {
         services.AddSingleton<IFileTreeService, FileTreeService>();
         services.AddSingleton<FileTreeViewModel>();
+        services.AddSingleton<IWorkspaceActionAuthority, WorkspaceActionAuthority>();
 
         return services;
     }

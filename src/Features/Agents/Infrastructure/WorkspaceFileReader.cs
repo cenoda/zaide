@@ -62,6 +62,35 @@ internal sealed class WorkspaceFileReader : IAgentFileReader
                 "Workspace root is unavailable.");
         }
 
+        // Revalidate the captured canonical root against the live filesystem.
+        // A root symlink retarget, directory replacement, or equivalent TOCTOU
+        // change is detected here without relying only on the generation counter.
+        if (!string.Equals(canonicalRoot, scope.CapturedCanonicalRoot, StringComparison.Ordinal))
+        {
+            return AgentFileReadResult.Rejected(
+                AgentFileReadOutcome.PathEscaped,
+                "Workspace root has changed since the action scope was captured.");
+        }
+
+        // Stat the live root to detect root directory replacement
+        // (same path, different filesystem object). The scope is required to
+        // carry valid device and inode values; a zero value is rejected at
+        // scope construction time, so we always validate here.
+        if (!TryGetDeviceInode(canonicalRoot, out var liveDevice, out var liveInode))
+        {
+            return AgentFileReadResult.Rejected(
+                AgentFileReadOutcome.Unreadable,
+                "Workspace root metadata could not be read.");
+        }
+
+        if (liveDevice != scope.CapturedRootDevice
+            || liveInode != scope.CapturedRootInode)
+        {
+            return AgentFileReadResult.Rejected(
+                AgentFileReadOutcome.PathEscaped,
+                "Workspace root has been replaced since the action scope was captured.");
+        }
+
         var candidate = Path.GetFullPath(Path.Combine(canonicalRoot, path.NormalizedPath));
 
         // Defense in depth: reject an obvious textual escape before touching disk.
@@ -363,6 +392,44 @@ internal sealed class WorkspaceFileReader : IAgentFileReader
         }
 
         mode = BitConverter.ToUInt32(buffer, StModeOffset);
+        return true;
+    }
+
+    /// <summary>
+    /// Reads device and inode from a <c>stat</c> buffer for root-directory
+    /// identity comparison. Offsets match the Linux x86-64 <c>struct stat</c>
+    /// layout.
+    /// </summary>
+    private static bool TryGetDeviceInode(
+        string path,
+        out ulong device,
+        out ulong inode)
+    {
+        device = 0;
+        inode = 0;
+        var buffer = new byte[StatBufferSize];
+        int result;
+        try
+        {
+            result = Stat(path, buffer);
+        }
+        catch (DllNotFoundException)
+        {
+            return false;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false;
+        }
+
+        if (result != 0)
+        {
+            return false;
+        }
+
+        // st_dev at offset 0, st_ino at offset 8 on Linux x86-64.
+        device = BitConverter.ToUInt64(buffer, 0);
+        inode = BitConverter.ToUInt64(buffer, 8);
         return true;
     }
 

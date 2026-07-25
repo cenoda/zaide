@@ -13,7 +13,10 @@ internal sealed class AgentActionResult
         AgentActionResultKind resultKind,
         AgentActionFailureKind? failureKind,
         string summary,
-        bool isTerminal = true)
+        bool isTerminal = true,
+        string? content = null,
+        AgentContentRevision revision = default,
+        long byteLength = 0)
     {
         if (actionId == default)
         {
@@ -48,12 +51,23 @@ internal sealed class AgentActionResult
             throw new ArgumentException("Action results must be terminal in Phase 17 M1.", nameof(isTerminal));
         }
 
+        if (content is not null && byteLength < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(byteLength),
+                byteLength,
+                "Byte length cannot be negative.");
+        }
+
         ActionId = actionId;
         AttemptId = attemptId;
         ResultKind = resultKind;
         FailureKind = failureKind;
         Summary = summary.Trim();
         IsTerminal = true;
+        Content = content;
+        Revision = revision;
+        ByteLength = byteLength;
     }
 
     public AgentActionId ActionId { get; }
@@ -67,4 +81,20 @@ internal sealed class AgentActionResult
     public string Summary { get; }
 
     public bool IsTerminal { get; }
+
+    /// <summary>
+    /// Decoded UTF-8 file content; non-null only on a successful read result.
+    /// </summary>
+    public string? Content { get; }
+
+    /// <summary>
+    /// Lowercase SHA-256 digest over the exact bytes; non-default only on a
+    /// successful read result.
+    /// </summary>
+    public AgentContentRevision Revision { get; }
+
+    /// <summary>
+    /// Exact number of bytes read; non-zero only on a successful read result.
+    /// </summary>
+    public long ByteLength { get; }
 }

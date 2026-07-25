@@ -33,6 +33,8 @@ internal enum AgentActionFailureKind
     CorrelationKeyMismatch,
     BrokerRevoked,
     BrokerUnavailable,
+    NoWorkspace,
+    WorkspaceRootChanged,
     ExecutionFailed,
     Indeterminate,
 }

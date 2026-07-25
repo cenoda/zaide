@@ -318,9 +318,7 @@ public sealed class Phase17ActionContractsBrokerTests
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry)
     {
-        var scope = new WorkspaceActionScope(
-            WorkspaceIdentity.New(),
-            WorkspaceGeneration.Initial,
+        var scope = FakeWorkspaceActionAuthority.CreateScopeFromDirectory(
             System.IO.Path.GetTempPath());
 
         return new(
@@ -330,7 +328,6 @@ public sealed class Phase17ActionContractsBrokerTests
             ActorId.HumanUser,
             ActorId.PanelSeed("alpha"),
             AgentBackendId.FromValue("backend:test"),
-            scope,
             new FakeWorkspaceActionAuthority(scope),
             new CountingAgentFileReader(),
             new FakeTrustedCommandResolver(),

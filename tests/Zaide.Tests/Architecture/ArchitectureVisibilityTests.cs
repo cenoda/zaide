@@ -202,7 +202,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
         // Phase 17 M2: +6 workspace-scope, read-result, read-port, and read-adapter files.
-        Assert.Equal(456, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(457, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

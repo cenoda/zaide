@@ -32,10 +32,7 @@ public sealed class Phase17WorkspaceReadFileReaderTests : IDisposable
         Directory.CreateDirectory(_workspaceRoot);
         Directory.CreateDirectory(_outsideRoot);
 
-        _scope = new WorkspaceActionScope(
-            WorkspaceIdentity.New(),
-            WorkspaceGeneration.Initial,
-            _workspaceRoot);
+        _scope = FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot);
     }
 
     public void Dispose()
@@ -343,11 +340,138 @@ public sealed class Phase17WorkspaceReadFileReaderTests : IDisposable
         Assert.Equal(AgentFileReadOutcome.Cancelled, result.Outcome);
     }
 
+    [Fact]
+    public void Read_RootSymlinkRetargeted_ReturnsPathEscaped()
+    {
+        // Capture the workspace scope before tampering with the root.
+        StatDeviceInode(_workspaceRoot, out var dev, out var ino);
+        var capturedScope = new WorkspaceActionScope(
+            _scope.Identity,
+            _scope.Generation,
+            _workspaceRoot,
+            capturedCanonicalRoot: _workspaceRoot,
+            capturedRootDevice: dev,
+            capturedRootInode: ino);
+
+        var insideFile = WorkspaceFile("root-toctou.txt");
+        File.WriteAllText(insideFile, "safe");
+
+        // Replace the workspace root directory with a symlink to outside.
+        Directory.Delete(_workspaceRoot, recursive: true);
+        try
+        {
+            Directory.CreateSymbolicLink(_workspaceRoot, _outsideRoot);
+
+            var result = _reader.Read(
+                capturedScope,
+                AgentWorkspaceRelativePath.Normalize("root-toctou.txt"),
+                CancellationToken.None);
+
+            Assert.Equal(AgentFileReadOutcome.PathEscaped, result.Outcome);
+        }
+        finally
+        {
+            // Restore the workspace root as a real directory so other tests
+            // (and Dispose) see the expected layout.
+            if (Directory.Exists(_workspaceRoot))
+            {
+                Directory.Delete(_workspaceRoot);
+            }
+
+            Directory.CreateDirectory(_workspaceRoot);
+        }
+    }
+
+    [Fact]
+    public void Read_RootReplacedWithNewDirectory_ReturnsPathEscaped()
+    {
+        // Capture the scope with the original device and inode identity.
+        StatDeviceInode(_workspaceRoot, out var origDev, out var origIno);
+        var capturedScope = new WorkspaceActionScope(
+            _scope.Identity,
+            _scope.Generation,
+            _workspaceRoot,
+            capturedCanonicalRoot: _workspaceRoot,
+            capturedRootDevice: origDev,
+            capturedRootInode: origIno);
+
+        var insideFile = WorkspaceFile("root-replace.txt");
+        File.WriteAllText(insideFile, "safe");
+
+        // Delete and recreate the root at the same path (new directory inode).
+        Directory.Delete(_workspaceRoot, recursive: true);
+        try
+        {
+            Directory.CreateDirectory(_workspaceRoot);
+
+            var result = _reader.Read(
+                capturedScope,
+                AgentWorkspaceRelativePath.Normalize("root-replace.txt"),
+                CancellationToken.None);
+
+            Assert.Equal(AgentFileReadOutcome.PathEscaped, result.Outcome);
+        }
+        finally
+        {
+            if (Directory.Exists(_workspaceRoot))
+            {
+                Directory.Delete(_workspaceRoot, recursive: true);
+            }
+
+            Directory.CreateDirectory(_workspaceRoot);
+        }
+    }
+
+    [Fact]
+    public void Read_CapturedCanonicalRootMismatch_ReturnsPathEscaped()
+    {
+        // Capture a scope whose CapturedCanonicalRoot deliberately mismatches
+        // the live root so the revalidation guard is exercised independently
+        // of filesystem tampering. Device and inode must be valid for the
+        // scope to be accepted; we stat the live root so the stat check
+        // succeeds and only the path comparison triggers the rejection.
+        StatDeviceInode(_workspaceRoot, out var dev, out var ino);
+        var mismatchedScope = new WorkspaceActionScope(
+            _scope.Identity,
+            _scope.Generation,
+            _workspaceRoot,
+            capturedCanonicalRoot: _outsideRoot, // Deliberately wrong path.
+            capturedRootDevice: dev,
+            capturedRootInode: ino);
+
+        File.WriteAllText(WorkspaceFile("mismatch.txt"), "content");
+
+        var result = _reader.Read(
+            mismatchedScope,
+            AgentWorkspaceRelativePath.Normalize("mismatch.txt"),
+            CancellationToken.None);
+
+        Assert.Equal(AgentFileReadOutcome.PathEscaped, result.Outcome);
+    }
+
     [DllImport("libc", SetLastError = true, EntryPoint = "mkfifo")]
     private static extern int Mkfifo(
         [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
         uint mode);
 
+    private static void StatDeviceInode(string path, out ulong device, out ulong inode)
+    {
+        var buffer = new byte[256];
+        var result = Stat(path, buffer);
+        if (result != 0)
+        {
+            throw new InvalidOperationException($"stat failed for '{path}'.");
+        }
+
+        device = BitConverter.ToUInt64(buffer, 0);
+        inode = BitConverter.ToUInt64(buffer, 8);
+    }
+
     [DllImport("libc", EntryPoint = "geteuid")]
     private static extern uint Geteuid();
+
+    [DllImport("libc", SetLastError = true, EntryPoint = "stat")]
+    private static extern int Stat(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+        byte[] statBuffer);
 }

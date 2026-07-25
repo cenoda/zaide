@@ -20,6 +20,7 @@ namespace Zaide.Tests.App.Composition;
 /// Refactor 6.3 M6c: proves Workspace DI membership moved into
 /// <see cref="WorkspaceServiceCollectionExtensions.AddZaideWorkspace"/> without
 /// changing service types, lifetimes, or total registration membership.
+/// Phase 17 M2 corrective: +1 IWorkspaceActionAuthority registration.
 /// </summary>
 public sealed class WorkspaceRegistrationModuleTests
 {
@@ -27,6 +28,7 @@ public sealed class WorkspaceRegistrationModuleTests
     {
         typeof(IFileTreeService).FullName!,
         typeof(FileTreeViewModel).FullName!,
+        typeof(IWorkspaceActionAuthority).FullName!,
     };
 
 
@@ -67,12 +69,12 @@ public sealed class WorkspaceRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideWorkspace_RegistersExactlyTwoPlannedServices()
+    public void AddZaideWorkspace_RegistersExactlyThreePlannedServices()
     {
         var services = new ServiceCollection();
         services.AddZaideWorkspace();
 
-        Assert.Equal(2, services.Count);
+        Assert.Equal(3, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -92,6 +94,10 @@ public sealed class WorkspaceRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(FileTreeViewModel)
                 && d.ImplementationType == typeof(FileTreeViewModel));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IWorkspaceActionAuthority)
+                && d.ImplementationType == typeof(WorkspaceActionAuthority));
     }
 
     [Fact]
@@ -107,6 +113,11 @@ public sealed class WorkspaceRegistrationModuleTests
         var viewModel1 = provider.GetRequiredService<FileTreeViewModel>();
         var viewModel2 = provider.GetRequiredService<FileTreeViewModel>();
         Assert.Same(viewModel1, viewModel2);
+
+        var authority1 = provider.GetRequiredService<IWorkspaceActionAuthority>();
+        var authority2 = provider.GetRequiredService<IWorkspaceActionAuthority>();
+        Assert.Same(authority1, authority2);
+        Assert.IsType<WorkspaceActionAuthority>(authority1);
     }
 
     [Fact]
@@ -138,7 +149,7 @@ public sealed class WorkspaceRegistrationModuleTests
     }
 
     [Fact]
-    public void WorkspaceModuleSource_ContainsExactlyTheTwoPlannedRegistrations()
+    public void WorkspaceModuleSource_ContainsExactlyTheThreePlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/WorkspaceServiceCollectionExtensions.cs");
@@ -153,8 +164,12 @@ public sealed class WorkspaceRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IFileTreeService,\s*FileTreeService>\(\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<FileTreeViewModel>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IWorkspaceActionAuthority,\s*WorkspaceActionAuthority>\(\)"));
 
-        Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+        Assert.Equal(3, Regex.Matches(moduleSource, @"AddSingleton<").Count);
 
         // Domain Workspace remains owned by AppCore (M6a), not this module.
         Assert.DoesNotContain("AddSingleton<Workspace>()", moduleSource);

@@ -2,11 +2,10 @@
 
 ## Status and authorization
 
-**Phase 17 status:** M0 accepted on 2026-07-24. M1 (action/workspace identity,
-taxonomy, policy, immutable proposals, budgets, deterministic state) received GO
-and is complete. M2 (canonical workspace capture and bounded read-only file
-access) is authorized and implemented on 2026-07-25. M3 is not authorized until
-M2 receives GO.
+**Phase 17 status:** M0 accepted on 2026-07-24. M1 received GO and is complete.
+M2 (canonical workspace capture and bounded read-only file access) was
+implemented on 2026-07-25, completed four corrective passes, and received GO on
+2026-07-25. M3 is now authorized.
 
 **Authorized work:** M2 canonical workspace capture and bounded reads. M3 and
 later milestones remain gated by predecessor completion and the repository's

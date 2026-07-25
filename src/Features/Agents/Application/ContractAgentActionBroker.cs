@@ -11,6 +11,9 @@ namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Run-scoped broker that admits and classifies action requests without performing I/O.
+/// Captures the current workspace scope at admission via
+/// <see cref="IWorkspaceActionAuthority.TryCaptureCurrentScope"/>; when no workspace
+/// is open all action requests are rejected with <see cref="AgentActionFailureKind.NoWorkspace"/>.
 /// </summary>
 internal sealed class ContractAgentActionBroker : IAgentActionBroker
 {
@@ -20,7 +23,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly ActorId _initiatingActorId;
     private readonly ActorId _targetActorId;
     private readonly AgentBackendId _backendId;
-    private readonly WorkspaceActionScope _workspaceScope;
+    private readonly WorkspaceActionScope? _workspaceScope;
     private readonly IWorkspaceActionAuthority _workspaceAuthority;
     private readonly IAgentFileReader _fileReader;
     private readonly IAgentCommandResolver _commandResolver;
@@ -31,6 +34,12 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
     internal Action? TestProcessingHold { get; set; }
 
+    /// <summary>
+    /// Creates a run-scoped broker that captures the current workspace scope via
+    /// <paramref name="workspaceAuthority"/> at admission. When no workspace is
+    /// open (<see cref="TryCaptureCurrentScope"/> returns <c>false</c>), every
+    /// action request is rejected with <see cref="AgentActionFailureKind.NoWorkspace"/>.
+    /// </summary>
     public ContractAgentActionBroker(
         AgentSessionId sessionId,
         ExecutionRunId runId,
@@ -38,7 +47,6 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         ActorId initiatingActorId,
         ActorId targetActorId,
         AgentBackendId backendId,
-        WorkspaceActionScope workspaceScope,
         IWorkspaceActionAuthority workspaceAuthority,
         IAgentFileReader fileReader,
         IAgentCommandResolver commandResolver,
@@ -75,14 +83,21 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             throw new ArgumentException("Backend id is required.", nameof(backendId));
         }
 
+        _workspaceAuthority = workspaceAuthority ?? throw new ArgumentNullException(nameof(workspaceAuthority));
+        if (!_workspaceAuthority.TryCaptureCurrentScope(out var capturedScope))
+        {
+            _workspaceScope = null;
+        }
+        else
+        {
+            _workspaceScope = capturedScope;
+        }
         _sessionId = sessionId;
         _runId = runId;
         _conversationId = conversationId;
         _initiatingActorId = initiatingActorId;
         _targetActorId = targetActorId;
         _backendId = backendId;
-        _workspaceScope = workspaceScope ?? throw new ArgumentNullException(nameof(workspaceScope));
-        _workspaceAuthority = workspaceAuthority ?? throw new ArgumentNullException(nameof(workspaceAuthority));
         _fileReader = fileReader ?? throw new ArgumentNullException(nameof(fileReader));
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
@@ -117,6 +132,15 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 payload,
                 AgentActionFailureKind.InvalidRequest,
                 "Action payload kind is inconsistent."));
+        }
+
+        // No workspace open: all action requests are rejected before composition.
+        if (_workspaceScope is null)
+        {
+            return ValueTask.FromResult(CreateDeniedResult(
+                payload,
+                AgentActionFailureKind.NoWorkspace,
+                "No workspace is open. Action requests require an active workspace."));
         }
 
         AgentActionRequest request;
@@ -181,7 +205,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     replay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
                     null,
-                    replay.Summary));
+                    replay.Summary,
+                    content: replay.Content,
+                    revision: replay.Revision,
+                    byteLength: replay.ByteLength));
             }
 
             if (_correlationRegistry.TryWaitForInFlightReplay(
@@ -201,7 +228,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     inFlightReplay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
                     null,
-                    inFlightReplay.Summary));
+                    inFlightReplay.Summary,
+                    content: inFlightReplay.Content,
+                    revision: inFlightReplay.Revision,
+                    byteLength: inFlightReplay.ByteLength));
             }
 
             // Cancellation or revocation occurred during wait.
@@ -247,7 +277,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         replay.AttemptId,
                         AgentActionResultKind.DuplicateReplay,
                         null,
-                        replay.Summary));
+                        replay.Summary,
+                        content: replay.Content,
+                        revision: replay.Revision,
+                        byteLength: replay.ByteLength));
                 }
             }
 
@@ -280,7 +313,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     reservedReplay.AttemptId,
                     AgentActionResultKind.DuplicateReplay,
                     null,
-                    reservedReplay.Summary));
+                    reservedReplay.Summary,
+                    content: reservedReplay.Content,
+                    revision: reservedReplay.Revision,
+                    byteLength: reservedReplay.ByteLength));
             }
 
             if (cancellationToken.IsCancellationRequested)
@@ -381,6 +417,18 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     {
         lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
 
+        // No workspace at execution time — rejected before any filesystem access.
+        if (_workspaceScope is null)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Denied);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Denied,
+                AgentActionFailureKind.NoWorkspace,
+                "No workspace is open. Action requests require an active workspace.");
+        }
+
         // Re-resolve authoritative workspace state immediately before execution.
         // A workspace close/switch (generation change) revokes stale authority.
         if (!_workspaceAuthority.IsCurrent(_workspaceScope))
@@ -418,12 +466,18 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             _ => AgentActionStatus.Failed,
         });
 
+        // Preserve content, revision, and byte length for successful reads.
+        // Rejection results are bounded and redacted — no content, default
+        // revision, and zero byte length.
         return new AgentActionResult(
             request.ActionId,
             request.AttemptId,
             resultKind,
             failureKind,
-            readResult.Summary);
+            readResult.Summary,
+            content: readResult.Content,
+            revision: readResult.Revision,
+            byteLength: readResult.ByteLength);
     }
 
     private static (AgentActionResultKind ResultKind, AgentActionFailureKind? FailureKind) MapReadOutcome(
