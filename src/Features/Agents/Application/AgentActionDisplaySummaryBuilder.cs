@@ -44,6 +44,17 @@ internal static class AgentActionDisplaySummaryBuilder
         };
     }
 
+    public static AgentActionDisplaySummary Build(AgentResolvedCommand resolvedCommand)
+    {
+        ArgumentNullException.ThrowIfNull(resolvedCommand);
+
+        return new AgentActionDisplaySummary(
+            AgentActionKind.ExecuteCommand,
+            "Execute command",
+            BuildCommandDetail(resolvedCommand),
+            wasTruncated: false);
+    }
+
     private static string BuildReadDetail(AgentReadFileActionPayload read) =>
         new StringBuilder()
             .AppendLine($"Path: {read.Path.NormalizedPath}")
@@ -87,13 +98,34 @@ internal static class AgentActionDisplaySummaryBuilder
 
     private static string BuildCommandDetail(AgentExecuteCommandActionPayload command)
     {
-        var builder = new StringBuilder();
-        builder.AppendLine($"Executable: {command.Executable}");
-        builder.AppendLine($"Working directory: {command.WorkingDirectory.NormalizedPath}");
-        builder.AppendLine("Arguments:");
-        for (var index = 0; index < command.Arguments.Count; index++)
+        if (!AgentResolvedCommand.TryCreate(command, out var resolvedCommand, out var error))
         {
-            builder.Append(index).Append(": ").AppendLine(command.Arguments[index]);
+            throw new InvalidOperationException(error);
+        }
+
+        return BuildCommandDetail(resolvedCommand!);
+    }
+
+    private static string BuildCommandDetail(AgentResolvedCommand resolvedCommand)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine($"Raw executable: {resolvedCommand.RawExecutable}");
+        builder.AppendLine($"Executable: {resolvedCommand.CanonicalAbsoluteExecutablePath}");
+        builder.AppendLine($"Denylist: {resolvedCommand.DenylistResult.Classification}");
+        builder.AppendLine($"Resolution: {resolvedCommand.ResolutionSource}");
+        if (resolvedCommand.SymlinkChain.Count > 0)
+        {
+            builder.AppendLine("Symlink chain:");
+            for (var i = 0; i < resolvedCommand.SymlinkChain.Count; i++)
+            {
+                builder.Append("  ").Append(i).Append(": ").AppendLine(resolvedCommand.SymlinkChain[i]);
+            }
+        }
+        builder.AppendLine($"Working directory: {resolvedCommand.WorkingDirectory.NormalizedPath}");
+        builder.AppendLine("Arguments:");
+        for (var index = 0; index < resolvedCommand.Arguments.Count; index++)
+        {
+            builder.Append(index).Append(": ").AppendLine(resolvedCommand.Arguments[index]);
         }
 
         builder.AppendLine("Scope: this exact request only.");

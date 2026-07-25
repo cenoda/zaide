@@ -34,6 +34,21 @@ internal static class AgentActionRequestFingerprintComputer
         return AgentActionRequestFingerprint.FromCanonicalText(canonical);
     }
 
+    public static AgentActionRequestFingerprint Compute(
+        WorkspaceIdentity workspaceIdentity,
+        WorkspaceGeneration workspaceGeneration,
+        ExecutionRunId runId,
+        AgentResolvedCommand resolvedCommand)
+    {
+        ArgumentNullException.ThrowIfNull(resolvedCommand);
+        var canonical = BuildCanonicalCommandText(
+            workspaceIdentity,
+            workspaceGeneration,
+            runId,
+            resolvedCommand);
+        return AgentActionRequestFingerprint.FromCanonicalText(canonical);
+    }
+
     private static string BuildCanonicalText(
         WorkspaceIdentity workspaceIdentity,
         WorkspaceGeneration workspaceGeneration,
@@ -69,9 +84,12 @@ internal static class AgentActionRequestFingerprintComputer
                 break;
 
             case AgentExecuteCommandActionPayload command:
-                builder.Append("executable=").Append(command.Executable).Append('\n');
-                builder.Append("working-directory=").Append(command.WorkingDirectory.NormalizedPath).Append('\n');
-                builder.Append("arguments=").Append(string.Join('\u001f', command.Arguments));
+                if (!AgentResolvedCommand.TryCreate(command, out var resolvedCommand, out var error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+
+                AppendResolvedCommand(builder, resolvedCommand!);
                 break;
 
             default:
@@ -79,5 +97,35 @@ internal static class AgentActionRequestFingerprintComputer
         }
 
         return builder.ToString();
+    }
+
+    private static string BuildCanonicalCommandText(
+        WorkspaceIdentity workspaceIdentity,
+        WorkspaceGeneration workspaceGeneration,
+        ExecutionRunId runId,
+        AgentResolvedCommand resolvedCommand)
+    {
+        var builder = new StringBuilder();
+        builder.Append("kind=").Append(AgentActionKind.ExecuteCommand.ToString()).Append('\n');
+        builder.Append("workspace=").Append(workspaceIdentity.Value).Append('\n');
+        builder.Append("generation=").Append(workspaceGeneration.Value.ToString(CultureInfo.InvariantCulture)).Append('\n');
+        builder.Append("run=").Append(runId.Value).Append('\n');
+        AppendResolvedCommand(builder, resolvedCommand);
+        return builder.ToString();
+    }
+
+    private static void AppendResolvedCommand(StringBuilder builder, AgentResolvedCommand resolvedCommand)
+    {
+        builder.Append("executable=").Append(resolvedCommand.CanonicalAbsoluteExecutablePath).Append('\n');
+        builder.Append("denylist=").Append(resolvedCommand.DenylistResult.Classification.ToString()).Append('\n');
+        builder.Append("resolution-source=").Append(resolvedCommand.ResolutionSource.ToString()).Append('\n');
+        if (resolvedCommand.SymlinkChain.Count > 0)
+        {
+            builder.Append("symlink-chain=")
+                .Append(string.Join('', resolvedCommand.SymlinkChain))
+                .Append('\n');
+        }
+        builder.Append("working-directory=").Append(resolvedCommand.WorkingDirectory.NormalizedPath).Append('\n');
+        builder.Append("arguments=").Append(string.Join('', resolvedCommand.Arguments));
     }
 }

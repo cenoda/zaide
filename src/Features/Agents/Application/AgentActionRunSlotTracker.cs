@@ -9,6 +9,7 @@ namespace Zaide.Features.Agents.Application;
 /// </summary>
 internal sealed class AgentActionRunSlotTracker
 {
+    private readonly object _gate = new();
     private AgentActionId? _activeActionId;
 
     public bool TryReserve(AgentActionId actionId)
@@ -18,13 +19,16 @@ internal sealed class AgentActionRunSlotTracker
             throw new ArgumentException("Action id is required.", nameof(actionId));
         }
 
-        if (_activeActionId is not null)
+        lock (_gate)
         {
-            return false;
-        }
+            if (_activeActionId is not null)
+            {
+                return false;
+            }
 
-        _activeActionId = actionId;
-        return true;
+            _activeActionId = actionId;
+            return true;
+        }
     }
 
     public void Release(AgentActionId actionId)
@@ -34,13 +38,34 @@ internal sealed class AgentActionRunSlotTracker
             throw new ArgumentException("Action id is required.", nameof(actionId));
         }
 
-        if (_activeActionId == actionId)
+        lock (_gate)
         {
-            _activeActionId = null;
+            if (_activeActionId == actionId)
+            {
+                _activeActionId = null;
+            }
         }
     }
 
-    public bool HasActiveAction => _activeActionId is not null;
+    public bool HasActiveAction
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _activeActionId is not null;
+            }
+        }
+    }
 
-    public AgentActionId? ActiveActionId => _activeActionId;
+    public AgentActionId? ActiveActionId
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _activeActionId;
+            }
+        }
+    }
 }
