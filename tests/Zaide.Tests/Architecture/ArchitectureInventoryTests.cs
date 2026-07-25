@@ -115,11 +115,11 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
         // Phase 17 M1: +9 action contract application services and brokers.
-        // Phase 17 M1 corrective: +1 internal DefaultAgentCommandResolver.
-        Assert.Equal((26, 7, 19), byNamespace["Zaide.Features.Agents.Application"]);
+        Assert.Equal((25, 7, 18), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
-        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
+        Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
@@ -168,7 +168,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
-        Assert.Equal(492, inventory.SourceFiles.Count);
+        Assert.Equal(495, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -184,7 +184,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
-        Assert.Equal(447, byFolder["Features"]);
+        Assert.Equal(450, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

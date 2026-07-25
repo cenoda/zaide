@@ -92,7 +92,7 @@ public sealed class Phase17ActionContractsFingerprintTests
             AgentBackendId.FromValue("backend:test"),
             WorkspaceIdentity.New(),
             WorkspaceGeneration.Initial,
-            new DefaultAgentCommandResolver(),
+            new FakeTrustedCommandResolver(),
             new AgentCreateFileActionPayload(
                 AgentWorkspaceRelativePath.Normalize("new.txt"),
                 "hello"));
@@ -115,7 +115,7 @@ public sealed class Phase17ActionContractsFingerprintTests
                 AgentBackendId.FromValue("backend:test"),
                 WorkspaceIdentity.New(),
                 WorkspaceGeneration.Initial,
-                new DefaultAgentCommandResolver(),
+                new FakeTrustedCommandResolver(),
                 new AgentExecuteCommandActionPayload(
                     "dotnet",
                     new[] { "build" },

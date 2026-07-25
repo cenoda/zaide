@@ -280,7 +280,8 @@ public sealed class Phase17ActionContractsBrokerTests
         var waitTask = Task.Run(() =>
         {
             waiterReady.Set();
-            waitReturned = registry.TryWaitForInFlightReplay(key, fingerprint, out _);
+            waitReturned = registry.TryWaitForInFlightReplay(
+                key, fingerprint, CancellationToken.None, out _);
         });
 
         Assert.True(waiterReady.Wait(TimeSpan.FromSeconds(1)));
@@ -325,7 +326,7 @@ public sealed class Phase17ActionContractsBrokerTests
             AgentBackendId.FromValue("backend:test"),
             WorkspaceIdentity.New(),
             WorkspaceGeneration.Initial,
-            new DefaultAgentCommandResolver(),
+            new FakeTrustedCommandResolver(),
             runSlot,
             correlationRegistry);
 }

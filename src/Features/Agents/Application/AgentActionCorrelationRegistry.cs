@@ -171,48 +171,6 @@ internal sealed class AgentActionCorrelationRegistry
         return false;
     }
 
-    /// <summary>
-    /// Legacy overload without cancellation token. Provided for backward
-    /// compatibility in tests that exercise the unbounded-wait path directly.
-    /// Production code should use the cancellation-aware overload.
-    /// </summary>
-    public bool TryWaitForInFlightReplay(
-        AgentActionCorrelationKey correlationKey,
-        AgentActionRequestFingerprint fingerprint,
-        out AgentActionResult? replay)
-    {
-        lock (_gate)
-        {
-            while (_inFlightFingerprints.TryGetValue(correlationKey, out var inFlightFingerprint))
-            {
-                if (inFlightFingerprint != fingerprint)
-                {
-                    replay = CreateCorrelationKeyMismatchResult();
-                    return true;
-                }
-
-                if (_terminalResults.TryGetValue(
-                        new CorrelationRecordKey(correlationKey, fingerprint),
-                        out var terminalResult))
-                {
-                    replay = terminalResult;
-                    return true;
-                }
-
-                if (_revoked)
-                {
-                    replay = null;
-                    return false;
-                }
-
-                Monitor.Wait(_gate, WaitPollInterval);
-            }
-        }
-
-        replay = null;
-        return false;
-    }
-
     public void BeginInFlightCorrelation(
         AgentActionCorrelationKey correlationKey,
         AgentActionRequestFingerprint fingerprint)
