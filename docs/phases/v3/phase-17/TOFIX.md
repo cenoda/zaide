@@ -17,6 +17,14 @@ one corrective pass (production review-surface wiring, exact path display,
 cancellation preservation, atomic decision lifecycle). M3 received GO on
 2026-07-25 after corrective pass #1. M3 closeout is complete.
 
+M4 received GO on 2026-07-25 after corrective passes #1–#3. M4 closeout is
+complete.
+
+M5 was implemented on 2026-07-25 with a constrained mutation executor for
+accepted create/replace/delete proposals, immediate pre-apply revalidation, safe
+temporary-file and atomic replacement behavior, and truthful terminal results.
+M5 closeout is complete.
+
 ## Current work
 
 - [x] Create, audit, amend, and accept the Phase 17 implementation plan.
@@ -31,13 +39,42 @@ cancellation preservation, atomic decision lifecycle). M3 received GO on
 
 ## Next task
 
-- [x] Implement M4: immutable create/replace/delete file proposals, bounded diff/summary presentation, stale-base detection, and explicit accept/deny flow. Proposal creation remains non-mutating.
-- [x] M4 corrective pass #1: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding.
-- [x] M4 corrective pass #2: restore predecessor broker/test seams; create proposals accept only confirmed `NotFound`; reject indeterminate target inspection; stale-base revalidation for create races (including non-regular and unreadable targets); path-aware synthetic reader test doubles.
-- [x] M4 corrective pass #3: move stale-base revalidation ahead of the final atomic `TryConsume()` authorization step; prove stale create/replace/delete proposals remain `Published`, fresh proposals consume exactly once, and concurrent stale/allow races cannot consume a stale proposal.
-- [ ] M4 awaiting re-audit. Do not authorize M5 prematurely.
+- [x] M4 received GO on 2026-07-25 after corrective passes #1–#3.
+- [x] Implement M5: safe workspace mutation behind accepted immutable proposals.
+- [ ] M6 remains gated. Do not authorize M6 prematurely.
 
-Manual preview evidence recorded in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
+Manual preview evidence for M4 remains in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+
+## M5 (2026-07-25)
+
+Implemented constrained mutation execution for accepted create/replace/delete
+proposals:
+
+- `IAgentFileMutator` / `WorkspaceFileMutator` revalidate workspace root
+  identity, canonical root, device/inode, path containment, proposal binding,
+  and base revision immediately before apply.
+- `ContractAgentActionBroker` executes approved file mutations after atomic
+  decision consumption; apply-time stale bases return `Conflict`.
+- Same-directory temporary files with atomic replacement; cleanup on failure
+  and cancellation; success only after on-disk confirmation.
+
+### Gate results (M5)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| `Phase17WorkspaceMutation` | pass, 17/17 |
+| `Phase17Proposal` | pass, 48/48 |
+| `Phase17ProposalBroker` | pass, 27/27 |
+| `Phase17Permission` | pass, 36/36 |
+| `Phase17ActionContracts` | pass, 50/50 |
+| `Phase17WorkspaceRead` | pass, 39/39 |
+| `Phase17WorkspaceAuthority` | pass, 21/21 |
+| Architecture | pass, 26/26 |
+| Full fast suite | 3001/3002 pass; 1 pre-existing parallel-runner flake (`Restart_DoesNotLeakFileDescriptors`; passes in isolation) |
+| Full suite (slow.runsettings) | 3001/3002 pass; 1 pre-existing Phase 16 flake (`LaunchAsync_CancellationTerminatesProcessTree`; passes in isolation) |
+| `git diff --check` | pass, clean |
 
 ## M4 corrective pass #3 (2026-07-25)
 
@@ -446,10 +483,9 @@ document reconciliation, Agent event/Townhall integration, Native Harness,
 ACP, or any Phase 16 / Phase 18 work. The production execution path still
 uses `UnavailableAgentActionBroker`; live broker wiring remains M8.
 
-## Scope boundaries observed (M4)
+## Scope boundaries observed (M5)
 
-M4 and its corrective passes did not implement mutation, command execution,
-document reconciliation, Agent event/Townhall integration, Native Harness,
-ACP, or any Phase 16 / Phase 18 work. Proposal creation remains non-mutating.
-The production execution path still uses `UnavailableAgentActionBroker`; live
-broker wiring remains M8. M5 remains gated by M4 GO.
+M5 did not implement document reconciliation, command execution, Agent
+event/Townhall integration, Native Harness, ACP, or any Phase 16 / Phase 18
+work. The production execution path still uses `UnavailableAgentActionBroker`;
+live broker wiring remains M8. M6 remains gated by M5 GO.

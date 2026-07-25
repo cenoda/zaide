@@ -26,6 +26,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly WorkspaceActionScope? _workspaceScope;
     private readonly IWorkspaceActionAuthority _workspaceAuthority;
     private readonly IAgentFileReader _fileReader;
+    private readonly IAgentFileMutator _fileMutator;
     private readonly IAgentCommandResolver _commandResolver;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
@@ -50,6 +51,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         AgentBackendId backendId,
         IWorkspaceActionAuthority workspaceAuthority,
         IAgentFileReader fileReader,
+        IAgentFileMutator fileMutator,
         IAgentCommandResolver commandResolver,
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry,
@@ -101,6 +103,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _targetActorId = targetActorId;
         _backendId = backendId;
         _fileReader = fileReader ?? throw new ArgumentNullException(nameof(fileReader));
+        _fileMutator = fileMutator ?? throw new ArgumentNullException(nameof(fileMutator));
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
@@ -585,16 +588,28 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         }
 
                         lifecycle.TransitionTo(AgentActionStatus.PermissionGranted);
-                        lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
-                        lifecycle.TransitionTo(AgentActionStatus.Executing);
-                        lifecycle.TransitionTo(AgentActionStatus.Succeeded);
 
-                        terminalResult = new AgentActionResult(
-                            request.ActionId,
-                            request.AttemptId,
-                            AgentActionResultKind.Succeeded,
-                            null,
-                            $"Action {request.Payload.Kind} approved by user decision and authorized.");
+                        if (fileProposal is not null && IsFileActionPayload(request.Payload))
+                        {
+                            terminalResult = ExecuteApprovedFileMutation(
+                                request,
+                                fileProposal,
+                                lifecycle,
+                                cancellationToken);
+                        }
+                        else
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+                            lifecycle.TransitionTo(AgentActionStatus.Executing);
+                            lifecycle.TransitionTo(AgentActionStatus.Succeeded);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Succeeded,
+                                null,
+                                $"Action {request.Payload.Kind} approved by user decision and authorized.");
+                        }
+
                         break;
                     }
 
@@ -637,6 +652,75 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         }
 
         return terminalResult!;
+    }
+
+    private AgentActionResult ExecuteApprovedFileMutation(
+        AgentActionRequest request,
+        AgentFileActionProposal fileProposal,
+        AgentActionLifecycleState lifecycle,
+        CancellationToken cancellationToken)
+    {
+        lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+
+        if (_workspaceScope is null)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Denied);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Denied,
+                AgentActionFailureKind.NoWorkspace,
+                "No workspace is open. Action requests require an active workspace.");
+        }
+
+        if (!_workspaceAuthority.IsCurrent(_workspaceScope))
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Revoked,
+                AgentActionFailureKind.StaleWorkspace,
+                "Workspace generation changed before the mutation executed.");
+        }
+
+        if (request.Fingerprint != fileProposal.PermissionFingerprint)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Failed);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Failed,
+                AgentActionFailureKind.InvalidRequest,
+                "Request fingerprint does not match the accepted proposal fingerprint.");
+        }
+
+        lifecycle.TransitionTo(AgentActionStatus.Executing);
+
+        var mutationResult = _fileMutator.Apply(
+            _workspaceScope,
+            fileProposal,
+            request.Payload,
+            cancellationToken);
+        var (resultKind, failureKind) = MapMutationOutcome(mutationResult.Outcome);
+
+        lifecycle.TransitionTo(resultKind switch
+        {
+            AgentActionResultKind.Succeeded => AgentActionStatus.Succeeded,
+            AgentActionResultKind.Cancelled => AgentActionStatus.Cancelled,
+            AgentActionResultKind.Revoked => AgentActionStatus.Revoked,
+            AgentActionResultKind.Conflict => AgentActionStatus.Conflict,
+            _ => AgentActionStatus.Failed,
+        });
+
+        return new AgentActionResult(
+            request.ActionId,
+            request.AttemptId,
+            resultKind,
+            failureKind,
+            mutationResult.Summary,
+            revision: mutationResult.Revision,
+            byteLength: mutationResult.ByteLength);
     }
 
     private AgentActionResult ExecuteAllowedRead(
@@ -718,6 +802,20 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             AgentFileReadOutcome.TooLarge => (AgentActionResultKind.Failed, AgentActionFailureKind.BudgetExceeded),
             AgentFileReadOutcome.PathEscaped => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
             AgentFileReadOutcome.NotRegularFile => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
+        };
+
+    private static (AgentActionResultKind ResultKind, AgentActionFailureKind? FailureKind) MapMutationOutcome(
+        AgentFileMutationOutcome outcome) =>
+        outcome switch
+        {
+            AgentFileMutationOutcome.Succeeded => (AgentActionResultKind.Succeeded, (AgentActionFailureKind?)null),
+            AgentFileMutationOutcome.Conflict => (AgentActionResultKind.Conflict, AgentActionFailureKind.StaleBaseRevision),
+            AgentFileMutationOutcome.Cancelled => (AgentActionResultKind.Cancelled, AgentActionFailureKind.Indeterminate),
+            AgentFileMutationOutcome.PathEscaped => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            AgentFileMutationOutcome.NotRegularFile => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            AgentFileMutationOutcome.NotFound => (AgentActionResultKind.Conflict, AgentActionFailureKind.StaleBaseRevision),
+            AgentFileMutationOutcome.Unreadable => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
             _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
         };
 

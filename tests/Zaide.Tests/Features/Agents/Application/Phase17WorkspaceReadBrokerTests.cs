@@ -159,6 +159,7 @@ public sealed class Phase17WorkspaceReadBrokerTests : IDisposable
             AgentBackendId.FromValue("backend:test"),
             authority,
             reader,
+            new CountingAgentFileMutator(),
             new FakeTrustedCommandResolver(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry());

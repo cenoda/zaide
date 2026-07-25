@@ -113,11 +113,13 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M1 corrective: +1 internal AgentCommandResolutionSource enum.
         // Phase 17 M2: +2 internal AgentFileReadResult, AgentFileReadOutcome.
         // Phase 17 M4: +3 internal AgentFileProposalId, AgentFileActionProposal, AgentFileProposalResult.
-        Assert.Equal((77, 7, 70), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 17 M5: +2 internal AgentFileMutationOutcome, AgentFileMutationResult.
+        Assert.Equal((79, 7, 72), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
-        Assert.Equal((11, 3, 8), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 17 M5: +1 internal IAgentFileMutator contract.
+        Assert.Equal((12, 3, 9), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -129,7 +131,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
         // Phase 17 M2: +1 internal WorkspaceFileReader read adapter.
-        Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 17 M5: +1 internal WorkspaceFileMutator mutation adapter.
+        Assert.Equal((5, 0, 5), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);

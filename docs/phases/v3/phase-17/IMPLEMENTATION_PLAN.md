@@ -9,18 +9,17 @@ implemented on 2026-07-25, completed four corrective passes, and received GO on
 completed one corrective pass, and received GO on 2026-07-25. M4 was
 implemented on 2026-07-25 with immutable create/replace/delete file proposals,
 bounded diff/summary presentation, stale-base detection, and explicit accept/deny
-flow. Proposal creation remains non-mutating. M4 received an initial
-implementation on 2026-07-25 and completed a corrective pass on 2026-07-25
-that restores predecessor broker/test seams while preserving fail-closed create
-inspection (`NotFound` only), stale-base revalidation for create races, and
-proposal/fingerprint/base-revision binding. A second corrective pass on
-2026-07-25 corrected the permission lifecycle ordering so stale-base
-revalidation completes before the final atomic decision consumption; awaiting
-re-audit.
+flow. Proposal creation remains non-mutating. M4 received GO on 2026-07-25
+after corrective passes that restore predecessor broker/test seams, fail-closed
+create inspection (`NotFound` only), stale-base revalidation before decision
+consumption, and proposal/fingerprint/base-revision binding. M5 was
+implemented on 2026-07-25 with a constrained mutation executor for accepted
+create/replace/delete proposals, immediate pre-apply revalidation, safe
+temporary-file and atomic replacement behavior, and truthful terminal results.
 
-**Authorized work:** M4 corrective pass only (complete; awaiting re-audit).
-M5 and later milestones remain gated by M4 GO and the repository's automatic
-progression and stop rules. Do not authorize M5 prematurely.
+**Authorized work:** M5 only (complete). M6 and later milestones remain gated
+by M5 GO and the repository's automatic progression and stop rules. Do not
+authorize M6 prematurely.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,
@@ -32,7 +31,7 @@ mutation.
 | Check | Verified result |
 |-------|-----------------|
 | Branch | `master` |
-| `HEAD` | `0e84730e` (baseline before M4 corrective pass #2) |
+| `HEAD` | `9d237af8` (baseline before M5) |
 | Working tree before plan creation | Clean |
 | Phase 15 dependency | Complete and closed |
 | Phase 16 relationship | Parked historical evaluation; not a dependency |

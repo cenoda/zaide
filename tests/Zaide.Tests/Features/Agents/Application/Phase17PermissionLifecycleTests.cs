@@ -60,6 +60,7 @@ public sealed class Phase17PermissionLifecycleTests : IDisposable
             backendId ?? AgentBackendId.FromValue("backend:test"),
             auth,
             CreateDefaultFileReader(),
+            new CountingAgentFileMutator(),
             new FakeTrustedCommandResolver(),
             runSlot ?? new AgentActionRunSlotTracker(),
             correlationRegistry ?? new AgentActionCorrelationRegistry(),

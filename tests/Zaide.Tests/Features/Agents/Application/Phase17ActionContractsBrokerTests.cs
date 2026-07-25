@@ -330,6 +330,7 @@ public sealed class Phase17ActionContractsBrokerTests
             AgentBackendId.FromValue("backend:test"),
             new FakeWorkspaceActionAuthority(scope),
             new CountingAgentFileReader(),
+            new CountingAgentFileMutator(),
             new FakeTrustedCommandResolver(),
             runSlot,
             correlationRegistry);

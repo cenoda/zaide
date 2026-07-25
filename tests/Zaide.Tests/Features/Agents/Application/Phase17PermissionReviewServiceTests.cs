@@ -8,6 +8,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Tests.Features.Agents;
@@ -226,6 +227,7 @@ public sealed class Phase17PermissionReviewServiceTests : IDisposable
             AgentBackendId.FromValue("backend:test"),
             new FakeWorkspaceActionAuthority(_scope),
             CreateDefaultFileReader(),
+            new WorkspaceFileMutator(),
             new FakeTrustedCommandResolver(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),

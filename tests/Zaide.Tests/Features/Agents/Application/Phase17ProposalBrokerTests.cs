@@ -705,12 +705,13 @@ public sealed class Phase17ProposalBrokerTests
     public async Task FreshProposal_ConsumesDecisionExactlyOnce()
     {
         var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        File.WriteAllText(Path.Combine(_workspaceRoot, "fresh.txt"), "base");
         var reader = new CountingAgentFileReader();
         reader.EnqueueReads(
             AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
             AgentFileReadResult.Success("base", baseRevision, byteLength: 4));
         var review = new CapturingAllowingPermissionReviewService();
-        var result = await CreateBroker(reader, review).RequestAsync(
+        var result = await CreateBroker(reader, review, new WorkspaceFileMutator()).RequestAsync(
             new AgentReplaceFileActionPayload(
                 AgentWorkspaceRelativePath.Normalize("fresh.txt"),
                 baseRevision,
@@ -721,12 +722,14 @@ public sealed class Phase17ProposalBrokerTests
         Assert.Equal(AgentActionResultKind.Succeeded, result.ResultKind);
         Assert.Equal(AgentPermissionDecisionStatus.Consumed, review.Decision!.Status);
         Assert.False(review.Decision.TryConsume());
+        Assert.Equal("replacement", File.ReadAllText(Path.Combine(_workspaceRoot, "fresh.txt")));
     }
 
     [Fact]
     public async Task ConcurrentStaleAndAllowRaces_StaleProposalCannotConsumeDecision()
     {
         var baseRevision = AgentContentRevision.FromUtf8Text("base");
+        File.WriteAllText(Path.Combine(_workspaceRoot, "concurrent.txt"), "base");
         var staleReader = new GateReader(
             AgentFileReadResult.Success("base", baseRevision, byteLength: 4),
             AgentFileReadResult.Success(
@@ -739,8 +742,8 @@ public sealed class Phase17ProposalBrokerTests
             AgentFileReadResult.Success("base", baseRevision, byteLength: 4));
         var review = new CapturingAllowingPermissionReviewService();
         var runId = ExecutionRunId.New();
-        var staleBroker = CreateBroker(staleReader, review, runId);
-        var allowBroker = CreateBroker(allowReader, review, runId);
+        var staleBroker = CreateBroker(staleReader, review, runId: runId);
+        var allowBroker = CreateBroker(allowReader, review, new WorkspaceFileMutator(), runId: runId);
         var payload = new AgentReplaceFileActionPayload(
             AgentWorkspaceRelativePath.Normalize("concurrent.txt"),
             baseRevision,
@@ -840,6 +843,7 @@ public sealed class Phase17ProposalBrokerTests
     private ContractAgentActionBroker CreateBroker(
         IAgentFileReader reader,
         IAgentPermissionReviewService? permissionReviewService = null,
+        IAgentFileMutator? fileMutator = null,
         ExecutionRunId? runId = null)
     {
         return new ContractAgentActionBroker(
@@ -851,6 +855,7 @@ public sealed class Phase17ProposalBrokerTests
             AgentBackendId.FromValue("backend:test"),
             _workspaceAuthority,
             reader,
+            fileMutator ?? new CountingAgentFileMutator(),
             new DefaultAgentCommandResolver(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),
