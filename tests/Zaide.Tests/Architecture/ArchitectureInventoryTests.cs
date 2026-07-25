@@ -185,7 +185,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
-        Assert.Equal(512, inventory.SourceFiles.Count);
+        // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
+        Assert.Equal(516, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -204,7 +205,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
-        Assert.Equal(467, byFolder["Features"]);
+        // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
+        Assert.Equal(471, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

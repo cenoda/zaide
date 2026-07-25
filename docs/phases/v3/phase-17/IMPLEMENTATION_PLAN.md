@@ -16,10 +16,13 @@ consumption, and proposal/fingerprint/base-revision binding. M5 was
 implemented on 2026-07-25 with a constrained mutation executor for accepted
 create/replace/delete proposals, immediate pre-apply revalidation, safe
 temporary-file and atomic replacement behavior, and truthful terminal results.
+M5 completed a corrective pass on 2026-07-25 that ratchets the four mutation
+production files in the architecture inventory (source-file counts, Features
+folder counts, namespace rollups, and baseline comments); awaiting re-audit.
 
-**Authorized work:** M5 only (complete). M6 and later milestones remain gated
-by M5 GO and the repository's automatic progression and stop rules. Do not
-authorize M6 prematurely.
+**Authorized work:** M5 corrective pass only (complete; awaiting re-audit).
+M6 and later milestones remain gated by M5 GO and the repository's automatic
+progression and stop rules. Do not authorize M6 prematurely.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,
@@ -31,7 +34,7 @@ mutation.
 | Check | Verified result |
 |-------|-----------------|
 | Branch | `master` |
-| `HEAD` | `9d237af8` (baseline before M5) |
+| `HEAD` | `e3d83006` (baseline before M5 corrective pass #1) |
 | Working tree before plan creation | Clean |
 | Phase 15 dependency | Complete and closed |
 | Phase 16 relationship | Parked historical evaluation; not a dependency |

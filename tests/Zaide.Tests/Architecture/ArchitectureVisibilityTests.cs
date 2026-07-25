@@ -204,7 +204,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 17 M2: +6 workspace-scope, read-result, read-port, and read-adapter files.
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
-        Assert.Equal(467, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
+        Assert.Equal(471, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -23,7 +23,8 @@ complete.
 M5 was implemented on 2026-07-25 with a constrained mutation executor for
 accepted create/replace/delete proposals, immediate pre-apply revalidation, safe
 temporary-file and atomic replacement behavior, and truthful terminal results.
-M5 closeout is complete.
+M5 completed corrective pass #1 on 2026-07-25 (architecture inventory ratchets
+for the four mutation production files); awaiting re-audit.
 
 ## Current work
 
@@ -41,7 +42,8 @@ M5 closeout is complete.
 
 - [x] M4 received GO on 2026-07-25 after corrective passes #1–#3.
 - [x] Implement M5: safe workspace mutation behind accepted immutable proposals.
-- [ ] M6 remains gated. Do not authorize M6 prematurely.
+- [x] M5 corrective pass #1: ratchet architecture inventory for `IAgentFileMutator`, `AgentFileMutationOutcome`, `AgentFileMutationResult`, and `WorkspaceFileMutator` (source-file counts 516, Features 471, namespace rollups, baseline comments).
+- [ ] M5 awaiting re-audit. Do not authorize M6 prematurely.
 
 Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
 Manual preview evidence for M4 remains in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
@@ -72,8 +74,35 @@ proposals:
 | `Phase17WorkspaceRead` | pass, 39/39 |
 | `Phase17WorkspaceAuthority` | pass, 21/21 |
 | Architecture | pass, 26/26 |
-| Full fast suite | 3001/3002 pass; 1 pre-existing parallel-runner flake (`Restart_DoesNotLeakFileDescriptors`; passes in isolation) |
-| Full suite (slow.runsettings) | 3001/3002 pass; 1 pre-existing Phase 16 flake (`LaunchAsync_CancellationTerminatesProcessTree`; passes in isolation) |
+| Full fast suite | pass, 3002/3002 |
+| Serial fallback | pass, 3002/3002 |
+| `git diff --check` | pass, clean |
+
+## M5 corrective pass #1 (2026-07-25)
+
+Ratchets the four M5 mutation production files in the architecture inventory:
+
+- `IAgentFileMutator` (`Agents.Contracts`)
+- `AgentFileMutationOutcome`, `AgentFileMutationResult` (`Agents.Domain`)
+- `WorkspaceFileMutator` (`Agents.Infrastructure`)
+
+Updates:
+
+- Total production source files: 512 → 516
+- Features folder source files: 467 → 471
+- Namespace rollup comments in `ArchitectureInventoryTests` and
+  `ArchitectureVisibilityTests`
+- `PublicProductionTypeBaseline` M5 type-count comments (572 total / 235
+  internal unchanged; all four types are internal)
+
+### Gate results (M5 corrective pass #1)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| Phase 17/Architecture targeted filters | pass, 244/244 |
+| Full fast suite | pass, 3002/3002 |
+| Serial fallback | pass, 3002/3002 |
 | `git diff --check` | pass, clean |
 
 ## M4 corrective pass #3 (2026-07-25)
