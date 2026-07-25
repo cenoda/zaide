@@ -112,7 +112,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Conversations.Infrastructure"]);
         // Phase 17 M1 corrective: +1 internal AgentCommandResolutionSource enum.
         // Phase 17 M2: +2 internal AgentFileReadResult, AgentFileReadOutcome.
-        Assert.Equal((74, 7, 67), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 17 M4: +3 internal AgentFileProposalId, AgentFileActionProposal, AgentFileProposalResult.
+        Assert.Equal((77, 7, 70), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -122,7 +123,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
         // Phase 17 M1: +9 action contract application services and brokers.
         // Phase 17 M3: +2 internal permission review view model and service.
-        Assert.Equal((27, 7, 20), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 17 M4: +1 internal AgentFileProposalGenerator.
+        Assert.Equal((28, 7, 21), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
@@ -179,7 +181,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
         // Phase 17 M3 corrective: +6 permission review surface production files.
-        Assert.Equal(508, inventory.SourceFiles.Count);
+        // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
+        Assert.Equal(512, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -197,7 +200,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
         // Phase 17 M3 corrective: +6 permission review surface production files.
-        Assert.Equal(463, byFolder["Features"]);
+        // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
+        Assert.Equal(467, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
