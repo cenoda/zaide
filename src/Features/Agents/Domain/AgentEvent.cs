@@ -288,6 +288,14 @@ internal sealed class AgentEvent
             AgentEventKind.FailureReported => payload is AgentFailurePayload,
             AgentEventKind.CapabilitySnapshotChanged => payload is AgentCapabilityChangedPayload,
 
+            AgentEventKind.ActionRequested => payload is AgentActionFactPayload,
+            AgentEventKind.ActionPermissionClassified => payload is AgentActionFactPayload,
+            AgentEventKind.ActionPermissionDecided => payload is AgentActionFactPayload,
+            AgentEventKind.ActionExecutionStarted => payload is AgentActionFactPayload,
+            AgentEventKind.ActionResultReported => payload is AgentActionFactPayload,
+            AgentEventKind.ActionReconciliationReported => payload is AgentActionFactPayload,
+            AgentEventKind.ActionRevoked => payload is AgentActionFactPayload,
+
             _ => false,
         };
 }

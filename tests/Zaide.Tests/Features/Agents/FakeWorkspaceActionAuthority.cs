@@ -24,6 +24,8 @@ internal sealed class FakeWorkspaceActionAuthority : IWorkspaceActionAuthority
         _scope = scope;
     }
 
+    public event Action? ScopeInvalidated;
+
     /// <summary>
     /// When <c>false</c>, <see cref="TryCaptureCurrentScope"/> returns <c>false</c>,
     /// simulating a closed workspace.
@@ -35,6 +37,8 @@ internal sealed class FakeWorkspaceActionAuthority : IWorkspaceActionAuthority
     /// a workspace generation change since capture.
     /// </summary>
     public bool IsStale { get; set; }
+
+    public void RaiseScopeInvalidated() => ScopeInvalidated?.Invoke();
 
     public bool TryCaptureCurrentScope(out WorkspaceActionScope scope)
     {

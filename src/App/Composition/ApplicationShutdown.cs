@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Language.Contracts;
@@ -65,6 +67,9 @@ internal static class ApplicationShutdown
         // Optional hosts — may be absent in focused test providers.
         DisposeOwner(services.GetService<IFileTreeService>());
         DisposeOwner(services.GetService<ITerminalHost>());
+
+        // Revoke pending action authority before process exit.
+        DisposeOwner(services.GetService<IAgentSessionService>());
     }
 
     private static void DisposeResolvedService<T>(IServiceProvider services)

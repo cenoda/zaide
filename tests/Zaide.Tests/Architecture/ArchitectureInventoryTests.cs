@@ -120,14 +120,16 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M5: +2 internal AgentFileMutationOutcome, AgentFileMutationResult.
         // Phase 17 M6: +2 internal AgentDocumentReconciliationOutcome, AgentDocumentReconciliationResult.
         // Phase 17 M7: +3 internal AgentCommandExecutionOutcome, AgentCommandStreamCapture, AgentCommandExecutionResult.
-        Assert.Equal((84, 7, 77), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 17 M8: +2 internal AgentActionFactPayload, AgentActionAuditRecord.
+        Assert.Equal((86, 7, 79), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
         // Phase 17 M5: +1 internal IAgentFileMutator contract.
         // Phase 17 M6: +1 internal IAgentDocumentReconciler contract.
         // Phase 17 M7: +1 internal IAgentCommandExecutor contract.
-        Assert.Equal((14, 3, 11), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 17 M8: +4 internal IAgentActionEventPublisher, IAgentActionAuditStore, IAgentActionBrokerFactory, IAgentActionRequestCapableBackend contracts.
+        Assert.Equal((18, 3, 15), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -135,7 +137,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M3: +2 internal permission review view model and service.
         // Phase 17 M4: +1 internal AgentFileProposalGenerator.
         // Phase 17 M6: +1 internal NullAgentDocumentReconciler.
-        Assert.Equal((29, 7, 22), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 17 M8: +3 internal AgentActionAuditStore, RunScopedAgentActionEventPublisher, AgentActionBrokerFactory.
+        Assert.Equal((32, 7, 25), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.

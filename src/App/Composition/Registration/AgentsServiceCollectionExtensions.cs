@@ -5,6 +5,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.App.Composition.Registration;
 
@@ -37,6 +38,14 @@ internal static class AgentsServiceCollectionExtensions
         // (PermissionUnavailable).
         services.AddSingleton<IAgentPermissionDialogPresenter, PermissionReviewDialogPresenter>();
         services.AddSingleton<IAgentPermissionReviewService, InteractiveAgentPermissionReviewService>();
+
+        // Phase 17 M8: action control plane wiring.
+        services.AddSingleton<IAgentActionAuditStore, AgentActionAuditStore>();
+        services.AddSingleton<IAgentFileReader, WorkspaceFileReader>();
+        services.AddSingleton<IAgentFileMutator, WorkspaceFileMutator>();
+        services.AddSingleton<IAgentCommandResolver, DefaultAgentCommandResolver>();
+        services.AddSingleton<IAgentCommandExecutor, WorkspaceCommandExecutor>();
+        services.AddSingleton<IAgentActionBrokerFactory, AgentActionBrokerFactory>();
 
         return services;
     }

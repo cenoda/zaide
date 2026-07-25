@@ -24,11 +24,15 @@ application reconciliation contract consumed by the action broker after confirme
 disk mutation and received GO on 2026-07-25. M7 was implemented on 2026-07-25
 with Zaide-owned command resolution and execution adapters, locked environment
 construction, bounded stdout/stderr capture, process-tree termination, and
-broker integration for approved commands.
+broker integration for approved commands and received GO on 2026-07-25. M8 was
+implemented on 2026-07-25 with session/event integration, in-memory audit
+snapshots, fake action requester integration tests, projection ownership, and
+bypass-prevention architecture ratchets (pending audit).
 
-**Authorized work:** M7 constrained command execution (complete; awaiting audit).
-M8 and later milestones remain gated by M7 GO and the repository's automatic
-progression and stop rules. Do not authorize M8 prematurely.
+**Authorized work:** M7 constrained command execution received GO on 2026-07-25.
+M8 session/event integration and bypass ratchets are implemented pending audit.
+M9 remains gated by M8 GO and the repository's automatic progression and stop
+rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,

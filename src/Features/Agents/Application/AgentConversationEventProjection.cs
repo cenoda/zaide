@@ -23,6 +23,7 @@ internal sealed class AgentConversationEventProjection : IDisposable
     private readonly HashSet<ConversationEntryId> _projectedMessageEntryIds = new();
     private readonly HashSet<ExecutionRunId> _admittedRunIds = new();
     private readonly HashSet<ExecutionRunId> _projectedTerminalRunIds = new();
+    private readonly HashSet<AgentActionId> _projectedActionSummaryIds = new();
 
     public AgentConversationEventProjection(
         AgentEventStream stream,
@@ -129,8 +130,57 @@ internal sealed class AgentConversationEventProjection : IDisposable
                 case AgentEventKind.RunRejected:
                     // Rejections are not admitted runs and produce no conversation entry.
                     break;
+
+                case AgentEventKind.ActionResultReported:
+                    ProjectActionResultReported(agentEvent);
+                    break;
             }
         }
+    }
+
+    private void ProjectActionResultReported(AgentEvent agentEvent)
+    {
+        if (agentEvent.Payload is not AgentActionFactPayload payload)
+        {
+            return;
+        }
+
+        if (payload.ResultKind is null)
+        {
+            return;
+        }
+
+        if (_projectedActionSummaryIds.Contains(payload.ActionId))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var headline = payload.ActionKind switch
+        {
+            AgentActionKind.ReadFile => "Read file",
+            AgentActionKind.CreateFile => "Create file",
+            AgentActionKind.ReplaceFile => "Replace file",
+            AgentActionKind.DeleteFile => "Delete file",
+            AgentActionKind.ExecuteCommand => "Run command",
+            _ => "Agent action",
+        };
+        var content = $"{headline}: {payload.Summary.Text} ({payload.ResultKind})";
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            content,
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedActionSummaryIds.Add(payload.ActionId);
     }
 
     private void ProjectUserMessageAdmitted(AgentEvent agentEvent)

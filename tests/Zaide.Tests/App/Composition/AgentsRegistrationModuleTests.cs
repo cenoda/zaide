@@ -41,6 +41,12 @@ public sealed class AgentsRegistrationModuleTests
         // Phase 17 M3: permission review surface.
         typeof(IAgentPermissionDialogPresenter).FullName!,
         typeof(IAgentPermissionReviewService).FullName!,
+        typeof(IAgentActionAuditStore).FullName!,
+        typeof(IAgentFileReader).FullName!,
+        typeof(IAgentFileMutator).FullName!,
+        typeof(IAgentCommandResolver).FullName!,
+        typeof(IAgentCommandExecutor).FullName!,
+        typeof(IAgentActionBrokerFactory).FullName!,
     };
 
 
@@ -87,7 +93,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(12, services.Count);
+        Assert.Equal(18, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -331,7 +337,7 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(12, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(18, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

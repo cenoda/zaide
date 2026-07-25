@@ -28,4 +28,12 @@ internal enum AgentEventKind
 
     FailureReported,
     CapabilitySnapshotChanged,
+
+    ActionRequested,
+    ActionPermissionClassified,
+    ActionPermissionDecided,
+    ActionExecutionStarted,
+    ActionResultReported,
+    ActionReconciliationReported,
+    ActionRevoked,
 }

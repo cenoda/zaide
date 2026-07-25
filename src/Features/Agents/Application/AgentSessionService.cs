@@ -6,31 +6,71 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Application-owned in-memory Agent Session and run lifecycle coordinator.
 /// </summary>
-internal sealed class AgentSessionService : IAgentSessionService
+internal sealed class AgentSessionService : IAgentSessionService, IDisposable
 {
     private readonly IReadOnlyDictionary<AgentBackendId, IAgentBackend> _backends;
     private readonly AgentEventStream _eventStream;
+    private readonly IAgentActionBrokerFactory? _brokerFactory;
+    private readonly IAgentActionAuditStore? _auditStore;
+    private readonly IWorkspaceActionAuthority? _workspaceAuthority;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
     private readonly object _sessionsSync = new();
+    private bool _disposed;
 
     public AgentSessionService(
         IEnumerable<IAgentBackend> backends,
-        AgentEventStream eventStream)
+        AgentEventStream eventStream,
+        IAgentActionBrokerFactory? brokerFactory = null,
+        IAgentActionAuditStore? auditStore = null,
+        IWorkspaceActionAuthority? workspaceAuthority = null)
     {
         ArgumentNullException.ThrowIfNull(backends);
         ArgumentNullException.ThrowIfNull(eventStream);
 
         _backends = backends.ToDictionary(backend => backend.BackendId);
         _eventStream = eventStream;
+        _brokerFactory = brokerFactory;
+        _auditStore = auditStore;
+        _workspaceAuthority = workspaceAuthority;
+
+        if (_workspaceAuthority is not null)
+        {
+            _workspaceAuthority.ScopeInvalidated += OnWorkspaceScopeInvalidated;
+        }
     }
 
     public IObservable<AgentEvent> Events => _eventStream.Events;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        if (_workspaceAuthority is not null)
+        {
+            _workspaceAuthority.ScopeInvalidated -= OnWorkspaceScopeInvalidated;
+        }
+
+        lock (_sessionsSync)
+        {
+            foreach (var session in _sessions.Values)
+            {
+                RevokeRunBrokerLocked(session.ActiveRun);
+            }
+
+            _sessions.Clear();
+        }
+    }
 
     public async Task<AgentRunSnapshot> SendAsync(
         ConversationId conversationId,
@@ -177,6 +217,7 @@ internal sealed class AgentSessionService : IAgentSessionService
                 run,
                 AgentEventKind.RunCancellationRequested,
                 AgentRunStatus.CancellationRequested);
+            RevokeRunBrokerLocked(run);
             run.ExecutionCancellation.Cancel();
         }
 
@@ -231,6 +272,7 @@ internal sealed class AgentSessionService : IAgentSessionService
                     activeRun,
                     AgentEventKind.RunCancellationRequested,
                     AgentRunStatus.CancellationRequested);
+                RevokeRunBrokerLocked(activeRun);
                 activeRun.ExecutionCancellation.Cancel();
             }
         }
@@ -381,9 +423,13 @@ internal sealed class AgentSessionService : IAgentSessionService
             targetActorId,
             messageEntryId,
             messageText);
-        var executionContext = new AgentBackendExecutionContext(
+        var executionContext = CreateExecutionContextLocked(
+            session,
+            run,
+            backend,
             request,
-            new UnavailableAgentActionBroker());
+            initiatorActorId,
+            targetActorId);
 
         run.ExecutionTask = ObserveBackendAsync(
             session,
@@ -601,6 +647,7 @@ internal sealed class AgentSessionService : IAgentSessionService
 
     private void ClearActiveRunLocked(LiveSession session, LiveRun completedRun)
     {
+        RevokeRunBrokerLocked(completedRun);
         session.ActiveRun = null;
 
         if (session.SessionState.Status == AgentSessionStatus.Running)
@@ -668,6 +715,7 @@ internal sealed class AgentSessionService : IAgentSessionService
                     run,
                     AgentEventKind.RunCancellationRequested,
                     AgentRunStatus.CancellationRequested);
+                RevokeRunBrokerLocked(run);
                 run.ExecutionCancellation?.Cancel();
             }
 
@@ -961,5 +1009,64 @@ internal sealed class AgentSessionService : IAgentSessionService
         public CancellationTokenSource ExecutionCancellation { get; set; } = null!;
 
         public Task? ExecutionTask { get; set; }
+
+        public ContractAgentActionBroker? ActionBroker { get; set; }
+    }
+
+    private AgentBackendExecutionContext CreateExecutionContextLocked(
+        LiveSession session,
+        LiveRun run,
+        IAgentBackend backend,
+        AgentBackendRequest request,
+        ActorId initiatorActorId,
+        ActorId targetActorId)
+    {
+        if (backend is not IAgentActionRequestCapableBackend
+            || _brokerFactory is null
+            || _auditStore is null)
+        {
+            return new AgentBackendExecutionContext(request, new UnavailableAgentActionBroker());
+        }
+
+        var publisher = new RunScopedAgentActionEventPublisher(
+            session.SessionId,
+            run.RunId,
+            session.ConversationId,
+            session.BackendId,
+            _eventStream,
+            _auditStore,
+            () => session.NextSequence++,
+            _sessionsSync);
+
+        var broker = (ContractAgentActionBroker)_brokerFactory.CreateRunScopedBroker(
+            session.SessionId,
+            run.RunId,
+            session.ConversationId,
+            initiatorActorId,
+            targetActorId,
+            session.BackendId,
+            publisher);
+        run.ActionBroker = broker;
+        return new AgentBackendExecutionContext(request, broker);
+    }
+
+    private void RevokeRunBrokerLocked(LiveRun? run)
+    {
+        run?.ActionBroker?.Revoke();
+        if (run is not null)
+        {
+            run.ActionBroker = null;
+        }
+    }
+
+    private void OnWorkspaceScopeInvalidated()
+    {
+        lock (_sessionsSync)
+        {
+            foreach (var session in _sessions.Values)
+            {
+                RevokeRunBrokerLocked(session.ActiveRun);
+            }
+        }
     }
 }

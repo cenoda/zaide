@@ -49,6 +49,8 @@ internal sealed class WorkspaceActionAuthority : IWorkspaceActionAuthority, IDis
     private const int StatBufferSize = 256;
     private bool _disposed;
 
+    public event Action? ScopeInvalidated;
+
     public WorkspaceActionAuthority(WorkspaceDomain workspace)
     {
         _workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
@@ -171,6 +173,8 @@ internal sealed class WorkspaceActionAuthority : IWorkspaceActionAuthority, IDis
 
             RefreshFromCurrentPath();
         }
+
+        ScopeInvalidated?.Invoke();
     }
 
     /// <summary>

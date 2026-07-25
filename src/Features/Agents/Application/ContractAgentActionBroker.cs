@@ -33,8 +33,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
     private readonly IAgentPermissionReviewService _permissionReviewService;
+    private readonly IAgentActionEventPublisher? _eventPublisher;
     private readonly object _admissionGate = new();
     private volatile bool _revoked;
+    private AgentEventId? _lastActionEventId;
 
     internal Action? TestProcessingHold { get; set; }
 
@@ -59,7 +61,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry,
         IAgentPermissionReviewService? permissionReviewService = null,
-        IAgentDocumentReconciler? documentReconciler = null)
+        IAgentDocumentReconciler? documentReconciler = null,
+        IAgentActionEventPublisher? eventPublisher = null)
     {
         if (sessionId == default)
         {
@@ -114,12 +117,14 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
         _permissionReviewService = permissionReviewService ?? new InteractiveAgentPermissionReviewService();
+        _eventPublisher = eventPublisher;
     }
 
     public void Revoke()
     {
         _revoked = true;
         _correlationRegistry.Revoke();
+        PublishRevocationFact("Action broker authority was revoked.");
     }
 
     public async ValueTask<AgentActionResult> RequestAsync(
@@ -371,9 +376,13 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             var lifecycle = new AgentActionLifecycleState();
             lifecycle.TransitionTo(AgentActionStatus.Classified);
 
+            PublishRequested(request);
+
             var classification = AgentActionPolicyClassifier.Classify(
                 request.Payload,
                 request.ResolvedCommand);
+            PublishClassified(request, classification);
+
             switch (classification)
             {
                 case AgentActionPermissionClassification.DeniedByPolicy:
@@ -427,6 +436,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                                 displaySummary,
                                 _workspaceScope,
                                 cancellationToken).ConfigureAwait(false);
+                            PublishPermissionDecision(request, decision);
                         }
                         catch (OperationCanceledException)
                         {
@@ -668,6 +678,11 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     }
                 }
             }
+
+            if (terminalResult is not null)
+            {
+                PublishResultReported(request, terminalResult);
+            }
         }
 
         return terminalResult!;
@@ -715,6 +730,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         }
 
         lifecycle.TransitionTo(AgentActionStatus.Executing);
+        PublishExecutionStarted(request);
 
         var mutationResult = _fileMutator.Apply(
             _workspaceScope,
@@ -744,6 +760,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             if (reconciliation.Outcome != AgentDocumentReconciliationOutcome.NotApplicable)
             {
                 summary = $"{summary} {reconciliation.Summary}";
+                PublishReconciliationReported(request, reconciliation);
             }
         }
 
@@ -828,6 +845,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         }
 
         lifecycle.TransitionTo(AgentActionStatus.Executing);
+        PublishExecutionStarted(request);
 
         var commandResult = _commandExecutor.Execute(
             _workspaceScope,
@@ -897,6 +915,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         }
 
         lifecycle.TransitionTo(AgentActionStatus.Executing);
+        PublishExecutionStarted(request);
 
         var readResult = _fileReader.Read(_workspaceScope, readPayload.Path, cancellationToken);
         var (resultKind, failureKind) = MapReadOutcome(readResult.Outcome);
@@ -1103,4 +1122,167 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             failureKind,
             summary);
     }
+
+    private void PublishRequested(AgentActionRequest request)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            $"request {request.Payload.Kind}",
+            AgentActionDisplaySummaryBuilder.Build(request.Payload).DetailText);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionRequested,
+            CreateFactPayload(request, summary),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
+    }
+
+    private void PublishClassified(AgentActionRequest request, AgentActionPermissionClassification classification)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            $"classified {classification}",
+            request.Payload.Kind.ToString());
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionPermissionClassified,
+            CreateFactPayload(request, summary, classification: classification),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
+    }
+
+    private void PublishPermissionDecision(AgentActionRequest request, AgentPermissionDecision decision)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            decision.IsAllow ? "permission allowed" : "permission denied",
+            decision.Status.ToString());
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionPermissionDecided,
+            CreateFactPayload(
+                request,
+                summary,
+                classification: AgentActionPermissionClassification.RequiresUserDecision,
+                decisionStatus: decision.Status,
+                decisionIsAllow: decision.IsAllow),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
+    }
+
+    private void PublishExecutionStarted(AgentActionRequest request)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            "execution started",
+            request.Payload.Kind.ToString());
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionExecutionStarted,
+            CreateFactPayload(request, summary),
+            AgentActivityEvidenceLevel.ZaideExecuted,
+            _lastActionEventId);
+    }
+
+    private void PublishResultReported(AgentActionRequest request, AgentActionResult result)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var evidence = result.ResultKind == AgentActionResultKind.Succeeded
+            ? AgentActivityEvidenceLevel.ZaideExecuted
+            : AgentActivityEvidenceLevel.ZaideMediated;
+        var summary = AgentActionAuditSummary.FromParts(
+            $"result {result.ResultKind}",
+            result.Summary);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionResultReported,
+            CreateFactPayload(
+                request,
+                summary,
+                resultKind: result.ResultKind,
+                failureKind: result.FailureKind),
+            evidence,
+            _lastActionEventId);
+    }
+
+    private void PublishReconciliationReported(
+        AgentActionRequest request,
+        AgentDocumentReconciliationResult reconciliation)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            $"reconciliation {reconciliation.Outcome}",
+            reconciliation.Summary);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionReconciliationReported,
+            CreateFactPayload(
+                request,
+                summary,
+                reconciliationOutcome: reconciliation.Outcome),
+            AgentActivityEvidenceLevel.ZaideExecuted,
+            _lastActionEventId);
+    }
+
+    private void PublishRevocationFact(string summaryText)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = new AgentActionAuditSummary(summaryText);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionRevoked,
+            new AgentActionFactPayload(
+                AgentActionId.New(),
+                AgentActionAttemptId.New(),
+                AgentActionKind.ReadFile,
+                _workspaceScope.Identity,
+                _workspaceScope.Generation,
+                summary),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
+    }
+
+    private AgentActionFactPayload CreateFactPayload(
+        AgentActionRequest request,
+        AgentActionAuditSummary summary,
+        AgentActionPermissionClassification? classification = null,
+        AgentPermissionDecisionStatus? decisionStatus = null,
+        bool? decisionIsAllow = null,
+        AgentActionResultKind? resultKind = null,
+        AgentActionFailureKind? failureKind = null,
+        AgentDocumentReconciliationOutcome? reconciliationOutcome = null) =>
+        new(
+            request.ActionId,
+            request.AttemptId,
+            request.Payload.Kind,
+            request.WorkspaceIdentity,
+            request.WorkspaceGeneration,
+            summary,
+            classification,
+            decisionStatus,
+            decisionIsAllow,
+            resultKind,
+            failureKind,
+            reconciliationOutcome);
 }

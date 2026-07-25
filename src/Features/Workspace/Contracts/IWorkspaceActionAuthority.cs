@@ -1,3 +1,4 @@
+using System;
 using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Features.Workspace.Contracts;
@@ -11,6 +12,12 @@ namespace Zaide.Features.Workspace.Contracts;
 /// </summary>
 internal interface IWorkspaceActionAuthority
 {
+    /// <summary>
+    /// Raised when the active workspace scope is closed, switched, or otherwise
+    /// invalidated. Subscribers should revoke pending action authority.
+    /// </summary>
+    event Action? ScopeInvalidated;
+
     /// <summary>
     /// Captures the current active workspace scope, or returns <c>false</c> when
     /// no workspace is open.
