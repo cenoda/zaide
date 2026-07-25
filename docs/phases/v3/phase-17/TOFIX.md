@@ -109,8 +109,8 @@ Implemented document reconciliation after confirmed disk mutation:
 | `Phase17WorkspaceRead` | pass, 39/39 |
 | `Phase17WorkspaceAuthority` | pass, 21/21 |
 | Architecture | pass |
-| Full fast suite | pass |
-| Serial fallback | pass |
+| Full fast suite | pass, 3012/3012 |
+| Serial fallback | pass (1 pre-existing flake isolated: `LaunchAsync_CancellationTerminatesProcessTree`) |
 | `git diff --check` | pass, clean |
 
 ## M4 corrective pass #3 (2026-07-25)

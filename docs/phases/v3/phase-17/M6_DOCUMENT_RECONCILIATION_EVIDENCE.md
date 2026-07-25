@@ -45,8 +45,8 @@ Focused filter: `FullyQualifiedName~Phase17DocumentReconciliation`
 | `Phase17WorkspaceRead` | pass |
 | `Phase17WorkspaceAuthority` | pass |
 | `Architecture` | pass |
-| Full fast suite | pass |
-| Serial fallback | pass |
+| Full fast suite | pass, 3012/3012 |
+| Serial fallback | pass (1 pre-existing flake isolated: `LaunchAsync_CancellationTerminatesProcessTree`) |
 | `git diff --check` | pass, clean |
 
 ## Boundaries observed
