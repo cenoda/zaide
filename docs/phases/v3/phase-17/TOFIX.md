@@ -14,19 +14,27 @@ M2 closeout is complete.
 
 M3 was implemented on 2026-07-25, received NO-GO on first audit, and completed
 one corrective pass (production review-surface wiring, exact path display,
-cancellation preservation, atomic decision lifecycle). M3 awaits re-audit.
+cancellation preservation, atomic decision lifecycle). M3 received GO on
+2026-07-25 after corrective pass #1. M3 closeout is complete.
 
 ## Current work
 
 - [x] Create, audit, amend, and accept the Phase 17 implementation plan.
 - [x] Complete M1 contracts and deterministic state (GO).
 - [x] Complete M2 canonical workspace capture and bounded read-only file access.
-- [ ] Implement M3 permission classification, immutable decision lifecycle, revocation, exact-request fingerprint binding, and visible review surface (implemented; awaiting re-audit after corrective pass #1).
+- [x] Implement M3 permission classification, immutable decision lifecycle, revocation, exact-request fingerprint binding, and visible review surface (GO).
 - [x] M3 corrective pass #1: production review-surface wiring, exact path display, cancellation preservation, atomic Published → Consumed lifecycle.
 - [x] M2 corrective pass #1: broker admission capture, canonical root revalidation, read result preservation.
 - [x] M2 corrective pass #2: production IWorkspaceActionAuthority, mandatory root filesystem identity, DI wiring.
 - [x] M2 corrective pass #3: event-driven generation, thread-safe full-state IsCurrent, direct authority tests.
 - [x] M2 corrective pass #4: fail-closed for relative paths (".", "src") before realpath/stat.
+
+## Next task
+
+- [x] Implement M4: immutable create/replace/delete file proposals, bounded diff/summary presentation, stale-base detection, and explicit accept/deny flow. Proposal creation remains non-mutating.
+- [ ] M4 corrective pass: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding (awaiting re-audit).
+
+Manual preview evidence recorded in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
 
 ## M3 corrective pass #1 (2026-07-25)
 

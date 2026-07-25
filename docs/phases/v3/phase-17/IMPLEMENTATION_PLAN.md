@@ -6,10 +6,15 @@
 M2 (canonical workspace capture and bounded read-only file access) was
 implemented on 2026-07-25, completed four corrective passes, and received GO on
 2026-07-25. M3 was implemented on 2026-07-25, received NO-GO on first audit,
-completed one corrective pass, and awaits re-audit.
+completed one corrective pass, and received GO on 2026-07-25. M4 was
+implemented on 2026-07-25 with immutable create/replace/delete file proposals,
+bounded diff/summary presentation, stale-base detection, and explicit accept/deny
+flow. Proposal creation remains non-mutating. M4 corrective pass completed
+broker integration with fail-closed behavior, stale-base revalidation, and
+proposal/fingerprint/base-revision binding; awaiting re-audit.
 
-**Authorized work:** M3 corrective pass only (architecture ratchet alignment).
-M4 and later milestones remain gated by M3 GO and the repository's automatic
+**Authorized work:** M5 only (safe workspace mutation).
+M6 and later milestones remain gated by M5 GO and the repository's automatic
 progression and stop rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate

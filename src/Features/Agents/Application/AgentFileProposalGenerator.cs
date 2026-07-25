@@ -44,7 +44,7 @@ internal static class AgentFileProposalGenerator
         {
             var proposal = payload switch
             {
-                AgentCreateFileActionPayload create => CreateCreateProposal(workspaceScope, create, permissionFingerprint),
+                AgentCreateFileActionPayload create => CreateCreateProposal(workspaceScope, create, permissionFingerprint, fileReader, cancellationToken),
                 AgentReplaceFileActionPayload replace => CreateReplaceProposal(workspaceScope, replace, fileReader, permissionFingerprint, cancellationToken),
                 AgentDeleteFileActionPayload delete => CreateDeleteProposal(workspaceScope, delete, fileReader, permissionFingerprint, cancellationToken),
                 _ => throw new ArgumentException("Unsupported file action payload type.", nameof(payload))
@@ -61,10 +61,20 @@ internal static class AgentFileProposalGenerator
     private static AgentFileActionProposal CreateCreateProposal(
         WorkspaceActionScope workspaceScope,
         AgentCreateFileActionPayload create,
-        AgentActionRequestFingerprint permissionFingerprint)
+        AgentActionRequestFingerprint permissionFingerprint,
+        IAgentFileReader fileReader,
+        CancellationToken cancellationToken)
     {
         // Validate proposed content budget
         ValidateProposedContentBudget(create.ProposedText);
+
+        // For create operations, inspect the live target and reject if file already exists
+        var readResult = fileReader.Read(workspaceScope, create.Path, cancellationToken);
+        if (readResult.Outcome == AgentFileReadOutcome.Succeeded)
+        {
+            throw new InvalidOperationException(
+                "Create proposal rejected: file already exists at " + create.Path.NormalizedPath);
+        }
 
         // For create operations, base does not exist
         var baseExists = false;

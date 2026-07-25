@@ -146,7 +146,12 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 "No workspace is open. Action requests require an active workspace.");
         }
 
-        AgentActionRequest request;
+        AgentActionRequest request = null!;
+        AgentFileActionProposal? fileProposal = null;
+        string? proposalError = null;
+        AgentActionResult? earlyDenial = null;
+        AgentActionCorrelationKey? parsedCorrelationKey = null;
+
         try
         {
             request = AgentActionRequestComposer.Compose(
@@ -160,31 +165,37 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 _workspaceScope.Generation,
                 _commandResolver,
                 payload);
+
+            // Parse correlation key after request composition
+            if (!string.IsNullOrWhiteSpace(correlationKey))
+            {
+                parsedCorrelationKey = AgentActionCorrelationKey.FromValue(correlationKey!);
+            }
+
+            // M4: Create immutable file action proposal for file operations.
+            // For create/replace/delete, proposal generation must succeed (fail closed).
+            // For read/execute, proposals are not required.
+            fileProposal = CreateFileProposalOrFailClosed(payload, request.Fingerprint, out proposalError);
+            if (fileProposal is null && IsFileActionPayload(payload))
+            {
+                earlyDenial = CreateDeniedResult(
+                    payload,
+                    AgentActionFailureKind.InvalidRequest,
+                    proposalError ?? "File action proposal generation failed (fail closed).");
+            }
         }
         catch (Exception exception)
         {
-            return CreateDeniedResult(
+            earlyDenial = CreateDeniedResult(
                 payload,
                 AgentActionFailureKind.InvalidRequest,
                 exception.Message);
         }
 
-        AgentActionCorrelationKey? parsedCorrelationKey = null;
-        if (!string.IsNullOrWhiteSpace(correlationKey))
+        // If proposal generation failed for a file action, return the denial
+        if (earlyDenial is not null)
         {
-            try
-            {
-                parsedCorrelationKey = AgentActionCorrelationKey.FromValue(correlationKey);
-            }
-            catch (Exception exception)
-            {
-                return new AgentActionResult(
-                    request.ActionId,
-                    request.AttemptId,
-                    AgentActionResultKind.Denied,
-                    AgentActionFailureKind.InvalidRequest,
-                    exception.Message);
-            }
+            return earlyDenial;
         }
 
         AgentActionResult? terminalResult = null;
@@ -391,7 +402,11 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         AgentPermissionDecision decision;
                         try
                         {
-                            var displaySummary = AgentActionDisplaySummaryBuilder.Build(request.Payload);
+                            // M4: Use proposal's bounded summary for file actions, payload summary for others
+                            var displaySummary = fileProposal is not null
+                                ? BuildProposalDisplaySummary(fileProposal)
+                                : AgentActionDisplaySummaryBuilder.Build(request.Payload);
+
                             decision = await _permissionReviewService.RequestDecisionAsync(
                                 request,
                                 displaySummary,
@@ -434,6 +449,34 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                                 AgentActionResultKind.Denied,
                                 AgentActionFailureKind.PermissionDenied,
                                 "Decision fingerprint does not match request fingerprint.");
+                            break;
+                        }
+
+                        // M4: Validate proposal/fingerprint/base-revision binding for file actions.
+                        if (fileProposal is not null && decision.RequestFingerprint != fileProposal.PermissionFingerprint)
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Decision fingerprint does not match proposal fingerprint (binding violation).");
+                            break;
+                        }
+
+                        // M4: Validate permission fingerprint matches base revision for file actions.
+                        if (fileProposal is not null && !fileProposal.PermissionFingerprintMatchesBase())
+                        {
+                            lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                            lifecycle.TransitionTo(AgentActionStatus.Denied);
+                            terminalResult = new AgentActionResult(
+                                request.ActionId,
+                                request.AttemptId,
+                                AgentActionResultKind.Denied,
+                                AgentActionFailureKind.PermissionDenied,
+                                "Proposal permission fingerprint does not match base revision (binding violation).");
                             break;
                         }
 
@@ -520,6 +563,24 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                                 AgentActionFailureKind.PermissionDenied,
                                 "Permission decision could not be consumed (Published → Consumed transition failed).");
                             break;
+                        }
+
+                        // M4: Stale-base revalidation before decision consumption.
+                        // Re-read the base file for replace/delete operations and check if it's stale.
+                        if (fileProposal is not null && IsFileActionPayload(request.Payload))
+                        {
+                            var currentBaseRevision = RevalidateBaseForStaleDetection(fileProposal, cancellationToken);
+                            if (fileProposal.IsBaseStale(currentBaseRevision))
+                            {
+                                lifecycle.TransitionTo(AgentActionStatus.Revoked);
+                                terminalResult = new AgentActionResult(
+                                    request.ActionId,
+                                    request.AttemptId,
+                                    AgentActionResultKind.Revoked,
+                                    AgentActionFailureKind.StaleBaseRevision,
+                                    "Base content changed before permission decision could be applied (stale base detected).");
+                                break;
+                            }
                         }
 
                         lifecycle.TransitionTo(AgentActionStatus.PermissionGranted);
@@ -658,6 +719,126 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             AgentFileReadOutcome.NotRegularFile => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
             _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
         };
+
+    /// <summary>
+    /// M4: Returns true if the payload is a file action (create/replace/delete) that requires a proposal.
+    /// </summary>
+    private static bool IsFileActionPayload(AgentActionPayload payload) =>
+        payload.Kind is AgentActionKind.CreateFile or AgentActionKind.ReplaceFile or AgentActionKind.DeleteFile;
+
+    /// <summary>
+    /// M4: Re-reads the base file for stale-base detection before decision consumption.
+    /// For create operations: checks if file now exists.
+    /// For replace/delete operations: reads current base revision.
+    /// Returns null if file doesn't exist, or the current revision if it does.
+    /// </summary>
+    private AgentContentRevision? RevalidateBaseForStaleDetection(
+        AgentFileActionProposal proposal,
+        CancellationToken cancellationToken)
+    {
+        if (_workspaceScope is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var readResult = _fileReader.Read(_workspaceScope, proposal.Path, cancellationToken);
+            return readResult.Outcome == AgentFileReadOutcome.Succeeded
+                ? readResult.Revision
+                : null;
+        }
+        catch (Exception)
+        {
+            // If we can't read the file, treat it as stale to fail closed
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// M4: Creates an immutable file action proposal for file operations.
+    /// For create operations: inspects live target and rejects if file already exists.
+    /// For replace/delete operations: captures actual base revision and rejects if read fails or doesn't match.
+    /// Returns null for non-file operations.
+    /// </summary>
+    private AgentFileActionProposal? CreateFileProposalOrFailClosed(
+        AgentActionPayload payload,
+        AgentActionRequestFingerprint requestFingerprint,
+        out string? error)
+    {
+        error = null;
+
+        if (_workspaceScope is null)
+        {
+            return null;
+        }
+
+        // Only file actions require proposals
+        if (!IsFileActionPayload(payload))
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = AgentFileProposalGenerator.CreateProposal(
+                _workspaceScope,
+                payload,
+                _fileReader,
+                requestFingerprint,
+                CancellationToken.None);
+
+            if (result.IsSuccess)
+            {
+                return result.Proposal;
+            }
+            else
+            {
+                error = result.Exception?.Message ?? "Proposal generation failed";
+                return null;
+            }
+        }
+        catch (Exception exception)
+        {
+            // Proposal creation failed - fail closed for file operations
+            error = exception.Message;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// M4: Builds a display summary from a file action proposal, using the proposal's
+    /// bounded change summary which includes operation, path, revisions, and preview.
+    /// </summary>
+    private static AgentActionDisplaySummary BuildProposalDisplaySummary(AgentFileActionProposal proposal)
+    {
+        // Extract the operation type for the display summary
+        var kind = proposal.Operation switch
+        {
+            AgentFileProposalOperation.Create => AgentActionKind.CreateFile,
+            AgentFileProposalOperation.Replace => AgentActionKind.ReplaceFile,
+            AgentFileProposalOperation.Delete => AgentActionKind.DeleteFile,
+            _ => throw new ArgumentOutOfRangeException(nameof(proposal.Operation), proposal.Operation, "Invalid proposal operation.")
+        };
+
+        // Use the proposal's bounded change summary as the detail text
+        return new AgentActionDisplaySummary(
+            kind,
+            GetActionDescription(kind),
+            proposal.BoundedChangeSummary,
+            wasTruncated: true); // The proposal summary is already bounded
+    }
+
+    /// <summary>
+    /// M4: Gets the action description for display summaries.
+    /// </summary>
+    private static string GetActionDescription(AgentActionKind kind) => kind switch
+    {
+        AgentActionKind.CreateFile => "Create workspace file",
+        AgentActionKind.ReplaceFile => "Replace workspace file",
+        AgentActionKind.DeleteFile => "Delete workspace file",
+        _ => "Workspace file action"
+    };
 
     private static AgentActionResult CreateDeniedResult(
         AgentActionPayload payload,
