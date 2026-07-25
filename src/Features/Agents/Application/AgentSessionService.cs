@@ -381,12 +381,15 @@ internal sealed class AgentSessionService : IAgentSessionService
             targetActorId,
             messageEntryId,
             messageText);
+        var executionContext = new AgentBackendExecutionContext(
+            request,
+            new UnavailableAgentActionBroker());
 
         run.ExecutionTask = ObserveBackendAsync(
             session,
             run,
             backend,
-            request,
+            executionContext,
             run.ExecutionCancellation.Token);
 
         return run;
@@ -436,12 +439,12 @@ internal sealed class AgentSessionService : IAgentSessionService
         LiveSession session,
         LiveRun run,
         IAgentBackend backend,
-        AgentBackendRequest request,
+        AgentBackendExecutionContext context,
         CancellationToken cancellationToken)
     {
         try
         {
-            await foreach (var backendEvent in backend.ExecuteAsync(request, cancellationToken)
+            await foreach (var backendEvent in backend.ExecuteAsync(context, cancellationToken)
                                .ConfigureAwait(false))
             {
                 lock (_sessionsSync)

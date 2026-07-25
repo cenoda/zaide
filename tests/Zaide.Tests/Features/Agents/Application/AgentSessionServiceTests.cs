@@ -585,9 +585,10 @@ public sealed class AgentSessionServiceTests
         }
 
         public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
-            AgentBackendRequest request,
+            AgentBackendExecutionContext context,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(context);
             ExecuteCallCount++;
             if (_plans.Count == 0)
             {

@@ -53,9 +53,12 @@ internal sealed class ResultMappingAgentBackend : IAgentBackend
             });
 
     public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
-        AgentBackendRequest request,
+        AgentBackendExecutionContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        var request = context.Request;
+
         AgentBackendEvent? terminalEvent;
         try
         {
