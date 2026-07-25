@@ -13,6 +13,28 @@ internal sealed class AgentActionCorrelationRegistry
     private readonly object _gate = new();
     private readonly Dictionary<CorrelationRecordKey, AgentActionResult> _terminalResults = new();
     private readonly Dictionary<AgentActionCorrelationKey, AgentActionRequestFingerprint> _inFlightFingerprints = new();
+    private volatile bool _revoked;
+
+    /// <summary>
+    /// Minimum polling interval used by cancellation-aware waits.
+    /// Balances responsiveness against lock contention.
+    /// </summary>
+    private static readonly TimeSpan WaitPollInterval = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
+    /// Signals all waiting threads that the registry has been revoked and
+    /// they should stop waiting.
+    /// </summary>
+    public void Revoke()
+    {
+        _revoked = true;
+        lock (_gate)
+        {
+            Monitor.PulseAll(_gate);
+        }
+    }
+
+    public bool IsRevoked => _revoked;
 
     public bool TryGetTerminalResult(
         AgentActionCorrelationKey correlationKey,
@@ -80,6 +102,80 @@ internal sealed class AgentActionCorrelationRegistry
         return false;
     }
 
+    /// <summary>
+    /// Waits for an in-flight correlation to complete, with cancellation and
+    /// revocation awareness.
+    /// </summary>
+    /// <remarks>
+    /// Uses <see cref="Monitor.Wait(object, int)"/> with a bounded polling
+    /// interval instead of an unbounded <see cref="Monitor.Wait(object)"/>.
+    /// This ensures the calling thread can observe cancellation, revocation,
+    /// and timeout without risking indefinite blocking when a processing
+    /// thread fails to call <see cref="Monitor.PulseAll"/>.
+    /// </remarks>
+    public bool TryWaitForInFlightReplay(
+        AgentActionCorrelationKey correlationKey,
+        AgentActionRequestFingerprint fingerprint,
+        CancellationToken cancellationToken,
+        out AgentActionResult? replay)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            replay = null;
+            return false;
+        }
+
+        lock (_gate)
+        {
+            while (_inFlightFingerprints.TryGetValue(correlationKey, out var inFlightFingerprint))
+            {
+                if (inFlightFingerprint != fingerprint)
+                {
+                    replay = CreateCorrelationKeyMismatchResult();
+                    return true;
+                }
+
+                if (_terminalResults.TryGetValue(
+                        new CorrelationRecordKey(correlationKey, fingerprint),
+                        out var terminalResult))
+                {
+                    replay = terminalResult;
+                    return true;
+                }
+
+                if (_revoked)
+                {
+                    replay = null;
+                    return false;
+                }
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    replay = null;
+                    return false;
+                }
+
+                // Bounded wait: sleeps at most WaitPollInterval, then
+                // re-evaluates the loop condition. This replaces the
+                // unbounded Monitor.Wait(_gate) call.
+                var waitSatisfied = Monitor.Wait(_gate, WaitPollInterval);
+                if (!waitSatisfied)
+                {
+                    // Timed out — loop re-evaluates revocation, cancellation,
+                    // and terminal result conditions.
+                }
+            }
+        }
+
+        replay = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Legacy overload without cancellation token. Provided for backward
+    /// compatibility in tests that exercise the unbounded-wait path directly.
+    /// Production code should use the cancellation-aware overload.
+    /// </summary>
     public bool TryWaitForInFlightReplay(
         AgentActionCorrelationKey correlationKey,
         AgentActionRequestFingerprint fingerprint,
@@ -103,7 +199,13 @@ internal sealed class AgentActionCorrelationRegistry
                     return true;
                 }
 
-                Monitor.Wait(_gate);
+                if (_revoked)
+                {
+                    replay = null;
+                    return false;
+                }
+
+                Monitor.Wait(_gate, WaitPollInterval);
             }
         }
 

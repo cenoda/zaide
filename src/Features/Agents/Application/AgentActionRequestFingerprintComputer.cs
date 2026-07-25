@@ -118,7 +118,14 @@ internal static class AgentActionRequestFingerprintComputer
     {
         builder.Append("executable=").Append(resolvedCommand.CanonicalAbsoluteExecutablePath).Append('\n');
         builder.Append("denylist=").Append(resolvedCommand.DenylistResult.Classification.ToString()).Append('\n');
+        builder.Append("resolution-source=").Append(resolvedCommand.ResolutionSource.ToString()).Append('\n');
+        if (resolvedCommand.SymlinkChain.Count > 0)
+        {
+            builder.Append("symlink-chain=")
+                .Append(string.Join('', resolvedCommand.SymlinkChain))
+                .Append('\n');
+        }
         builder.Append("working-directory=").Append(resolvedCommand.WorkingDirectory.NormalizedPath).Append('\n');
-        builder.Append("arguments=").Append(string.Join('\u001f', resolvedCommand.Arguments));
+        builder.Append("arguments=").Append(string.Join('', resolvedCommand.Arguments));
     }
 }

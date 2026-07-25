@@ -1,4 +1,5 @@
 using System;
+using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Domain;
@@ -19,6 +20,7 @@ internal static class AgentActionRequestComposer
         AgentBackendId backendId,
         WorkspaceIdentity workspaceIdentity,
         WorkspaceGeneration workspaceGeneration,
+        IAgentCommandResolver commandResolver,
         AgentActionPayload payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
@@ -27,6 +29,8 @@ internal static class AgentActionRequestComposer
             throw new ArgumentException("Action payload kind is inconsistent.", nameof(payload));
         }
 
+        ArgumentNullException.ThrowIfNull(commandResolver);
+
         var actionId = AgentActionId.New();
         var attemptId = AgentActionAttemptId.New();
         AgentActionDisplaySummary displaySummary;
@@ -34,7 +38,7 @@ internal static class AgentActionRequestComposer
 
         if (payload is AgentExecuteCommandActionPayload commandPayload)
         {
-            if (!AgentResolvedCommand.TryCreate(commandPayload, out var resolvedCommand, out var error))
+            if (!commandResolver.TryResolve(commandPayload, out var resolvedCommand, out var error))
             {
                 throw new ArgumentException(error, nameof(payload));
             }

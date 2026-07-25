@@ -109,8 +109,18 @@ internal static class AgentActionDisplaySummaryBuilder
     private static string BuildCommandDetail(AgentResolvedCommand resolvedCommand)
     {
         var builder = new StringBuilder();
+        builder.AppendLine($"Raw executable: {resolvedCommand.RawExecutable}");
         builder.AppendLine($"Executable: {resolvedCommand.CanonicalAbsoluteExecutablePath}");
         builder.AppendLine($"Denylist: {resolvedCommand.DenylistResult.Classification}");
+        builder.AppendLine($"Resolution: {resolvedCommand.ResolutionSource}");
+        if (resolvedCommand.SymlinkChain.Count > 0)
+        {
+            builder.AppendLine("Symlink chain:");
+            for (var i = 0; i < resolvedCommand.SymlinkChain.Count; i++)
+            {
+                builder.Append("  ").Append(i).Append(": ").AppendLine(resolvedCommand.SymlinkChain[i]);
+            }
+        }
         builder.AppendLine($"Working directory: {resolvedCommand.WorkingDirectory.NormalizedPath}");
         builder.AppendLine("Arguments:");
         for (var index = 0; index < resolvedCommand.Arguments.Count; index++)

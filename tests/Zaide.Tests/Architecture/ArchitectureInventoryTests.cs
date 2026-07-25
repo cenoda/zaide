@@ -107,13 +107,16 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((6, 0, 6), byNamespace["Zaide.Features.Conversations.Application"]);
         // Phase 14 M6: +8 internal conversation persistence types.
         Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Conversations.Infrastructure"]);
-        Assert.Equal((71, 7, 64), byNamespace["Zaide.Features.Agents.Domain"]);
-        Assert.Equal((7, 3, 4), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 17 M1 corrective: +1 internal AgentCommandResolutionSource enum.
+        Assert.Equal((72, 7, 65), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
+        Assert.Equal((8, 3, 5), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
         // Phase 17 M1: +9 action contract application services and brokers.
-        Assert.Equal((25, 7, 18), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 17 M1 corrective: +1 internal DefaultAgentCommandResolver.
+        Assert.Equal((26, 7, 19), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Infrastructure"]);

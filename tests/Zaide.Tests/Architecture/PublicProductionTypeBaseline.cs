@@ -45,13 +45,13 @@ public static class PublicProductionTypeBaseline
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
     /// <summary>Total non-nested, non-compiler-generated production types (Phase 17 M1 corrective pass).</summary>
-    public const int TotalTopLevelTypes = 548;
+    public const int TotalTopLevelTypes = 551;
 
     /// <summary>Public top-level production type ceiling and baseline count (unchanged; Phase 17 M1 types are internal).</summary>
     public const int PublicTopLevelTypes = 337;
 
-    /// <summary>Internal top-level production type count (Phase 17 M1 corrective pass +4 internal types).</summary>
-    public const int InternalTopLevelTypes = 211;
+    /// <summary>Internal top-level production type count (Phase 17 M1 corrective pass +7 internal types).</summary>
+    public const int InternalTopLevelTypes = 214;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

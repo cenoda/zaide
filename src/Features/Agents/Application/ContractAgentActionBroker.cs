@@ -21,6 +21,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly AgentBackendId _backendId;
     private readonly WorkspaceIdentity _workspaceIdentity;
     private readonly WorkspaceGeneration _workspaceGeneration;
+    private readonly IAgentCommandResolver _commandResolver;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
     private readonly object _admissionGate = new();
@@ -37,6 +38,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         AgentBackendId backendId,
         WorkspaceIdentity workspaceIdentity,
         WorkspaceGeneration workspaceGeneration,
+        IAgentCommandResolver commandResolver,
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry)
     {
@@ -88,11 +90,16 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _backendId = backendId;
         _workspaceIdentity = workspaceIdentity;
         _workspaceGeneration = workspaceGeneration;
+        _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
     }
 
-    public void Revoke() => _revoked = true;
+    public void Revoke()
+    {
+        _revoked = true;
+        _correlationRegistry.Revoke();
+    }
 
     public ValueTask<AgentActionResult> RequestAsync(
         AgentActionPayload payload,
@@ -130,6 +137,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 _backendId,
                 _workspaceIdentity,
                 _workspaceGeneration,
+                _commandResolver,
                 payload);
         }
         catch (Exception exception)
@@ -185,6 +193,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             if (_correlationRegistry.TryWaitForInFlightReplay(
                     parsedCorrelationKey.Value,
                     request.Fingerprint,
+                    cancellationToken,
                     out var inFlightReplay))
             {
                 if (inFlightReplay!.ResultKind == AgentActionResultKind.Denied
@@ -199,6 +208,25 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     AgentActionResultKind.DuplicateReplay,
                     null,
                     inFlightReplay.Summary));
+            }
+
+            // Cancellation or revocation occurred during wait.
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ValueTask.FromResult(new AgentActionResult(
+                    request.ActionId,
+                    request.AttemptId,
+                    AgentActionResultKind.Cancelled,
+                    AgentActionFailureKind.Indeterminate,
+                    "Action request was cancelled while waiting for an in-flight correlation."));
+            }
+
+            if (_correlationRegistry.IsRevoked)
+            {
+                return ValueTask.FromResult(CreateDeniedResult(
+                    payload,
+                    AgentActionFailureKind.BrokerRevoked,
+                    "Correlation registry was revoked while waiting for in-flight action."));
             }
         }
 
@@ -244,6 +272,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 && _correlationRegistry.TryWaitForInFlightReplay(
                     parsedCorrelationKey.Value,
                     request.Fingerprint,
+                    cancellationToken,
                     out var reservedReplay))
             {
                 if (reservedReplay!.ResultKind == AgentActionResultKind.Denied
@@ -258,6 +287,16 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     AgentActionResultKind.DuplicateReplay,
                     null,
                     reservedReplay.Summary));
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ValueTask.FromResult(new AgentActionResult(
+                    request.ActionId,
+                    request.AttemptId,
+                    AgentActionResultKind.Cancelled,
+                    AgentActionFailureKind.Indeterminate,
+                    "Action request was cancelled while waiting for a run slot."));
             }
 
             return ValueTask.FromResult(new AgentActionResult(
