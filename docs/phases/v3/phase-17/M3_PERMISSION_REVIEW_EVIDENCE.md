@@ -185,11 +185,25 @@ Evidence:
   executors are M5+). The production run boundary still uses
   `UnavailableAgentActionBroker` until M8.
 
-## Gate results (2026-07-25 corrective pass)
+## Gate results (2026-07-25 corrective pass #1)
 
 | Gate | Result |
 |------|--------|
 | `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| `Phase17Permission` | 36/36 pass |
+| `Phase17ActionContracts` | 50/50 pass |
+| `Phase17WorkspaceRead` | 39/39 pass |
+| `Phase17WorkspaceAuthority` | 21/21 pass |
+| `Architecture` | 26/26 pass |
+| Full suite (fast) | 2936/2937; 1 pre-existing fd-count flake under the parallel runner only (passes in isolation and serially) |
+| Full suite (slow.runsettings) | 2936/2937; only the pre-existing Phase 16 flake failed (passes in isolation) |
+| `git diff --check` | clean |
+
+## Gate results (M3 corrective-only pass: architecture ratchet alignment)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors, 4 warnings |
 | `Phase17Permission` | 36/36 pass |
 | `Phase17ActionContracts` | 50/50 pass |
 | `Phase17WorkspaceRead` | 39/39 pass |

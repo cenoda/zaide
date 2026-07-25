@@ -178,7 +178,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
-        Assert.Equal(502, inventory.SourceFiles.Count);
+        // Phase 17 M3 corrective: +6 permission review surface production files.
+        Assert.Equal(508, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -195,7 +196,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 15 M3b-1: +2 coordinator session cutover production files.
         // Phase 17 M1 corrective pass: +3 resolved-command contract production files.
         // Phase 17 M2 corrective: +7 workspace-scope, read-result, read-port, read-adapter, and authority files.
-        Assert.Equal(457, byFolder["Features"]);
+        // Phase 17 M3 corrective: +6 permission review surface production files.
+        Assert.Equal(463, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

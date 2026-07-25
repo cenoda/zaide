@@ -5,12 +5,12 @@
 **Phase 17 status:** M0 accepted on 2026-07-24. M1 received GO and is complete.
 M2 (canonical workspace capture and bounded read-only file access) was
 implemented on 2026-07-25, completed four corrective passes, and received GO on
-2026-07-25. M3 is now authorized.
+2026-07-25. M3 was implemented on 2026-07-25, received NO-GO on first audit,
+completed one corrective pass, and awaits re-audit.
 
-**Authorized work:** M3 permission classification, immutable decision lifecycle,
-revocation, exact-request fingerprint binding, and minimal Zaide-owned visible
-review surface. M4 and later milestones remain gated by predecessor
-completion and the repository's automatic progression and stop rules.
+**Authorized work:** M3 corrective pass only (architecture ratchet alignment).
+M4 and later milestones remain gated by M3 GO and the repository's automatic
+progression and stop rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,
