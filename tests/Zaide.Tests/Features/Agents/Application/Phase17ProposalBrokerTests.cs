@@ -9,6 +9,7 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Tests.Features.Agents;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
@@ -469,7 +470,185 @@ public sealed class Phase17ProposalBrokerTests
         Assert.Equal(AgentActionFailureKind.InvalidRequest, result.FailureKind);
     }
 
-    private ContractAgentActionBroker CreateBroker()
+    // ----------------------------------------------------------------
+    // M4 corrective pass — create target inspection and stale-base races
+    // ----------------------------------------------------------------
+
+    [Fact]
+    public void SyntheticReader_DefaultNotFound_DoesNotFalseRejectCreateProposal()
+    {
+        var reader = new CountingAgentFileReader();
+        var path = AgentWorkspaceRelativePath.Normalize("synthetic-new.txt");
+        var fingerprint = AgentActionRequestFingerprint.FromCanonicalText("create-synthetic");
+
+        var result = AgentFileProposalGenerator.CreateProposal(
+            _scope,
+            new AgentCreateFileActionPayload(path, "hello"),
+            reader,
+            fingerprint,
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, reader.ReadCount);
+    }
+
+    [Fact]
+    public void SyntheticReader_PathAwareRead_SucceedsForConfiguredPathOnly()
+    {
+        var reader = new CountingAgentFileReader();
+        var absentPath = AgentWorkspaceRelativePath.Normalize("absent.txt");
+        var existingPath = AgentWorkspaceRelativePath.Normalize("existing.txt");
+        reader.SetPathResult(
+            existingPath,
+            AgentFileReadResult.Success(
+                "existing",
+                AgentContentRevision.FromUtf8Text("existing"),
+                byteLength: 8));
+        var fingerprint = AgentActionRequestFingerprint.FromCanonicalText("path-aware");
+
+        var absentResult = AgentFileProposalGenerator.CreateProposal(
+            _scope,
+            new AgentCreateFileActionPayload(absentPath, "new"),
+            reader,
+            fingerprint,
+            CancellationToken.None);
+        var existingResult = AgentFileProposalGenerator.CreateProposal(
+            _scope,
+            new AgentCreateFileActionPayload(existingPath, "new"),
+            reader,
+            fingerprint,
+            CancellationToken.None);
+
+        Assert.True(absentResult.IsSuccess);
+        Assert.False(existingResult.IsSuccess);
+        Assert.Contains("file already exists", existingResult.Exception!.Message);
+    }
+
+    [Fact]
+    public void CreateProposal_RejectsIndeterminateTargetInspection()
+    {
+        AgentFileReadOutcome[] indeterminateOutcomes =
+        [
+            AgentFileReadOutcome.Succeeded,
+            AgentFileReadOutcome.NotRegularFile,
+            AgentFileReadOutcome.PathEscaped,
+            AgentFileReadOutcome.Binary,
+            AgentFileReadOutcome.TooLarge,
+            AgentFileReadOutcome.Unreadable,
+            AgentFileReadOutcome.Cancelled,
+        ];
+
+        foreach (var outcome in indeterminateOutcomes)
+        {
+            var reader = outcome == AgentFileReadOutcome.Succeeded
+                ? new CountingAgentFileReader(AgentFileReadResult.Success(
+                    "existing",
+                    AgentContentRevision.FromUtf8Text("existing"),
+                    byteLength: 8))
+                : new CountingAgentFileReader(
+                    AgentFileReadResult.Rejected(outcome, $"inspection returned {outcome}"));
+            var path = AgentWorkspaceRelativePath.Normalize($"indeterminate-{outcome}.txt");
+            var fingerprint = AgentActionRequestFingerprint.FromCanonicalText($"indeterminate-{outcome}");
+
+            var result = AgentFileProposalGenerator.CreateProposal(
+                _scope,
+                new AgentCreateFileActionPayload(path, "hello"),
+                reader,
+                fingerprint,
+                CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.NotNull(result.Exception);
+        }
+    }
+
+    private static AgentFileReadResult ConfirmedAbsentTarget =>
+        AgentFileReadResult.Rejected(
+            AgentFileReadOutcome.NotFound,
+            "File does not exist in the workspace.");
+
+    [Fact]
+    public async Task CreateTargetAppearingBeforeDecisionConsumption_RevokedAsStaleBase()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            ConfirmedAbsentTarget,
+            AgentFileReadResult.Success(
+                "appeared",
+                AgentContentRevision.FromUtf8Text("appeared"),
+                byteLength: 8));
+        var broker = CreateBroker(reader, new AllowingPermissionReviewService());
+        var payload = new AgentCreateFileActionPayload(
+            AgentWorkspaceRelativePath.Normalize("race.txt"),
+            "content");
+
+        var result = await broker.RequestAsync(payload, null, CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+        Assert.Equal(2, reader.ReadCount);
+    }
+
+    [Fact]
+    public async Task CreateTargetBecomingUnreadableBeforeDecisionConsumption_RevokedAsStaleBase()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            ConfirmedAbsentTarget,
+            AgentFileReadResult.Rejected(
+                AgentFileReadOutcome.Unreadable,
+                "target became unreadable"));
+        var broker = CreateBroker(reader, new AllowingPermissionReviewService());
+        var payload = new AgentCreateFileActionPayload(
+            AgentWorkspaceRelativePath.Normalize("race-unreadable.txt"),
+            "content");
+
+        var result = await broker.RequestAsync(payload, null, CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+    }
+
+    [Fact]
+    public async Task CreateTargetBecomingNonRegularBeforeDecisionConsumption_RevokedAsStaleBase()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.EnqueueReads(
+            ConfirmedAbsentTarget,
+            AgentFileReadResult.Rejected(
+                AgentFileReadOutcome.NotRegularFile,
+                "target became a directory"));
+        var broker = CreateBroker(reader, new AllowingPermissionReviewService());
+        var payload = new AgentCreateFileActionPayload(
+            AgentWorkspaceRelativePath.Normalize("race-dir.txt"),
+            "content");
+
+        var result = await broker.RequestAsync(payload, null, CancellationToken.None);
+
+        Assert.Equal(AgentActionResultKind.Revoked, result.ResultKind);
+        Assert.Equal(AgentActionFailureKind.StaleBaseRevision, result.FailureKind);
+    }
+
+    private sealed class AllowingPermissionReviewService : IAgentPermissionReviewService
+    {
+        public ValueTask<AgentPermissionDecision> RequestDecisionAsync(
+            AgentActionRequest request,
+            AgentActionDisplaySummary displaySummary,
+            WorkspaceActionScope? workspaceScope,
+            CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AgentPermissionDecision(
+                AgentPermissionDecisionId.New(),
+                request.Fingerprint,
+                AgentActionPermissionClassification.RequiresUserDecision,
+                AgentPermissionDecisionStatus.Published,
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow.AddMinutes(5),
+                true));
+    }
+
+    private ContractAgentActionBroker CreateBroker(
+        IAgentFileReader reader,
+        IAgentPermissionReviewService? permissionReviewService = null)
     {
         return new ContractAgentActionBroker(
             AgentSessionId.New(),
@@ -479,9 +658,15 @@ public sealed class Phase17ProposalBrokerTests
             ActorId.PanelSeed("agent-target"),
             AgentBackendId.FromValue("backend:test"),
             _workspaceAuthority,
-            _fileReader,
+            reader,
             new DefaultAgentCommandResolver(),
             new AgentActionRunSlotTracker(),
-            new AgentActionCorrelationRegistry());
+            new AgentActionCorrelationRegistry(),
+            permissionReviewService);
+    }
+
+    private ContractAgentActionBroker CreateBroker()
+    {
+        return CreateBroker(_fileReader);
     }
 }

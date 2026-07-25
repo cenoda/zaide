@@ -59,11 +59,23 @@ public sealed class Phase17PermissionLifecycleTests : IDisposable
             targetActor ?? ActorId.PanelSeed("agent-target"),
             backendId ?? AgentBackendId.FromValue("backend:test"),
             auth,
-            new CountingAgentFileReader(),
+            CreateDefaultFileReader(),
             new FakeTrustedCommandResolver(),
             runSlot ?? new AgentActionRunSlotTracker(),
             correlationRegistry ?? new AgentActionCorrelationRegistry(),
             reviewService);
+    }
+
+    private static CountingAgentFileReader CreateDefaultFileReader()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.SetPathResult(
+            "README.md",
+            AgentFileReadResult.Success(
+                "readme",
+                AgentContentRevision.FromUtf8Text("readme"),
+                byteLength: 6));
+        return reader;
     }
 
     private sealed class StubPermissionReviewService(

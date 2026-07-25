@@ -32,10 +32,65 @@ cancellation preservation, atomic decision lifecycle). M3 received GO on
 ## Next task
 
 - [x] Implement M4: immutable create/replace/delete file proposals, bounded diff/summary presentation, stale-base detection, and explicit accept/deny flow. Proposal creation remains non-mutating.
-- [x] M4 corrective pass: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding.
+- [x] M4 corrective pass #1: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding.
+- [x] M4 corrective pass #2: restore predecessor broker/test seams; create proposals accept only confirmed `NotFound`; reject indeterminate target inspection; stale-base revalidation for create races (including non-regular and unreadable targets); path-aware synthetic reader test doubles.
 - [ ] M4 awaiting re-audit. Do not authorize M5 prematurely.
 
 Manual preview evidence recorded in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+
+## M4 corrective pass #2 (2026-07-25)
+
+Restores predecessor `Phase17Permission` and `Phase17ActionContracts` broker
+behavior while preserving M4 fail-closed proposal semantics.
+
+### 1. Create target inspection (fail closed)
+
+- `AgentFileProposalGenerator` accepts create proposals only when the live
+  target read returns `AgentFileReadOutcome.NotFound`.
+- Existing, binary, special, escaped, unreadable, cancelled, and all other
+  indeterminate inspection outcomes reject proposal generation before permission
+  review begins.
+
+### 2. Stale-base revalidation before decision consumption
+
+- `ContractAgentActionBroker.IsFileProposalStaleBeforeConsumption` re-reads the
+  proposal target immediately before `TryConsume()`.
+- Create operations require a confirmed `NotFound` at consumption time; any other
+  outcome (including non-regular and unreadable targets) revokes with
+  `StaleBaseRevision`.
+- Replace/delete operations preserve revision comparison and fail closed when
+  the base cannot be read successfully.
+
+### 3. Broker/test seam restoration
+
+- `CountingAgentFileReader` is path-aware with a default of confirmed absence
+  (`NotFound`), per-path overrides, and queued read sequences for race tests.
+- Predecessor permission, correlation, cancellation, and revocation broker
+  tests use the synthetic reader without false create rejection.
+
+### 4. Regression tests added
+
+- Synthetic reader default does not false-reject create proposals.
+- Create accepted only on confirmed `NotFound`.
+- Create rejected on every indeterminate inspection outcome.
+- Create target appearing or becoming non-regular/unreadable before decision
+  consumption revokes as stale base.
+
+### Gate results (M4 corrective pass #2)
+
+| Gate | Result |
+|------|--------|
+| Build | pass, 0 errors |
+| `Phase17Proposal` | pass |
+| `Phase17ProposalBroker` | pass |
+| `Phase17Permission` | pass |
+| `Phase17ActionContracts` | pass |
+| `Phase17WorkspaceRead` | pass |
+| `Phase17WorkspaceAuthority` | pass |
+| Architecture | pass |
+| Full suite (fast) | 2978/2980 pass; 2 pre-existing parallel-runner flakes (`Restart_DoesNotLeakFileDescriptors`, `LaunchAsync_EnforcesWallTimeoutAndOrphanAbsence`) |
+| Full suite (slow.runsettings) | 2980/2980 pass |
+| `git diff --check` | clean |
 
 ## M3 corrective pass #1 (2026-07-25)
 
@@ -363,7 +418,10 @@ document reconciliation, Agent event/Townhall integration, Native Harness,
 ACP, or any Phase 16 / Phase 18 work. The production execution path still
 uses `UnavailableAgentActionBroker`; live broker wiring remains M8.
 
-## Next task
+## Scope boundaries observed (M4)
 
-M3 corrective pass #1 is complete; request M3 re-audit. M4 (non-mutating
-change proposals) remains blocked until M3 receives GO.
+M4 and its corrective passes did not implement mutation, command execution,
+document reconciliation, Agent event/Townhall integration, Native Harness,
+ACP, or any Phase 16 / Phase 18 work. Proposal creation remains non-mutating.
+The production execution path still uses `UnavailableAgentActionBroker`; live
+broker wiring remains M8. M5 remains gated by M4 GO.

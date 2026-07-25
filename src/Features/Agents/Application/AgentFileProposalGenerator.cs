@@ -68,13 +68,9 @@ internal static class AgentFileProposalGenerator
         // Validate proposed content budget
         ValidateProposedContentBudget(create.ProposedText);
 
-        // For create operations, inspect the live target and reject if file already exists
+        // Create proposals succeed only when the target is definitively absent.
         var readResult = fileReader.Read(workspaceScope, create.Path, cancellationToken);
-        if (readResult.Outcome == AgentFileReadOutcome.Succeeded)
-        {
-            throw new InvalidOperationException(
-                "Create proposal rejected: file already exists at " + create.Path.NormalizedPath);
-        }
+        ValidateCreateTargetAbsent(readResult, create.Path);
 
         // For create operations, base does not exist
         var baseExists = false;
@@ -200,6 +196,28 @@ internal static class AgentFileProposalGenerator
             workspaceScope,
             permissionFingerprint,
             permissionFingerprintBaseRevision);
+    }
+
+    private static void ValidateCreateTargetAbsent(
+        AgentFileReadResult readResult,
+        AgentWorkspaceRelativePath path)
+    {
+        if (readResult.Outcome == AgentFileReadOutcome.NotFound)
+        {
+            return;
+        }
+
+        var message = readResult.Outcome switch
+        {
+            AgentFileReadOutcome.Succeeded =>
+                "Create proposal rejected: file already exists at " + path.NormalizedPath,
+            AgentFileReadOutcome.Cancelled =>
+                "Create proposal rejected: target inspection was cancelled.",
+            _ =>
+                $"Create proposal rejected: target state is indeterminate ({readResult.Outcome}).",
+        };
+
+        throw new InvalidOperationException(message);
     }
 
     private static void ValidateProposedContentBudget(string proposedText)

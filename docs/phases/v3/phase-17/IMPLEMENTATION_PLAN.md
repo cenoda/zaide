@@ -9,13 +9,15 @@ implemented on 2026-07-25, completed four corrective passes, and received GO on
 completed one corrective pass, and received GO on 2026-07-25. M4 was
 implemented on 2026-07-25 with immutable create/replace/delete file proposals,
 bounded diff/summary presentation, stale-base detection, and explicit accept/deny
-flow. Proposal creation remains non-mutating. M4 corrective pass completed
-broker integration with fail-closed behavior, stale-base revalidation, and
+flow. Proposal creation remains non-mutating. M4 received an initial
+implementation on 2026-07-25 and completed a corrective pass on 2026-07-25
+that restores predecessor broker/test seams while preserving fail-closed create
+inspection (`NotFound` only), stale-base revalidation for create races, and
 proposal/fingerprint/base-revision binding; awaiting re-audit.
 
-**Authorized work:** M4 corrective pass only.
+**Authorized work:** M4 corrective pass only (complete; awaiting re-audit).
 M5 and later milestones remain gated by M4 GO and the repository's automatic
-progression and stop rules.
+progression and stop rules. Do not authorize M5 prematurely.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,
@@ -27,8 +29,7 @@ mutation.
 | Check | Verified result |
 |-------|-----------------|
 | Branch | `master` |
-| `HEAD` | `86db33a6563affcce42e563fab96d18f2d0742e0` |
-| `origin/master` | `86db33a6563affcce42e563fab96d18f2d0742e0` |
+| `HEAD` | `0e84730e` (baseline before M4 corrective pass #2) |
 | Working tree before plan creation | Clean |
 | Phase 15 dependency | Complete and closed |
 | Phase 16 relationship | Parked historical evaluation; not a dependency |
@@ -528,7 +529,11 @@ M4 creates previews only. It must cover create, replace, and delete with:
 - explicit new/deleted-file treatment;
 - binary/oversized/unsupported rejection;
 - immutable content after permission review begins;
-- stale-base detection before a decision may be consumed.
+- stale-base detection before a decision may be consumed;
+- create proposals accepted only when the live target is confirmed absent
+  (`NotFound`); all other inspection outcomes reject proposal generation;
+- stale-base revalidation for create races where the target appears or becomes
+  non-regular or unreadable before decision consumption.
 
 No disk write/delete API is called in M4.
 

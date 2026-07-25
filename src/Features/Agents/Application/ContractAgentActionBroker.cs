@@ -566,11 +566,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         }
 
                         // M4: Stale-base revalidation before decision consumption.
-                        // Re-read the base file for replace/delete operations and check if it's stale.
                         if (fileProposal is not null && IsFileActionPayload(request.Payload))
                         {
-                            var currentBaseRevision = RevalidateBaseForStaleDetection(fileProposal, cancellationToken);
-                            if (fileProposal.IsBaseStale(currentBaseRevision))
+                            if (IsFileProposalStaleBeforeConsumption(fileProposal, cancellationToken))
                             {
                                 lifecycle.TransitionTo(AgentActionStatus.Revoked);
                                 terminalResult = new AgentActionResult(
@@ -727,31 +725,37 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         payload.Kind is AgentActionKind.CreateFile or AgentActionKind.ReplaceFile or AgentActionKind.DeleteFile;
 
     /// <summary>
-    /// M4: Re-reads the base file for stale-base detection before decision consumption.
-    /// For create operations: checks if file now exists.
-    /// For replace/delete operations: reads current base revision.
-    /// Returns null if file doesn't exist, or the current revision if it does.
+    /// M4: Re-reads the proposal target before decision consumption.
+    /// Create operations require a confirmed <see cref="AgentFileReadOutcome.NotFound"/>.
+    /// Replace/delete operations compare the current base revision and fail closed when
+    /// the base cannot be read successfully.
     /// </summary>
-    private AgentContentRevision? RevalidateBaseForStaleDetection(
+    private bool IsFileProposalStaleBeforeConsumption(
         AgentFileActionProposal proposal,
         CancellationToken cancellationToken)
     {
         if (_workspaceScope is null)
         {
-            return null;
+            return true;
         }
 
         try
         {
             var readResult = _fileReader.Read(_workspaceScope, proposal.Path, cancellationToken);
-            return readResult.Outcome == AgentFileReadOutcome.Succeeded
+
+            if (proposal.Operation == AgentFileProposalOperation.Create)
+            {
+                return readResult.Outcome != AgentFileReadOutcome.NotFound;
+            }
+
+            AgentContentRevision? currentBaseRevision = readResult.Outcome == AgentFileReadOutcome.Succeeded
                 ? readResult.Revision
                 : null;
+            return proposal.IsBaseStale(currentBaseRevision);
         }
         catch (Exception)
         {
-            // If we can't read the file, treat it as stale to fail closed
-            return null;
+            return true;
         }
     }
 

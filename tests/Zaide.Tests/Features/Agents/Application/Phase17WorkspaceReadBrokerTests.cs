@@ -78,10 +78,15 @@ public sealed class Phase17WorkspaceReadBrokerTests : IDisposable
         Assert.Equal(0, reader.ReadCount);
     }
 
+    private static readonly AgentFileReadResult SyntheticReadSuccess = AgentFileReadResult.Success(
+        "ok",
+        AgentContentRevision.FromUtf8Text("ok"),
+        byteLength: 2);
+
     [Fact]
     public async Task DuplicateCorrelationKey_DoesNotReExecuteRead()
     {
-        var reader = new CountingAgentFileReader();
+        var reader = new CountingAgentFileReader(SyntheticReadSuccess);
         var broker = CreateBroker(reader, new FakeWorkspaceActionAuthority(_scope));
         const string correlationKey = "read-dup-1";
         var payload = new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("note.txt"));
@@ -218,7 +223,7 @@ public sealed class Phase17WorkspaceReadBrokerTests : IDisposable
     [Fact]
     public async Task DuplicateCorrelationKey_PreservesContentRevisionAndByteLength()
     {
-        var reader = new CountingAgentFileReader();
+        var reader = new CountingAgentFileReader(SyntheticReadSuccess);
         var broker = CreateBroker(reader, new FakeWorkspaceActionAuthority(_scope));
         const string correlationKey = "dup-preserve-1";
         var payload = new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("note.txt"));

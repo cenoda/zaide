@@ -204,6 +204,18 @@ public sealed class Phase17PermissionReviewServiceTests : IDisposable
     // Broker integration through the real interactive service
     // ----------------------------------------------------------------
 
+    private static CountingAgentFileReader CreateDefaultFileReader()
+    {
+        var reader = new CountingAgentFileReader();
+        reader.SetPathResult(
+            "README.md",
+            AgentFileReadResult.Success(
+                "readme",
+                AgentContentRevision.FromUtf8Text("readme"),
+                byteLength: 6));
+        return reader;
+    }
+
     private ContractAgentActionBroker CreateBroker(IAgentPermissionReviewService reviewService) =>
         new(
             AgentSessionId.New(),
@@ -213,7 +225,7 @@ public sealed class Phase17PermissionReviewServiceTests : IDisposable
             ActorId.PanelSeed("agent-target"),
             AgentBackendId.FromValue("backend:test"),
             new FakeWorkspaceActionAuthority(_scope),
-            new CountingAgentFileReader(),
+            CreateDefaultFileReader(),
             new FakeTrustedCommandResolver(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),
