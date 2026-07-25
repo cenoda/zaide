@@ -32,7 +32,8 @@ cancellation preservation, atomic decision lifecycle). M3 received GO on
 ## Next task
 
 - [x] Implement M4: immutable create/replace/delete file proposals, bounded diff/summary presentation, stale-base detection, and explicit accept/deny flow. Proposal creation remains non-mutating.
-- [ ] M4 corrective pass: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding (awaiting re-audit).
+- [x] M4 corrective pass: complete broker integration with fail-closed behavior, stale-base revalidation, and proposal/fingerprint/base-revision binding.
+- [ ] M4 awaiting re-audit. Do not authorize M5 prematurely.
 
 Manual preview evidence recorded in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
 

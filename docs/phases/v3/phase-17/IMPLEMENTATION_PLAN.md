@@ -13,8 +13,8 @@ flow. Proposal creation remains non-mutating. M4 corrective pass completed
 broker integration with fail-closed behavior, stale-base revalidation, and
 proposal/fingerprint/base-revision binding; awaiting re-audit.
 
-**Authorized work:** M5 only (safe workspace mutation).
-M6 and later milestones remain gated by M5 GO and the repository's automatic
+**Authorized work:** M4 corrective pass only.
+M5 and later milestones remain gated by M4 GO and the repository's automatic
 progression and stop rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
