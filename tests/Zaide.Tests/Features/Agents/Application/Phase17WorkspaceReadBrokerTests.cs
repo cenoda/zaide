@@ -161,6 +161,7 @@ public sealed class Phase17WorkspaceReadBrokerTests : IDisposable
             reader,
             new CountingAgentFileMutator(),
             new FakeTrustedCommandResolver(),
+            new WorkspaceCommandExecutor(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry());
 

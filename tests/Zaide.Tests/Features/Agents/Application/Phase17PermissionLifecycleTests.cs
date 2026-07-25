@@ -7,6 +7,7 @@ using Xunit;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Workspace.Domain;
@@ -62,6 +63,7 @@ public sealed class Phase17PermissionLifecycleTests : IDisposable
             CreateDefaultFileReader(),
             new CountingAgentFileMutator(),
             new FakeTrustedCommandResolver(),
+            new WorkspaceCommandExecutor(),
             runSlot ?? new AgentActionRunSlotTracker(),
             correlationRegistry ?? new AgentActionCorrelationRegistry(),
             reviewService);

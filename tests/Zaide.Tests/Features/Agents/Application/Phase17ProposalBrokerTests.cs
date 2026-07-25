@@ -857,6 +857,7 @@ public sealed class Phase17ProposalBrokerTests
             reader,
             fileMutator ?? new CountingAgentFileMutator(),
             new DefaultAgentCommandResolver(),
+            new WorkspaceCommandExecutor(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),
             permissionReviewService);

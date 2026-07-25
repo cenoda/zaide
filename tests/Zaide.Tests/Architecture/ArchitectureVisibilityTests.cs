@@ -205,7 +205,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
-        Assert.Equal(478, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(485, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -29,6 +29,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly IAgentFileMutator _fileMutator;
     private readonly IAgentDocumentReconciler _documentReconciler;
     private readonly IAgentCommandResolver _commandResolver;
+    private readonly IAgentCommandExecutor _commandExecutor;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
     private readonly IAgentPermissionReviewService _permissionReviewService;
@@ -54,6 +55,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         IAgentFileReader fileReader,
         IAgentFileMutator fileMutator,
         IAgentCommandResolver commandResolver,
+        IAgentCommandExecutor commandExecutor,
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry,
         IAgentPermissionReviewService? permissionReviewService = null,
@@ -108,6 +110,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _fileMutator = fileMutator ?? throw new ArgumentNullException(nameof(fileMutator));
         _documentReconciler = documentReconciler ?? NullAgentDocumentReconciler.Instance;
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
+        _commandExecutor = commandExecutor ?? throw new ArgumentNullException(nameof(commandExecutor));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
         _permissionReviewService = permissionReviewService ?? new InteractiveAgentPermissionReviewService();
@@ -228,7 +231,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     replay.Summary,
                     content: replay.Content,
                     revision: replay.Revision,
-                    byteLength: replay.ByteLength);
+                    byteLength: replay.ByteLength,
+                    commandExecution: replay.CommandExecution);
             }
 
             if (_correlationRegistry.TryWaitForInFlightReplay(
@@ -251,7 +255,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     inFlightReplay.Summary,
                     content: inFlightReplay.Content,
                     revision: inFlightReplay.Revision,
-                    byteLength: inFlightReplay.ByteLength);
+                    byteLength: inFlightReplay.ByteLength,
+                    commandExecution: inFlightReplay.CommandExecution);
             }
 
             // Cancellation or revocation occurred during wait.
@@ -300,7 +305,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                         replay.Summary,
                         content: replay.Content,
                         revision: replay.Revision,
-                        byteLength: replay.ByteLength);
+                        byteLength: replay.ByteLength,
+                        commandExecution: replay.CommandExecution);
                 }
             }
 
@@ -336,7 +342,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     reservedReplay.Summary,
                     content: reservedReplay.Content,
                     revision: reservedReplay.Revision,
-                    byteLength: reservedReplay.ByteLength);
+                    byteLength: reservedReplay.ByteLength,
+                    commandExecution: reservedReplay.CommandExecution);
             }
 
             if (cancellationToken.IsCancellationRequested)
@@ -364,7 +371,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             var lifecycle = new AgentActionLifecycleState();
             lifecycle.TransitionTo(AgentActionStatus.Classified);
 
-            var classification = AgentActionPolicyClassifier.Classify(request.Payload);
+            var classification = AgentActionPolicyClassifier.Classify(
+                request.Payload,
+                request.ResolvedCommand);
             switch (classification)
             {
                 case AgentActionPermissionClassification.DeniedByPolicy:
@@ -600,6 +609,13 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                                 lifecycle,
                                 cancellationToken);
                         }
+                        else if (request.Payload.Kind == AgentActionKind.ExecuteCommand)
+                        {
+                            terminalResult = ExecuteApprovedCommand(
+                                request,
+                                lifecycle,
+                                cancellationToken);
+                        }
                         else
                         {
                             lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
@@ -741,6 +757,101 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             byteLength: mutationResult.ByteLength);
     }
 
+    private AgentActionResult ExecuteApprovedCommand(
+        AgentActionRequest request,
+        AgentActionLifecycleState lifecycle,
+        CancellationToken cancellationToken)
+    {
+        lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+
+        if (_workspaceScope is null)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Denied);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Denied,
+                AgentActionFailureKind.NoWorkspace,
+                "No workspace is open. Action requests require an active workspace.");
+        }
+
+        if (!_workspaceAuthority.IsCurrent(_workspaceScope))
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Revoked,
+                AgentActionFailureKind.StaleWorkspace,
+                "Workspace generation changed before the command executed.");
+        }
+
+        if (request.ResolvedCommand is null)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Failed);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Failed,
+                AgentActionFailureKind.InvalidRequest,
+                "Execute-command request is missing its resolved command identity.");
+        }
+
+        if (!_commandResolver.TryResolve(
+                (AgentExecuteCommandActionPayload)request.Payload,
+                out var liveResolvedCommand,
+                out _))
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Revoked,
+                AgentActionFailureKind.InvalidRequest,
+                "Command executable could not be revalidated before execution.");
+        }
+
+        var recomputedFingerprint = AgentActionRequestFingerprintComputer.Compute(
+            request.WorkspaceIdentity,
+            request.WorkspaceGeneration,
+            request.RunId,
+            liveResolvedCommand!);
+        if (recomputedFingerprint != request.Fingerprint)
+        {
+            lifecycle.TransitionTo(AgentActionStatus.Revoked);
+            return new AgentActionResult(
+                request.ActionId,
+                request.AttemptId,
+                AgentActionResultKind.Revoked,
+                AgentActionFailureKind.InvalidRequest,
+                "Command identity changed since permission review.");
+        }
+
+        lifecycle.TransitionTo(AgentActionStatus.Executing);
+
+        var commandResult = _commandExecutor.Execute(
+            _workspaceScope,
+            request.ResolvedCommand,
+            cancellationToken);
+        var (resultKind, failureKind) = MapCommandOutcome(commandResult.Outcome);
+
+        lifecycle.TransitionTo(resultKind switch
+        {
+            AgentActionResultKind.Succeeded => AgentActionStatus.Succeeded,
+            AgentActionResultKind.Cancelled => AgentActionStatus.Cancelled,
+            AgentActionResultKind.Revoked => AgentActionStatus.Revoked,
+            _ => AgentActionStatus.Failed,
+        });
+
+        return new AgentActionResult(
+            request.ActionId,
+            request.AttemptId,
+            resultKind,
+            failureKind,
+            commandResult.Summary,
+            commandExecution: commandResult);
+    }
+
     private AgentActionResult ExecuteAllowedRead(
         AgentActionRequest request,
         AgentActionLifecycleState lifecycle,
@@ -834,6 +945,22 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             AgentFileMutationOutcome.NotRegularFile => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
             AgentFileMutationOutcome.NotFound => (AgentActionResultKind.Conflict, AgentActionFailureKind.StaleBaseRevision),
             AgentFileMutationOutcome.Unreadable => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
+            _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
+        };
+
+    private static (AgentActionResultKind ResultKind, AgentActionFailureKind? FailureKind) MapCommandOutcome(
+        AgentCommandExecutionOutcome outcome) =>
+        outcome switch
+        {
+            AgentCommandExecutionOutcome.Succeeded => (AgentActionResultKind.Succeeded, (AgentActionFailureKind?)null),
+            AgentCommandExecutionOutcome.Cancelled => (AgentActionResultKind.Cancelled, AgentActionFailureKind.Indeterminate),
+            AgentCommandExecutionOutcome.TimedOut => (AgentActionResultKind.Failed, AgentActionFailureKind.BudgetExceeded),
+            AgentCommandExecutionOutcome.Truncated => (AgentActionResultKind.Failed, AgentActionFailureKind.BudgetExceeded),
+            AgentCommandExecutionOutcome.PathEscaped => (AgentActionResultKind.Failed, AgentActionFailureKind.PathRejected),
+            AgentCommandExecutionOutcome.DeniedExecutable => (AgentActionResultKind.Failed, AgentActionFailureKind.PolicyDenied),
+            AgentCommandExecutionOutcome.StartupFailed => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
+            AgentCommandExecutionOutcome.IndeterminateCleanup => (AgentActionResultKind.Failed, AgentActionFailureKind.Indeterminate),
+            AgentCommandExecutionOutcome.Failed => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
             _ => (AgentActionResultKind.Failed, AgentActionFailureKind.ExecutionFailed),
         };
 

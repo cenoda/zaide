@@ -229,6 +229,7 @@ public sealed class Phase17PermissionReviewServiceTests : IDisposable
             CreateDefaultFileReader(),
             new WorkspaceFileMutator(),
             new FakeTrustedCommandResolver(),
+            new WorkspaceCommandExecutor(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),
             reviewService);

@@ -21,11 +21,14 @@ production files in the architecture inventory (source-file counts, Features
 folder counts, namespace rollups, and baseline comments) and received GO on
 2026-07-25. M6 was implemented on 2026-07-25 with a Workspace/Editor
 application reconciliation contract consumed by the action broker after confirmed
-disk mutation.
+disk mutation and received GO on 2026-07-25. M7 was implemented on 2026-07-25
+with Zaide-owned command resolution and execution adapters, locked environment
+construction, bounded stdout/stderr capture, process-tree termination, and
+broker integration for approved commands.
 
-**Authorized work:** M6 document reconciliation (complete; awaiting audit).
-M7 and later milestones remain gated by M6 GO and the repository's automatic
-progression and stop rules. Do not authorize M7 prematurely.
+**Authorized work:** M7 constrained command execution (complete; awaiting audit).
+M8 and later milestones remain gated by M7 GO and the repository's automatic
+progression and stop rules. Do not authorize M8 prematurely.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,

@@ -28,7 +28,13 @@ for the four mutation production files) and received GO on 2026-07-25.
 
 M6 was implemented on 2026-07-25 with a Workspace/Editor application
 reconciliation contract consumed by the action broker after confirmed disk
-mutation; dirty buffers are never silently overwritten.
+mutation; dirty buffers are never silently overwritten. M6 received GO on
+2026-07-25.
+
+M7 was implemented on 2026-07-25 with constrained non-shell command execution
+through `IAgentCommandExecutor` / `WorkspaceCommandExecutor`, production
+`DefaultAgentCommandResolver`, locked environment construction, and broker
+integration preserving bounded stdout/stderr results.
 
 ## Current work
 
@@ -49,11 +55,42 @@ mutation; dirty buffers are never silently overwritten.
 - [x] M5 corrective pass #1: ratchet architecture inventory for `IAgentFileMutator`, `AgentFileMutationOutcome`, `AgentFileMutationResult`, and `WorkspaceFileMutator` (source-file counts 516, Features 471, namespace rollups, baseline comments).
 - [x] M5 received GO on 2026-07-25.
 - [x] Implement M6: document reconciliation after confirmed disk mutation.
-- [ ] M7 and later milestones remain gated. Do not authorize M7 prematurely.
+- [x] M6 received GO on 2026-07-25.
+- [x] Implement M7: constrained command execution behind approved resolved commands.
+- [ ] M8 and later milestones remain gated. Do not authorize M8 prematurely.
 
 Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
 Manual reconciliation evidence recorded in `M6_DOCUMENT_RECONCILIATION_EVIDENCE.md`.
+Manual command execution evidence recorded in `M7_COMMAND_EXECUTION_EVIDENCE.md`.
 Manual preview evidence for M4 remains in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+
+## M7 (2026-07-25)
+
+Implemented constrained command execution:
+
+- `IAgentCommandExecutor` (`Agents.Contracts`) and `WorkspaceCommandExecutor`
+  (`Agents.Infrastructure`) run one approved resolved command without shell
+  parsing or ProjectSystem workflow runners.
+- `DefaultAgentCommandResolver` resolves PATH, symlinks, and denylist targets
+  before permission review.
+- `AgentCommandEnvironmentBuilder` constructs the locked environment and
+  redacts secret values.
+- `ContractAgentActionBroker` executes approved commands, revalidates identity
+  before start, and preserves `AgentCommandExecutionResult` on terminal
+  results and duplicate replay.
+- `PermissionReviewViewModel.ContainmentDisclosureText` states that
+  working-directory scope is not filesystem or network sandboxing.
+
+### Gate results (M7)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| `Phase17CommandExecution` | pass, 22/22 |
+| `Phase17` (all filters) | pass |
+| `Architecture` | pass |
+| Full fast suite | pass, 3034/3034 |
+| `git diff --check` | pass, clean |
 
 ## M5 corrective pass #1 (2026-07-25)
 
@@ -526,6 +563,13 @@ M5 did not implement document reconciliation, command execution, Agent
 event/Townhall integration, Native Harness, ACP, or any Phase 16 / Phase 18
 work. The production execution path still uses `UnavailableAgentActionBroker`;
 live broker wiring remains M8.
+
+## Scope boundaries observed (M7)
+
+M7 did not implement M8 session/event integration, Agent/Townhall projection,
+production DI broker wiring, Native Harness, ACP, or any Phase 16 / Phase 18
+work. Command execution is exercised through focused tests and the broker seam
+only. M8 remains gated by M7 GO.
 
 ## Scope boundaries observed (M6)
 

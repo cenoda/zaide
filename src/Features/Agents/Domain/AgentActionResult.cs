@@ -16,7 +16,8 @@ internal sealed class AgentActionResult
         bool isTerminal = true,
         string? content = null,
         AgentContentRevision revision = default,
-        long byteLength = 0)
+        long byteLength = 0,
+        AgentCommandExecutionResult? commandExecution = null)
     {
         if (actionId == default)
         {
@@ -68,6 +69,7 @@ internal sealed class AgentActionResult
         Content = content;
         Revision = revision;
         ByteLength = byteLength;
+        CommandExecution = commandExecution;
     }
 
     public AgentActionId ActionId { get; }
@@ -97,4 +99,9 @@ internal sealed class AgentActionResult
     /// Exact number of bytes read; non-zero only on a successful read result.
     /// </summary>
     public long ByteLength { get; }
+
+    /// <summary>
+    /// Bounded command execution evidence; non-null only on command results.
+    /// </summary>
+    public AgentCommandExecutionResult? CommandExecution { get; }
 }

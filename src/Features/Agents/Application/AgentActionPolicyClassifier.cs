@@ -7,8 +7,16 @@ namespace Zaide.Features.Agents.Application;
 /// </summary>
 internal static class AgentActionPolicyClassifier
 {
-    public static AgentActionPermissionClassification Classify(AgentActionPayload payload)
+    public static AgentActionPermissionClassification Classify(
+        AgentActionPayload payload,
+        AgentResolvedCommand? resolvedCommand = null)
     {
+        if (payload is AgentExecuteCommandActionPayload
+            && resolvedCommand?.DenylistResult.IsDenied == true)
+        {
+            return AgentActionPermissionClassification.DeniedByPolicy;
+        }
+
         return payload.Kind switch
         {
             AgentActionKind.ReadFile => AgentActionPermissionClassification.AllowedByLockedPolicy,

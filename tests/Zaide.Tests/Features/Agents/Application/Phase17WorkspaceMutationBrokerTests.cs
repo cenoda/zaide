@@ -199,6 +199,7 @@ public sealed class Phase17WorkspaceMutationBrokerTests : IDisposable
             reader ?? _fileReader,
             mutator ?? _fileMutator,
             new DefaultAgentCommandResolver(),
+            new WorkspaceCommandExecutor(),
             new AgentActionRunSlotTracker(),
             new AgentActionCorrelationRegistry(),
             new AllowingPermissionReviewService());

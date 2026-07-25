@@ -35,10 +35,11 @@ internal static class AgentActionRequestComposer
         var attemptId = AgentActionAttemptId.New();
         AgentActionDisplaySummary displaySummary;
         AgentActionRequestFingerprint fingerprint;
+        AgentResolvedCommand? resolvedCommand = null;
 
         if (payload is AgentExecuteCommandActionPayload commandPayload)
         {
-            if (!commandResolver.TryResolve(commandPayload, out var resolvedCommand, out var error))
+            if (!commandResolver.TryResolve(commandPayload, out resolvedCommand, out var error))
             {
                 throw new ArgumentException(error, nameof(payload));
             }
@@ -73,6 +74,7 @@ internal static class AgentActionRequestComposer
             workspaceGeneration,
             payload,
             fingerprint,
-            displaySummary);
+            displaySummary,
+            resolvedCommand);
     }
 }

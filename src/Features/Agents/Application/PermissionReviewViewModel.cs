@@ -122,6 +122,10 @@ internal sealed class PermissionReviewViewModel : ReactiveObject
 
     public string ScopeText => "Scope: this exact request only.";
 
+    public string ContainmentDisclosureText => Request.Payload.Kind == AgentActionKind.ExecuteCommand
+        ? "Working-directory scope is not filesystem or network sandboxing."
+        : string.Empty;
+
     public ReactiveCommand<Unit, Unit> AllowCommand { get; }
 
     public ReactiveCommand<Unit, Unit> DenyCommand { get; }

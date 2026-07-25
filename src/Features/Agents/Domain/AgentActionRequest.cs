@@ -22,7 +22,8 @@ internal sealed class AgentActionRequest
         WorkspaceGeneration workspaceGeneration,
         AgentActionPayload payload,
         AgentActionRequestFingerprint fingerprint,
-        AgentActionDisplaySummary displaySummary)
+        AgentActionDisplaySummary displaySummary,
+        AgentResolvedCommand? resolvedCommand = null)
     {
         if (actionId == default)
         {
@@ -93,6 +94,22 @@ internal sealed class AgentActionRequest
                 nameof(displaySummary));
         }
 
+        if (payload is AgentExecuteCommandActionPayload)
+        {
+            if (resolvedCommand is null)
+            {
+                throw new ArgumentException(
+                    "Resolved command is required for execute-command requests.",
+                    nameof(resolvedCommand));
+            }
+        }
+        else if (resolvedCommand is not null)
+        {
+            throw new ArgumentException(
+                "Resolved command is only valid for execute-command requests.",
+                nameof(resolvedCommand));
+        }
+
         ActionId = actionId;
         AttemptId = attemptId;
         SessionId = sessionId;
@@ -106,6 +123,7 @@ internal sealed class AgentActionRequest
         Payload = payload;
         Fingerprint = fingerprint;
         DisplaySummary = displaySummary;
+        ResolvedCommand = resolvedCommand;
     }
 
     public AgentActionId ActionId { get; }
@@ -133,4 +151,10 @@ internal sealed class AgentActionRequest
     public AgentActionRequestFingerprint Fingerprint { get; }
 
     public AgentActionDisplaySummary DisplaySummary { get; }
+
+    /// <summary>
+    /// Immutable resolved command identity bound before permission review.
+    /// Present only for <see cref="AgentActionKind.ExecuteCommand"/> requests.
+    /// </summary>
+    public AgentResolvedCommand? ResolvedCommand { get; }
 }
