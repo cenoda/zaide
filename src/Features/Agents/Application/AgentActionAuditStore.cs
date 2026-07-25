@@ -14,7 +14,7 @@ internal sealed class AgentActionAuditStore : IAgentActionAuditStore
 {
     internal const int DefaultMaxSnapshotRecords = 256;
 
-    private readonly List<AgentActionAuditRecord> _records = new();
+    private readonly LinkedList<AgentActionAuditRecord> _records = new();
     private readonly object _sync = new();
 
     public void Record(AgentActionAuditRecord record)
@@ -22,7 +22,11 @@ internal sealed class AgentActionAuditStore : IAgentActionAuditStore
         ArgumentNullException.ThrowIfNull(record);
         lock (_sync)
         {
-            _records.Add(record);
+            _records.AddLast(record);
+            if (_records.Count > DefaultMaxSnapshotRecords)
+            {
+                _records.RemoveFirst();
+            }
         }
     }
 

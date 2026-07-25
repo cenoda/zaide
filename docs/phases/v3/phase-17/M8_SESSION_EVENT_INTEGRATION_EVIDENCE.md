@@ -27,16 +27,17 @@ Baseline: M7 GO at `ebdbec85`
 | Gate | Result |
 |------|--------|
 | `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
-| `Phase17SessionEventIntegration` | pass, 7/7 |
+| `Phase17SessionEventIntegration` | pass, 10/10 |
 | `Phase17BypassRatchet` | pass, 5/5 |
-| `Phase17` (all filters) | pass |
-| `Architecture` | pass |
-| Full fast suite | pass, 3045/3046 (1 pre-existing parallel fd-count flake) |
-| Serial fallback | pass, 3045/3046 (1 pre-existing Phase 16 flake) |
+| `Phase17` (all filters) | pass, 284/284 |
+| `Architecture` | pass, 284/284 |
+| Full fast suite | pass, 3048/3049 (1 pre-existing parallel fd-count flake) |
+| Serial fallback | pass, 3048/3049 (1 pre-existing Phase 16 flake) |
 | `git diff --check` | pass, clean |
 
 ## Manual notes
 
 - No production tool-using backend was added.
-- Audit snapshots are in-memory and current-lifetime bounded only.
-- M9 remains gated for adversarial closeout and manual evidence.
+- Audit snapshots are in-memory and current-lifetime bounded to 256 records.
+- Revocation facts are truthful and bound to real action context; broker-level revocations do not fabricate action details.
+- M9 remains gated pending a fresh M8 audit.

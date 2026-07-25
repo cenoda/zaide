@@ -273,6 +273,180 @@ public sealed class Phase17SessionEventIntegrationTests : IDisposable
     }
 
     [Fact]
+    public void AuditStore_RetentionIsBoundedTo256Records()
+    {
+        var store = new AgentActionAuditStore();
+
+        // Record more than the cap (256 + 10 = 266 records)
+        for (int i = 0; i < 266; i++)
+        {
+            store.Record(new AgentActionAuditRecord(
+                AgentEventId.New(),
+                AgentEventKind.ActionRequested,
+                AgentSessionId.New(),
+                ExecutionRunId.New(),
+                ConversationId.NewDirect(),
+                AgentBackendId.FromValue("backend:test"),
+                i + 1,
+                DateTimeOffset.UtcNow.AddMilliseconds(i),
+                AgentActivityEvidenceLevel.ZaideExecuted,
+                AgentActionId.New(),
+                AgentActionAttemptId.New(),
+                AgentActionKind.ReadFile,
+                WorkspaceIdentity.New(),
+                WorkspaceGeneration.Initial,
+                new AgentActionAuditSummary("test")));
+        }
+
+        // Store should not exceed the cap
+        var allRecords = store.GetCurrentLifetimeSnapshot(maxRecords: 1000);
+        Assert.Equal(256, allRecords.Count);
+
+        // The newest records should be preserved (highest sequence numbers)
+        var sequences = allRecords.Select(r => r.Sequence).OrderBy(s => s).ToArray();
+        Assert.Equal(11, sequences[0]); // First record should be sequence 11 (266 - 256 + 1 = 11)
+        Assert.Equal(266, sequences[255]); // Last record should be sequence 266
+    }
+
+    [Fact]
+    public void AuditStore_PreservesDeterministicSequenceOrdering()
+    {
+        var store = new AgentActionAuditStore();
+
+        // Record exactly 256 records with known sequences
+        for (int i = 1; i <= 256; i++)
+        {
+            store.Record(new AgentActionAuditRecord(
+                AgentEventId.New(),
+                AgentEventKind.ActionRequested,
+                AgentSessionId.New(),
+                ExecutionRunId.New(),
+                ConversationId.NewDirect(),
+                AgentBackendId.FromValue("backend:test"),
+                i,
+                DateTimeOffset.UtcNow.AddMilliseconds(i),
+                AgentActivityEvidenceLevel.ZaideExecuted,
+                AgentActionId.New(),
+                AgentActionAttemptId.New(),
+                AgentActionKind.ReadFile,
+                WorkspaceIdentity.New(),
+                WorkspaceGeneration.Initial,
+                new AgentActionAuditSummary("test")));
+        }
+
+        // Add one more to trigger the cap
+        store.Record(new AgentActionAuditRecord(
+            AgentEventId.New(),
+            AgentEventKind.ActionRequested,
+            AgentSessionId.New(),
+            ExecutionRunId.New(),
+            ConversationId.NewDirect(),
+            AgentBackendId.FromValue("backend:test"),
+            257,
+            DateTimeOffset.UtcNow.AddMilliseconds(257),
+            AgentActivityEvidenceLevel.ZaideExecuted,
+            AgentActionId.New(),
+            AgentActionAttemptId.New(),
+            AgentActionKind.ReadFile,
+            WorkspaceIdentity.New(),
+            WorkspaceGeneration.Initial,
+            new AgentActionAuditSummary("test")));
+
+        // Should still have exactly 256 records
+        var allRecords = store.GetCurrentLifetimeSnapshot(maxRecords: 1000);
+        Assert.Equal(256, allRecords.Count);
+
+        // Sequences should be 2 through 257 (first record 1 was removed)
+        var sequences = allRecords.Select(r => r.Sequence).OrderBy(s => s).ToArray();
+        Assert.Equal(2, sequences[0]);
+        Assert.Equal(257, sequences[255]);
+
+        // Verify ordering is preserved
+        for (int i = 1; i < sequences.Length; i++)
+        {
+            Assert.True(sequences[i] > sequences[i - 1]);
+        }
+    }
+
+    [Fact]
+    public async Task ActionRevokedFacts_AreTruthfulAndBoundToRealActionContext()
+    {
+        // Regression: ActionRevoked facts must be bound to real action/attempt context,
+        // not fabricated identities. Broker-level revocations without action context
+        // must not publish ActionRevoked facts with fabricated ReadFile action kind.
+
+        // Use the existing test infrastructure to verify that broker-level revocations
+        // do not publish ActionRevoked facts with fabricated action context.
+        var initialRevokedCount = _capturedEvents.Count(e => e.Kind == AgentEventKind.ActionRevoked);
+
+        var conversation = _conversationStore.CreateDirectConversation(ActorId.HumanUser, ActorId.TownhallAgent);
+        var conversationId = conversation.Id;
+
+        // Trigger a workspace invalidation which causes broker revocation
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _backend.SetDelayedAction(
+            TimeSpan.Zero,
+            async (broker, token) =>
+            {
+                gate.SetResult();
+                return await broker.RequestAsync(
+                    new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("note.txt")),
+                    correlationKey: null,
+                    token);
+            },
+            assistantText: "late");
+
+        var sendTask = _session.SendAsync(
+            conversationId,
+            ActorId.HumanUser,
+            ActorId.TownhallAgent,
+            _backend.BackendId,
+            ConversationEntryId.New(),
+            "revocation test",
+            CancellationToken.None);
+
+        await gate.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        _workspaceAuthority.RaiseScopeInvalidated();
+        var snapshot = await sendTask;
+
+        // Should have completed due to revocation
+        Assert.NotEqual(AgentRunStatus.Running, snapshot.Status);
+
+        // Any new ActionRevoked events must have real action context, not fabricated
+        var newRevokedEvents = _capturedEvents
+            .Where(e => e.Kind == AgentEventKind.ActionRevoked)
+            .Skip(initialRevokedCount)
+            .ToArray();
+
+        // With the current implementation, broker-level revocations do not publish
+        // ActionRevoked facts to avoid fabricating action context
+        Assert.Empty(newRevokedEvents);
+
+        // The test should still complete successfully with result events
+        var resultEvents = _capturedEvents
+            .Where(e => e.Kind == AgentEventKind.ActionResultReported)
+            .Skip(initialRevokedCount)
+            .ToArray();
+
+        // There should be result events from the failed request
+        Assert.NotEmpty(resultEvents);
+
+        // Verify that result events have real action context (not fabricated)
+        foreach (var resultEvent in resultEvents)
+        {
+            Assert.IsType<AgentActionFactPayload>(resultEvent.Payload);
+            var payload = (AgentActionFactPayload)resultEvent.Payload;
+
+            // Action/attempt IDs should not be default (fabricated)
+            Assert.NotEqual(default, payload.ActionId);
+            Assert.NotEqual(default, payload.AttemptId);
+
+            // Action kind should be a valid enum value (not fabricated)
+            Assert.True(Enum.IsDefined(typeof(AgentActionKind), payload.ActionKind));
+        }
+    }
+
+    [Fact]
     public async Task LegacyBackendSession_StillReceivesUnavailableBroker()
     {
         var legacyBackend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);

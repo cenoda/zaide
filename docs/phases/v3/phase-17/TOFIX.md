@@ -94,11 +94,11 @@ Implemented session/event integration and bypass ratchets:
 | Gate | Result |
 |------|--------|
 | `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
-| `Phase17SessionEventIntegration` | pass, 7/7 |
+| `Phase17SessionEventIntegration` | pass, 10/10 |
 | `Phase17BypassRatchet` | pass, 5/5 |
-| `Phase17` + `Architecture` targeted filters | pass, 281/281 |
-| Full fast suite | pass, 3045/3046 (1 pre-existing parallel fd-count flake) |
-| Serial fallback | pass, 3045/3046 (1 pre-existing Phase 16 flake) |
+| `Phase17` + `Architecture` targeted filters | pass, 284/284 |
+| Full fast suite | pass, 3048/3049 (1 pre-existing parallel fd-count flake) |
+| Serial fallback | pass, 3048/3049 (1 pre-existing Phase 16 flake) |
 | `git diff --check` | pass, clean |
 
 ## M7 (2026-07-25)
@@ -606,7 +606,7 @@ live broker wiring remains M8.
 M8 did not implement M9 closeout, Native Harness, ACP, persistence/resume,
 raw traces, Phase 18 context disclosure, or a production tool-using backend.
 The fake action requester is test-only and not registered in production DI.
-M9 remains gated by M8 GO.
+M9 remains gated pending a fresh M8 audit.
 
 ## Scope boundaries observed (M7)
 

@@ -1244,23 +1244,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
     private void PublishRevocationFact(string summaryText)
     {
-        if (_eventPublisher is null || _workspaceScope is null)
-        {
-            return;
-        }
-
-        var summary = new AgentActionAuditSummary(summaryText);
-        _lastActionEventId = _eventPublisher.Publish(
-            AgentEventKind.ActionRevoked,
-            new AgentActionFactPayload(
-                AgentActionId.New(),
-                AgentActionAttemptId.New(),
-                AgentActionKind.ReadFile,
-                _workspaceScope.Identity,
-                _workspaceScope.Generation,
-                summary),
-            AgentActivityEvidenceLevel.ZaideMediated,
-            _lastActionEventId);
+        // Broker-level revocation with no specific action context:
+        // do not fabricate action/attempt identity or action kind.
+        // Real action revocations are bound to their actual request context
+        // and published via result events, not this method.
     }
 
     private AgentActionFactPayload CreateFactPayload(

@@ -201,7 +201,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
         // Phase 17 M6: +7 document reconciliation production files.
         // Phase 17 M7: +7 command execution production files.
-        Assert.Equal(530, inventory.SourceFiles.Count);
+        // Phase 17 M8: +9 session/event integration production files.
+        Assert.Equal(539, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -223,7 +224,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
         // Phase 17 M6: +7 document reconciliation production files.
         // Phase 17 M7: +7 command execution production files.
-        Assert.Equal(485, byFolder["Features"]);
+        // Phase 17 M8: +9 session/event integration production files.
+        Assert.Equal(494, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
