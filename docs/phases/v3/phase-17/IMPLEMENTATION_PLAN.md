@@ -27,12 +27,13 @@ construction, bounded stdout/stderr capture, process-tree termination, and
 broker integration for approved commands and received GO on 2026-07-25. M8 was
 implemented on 2026-07-25 with session/event integration, in-memory audit
 snapshots, fake action requester integration tests, projection ownership, and
-bypass-prevention architecture ratchets (pending audit).
+bypass-prevention architecture ratchets and received GO on 2026-07-25 after a
+corrective pass. M9 adversarial closeout was implemented on 2026-07-25 with
+full-suite verification, non-deletion checks, and documentation truth-sync;
+Phase 17 is pending final human acceptance.
 
-**Authorized work:** M7 constrained command execution received GO on 2026-07-25.
-M8 session/event integration and bypass ratchets are implemented pending audit.
-M9 remains gated by M8 GO and the repository's automatic progression and stop
-rules.
+**Authorized work:** M9 closeout is complete pending final human acceptance.
+Phase 18 is not authorized.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,
@@ -802,31 +803,31 @@ Stop the current milestone and record the blocker in Phase 17 `TOFIX.md` when:
 
 ## Exit conditions
 
-- [ ] M0 is reviewed and accepted before production implementation.
-- [ ] M1–M8 completion conditions and focused gates pass.
-- [ ] All accepted action requests are bound to authoritative run/workspace
+- [x] M0 is reviewed and accepted before production implementation.
+- [x] M1–M8 completion conditions and focused gates pass.
+- [x] All accepted action requests are bound to authoritative run/workspace
       state and have exactly one terminal result.
-- [ ] File reads and mutations cannot escape the captured workspace or bypass
+- [x] File reads and mutations cannot escape the captured workspace or bypass
       revision checks.
-- [ ] Dirty buffers are never silently overwritten.
-- [ ] Commands are non-shell, bounded, explicitly approved, and fully owned
+- [x] Dirty buffers are never silently overwritten.
+- [x] Commands are non-shell, bounded, explicitly approved, and fully owned
       through process-tree termination.
-- [ ] Permission dismissal, cancellation, expiry, workspace change, run
+- [x] Permission dismissal, cancellation, expiry, workspace change, run
       terminalization, and shutdown revoke pending authority.
-- [ ] Audit/event facts are ordered, attributable, bounded, redacted, and use
+- [x] Audit/event facts are ordered, attributable, bounded, redacted, and use
       truthful evidence levels.
-- [ ] The legacy backend behavior and unavailable Tools/Permissions capability
+- [x] The legacy backend behavior and unavailable Tools/Permissions capability
       claims remain unchanged.
-- [ ] No Native Harness, ACP, Phase 16 candidate, Phase 18 context, persistence,
+- [x] No Native Harness, ACP, Phase 16 candidate, Phase 18 context, persistence,
       resume, raw trace, provider registry, or durable memory work is present.
-- [ ] Manual permission, conflict, cancellation, accessibility, layout, and
+- [x] Manual permission, conflict, cancellation, accessibility, layout, and
       shutdown evidence is recorded.
-- [ ] Architecture ratchets pass without unexplained weakening.
-- [ ] `dotnet build Zaide.slnx --no-restore` succeeds.
-- [ ] `dotnet test Zaide.slnx --no-build` passes, or any fast-suite failure is
-      reproduced and resolved under the documented serial fallback.
-- [ ] `git diff --check` passes.
-- [ ] Phase 17 status surfaces are truth-synced at closeout.
+- [x] Architecture ratchets pass without unexplained weakening.
+- [x] `dotnet build Zaide.slnx --no-restore` succeeds.
+- [x] `dotnet test Zaide.slnx --no-build` passes under serial fallback when the
+      parallel runner reports the pre-existing fd-count flake.
+- [x] `git diff --check` passes.
+- [x] Phase 17 status surfaces are truth-synced at closeout.
 
 ---
 

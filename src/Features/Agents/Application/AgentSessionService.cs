@@ -65,7 +65,19 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         {
             foreach (var session in _sessions.Values)
             {
-                RevokeRunBrokerLocked(session.ActiveRun);
+                var activeRun = session.ActiveRun;
+                if (activeRun is not null
+                    && !activeRun.StateMachine.IsTerminal
+                    && activeRun.StateMachine.Status != AgentRunStatus.CancellationRequested)
+                {
+                    activeRun.StateMachine.TransitionTo(AgentRunStatus.CancellationRequested);
+                    RevokeRunBrokerLocked(activeRun);
+                    activeRun.ExecutionCancellation.Cancel();
+                }
+                else
+                {
+                    RevokeRunBrokerLocked(activeRun);
+                }
             }
 
             _sessions.Clear();

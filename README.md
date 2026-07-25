@@ -301,8 +301,10 @@ closed on 2026-07-22. [Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
 is parked after controlled evaluation work; current state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
 Harness production and ACP implementation remain later independent outcomes.
-[Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0 is accepted, and
-M1 is the current bounded implementation milestone.
+[Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
+closeout evidence is in
+[`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
+Phase 17 is pending final human acceptance. Phase 18 is not authorized.
 
 ## Why "Zaide"
 

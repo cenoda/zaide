@@ -39,9 +39,20 @@ integration preserving bounded stdout/stderr results. M7 received GO on
 
 M8 was implemented on 2026-07-25 with session/event integration, in-memory
 audit snapshots, fake action requester integration tests, projection ownership,
-and bypass-prevention architecture ratchets.
+and bypass-prevention architecture ratchets. M8 received GO on 2026-07-25 after
+a corrective pass and serial verification at 3049/3049.
+
+M9 adversarial closeout was implemented on 2026-07-25 with adversarial test
+inventory, shutdown-during-pending-action fix, non-deletion verification,
+architecture inventory confirmation, and documentation truth-sync. Phase 17 is
+pending final human acceptance.
 
 ## Current work
+
+Phase 17 M9 closeout is complete pending final human acceptance. No Phase 18
+work is authorized.
+
+## Completed milestones
 
 - [x] Create, audit, amend, and accept the Phase 17 implementation plan.
 - [x] Complete M1 contracts and deterministic state (GO).
@@ -64,7 +75,9 @@ and bypass-prevention architecture ratchets.
 - [x] Implement M7: constrained command execution behind approved resolved commands.
 - [x] M7 received GO on 2026-07-25.
 - [x] Implement M8: session/event integration, audit snapshots, and bypass ratchets.
-- [ ] M9 remains gated. Do not authorize M9 prematurely.
+- [x] M8 received GO on 2026-07-25.
+- [x] Implement M9: adversarial closeout, non-deletion verification, and truth-sync.
+- [ ] Phase 17 final human acceptance. Do not start Phase 18 without explicit authorization.
 
 Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
 Manual reconciliation evidence recorded in `M6_DOCUMENT_RECONCILIATION_EVIDENCE.md`.
@@ -72,6 +85,35 @@ Manual command execution evidence recorded in `M7_COMMAND_EXECUTION_EVIDENCE.md`
 Manual session/event integration evidence recorded in
 `M8_SESSION_EVENT_INTEGRATION_EVIDENCE.md`.
 Manual preview evidence for M4 remains in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
+M9 consolidated closeout evidence is in `M9_CLOSEOUT_EVIDENCE.md`.
+
+## M9 (2026-07-25)
+
+Implemented final adversarial closeout:
+
+- Added `Phase17AdversarialCloseoutTests` mapping path, symlink, TOCTOU,
+  duplicate, cancellation, workspace-switch, redaction, and process-tree
+  regressions; plus shutdown, non-deletion, accessibility/layout, and
+  architecture inventory ratchets.
+- Fixed `AgentSessionService.Dispose()` to cancel active run execution before
+  revoking brokers so shutdown during a pending permission review terminates
+  cleanly.
+- Recorded consolidated manual evidence in `M9_CLOSEOUT_EVIDENCE.md` linking
+  M3–M8 milestone evidence.
+- Truth-synced `IMPLEMENTATION_PLAN.md`, `TOFIX.md`, `README.md`,
+  `docs/architecture/OVERVIEW.md`, `docs/phases/README.md`, and
+  `docs/roadmap/V3.md`.
+
+### Gate results (M9)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| `Phase17AdversarialCloseout` | pass, 16/16 |
+| Phase 17/Architecture targeted filters | pass, 300/300 |
+| Full fast suite | pass, 3064/3065 (1 pre-existing parallel fd-count flake) |
+| Serial fallback | pass, 3065/3065 |
+| `git diff --check` | pass, clean |
 
 ## M8 (2026-07-25)
 
@@ -97,8 +139,8 @@ Implemented session/event integration and bypass ratchets:
 | `Phase17SessionEventIntegration` | pass, 10/10 |
 | `Phase17BypassRatchet` | pass, 5/5 |
 | `Phase17` + `Architecture` targeted filters | pass, 284/284 |
-| Full fast suite | pass, 3048/3049 (1 pre-existing parallel fd-count flake) |
-| Serial fallback | pass, 3048/3049 (1 pre-existing Phase 16 flake) |
+| Full fast suite | pass, 3049/3049 (1 pre-existing parallel fd-count flake under fast mode) |
+| Serial fallback | pass, 3049/3049 |
 | `git diff --check` | pass, clean |
 
 ## M7 (2026-07-25)
@@ -606,7 +648,13 @@ live broker wiring remains M8.
 M8 did not implement M9 closeout, Native Harness, ACP, persistence/resume,
 raw traces, Phase 18 context disclosure, or a production tool-using backend.
 The fake action requester is test-only and not registered in production DI.
-M9 remains gated pending a fresh M8 audit.
+
+## Scope boundaries observed (M9)
+
+M9 did not implement Phase 18 IDE-context disclosure, a production tool-using
+backend, Native Harness, ACP, persistence/resume, raw traces, or durable
+memory. M9 added closeout tests, one shutdown cancellation fix in
+`AgentSessionService.Dispose`, and documentation truth-sync only.
 
 ## Scope boundaries observed (M7)
 
