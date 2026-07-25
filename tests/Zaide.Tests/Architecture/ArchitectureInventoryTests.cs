@@ -65,8 +65,12 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Workspace.Infrastructure"]);
         Assert.Equal((3, 2, 1), byNamespace["Zaide.Features.Workspace.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
-        Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
-        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Editor.Infrastructure"]);
+        // Phase 17 M6: +1 internal IEditorUiDispatcher contract.
+        Assert.Equal((7, 6, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
+        // Phase 17 M6: +1 internal AvaloniaEditorUiDispatcher.
+        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Editor.Infrastructure"]);
+        // Phase 17 M6: +1 internal WorkspaceEditorDocumentReconciler.
+        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Editor.Application"]);
         Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
@@ -114,19 +118,22 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M2: +2 internal AgentFileReadResult, AgentFileReadOutcome.
         // Phase 17 M4: +3 internal AgentFileProposalId, AgentFileActionProposal, AgentFileProposalResult.
         // Phase 17 M5: +2 internal AgentFileMutationOutcome, AgentFileMutationResult.
-        Assert.Equal((79, 7, 72), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 17 M6: +2 internal AgentDocumentReconciliationOutcome, AgentDocumentReconciliationResult.
+        Assert.Equal((81, 7, 74), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
         // Phase 17 M5: +1 internal IAgentFileMutator contract.
-        Assert.Equal((12, 3, 9), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 17 M6: +1 internal IAgentDocumentReconciler contract.
+        Assert.Equal((13, 3, 10), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
         // Phase 17 M1: +9 action contract application services and brokers.
         // Phase 17 M3: +2 internal permission review view model and service.
         // Phase 17 M4: +1 internal AgentFileProposalGenerator.
-        Assert.Equal((28, 7, 21), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 17 M6: +1 internal NullAgentDocumentReconciler.
+        Assert.Equal((29, 7, 22), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
@@ -186,7 +193,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
-        Assert.Equal(516, inventory.SourceFiles.Count);
+        // Phase 17 M6: +7 document reconciliation production files.
+        Assert.Equal(523, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -206,7 +214,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M3 corrective: +6 permission review surface production files.
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
-        Assert.Equal(471, byFolder["Features"]);
+        // Phase 17 M6: +7 document reconciliation production files.
+        Assert.Equal(478, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

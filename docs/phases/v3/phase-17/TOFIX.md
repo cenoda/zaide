@@ -24,7 +24,11 @@ M5 was implemented on 2026-07-25 with a constrained mutation executor for
 accepted create/replace/delete proposals, immediate pre-apply revalidation, safe
 temporary-file and atomic replacement behavior, and truthful terminal results.
 M5 completed corrective pass #1 on 2026-07-25 (architecture inventory ratchets
-for the four mutation production files); awaiting re-audit.
+for the four mutation production files) and received GO on 2026-07-25.
+
+M6 was implemented on 2026-07-25 with a Workspace/Editor application
+reconciliation contract consumed by the action broker after confirmed disk
+mutation; dirty buffers are never silently overwritten.
 
 ## Current work
 
@@ -43,40 +47,13 @@ for the four mutation production files); awaiting re-audit.
 - [x] M4 received GO on 2026-07-25 after corrective passes #1–#3.
 - [x] Implement M5: safe workspace mutation behind accepted immutable proposals.
 - [x] M5 corrective pass #1: ratchet architecture inventory for `IAgentFileMutator`, `AgentFileMutationOutcome`, `AgentFileMutationResult`, and `WorkspaceFileMutator` (source-file counts 516, Features 471, namespace rollups, baseline comments).
-- [ ] M5 awaiting re-audit. Do not authorize M6 prematurely.
+- [x] M5 received GO on 2026-07-25.
+- [x] Implement M6: document reconciliation after confirmed disk mutation.
+- [ ] M7 and later milestones remain gated. Do not authorize M7 prematurely.
 
 Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
+Manual reconciliation evidence recorded in `M6_DOCUMENT_RECONCILIATION_EVIDENCE.md`.
 Manual preview evidence for M4 remains in `M4_PROPOSAL_PREVIEW_EVIDENCE.md`.
-
-## M5 (2026-07-25)
-
-Implemented constrained mutation execution for accepted create/replace/delete
-proposals:
-
-- `IAgentFileMutator` / `WorkspaceFileMutator` revalidate workspace root
-  identity, canonical root, device/inode, path containment, proposal binding,
-  and base revision immediately before apply.
-- `ContractAgentActionBroker` executes approved file mutations after atomic
-  decision consumption; apply-time stale bases return `Conflict`.
-- Same-directory temporary files with atomic replacement; cleanup on failure
-  and cancellation; success only after on-disk confirmation.
-
-### Gate results (M5)
-
-| Gate | Result |
-|------|--------|
-| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
-| `Phase17WorkspaceMutation` | pass, 17/17 |
-| `Phase17Proposal` | pass, 48/48 |
-| `Phase17ProposalBroker` | pass, 27/27 |
-| `Phase17Permission` | pass, 36/36 |
-| `Phase17ActionContracts` | pass, 50/50 |
-| `Phase17WorkspaceRead` | pass, 39/39 |
-| `Phase17WorkspaceAuthority` | pass, 21/21 |
-| Architecture | pass, 26/26 |
-| Full fast suite | pass, 3002/3002 |
-| Serial fallback | pass, 3002/3002 |
-| `git diff --check` | pass, clean |
 
 ## M5 corrective pass #1 (2026-07-25)
 
@@ -103,6 +80,37 @@ Updates:
 | Phase 17/Architecture targeted filters | pass, 244/244 |
 | Full fast suite | pass, 3002/3002 |
 | Serial fallback | pass, 3002/3002 |
+| `git diff --check` | pass, clean |
+
+## M6 (2026-07-25)
+
+Implemented document reconciliation after confirmed disk mutation:
+
+- `IAgentDocumentReconciler` (`Agents.Contracts`) is consumed by
+  `ContractAgentActionBroker` after successful file mutations.
+- `WorkspaceEditorDocumentReconciler` (`Editor.Application`) reconciles open
+  `Workspace` documents without referencing Editor Presentation types.
+- `IEditorUiDispatcher` / `AvaloniaEditorUiDispatcher` marshal document
+  updates on the UI thread with observer-failure isolation.
+- `Document` exposes `ReloadCleanContent`, `FlagDiskAbsent`, and
+  `IsDiskAbsent`; dirty buffers are never silently overwritten.
+
+### Gate results (M6)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
+| `Phase17DocumentReconciliation` | pass, 10/10 |
+| `Phase17WorkspaceMutation` | pass, 17/17 |
+| `Phase17Proposal` | pass, 48/48 |
+| `Phase17ProposalBroker` | pass, 27/27 |
+| `Phase17Permission` | pass, 36/36 |
+| `Phase17ActionContracts` | pass, 50/50 |
+| `Phase17WorkspaceRead` | pass, 39/39 |
+| `Phase17WorkspaceAuthority` | pass, 21/21 |
+| Architecture | pass |
+| Full fast suite | pass |
+| Serial fallback | pass |
 | `git diff --check` | pass, clean |
 
 ## M4 corrective pass #3 (2026-07-25)
@@ -517,4 +525,10 @@ uses `UnavailableAgentActionBroker`; live broker wiring remains M8.
 M5 did not implement document reconciliation, command execution, Agent
 event/Townhall integration, Native Harness, ACP, or any Phase 16 / Phase 18
 work. The production execution path still uses `UnavailableAgentActionBroker`;
-live broker wiring remains M8. M6 remains gated by M5 GO.
+live broker wiring remains M8.
+
+## Scope boundaries observed (M6)
+
+M6 did not implement command execution, Agent/Townhall event integration,
+Native Harness, ACP, or any Phase 16 / Phase 18 work. Reconciliation consumes
+confirmed M5 mutation results only. M7 remains gated by M6 GO.

@@ -27,8 +27,8 @@ public sealed class EditorHoverPopup : Popup
 
         var border = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            BorderBrush = (IBrush?)Application.Current!.Resources["BorderSubtleBrush"],
+            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
+            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["BorderSubtleBrush"],
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),

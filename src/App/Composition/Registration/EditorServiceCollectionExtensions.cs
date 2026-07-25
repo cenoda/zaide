@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Editor.Application;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
@@ -11,6 +13,8 @@ internal static class EditorServiceCollectionExtensions
         this IServiceCollection services)
     {
         services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IEditorUiDispatcher, AvaloniaEditorUiDispatcher>();
+        services.AddSingleton<IAgentDocumentReconciler, WorkspaceEditorDocumentReconciler>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
         services.AddSingleton<EditorSearchViewModel>();

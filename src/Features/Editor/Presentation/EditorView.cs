@@ -107,8 +107,8 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             FontFamily = _codeFont,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
-            Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
+            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfaceBaseBrush"],
+            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
             Options =
             {
                 EnableHyperlinks = true,
@@ -139,7 +139,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         {
             Content = IconFactory.Create(
                 "Icon.Unknown",
-                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
                 12),
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
         };
@@ -258,7 +258,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                         _indentGuideRenderer.IsEnabled = false;
                         _fileInfoIconHost.Content = IconFactory.Create(
                             "Icon.Unknown",
-                            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                            (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
                             12);
                         _fileInfoText.Text = "diff/edit";
                         // Phase 9 M4: clear folding state when no tab is active.
@@ -575,7 +575,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             _fileInfoText.Text = $"{path}  —  {state} (read-only)";
             _fileInfoIconHost.Content = IconFactory.Create(
                 FileIconKeyResolver.GetIconKey(path),
-                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
                 12);
             return;
         }
@@ -584,7 +584,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _fileInfoText.Text = $"{name}  —  diff/edit";
         _fileInfoIconHost.Content = IconFactory.Create(
             FileIconKeyResolver.GetIconKey(vm.FilePath),
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
             12);
     }
 

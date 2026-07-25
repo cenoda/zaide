@@ -107,7 +107,7 @@ public partial class EditorTabBar : UserControl
     }
 
     // Brushes resolved from app resources in constructor (not static —
-    // Application.Current may be null at type-init time in test harnesses).
+    // Avalonia.Application.Current may be null at type-init time in test harnesses).
     private readonly IBrush? _activeTabBrush;
     private readonly IBrush? _inactiveTabBrush = Brushes.Transparent;
 
@@ -144,7 +144,7 @@ public partial class EditorTabBar : UserControl
 
         // Resolve brushes now — safe because the constructor only runs when
         // the control is created, which happens inside a running application.
-        _activeTabBrush = Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
+        _activeTabBrush = Avalonia.Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
 
         // Phase 9 M5b: drop-position visual indicator.
         // A thin vertical line shown at the target insertion point during drag.
@@ -186,7 +186,7 @@ public partial class EditorTabBar : UserControl
         // M4: "Shared in #townhall" label — right of tabs, SecondaryAccentBrush,
         // hidden by default. Visibility controlled by MainWindow via SetTownhallLinkVisible.
         _townhallLink = TextStyles.Body("Shared in #townhall");
-        _townhallLink.Foreground = (IBrush?)Application.Current?.Resources["SecondaryAccentBrush"];
+        _townhallLink.Foreground = (IBrush?)Avalonia.Application.Current?.Resources["SecondaryAccentBrush"];
         _townhallLink.VerticalAlignment = VerticalAlignment.Center;
         _townhallLink.Margin = LayoutTokens.Horizontal(LayoutTokens.SpacingMd);
         _townhallLink.IsVisible = false;
@@ -645,7 +645,7 @@ public partial class EditorTabBar : UserControl
     {
         var icon = IconFactory.Create(
             FileIconKeyResolver.GetIconKey(vm.FilePath),
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
             12);
 
         var label = new TextBlock
@@ -660,7 +660,7 @@ public partial class EditorTabBar : UserControl
 
         var closeGlyph = IconFactory.Create(
             "Icon.X",
-            (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
+            (IBrush?)Avalonia.Application.Current!.Resources["SecondaryAccentBrush"],
             12);
 
         var closeButton = new Border
@@ -713,7 +713,7 @@ public partial class EditorTabBar : UserControl
         {
             Child = grid,
             Background = _inactiveTabBrush,
-            BorderBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"],
+            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["SurfaceBaseBrush"],
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = LayoutTokens.NoneThickness,
             MinHeight = 36,

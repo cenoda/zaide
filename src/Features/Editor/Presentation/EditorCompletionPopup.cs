@@ -40,8 +40,8 @@ public sealed class EditorCompletionPopup : Popup
 
         var border = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
-            BorderBrush = (IBrush?)Application.Current!.Resources["BorderSubtleBrush"],
+            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
+            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["BorderSubtleBrush"],
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = new Thickness(LayoutTokens.SpacingXxs),

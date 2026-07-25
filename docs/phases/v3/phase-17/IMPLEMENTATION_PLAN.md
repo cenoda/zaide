@@ -18,11 +18,14 @@ create/replace/delete proposals, immediate pre-apply revalidation, safe
 temporary-file and atomic replacement behavior, and truthful terminal results.
 M5 completed a corrective pass on 2026-07-25 that ratchets the four mutation
 production files in the architecture inventory (source-file counts, Features
-folder counts, namespace rollups, and baseline comments); awaiting re-audit.
+folder counts, namespace rollups, and baseline comments) and received GO on
+2026-07-25. M6 was implemented on 2026-07-25 with a Workspace/Editor
+application reconciliation contract consumed by the action broker after confirmed
+disk mutation.
 
-**Authorized work:** M5 corrective pass only (complete; awaiting re-audit).
-M6 and later milestones remain gated by M5 GO and the repository's automatic
-progression and stop rules. Do not authorize M6 prematurely.
+**Authorized work:** M6 document reconciliation (complete; awaiting audit).
+M7 and later milestones remain gated by M6 GO and the repository's automatic
+progression and stop rules. Do not authorize M7 prematurely.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
 work, live IDE-context disclosure, durable memory, raw traces, session resume,

@@ -10,6 +10,8 @@ using Xunit;
 using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Editor.Application;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
@@ -21,12 +23,15 @@ namespace Zaide.Tests.App.Composition;
 /// <see cref="EditorServiceCollectionExtensions.AddZaideEditor"/> without
 /// changing service types, lifetimes, mappings, or total registration
 /// membership. <see cref="EditorViewModel"/> remains unregistered.
+/// Phase 17 M6 adds document reconciliation and UI dispatcher registrations.
 /// </summary>
 public sealed class EditorRegistrationModuleTests
 {
     private static readonly string[] EditorServiceTypeNames =
     {
         typeof(IFileService).FullName!,
+        typeof(IEditorUiDispatcher).FullName!,
+        typeof(IAgentDocumentReconciler).FullName!,
         typeof(IEditorSessionFactory).FullName!,
         typeof(IEditorReadOnlyTabService).FullName!,
         typeof(EditorSearchViewModel).FullName!,
@@ -72,12 +77,12 @@ public sealed class EditorRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideEditor_RegistersExactlySixPlannedServices()
+    public void AddZaideEditor_RegistersExactlyEightPlannedServices()
     {
         var services = new ServiceCollection();
         services.AddZaideEditor();
 
-        Assert.Equal(6, services.Count);
+        Assert.Equal(8, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -93,6 +98,14 @@ public sealed class EditorRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(IFileService)
                 && d.ImplementationType == typeof(FileService));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IEditorUiDispatcher)
+                && d.ImplementationType == typeof(AvaloniaEditorUiDispatcher));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentDocumentReconciler)
+                && d.ImplementationType == typeof(WorkspaceEditorDocumentReconciler));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IEditorSessionFactory)
@@ -205,7 +218,7 @@ public sealed class EditorRegistrationModuleTests
     }
 
     [Fact]
-    public void EditorModuleSource_ContainsExactlyTheSixPlannedRegistrations()
+    public void EditorModuleSource_ContainsExactlyTheEightPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/EditorServiceCollectionExtensions.cs");
@@ -222,6 +235,14 @@ public sealed class EditorRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
+                @"AddSingleton<IEditorUiDispatcher,\s*AvaloniaEditorUiDispatcher>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentDocumentReconciler,\s*WorkspaceEditorDocumentReconciler>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
                 @"AddSingleton<IEditorSessionFactory,\s*EditorSessionFactory>\(\)"));
         Assert.Single(
             Regex.Matches(
@@ -232,7 +253,7 @@ public sealed class EditorRegistrationModuleTests
         Assert.Single(
             Regex.Matches(moduleSource, @"AddSingleton<EditorLanguageInputViewModel>\(\)"));
 
-        Assert.Equal(6, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+        Assert.Equal(8, Regex.Matches(moduleSource, @"AddSingleton<").Count);
 
         // Locked exclusion: EditorViewModel must not be registered.
         Assert.DoesNotContain("EditorViewModel", moduleSource);

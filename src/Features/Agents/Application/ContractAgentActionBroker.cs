@@ -27,6 +27,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly IWorkspaceActionAuthority _workspaceAuthority;
     private readonly IAgentFileReader _fileReader;
     private readonly IAgentFileMutator _fileMutator;
+    private readonly IAgentDocumentReconciler _documentReconciler;
     private readonly IAgentCommandResolver _commandResolver;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
@@ -55,7 +56,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         IAgentCommandResolver commandResolver,
         AgentActionRunSlotTracker runSlot,
         AgentActionCorrelationRegistry correlationRegistry,
-        IAgentPermissionReviewService? permissionReviewService = null)
+        IAgentPermissionReviewService? permissionReviewService = null,
+        IAgentDocumentReconciler? documentReconciler = null)
     {
         if (sessionId == default)
         {
@@ -104,6 +106,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _backendId = backendId;
         _fileReader = fileReader ?? throw new ArgumentNullException(nameof(fileReader));
         _fileMutator = fileMutator ?? throw new ArgumentNullException(nameof(fileMutator));
+        _documentReconciler = documentReconciler ?? NullAgentDocumentReconciler.Instance;
         _commandResolver = commandResolver ?? throw new ArgumentNullException(nameof(commandResolver));
         _runSlot = runSlot ?? throw new ArgumentNullException(nameof(runSlot));
         _correlationRegistry = correlationRegistry ?? throw new ArgumentNullException(nameof(correlationRegistry));
@@ -713,12 +716,27 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             _ => AgentActionStatus.Failed,
         });
 
+        var summary = mutationResult.Summary;
+        if (mutationResult.IsSuccess)
+        {
+            var reconciliation = _documentReconciler.ReconcileAfterMutation(
+                _workspaceScope,
+                _workspaceAuthority,
+                fileProposal,
+                mutationResult,
+                cancellationToken);
+            if (reconciliation.Outcome != AgentDocumentReconciliationOutcome.NotApplicable)
+            {
+                summary = $"{summary} {reconciliation.Summary}";
+            }
+        }
+
         return new AgentActionResult(
             request.ActionId,
             request.AttemptId,
             resultKind,
             failureKind,
-            mutationResult.Summary,
+            summary,
             revision: mutationResult.Revision,
             byteLength: mutationResult.ByteLength);
     }

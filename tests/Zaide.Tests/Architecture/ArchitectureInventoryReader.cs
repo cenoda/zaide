@@ -19,13 +19,13 @@ namespace Zaide.Tests.Architecture;
 public sealed class ArchitectureInventoryReader
 {
     /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (Phase 17 M3 corrective +6 internal permission review types, M4 +4 proposal types, M5 +4 mutation types).</summary>
-    public const int M0TotalTopLevelTypes = 572;
+    public const int M0TotalTopLevelTypes = 579;
 
     /// <summary>M0 baseline public top-level type count (unchanged; Phase 17 types are internal).</summary>
     public const int M0PublicTopLevelTypes = 337;
 
     /// <summary>M0 baseline internal top-level type count (Phase 17 M3 corrective +6 internal permission review types, M4 +4 proposal types, M5 +4 mutation types).</summary>
-    public const int M0InternalTopLevelTypes = 235;
+    public const int M0InternalTopLevelTypes = 242;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",
