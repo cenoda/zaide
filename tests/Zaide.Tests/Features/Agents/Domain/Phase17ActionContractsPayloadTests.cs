@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Xunit;
 using Zaide.Features.Agents.Domain;
 
@@ -60,6 +61,38 @@ public sealed class Phase17ActionContractsPayloadTests
                 AgentWorkspaceRelativePath.Normalize(".")));
 
         Assert.Equal("arguments", exception.ParamName);
+    }
+
+    [Fact]
+    public void AgentResolvedCommand_RejectsUnresolvedExecutableToken()
+    {
+        Assert.False(
+            AgentResolvedCommand.TryCreate(
+                new AgentExecuteCommandActionPayload(
+                    "dotnet",
+                    new[] { "build" },
+                    AgentWorkspaceRelativePath.Normalize(".")),
+                out _,
+                out var error));
+        Assert.Contains("absolute path", error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AgentCommandDenylist_ClassifiesShellInterpretersAndPrivilegeEscalation()
+    {
+        var bash = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "bash");
+        var sudo = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "sudo");
+        var dotnet = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "dotnet");
+
+        Assert.Equal(
+            AgentCommandDenylistClassification.DeniedShellInterpreter,
+            AgentCommandDenylist.Classify(bash).Classification);
+        Assert.Equal(
+            AgentCommandDenylistClassification.DeniedPrivilegeEscalation,
+            AgentCommandDenylist.Classify(sudo).Classification);
+        Assert.Equal(
+            AgentCommandDenylistClassification.Allowed,
+            AgentCommandDenylist.Classify(dotnet).Classification);
     }
 
     [Fact]

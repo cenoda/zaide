@@ -2,11 +2,12 @@
 
 ## Status and authorization
 
-**Phase 17 status:** M0 accepted on 2026-07-24. M1 complete on 2026-07-24. M2 is
-authorized as the next bounded implementation milestone.
+**Phase 17 status:** M0 accepted on 2026-07-24. M1 corrective work is in progress
+after audit blockers on thread-safe admission and canonical command
+fingerprints. M2 is not authorized until corrected M1 receives GO.
 
-**Authorized work:** M2 workspace capture and bounded reads only. M3 and later
-milestones remain gated by predecessor completion and the repository's
+**Authorized work:** Corrected M1 contracts and deterministic state only. M2 and
+later milestones remain gated by predecessor completion and the repository's
 automatic progression and stop rules.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate

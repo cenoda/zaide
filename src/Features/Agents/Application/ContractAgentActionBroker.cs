@@ -23,7 +23,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private readonly WorkspaceGeneration _workspaceGeneration;
     private readonly AgentActionRunSlotTracker _runSlot;
     private readonly AgentActionCorrelationRegistry _correlationRegistry;
+    private readonly object _admissionGate = new();
     private volatile bool _revoked;
+
+    internal Action? TestProcessingHold { get; set; }
 
     public ContractAgentActionBroker(
         AgentSessionId sessionId,
@@ -137,12 +140,12 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 exception.Message));
         }
 
+        AgentActionCorrelationKey? parsedCorrelationKey = null;
         if (!string.IsNullOrWhiteSpace(correlationKey))
         {
-            AgentActionCorrelationKey parsedKey;
             try
             {
-                parsedKey = AgentActionCorrelationKey.FromValue(correlationKey);
+                parsedCorrelationKey = AgentActionCorrelationKey.FromValue(correlationKey);
             }
             catch (Exception exception)
             {
@@ -153,9 +156,13 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     AgentActionFailureKind.InvalidRequest,
                     exception.Message));
             }
+        }
 
+        AgentActionResult? terminalResult = null;
+        if (parsedCorrelationKey is not null)
+        {
             if (_correlationRegistry.TryRejectMismatchedFingerprint(
-                    parsedKey,
+                    parsedCorrelationKey.Value,
                     request.Fingerprint,
                     out var mismatch))
             {
@@ -163,7 +170,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             }
 
             if (_correlationRegistry.TryGetTerminalResult(
-                    parsedKey,
+                    parsedCorrelationKey.Value,
                     request.Fingerprint,
                     out var replay))
             {
@@ -174,10 +181,85 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     null,
                     replay.Summary));
             }
+
+            if (_correlationRegistry.TryWaitForInFlightReplay(
+                    parsedCorrelationKey.Value,
+                    request.Fingerprint,
+                    out var inFlightReplay))
+            {
+                if (inFlightReplay!.ResultKind == AgentActionResultKind.Denied
+                    && inFlightReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
+                {
+                    return ValueTask.FromResult(inFlightReplay);
+                }
+
+                return ValueTask.FromResult(new AgentActionResult(
+                    inFlightReplay.ActionId,
+                    inFlightReplay.AttemptId,
+                    AgentActionResultKind.DuplicateReplay,
+                    null,
+                    inFlightReplay.Summary));
+            }
         }
 
-        if (!_runSlot.TryReserve(request.ActionId))
+        var reserved = false;
+        lock (_admissionGate)
         {
+            if (parsedCorrelationKey is not null)
+            {
+                if (_correlationRegistry.TryRejectMismatchedFingerprint(
+                        parsedCorrelationKey.Value,
+                        request.Fingerprint,
+                        out var mismatch))
+                {
+                    return ValueTask.FromResult(mismatch!);
+                }
+
+                if (_correlationRegistry.TryGetTerminalResult(
+                        parsedCorrelationKey.Value,
+                        request.Fingerprint,
+                        out var replay))
+                {
+                    return ValueTask.FromResult(new AgentActionResult(
+                        replay!.ActionId,
+                        replay.AttemptId,
+                        AgentActionResultKind.DuplicateReplay,
+                        null,
+                        replay.Summary));
+                }
+            }
+
+            reserved = _runSlot.TryReserve(request.ActionId);
+            if (reserved && parsedCorrelationKey is not null)
+            {
+                _correlationRegistry.BeginInFlightCorrelation(
+                    parsedCorrelationKey.Value,
+                    request.Fingerprint);
+            }
+        }
+
+        if (!reserved)
+        {
+            if (parsedCorrelationKey is not null
+                && _correlationRegistry.TryWaitForInFlightReplay(
+                    parsedCorrelationKey.Value,
+                    request.Fingerprint,
+                    out var reservedReplay))
+            {
+                if (reservedReplay!.ResultKind == AgentActionResultKind.Denied
+                    && reservedReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
+                {
+                    return ValueTask.FromResult(reservedReplay);
+                }
+
+                return ValueTask.FromResult(new AgentActionResult(
+                    reservedReplay.ActionId,
+                    reservedReplay.AttemptId,
+                    AgentActionResultKind.DuplicateReplay,
+                    null,
+                    reservedReplay.Summary));
+            }
+
             return ValueTask.FromResult(new AgentActionResult(
                 request.ActionId,
                 request.AttemptId,
@@ -186,69 +268,85 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 "Only one non-terminal action is allowed per run."));
         }
 
-        var lifecycle = new AgentActionLifecycleState();
-        lifecycle.TransitionTo(AgentActionStatus.Classified);
-
-        var classification = AgentActionPolicyClassifier.Classify(request.Payload);
-        AgentActionResult terminalResult;
-        switch (classification)
+        try
         {
-            case AgentActionPermissionClassification.DeniedByPolicy:
-                lifecycle.TransitionTo(AgentActionStatus.Denied);
-                terminalResult = new AgentActionResult(
-                    request.ActionId,
-                    request.AttemptId,
-                    AgentActionResultKind.Denied,
-                    AgentActionFailureKind.PolicyDenied,
-                    "Action was denied by locked policy.");
-                break;
+            TestProcessingHold?.Invoke();
 
-            case AgentActionPermissionClassification.RequiresUserDecision:
-                lifecycle.TransitionTo(AgentActionStatus.AwaitingPermissionDecision);
-                lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
-                lifecycle.TransitionTo(AgentActionStatus.Denied);
-                terminalResult = new AgentActionResult(
-                    request.ActionId,
-                    request.AttemptId,
-                    AgentActionResultKind.Denied,
-                    AgentActionFailureKind.PermissionUnavailable,
-                    "Permission review is not available in Phase 17 M1.");
-                break;
+            var lifecycle = new AgentActionLifecycleState();
+            lifecycle.TransitionTo(AgentActionStatus.Classified);
 
-            case AgentActionPermissionClassification.AllowedByLockedPolicy:
-                lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
-                lifecycle.TransitionTo(AgentActionStatus.Failed);
-                terminalResult = new AgentActionResult(
-                    request.ActionId,
-                    request.AttemptId,
-                    AgentActionResultKind.Failed,
-                    AgentActionFailureKind.ExecutionFailed,
-                    "Workspace read execution is not available in Phase 17 M1.");
-                break;
+            var classification = AgentActionPolicyClassifier.Classify(request.Payload);
+            switch (classification)
+            {
+                case AgentActionPermissionClassification.DeniedByPolicy:
+                    lifecycle.TransitionTo(AgentActionStatus.Denied);
+                    terminalResult = new AgentActionResult(
+                        request.ActionId,
+                        request.AttemptId,
+                        AgentActionResultKind.Denied,
+                        AgentActionFailureKind.PolicyDenied,
+                        "Action was denied by locked policy.");
+                    break;
 
-            default:
-                lifecycle.TransitionTo(AgentActionStatus.Denied);
-                terminalResult = new AgentActionResult(
-                    request.ActionId,
-                    request.AttemptId,
-                    AgentActionResultKind.Denied,
-                    AgentActionFailureKind.PolicyDenied,
-                    "Action was denied by locked policy.");
-                break;
+                case AgentActionPermissionClassification.RequiresUserDecision:
+                    lifecycle.TransitionTo(AgentActionStatus.AwaitingPermissionDecision);
+                    lifecycle.TransitionTo(AgentActionStatus.PermissionDenied);
+                    lifecycle.TransitionTo(AgentActionStatus.Denied);
+                    terminalResult = new AgentActionResult(
+                        request.ActionId,
+                        request.AttemptId,
+                        AgentActionResultKind.Denied,
+                        AgentActionFailureKind.PermissionUnavailable,
+                        "Permission review is not available in Phase 17 M1.");
+                    break;
+
+                case AgentActionPermissionClassification.AllowedByLockedPolicy:
+                    lifecycle.TransitionTo(AgentActionStatus.ReadyToExecute);
+                    lifecycle.TransitionTo(AgentActionStatus.Executing);
+                    lifecycle.TransitionTo(AgentActionStatus.Failed);
+                    terminalResult = new AgentActionResult(
+                        request.ActionId,
+                        request.AttemptId,
+                        AgentActionResultKind.Failed,
+                        AgentActionFailureKind.ExecutionFailed,
+                        "Workspace read execution is not available in Phase 17 M1.");
+                    break;
+
+                default:
+                    lifecycle.TransitionTo(AgentActionStatus.Denied);
+                    terminalResult = new AgentActionResult(
+                        request.ActionId,
+                        request.AttemptId,
+                        AgentActionResultKind.Denied,
+                        AgentActionFailureKind.PolicyDenied,
+                        "Action was denied by locked policy.");
+                    break;
+            }
+        }
+        finally
+        {
+            lock (_admissionGate)
+            {
+                _runSlot.Release(request.ActionId);
+
+                if (parsedCorrelationKey is not null)
+                {
+                    if (terminalResult is not null)
+                    {
+                        _correlationRegistry.RecordTerminalResult(
+                            parsedCorrelationKey.Value,
+                            request.Fingerprint,
+                            terminalResult);
+                    }
+                    else
+                    {
+                        _correlationRegistry.ClearInFlightCorrelation(parsedCorrelationKey.Value);
+                    }
+                }
+            }
         }
 
-        _runSlot.Release(request.ActionId);
-
-        if (!string.IsNullOrWhiteSpace(correlationKey))
-        {
-            var parsedKey = AgentActionCorrelationKey.FromValue(correlationKey);
-            _correlationRegistry.RecordTerminalResult(
-                parsedKey,
-                request.Fingerprint,
-                terminalResult);
-        }
-
-        return ValueTask.FromResult(terminalResult);
+        return ValueTask.FromResult(terminalResult!);
     }
 
     private static AgentActionResult CreateDeniedResult(

@@ -29,12 +29,32 @@ internal static class AgentActionRequestComposer
 
         var actionId = AgentActionId.New();
         var attemptId = AgentActionAttemptId.New();
-        var displaySummary = AgentActionDisplaySummaryBuilder.Build(payload);
-        var fingerprint = AgentActionRequestFingerprintComputer.Compute(
-            workspaceIdentity,
-            workspaceGeneration,
-            runId,
-            payload);
+        AgentActionDisplaySummary displaySummary;
+        AgentActionRequestFingerprint fingerprint;
+
+        if (payload is AgentExecuteCommandActionPayload commandPayload)
+        {
+            if (!AgentResolvedCommand.TryCreate(commandPayload, out var resolvedCommand, out var error))
+            {
+                throw new ArgumentException(error, nameof(payload));
+            }
+
+            displaySummary = AgentActionDisplaySummaryBuilder.Build(resolvedCommand!);
+            fingerprint = AgentActionRequestFingerprintComputer.Compute(
+                workspaceIdentity,
+                workspaceGeneration,
+                runId,
+                resolvedCommand!);
+        }
+        else
+        {
+            displaySummary = AgentActionDisplaySummaryBuilder.Build(payload);
+            fingerprint = AgentActionRequestFingerprintComputer.Compute(
+                workspaceIdentity,
+                workspaceGeneration,
+                runId,
+                payload);
+        }
 
         return new AgentActionRequest(
             actionId,

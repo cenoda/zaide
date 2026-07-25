@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Xunit;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Domain;
@@ -98,5 +99,113 @@ public sealed class Phase17ActionContractsFingerprintTests
         Assert.Equal(AgentActionKind.CreateFile, request.DisplaySummary.Kind);
         Assert.Contains("Scope: this exact request only.", request.DisplaySummary.DetailText, StringComparison.Ordinal);
         Assert.NotEqual(default(AgentActionRequestFingerprint), request.Fingerprint);
+    }
+
+    [Fact]
+    public void AgentActionRequestComposer_RejectsUnresolvedCommandExecutable()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            AgentActionRequestComposer.Compose(
+                AgentSessionId.New(),
+                ExecutionRunId.New(),
+                ConversationId.NewDirect(),
+                ActorId.HumanUser,
+                ActorId.PanelSeed("alpha"),
+                AgentBackendId.FromValue("backend:test"),
+                WorkspaceIdentity.New(),
+                WorkspaceGeneration.Initial,
+                new AgentExecuteCommandActionPayload(
+                    "dotnet",
+                    new[] { "build" },
+                    AgentWorkspaceRelativePath.Normalize("."))));
+
+        Assert.Equal("payload", exception.ParamName);
+        Assert.Contains("absolute path", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AgentActionRequestFingerprint_CommandFingerprintChangesWhenBoundFieldsChange()
+    {
+        var workspaceA = WorkspaceIdentity.New();
+        var workspaceB = WorkspaceIdentity.New();
+        var generationA = WorkspaceGeneration.Initial;
+        var generationB = new WorkspaceGeneration(generationA.Value + 1);
+        var runA = ExecutionRunId.New();
+        var runB = ExecutionRunId.New();
+        var executableA = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "dotnet");
+        var executableB = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "git");
+        var baseline = CreateResolvedCommand(executableA, new[] { "build" }, AgentWorkspaceRelativePath.Normalize("."));
+
+        var baselineFingerprint = AgentActionRequestFingerprintComputer.Compute(
+            workspaceA,
+            generationA,
+            runA,
+            baseline);
+
+        var differentExecutable = CreateResolvedCommand(executableB, new[] { "build" }, baseline.WorkingDirectory);
+        var differentArguments = CreateResolvedCommand(executableA, new[] { "test" }, baseline.WorkingDirectory);
+        var differentWorkingDirectory = CreateResolvedCommand(
+            executableA,
+            new[] { "build" },
+            AgentWorkspaceRelativePath.Normalize("src"));
+        var deniedExecutable = CreateResolvedCommand(
+            Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "bash"),
+            new[] { "-c", "echo" },
+            baseline.WorkingDirectory);
+
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceB, generationA, runA, baseline));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationB, runA, baseline));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationA, runB, baseline));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationA, runA, differentExecutable));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationA, runA, differentArguments));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationA, runA, differentWorkingDirectory));
+        Assert.NotEqual(
+            baselineFingerprint,
+            AgentActionRequestFingerprintComputer.Compute(workspaceA, generationA, runA, deniedExecutable));
+    }
+
+    [Fact]
+    public void AgentActionDisplaySummary_CommandSummaryBindsResolvedExecutableAndDenylist()
+    {
+        var executable = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "bin", "dotnet");
+        Assert.True(
+            AgentResolvedCommand.TryCreate(
+                new AgentExecuteCommandActionPayload(
+                    executable,
+                    new[] { "build" },
+                    AgentWorkspaceRelativePath.Normalize(".")),
+                out var resolvedCommand,
+                out _));
+
+        var summary = AgentActionDisplaySummaryBuilder.Build(resolvedCommand!);
+
+        Assert.Contains(resolvedCommand!.CanonicalAbsoluteExecutablePath, summary.DetailText, StringComparison.Ordinal);
+        Assert.Contains("Denylist: Allowed", summary.DetailText, StringComparison.Ordinal);
+    }
+
+    private static AgentResolvedCommand CreateResolvedCommand(
+        string executable,
+        string[] arguments,
+        AgentWorkspaceRelativePath workingDirectory)
+    {
+        Assert.True(
+            AgentResolvedCommand.TryCreate(
+                new AgentExecuteCommandActionPayload(executable, arguments, workingDirectory),
+                out var resolvedCommand,
+                out var error),
+            error);
+        return resolvedCommand!;
     }
 }
