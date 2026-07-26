@@ -4,7 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, and M2b are implemented and ready for review.
+closeout. M1, M2a, M2b, and M2c are implemented and ready for review.
 
 ## Current findings
 
@@ -52,12 +52,17 @@ service polling.
   with backend/read-start completion signals.
 - Focused agent gate: 94/94 passed in 7.598 seconds.
 
-The generic `WaitUntilAsync` helper in the parity tests remains a separate
-follow-up because its callers need an event-source-specific signal mapping.
+## M2c result (2026-07-26)
+
+- Converted the parity test `WaitUntilAsync` and `WaitForRunningAsync` helpers
+  from fixed-interval polling to `IAgentSessionService.Events` signals.
+- Added explicit second-run admission completion signals where the observed
+  state change and test variable assignment had a race.
+- Focused parity gate: 28/28 passed in 7 seconds.
+- No `Task.Delay` remains in `AgentSessionCoordinatorParityTests`.
 
 ## Next task
 
 After review, repeat the unfiltered full regression on a clean test host. If
-it is green, continue with M2c: replace the remaining agent-session
-`WaitUntilAsync` polling helper with event-driven waits, then move to language
-service polling.
+it is green, continue with M2d: replace language-service polling waits with
+server/session signals.

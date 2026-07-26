@@ -63,6 +63,13 @@ The agent-session cancellation and admission tests now wait on backend/read
 start signals or typed session state instead of fixed delays. The focused agent
 gate passed 94/94 in 7.598s. No production process is started by this slice.
 
+## M2c Verification Record
+
+The parity test wait helpers now subscribe to `IAgentSessionService.Events`
+instead of polling with `Task.Delay`. Re-admission tests use explicit
+completion signals for the moment the second run identity is assigned. The
+focused parity gate passed 28/28 in 7s.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.
