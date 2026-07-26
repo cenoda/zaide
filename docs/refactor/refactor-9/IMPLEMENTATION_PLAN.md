@@ -49,6 +49,14 @@ Those are later milestones and must retain independent verification gates.
 | Full unfiltered run | blocked by pre-existing orphaned test sessions; the run started for this gate was cancelled after inspection, with testhost count unchanged at 7 and external-process count unchanged at 3 |
 | `git diff --check` | pass |
 
+## M2a Verification Record
+
+The first polling slice replaced fixed-delay waits in
+`ProjectContextServiceTests` and `ProjectContextServiceIntegrationTests` with
+observable snapshot signals and task completion. The focused gate passed
+48/48 in 0.569s. No production process is started by this slice; the existing
+shared-host counts were not changed.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.

@@ -87,11 +87,63 @@ public sealed class ProjectContextServiceTests
     private sealed class SnapshotCollector : IDisposable
     {
         private readonly IDisposable _subscription;
+        private readonly object _sync = new();
+        private readonly List<(ProjectContextState State, TaskCompletionSource<object?> Completion)> _waiters = new();
+        private readonly List<(int Count, TaskCompletionSource<object?> Completion)> _countWaiters = new();
         public List<ProjectContext> Snapshots { get; } = new();
 
         public SnapshotCollector(IProjectContextService svc)
         {
-            _subscription = svc.WhenChanged.Subscribe(s => Snapshots.Add(s));
+            _subscription = svc.WhenChanged.Subscribe(snapshot =>
+            {
+                lock (_sync)
+                {
+                    Snapshots.Add(snapshot);
+                    foreach (var waiter in _waiters.FindAll(waiter => waiter.State == snapshot.State))
+                    {
+                        _waiters.Remove(waiter);
+                        waiter.Completion.TrySetResult(null);
+                    }
+
+                    foreach (var waiter in _countWaiters.FindAll(waiter => Snapshots.Count >= waiter.Count))
+                    {
+                        _countWaiters.Remove(waiter);
+                        waiter.Completion.TrySetResult(null);
+                    }
+                }
+            });
+        }
+
+        public async Task WaitForStateAsync(ProjectContextState state)
+        {
+            var completion = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            lock (_sync)
+            {
+                if (Snapshots.Exists(snapshot => snapshot.State == state))
+                    return;
+
+                _waiters.Add((state, completion));
+            }
+
+            await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        public async Task WaitForCountAsync(int count)
+        {
+            var completion = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            lock (_sync)
+            {
+                if (Snapshots.Count >= count)
+                    return;
+
+                _countWaiters.Add((count, completion));
+            }
+
+            await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
         public void Dispose() => _subscription.Dispose();
@@ -174,8 +226,9 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var loadTask = svc.LoadAsync("/root");
 
-        // Allow the service thread to reach discovery and emit Loading.
-        await Task.Delay(200);
+        // The Loading snapshot is the service's state-change signal that
+        // discovery has started.
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         Assert.Equal(1, discovery.CallCount);
 
@@ -428,7 +481,7 @@ public sealed class ProjectContextServiceTests
         var loadTask = svc.LoadAsync("/root");
 
         // Wait for Loading emission.
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
         var loadingSnapshot = Assert.Single(collector.Snapshots);
         Assert.Equal(ProjectContextState.Loading, loadingSnapshot.State);
 
@@ -464,7 +517,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var reloadTask = svc.LoadAsync("/root");
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
         var loadingSnapshot = Assert.Single(collector.Snapshots);
         Assert.Equal(ProjectContextState.Loading, loadingSnapshot.State);
 
@@ -512,7 +565,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var reloadTask = svc.ReloadAsync();
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
         var reloadLoading = Assert.Single(collector.Snapshots);
         Assert.Equal(ProjectContextState.Loading, reloadLoading.State);
         Assert.Equal("/root", reloadLoading.WorkspaceRoot);
@@ -540,7 +593,7 @@ public sealed class ProjectContextServiceTests
         var load1 = svc.LoadAsync("/root1");
         var load2 = svc.LoadAsync("/root2");
 
-        await Task.Delay(200);
+        await collector.WaitForCountAsync(2);
 
         // Older request completes first, but its result should be stale.
         gate1.TrySetResult(SingleProjectResult("/root1/project.csproj"));
@@ -576,7 +629,7 @@ public sealed class ProjectContextServiceTests
         var load1 = svc.LoadAsync("/root1");
         var load2 = svc.LoadAsync("/root2");
 
-        await Task.Delay(200);
+        await collector.WaitForCountAsync(2);
 
         // Newer request completes first.
         gate2.TrySetResult(SingleProjectResult("/root2/project.csproj"));
@@ -608,7 +661,7 @@ public sealed class ProjectContextServiceTests
         var load1 = svc.LoadAsync("/root1");
         var load2 = svc.LoadAsync("/root2");
 
-        await Task.Delay(200);
+        await collector.WaitForCountAsync(2);
 
         // Newest request is cancelled.
         gate2.TrySetCanceled();
@@ -649,7 +702,7 @@ public sealed class ProjectContextServiceTests
         var load1 = svc.LoadAsync("/root1");
         var load2 = svc.LoadAsync("/root2");
 
-        await Task.Delay(200);
+        await collector.WaitForCountAsync(2);
 
         // Complete the newer request first.
         gate2.TrySetResult(SingleProjectResult("/root2/project.csproj"));
@@ -680,7 +733,7 @@ public sealed class ProjectContextServiceTests
         var load1 = svc.LoadAsync("/root1");
         var load2 = svc.LoadAsync("/root2");
 
-        await Task.Delay(200);
+        await collector.WaitForCountAsync(2);
 
         // Newer request completes first.
         gate2.TrySetResult(SingleProjectResult("/root2/project.csproj"));
@@ -706,7 +759,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var loadTask = svc.LoadAsync("/root");
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
         var loadLoading = Assert.Single(collector.Snapshots);
         Assert.Equal(ProjectContextState.Loading, loadLoading.State);
 
@@ -716,8 +769,8 @@ public sealed class ProjectContextServiceTests
         // The in-flight load should be stale; completing it should do nothing.
         gate.TrySetResult(SingleProjectResult("/root/project.csproj"));
 
-        // Allow the stale completion to process.
-        await Task.Delay(200);
+        // Await the stale completion rather than yielding for a fixed interval.
+        await loadTask;
         Assert.False(loadTask.IsFaulted);
         Assert.True(loadTask.IsCompleted);
 
@@ -738,7 +791,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var loadTask = svc.LoadAsync("/root");
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         // Unload invalidates the in-flight request.
         await svc.UnloadAsync();
@@ -762,7 +815,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var loadTask = svc.LoadAsync("/root");
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         // Fail discovery with an unexpected exception (not a failure result).
         gate.TrySetException(new InvalidOperationException("Unexpected error!"));
@@ -799,7 +852,6 @@ public sealed class ProjectContextServiceTests
         });
 
         var loadTask = svc.LoadAsync("/root");
-        await Task.Delay(200);
 
         // The Loading emission should have been captured.
         Assert.NotEqual(0, emittedThreadId);
@@ -914,7 +966,7 @@ public sealed class ProjectContextServiceTests
         var gate = discovery.AddGate();
         var reloadTask = svc.ReloadAsync();
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         // Loading should be emitted.
         Assert.Single(collector.Snapshots);
@@ -986,10 +1038,11 @@ public sealed class ProjectContextServiceTests
     public async Task SelectProject_LoadingState_DoesNotEmit()
     {
         var (svc, discovery, _) = CreateService();
+        using var collector = new SnapshotCollector(svc);
         var gate = discovery.AddGate();
         var loadTask = svc.LoadAsync("/root");
 
-        await Task.Delay(200);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         // Current should be Loading.
         Assert.Equal(ProjectContextState.Loading, svc.Current.State);
