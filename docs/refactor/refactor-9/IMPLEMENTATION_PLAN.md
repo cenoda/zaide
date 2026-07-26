@@ -77,6 +77,18 @@ language service change stream. Stale-response cases that publish no terminal
 snapshot retain their bounded legacy delay until a production request-complete
 signal is available. The focused navigation/symbol gate passed 32/32.
 
+## M2e Verification Record
+
+Added `ILanguageNavigationService.WhenRequestCompleted` so definition requests
+that discard stale LSP results without publishing a terminal snapshot still
+signal completion. Navigation stale waits now subscribe before triggering
+completion; symbol stale waits use the existing change stream because those
+paths publish cancelled/idle snapshots. The focused navigation/symbol gate passed
+32/32 in 1 second. Ordinary selection passed 3029/3029 in 11 seconds. Slow
+integration selection passed 36/36 in 10 seconds. Combined coverage 3065/3065
+with 0 failures. Testhost count remained 0 before and after; external-process
+count remained 2 before and after. `git diff --check` passed.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.

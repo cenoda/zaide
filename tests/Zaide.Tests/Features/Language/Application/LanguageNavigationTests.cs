@@ -260,6 +260,21 @@ public sealed class LanguageNavigationTests
         await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
+    private static async Task WaitForRequestCompletedAsync(
+        ILanguageNavigationService service,
+        long requestId)
+    {
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = service.WhenRequestCompleted.Subscribe(completedRequestId =>
+        {
+            if (completedRequestId == requestId)
+                completion.TrySetResult(null);
+        });
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
     [Fact]
     public async Task SingleDefinition_SameFile_ProducesReady()
     {
@@ -444,12 +459,14 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(path, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         // Advance generation while request in flight.
         h.SessionService.SetReady(h.Session, generation: 2);
         h.Bridge.SetOpen(path, 1, 2);
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         // Stale generation must not leave a Ready/Choose surface.
         Assert.False(h.Service.Current.IsSingleNavigateReady);
@@ -470,10 +487,12 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(path, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         h.Bridge.SetVersion(path, 2);
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         Assert.False(h.Service.Current.IsSingleNavigateReady);
         Assert.Null(h.Service.TryTakeSingleLocation());
@@ -493,6 +512,7 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(pathA, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         var contentB = "class B {}";
         var pathB = Path.Combine(TempRoot, "b.cs");
@@ -500,9 +520,10 @@ public sealed class LanguageNavigationTests
         var docB = h.Workspace.OpenDocument(pathB, contentB);
         h.Workspace.SetActiveDocument(docB);
         h.Bridge.SetOpen(pathB, 1, 1);
-
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
+        h.Input.ActiveDocumentId = pathB;
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         Assert.Null(h.Service.TryTakeSingleLocation());
         Assert.False(h.Service.Current.IsChooserOpen);

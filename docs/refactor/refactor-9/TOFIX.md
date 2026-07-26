@@ -4,7 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, M2c, and M2d are implemented and ready for review.
+closeout. M1, M2a, M2b, M2c, M2d, and M2e are implemented and ready for review.
 
 ## Current findings
 
@@ -70,6 +70,26 @@ service polling.
   complete without publishing a terminal snapshot; replacing those waits
   requires a request-completion seam rather than a test-only polling trick.
 
+## M2e result (2026-07-26)
+
+- Added `ILanguageNavigationService.WhenRequestCompleted` and completion
+  notification from `LanguageNavigationService.ExecuteRequestAsync` so silent
+  stale discards still signal request completion without changing surface
+  behavior.
+- Replaced navigation stale-generation, stale-version, and active-tab stale
+  `Task.Delay(150)` waits with request-completion subscriptions registered
+  before triggering completion.
+- Replaced symbol stale-generation and stale-version waits with
+  `WaitForChangeAsync` on the existing idle/cancelled snapshot stream; kept
+  workspace debounce delay in workspace-symbol replacement tests.
+- Focused language navigation/symbol gate: 32/32 passed in 1 second.
+- Ordinary selection: 3029/3029 passed in 11 seconds.
+- Slow integration selection: 36/36 passed in 10 seconds.
+- Combined coverage: 3065/3065 passed with 0 failures.
+- Testhost count remained 0 before and after; external-process count remained
+  2 before and after.
+- `git diff --check` passed.
+
 ## Full coverage verification (2026-07-26)
 
 - Ordinary selection: 3029/3029 passed in 9 seconds.
@@ -83,7 +103,6 @@ service polling.
 
 ## Next task
 
-After review, repeat the unfiltered full regression on a clean test host. If
-it is green, continue with M2e: add a narrowly scoped request-completion seam
-for stale language responses, then continue the remaining language polling
-inventory.
+After review, continue with M3: share Avalonia/ReactiveUI bootstrap with
+resettable test infrastructure, then continue the remaining language polling
+inventory (completion/hover/document-sync delays).

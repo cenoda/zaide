@@ -424,7 +424,9 @@ public sealed class LanguageSymbolTests
 
         h.Bridge.SetVersion(path, 2);
         h.Session.DocumentGate.TrySetResult(true);
-        await Task.Delay(150);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         // Stale response must not install Ready symbols; surface must collapse to Idle.
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
@@ -603,7 +605,9 @@ public sealed class LanguageSymbolTests
         // Advance generation before response arrives.
         h.SessionService.SetReady(h.Session, generation: 2);
         h.Session.DocumentGate.TrySetResult(true);
-        await Task.Delay(150);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.NotEqual(LanguageSymbolState.Ready, h.Service.Current.State);
         Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageSymbolState.Ready && s.Symbols.Count > 0);
