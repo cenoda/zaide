@@ -13,9 +13,16 @@ verification, and documentation truth-sync. Phase 18 is not authorized.
 
 ## Production change (M9)
 
-`AgentSessionService.Dispose()` now cancels active run execution (matching
-`CancelAsync` / `EndAsync`) before revoking run-scoped action brokers. This
-prevents shutdown from leaving a pending permission review blocked indefinitely.
+`AgentSessionService.Dispose()` now cancels active run execution, matching
+`CancelAsync` / `EndAsync`. This prevents shutdown from leaving a pending
+permission review blocked indefinitely.
+
+The applied order at all four sites (`Dispose()`, `CancelAsync`, `EndAsync`, and
+workspace invalidation) is revoke-then-cancel: `RevokeRunBrokerLocked(activeRun)`
+runs before `activeRun.ExecutionCancellation.Cancel()`. Revoking first
+guarantees that an in-flight action request fails closed against a revoked
+broker rather than racing the cancellation; the subsequent cancel then unblocks
+the run.
 
 ## Adversarial automated coverage
 

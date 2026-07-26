@@ -2,12 +2,18 @@
 
 ## Status
 
-M0 live audit is complete. The clean baseline is commit `e1873ce8` on
+M0 live audit is complete. The clean baseline was commit `e1873ce8` on
 `perf/test-structure-phase1`. M1, M2a, M2b, M2c, M2d, M2e, M3, M4, and M5 are
-implemented. Final closeout verification (2026-07-26) passed all gates; Refactor
-9 is ready for PR.
+implemented. Final closeout verification (2026-07-26) passed all gates.
 
-## Current findings
+Refactor 9 is **merged and closed**. The work landed on `master` as merge
+commit `78c94835` on 2026-07-26; the `perf/test-structure-phase1` baseline
+branch is historical only. The M1 unfiltered-gate caveat is closed: an
+unfiltered `dotnet test Zaide.slnx --no-build` on a clean host passed
+3065/3065 in 14 seconds on 2026-07-26, matching the two filtered selections
+exactly.
+
+## M0 findings (all addressed)
 
 - Phase 16 and Linux PTY tests already have isolated collections, but their
   external-resource nature is not selectable through a common trait.
@@ -30,8 +36,8 @@ implemented. Final closeout verification (2026-07-26) passed all gates; Refactor
   external processes; the attempted run left those counts unchanged.
 
 The two filtered selections cover all 3065 discovered tests. The unfiltered
-gate must be repeated on a clean test host before treating the refactor as
-fully closed.
+gate was subsequently repeated on a clean test host on 2026-07-26 and passed
+3065/3065, so this caveat is closed.
 
 ## M2a result (2026-07-26)
 
@@ -194,5 +200,7 @@ sessions; filtered selections remain the recommended default on shared hosts.
 - Remaining language polling (32 `Task.Delay` calls across
   completion/hover/document-sync/formatting/session/symbol/navigation) requires
   production completion/propagation signals; defer to a later refactor milestone.
-- Repeat unfiltered gate on a fully clean host when stale Jul 25 sessions are
-  cleared (optional hygiene; not blocking PR).
+- ~~Repeat unfiltered gate on a fully clean host when stale Jul 25 sessions are
+  cleared.~~ Done on 2026-07-26 post-merge: unfiltered
+  `dotnet test Zaide.slnx --no-build` passed 3065/3065 in 14 seconds with no
+  stale sessions present.

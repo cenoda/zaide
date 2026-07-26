@@ -47,6 +47,32 @@ inventory, shutdown-during-pending-action fix, non-deletion verification,
 architecture inventory confirmation, and documentation truth-sync. Phase 17 is
 pending final human acceptance.
 
+## Delivery boundary: shipped inert
+
+Phase 17 delivers a complete but backend-gated control plane. It is not
+reachable by any production user flow today, and that is the intended M0
+boundary rather than a defect:
+
+- `AgentSessionService.CreateExecutionContextLocked` creates a run-scoped
+  `ContractAgentActionBroker` only for backends implementing
+  `IAgentActionRequestCapableBackend`.
+- The only production backend registered in `AddZaideAgents` is
+  `LegacyOpenAiCompatibleAgentBackend`, which does not implement that
+  interface.
+- Every production run therefore resolves `UnavailableAgentActionBroker`, so
+  reads, proposals, permission review, mutation, reconciliation, and command
+  execution cannot be triggered by a real user.
+- The only action-capable backend is `FakeActionRequesterBackend`, which lives
+  in `tests/` and is not registered in production DI.
+
+Earlier M2/M3/M5 scope notes state that "live broker wiring remains M8". That
+is accurate only for the session-side seam: M8 wired the broker lifecycle,
+events, and audit into `AgentSessionService`. M8 did not deliver a production
+tool-using backend, and explicitly excluded one. Production activation of the
+action plane requires a backend that implements
+`IAgentActionRequestCapableBackend` and belongs to the first tool-using backend
+phase (Phase 19 or Phase 20).
+
 ## Current work
 
 Phase 17 M9 closeout is complete pending final human acceptance. No Phase 18
@@ -95,9 +121,15 @@ Implemented final adversarial closeout:
   duplicate, cancellation, workspace-switch, redaction, and process-tree
   regressions; plus shutdown, non-deletion, accessibility/layout, and
   architecture inventory ratchets.
-- Fixed `AgentSessionService.Dispose()` to cancel active run execution before
-  revoking brokers so shutdown during a pending permission review terminates
-  cleanly.
+- Fixed `AgentSessionService` shutdown so that a pending permission review
+  terminates cleanly. The applied order is revoke-then-cancel:
+  `RevokeRunBrokerLocked(activeRun)` runs before
+  `activeRun.ExecutionCancellation.Cancel()` in `Dispose()`, `CancelAsync`,
+  `EndAsync`, and workspace invalidation. Revoking first guarantees an in-flight
+  action request fails closed against a revoked broker instead of racing the
+  cancellation; the subsequent cancel then unblocks the run. An earlier draft of
+  this note described the opposite (cancel-then-revoke) order; the code order
+  above is the intended and verified behavior.
 - Recorded consolidated manual evidence in `M9_CLOSEOUT_EVIDENCE.md` linking
   M3–M8 milestone evidence.
 - Truth-synced `IMPLEMENTATION_PLAN.md`, `TOFIX.md`, `README.md`,
