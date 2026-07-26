@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
+using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Infrastructure;
 
@@ -195,6 +196,31 @@ public sealed class Phase18ContextBypassRatchetTests
             {
                 violations.Add(relativePath);
             }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void ContextIntegration_DoesNotLeakToLegacyBackend()
+    {
+        var violations = new List<string>();
+
+        var legacyType = typeof(LegacyOpenAiCompatibleAgentBackend);
+
+        var executeBody = File.ReadAllText(
+            Path.Combine(
+                RepositoryRoot,
+                "src/Features/Agents/Infrastructure/LegacyOpenAiCompatibleAgentBackend.cs"));
+
+        if (executeBody.Contains("ContextManifest", StringComparison.Ordinal))
+        {
+            violations.Add("Legacy backend consumes ContextManifest");
+        }
+
+        if (executeBody.Contains("AgentContextManifest", StringComparison.Ordinal))
+        {
+            violations.Add("Legacy backend consumes AgentContextManifest");
         }
 
         Assert.Empty(violations);

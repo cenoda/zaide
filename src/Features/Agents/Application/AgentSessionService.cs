@@ -20,6 +20,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
     private readonly IAgentActionBrokerFactory? _brokerFactory;
     private readonly IAgentActionAuditStore? _auditStore;
     private readonly IWorkspaceActionAuthority? _workspaceAuthority;
+    private readonly AgentContextManifestBuilder? _contextManifestBuilder;
+    private readonly IAgentContextSnapshotSources? _contextSnapshotSources;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
     private readonly object _sessionsSync = new();
     private bool _disposed;
@@ -29,7 +31,9 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         AgentEventStream eventStream,
         IAgentActionBrokerFactory? brokerFactory = null,
         IAgentActionAuditStore? auditStore = null,
-        IWorkspaceActionAuthority? workspaceAuthority = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null,
+        AgentContextManifestBuilder? contextManifestBuilder = null,
+        IAgentContextSnapshotSources? contextSnapshotSources = null)
     {
         ArgumentNullException.ThrowIfNull(backends);
         ArgumentNullException.ThrowIfNull(eventStream);
@@ -39,6 +43,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         _brokerFactory = brokerFactory;
         _auditStore = auditStore;
         _workspaceAuthority = workspaceAuthority;
+        _contextManifestBuilder = contextManifestBuilder;
+        _contextSnapshotSources = contextSnapshotSources;
 
         if (_workspaceAuthority is not null)
         {
@@ -427,6 +433,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         EmitRunLifecycleLocked(session, run, AgentEventKind.RunRunning, AgentRunStatus.Running);
 
         run.ExecutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        var contextManifest = AssembleContextManifestLocked(session, run);
         var request = new AgentBackendRequest(
             session.SessionId,
             run.RunId,
@@ -434,7 +442,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
             initiatorActorId,
             targetActorId,
             messageEntryId,
-            messageText);
+            messageText,
+            contextManifest);
         var executionContext = CreateExecutionContextLocked(
             session,
             run,
@@ -1023,6 +1032,33 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         public Task? ExecutionTask { get; set; }
 
         public ContractAgentActionBroker? ActionBroker { get; set; }
+    }
+
+    private AgentContextManifest? AssembleContextManifestLocked(
+        LiveSession session,
+        LiveRun run)
+    {
+        if (_contextManifestBuilder is null || _contextSnapshotSources is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var policy = AgentContextPolicy.CreateApplicationDefault();
+            var assembledAtUtc = DateTimeOffset.UtcNow;
+            return _contextManifestBuilder.Build(
+                session.SessionId,
+                run.RunId,
+                session.ConversationId,
+                policy,
+                _contextSnapshotSources,
+                assembledAtUtc);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private AgentBackendExecutionContext CreateExecutionContextLocked(

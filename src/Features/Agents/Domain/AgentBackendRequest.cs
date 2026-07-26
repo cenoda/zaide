@@ -15,7 +15,8 @@ internal sealed class AgentBackendRequest
         ActorId initiatingActorId,
         ActorId targetActorId,
         ConversationEntryId messageEntryId,
-        string messageText)
+        string messageText,
+        AgentContextManifest? contextManifest = null)
     {
         if (sessionId == default)
         {
@@ -59,6 +60,7 @@ internal sealed class AgentBackendRequest
         TargetActorId = targetActorId;
         MessageEntryId = messageEntryId;
         MessageText = messageText;
+        ContextManifest = contextManifest;
     }
 
     public AgentSessionId SessionId { get; }
@@ -74,4 +76,6 @@ internal sealed class AgentBackendRequest
     public ConversationEntryId MessageEntryId { get; }
 
     public string MessageText { get; }
+
+    public AgentContextManifest? ContextManifest { get; }
 }

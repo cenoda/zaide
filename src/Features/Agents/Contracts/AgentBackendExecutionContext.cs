@@ -7,4 +7,7 @@ namespace Zaide.Features.Agents.Contracts;
 /// </summary>
 internal sealed record AgentBackendExecutionContext(
     AgentBackendRequest Request,
-    IAgentActionBroker Actions);
+    IAgentActionBroker Actions)
+{
+    public AgentContextManifest? ContextManifest => Request.ContextManifest;
+}

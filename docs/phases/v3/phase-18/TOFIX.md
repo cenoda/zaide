@@ -66,6 +66,30 @@ type names).
 - `dotnet test Zaide.slnx --no-build` — 3116/3116 passed
 - `git diff --check` — clean
 
+## M3 delivery (2026-07-26) - COMPLETE
+
+Production (`src/Features/Agents/`):
+
+- **Backend request extension:** `AgentBackendRequest` now includes optional nullable `AgentContextManifest? ContextManifest` parameter with backward-compatible constructor.
+- **Execution context extension:** `AgentBackendExecutionContext` exposes `ContextManifest` property derived from the request.
+- **Run integration:** `AgentSessionService` integrates `AgentContextManifestBuilder` and `IAgentContextSnapshotSources` through optional constructor parameters.
+- **Context assembly:** `AssembleContextManifestLocked` method creates manifest per admitted run using application-default policy and available snapshot sources.
+- **Manifest attachment:** Context manifest is attached to `AgentBackendRequest` before backend execution begins.
+
+Tests:
+
+- `Phase18RunIntegrationTests` — backend request/response manifest slot, execution context exposure, read-only manifest collections, session service integration with and without context assembly, legacy backend inert verification, run-scoped manifest identity, policy level verification, session override precedence.
+
+Architecture ratchets updated for M3 (+1 integration test in bypass ratchets).
+
+## Verification status (M3 2026-07-26) - COMPLETE
+
+- `dotnet build Zaide.slnx --no-restore` — 0 errors, 0 warnings
+- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Phase18'` — 62/62 passed
+- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Architecture'` — 37/37 passed
+- `dotnet test Zaide.slnx --no-build` — 3127/3127 passed
+- `git diff --check` — clean
+
 ## M1 delivery scope (unchanged)
 
 Implemented under `src/Features/Agents/Domain/`:
@@ -88,7 +112,7 @@ Legacy backend keeps `IdeContext` capability as `Unavailable`.
 
 ## Next task
 
-- [ ] M3 run integration and consumption boundary (not started).
+- [x] M3 run integration and consumption boundary (2026-07-26).
 
 ## Scope boundaries observed
 
@@ -98,8 +122,8 @@ state, language identification, terminal scrollback, telemetry, or Phase 17 cont
 changes. Legacy backend remains free of `AgentContextManifest` consumption.
 
 M3/M4 boundaries preserved:
-- no run wiring
-- no backend manifest consumption
+- run wiring implemented via AgentBackendRequest context manifest slot
+- backend manifest consumption prevented (legacy backend remains inert)
 - no ContextDisclosed event emission
 - no UI
 - no custom policy
