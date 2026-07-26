@@ -6,7 +6,6 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -26,9 +25,9 @@ public sealed class LanguageFormattingTests
         Path.GetTempPath(),
         "zaide-phase10-m6-fmt-" + Guid.NewGuid().ToString("N"));
 
+
     static LanguageFormattingTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

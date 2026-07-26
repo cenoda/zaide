@@ -26,6 +26,7 @@ public sealed class ProjectDebugLaunchServiceTests
         Path.GetTempPath(),
         "zaide-phase12-m3a-launch-" + Guid.NewGuid().ToString("N"));
 
+
     static ProjectDebugLaunchServiceTests()
     {
         Directory.CreateDirectory(TempRoot);

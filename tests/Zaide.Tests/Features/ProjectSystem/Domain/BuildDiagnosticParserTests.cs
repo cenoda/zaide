@@ -16,6 +16,7 @@ public sealed class BuildDiagnosticParserTests
         Path.GetTempPath(),
         "zaide-phase11-build-parser-" + Guid.NewGuid().ToString("N"));
 
+
     static BuildDiagnosticParserTests()
     {
         Directory.CreateDirectory(TempRoot);

@@ -9,8 +9,6 @@ using Avalonia.Controls.Primitives;
 using Moq;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
-using Splat;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
@@ -26,12 +24,6 @@ namespace Zaide.Tests.Features.Debugging.Presentation;
 /// </summary>
 public sealed class DebugPanelSelectionTests
 {
-    static DebugPanelSelectionTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Locator.CurrentMutable.Register(() => new AvaloniaActivationForViewFetcher(), typeof(IActivationForViewFetcher));
-        EnsureApplication();
-    }
 
     [Fact]
     public async Task Stopped_WithDebugPanel_IssuesSingleInspectionRequestPerKind()
@@ -113,15 +105,4 @@ public sealed class DebugPanelSelectionTests
         throw new TimeoutException("Timed out waiting for debug panel projection.");
     }
 
-    private static void EnsureApplication()
-    {
-        if (Avalonia.Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-                app.Initialize();
-            return;
-        }
-
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 }

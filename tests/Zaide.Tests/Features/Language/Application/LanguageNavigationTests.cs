@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -33,9 +32,9 @@ public sealed class LanguageNavigationTests
         Path.GetTempPath(),
         "zaide-phase10-m5-nav-" + Guid.NewGuid().ToString("N"));
 
+
     static LanguageNavigationTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

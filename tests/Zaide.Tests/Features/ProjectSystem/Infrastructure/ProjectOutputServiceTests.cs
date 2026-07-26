@@ -20,10 +20,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectOutputServiceTests
 {
-    static ProjectOutputServiceTests()
-    {
-        ReactiveUI.Builder.RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void ProjectOutputService_MapsWorkflowSnapshot()

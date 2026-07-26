@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -57,11 +56,7 @@ using Zaide.Features.Conversations.Domain;
 namespace Zaide.Tests.App.Shell;
 public class MainWindowViewModelTests
 {
-    static MainWindowViewModelTests()
-    {
-        // ReactiveUI must be initialized before using WhenAnyValue in constructor
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
+
 
     private static Mock<IAgentExecutionCoordinator> CreateMockCoordinator()
     {

@@ -22,6 +22,7 @@ public sealed class BuildDiagnosticsServiceTests
         Path.GetTempPath(),
         "zaide-phase11-build-diags-" + Guid.NewGuid().ToString("N"));
 
+
     static BuildDiagnosticsServiceTests()
     {
         Directory.CreateDirectory(TempRoot);

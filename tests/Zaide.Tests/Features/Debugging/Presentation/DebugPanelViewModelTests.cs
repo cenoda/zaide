@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
@@ -22,10 +21,6 @@ namespace Zaide.Tests.Features.Debugging.Presentation;
 /// </summary>
 public sealed class DebugPanelViewModelTests
 {
-    static DebugPanelViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static (DebugPanelViewModel Panel, Subject<DebugSessionSnapshot> Subject, Mock<IDebugSessionService> Debug)
         CreateHarness(DebugSessionSnapshot initial)

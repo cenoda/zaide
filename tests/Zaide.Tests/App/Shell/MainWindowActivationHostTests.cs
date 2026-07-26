@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Shell;
@@ -53,10 +52,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class MainWindowActivationHostTests
 {
-    static MainWindowActivationHostTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void MwvmActivate_IsIdempotent_DoesNotDuplicateRootPathSync()

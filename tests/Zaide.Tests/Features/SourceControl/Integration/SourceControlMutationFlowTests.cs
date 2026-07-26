@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using LibGit2Sharp;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.SourceControl;
 using Zaide.Features.SourceControl.Domain;
@@ -30,10 +29,6 @@ namespace Zaide.Tests.Features.SourceControl.Integration;
 /// </summary>
 public sealed class SourceControlMutationFlowTests : IDisposable
 {
-    static SourceControlMutationFlowTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private readonly string _repoDir;
     private readonly string _bareRemoteDir;

@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Avalonia;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
-using Splat;
 using Xunit;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
@@ -22,14 +20,7 @@ namespace Zaide.Tests.Features.Settings.Presentation;
 /// </summary>
 public sealed class SettingsPanelFactoryTests
 {
-    static SettingsPanelFactoryTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Locator.CurrentMutable.Register(
-            () => new AvaloniaActivationForViewFetcher(),
-            typeof(IActivationForViewFetcher));
-        EnsureApplication();
-    }
+
 
     [Fact]
     public void Create_ReturnsViewModelAndPanelPair_WithPanelBoundToViewModel()
@@ -95,20 +86,6 @@ public sealed class SettingsPanelFactoryTests
         }
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 
     private sealed class TestSecretStore : ISecretStore
     {

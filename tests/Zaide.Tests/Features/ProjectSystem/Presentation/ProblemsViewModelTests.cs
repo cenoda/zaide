@@ -6,7 +6,6 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -32,9 +31,9 @@ public sealed class ProblemsViewModelTests
         Path.GetTempPath(),
         "zaide-phase10-m3-problems-" + Guid.NewGuid().ToString("N"));
 
+
     static ProblemsViewModelTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

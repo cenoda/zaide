@@ -6,7 +6,6 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Presentation;
@@ -15,10 +14,6 @@ namespace Zaide.Tests.Features.Terminal.Presentation;
 
 public class TerminalHostTests
 {
-    static TerminalHostTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     /// <summary>
     /// Production <see cref="TerminalViewModel"/> marshals Append via

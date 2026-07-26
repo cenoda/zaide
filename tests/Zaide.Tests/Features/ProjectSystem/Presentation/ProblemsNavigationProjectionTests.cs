@@ -5,7 +5,6 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -32,9 +31,9 @@ public sealed class ProblemsNavigationProjectionTests
         Path.GetTempPath(),
         "zaide-phase10-m3-nav-" + Guid.NewGuid().ToString("N"));
 
+
     static ProblemsNavigationProjectionTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

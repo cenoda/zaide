@@ -5,7 +5,6 @@ using System.Reactive.Concurrency;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -24,10 +23,6 @@ namespace Zaide.Tests.App.Composition;
 /// </summary>
 public sealed class TownhallRegistrationModuleTests
 {
-    static TownhallRegistrationModuleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProductionProvider()
     {

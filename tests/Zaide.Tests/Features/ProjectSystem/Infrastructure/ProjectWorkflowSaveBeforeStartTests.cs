@@ -5,7 +5,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -24,10 +23,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectWorkflowSaveBeforeStartTests
 {
-    static ProjectWorkflowSaveBeforeStartTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static readonly string FixtureProjectPath = Path.GetFullPath(
         Path.Combine(

@@ -8,7 +8,6 @@ using Avalonia.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.Features.SourceControl.Domain;
@@ -54,10 +53,6 @@ namespace Zaide.Tests.Features.Settings.Infrastructure;
 /// </summary>
 public sealed class KeyBindingMaterializationTests
 {
-    static KeyBindingMaterializationTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private readonly TestLoggerProvider _loggerProvider;
     private readonly CommandRegistry _registry;

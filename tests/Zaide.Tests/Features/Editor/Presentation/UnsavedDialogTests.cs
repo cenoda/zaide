@@ -1,4 +1,5 @@
 using System;
+using Zaide.Tests.Infrastructure;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -6,7 +7,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.UI.DesignSystem;
@@ -31,11 +31,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </remarks>
 public sealed class UnsavedDialogTests
 {
-    static UnsavedDialogTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        EnsureApplication();
-    }
 
     [Fact]
     public void UnsavedDialogAxaml_DoesNotBindMarginToDoubleSpacingToken()
@@ -57,7 +52,7 @@ public sealed class UnsavedDialogTests
     [Fact]
     public void SpacingXl_Resource_IsDouble_NotThickness()
     {
-        var app = EnsureApplication();
+        var app = ReactiveUiTestBootstrap.EnsureApplication();
         Assert.True(app.Resources.TryGetValue("SpacingXl", out var value));
         Assert.IsType<double>(value);
         Assert.Equal(20d, (double)value!);
@@ -228,19 +223,6 @@ public sealed class UnsavedDialogTests
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
     }
 
-    private static global::Zaide.App.Composition.App EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App current)
-        {
-            if (!current.Resources.ContainsKey("SpacingXl"))
-                current.Initialize();
-            return current;
-        }
-
-        var app = new global::Zaide.App.Composition.App();
-        app.Initialize();
-        return app;
-    }
 
     private static string FindRepoFile(string relativePath)
     {

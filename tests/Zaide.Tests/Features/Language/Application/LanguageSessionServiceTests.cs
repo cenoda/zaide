@@ -26,12 +26,13 @@ public sealed class LanguageSessionServiceTests
         Path.GetTempPath(),
         "zaide-phase10-m1-" + Guid.NewGuid().ToString("N"));
 
+
+    // ── Fakes ───────────────────────────────────────────────────────────
+
     static LanguageSessionServiceTests()
     {
         Directory.CreateDirectory(TempRoot);
     }
-
-    // ── Fakes ───────────────────────────────────────────────────────────
 
     private sealed class FakeProjectContextService : IProjectContextService
     {

@@ -1,14 +1,12 @@
 using Avalonia;
+using Zaide.Tests.Infrastructure;
 using System;
 using System.Reactive.Subjects;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Moq;
 using Xunit;
-using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
 using ReactiveUI;
-using Splat;
 using Zaide.App.Shell;
 using Zaide.App.Composition;
 using Zaide.Features.Settings.Domain;
@@ -24,14 +22,7 @@ namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class SettingsPersistenceUiTests
 {
-    static SettingsPersistenceUiTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        EnsureApplication();
-        Locator.CurrentMutable.Register(
-            () => new AvaloniaActivationForViewFetcher(),
-            typeof(IActivationForViewFetcher));
-    }
+
 
     [Fact]
     public void ConfiguredModelStatus_IsShownOnlyForNonEmptySavedModel()
@@ -44,7 +35,7 @@ public sealed class SettingsPersistenceUiTests
     [Fact]
     public void TerminalRenderControl_ApplyFontSettings_UpdatesMetricsAndInvalidates()
     {
-        EnsureApplication();
+        ReactiveUiTestBootstrap.EnsureApplication();
         var control = new TestTerminalRenderControl();
 
         control.ApplyFontSettings("DejaVu Sans Mono", 19);
@@ -148,7 +139,7 @@ public sealed class SettingsPersistenceUiTests
     [Fact]
     public void TerminalSettingsProjection_AppliesLiveFontSettingsWithoutRecreatingSurface()
     {
-        EnsureApplication();
+        ReactiveUiTestBootstrap.EnsureApplication();
         var initial = TerminalPanel.ProjectTerminalSettings(SettingsModel.Defaults.Editor with
         {
             TerminalFontFamily = "Initial Terminal",
@@ -173,7 +164,7 @@ public sealed class SettingsPersistenceUiTests
     [Fact]
     public void TerminalTabHost_DisposesInactivePanelsOnRemovalReplacementDetachAndClose()
     {
-        EnsureApplication();
+        ReactiveUiTestBootstrap.EnsureApplication();
         var settings = new Mock<ISettingsService>();
         settings.SetupGet(x => x.Current).Returns(SettingsModel.Defaults);
         settings.SetupGet(x => x.WhenChanged).Returns(Observable.Empty<SettingsModel>());
@@ -295,17 +286,4 @@ public sealed class SettingsPersistenceUiTests
         }
     }
 
-    private static void EnsureApplication()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-                app.Initialize();
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 }

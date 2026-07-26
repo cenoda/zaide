@@ -6,7 +6,6 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -32,9 +31,9 @@ public sealed class ProblemsBuildProjectionTests
         Path.GetTempPath(),
         "zaide-phase11-problems-merge-" + Guid.NewGuid().ToString("N"));
 
+
     static ProblemsBuildProjectionTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

@@ -24,6 +24,7 @@ public sealed class LanguageCompletionTests
         Path.GetTempPath(),
         "zaide-phase10-m4-completion-" + Guid.NewGuid().ToString("N"));
 
+
     static LanguageCompletionTests()
     {
         Directory.CreateDirectory(TempRoot);

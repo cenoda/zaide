@@ -15,6 +15,7 @@ public sealed class TestResultsParserTests
         Path.GetTempPath(),
         "zaide-phase11-test-parser-" + Guid.NewGuid().ToString("N"));
 
+
     static TestResultsParserTests()
     {
         Directory.CreateDirectory(TempRoot);

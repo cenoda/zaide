@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -42,11 +41,7 @@ namespace Zaide.Tests.App.Composition;
 /// </summary>
 public sealed class CommandRegistrationTests
 {
-    static CommandRegistrationTests()
-    {
-        // ReactiveUI must be initialized before using WhenAnyValue in constructors.
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
+
 
     private static ICommandRegistry NewRegistry() => CommandRegistryFactory.Create();
 

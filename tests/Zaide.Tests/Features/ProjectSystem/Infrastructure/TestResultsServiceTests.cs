@@ -20,6 +20,7 @@ public sealed class TestResultsServiceTests
         Path.GetTempPath(),
         "zaide-phase11-test-results-" + Guid.NewGuid().ToString("N"));
 
+
     static TestResultsServiceTests()
     {
         Directory.CreateDirectory(TempRoot);

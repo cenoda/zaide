@@ -19,6 +19,7 @@ public sealed class ProjectDebugTargetResolverTests
         Path.GetTempPath(),
         "zaide-phase12-m3a-target-" + Guid.NewGuid().ToString("N"));
 
+
     static ProjectDebugTargetResolverTests()
     {
         Directory.CreateDirectory(TempRoot);

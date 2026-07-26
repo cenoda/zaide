@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Tests.App.Composition;
@@ -27,10 +26,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorTabViewModelTabLifecycleTests
 {
-    static EditorTabViewModelTabLifecycleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // Test Helpers

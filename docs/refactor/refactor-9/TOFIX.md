@@ -4,7 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, M2c, M2d, and M2e are implemented and ready for review.
+closeout. M1, M2a, M2b, M2c, M2d, M2e, and M3 are implemented and ready for review.
 
 ## Current findings
 
@@ -90,19 +90,29 @@ service polling.
   2 before and after.
 - `git diff --check` passed.
 
-## Full coverage verification (2026-07-26)
+## M3 result (2026-07-26)
 
-- Ordinary selection: 3029/3029 passed in 9 seconds.
-- Slow integration selection: 36/36 passed in 9 seconds.
+- Added `ReactiveUiTestBootstrap` (`ModuleInitializer` + idempotent
+  `EnsureInitialized` / `EnsureApplication` / default Splat registration) under
+  `tests/Zaide.Tests/Infrastructure/`.
+- Moved `AvaloniaUiInitializationCollection` to Infrastructure with
+  `AvaloniaUiInitializationFixture` and `ReactiveUiMutableStateResetAttribute`
+  for serialized settings UI tests.
+- Removed 81 duplicate `BuildApp()` call sites (82 → 1 deliberate bootstrap).
+- Consolidated 15 private `EnsureApplication()` copies into the shared bootstrap.
+- Preserved temp-directory static initialization in 24 classes that mixed
+  bootstrap with fixture setup.
+- Settings UI gate: 4/4 passed in 0.288 seconds.
+- App.Shell gate: 134/134 passed in 0.780 seconds.
+- Ordinary selection: 3029/3029 passed in 7 seconds (prior 9–11 seconds).
+- Slow integration selection: 36/36 passed in 9 seconds (prior 9–10 seconds).
 - Combined coverage: 3065/3065 passed with 0 failures.
-- Testhost count remained 7 before and after; external-process count remained
-  3 before and after.
-- The two selections cover every discovered test. The plain unfiltered command
-  remains unsuitable on this contaminated shared host because stale testhost
-  sessions already exist before the run.
+- Testhost count remained 0 before and after; no leaked Avalonia/testhost
+  processes observed after the gates.
+- `git diff --check` passed.
 
 ## Next task
 
-After review, continue with M3: share Avalonia/ReactiveUI bootstrap with
-resettable test infrastructure, then continue the remaining language polling
-inventory (completion/hover/document-sync delays).
+After review, continue with M4: reuse immutable filesystem fixtures and isolate
+writable cases, then continue the remaining language polling inventory
+(completion/hover/document-sync delays).

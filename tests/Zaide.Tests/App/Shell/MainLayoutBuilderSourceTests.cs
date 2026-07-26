@@ -17,10 +17,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class MainLayoutBuilderSourceTests
 {
-    static MainLayoutBuilderSourceTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void MainLayoutBuilder_IsInternalShellTypeWithBuildSurface()

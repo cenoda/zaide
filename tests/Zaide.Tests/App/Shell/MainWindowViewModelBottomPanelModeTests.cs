@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -37,10 +36,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class MainWindowViewModelBottomPanelModeTests
 {
-    static MainWindowViewModelBottomPanelModeTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void BottomPanelMode_TestResults_SetsVisibilityFlags()

@@ -89,6 +89,30 @@ integration selection passed 36/36 in 10 seconds. Combined coverage 3065/3065
 with 0 failures. Testhost count remained 0 before and after; external-process
 count remained 2 before and after. `git diff --check` passed.
 
+## M3 Verification Record
+
+Added `ReactiveUiTestBootstrap` with a module initializer that performs a
+one-time `BuildApp()` plus shared `EnsureApplication()` and default Splat
+registrations per testhost process. Moved `AvaloniaUiInitializationCollection`
+to `tests/Zaide.Tests/Infrastructure/` with an `ICollectionFixture` and
+`ReactiveUiMutableStateResetAttribute` for serialized UI tests. Replaced 81
+duplicate `RxAppBuilder.CreateReactiveUIBuilder().BuildApp()` call sites
+across 81 test files; the only remaining bootstrap call is in
+`ReactiveUiTestBootstrap`. Consolidated 15 duplicated private
+`EnsureApplication()` helpers into the shared bootstrap. Preserved non-bootstrap
+static initialization (temp-directory setup) in 24 test classes.
+
+| Gate | Result |
+|---|---|
+| `dotnet build Zaide.slnx` | pass, 0 errors, 4 existing warnings |
+| `FullyQualifiedName~SettingsUiTests` | pass, 4/4 in 0.288s |
+| `FullyQualifiedName~Zaide.Tests.App.Shell` | pass, 134/134 in 0.780s |
+| `Category!=SlowIntegration` | pass, 3029/3029 in 7s (prior baseline 9–11s) |
+| `Category=SlowIntegration` | pass, 36/36 in 9s (prior baseline 9–10s) |
+| Combined coverage | 3065/3065 with 0 failures |
+| Testhost count before/after gates | 0 / 0 |
+| `git diff --check` | pass |
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.

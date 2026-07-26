@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -20,10 +19,6 @@ namespace Zaide.Tests.Features.Editor.Infrastructure;
 /// </summary>
 public sealed class TabCommandRegistrationTests
 {
-    static TabCommandRegistrationTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ICommandRegistry NewRegistry() => CommandRegistryFactory.Create();
 

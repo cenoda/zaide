@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -35,9 +34,9 @@ public sealed class EditorLanguageInputRoutingTests
         Path.GetTempPath(),
         "zaide-phase10-m4-input-" + Guid.NewGuid().ToString("N"));
 
+
     static EditorLanguageInputRoutingTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

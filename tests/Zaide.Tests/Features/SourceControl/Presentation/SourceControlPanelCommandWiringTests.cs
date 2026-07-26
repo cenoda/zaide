@@ -5,7 +5,6 @@ using System.Reactive.Subjects;
 using Avalonia.Interactivity;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
@@ -29,10 +28,6 @@ namespace Zaide.Tests.Features.SourceControl.Presentation;
 /// </summary>
 public class SourceControlPanelCommandWiringTests
 {
-    static SourceControlPanelCommandWiringTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static SourceControlViewModel CreateViewModel()
     {

@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -32,10 +31,6 @@ public sealed class SettingsRegistrationModuleTests
     };
 
 
-    static SettingsRegistrationModuleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProductionProvider()
     {

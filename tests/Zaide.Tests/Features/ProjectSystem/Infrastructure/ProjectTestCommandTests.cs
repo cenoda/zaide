@@ -22,10 +22,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectTestCommandTests
 {
-    static ProjectTestCommandTests()
-    {
-        ReactiveUI.Builder.RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static readonly string FixtureProjectPath = Path.GetFullPath(
         Path.Combine(

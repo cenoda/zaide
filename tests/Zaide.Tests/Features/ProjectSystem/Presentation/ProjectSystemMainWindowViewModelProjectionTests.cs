@@ -3,7 +3,6 @@ using System.Reactive.Subjects;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -48,10 +47,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 /// </summary>
 public sealed class ProjectSystemMainWindowViewModelProjectionTests
 {
-    static ProjectSystemMainWindowViewModelProjectionTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     /// <summary>
     /// Creates a <see cref="MainWindowViewModel"/> with a mock

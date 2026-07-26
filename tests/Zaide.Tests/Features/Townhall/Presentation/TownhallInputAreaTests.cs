@@ -14,10 +14,6 @@ namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallInputAreaTests
 {
-    static TownhallInputAreaTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void InputField_AcceptsReturn_IsFalse()
@@ -125,19 +121,4 @@ public class TownhallInputAreaTests
         return inputArea.GetVisualDescendants().OfType<TextBox>().Single();
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 }

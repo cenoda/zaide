@@ -3,7 +3,6 @@ using System.IO;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
@@ -26,9 +25,9 @@ public sealed class DebugCurrentLocationViewModelTests
         Path.GetTempPath(),
         "zaide-phase12-m5-location-" + Guid.NewGuid().ToString("N"));
 
+
     static DebugCurrentLocationViewModelTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

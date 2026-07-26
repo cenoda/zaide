@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -27,10 +26,6 @@ namespace Zaide.Tests.Features.Editor.Infrastructure;
 /// </summary>
 public sealed class FormatDocumentCommandTests
 {
-    static FormatDocumentCommandTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void FormatDocument_IsRegistered_WithCtrlShiftI()

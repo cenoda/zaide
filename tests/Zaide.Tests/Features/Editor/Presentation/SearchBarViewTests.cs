@@ -1,6 +1,5 @@
 using System;
 using Avalonia;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -19,10 +18,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class SearchBarViewTests
 {
-    static SearchBarViewTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ICommandRegistry CreateRegistry() => CommandRegistryFactory.Create();
 

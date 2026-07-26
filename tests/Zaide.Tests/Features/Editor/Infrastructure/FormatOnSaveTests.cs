@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -33,9 +32,9 @@ public sealed class FormatOnSaveTests
         Path.GetTempPath(),
         "zaide-phase10-m6-fos-" + Guid.NewGuid().ToString("N"));
 
+
     static FormatOnSaveTests()
     {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
         Directory.CreateDirectory(TempRoot);
     }
 

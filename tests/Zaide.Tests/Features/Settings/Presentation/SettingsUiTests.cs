@@ -22,8 +22,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
-using Splat;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide;
@@ -60,17 +58,14 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Tests.Infrastructure;
+
 namespace Zaide.Tests.Features.Settings.Presentation;
 
 [Collection("AvaloniaUiInitialization")]
+[ReactiveUiMutableStateReset]
 public sealed class SettingsUiTests
 {
-    static SettingsUiTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Locator.CurrentMutable.Register(() => new AvaloniaActivationForViewFetcher(), typeof(IActivationForViewFetcher));
-        EnsureApplication();
-    }
 
     [Fact]
     public async Task GearCommand_TogglesSettingsOpenState_AndReusesSinglePanelInstance()
@@ -232,15 +227,6 @@ public sealed class SettingsUiTests
         return vm;
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush")) app.Initialize();
-            return;
-        }
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 
     private sealed class TestSecretStore : ISecretStore
     {

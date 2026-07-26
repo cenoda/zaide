@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -17,10 +16,6 @@ namespace Zaide.Tests.Features.Language.DI;
 /// </summary>
 public sealed class LanguageSessionServiceDiTests
 {
-    static LanguageSessionServiceDiTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProvider()
     {

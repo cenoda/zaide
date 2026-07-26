@@ -25,12 +25,13 @@ public sealed class LanguageDiagnosticsServiceTests
         Path.GetTempPath(),
         "zaide-phase10-m3-diag-" + Guid.NewGuid().ToString("N"));
 
+
+    // ── Fakes ───────────────────────────────────────────────────────────
+
     static LanguageDiagnosticsServiceTests()
     {
         Directory.CreateDirectory(TempRoot);
     }
-
-    // ── Fakes ───────────────────────────────────────────────────────────
 
     private sealed class RecordingSession : ILanguageServerSession
     {

@@ -17,6 +17,7 @@ public sealed class ProjectTargetResolutionTests
         Path.GetTempPath(),
         "zaide-phase11-m1-" + Guid.NewGuid().ToString("N"));
 
+
     static ProjectTargetResolutionTests()
     {
         Directory.CreateDirectory(TempRoot);

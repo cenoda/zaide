@@ -1,7 +1,6 @@
 using System;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.SourceControl.Domain;
 using Zaide.Features.SourceControl.Contracts;
@@ -16,10 +15,6 @@ namespace Zaide.Tests.Features.SourceControl.Application;
 
 public sealed class SourceControlDiffTabServiceTests
 {
-    static SourceControlDiffTabServiceTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void Format_BinaryFile_ReturnsNotice()

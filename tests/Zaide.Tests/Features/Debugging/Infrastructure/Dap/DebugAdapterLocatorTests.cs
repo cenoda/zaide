@@ -14,6 +14,7 @@ public sealed class DebugAdapterLocatorTests
         Path.GetTempPath(),
         "zaide-phase12-m1-locator-" + Guid.NewGuid().ToString("N"));
 
+
     static DebugAdapterLocatorTests()
     {
         Directory.CreateDirectory(TempRoot);

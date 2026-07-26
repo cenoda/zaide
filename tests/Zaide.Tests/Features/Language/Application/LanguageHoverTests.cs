@@ -24,6 +24,7 @@ public sealed class LanguageHoverTests
         Path.GetTempPath(),
         "zaide-phase10-m4-hover-" + Guid.NewGuid().ToString("N"));
 
+
     static LanguageHoverTests()
     {
         Directory.CreateDirectory(TempRoot);

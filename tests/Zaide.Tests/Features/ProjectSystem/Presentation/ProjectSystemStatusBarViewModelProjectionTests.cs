@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -58,10 +57,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 /// </summary>
 public sealed class ProjectSystemStatusBarViewModelProjectionTests
 {
-    static ProjectSystemStatusBarViewModelProjectionTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private sealed class ControlledLanguageSessionService : ILanguageSessionService
     {

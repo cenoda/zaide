@@ -24,12 +24,13 @@ public sealed class LanguageDocumentSyncTests
         Path.GetTempPath(),
         "zaide-phase10-m2-" + Guid.NewGuid().ToString("N"));
 
+
+    // ── Fakes ───────────────────────────────────────────────────────────
+
     static LanguageDocumentSyncTests()
     {
         Directory.CreateDirectory(TempRoot);
     }
-
-    // ── Fakes ───────────────────────────────────────────────────────────
 
     public sealed record DocumentNotification(
         string Method,

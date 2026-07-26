@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Settings.Domain;
@@ -31,10 +30,6 @@ namespace Zaide.Tests.Features.Debugging.Presentation;
 /// </summary>
 public sealed class EditorBreakpointViewModelTests
 {
-    static EditorBreakpointViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public async Task ToggleAtLine_AddsAndProjectsEnabledMarker()

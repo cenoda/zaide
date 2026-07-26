@@ -5,7 +5,6 @@ using System.Reactive.Concurrency;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -23,10 +22,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorSearchViewModelTests
 {
-    static EditorSearchViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ICommandRegistry CreateRegistry() => CommandRegistryFactory.Create();
 

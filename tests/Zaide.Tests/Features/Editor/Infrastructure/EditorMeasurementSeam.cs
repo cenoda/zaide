@@ -3,16 +3,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
@@ -26,8 +25,6 @@ namespace Zaide.Tests.Features.Editor.Infrastructure;
 /// </summary>
 public static class EditorMeasurementSeam
 {
-    private static int _reactiveInitialized;
-
     /// <summary>
     /// Clock boundary for all samples in this seam: <see cref="Stopwatch.GetTimestamp"/>
     /// (high-resolution monotonic) starts immediately before the first timed
@@ -42,7 +39,7 @@ public static class EditorMeasurementSeam
 
     public static EditorTabViewModel CreateTabManager()
     {
-        EnsureReactiveUiInitialized();
+        ReactiveUiTestBootstrap.EnsureInitialized();
         var services = new ServiceCollection();
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
@@ -52,21 +49,6 @@ public static class EditorMeasurementSeam
             sp.GetRequiredService<IEditorSessionFactory>(),
             sp.GetRequiredService<IFileService>(),
             sp.GetRequiredService<global::Zaide.Features.Workspace.Domain.Workspace>());
-    }
-
-    private static void EnsureReactiveUiInitialized()
-    {
-        if (Interlocked.Exchange(ref _reactiveInitialized, 1) == 1)
-            return;
-
-        try
-        {
-            RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        }
-        catch (InvalidOperationException)
-        {
-            // Already initialized by another test in this process.
-        }
     }
 
     public static string Sha256Hex(string path)
