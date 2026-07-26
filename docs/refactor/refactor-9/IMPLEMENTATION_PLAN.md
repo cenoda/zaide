@@ -70,6 +70,13 @@ instead of polling with `Task.Delay`. Re-admission tests use explicit
 completion signals for the moment the second run identity is assigned. The
 focused parity gate passed 28/28 in 7s.
 
+## M2d Verification Record
+
+Language navigation/symbol cancellation and dismissal waits now use the
+language service change stream. Stale-response cases that publish no terminal
+snapshot retain their bounded legacy delay until a production request-complete
+signal is available. The focused navigation/symbol gate passed 32/32.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.

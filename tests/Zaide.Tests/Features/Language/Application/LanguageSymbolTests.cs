@@ -84,9 +84,11 @@ public sealed class LanguageSymbolTests
             DocumentCallCount++;
             if (DocumentGate is not null)
                 await DocumentGate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-            if (DocumentHandler is not null)
-                return await DocumentHandler(documentUri, cancellationToken).ConfigureAwait(false);
-            return new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>());
+
+            var result = DocumentHandler is not null
+                ? await DocumentHandler(documentUri, cancellationToken).ConfigureAwait(false)
+                : new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>());
+            return result;
         }
 
         public async Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
@@ -259,6 +261,27 @@ public sealed class LanguageSymbolTests
                 return;
             await Task.Delay(15);
         }
+    }
+
+    private static async Task WaitForChangeAsync<T>(
+        IObservable<T> changes,
+        Func<bool> predicate)
+    {
+        if (predicate())
+            return;
+
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = changes.Subscribe(_ =>
+        {
+            if (predicate())
+                completion.TrySetResult(null);
+        });
+
+        if (predicate())
+            return;
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -602,7 +625,9 @@ public sealed class LanguageSymbolTests
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
 
         h.Workspace.CloseDocument(path);
-        await Task.Delay(50);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
     }
@@ -623,7 +648,9 @@ public sealed class LanguageSymbolTests
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
 
         h.SessionService.SetState(LanguageSessionState.Cancelled);
-        await Task.Delay(50);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
     }

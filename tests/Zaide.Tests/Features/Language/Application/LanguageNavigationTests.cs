@@ -76,10 +76,10 @@ public sealed class LanguageNavigationTests
             if (DefinitionGate is not null)
                 await DefinitionGate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            if (DefinitionHandler is not null)
-                return await DefinitionHandler(documentUri, line, character, cancellationToken).ConfigureAwait(false);
-
-            return new LanguageServerDefinitionResult(Array.Empty<LanguageLocation>());
+            var result = DefinitionHandler is not null
+                ? await DefinitionHandler(documentUri, line, character, cancellationToken).ConfigureAwait(false)
+                : new LanguageServerDefinitionResult(Array.Empty<LanguageLocation>());
+            return result;
         }
 
         public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
@@ -237,6 +237,27 @@ public sealed class LanguageNavigationTests
                 return;
             await Task.Delay(15);
         }
+    }
+
+    private static async Task WaitForChangeAsync<T>(
+        IObservable<T> changes,
+        Func<bool> predicate)
+    {
+        if (predicate())
+            return;
+
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = changes.Subscribe(_ =>
+        {
+            if (predicate())
+                completion.TrySetResult(null);
+        });
+
+        if (predicate())
+            return;
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -403,7 +424,6 @@ public sealed class LanguageNavigationTests
 
         h.Service.Dismiss();
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(100);
 
         Assert.Equal(LanguageNavigationState.Idle, h.Service.Current.State);
         Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageNavigationState.Ready);

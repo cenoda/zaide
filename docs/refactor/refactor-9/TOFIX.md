@@ -4,7 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, and M2c are implemented and ready for review.
+closeout. M1, M2a, M2b, M2c, and M2d are implemented and ready for review.
 
 ## Current findings
 
@@ -61,6 +61,15 @@ service polling.
 - Focused parity gate: 28/28 passed in 7 seconds.
 - No `Task.Delay` remains in `AgentSessionCoordinatorParityTests`.
 
+## M2d result (2026-07-26)
+
+- Converted language navigation cancellation and language symbol dismissal
+  waits to language-service change-stream signals.
+- Focused language navigation/symbol gate: 32/32 passed.
+- Stale-response tests retain bounded delays because those production paths can
+  complete without publishing a terminal snapshot; replacing those waits
+  requires a request-completion seam rather than a test-only polling trick.
+
 ## Full coverage verification (2026-07-26)
 
 - Ordinary selection: 3029/3029 passed in 9 seconds.
@@ -75,5 +84,6 @@ service polling.
 ## Next task
 
 After review, repeat the unfiltered full regression on a clean test host. If
-it is green, continue with M2d: replace language-service polling waits with
-server/session signals.
+it is green, continue with M2e: add a narrowly scoped request-completion seam
+for stale language responses, then continue the remaining language polling
+inventory.
