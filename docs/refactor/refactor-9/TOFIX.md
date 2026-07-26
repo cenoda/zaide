@@ -61,6 +61,17 @@ service polling.
 - Focused parity gate: 28/28 passed in 7 seconds.
 - No `Task.Delay` remains in `AgentSessionCoordinatorParityTests`.
 
+## Full coverage verification (2026-07-26)
+
+- Ordinary selection: 3029/3029 passed in 9 seconds.
+- Slow integration selection: 36/36 passed in 9 seconds.
+- Combined coverage: 3065/3065 passed with 0 failures.
+- Testhost count remained 7 before and after; external-process count remained
+  3 before and after.
+- The two selections cover every discovered test. The plain unfiltered command
+  remains unsuitable on this contaminated shared host because stale testhost
+  sessions already exist before the run.
+
 ## Next task
 
 After review, repeat the unfiltered full regression on a clean test host. If
