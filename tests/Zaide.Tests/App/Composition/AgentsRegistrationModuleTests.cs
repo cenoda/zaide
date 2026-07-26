@@ -31,6 +31,7 @@ public sealed class AgentsRegistrationModuleTests
         typeof(AgentContextManifestBuilder).FullName!,
         typeof(IAgentContextSnapshotSources).FullName!,
         typeof(IAgentSessionService).FullName!,
+        typeof(IAgentContextSessionPolicyService).FullName!,
         typeof(AgentConversationEventProjection).FullName!,
         typeof(IAgentPanelHost).FullName!,
         typeof(IAgentExecutionService).FullName!,
@@ -90,7 +91,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(20, services.Count);
+        Assert.Equal(21, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -203,6 +204,11 @@ public sealed class AgentsRegistrationModuleTests
         var sessionService2 = provider.GetRequiredService<IAgentSessionService>();
         Assert.Same(sessionService1, sessionService2);
         Assert.IsType<AgentSessionService>(sessionService1);
+
+        var policyService1 = provider.GetRequiredService<IAgentContextSessionPolicyService>();
+        var policyService2 = provider.GetRequiredService<IAgentContextSessionPolicyService>();
+        Assert.Same(policyService1, policyService2);
+        Assert.Same(sessionService1, policyService1);
 
         var manifestBuilder1 = provider.GetRequiredService<AgentContextManifestBuilder>();
         var manifestBuilder2 = provider.GetRequiredService<AgentContextManifestBuilder>();
@@ -380,7 +386,7 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(20, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(21, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

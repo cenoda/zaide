@@ -7,6 +7,7 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
+using Zaide.Features.Conversations.Domain;
 using ConversationDraftStateImpl = Zaide.Features.Conversations.Application.ConversationDraftState;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
@@ -41,6 +42,7 @@ internal static class ConversationsTestSupport
         IConversationStore? store = null,
         IAgentPanelHost? panelHost = null,
         IAgentExecutionCoordinator? executionCoordinator = null,
+        IAgentContextSessionPolicyService? sessionPolicyService = null,
         TownhallConversationUiState? conversationUiState = null,
         TownhallConversationPersistenceBridge? persistenceBridge = null,
         Zaide.Features.Conversations.Infrastructure.ConversationPersistenceService? persistenceService = null,
@@ -57,10 +59,27 @@ internal static class ConversationsTestSupport
             resolvedStore,
             panelHost ?? CreatePanelHost(resolvedCatalog, resolvedStore, resolvedDrafts),
             executionCoordinator ?? new NoOpAgentExecutionCoordinator(),
+            sessionPolicyService ?? new NoOpAgentContextSessionPolicyService(),
             resolvedUiState,
             persistenceBridge,
             persistenceService,
             agentRouter);
+    }
+
+    private sealed class NoOpAgentContextSessionPolicyService : IAgentContextSessionPolicyService
+    {
+        public AgentContextSessionPolicyState GetPolicyState(ConversationId conversationId) =>
+            AgentContextSessionPolicyState.CreateApplicationDefault(
+                conversationId,
+                AgentSessionContextPolicyLevel.Standard);
+
+        public bool TrySetSessionOverride(
+            ConversationId conversationId,
+            AgentSessionContextPolicyLevel level) =>
+            false;
+
+        public bool ClearSessionOverride(ConversationId conversationId) =>
+            false;
     }
 
     private sealed class NoOpAgentExecutionCoordinator : IAgentExecutionCoordinator

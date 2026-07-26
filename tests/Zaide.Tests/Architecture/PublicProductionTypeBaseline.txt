@@ -24,6 +24,9 @@ Zaide.Features.Agents.Application.AgentRouter
 Zaide.Features.Agents.Application.MentionParseResult
 Zaide.Features.Agents.Application.MentionParser
 Zaide.Features.Agents.Application.ParsedRouteIntent
+Zaide.Features.Agents.Contracts.AgentContextSessionPolicyState
+Zaide.Features.Agents.Contracts.AgentSessionContextPolicyLevel
+Zaide.Features.Agents.Contracts.IAgentContextSessionPolicyService
 Zaide.Features.Agents.Contracts.IAgentExecutionCoordinator
 Zaide.Features.Agents.Contracts.IAgentExecutionService
 Zaide.Features.Agents.Contracts.IAgentRouter
@@ -332,6 +335,7 @@ Zaide.Features.Townhall.Domain.TownhallState
 Zaide.Features.Townhall.Domain.WorkspaceAgent
 Zaide.Features.Townhall.Presentation.TownhallAvatarFactory
 Zaide.Features.Townhall.Presentation.TownhallChatPanel
+Zaide.Features.Townhall.Presentation.TownhallContextPolicySelector
 Zaide.Features.Townhall.Presentation.TownhallInputArea
 Zaide.Features.Townhall.Presentation.TownhallPeoplePanel
 Zaide.Features.Townhall.Presentation.TownhallView

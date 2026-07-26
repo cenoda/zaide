@@ -8,7 +8,8 @@ is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
 2026-07-26, including production DI wiring, integration-test proof, and the M3
 publisher corrective pass connecting Editor and Source Control presentation to
 passive snapshot services. M4 disclosure event and indicator implemented with corrective
-pass as of 2026-07-26. M5 remains explicitly not started.
+pass as of 2026-07-26. M5 session policy override and minimal UI complete as of
+2026-07-27. M6 closeout not started.
 
 ## Current work
 
@@ -140,19 +141,49 @@ Production (`src/Features/Agents/`):
 - `ContextDisclosureStatus_IsConsumedByView_ProjectedToNavigationItem`: Architecture proof
   that the property is consumed by the view.
 
+## M5 delivery (2026-07-27) - COMPLETE
+
+Production (`src/Features/Agents/`, `src/Features/Townhall/`, `src/App/Composition/`):
+
+- **Session policy boundary:** `IAgentContextSessionPolicyService` with
+  `AgentContextSessionPolicyState` and `AgentSessionContextPolicyLevel` contracts.
+  `AgentSessionService` stores per-conversation overrides in-memory, resolves
+  `Session override > Application default` under `_sessionsSync`, and uses the
+  resolved policy in `AssembleContextManifestLocked` for subsequent admitted runs.
+- **DI:** `IAgentContextSessionPolicyService` resolves to the same
+  `AgentSessionService` instance via `Program.ResolveAgentContextSessionPolicyService`
+  (composition-root locator; registration module stays locator-free).
+- **Presentation:** `TownhallContextPolicySelector` above the direct-message input;
+  `TownhallViewModel` commands project effective policy, override-active state, and
+  application-default caption without exposing services to the view.
+  `AgentPanelState` carries policy projection fields for panel-bound state.
+
+Tests:
+
+- `Phase18SessionPolicyTests` — application default, override precedence, clear/reset,
+  all four policy levels, session isolation, subsequent-run behavior, existing-run
+  manifest immutability, rejected-run non-assembly, concurrent override updates.
+- `Phase18SessionPolicyUiTests` — selector default/override/clear projection, session
+  boundary reachability, channel-hidden selector, Townhall view consumption proof.
+- Architecture ratchets updated: public baseline 350/646 total; source files 585/540
+  Features; locator site preserved (Agents registration module clean).
+
+Verification (2026-07-27): `dotnet build Zaide.slnx --no-restore` succeeded;
+Phase18 104/104; Architecture 37/37; full fast 3186/3186; `git diff --check` clean.
+
 ## Next task
 
-- [x] M4 audit event and disclosure indicator (2026-07-26) — corrective pass complete.
-- [ ] M5 session policy override and minimal UI (not started).
+- [x] M5 session policy override and minimal UI (2026-07-27).
+- [ ] M6 closeout (not started).
 
 ## Scope boundaries observed
 
-M3 does not implement session policy selector UI, custom policy support, telemetry,
-persistence, backend/provider prompt formatting, legacy backend context consumption,
-terminal scrollback, viewport state, or language identification. M3 does not emit
-`ContextDisclosed` (implemented in M4).
+M5 does not implement Custom policy, persistence, telemetry, memory, viewport state,
+language identification, terminal scrollback, provider-specific prompt formatting,
+raw context preview, or Phase 19/20 backend consumption. M5 does not emit new audit
+events beyond preserving M4 `ContextDisclosed` semantics for the policy applied to
+each admitted run.
 
 M4 implemented `ContextDisclosed` audit event emission and minimal disclosure indicator.
 M4 corrective pass fixed event ordering (ContextDisclosed emitted only after manifest
 attached to AgentBackendRequest) and made disclosure indicator real/visible.
-M5 remains explicitly not started.

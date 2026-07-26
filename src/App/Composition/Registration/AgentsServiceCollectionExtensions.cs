@@ -18,6 +18,7 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentContextManifestBuilder>();
         services.AddSingleton<IAgentContextSnapshotSources, LiveAgentContextSnapshotSources>();
         services.AddSingleton<IAgentSessionService, AgentSessionService>();
+        services.AddSingleton<IAgentContextSessionPolicyService>(Program.ResolveAgentContextSessionPolicyService);
         services.AddSingleton<AgentConversationEventProjection>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();

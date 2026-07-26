@@ -30,6 +30,7 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallPeoplePanel _peoplePanel;
     private readonly TownhallNavigationPanel _navigationPanel;
     private readonly TownhallChatPanel _chatPanel;
+    private readonly TownhallContextPolicySelector _contextPolicySelector;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
@@ -55,6 +56,11 @@ public class TownhallView : Panel, IDisposable
         _peoplePanel = new TownhallPeoplePanel { Background = PaletteTokens.SurfacePanelBrush };
         _navigationPanel = new TownhallNavigationPanel { Background = PaletteTokens.SurfacePanelBrush };
         _chatPanel = new TownhallChatPanel { Background = PaletteTokens.SurfacePanelBrush };
+        _contextPolicySelector = new TownhallContextPolicySelector
+        {
+            Background = PaletteTokens.SurfacePanelBrush,
+            IsVisible = false,
+        };
         _inputArea = new TownhallInputArea
         {
             Background = PaletteTokens.SurfacePanelBrush,
@@ -156,20 +162,23 @@ public class TownhallView : Panel, IDisposable
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
             {
                 filterGroup,
                 _chatPanel,
+                _contextPolicySelector,
                 inputSeparator,
                 _inputArea
             }
         };
         Grid.SetRow(filterGroup, 0);
         Grid.SetRow(_chatPanel, 1);
-        Grid.SetRow(inputSeparator, 2);
-        Grid.SetRow(_inputArea, 3);
+        Grid.SetRow(_contextPolicySelector, 2);
+        Grid.SetRow(inputSeparator, 3);
+        Grid.SetRow(_inputArea, 4);
 
         return chatArea;
     }
@@ -313,6 +322,30 @@ public class TownhallView : Panel, IDisposable
         _disposables.Add(
             _viewModel.WhenAnyValue(x => x.IsInputEnabled)
                 .Subscribe(enabled => _inputArea.IsInputEnabled = enabled));
+
+        _disposables.Add(
+            _viewModel.WhenAnyValue(
+                    x => x.IsContextPolicySelectorVisible,
+                    x => x.ContextPolicySelectorIndex,
+                    x => x.ContextPolicyStatusCaption,
+                    x => x.IsContextPolicyOverrideActive,
+                    x => x.IsInputEnabled)
+                .Subscribe(tuple =>
+                {
+                    var (visible, selectorIndex, statusCaption, isOverrideActive, inputEnabled) = tuple;
+                    _contextPolicySelector.IsSelectorVisible = visible;
+                    _contextPolicySelector.SetPolicyProjection(selectorIndex, statusCaption, isOverrideActive);
+                    _contextPolicySelector.SetSelectorEnabled(inputEnabled);
+                }));
+
+        _contextPolicySelector.PolicySelectionChanged += (_, index) =>
+        {
+            _viewModel?.SetContextPolicyFromSelectorCommand.Execute(index).Subscribe();
+        };
+        _contextPolicySelector.ClearOverrideRequested += (_, _) =>
+        {
+            _viewModel?.ClearContextPolicyOverrideCommand.Execute().Subscribe();
+        };
 
         // Wire filter toggle buttons to FilterMode using a shared helper that unchecks
         // the other two buttons when a button is checked, guarding against redundant

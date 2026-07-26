@@ -13,7 +13,7 @@ namespace Zaide.Features.Agents.Application;
 /// <summary>
 /// Application-owned in-memory Agent Session and run lifecycle coordinator.
 /// </summary>
-internal sealed class AgentSessionService : IAgentSessionService, IDisposable
+internal sealed class AgentSessionService : IAgentSessionService, IAgentContextSessionPolicyService, IDisposable
 {
     private readonly IReadOnlyDictionary<AgentBackendId, IAgentBackend> _backends;
     private readonly AgentEventStream _eventStream;
@@ -23,6 +23,7 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
     private readonly AgentContextManifestBuilder? _contextManifestBuilder;
     private readonly IAgentContextSnapshotSources? _contextSnapshotSources;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
+    private readonly Dictionary<ConversationId, AgentContextPolicyLevel> _sessionPolicyOverrides = new();
     private readonly object _sessionsSync = new();
     private bool _disposed;
 
@@ -357,6 +358,54 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
             }
 
             return CreateRunSnapshotLocked(session, session.ActiveRun);
+        }
+    }
+
+    public AgentContextSessionPolicyState GetPolicyState(ConversationId conversationId)
+    {
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        lock (_sessionsSync)
+        {
+            return CreatePolicyStateLocked(conversationId);
+        }
+    }
+
+    public bool TrySetSessionOverride(
+        ConversationId conversationId,
+        AgentSessionContextPolicyLevel level)
+    {
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        if (!Enum.IsDefined(level))
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), level, "Policy level is invalid.");
+        }
+
+        lock (_sessionsSync)
+        {
+            var domainLevel = AgentContextPolicyLevelMapper.ToDomain(level);
+            _sessionPolicyOverrides[conversationId] = domainLevel;
+            return true;
+        }
+    }
+
+    public bool ClearSessionOverride(ConversationId conversationId)
+    {
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        lock (_sessionsSync)
+        {
+            return _sessionPolicyOverrides.Remove(conversationId);
         }
     }
 
@@ -1069,7 +1118,7 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
 
         try
         {
-            var policy = AgentContextPolicy.CreateApplicationDefault();
+            var policy = ResolveContextPolicyLocked(session.ConversationId);
             var assembledAtUtc = DateTimeOffset.UtcNow;
             return _contextManifestBuilder.Build(
                 session.SessionId,
@@ -1253,5 +1302,37 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
                 RevokeRunBrokerLocked(session.ActiveRun);
             }
         }
+    }
+
+    private AgentContextPolicy ResolveContextPolicyLocked(ConversationId conversationId)
+    {
+        AgentContextSessionOverride? sessionOverride = null;
+        if (_sessionPolicyOverrides.TryGetValue(conversationId, out var overrideLevel))
+        {
+            sessionOverride = new AgentContextSessionOverride(overrideLevel);
+        }
+
+        return new AgentContextPolicy(
+            AgentContextApplicationDefault.Level,
+            sessionOverride);
+    }
+
+    private AgentContextSessionPolicyState CreatePolicyStateLocked(ConversationId conversationId)
+    {
+        var applicationDefault = AgentContextPolicyLevelMapper.ToContract(
+            AgentContextApplicationDefault.Level);
+        var policy = ResolveContextPolicyLocked(conversationId);
+        var effective = AgentContextPolicyLevelMapper.ToContract(policy.EffectiveLevel);
+        var isOverrideActive = policy.SessionOverride?.IsActive == true;
+        var statusCaption = isOverrideActive
+            ? AgentContextSessionPolicyState.FormatOverrideCaption(effective)
+            : AgentContextSessionPolicyState.FormatApplicationDefaultCaption(applicationDefault);
+
+        return new AgentContextSessionPolicyState(
+            conversationId,
+            applicationDefault,
+            effective,
+            isOverrideActive,
+            statusCaption);
     }
 }

@@ -51,6 +51,10 @@ class Program
             services.GetService<IConversationDraftState>());
     }
 
+    internal static IAgentContextSessionPolicyService ResolveAgentContextSessionPolicyService(
+        IServiceProvider services) =>
+        (IAgentContextSessionPolicyService)services.GetRequiredService<IAgentSessionService>();
+
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

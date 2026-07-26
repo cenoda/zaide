@@ -123,4 +123,36 @@ public class AgentPanelState : ReactiveObject
         get => _contextDisclosureStatus;
         set => this.RaiseAndSetIfChanged(ref _contextDisclosureStatus, value);
     }
+
+    /// <summary>
+    /// Human-readable resolved context policy for this panel's session.
+    /// Phase 18 M5: Indicates effective policy and whether a session override is active.
+    /// </summary>
+    private string _contextPolicyStatusCaption = string.Empty;
+    public string ContextPolicyStatusCaption
+    {
+        get => _contextPolicyStatusCaption;
+        set => this.RaiseAndSetIfChanged(ref _contextPolicyStatusCaption, value);
+    }
+
+    /// <summary>
+    /// True when this panel's session has an explicit policy override.
+    /// </summary>
+    private bool _isContextPolicyOverrideActive;
+    public bool IsContextPolicyOverrideActive
+    {
+        get => _isContextPolicyOverrideActive;
+        set => this.RaiseAndSetIfChanged(ref _isContextPolicyOverrideActive, value);
+    }
+
+    /// <summary>
+    /// Selector index for the context policy combo:
+    /// 0 = application default, 1 = Off, 2 = Minimal, 3 = Standard, 4 = Detailed.
+    /// </summary>
+    private int _contextPolicySelectorIndex;
+    public int ContextPolicySelectorIndex
+    {
+        get => _contextPolicySelectorIndex;
+        set => this.RaiseAndSetIfChanged(ref _contextPolicySelectorIndex, value);
+    }
 }

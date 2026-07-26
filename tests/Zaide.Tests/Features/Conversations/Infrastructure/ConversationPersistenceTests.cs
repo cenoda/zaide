@@ -68,8 +68,8 @@ public sealed class ConversationPersistenceTests : IDisposable
             store,
             host,
             coordinator,
-            uiState,
-            bridge);
+            conversationUiState: uiState,
+            persistenceBridge: bridge);
 
         var channelId = vm.ActiveChannelId!;
         store.AppendEntry(
@@ -123,9 +123,9 @@ public sealed class ConversationPersistenceTests : IDisposable
             reloadStore,
             reloadHost,
             reloadCoordinator,
-            reloadUiState,
-            reloadBridge,
-            reloadPersistence);
+            conversationUiState: reloadUiState,
+            persistenceBridge: reloadBridge,
+            persistenceService: reloadPersistence);
 
         Assert.Equal(channelId, reloadVm.ActiveChannelId);
         Assert.True(reloadStore.TryGetChannelConversation(channelId, out var restoredChannel));

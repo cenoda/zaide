@@ -6,11 +6,12 @@
 evaluation and context assembly complete as of 2026-07-26. M3 run integration and
 consumption boundary complete as of 2026-07-26 (including production DI corrective
 pass). M4 disclosure event and indicator implementation complete with corrective
-pass as of 2026-07-26. M5 not started.
+pass as of 2026-07-26. M5 session policy override and minimal UI complete as of
+2026-07-27.
 
-**Authorized work:** M0–M4 implementation is complete. M5 remains unauthorized
-until explicitly started. No persistence, memory, raw traces, provider-specific
-prompt tuning, or Phase 19/20 work is authorized.
+**Authorized work:** M0–M5 implementation is complete. M6 closeout remains
+unauthorized until explicitly started. No persistence, memory, raw traces,
+provider-specific prompt tuning, or Phase 19/20 work is authorized.
 
 **Planning baseline:**
 

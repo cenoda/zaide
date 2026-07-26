@@ -33,6 +33,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IConversationStore _conversationStore;
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _executionCoordinator;
+    private readonly IAgentContextSessionPolicyService _sessionPolicyService;
     private readonly IAgentRouter? _agentRouter;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
@@ -41,6 +42,10 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
     private bool _isDirectSendBusy;
+    private bool _isContextPolicySelectorVisible;
+    private string _contextPolicyStatusCaption = string.Empty;
+    private bool _isContextPolicyOverrideActive;
+    private int _contextPolicySelectorIndex;
 
     /// <summary>
     /// Gets the list of channels.
@@ -191,6 +196,53 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     public string ActiveConversationInputPlaceholder { get; private set; } = "Message...";
 
     /// <summary>
+    /// True when the active conversation is a direct agent session that exposes
+    /// the context policy selector.
+    /// </summary>
+    public bool IsContextPolicySelectorVisible
+    {
+        get => _isContextPolicySelectorVisible;
+        private set => this.RaiseAndSetIfChanged(ref _isContextPolicySelectorVisible, value);
+    }
+
+    /// <summary>
+    /// Resolved context policy caption for the active direct conversation.
+    /// </summary>
+    public string ContextPolicyStatusCaption
+    {
+        get => _contextPolicyStatusCaption;
+        private set => this.RaiseAndSetIfChanged(ref _contextPolicyStatusCaption, value);
+    }
+
+    /// <summary>
+    /// True when the active direct conversation has a session policy override.
+    /// </summary>
+    public bool IsContextPolicyOverrideActive
+    {
+        get => _isContextPolicyOverrideActive;
+        private set => this.RaiseAndSetIfChanged(ref _isContextPolicyOverrideActive, value);
+    }
+
+    /// <summary>
+    /// Combo selector index for the active direct conversation policy.
+    /// </summary>
+    public int ContextPolicySelectorIndex
+    {
+        get => _contextPolicySelectorIndex;
+        private set => this.RaiseAndSetIfChanged(ref _contextPolicySelectorIndex, value);
+    }
+
+    /// <summary>
+    /// Command to select a context policy level from the selector index.
+    /// </summary>
+    public ReactiveCommand<int, Unit> SetContextPolicyFromSelectorCommand { get; }
+
+    /// <summary>
+    /// Command to clear the session policy override for the active direct conversation.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> ClearContextPolicyOverrideCommand { get; }
+
+    /// <summary>
     /// Command to select a channel by its ID.
     /// Updates Channel.IsActive flags, active channel state, and message list.
     /// </summary>
@@ -221,6 +273,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         IConversationStore conversationStore,
         IAgentPanelHost panelHost,
         IAgentExecutionCoordinator executionCoordinator,
+        IAgentContextSessionPolicyService sessionPolicyService,
         IAgentRouter? agentRouter = null)
         : this(
             state,
@@ -228,6 +281,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             conversationStore,
             panelHost,
             executionCoordinator,
+            sessionPolicyService,
             new TownhallConversationUiState(),
             persistenceBridge: null,
             persistenceService: null,
@@ -241,6 +295,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         IConversationStore conversationStore,
         IAgentPanelHost panelHost,
         IAgentExecutionCoordinator executionCoordinator,
+        IAgentContextSessionPolicyService sessionPolicyService,
         TownhallConversationUiState conversationUiState,
         IConversationWorkspacePersistenceBridge? persistenceBridge,
         ConversationPersistenceService? persistenceService,
@@ -252,6 +307,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
         _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
         _executionCoordinator = executionCoordinator ?? throw new ArgumentNullException(nameof(executionCoordinator));
+        _sessionPolicyService = sessionPolicyService
+            ?? throw new ArgumentNullException(nameof(sessionPolicyService));
         _agentRouter = agentRouter;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
@@ -324,6 +381,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         OpenDirectConversationCommand = ReactiveCommand.Create<ActorId>(OpenDirectConversation);
 
         SendMessageCommand = ReactiveCommand.CreateFromTask(SendMessageAsync);
+        SetContextPolicyFromSelectorCommand = ReactiveCommand.Create<int>(ApplyContextPolicySelection);
+        ClearContextPolicyOverrideCommand = ReactiveCommand.Create(ClearActiveContextPolicyOverride);
         UpdateDirectSendBusyTracking();
     }
 
@@ -585,7 +644,9 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private AgentPanelState EnsurePanelForDirectConversation(Conversation conversation)
     {
         var peerActorId = ResolveDirectPeerActorId(conversation);
-        return _panelHost.GetOrCreatePanelForActor(peerActorId);
+        var panel = _panelHost.GetOrCreatePanelForActor(peerActorId);
+        RefreshContextPolicyProjection(conversation.Id);
+        return panel;
     }
 
     private ActorId ResolveDirectPeerActorId(Conversation conversation)
@@ -989,6 +1050,120 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         {
             ActiveConversationInputPlaceholder = placeholder;
             this.RaisePropertyChanged(nameof(ActiveConversationInputPlaceholder));
+        }
+
+        RefreshActiveContextPolicyProjection();
+    }
+
+    private void ApplyContextPolicySelection(int selectorIndex)
+    {
+        if (_state.ActiveConversationId is not { } activeConversationId
+            || !_conversationStore.TryGet(activeConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            return;
+        }
+
+        if (selectorIndex <= 0)
+        {
+            _sessionPolicyService.ClearSessionOverride(activeConversationId);
+        }
+        else if (TryMapSelectorIndexToPolicyLevel(selectorIndex, out var level))
+        {
+            _sessionPolicyService.TrySetSessionOverride(activeConversationId, level);
+        }
+        else
+        {
+            return;
+        }
+
+        RefreshContextPolicyProjection(activeConversationId);
+    }
+
+    private void ClearActiveContextPolicyOverride()
+    {
+        if (_state.ActiveConversationId is not { } activeConversationId)
+        {
+            return;
+        }
+
+        _sessionPolicyService.ClearSessionOverride(activeConversationId);
+        RefreshContextPolicyProjection(activeConversationId);
+    }
+
+    private void RefreshActiveContextPolicyProjection()
+    {
+        if (_state.ActiveConversationId is not { } activeConversationId
+            || !_conversationStore.TryGet(activeConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            IsContextPolicySelectorVisible = false;
+            ContextPolicyStatusCaption = string.Empty;
+            IsContextPolicyOverrideActive = false;
+            ContextPolicySelectorIndex = 0;
+            return;
+        }
+
+        IsContextPolicySelectorVisible = true;
+        RefreshContextPolicyProjection(activeConversationId);
+    }
+
+    private void RefreshContextPolicyProjection(ConversationId conversationId)
+    {
+        var policyState = _sessionPolicyService.GetPolicyState(conversationId);
+        var selectorIndex = MapPolicyStateToSelectorIndex(policyState);
+
+        ContextPolicyStatusCaption = policyState.StatusCaption;
+        IsContextPolicyOverrideActive = policyState.IsOverrideActive;
+        ContextPolicySelectorIndex = selectorIndex;
+
+        var panel = _panelHost.Panels.FirstOrDefault(p => p.ConversationId == conversationId);
+        if (panel is not null)
+        {
+            panel.ContextPolicyStatusCaption = policyState.StatusCaption;
+            panel.IsContextPolicyOverrideActive = policyState.IsOverrideActive;
+            panel.ContextPolicySelectorIndex = selectorIndex;
+        }
+    }
+
+    private static int MapPolicyStateToSelectorIndex(AgentContextSessionPolicyState policyState)
+    {
+        if (!policyState.IsOverrideActive)
+        {
+            return 0;
+        }
+
+        return policyState.EffectiveLevel switch
+        {
+            AgentSessionContextPolicyLevel.Off => 1,
+            AgentSessionContextPolicyLevel.Minimal => 2,
+            AgentSessionContextPolicyLevel.Standard => 3,
+            AgentSessionContextPolicyLevel.Detailed => 4,
+            _ => 0,
+        };
+    }
+
+    private static bool TryMapSelectorIndexToPolicyLevel(
+        int selectorIndex,
+        out AgentSessionContextPolicyLevel level)
+    {
+        switch (selectorIndex)
+        {
+            case 1:
+                level = AgentSessionContextPolicyLevel.Off;
+                return true;
+            case 2:
+                level = AgentSessionContextPolicyLevel.Minimal;
+                return true;
+            case 3:
+                level = AgentSessionContextPolicyLevel.Standard;
+                return true;
+            case 4:
+                level = AgentSessionContextPolicyLevel.Detailed;
+                return true;
+            default:
+                level = default;
+                return false;
         }
     }
 

@@ -195,9 +195,12 @@ public class AgentPanelStateTests
             "AgentName",
             "AvatarResourceKey",
             "ContextDisclosureStatus",
+            "ContextPolicySelectorIndex",
+            "ContextPolicyStatusCaption",
             "ConversationId",
             "DraftInput",
             "IsBusy",
+            "IsContextPolicyOverrideActive",
             "OutputHistory",
             "PanelId",
             "Status"
