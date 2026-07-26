@@ -2,16 +2,12 @@
 
 ## Status and authorization
 
-**Phase 18 status:** M0 accepted. M1 complete (including corrective pass). M2 policy
-evaluation and context assembly complete as of 2026-07-26. M3 run integration and
-consumption boundary complete as of 2026-07-26 (including production DI corrective
-pass). M4 disclosure event and indicator implementation complete with corrective
-pass as of 2026-07-26. M5 session policy override and minimal UI complete as of
-2026-07-27.
+**Phase 18 status:** **Closed.** M0–M5 implementation complete. M6 closeout
+complete as of 2026-07-27. All milestones pass with full verification evidence.
 
-**Authorized work:** M0–M5 implementation is complete. M6 closeout remains
-unauthorized until explicitly started. No persistence, memory, raw traces,
-provider-specific prompt tuning, or Phase 19/20 work is authorized.
+**Authorized work:** Phase 18 is complete. No further Phase 18 work is
+authorized. No persistence, memory, raw traces, provider-specific prompt
+tuning, or Phase 19/20 work was implemented.
 
 **Planning baseline:**
 
@@ -622,25 +618,25 @@ Stop work and ask the user if any of the following occur:
 
 ## Exit conditions
 
-- [ ] Build succeeds: `dotnet build Zaide.slnx --no-restore`
-- [ ] All milestone test gates pass
-- [ ] Full fast suite passes: `dotnet test Zaide.slnx --no-build`
-- [ ] Serial fallback passes (if fast mode has known flake)
-- [ ] Architecture inventory and bypass ratchets updated and passing
-- [ ] Context policy produces correct manifests at each level (Off, Minimal,
+- [x] Build succeeds: `dotnet build Zaide.slnx --no-restore`
+- [x] All milestone test gates pass
+- [x] Full fast suite passes: `dotnet test Zaide.slnx --no-build` (3194/3194)
+- [x] Serial fallback passes (3194/3194)
+- [x] Architecture inventory and bypass ratchets updated and passing (37/37)
+- [x] Context policy produces correct manifests at each level (Off, Minimal,
       Standard, Detailed) with test evidence
-- [ ] Hard exclusions enforced at all policy levels with test evidence
-- [ ] Token budget enforced with deterministic truncation and test evidence
-- [ ] Redaction boundary tested with representative secret patterns
-- [ ] Inert delivery confirmed: legacy backend does not read context manifest
-- [ ] Redaction fail-closed behavior tested (failed redaction drops item)
-- [ ] Hard exclusions have no user-selectable escape hatch
-- [ ] Contract-level snapshot seams verified for Editor, Terminal, Source Control
-- [ ] Disclosure indicator accessible and truthful
-- [ ] Session policy override works with correct precedence
-- [ ] `git diff --check` clean
-- [ ] No Phase 19/20 work implemented
-- [ ] Documentation truth-sync complete
+- [x] Hard exclusions enforced at all policy levels with test evidence
+- [x] Token budget enforced with deterministic truncation and test evidence
+- [x] Redaction boundary tested with representative secret patterns
+- [x] Inert delivery confirmed: legacy backend does not read context manifest
+- [x] Redaction fail-closed behavior tested (failed redaction drops item)
+- [x] Hard exclusions have no user-selectable escape hatch
+- [x] Contract-level snapshot seams verified for Editor, Terminal, Source Control
+- [x] Disclosure indicator accessible and truthful
+- [x] Session policy override works with correct precedence
+- [x] `git diff --check` clean
+- [x] No Phase 19/20 work implemented
+- [x] Documentation truth-sync complete
 
 ---
 

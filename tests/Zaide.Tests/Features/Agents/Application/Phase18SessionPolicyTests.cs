@@ -337,6 +337,45 @@ public sealed class Phase18SessionPolicyTests
             "message",
             CancellationToken.None);
 
+    // ── M6 adversarial tests ──────────────────────────────────────────
+
+    [Fact]
+    public async Task EndAsync_RetainsSessionPolicyOverride_ForReusedConversationId()
+    {
+        // M6: After EndAsync, the session is destroyed but the in-memory
+        // policy override is NOT cleared. If the same ConversationId is
+        // reused for a new session, the previous override persists.
+        // This is by design: policy overrides are conversation-scoped,
+        // not session-scoped. Persistence is deferred to a later phase.
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+        var sessionService = CreateSessionService(backend);
+        var conversationId = ConversationId.NewDirect();
+
+        // Set an override and verify it takes effect
+        sessionService.TrySetSessionOverride(
+            conversationId, AgentSessionContextPolicyLevel.Minimal);
+        await SendAsync(sessionService, backend, conversationId);
+        var firstManifest = backend.LastExecutionContext!.ContextManifest;
+        Assert.NotNull(firstManifest);
+        Assert.Equal(AgentContextPolicyLevel.Minimal, firstManifest.PolicyLevelApplied);
+
+        // End the session
+        await sessionService.EndAsync(conversationId);
+
+        // After EndAsync, the policy state for this conversation still
+        // reflects the override (it was not cleared by EndAsync)
+        var state = sessionService.GetPolicyState(conversationId);
+        Assert.Equal(AgentSessionContextPolicyLevel.Minimal, state.EffectiveLevel);
+        Assert.True(state.IsOverrideActive);
+
+        // Clear the override explicitly
+        sessionService.ClearSessionOverride(conversationId);
+        var clearedState = sessionService.GetPolicyState(conversationId);
+        Assert.False(clearedState.IsOverrideActive);
+        Assert.Equal(AgentSessionContextPolicyLevel.Standard, clearedState.EffectiveLevel);
+    }
+
     private static AgentContextPolicyLevel MapToDomain(AgentSessionContextPolicyLevel level) =>
         level switch
         {

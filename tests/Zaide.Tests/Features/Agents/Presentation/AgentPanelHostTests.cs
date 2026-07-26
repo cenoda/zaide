@@ -470,4 +470,60 @@ public class AgentPanelHostTests
         Assert.Same(panel, host.ActivePanel);
         Assert.Single(host.Panels);
     }
+
+    // ── M6 adversarial: subscription disposal on teardown ─────────────
+
+    [Fact]
+    public void ClosePanel_DisposesOutputProjection_NoLeakAfterClose()
+    {
+        // M6: When a panel is closed, its output history projection must
+        // be disposed so it stops subscribing to conversation entry
+        // appends. Verify the panel is removed from the host and the
+        // projection is cleaned up by checking that subsequent
+        // conversation appends do not reach the closed panel.
+        var store = ConversationsTestSupport.CreateStore();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store);
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var panelId = panel.PanelId;
+
+        // Append a message while panel is open — it should appear
+        AgentPanelTestSupport.AppendUserChat(store, panel, "before close");
+        var beforeLines = panel.OutputHistory.ToArray();
+
+        // Close the panel
+        host.ClosePanel(panelId);
+
+        // Append another message after close — it should NOT reach
+        // the panel's output history since the projection was disposed.
+        AgentPanelTestSupport.AppendUserChat(store, panel, "after close");
+        var afterLines = panel.OutputHistory.ToArray();
+
+        // Output history is preserved but frozen after close
+        Assert.Equal(beforeLines.Length, afterLines.Length);
+    }
+
+    [Fact]
+    public void ClosePanel_DetachesDraftSync_ClearsDraftHandler()
+    {
+        // M6: When a panel is closed, its draft PropertyChanged handler
+        // must be removed so DraftInput changes no longer write to the
+        // conversation draft state.
+        var store = ConversationsTestSupport.CreateStore();
+        var draftState = ConversationsTestSupport.CreateDraftState();
+        var host = ConversationsTestSupport.CreatePanelHost(store: store, draftState: draftState);
+        var panel = host.CreatePanel("agent-1", "Alpha", "avatar_alpha");
+        var conversationId = panel.ConversationId;
+        var panelId = panel.PanelId;
+
+        // Draft sync works while panel is open
+        panel.DraftInput = "in-progress draft";
+        Assert.Equal("in-progress draft", draftState.GetDraft(conversationId));
+
+        // Close the panel
+        host.ClosePanel(panelId);
+
+        // After close, changing DraftInput does NOT sync to draft state
+        panel.DraftInput = "post-close draft";
+        Assert.Equal("in-progress draft", draftState.GetDraft(conversationId));
+    }
 }

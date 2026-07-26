@@ -9,7 +9,7 @@ is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
 publisher corrective pass connecting Editor and Source Control presentation to
 passive snapshot services. M4 disclosure event and indicator implemented with corrective
 pass as of 2026-07-26. M5 session policy override and minimal UI complete as of
-2026-07-27. M6 closeout not started.
+2026-07-27. M6 closeout complete as of 2026-07-27.
 
 ## Current work
 
@@ -174,7 +174,90 @@ Phase18 104/104; Architecture 37/37; full fast 3186/3186; `git diff --check` cle
 ## Next task
 
 - [x] M5 session policy override and minimal UI (2026-07-27).
-- [ ] M6 closeout (not started).
+- [x] M6 closeout (2026-07-27).
+
+## M6 closeout delivery (2026-07-27) - COMPLETE
+
+### Adversarial tests added
+
+All M6 adversarial tests added to existing test files:
+
+**Disclosure event adversarial (`Phase18DisclosureEventTests.cs`):**
+- `ContextDisclosurePayload_NeverExposesRawSnapshotContent` — reflection verifies
+  no Content/RawContent/AgentContextManifest/AgentContextItem properties on
+  `AgentContextDisclosurePayload`.
+- `ContextDisclosed_NoRawItemContentInDisclosureStatusText` — verified disclosure
+  event payload contains only metadata (source IDs, counts), never file content.
+- `AssemblyFailure_EmitsSafeReasonWithoutRawSnapshotContent` — null sources
+  skip silently without leaking content or exception details.
+- `ContextDisclosurePayload_IdentityMatchesRunSessionAndConversation` — verified
+  each ContextDisclosed event carries correct run/session/conversation tuple
+  across multiple runs.
+- `RejectedRun_DoesNotEmitContextDisclosed_Adversarial` — end-to-end gated
+  run rejection proves ContextDisclosed is never emitted for rejected runs.
+
+**Session policy adversarial (`Phase18SessionPolicyTests.cs`):**
+- `EndAsync_RetainsSessionPolicyOverride_ForReusedConversationId` — documented
+  and tested the intended behavior: `EndAsync` destroys the session but does
+  NOT clear in-memory policy overrides. Overrides are conversation-scoped,
+  not session-scoped. Persistence is deferred.
+
+**Agent panel teardown adversarial (`AgentPanelHostTests.cs`):**
+- `ClosePanel_DisposesOutputProjection_NoLeakAfterClose` — verified output
+  history projection is disposed on panel close; subsequent appends do not
+  reach closed panel.
+- `ClosePanel_DetachesDraftSync_ClearsDraftHandler` — verified DraftInput
+  PropertyChanged handler is removed on panel close.
+
+### EndAsync policy override behavior (decided and documented)
+
+After `EndAsync`, the `_sessionPolicyOverrides` entry for the conversation is
+NOT cleared. If a new session is later created for the same `ConversationId`,
+the previous override still applies. This is by design:
+
+- Policy overrides are **conversation-scoped**, not session-scoped.
+- `EndAsync` destroys the session but the conversation may be reused.
+- Users must call `ClearSessionOverride` explicitly to reset.
+- No persistence is implemented in Phase 18; overrides are in-memory only.
+
+### Coverage summary
+
+All M6 requirements are now covered by tests:
+
+| Requirement | Tests |
+|-------------|-------|
+| Off policy → no context | 3 (M2 assembly + M5 session) |
+| Hard exclusions cannot be bypassed | 4 (M2 assembly + M2 contracts) |
+| Redaction fail-closed | 2 (M2 assembly + M2 contracts) |
+| Raw content/secrets never in UI/events/errors | 2 (M6 adversarial + M4 disclosure) |
+| Budget never partially splits item | 3 (M2 assembly) |
+| Session override affects only subsequent runs | 2 (M5 session) |
+| Existing run manifest immutable after policy change | 3 (M5 session + M3 integration) |
+| Rejected runs: no assembly, no ContextDisclosed | 4 (M5 session + M4 disclosure + M6 adversarial) |
+| Legacy backend inert to AgentContextManifest | 3 (M1 ratchets + M3 integration) |
+| ContextDisclosed identity matches run/session/conversation | 3 (M4 disclosure + M6 adversarial) |
+| Architecture inventory, visibility, bypass ratchets | 5 (M1 bypass ratchets + visibility) |
+| M5 selector accessible, truthful, session-scoped, resettable | 5 (M5 UI) |
+| Townhall/AgentPanel subscriptions disposed on teardown | 4 (TownhallViewModel dispose + M6 AgentPanelHost) |
+
+### Verification (2026-07-27)
+
+| Command | Result |
+|---------|--------|
+| `dotnet build Zaide.slnx --no-restore` | 0 errors, 0 warnings |
+| `dotnet test --filter "FullyQualifiedName~Phase18"` | 110/110 passed |
+| `dotnet test --filter "FullyQualifiedName~Architecture"` | 37/37 passed |
+| `dotnet test Zaide.slnx --no-build` | 3194/3194 passed |
+| `dotnet test Zaide.slnx --no-build --settings slow.runsettings` | 3194/3194 passed |
+| `git diff --check` | Clean |
+
+### Scope boundaries confirmed
+
+M6 did not introduce: Custom policy, persistence, telemetry, memory, raw
+context preview, viewport state, language ID, terminal scrollback,
+provider-specific prompt formatting, Phase 19, or Phase 20 work.
+
+Phase 18 M0–M6 complete. All gates pass.
 
 ## Scope boundaries observed
 
