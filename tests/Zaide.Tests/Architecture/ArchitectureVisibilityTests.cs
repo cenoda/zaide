@@ -234,10 +234,9 @@ public sealed class ArchitectureVisibilityTests
         // M5 residual: 2 FindingIds (0 NS + 2 LOC).
         Assert.Equal(2, LegacyArchitectureAllowlist.Entries.Count);
         Assert.Equal(2, LegacyArchitectureAllowlist.ApprovedFindingIds.Count);
-        Assert.Equal(
-            0,
+        Assert.Empty(
             LegacyArchitectureAllowlist.EntriesForCategory(
-                ArchitectureRatchet.CategoryNamespaceDirection).Count);
+                ArchitectureRatchet.CategoryNamespaceDirection));
         Assert.Equal(
             2,
             LegacyArchitectureAllowlist.EntriesForCategory(

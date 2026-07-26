@@ -69,9 +69,8 @@ public sealed class ArchitectureRatchetTests
 
         // M5 residual size: 0 namespace edges + 2 locator sites + 0 root admissions.
         Assert.Equal(2, liveIds.Length);
-        Assert.Equal(
-            0,
-            LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryNamespaceDirection).Count);
+        Assert.Empty(
+            LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryNamespaceDirection));
         Assert.Equal(
             2,
             LegacyArchitectureAllowlist.EntriesForCategory(ArchitectureRatchet.CategoryLocatorSite).Count);
@@ -120,7 +119,7 @@ public sealed class ArchitectureRatchetTests
         Assert.DoesNotContain(live, v => v.RelativePath == "src/Features/SourceControl/Application/SourceControlDiffTabService.cs");
         Assert.DoesNotContain(live, v => v.RelativePath.Contains("TerminalSessionFactory", StringComparison.Ordinal));
         Assert.DoesNotContain(live, v => v.RelativePath.Contains("ITerminalSessionFactory", StringComparison.Ordinal));
-        Assert.Equal(0, live.Count);
+        Assert.Empty(live);
     }
 
     [Fact]

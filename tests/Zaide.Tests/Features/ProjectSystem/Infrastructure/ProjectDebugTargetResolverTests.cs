@@ -31,7 +31,13 @@ public sealed class ProjectDebugTargetResolverTests : IDisposable
         public bool IsRunning => false;
         public int? ProcessId => null;
         public event Action<ManagedProcessOutputLine>? OutputReceived;
-        public event Action? ProcessStarted;
+
+        // Interface member the resolver never subscribes to in these tests.
+        public event Action? ProcessStarted
+        {
+            add { }
+            remove { }
+        }
 
         public Task<ManagedProcessRunResult> RunAsync(
             ManagedProcessStartRequest request,
