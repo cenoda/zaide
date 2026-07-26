@@ -547,4 +547,35 @@ public class TownhallViewModelTests
         Assert.Contains(latest, m => m.Content == "Hello from channel send");
     }
 
+    [Fact]
+    public void Dispose_UnsubscribesPanelAndStoreEventHandlers()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var panelHost = ConversationsTestSupport.CreatePanelHost(store: store);
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(store: store, panelHost: panelHost);
+
+        var panel = panelHost.CreatePanel();
+        vm.RefreshDirectNavItems();
+        var navItem = Assert.Single(vm.DirectNavItems, i => i.ConversationId == panel.ConversationId);
+
+        panel.ContextDisclosureStatus = "before-dispose";
+        Assert.Equal("before-dispose", navItem.ContextDisclosureStatus);
+
+        vm.Dispose();
+
+        panel.ContextDisclosureStatus = "after-dispose";
+        Assert.Equal("before-dispose", navItem.ContextDisclosureStatus);
+
+        var directCountBeforeAppend = vm.DirectNavItems.Count;
+        var secondPanel = panelHost.CreatePanel();
+        store.AppendEntry(
+            secondPanel.ConversationId,
+            ConversationEntry.UserChat(
+                ConversationEntryId.New(),
+                ActorId.HumanUser,
+                DateTimeOffset.UtcNow,
+                "post-dispose"));
+        Assert.Equal(directCountBeforeAppend, vm.DirectNavItems.Count);
+    }
+
 }

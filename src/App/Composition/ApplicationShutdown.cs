@@ -8,6 +8,7 @@ using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.Terminal.Presentation;
+using Zaide.Features.Townhall.Presentation;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.App.Composition;
@@ -67,6 +68,8 @@ internal static class ApplicationShutdown
         // Optional hosts — may be absent in focused test providers.
         DisposeOwner(services.GetService<IFileTreeService>());
         DisposeOwner(services.GetService<ITerminalHost>());
+
+        DisposeResolvedService<TownhallViewModel>(services);
 
         // Revoke pending action authority before process exit.
         DisposeOwner(services.GetService<IAgentSessionService>());

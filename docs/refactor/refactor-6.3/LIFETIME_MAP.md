@@ -100,7 +100,7 @@ row. `ApplicationShutdown` is not registered in DI.
 | 24 | `MainWindowViewModel` | Singleton | Application | Application DI singleton shell hub. `Dispose` on `MainWindow` `WhenActivated` cleanup disposes `CompositeDisposable` activation subscriptions. |
 | 25 | `CommandPaletteViewModel` | Singleton | Application | Application DI singleton palette state. Not `IDisposable`. |
 | 26 | `TownhallState` | Singleton | Application | Application DI singleton in-memory townhall state bag. Not `IDisposable`. |
-| 27 | `TownhallViewModel` | Singleton | Projection | Application DI singleton projecting `TownhallState` into the townhall surface. Not `IDisposable`. |
+| 27 | `TownhallViewModel` | Singleton | Projection | Application DI singleton projecting `TownhallState` into the townhall surface. `IDisposable` tears down panel/store subscriptions and direct-busy tracking; disposed via `ApplicationShutdown.Run`. |
 | 28 | `SourceControlViewModel` | Singleton | Projection | Application DI singleton projecting git snapshots from `ISourceControlSnapshotOrchestrator` / mutation seams. Not `IDisposable`. |
 | 29 | `IGitRepositoryService` → `GitRepositoryService` | Singleton | Application | Application DI singleton stateless LibGit2Sharp read seam. Not `IDisposable`. |
 | 30 | `ISourceControlSnapshotOrchestrator` → orchestrator | Singleton | Application | Application DI singleton (`SourceControlSnapshotOrchestrator`). Stateless refresh orchestration; not `IDisposable`. |

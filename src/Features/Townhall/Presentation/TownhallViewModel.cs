@@ -26,7 +26,7 @@ namespace Zaide.Features.Townhall.Presentation;
 /// Initializes explicit in-memory session seed state for first run.
 /// Messages are stored per-channel in TownhallState.ChannelMessages.
 /// </summary>
-public class TownhallViewModel : ReactiveObject
+public class TownhallViewModel : ReactiveObject, IDisposable
 {
     private readonly TownhallState _state;
     private readonly IActorCatalog _actorCatalog;
@@ -37,6 +37,7 @@ public class TownhallViewModel : ReactiveObject
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
+    private bool _disposed;
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
     private bool _isDirectSendBusy;
@@ -256,24 +257,7 @@ public class TownhallViewModel : ReactiveObject
         _persistenceBridge = persistenceBridge;
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
-
-        _panelHost.Panels.CollectionChanged += (_, args) =>
-        {
-            if (args.NewItems != null)
-            {
-                foreach (AgentPanelState panel in args.NewItems)
-                {
-                    panel.PropertyChanged += OnAgentPanelPropertyChanged;
-                }
-            }
-            if (args.OldItems != null)
-            {
-                foreach (AgentPanelState panel in args.OldItems)
-                {
-                    panel.PropertyChanged -= OnAgentPanelPropertyChanged;
-                }
-            }
-        };
+        _panelHost.Panels.CollectionChanged += OnAgentPanelsCollectionChanged;
         foreach (var panel in _panelHost.Panels)
         {
             panel.PropertyChanged += OnAgentPanelPropertyChanged;
@@ -1027,6 +1011,25 @@ public class TownhallViewModel : ReactiveObject
         return "Direct";
     }
 
+    private void OnAgentPanelsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (args.NewItems != null)
+        {
+            foreach (AgentPanelState panel in args.NewItems)
+            {
+                panel.PropertyChanged += OnAgentPanelPropertyChanged;
+            }
+        }
+
+        if (args.OldItems != null)
+        {
+            foreach (AgentPanelState panel in args.OldItems)
+            {
+                panel.PropertyChanged -= OnAgentPanelPropertyChanged;
+            }
+        }
+    }
+
     private void OnAgentPanelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AgentPanelState.ContextDisclosureStatus) && sender is AgentPanelState panel)
@@ -1037,6 +1040,25 @@ public class TownhallViewModel : ReactiveObject
                 navItem.ContextDisclosureStatus = panel.ContextDisclosureStatus;
             }
         }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _conversationStore.EntryAppended -= OnConversationEntryAppended;
+        _panelHost.Panels.CollectionChanged -= OnAgentPanelsCollectionChanged;
+        foreach (var panel in _panelHost.Panels.ToArray())
+        {
+            panel.PropertyChanged -= OnAgentPanelPropertyChanged;
+        }
+
+        _directBusySubscription.Dispose();
     }
 
     private System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage> ApplyFilter()
