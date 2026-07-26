@@ -59,6 +59,7 @@ coverage*/
 BenchmarkDotNet.Artifacts/
 
 ## Misc
+.opencode/
 *.tmp
 *.bak
 *.swp
