@@ -36,6 +36,28 @@ User audit returned NO-GO with 8 findings. All addressed in amended plan:
    modifies existing types, not just additive files).
 8. **Missing TOFIX (Medium):** This file created.
 
+## Residual findings (2026-07-26)
+
+User re-audit after first amendment. 5 residual issues addressed:
+
+1. **Architecture test baseline:** Reconciled. 31 tests in
+   `Zaide.Tests.Architecture` namespace + 1 cross-namespace match
+   (`Phase17AdversarialCloseoutTests.ArchitectureInventory_...`).
+   Authoritative baseline for Phase 18 ratchets: **31**.
+2. **Viewport state:** Definitively excluded from Phase 18. No longer
+   deferred to M1.
+3. **Language ID:** Definitively excluded from Phase 18. No longer
+   deferred to M1.
+4. **Budget overflow wording:** Added explicit limitation: budget permits
+   intentional overflow for oversized highest-priority items. Exit condition
+   reworded to verify behavior, not a hard ceiling.
+5. **Legacy backend context capability:** Explicitly defined in consumption
+   boundary — capability row is `Unavailable`, assembly runs but manifest
+   is never read.
+6. **Architecture bypass ratchets:** Named test class
+   `Phase18ContextBypassRatchetTests` with 3 specific tests and file
+   acceptance criteria in required test layers table.
+
 ## Next task
 
 - [ ] User reviews amended M0 plan and accepts or returns further findings.

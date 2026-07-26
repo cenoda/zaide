@@ -22,7 +22,7 @@ begin. Starting M1 before M0 acceptance is a stop condition.
 | Working tree before plan creation | Clean |
 | Phase 17 dependency | Complete, accepted, and closed (2026-07-26) |
 | Build baseline | Succeeded with 0 errors and 0 warnings |
-| Architecture tests | 32 passed, 0 failed |
+| Architecture tests | 31 passed in `Zaide.Tests.Architecture` namespace; 1 cross-namespace match in `Phase17AdversarialCloseoutTests` (method name contains `Architecture`); total 32 with substring filter `FullyQualifiedName~Architecture` |
 | Verification date | 2026-07-26 |
 
 ---
@@ -47,7 +47,11 @@ begin. Starting M1 before M0 acceptance is a stop condition.
       stop conditions, and rollback boundaries.
 - [x] Run `dotnet build Zaide.slnx --no-restore` — succeeded, 0 errors,
       0 warnings.
-- [x] Run architecture tests — 32 passed, 0 failed.
+- [x] Run architecture tests — 31 passed in `Zaide.Tests.Architecture` namespace;
+      1 additional cross-namespace match (`Phase17AdversarialCloseoutTests
+      .ArchitectureInventory_Phase17Closeout_HasNoUnexplainedWeakening`);
+      total 32 with substring filter `FullyQualifiedName~Architecture`.
+      Authoritative baseline for Phase 18 ratchets: **31** (namespace-scoped).
 - [x] Run `git diff --check` — clean.
 
 No new library is required or authorized by M0. Any later dependency proposal
@@ -354,8 +358,8 @@ existing IDE snapshot services
 | No context aggregate | No single type composes the above snapshots | M1 must define the context manifest contract; M2 must build the assembly service |
 | No system prompt | Never constructed anywhere | Phase 18 does not build one (P18-D10); it delivers context items that a later backend may embed |
 | No history replay | Conversation store is write-only from backend perspective | Deferred to Phase 19/20 |
-| No viewport state | EditorView does not push scroll position to ViewModel | Deferred; M1 may add if design shows it is needed for `Detailed` policy |
-| No document language ID | `Document` does not track grammar scope | M1 may add a lightweight `LanguageId` if needed for context source attribution |
+| No viewport state | EditorView does not push scroll position to ViewModel | Excluded from Phase 18 (see Limitations); `Detailed` uses caret + selection |
+| No document language ID | `Document` does not track grammar scope | Excluded from Phase 18 (see Limitations); file extension is sufficient |
 | No token budget mechanism | No budget, truncation, or counting exists | M2 must design and implement a budget model (see Budget Contract below) |
 | Editor contract seam | Editor state lives in Presentation | M1 must create read-only snapshot in Contracts |
 | Terminal contract seam | Terminal state lives in Presentation | M1 must create read-only snapshot in Contracts |
@@ -460,9 +464,17 @@ Every context item records:
 ### Consumption boundary
 
 The context manifest is attached to the run through an extension of
-`AgentBackendRequest` or `AgentBackendExecutionContext`. The consumption
-boundary is read-only: backends may inspect the manifest but cannot modify
-it or request additional context through the same channel during the run.
+`AgentBackendExecutionContext`. The consumption boundary is read-only:
+backends may inspect the manifest but cannot modify it or request
+additional context through the same channel during the run.
+
+**Legacy backend context capability:** The new `AgentCapabilityId` for
+IDE context defaults to `Unavailable` on `LegacyOpenAiCompatibleAgentBackend`.
+The assembly service runs per policy regardless of backend capability, but
+the manifest is attached to `AgentBackendExecutionContext` as an optional
+nullable member. The legacy backend never reads this member. A future
+context-consuming backend must declare the capability as `Available` and
+read the manifest explicitly.
 
 ---
 
@@ -533,8 +545,8 @@ dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
 | Budget and truncation tests | Token counting, deterministic truncation order, boundary conditions |
 | Redaction tests | Secret detection, content filtering, exclusion enforcement |
 | Integration tests | End-to-end run → context → manifest → consumption boundary |
-| Inert delivery tests | Legacy backend ignores context; no context reaches production user flow |
-| Bypass ratchet tests | Context assembly cannot be reached without going through the policy boundary |
+| Inert delivery tests | Legacy backend capability row is `Unavailable` for context; assembly runs but manifest is never read by legacy backend |
+| Bypass ratchet tests | Context assembly cannot be reached without going through the policy boundary. Named tests: `Phase18ContextBypassRatchetTests` in `tests/Zaide.Tests/Architecture/`, containing: `ContextAssembly_DoesNotBypassPolicyBoundary`, `ContextManifest_DoesNotLeakToLegacyBackend`, `ContextAssembly_DoesNotReferenceConcretePresentationOrCrossFeatureInfrastructure`. Accepted files: all new Phase 18 production types in `src/Features/Agents/` only. |
 | Adversarial tests (M6) | Context leak when policy is Off; budget overflow; exclusion bypass; redaction bypass |
 
 ---
@@ -559,14 +571,25 @@ dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
   deferred. Phase 18 delivers four levels (Off/Minimal/Standard/Detailed).
 - **No hard-exclusion escape hatch:** Users cannot override hard exclusions
   in Phase 18. That mechanism belongs to a later phase.
-- **No viewport state:** Editor visible range is not tracked. If `Detailed`
-  policy requires it, M1 design must decide whether to add it.
+- **No viewport state:** Editor visible range is not tracked and is
+  excluded from Phase 18. Adding it would require Editor contract
+  changes that exceed the context assembly scope. The `Detailed` policy
+  uses caret position and selection instead.
 - **Redaction is best-effort:** Secret detection uses pattern matching
   (P18-D07), not a guaranteed filter. The disclosure indicator must
   communicate this limitation.
+- **No document language ID:** `Document` does not track grammar scope
+  and Phase 18 will not add it. If a later backend needs language
+  identification, it can derive it from file extension. The `Detailed`
+  policy provides file paths and diagnostics (which carry their own
+  source identity) instead.
 - **Token budget is approximate:** Token counting is heuristic
-  (`ceil(character_count / 4)`). Exact model-specific tokenization is out of
-  scope.
+  (`ceil(character_count / 4)`). Exact model-specific tokenization is
+  out of scope.
+- **Budget permits intentional overflow:** A single highest-priority item
+  that exceeds the budget is included with a `[TRUNCATED:exceeded-budget]`
+  marker rather than dropped. This preserves critical failure context.
+  The budget is a truncation guide, not a hard ceiling.
 
 ---
 
