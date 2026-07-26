@@ -296,6 +296,8 @@ internal sealed class AgentEvent
             AgentEventKind.ActionReconciliationReported => payload is AgentActionFactPayload,
             AgentEventKind.ActionRevoked => payload is AgentActionFactPayload,
 
+            AgentEventKind.ContextDisclosed => payload is AgentContextDisclosurePayload,
+
             _ => false,
         };
 }

@@ -855,7 +855,8 @@ public class SourceControlViewModelTests
             AddedLines = 1,
             DeletedLines = 1,
         };
-        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, file)).Returns(expectedDiff);
+        diffService.Setup(d => d.GetDiff(DefaultRepoRoot, It.Is<FileChange>(c => c.FilePath == "a.cs")))
+            .Returns(expectedDiff);
 
         var (vm, tabs) = SourceControlTestFactory.CreateWithDiffTabs(
             CreateOrchestrator(snapshot),

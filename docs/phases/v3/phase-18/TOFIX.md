@@ -2,68 +2,91 @@
 
 ## Status
 
-M0 planning document created and submitted for review. No milestone
-implementation has started.
-
-Phase 18 implementation is unauthorized until M0 is explicitly reviewed and
-accepted by the user.
+M0 accepted. M1 implementation landed, failed NO-GO review, and the corrective pass
+is complete as of 2026-07-26. M2 context assembly is not started.
 
 ## Current work
 
-- [ ] M0 review and acceptance by user.
+- [x] M0 review and acceptance by user.
+- [x] M1 initial delivery.
+- [x] M1 corrective pass for NO-GO findings (2026-07-26).
 
-## M0 findings (2026-07-26)
+## M1 corrective findings addressed (2026-07-26)
 
-User audit returned NO-GO with 8 findings. All addressed in amended plan:
+- **Hard-exclusion invariant restored in `AgentContextExclusionDecision`:**
+  - `isHardExclusion: true` requires `hardExclusionId` and forbids `sourceId`
+  - `isHardExclusion: false` forbids `hardExclusionId`
+  - `sourceId` and `hardExclusionId` remain mutually exclusive
+  - either `sourceId` or `hardExclusionId` must be supplied
+  - `AgentContextExclusionDecision_RejectsInconsistentHardExclusionState` now
+    verifies rejection of the inconsistent state
 
-1. **Source-layer contradiction (High):** P18-D02 now identifies three
-   verified gaps (Editor, Terminal, Source Control) requiring M1 contract
-   seams. Verified live facts table updated with gap annotations.
-2. **Shipped-inert semantics (High):** P18-D09 rewritten to define inert as
-   "assembled and attached, but not consumed" — matching Phase 17's pattern.
-3. **Security boundary (High):** P18-D07 expanded with redaction contract
-   table (secret classes, patterns, fail-closed behavior, canonicalization,
-   structured data handling). Hard exclusions no longer have an
-   explicit-selection escape hatch.
-4. **Policy determinism (High):** P18-D05 now includes a source-by-policy
-   matrix. `Custom` level removed from Phase 18 scope.
-5. **Budget contract (High):** New "Token budget contract" section in Locked
-   Phase 18 Contracts defines budget owner/defaults, source priority order,
-   truncation behavior, overflow handling, and manifest recording.
-6. **Architecture test baseline (Medium):** Confirmed 32 passed, 0 failed.
-   Audit's claim of 31 was incorrect.
-7. **Rollback plan (Medium):** Corrected to commit-level reversal (Phase 18
-   modifies existing types, not just additive files).
-8. **Missing TOFIX (Medium):** This file created.
+- **Strengthened bypass ratchet:**
+  - Removed vacuous "no ContextAssembly class exists" gate from
+    `ContextAssembly_DoesNotBypassPolicyBoundary`
+  - Added `ContextAssemblyService_RequiresPolicyMatrixRegistration` structural
+    ratchet for future assembly-service types
+  - Scan covers all `src/Features/Agents` production files
+  - Legacy backend isolation and cross-feature Presentation/Infrastructure checks
+    preserved
 
-## Residual findings (2026-07-26)
+- **Complete snapshot immutability:**
+  - `EditorStateSnapshot` defensively copies `OpenFilePaths`
+  - `RepositoryStatusSnapshot` defensively copies `Branches` and `Changes`,
+    including nested `FileChange` values, on init and via `CloneDefensively()`
+  - `SourceControlStatusSnapshot` acquires defensive copies via
+    `RepositoryStatus?.CloneDefensively()`
+  - Focused mutation tests added in `Phase18SnapshotSeamTests`
 
-User re-audit after first amendment. 5 residual issues addressed:
+- **Contract invariant tests in `Phase18ContextContractTests`:**
+  - Manifest null collections/elements, UTC timestamp, invalid policy, checked
+    token-sum overflow, and read-only item exposure
+  - Item null content, processing-failed content rejection, redacted-state reason
+    requirement
+  - Metadata-only `AgentContextDisclosurePayload` structural guard and
+    `AgentEventKind.ContextDisclosed` payload matching
 
-1. **Architecture test baseline:** Reconciled. 31 tests in
-   `Zaide.Tests.Architecture` namespace + 1 cross-namespace match
-   (`Phase17AdversarialCloseoutTests.ArchitectureInventory_...`).
-   Authoritative baseline for Phase 18 ratchets: **31**.
-2. **Viewport state:** Definitively excluded from Phase 18. No longer
-   deferred to M1.
-3. **Language ID:** Definitively excluded from Phase 18. No longer
-   deferred to M1.
-4. **Budget overflow wording:** Added explicit limitation: budget permits
-   intentional overflow for oversized highest-priority items. Exit condition
-   reworded to verify behavior, not a hard ceiling.
-5. **Legacy backend context capability:** Explicitly defined in consumption
-   boundary — capability row is `Unavailable`, assembly runs but manifest
-   is never read.
-6. **Architecture bypass ratchets:** Named test class
-   `Phase18ContextBypassRatchetTests` with 3 specific tests and file
-   acceptance criteria in required test layers table.
+- **Regression fix from nested `FileChange` cloning:**
+  - `SourceControlViewModelTests.Refresh_SamePathAfterRefresh_ReselectsAndPreservesDiff`
+    now matches diff requests by file path instead of object identity
+
+## Verification status (corrective pass 2026-07-26)
+
+- `dotnet build Zaide.slnx --no-restore` — 0 errors, 0 warnings
+- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Phase18'` — 28/28 passed
+- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Architecture'` — 36/36 passed
+- `dotnet test Zaide.slnx --no-build` — 3093/3093 passed
+- `git diff --check` — clean
+- `git diff --cached --check` — clean
+
+## M1 delivery scope (unchanged)
+
+Implemented under `src/Features/Agents/Domain/`:
+
+- Context source identifier, item, manifest, provenance, redaction state/reason,
+  exclusion decision, token budget, truncation decision
+- Four policy levels (Off, Minimal, Standard, Detailed) with locked source matrix
+- Application default (`Standard`) and session override contracts
+- Hard exclusion registry with no Phase 18 escape hatch
+- Metadata-only `AgentContextDisclosurePayload` plus redaction/boundary summaries
+- `AgentCapabilityId.IdeContext` and `AgentEventKind.ContextDisclosed` taxonomy
+
+Contract-level passive snapshot seams:
+
+- `IEditorStateSnapshotService` / `EditorStateSnapshot`
+- `ITerminalSurfaceSnapshotService` / `TerminalSurfaceSnapshot` (no scrollback shape)
+- `ISourceControlSnapshotService` / `SourceControlStatusSnapshot`
+
+Legacy backend keeps `IdeContext` capability as `Unavailable`. No assembly service,
+run integration, redaction detection, token counting, or disclosure UI were added.
 
 ## Next task
 
-- [ ] User reviews amended M0 plan and accepts or returns further findings.
+- [ ] M2 policy evaluation and context assembly service.
 
 ## Scope boundaries observed
 
-M0 planning does not implement production code, tests, UI, backend wiring,
-persistence, memory, raw traces, provider-specific prompt tuning, or
-Phase 19/20 work.
+M1 and the corrective pass do not implement context assembly, redaction
+detection, token counting or truncation execution, run integration, disclosure UI,
+session policy selector, Native Harness or ACP, persistence, memory, raw traces,
+prompt engineering, or Phase 17 contract changes.

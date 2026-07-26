@@ -36,4 +36,6 @@ internal enum AgentEventKind
     ActionResultReported,
     ActionReconciliationReported,
     ActionRevoked,
+
+    ContextDisclosed,
 }

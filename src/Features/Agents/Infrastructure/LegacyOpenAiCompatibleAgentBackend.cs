@@ -228,6 +228,7 @@ internal sealed class LegacyOpenAiCompatibleAgentBackend : IAgentBackend
         yield return CreateUnavailableRow(AgentCapabilityId.Reconnect);
         yield return CreateUnavailableRow(AgentCapabilityId.UsageReporting);
         yield return CreateUnavailableRow(AgentCapabilityId.RawTrace);
+        yield return CreateUnavailableRow(AgentCapabilityId.IdeContext);
     }
 
     private static IEnumerable<AgentCapabilityRow> CreateResolutionUnavailableCapabilityRows()
@@ -269,6 +270,7 @@ internal sealed class LegacyOpenAiCompatibleAgentBackend : IAgentBackend
         yield return CreateUnavailableRow(AgentCapabilityId.Reconnect);
         yield return CreateUnavailableRow(AgentCapabilityId.UsageReporting);
         yield return CreateUnavailableRow(AgentCapabilityId.RawTrace);
+        yield return CreateUnavailableRow(AgentCapabilityId.IdeContext);
     }
 
     private static AgentCapabilityRow CreateUnavailableRow(AgentCapabilityId capabilityId) =>

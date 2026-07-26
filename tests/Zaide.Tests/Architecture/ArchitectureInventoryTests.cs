@@ -66,11 +66,13 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((3, 2, 1), byNamespace["Zaide.Features.Workspace.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
         // Phase 17 M6: +1 internal IEditorUiDispatcher contract.
-        Assert.Equal((7, 6, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
+        // Phase 18 M1: +1 public IEditorStateSnapshotService contract.
+        Assert.Equal((8, 7, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
         // Phase 17 M6: +1 internal AvaloniaEditorUiDispatcher.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Editor.Infrastructure"]);
         // Phase 17 M6: +1 internal WorkspaceEditorDocumentReconciler.
-        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Editor.Application"]);
+        // Phase 18 M1: +1 public EditorStateSnapshot.
+        Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Editor.Application"]);
         Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
@@ -89,14 +91,18 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((19, 14, 5), byNamespace["Zaide.Features.Debugging.Infrastructure.Dap"]);
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
-        Assert.Equal((5, 5, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
+        // Phase 18 M1: +1 public ISourceControlSnapshotService contract.
+        Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
         // M11c: SourceControlSnapshotOrchestrator + SourceControlActionDeriver + SourceControlDiffTabService public→internal (14p/0i → 11p/3i).
-        Assert.Equal((14, 11, 3), byNamespace["Zaide.Features.SourceControl.Application"]);
+        // Phase 18 M1: +2 public SourceControlSnapshotAvailability and SourceControlStatusSnapshot.
+        Assert.Equal((16, 13, 3), byNamespace["Zaide.Features.SourceControl.Application"]);
         // M11c: GitMutationService public→internal (1p/2i → 0p/3i).
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);
-        Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.Terminal.Contracts"]);
-        Assert.False(byNamespace.ContainsKey("Zaide.Features.Terminal.Application"));
+        // Phase 18 M1: +1 public ITerminalSurfaceSnapshotService contract.
+        Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Terminal.Contracts"]);
+        // Phase 18 M1: +1 public TerminalSurfaceSnapshot.
+        Assert.Equal((1, 1, 0), byNamespace["Zaide.Features.Terminal.Application"]);
         // M11c: LinuxTerminalService public→internal (1p/2i → 0p/3i).
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Terminal.Infrastructure"]);
         Assert.Equal((35, 19, 16), byNamespace["Zaide.Features.Terminal.Presentation"]);
@@ -121,7 +127,9 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +2 internal AgentDocumentReconciliationOutcome, AgentDocumentReconciliationResult.
         // Phase 17 M7: +3 internal AgentCommandExecutionOutcome, AgentCommandStreamCapture, AgentCommandExecutionResult.
         // Phase 17 M8: +2 internal AgentActionFactPayload, AgentActionAuditRecord.
-        Assert.Equal((86, 7, 79), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 18 M1: +17 internal IDE context contract types.
+        // Phase 18 M1 corrective: +2 internal disclosure summary types.
+        Assert.Equal((105, 7, 98), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -202,7 +210,10 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +7 document reconciliation production files.
         // Phase 17 M7: +7 command execution production files.
         // Phase 17 M8: +9 session/event integration production files.
-        Assert.Equal(539, inventory.SourceFiles.Count);
+        // Phase 18 M1: +17 IDE context contract production files.
+        // Phase 18 M1: +7 snapshot seam production files.
+        // Phase 18 M1 corrective: +2 disclosure summary production files.
+        Assert.Equal(565, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -225,7 +236,9 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +7 document reconciliation production files.
         // Phase 17 M7: +7 command execution production files.
         // Phase 17 M8: +9 session/event integration production files.
-        Assert.Equal(494, byFolder["Features"]);
+        // Phase 18 M1: +24 IDE context contract and snapshot seam production files.
+        // Phase 18 M1 corrective: +2 disclosure summary production files.
+        Assert.Equal(520, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

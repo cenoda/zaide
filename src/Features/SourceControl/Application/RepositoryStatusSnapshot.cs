@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Zaide.Features.SourceControl.Application;
 
@@ -23,15 +25,45 @@ public sealed class RepositoryStatusSnapshot
     /// All local branches, with <see cref="Zaide.Features.SourceControl.Domain.GitBranch.IsCurrent"/>
     /// set on the one matching HEAD (when not detached).
     /// </summary>
-    public IReadOnlyList<Zaide.Features.SourceControl.Domain.GitBranch> Branches { get; init; }
-        = System.Array.Empty<Zaide.Features.SourceControl.Domain.GitBranch>();
+    public IReadOnlyList<Zaide.Features.SourceControl.Domain.GitBranch> Branches
+    {
+        get;
+        init
+        {
+            if (value is null || value.Count == 0)
+            {
+                field = Array.Empty<Zaide.Features.SourceControl.Domain.GitBranch>();
+                return;
+            }
+
+            field = Array.AsReadOnly(value.ToArray());
+        }
+    } = Array.Empty<Zaide.Features.SourceControl.Domain.GitBranch>();
 
     /// <summary>
     /// Working-tree file changes (staged + unstaged combined by this read seam).
     /// Later phases split by <see cref="Zaide.Features.SourceControl.Domain.FileChange.IsStaged"/>.
     /// </summary>
-    public IReadOnlyList<Zaide.Features.SourceControl.Domain.FileChange> Changes { get; init; }
-        = System.Array.Empty<Zaide.Features.SourceControl.Domain.FileChange>();
+    public IReadOnlyList<Zaide.Features.SourceControl.Domain.FileChange> Changes
+    {
+        get;
+        init
+        {
+            if (value is null || value.Count == 0)
+            {
+                field = Array.Empty<Zaide.Features.SourceControl.Domain.FileChange>();
+                return;
+            }
+
+            field = Array.AsReadOnly(
+                value
+                    .Select(change => new Domain.FileChange(
+                        change.FilePath,
+                        change.ChangeType,
+                        change.IsStaged))
+                    .ToArray());
+        }
+    } = Array.Empty<Zaide.Features.SourceControl.Domain.FileChange>();
 
     /// <summary>
     /// True when the current branch tracks an upstream remote branch.
@@ -50,4 +82,22 @@ public sealed class RepositoryStatusSnapshot
     /// Zero when there is no upstream or the branch is up to date.
     /// </summary>
     public int BehindBy { get; init; }
+
+    /// <summary>
+    /// Returns a defensive copy whose collection properties cannot be mutated
+    /// through the original inputs.
+    /// </summary>
+    public RepositoryStatusSnapshot CloneDefensively()
+    {
+        return new RepositoryStatusSnapshot
+        {
+            CurrentBranchName = CurrentBranchName,
+            IsDetachedHead = IsDetachedHead,
+            Branches = Branches,
+            Changes = Changes,
+            HasUpstream = HasUpstream,
+            AheadBy = AheadBy,
+            BehindBy = BehindBy,
+        };
+    }
 }

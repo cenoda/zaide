@@ -46,6 +46,9 @@ internal readonly struct AgentCapabilityId : IEquatable<AgentCapabilityId>
     public static AgentCapabilityId RawTrace { get; } =
         FromValue("capability:raw-trace");
 
+    public static AgentCapabilityId IdeContext { get; } =
+        FromValue("capability:ide-context");
+
     public static AgentCapabilityId FromValue(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

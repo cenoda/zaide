@@ -92,6 +92,12 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         Assert.Equal(AgentCapabilityFactValue.Unavailable, attachments.Advertised);
         Assert.Equal(AgentCapabilityFactValue.Unavailable, attachments.Available);
         Assert.Equal(AgentCapabilityFactValue.Unavailable, attachments.CurrentlyUsable);
+
+        Assert.True(snapshot.TryGetState(AgentCapabilityId.IdeContext, out var ideContext));
+        Assert.Equal(AgentCapabilityFactValue.Unavailable, ideContext.Advertised);
+        Assert.Equal(AgentCapabilityFactValue.Unavailable, ideContext.Available);
+        Assert.Equal(AgentCapabilityFactValue.Unavailable, ideContext.Configured);
+        Assert.Equal(AgentCapabilityFactValue.Unavailable, ideContext.CurrentlyUsable);
     }
 
     [Fact]
