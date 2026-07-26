@@ -129,7 +129,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M8: +2 internal AgentActionFactPayload, AgentActionAuditRecord.
         // Phase 18 M1: +17 internal IDE context contract types.
         // Phase 18 M1 corrective: +2 internal disclosure summary types.
-        Assert.Equal((105, 7, 98), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 18 M2: +4 internal context assembly contract helpers.
+        Assert.Equal((109, 7, 102), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -146,7 +147,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M4: +1 internal AgentFileProposalGenerator.
         // Phase 17 M6: +1 internal NullAgentDocumentReconciler.
         // Phase 17 M8: +3 internal AgentActionAuditStore, RunScopedAgentActionEventPublisher, AgentActionBrokerFactory.
-        Assert.Equal((32, 7, 25), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 18 M2: +11 internal context policy/assembly production types.
+        Assert.Equal((43, 7, 36), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
@@ -213,7 +215,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1: +17 IDE context contract production files.
         // Phase 18 M1: +7 snapshot seam production files.
         // Phase 18 M1 corrective: +2 disclosure summary production files.
-        Assert.Equal(565, inventory.SourceFiles.Count);
+        Assert.Equal(575, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -238,7 +240,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M8: +9 session/event integration production files.
         // Phase 18 M1: +24 IDE context contract and snapshot seam production files.
         // Phase 18 M1 corrective: +2 disclosure summary production files.
-        Assert.Equal(520, byFolder["Features"]);
+        // Phase 18 M2: +11 internal context assembly service production files.
+        Assert.Equal(530, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

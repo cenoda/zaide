@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**Phase 18 status:** M0 planning document created for review. No milestone
-implementation has started.
+**Phase 18 status:** M0 accepted. M1 complete (including corrective pass). M2 policy
+evaluation and context assembly complete as of 2026-07-26. M3/M4 not started.
 
-**Authorized work:** This M0 planning document only. No production code, tests,
+**Authorized work:** This document authorizes M0 planning only. No production code, tests,
 UI, backend wiring, persistence, memory, raw traces, provider-specific prompt
 tuning, or Phase 19/20 work is authorized.
 
@@ -60,7 +60,7 @@ plan before adoption.
 
 ---
 
-## Accepted M0 implementation decisions
+## Accepted implementation decisions
 
 ### P18-D01: Feature ownership
 
