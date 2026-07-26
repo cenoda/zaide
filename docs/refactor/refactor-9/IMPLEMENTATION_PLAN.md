@@ -239,6 +239,29 @@ dependency graph, Roslyn reference closure, or MSBuild per-type test mapping
 | Combined coverage | 3065/3065 with 0 failures |
 | `git diff --check` | pass |
 
+## Closeout Verification Record (2026-07-26)
+
+Final verification on `perf/test-structure-phase1` after M2e (`4f9a963`), M3
+(`e91b1cc`), M4 (`466c6b30`), and M5 (`c1cb051`).
+
+| Gate | Result |
+|---|---|
+| `dotnet build Zaide.slnx` | pass, 0 errors, 4 existing warnings |
+| `Category!=SlowIntegration` (interactive PTY) | pass, 3029/3029 in 9 s |
+| `Category=SlowIntegration` (interactive PTY) | pass, 36/36 in 9 s |
+| Full unfiltered run (interactive PTY) | pass, 3065/3065 in 16 s |
+| Combined coverage | 3065/3065 with 0 failures, 0 skipped |
+| Testhost count before/after | 3 / 3 (pre-existing stale; no new leaks) |
+| VSTest parent-session count before/after | 3 / 3 (pre-existing stale) |
+| Child external-process count before/after | 0 / 0 |
+| `git diff --check` | pass |
+
+Pre-existing stale testhost PIDs (Jul 25 orphaned runs): 1862025, 1895592,
+2945477. Closeout did not kill unrelated processes.
+
+**Deferred:** language completion/hover/document-sync polling (32 remaining
+`Task.Delay` calls); optional unfiltered gate on a fully clean host.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.

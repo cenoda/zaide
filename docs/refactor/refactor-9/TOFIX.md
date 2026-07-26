@@ -3,9 +3,9 @@
 ## Status
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
-`perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, M2c, M2d, M2e, M3, M4, and M5 are implemented and
-ready for review.
+`perf/test-structure-phase1`. M1, M2a, M2b, M2c, M2d, M2e, M3, M4, and M5 are
+implemented. Final closeout verification (2026-07-26) passed all gates; Refactor
+9 is ready for PR.
 
 ## Current findings
 
@@ -163,8 +163,36 @@ service polling.
 - Combined coverage: 3065/3065 passed with 0 failures.
 - `git diff --check` passed.
 
-## Next task
+## Closeout verification (2026-07-26)
 
-After review, close Refactor 9: repeat unfiltered full gate on a clean test host,
-then address remaining language polling (completion/hover/document-sync) in a
-follow-up slice or defer to a later refactor milestone.
+| Gate | Result |
+|---|---|
+| `dotnet build Zaide.slnx` | pass, 0 errors, 4 existing warnings |
+| `Category!=SlowIntegration` (PTY) | pass, 3029/3029 in 9 s |
+| `Category=SlowIntegration` (PTY) | pass, 36/36 in 9 s |
+| Full unfiltered run (PTY) | pass, 3065/3065 in 16 s |
+| Combined coverage | 3065/3065 with 0 failures, 0 skipped |
+| Testhost count before/after gates | 3 / 3 (unchanged; all pre-existing stale) |
+| VSTest parent-session count before/after | 3 / 3 (unchanged; all pre-existing stale) |
+| Child external-process count before/after (csharp-ls, netcoredbg, Phase16) | 0 / 0 |
+| `/tmp/zaide*` + `/tmp/Zaide*` after full gate | 8744 |
+| `git diff --check` | pass |
+
+Known stale processes already present before closeout (not killed; unrelated to
+this refactor):
+
+- PID 1862025 — orphaned testhost from `Phase17AdversarialCloseout` filter (Jul 25)
+- PID 1895592 — orphaned testhost from `slow.runsettings` run (Jul 25)
+- PID 2945477 — orphaned testhost from `Phase17ActionContractsBrokerTests` filter (Jul 25)
+
+Closeout gates did not add testhost, VSTest parent, or child external-process
+leaks. The unfiltered gate completed successfully despite the pre-existing stale
+sessions; filtered selections remain the recommended default on shared hosts.
+
+## Deferred follow-ups
+
+- Remaining language polling (32 `Task.Delay` calls across
+  completion/hover/document-sync/formatting/session/symbol/navigation) requires
+  production completion/propagation signals; defer to a later refactor milestone.
+- Repeat unfiltered gate on a fully clean host when stale Jul 25 sessions are
+  cleared (optional hygiene; not blocking PR).
