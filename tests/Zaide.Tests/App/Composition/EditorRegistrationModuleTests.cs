@@ -155,6 +155,7 @@ public sealed class EditorRegistrationModuleTests
         var editorSnapshot2 = provider.GetRequiredService<IEditorStateSnapshotService>();
         Assert.Same(editorSnapshot1, editorSnapshot2);
         Assert.IsType<EditorStateSnapshotService>(editorSnapshot1);
+        Assert.IsAssignableFrom<IEditorStateSnapshotPublisher>(editorSnapshot1);
 
         var search1 = provider.GetRequiredService<EditorSearchViewModel>();
         var search2 = provider.GetRequiredService<EditorSearchViewModel>();

@@ -18,14 +18,14 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (Phase 18 M1 corrective +2 internal disclosure summary types).</summary>
-    public const int M0TotalTopLevelTypes = 638;
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (Phase 18 M3 publisher corrective +1 internal mapper).</summary>
+    public const int M0TotalTopLevelTypes = 641;
 
-    /// <summary>M0 baseline public top-level type count (Phase 18 M1 +7 public snapshot seam types).</summary>
-    public const int M0PublicTopLevelTypes = 344;
+    /// <summary>M0 baseline public top-level type count (Phase 18 M3 publisher corrective +2 public publisher contracts).</summary>
+    public const int M0PublicTopLevelTypes = 346;
 
-    /// <summary>M0 baseline internal top-level type count (Phase 18 M1 +19 internal context contract types).</summary>
-    public const int M0InternalTopLevelTypes = 294;
+    /// <summary>M0 baseline internal top-level type count (Phase 18 M3 publisher corrective +1 internal mapper).</summary>
+    public const int M0InternalTopLevelTypes = 295;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",

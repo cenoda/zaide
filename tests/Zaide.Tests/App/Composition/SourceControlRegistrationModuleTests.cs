@@ -152,6 +152,12 @@ public sealed class SourceControlRegistrationModuleTests
         var mutation2 = provider.GetRequiredService<IGitMutationService>();
         Assert.Same(mutation1, mutation2);
         Assert.IsType<GitMutationService>(mutation1);
+
+        var snapshot1 = provider.GetRequiredService<ISourceControlSnapshotService>();
+        var snapshot2 = provider.GetRequiredService<ISourceControlSnapshotService>();
+        Assert.Same(snapshot1, snapshot2);
+        Assert.IsType<SourceControlSnapshotService>(snapshot1);
+        Assert.IsAssignableFrom<ISourceControlSnapshotPublisher>(snapshot1);
     }
 
     [Fact]

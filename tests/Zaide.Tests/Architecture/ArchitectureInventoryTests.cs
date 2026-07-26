@@ -67,7 +67,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.Editor.Domain"]);
         // Phase 17 M6: +1 internal IEditorUiDispatcher contract.
         // Phase 18 M1: +1 public IEditorStateSnapshotService contract.
-        Assert.Equal((8, 7, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
+        // Phase 18 M3 publisher corrective: +1 public IEditorStateSnapshotPublisher contract.
+        Assert.Equal((9, 8, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
         // Phase 17 M6: +1 internal AvaloniaEditorUiDispatcher.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Editor.Infrastructure"]);
         // Phase 17 M6: +1 internal WorkspaceEditorDocumentReconciler.
@@ -93,11 +94,13 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((19, 16, 3), byNamespace["Zaide.Features.Debugging.Presentation"]);
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Domain"]);
         // Phase 18 M1: +1 public ISourceControlSnapshotService contract.
-        Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
+        // Phase 18 M3 publisher corrective: +1 public ISourceControlSnapshotPublisher contract.
+        Assert.Equal((7, 7, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
         // M11c: SourceControlSnapshotOrchestrator + SourceControlActionDeriver + SourceControlDiffTabService public→internal (14p/0i → 11p/3i).
         // Phase 18 M1: +2 public SourceControlSnapshotAvailability and SourceControlStatusSnapshot.
         // Phase 18 M3 corrective: +1 internal SourceControlSnapshotService.
-        Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.SourceControl.Application"]);
+        // Phase 18 M3 publisher corrective: +1 internal SourceControlSnapshotMapper.
+        Assert.Equal((18, 13, 5), byNamespace["Zaide.Features.SourceControl.Application"]);
         // M11c: GitMutationService public→internal (1p/2i → 0p/3i).
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);

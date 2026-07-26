@@ -26,6 +26,7 @@ public class SourceControlViewModel : ReactiveObject
     private readonly ISourceControlDiffTabService _diffTabService;
     private readonly IGitMutationService _mutationService;
     private readonly IGitRepositoryService _gitRepositoryService;
+    private readonly ISourceControlSnapshotPublisher? _snapshotPublisher;
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private string _commitMessage = string.Empty;
     private string? _commitError;
@@ -198,13 +199,15 @@ public class SourceControlViewModel : ReactiveObject
         IGitMutationService mutationService,
         IGitRepositoryService gitRepositoryService,
         ISourceControlDiffTabService? diffTabService = null,
-        ICommandRegistry? commandRegistry = null)
+        ICommandRegistry? commandRegistry = null,
+        ISourceControlSnapshotService? snapshotService = null)
     {
         _orchestrator = orchestrator;
         _workspace = workspace;
         _diffTabService = diffTabService ?? NullSourceControlDiffTabService.Instance;
         _mutationService = mutationService;
         _gitRepositoryService = gitRepositoryService;
+        _snapshotPublisher = snapshotService as ISourceControlSnapshotPublisher;
 
         // Load a truthful snapshot from the refresh seam (the source of truth).
         // When no workspace is open or it is not inside a repository, the
@@ -327,6 +330,7 @@ public class SourceControlViewModel : ReactiveObject
             this.RaisePropertyChanged(nameof(SelectedBranch));
             this.RaisePropertyChanged(nameof(CurrentBranchName));
             this.RaisePropertyChanged(nameof(StatusMessage));
+            PublishSnapshot(result);
             return;
         }
 
@@ -380,6 +384,14 @@ public class SourceControlViewModel : ReactiveObject
                 _diffTabService.RefreshOpenDiff(previouslySelectedPath, change: null);
             }
         }
+
+        PublishSnapshot(result);
+    }
+
+    private void PublishSnapshot(SnapshotRefreshResult result)
+    {
+        _snapshotPublisher?.TryPublish(
+            SourceControlSnapshotMapper.FromRefreshResult(result, StatusMessage));
     }
 
     private async Task ExecuteStageAllAsync()

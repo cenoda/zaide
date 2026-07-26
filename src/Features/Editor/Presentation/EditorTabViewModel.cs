@@ -4,12 +4,14 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ReactiveUI;
 using Zaide.App.Composition;
 using Zaide.Features.Workspace.Domain;
+using Zaide.Features.Editor.Application;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Contracts;
 
@@ -32,6 +34,8 @@ public class EditorTabViewModel : ReactiveObject
     private readonly IEditorSessionFactory _editorSessionFactory;
     private readonly IFileService _fileService;
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
+    private readonly IEditorStateSnapshotPublisher? _snapshotPublisher;
+    private readonly System.Collections.Generic.Dictionary<EditorViewModel, IDisposable> _tabSnapshotSubscriptions = new();
     private EditorViewModel? _activeTab;
 
     public ObservableCollection<EditorViewModel> OpenTabs { get; } = new();
@@ -168,11 +172,13 @@ public class EditorTabViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> TabCloseAllCommand { get; }
 
     public EditorTabViewModel(IEditorSessionFactory editorSessionFactory, IFileService fileService, global::Zaide.Features.Workspace.Domain.Workspace workspace,
-        ICommandRegistry? commandRegistry = null)
+        ICommandRegistry? commandRegistry = null,
+        IEditorStateSnapshotService? snapshotService = null)
     {
         _editorSessionFactory = editorSessionFactory;
         _fileService = fileService;
         _workspace = workspace;
+        _snapshotPublisher = snapshotService as IEditorStateSnapshotPublisher;
 
         OpenFileCommand = ReactiveCommand.CreateFromTask<string, bool>(OpenFileAsync);
         CloseTabCommand = ReactiveCommand.CreateFromTask<EditorViewModel>(CloseTabAsync);
@@ -264,6 +270,95 @@ public class EditorTabViewModel : ReactiveObject
         commandRegistry?.Register(new CommandDescriptor(
             "tab.closeAll", "Close All Tabs", "Tab",
             Array.Empty<string>(), TabCloseAllCommand));
+
+        OpenTabs.CollectionChanged += OnOpenTabsCollectionChanged;
+        this.WhenAnyValue(x => x.ActiveTab)
+            .Subscribe(_ => PublishEditorSnapshot());
+
+        PublishEditorSnapshot();
+    }
+
+    private void OnOpenTabsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems is not null)
+        {
+            foreach (EditorViewModel tab in e.NewItems)
+            {
+                AttachTabSnapshotSources(tab);
+            }
+        }
+
+        if (e.OldItems is not null)
+        {
+            foreach (EditorViewModel tab in e.OldItems)
+            {
+                DetachTabSnapshotSources(tab);
+            }
+        }
+
+        PublishEditorSnapshot();
+    }
+
+    private void AttachTabSnapshotSources(EditorViewModel tab)
+    {
+        if (_tabSnapshotSubscriptions.ContainsKey(tab))
+        {
+            return;
+        }
+
+        var subscriptions = new CompositeDisposable();
+
+        void OnDocumentChanged(object? sender, EventArgs e) => PublishEditorSnapshot();
+        tab.Document.ContentChanged += OnDocumentChanged;
+        tab.Document.DirtyStateChanged += OnDocumentChanged;
+        subscriptions.Add(Disposable.Create(() =>
+        {
+            tab.Document.ContentChanged -= OnDocumentChanged;
+            tab.Document.DirtyStateChanged -= OnDocumentChanged;
+        }));
+
+        subscriptions.Add(tab.WhenAnyValue(t => t.FilePath).Subscribe(_ => PublishEditorSnapshot()));
+        subscriptions.Add(tab.WhenAnyValue(t => t.CaretLine).Subscribe(_ => PublishEditorSnapshot()));
+        subscriptions.Add(tab.WhenAnyValue(t => t.CaretColumn).Subscribe(_ => PublishEditorSnapshot()));
+        subscriptions.Add(tab.WhenAnyValue(t => t.SelectionStart).Subscribe(_ => PublishEditorSnapshot()));
+        subscriptions.Add(tab.WhenAnyValue(t => t.SelectionLength).Subscribe(_ => PublishEditorSnapshot()));
+        subscriptions.Add(tab.WhenAnyValue(t => t.SelectionText).Subscribe(_ => PublishEditorSnapshot()));
+
+        _tabSnapshotSubscriptions[tab] = subscriptions;
+    }
+
+    private void DetachTabSnapshotSources(EditorViewModel tab)
+    {
+        if (_tabSnapshotSubscriptions.Remove(tab, out var subscriptions))
+        {
+            subscriptions.Dispose();
+        }
+    }
+
+    private void PublishEditorSnapshot()
+    {
+        if (_snapshotPublisher is null)
+        {
+            return;
+        }
+
+        var active = ActiveTab;
+        var openPaths = OpenTabs
+            .Select(tab => tab.FilePath)
+            .Where(path => !string.IsNullOrEmpty(path))
+            .ToArray();
+
+        _snapshotPublisher.TryPublish(new EditorStateSnapshot(
+            generation: 0,
+            activeFilePath: active?.FilePath,
+            activeFileContent: active?.TextContent,
+            activeFileIsDirty: active?.IsDirty ?? false,
+            openFilePaths: openPaths,
+            caretLine: active?.CaretLine ?? 1,
+            caretColumn: active?.CaretColumn ?? 1,
+            selectionStart: active?.SelectionStart ?? 0,
+            selectionLength: active?.SelectionLength ?? 0,
+            selectionText: active?.SelectionText));
     }
 
     // ═══════════════════════════════════════════════════════════════════════

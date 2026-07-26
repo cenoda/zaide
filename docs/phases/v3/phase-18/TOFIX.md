@@ -5,8 +5,9 @@
 M0 accepted. M1 implementation landed, failed NO-GO review, and the corrective pass
 is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
 2026-07-26 and is complete. M3 run integration and consumption boundary landed
-2026-07-26, including the M3 corrective pass for production DI wiring and
-integration-test proof. M4/M5 are not started.
+2026-07-26, including production DI wiring, integration-test proof, and the M3
+publisher corrective pass connecting Editor and Source Control presentation to
+passive snapshot services. M4/M5 are not started.
 
 ## Current work
 
@@ -16,6 +17,37 @@ integration-test proof. M4/M5 are not started.
 - [x] M2 policy evaluation and context assembly service (2026-07-26).
 - [x] M3 run integration and consumption boundary (2026-07-26).
 - [x] M3 corrective pass for production DI wiring and integration proof (2026-07-26).
+- [x] M3 publisher corrective pass for Editor and Source Control snapshots (2026-07-26).
+
+## M3 publisher corrective delivery (2026-07-26) - COMPLETE
+
+Production:
+
+- **Editor snapshot publisher:** `IEditorStateSnapshotPublisher` / `EditorStateSnapshotService.TryPublish`
+  assigns monotonic generations, defensively copies published state, ignores stale
+  updates and post-disposal publication. `EditorTabViewModel` publishes from existing
+  tab/document lifecycle signals (open/close, active tab, content/dirty/caret/selection).
+- **Source Control snapshot publisher:** `ISourceControlSnapshotPublisher` /
+  `SourceControlSnapshotService.TryPublish` with `SourceControlSnapshotMapper` projecting
+  orchestrator refresh results into passive snapshots. `SourceControlViewModel` publishes
+  after each `ApplyResult` (workspace open/close already flows through the existing
+  shell refresh path; Agents never call `Refresh()`).
+- **Read-only consumer boundary preserved:** Agents continue to consume
+  `IEditorStateSnapshotService` / `ISourceControlSnapshotService` only.
+
+Tests:
+
+- `EditorStateSnapshotServiceTests` — initial empty snapshot, publish/WhenChanged,
+  monotonic generation, defensive copy, stale rejection, disposal safety.
+- `SourceControlSnapshotServiceTests` — initial `NoWorkspace`, publish/WhenChanged,
+  nested defensive clone, monotonic generation, workspace reset, stale rejection,
+  disposal safety.
+- `Phase18RunIntegrationTests` — `LiveAgentContextSnapshotSources` observes published
+  Editor/Source Control snapshots; Detailed-policy manifest includes published source data.
+- Registration module tests updated for publisher DI aliases.
+
+Verification (2026-07-26): `dotnet build Zaide.slnx --no-restore` succeeded;
+Phase18 73/73; Architecture 37/37; full fast 3154/3154; serial 3154/3154.
 
 ## M3 corrective delivery (2026-07-26) - COMPLETE
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
@@ -11,10 +12,13 @@ using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Editor.Application;
+using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Contracts;
 using Zaide.Features.SourceControl.Domain;
+using Zaide.Tests.App.Composition;
 using Zaide.Tests.Features.Agents;
 
 namespace Zaide.Tests.Features.Agents.Application;
@@ -557,6 +561,86 @@ public sealed class Phase18RunIntegrationTests
 
         Assert.NotEqual(manifest1.RunId, manifest2.RunId);
         Assert.NotSame(manifest1, manifest2);
+    }
+
+    [Fact]
+    public void LiveSnapshotSources_ObservePublishedEditorAndSourceControlSnapshots()
+    {
+        using var provider = AgentsRegistrationModuleTests.BuildProductionProvider();
+        var editorPublisher = (IEditorStateSnapshotPublisher)provider.GetRequiredService<IEditorStateSnapshotService>();
+        var sourceControlPublisher = (ISourceControlSnapshotPublisher)provider.GetRequiredService<ISourceControlSnapshotService>();
+        var snapshotSources = provider.GetRequiredService<IAgentContextSnapshotSources>();
+
+        Assert.Null(snapshotSources.Editor.ActiveFilePath);
+        Assert.Equal(SourceControlSnapshotAvailability.NoWorkspace, snapshotSources.SourceControl.Availability);
+
+        Assert.True(editorPublisher.TryPublish(new EditorStateSnapshot(
+            generation: 0,
+            activeFilePath: "/workspace/Program.cs",
+            activeFileContent: "class Program {}",
+            openFilePaths: new[] { "/workspace/Program.cs" })));
+
+        Assert.True(sourceControlPublisher.TryPublish(new SourceControlStatusSnapshot(
+            generation: 0,
+            availability: SourceControlSnapshotAvailability.Available,
+            workspacePath: "/workspace",
+            repositoryStatus: new RepositoryStatusSnapshot
+            {
+                CurrentBranchName = "main",
+                Changes = new[] { new FileChange("Program.cs", GitChangeType.Modified) },
+            })));
+
+        Assert.Equal("/workspace/Program.cs", snapshotSources.Editor.ActiveFilePath);
+        Assert.Equal(SourceControlSnapshotAvailability.Available, snapshotSources.SourceControl.Availability);
+        Assert.Equal("main", snapshotSources.SourceControl.RepositoryStatus!.CurrentBranchName);
+    }
+
+    [Fact]
+    public void ManifestBuilder_WithLivePublishedSnapshots_IncludesEditorAndSourceControlAtDetailedPolicy()
+    {
+        using var provider = AgentsRegistrationModuleTests.BuildProductionProvider();
+        var editorPublisher = (IEditorStateSnapshotPublisher)provider.GetRequiredService<IEditorStateSnapshotService>();
+        var sourceControlPublisher = (ISourceControlSnapshotPublisher)provider.GetRequiredService<ISourceControlSnapshotService>();
+        var snapshotSources = provider.GetRequiredService<IAgentContextSnapshotSources>();
+        var builder = provider.GetRequiredService<AgentContextManifestBuilder>();
+
+        Assert.True(editorPublisher.TryPublish(new EditorStateSnapshot(
+            generation: 0,
+            activeFilePath: "/workspace/Program.cs",
+            activeFileContent: "class Program {}",
+            openFilePaths: new[] { "/workspace/Program.cs" },
+            caretLine: 3,
+            caretColumn: 5,
+            selectionStart: 10,
+            selectionLength: 4,
+            selectionText: "Prog")));
+        Assert.True(sourceControlPublisher.TryPublish(new SourceControlStatusSnapshot(
+            generation: 0,
+            availability: SourceControlSnapshotAvailability.Available,
+            workspacePath: "/workspace",
+            repositoryStatus: new RepositoryStatusSnapshot
+            {
+                CurrentBranchName = "main",
+                Changes = new[] { new FileChange("Program.cs", GitChangeType.Modified) },
+            })));
+
+        var manifest = builder.Build(
+            AgentSessionId.New(),
+            ExecutionRunId.New(),
+            ConversationId.NewDirect(),
+            new AgentContextPolicy(AgentContextPolicyLevel.Detailed),
+            snapshotSources,
+            FixedAssemblyTime);
+
+        Assert.Contains(
+            manifest.Items,
+            item => item.SourceId == AgentContextSourceId.ActiveFile);
+        Assert.Contains(
+            manifest.Items,
+            item => item.SourceId == AgentContextSourceId.SourceControlSummary);
+        Assert.Contains(
+            manifest.Items,
+            item => item.SourceId == AgentContextSourceId.EditorCaretSelection);
     }
 
     private static DeterministicAgentContextSnapshotSources CreateDeterministicSnapshotSources() =>

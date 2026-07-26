@@ -100,6 +100,7 @@ Zaide.Features.Editor.Application.EditorStateSnapshot
 Zaide.Features.Editor.Contracts.EditorReadOnlyTabRequest
 Zaide.Features.Editor.Contracts.IEditorLanguageOperations
 Zaide.Features.Editor.Contracts.IEditorReadOnlyTabService
+Zaide.Features.Editor.Contracts.IEditorStateSnapshotPublisher
 Zaide.Features.Editor.Contracts.IEditorStateSnapshotService
 Zaide.Features.Editor.Contracts.IEditorTextOperations
 Zaide.Features.Editor.Contracts.IFileService
@@ -289,6 +290,7 @@ Zaide.Features.SourceControl.Contracts.IGitMutationService
 Zaide.Features.SourceControl.Contracts.IGitRepositoryService
 Zaide.Features.SourceControl.Contracts.ISourceControlDiffTabService
 Zaide.Features.SourceControl.Contracts.ISourceControlSnapshotOrchestrator
+Zaide.Features.SourceControl.Contracts.ISourceControlSnapshotPublisher
 Zaide.Features.SourceControl.Contracts.ISourceControlSnapshotService
 Zaide.Features.SourceControl.Domain.ChangeType
 Zaide.Features.SourceControl.Domain.FileChange
