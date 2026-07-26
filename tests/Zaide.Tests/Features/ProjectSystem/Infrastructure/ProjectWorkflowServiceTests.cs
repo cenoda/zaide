@@ -12,6 +12,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
@@ -21,15 +22,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectWorkflowServiceTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase11-workflow-" + Guid.NewGuid().ToString("N"));
-
-
-    static ProjectWorkflowServiceTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     private sealed class FakeProjectContextService : IProjectContextService
     {

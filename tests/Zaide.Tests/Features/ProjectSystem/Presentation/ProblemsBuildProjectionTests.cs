@@ -19,23 +19,19 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 
 /// <summary>
 /// Phase 11 M3 tests for Problems merge of LSP and build diagnostics.
 /// </summary>
-public sealed class ProblemsBuildProjectionTests
+public sealed class ProblemsBuildProjectionTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase11-problems-merge-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-
-    static ProblemsBuildProjectionTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class FakeLanguageDiagnosticsService : ILanguageDiagnosticsService
     {
@@ -73,6 +69,7 @@ public sealed class ProblemsBuildProjectionTests
 
     private sealed class Harness : IDisposable
     {
+        private readonly string _workspaceRoot;
         public global::Zaide.Features.Workspace.Domain.Workspace Workspace { get; } = new();
         public FakeLanguageDiagnosticsService LanguageDiagnostics { get; } = new();
         public FakeBuildDiagnosticsService BuildDiagnostics { get; } = new();
@@ -80,8 +77,9 @@ public sealed class ProblemsBuildProjectionTests
         public ProblemsViewModel Problems { get; }
         private readonly ServiceProvider _sp;
 
-        public Harness()
+        public Harness(string workspaceRoot)
         {
+            _workspaceRoot = workspaceRoot;
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
@@ -101,7 +99,7 @@ public sealed class ProblemsBuildProjectionTests
 
         public string WriteCs(string name, string content)
         {
-            var path = Path.Combine(TempRoot, name + ".cs");
+            var path = Path.Combine(_workspaceRoot, name + ".cs");
             File.WriteAllText(path, content);
             return path;
         }
@@ -142,7 +140,7 @@ public sealed class ProblemsBuildProjectionTests
     [Fact]
     public void Merge_ProjectsLanguageAndBuildItemsWithSourceAttribution()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var lspPath = harness.WriteCs("lsp", "class A { }");
         var buildPath = harness.WriteCs("build", "class B { }");
 
@@ -172,7 +170,7 @@ public sealed class ProblemsBuildProjectionTests
     [Fact]
     public void BuildStart_ClearsBuildItems_ButRetainsLanguageItems()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var lspPath = harness.WriteCs("retain-lsp", "class A { }");
         var buildPath = harness.WriteCs("clear-build", "class B { }");
 
@@ -210,7 +208,7 @@ public sealed class ProblemsBuildProjectionTests
     [Fact]
     public void BuildFinish_ReplacesBuildItems_ButRetainsLanguageItems()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var lspPath = harness.WriteCs("retain-lsp-finish", "class A { }");
         var buildPath = harness.WriteCs("replace-build", "class B { }");
 
@@ -246,7 +244,7 @@ public sealed class ProblemsBuildProjectionTests
     [Fact]
     public async Task NavigateBuildProblem_OpensFileAtLineColumn()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var content = "class BuildNav { int x }";
         var path = harness.WriteCs("build-nav", content);
 

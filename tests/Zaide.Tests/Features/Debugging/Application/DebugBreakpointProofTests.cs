@@ -15,6 +15,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -25,8 +26,7 @@ namespace Zaide.Tests.Features.Debugging.Application;
 [Trait("Category", "SlowIntegration")]
 public sealed class DebugBreakpointProofTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string ProgramSource = Path.Combine(FixtureRoot, "Program.cs");
 

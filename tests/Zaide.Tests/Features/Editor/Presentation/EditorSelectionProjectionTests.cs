@@ -4,6 +4,7 @@ using AvaloniaEdit.Document;
 using Xunit;
 using Zaide.App.Shell;
 using Zaide.Features.Editor.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 
@@ -13,9 +14,7 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorSelectionProjectionTests
 {
-    private static readonly string WorkflowProgramCs = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..",
-            "fixtures", "workflow-console", "Program.cs"));
+    private static readonly string WorkflowProgramCs = TestFixturePaths.WorkflowConsoleProgram;
 
     [Fact]
     public void EmptySelection_StartPositionLineZero_WouldCrashGetOffset_ButProjectionIsSafe()

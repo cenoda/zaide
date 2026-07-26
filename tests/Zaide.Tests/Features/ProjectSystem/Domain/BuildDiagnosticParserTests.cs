@@ -4,6 +4,7 @@ using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Domain;
 
@@ -12,15 +13,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Domain;
 /// </summary>
 public sealed class BuildDiagnosticParserTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase11-build-parser-" + Guid.NewGuid().ToString("N"));
-
-
-    static BuildDiagnosticParserTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     [Fact]
     public void Parse_ErrorWithLineAndColumn_NormalizesAbsolutePath()

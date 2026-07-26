@@ -14,6 +14,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 using Zaide.Tests.Features.Debugging.Infrastructure.Dap;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -21,17 +22,12 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Phase 12 M1 tests for <see cref="DebugSessionService"/> lifecycle, ordering,
 /// events, failures, generation safety, and disposal.
 /// </summary>
-public sealed class DebugSessionServiceTests
+public sealed class DebugSessionServiceTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m1-debug-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-
-    static DebugSessionServiceTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class FakeProjectContextService : IProjectContextService
     {
@@ -144,13 +140,13 @@ public sealed class DebugSessionServiceTests
         public void Dispose() => _subscription.Dispose();
     }
 
-    private static ProjectCandidate MakeCandidate(string fileName, ProjectKind kind = ProjectKind.CSharpProject)
+    private ProjectCandidate MakeCandidate(string fileName, ProjectKind kind = ProjectKind.CSharpProject)
     {
         var path = Path.GetFullPath(Path.Combine(TempRoot, fileName));
         return new ProjectCandidate(path, Path.GetFileNameWithoutExtension(path), kind);
     }
 
-    private static ProjectContext MakeContext(
+    private ProjectContext MakeContext(
         ProjectContextState state,
         ProjectCandidate? selected,
         IReadOnlyList<ProjectCandidate>? candidates = null)
@@ -165,7 +161,7 @@ public sealed class DebugSessionServiceTests
             ErrorMessage: state == ProjectContextState.Failed ? "discovery failed" : null);
     }
 
-    private static DebugLaunchRequest MakeLaunchRequest(
+    private DebugLaunchRequest MakeLaunchRequest(
         string dllName = "App.dll",
         string sourceName = "Program.cs",
         int breakpointLine = 1)

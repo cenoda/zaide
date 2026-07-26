@@ -3,6 +3,7 @@ using System.IO;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Domain;
 
@@ -11,15 +12,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Domain;
 /// </summary>
 public sealed class TestResultsParserTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase11-test-parser-" + Guid.NewGuid().ToString("N"));
-
-
-    static TestResultsParserTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     [Fact]
     public void Parse_PassSummary_ExtractsCountsWithoutInventingCases()

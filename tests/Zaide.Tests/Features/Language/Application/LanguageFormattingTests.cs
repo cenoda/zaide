@@ -13,23 +13,20 @@ using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Editor.Domain;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
 /// <summary>
 /// Phase 10 M6 tests for whole-document formatting ownership and edit validation.
 /// </summary>
-public sealed class LanguageFormattingTests
+public sealed class LanguageFormattingTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m6-fmt-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-fmt-");
+    private string WorkspaceRoot => _workspace.Path;
 
+    public void Dispose() => _workspace.Dispose();
 
-    static LanguageFormattingTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
 
     private sealed class ConfigurableSession : ILanguageServerSession
     {
@@ -90,9 +87,12 @@ public sealed class LanguageFormattingTests
 
     private sealed class FakeSessionService : ILanguageSessionService
     {
+        private readonly string _workspaceRoot;
         private readonly Subject<LanguageSessionSnapshot> _subject = new();
         private LanguageSessionSnapshot _current = Unavailable(0);
         private ConfigurableSession? _session;
+
+        public FakeSessionService(string workspaceRoot) => _workspaceRoot = workspaceRoot;
 
         public LanguageSessionSnapshot Current => _current;
         public IObservable<LanguageSessionSnapshot> WhenChanged => _subject;
@@ -102,7 +102,7 @@ public sealed class LanguageFormattingTests
             _session = session;
             session.Generation = generation;
             _current = new LanguageSessionSnapshot(
-                LanguageSessionState.Ready, generation, "/p.csproj", TempRoot, 1, null);
+                LanguageSessionState.Ready, generation, "/p.csproj", _workspaceRoot, 1, null);
             _subject.OnNext(_current);
         }
 
@@ -159,14 +159,17 @@ public sealed class LanguageFormattingTests
     private sealed class Harness : IDisposable
     {
         public global::Zaide.Features.Workspace.Domain.Workspace Workspace { get; } = new();
-        public FakeSessionService SessionService { get; } = new();
+        private readonly string _workspaceRoot;
         public FakeDocumentBridge Bridge { get; } = new();
         public ConfigurableSession Session { get; } = new();
+        public FakeSessionService SessionService { get; }
         public LanguageFormattingService Service { get; }
         public List<LanguageFormattingSnapshot> Snapshots { get; } = new();
 
-        public Harness()
+        public Harness(string workspaceRoot)
         {
+            _workspaceRoot = workspaceRoot;
+            SessionService = new FakeSessionService(workspaceRoot);
             Service = new LanguageFormattingService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
             Service.WhenChanged.Subscribe(s => Snapshots.Add(s));
@@ -175,7 +178,7 @@ public sealed class LanguageFormattingTests
         public (string Path, Document Document) OpenActive(
             string name, string content, int version = 1, long generation = 1)
         {
-            var path = Path.Combine(TempRoot, Guid.NewGuid().ToString("N") + "-" + name);
+            var path = Path.Combine(_workspaceRoot, Guid.NewGuid().ToString("N") + "-" + name);
             File.WriteAllText(path, content);
             var doc = Workspace.OpenDocument(path, content);
             Workspace.SetActiveDocument(doc);
@@ -261,7 +264,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_NoEdits_AcceptedWithoutMutationSignal()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, doc) = h.OpenActive("tidy.cs", "class C { }");
         var original = doc.Content;
         h.SessionService.SetReady(h.Session);
@@ -282,7 +285,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_ValidEdits_ProducesFormattedText()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, doc) = h.OpenActive("messy.cs", "class C{int x;}");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingHandler = (_, _) =>
@@ -304,7 +307,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_InvalidEdits_RejectedWithoutTextChange()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, doc) = h.OpenActive("bad.cs", "abc");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingHandler = (_, _) =>
@@ -322,7 +325,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_OverlappingEdits_Rejected()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("overlap.cs", "abcdef");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingHandler = (_, _) =>
@@ -340,7 +343,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_UnsupportedCapability_NoRequest()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("unsup.cs", "class C {}");
         h.Session.Capabilities = TestLanguageServerSession.DefaultCapabilities with
         {
@@ -358,7 +361,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_SessionNotReady_Unavailable()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("nr.cs", "class C {}");
         h.SessionService.SetUnavailable();
 
@@ -371,7 +374,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_FailedNullResult_FailedOutcome()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("fail.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingHandler = (_, _) =>
@@ -386,7 +389,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_Cancelled_ReturnsCancelled()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("cancel.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingGate = new TaskCompletionSource<bool>();
@@ -403,7 +406,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_StaleVersion_Rejected()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, _) = h.OpenActive("stale.cs", "class C {}", version: 1);
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingGate = new TaskCompletionSource<bool>();
@@ -421,9 +424,9 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_ActiveTabSwitch_Rejected()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (pathA, docA) = h.OpenActive("a.cs", "class A {}");
-        var pathB = Path.Combine(TempRoot, Guid.NewGuid().ToString("N") + "-b.cs");
+        var pathB = Path.Combine(WorkspaceRoot, Guid.NewGuid().ToString("N") + "-b.cs");
         File.WriteAllText(pathB, "class B {}");
         var docB = h.Workspace.OpenDocument(pathB, "class B {}");
         // OpenDocument activates B; restore A as active before formatting.
@@ -447,7 +450,7 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_ContentChangedDuringRequest_Stale()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (path, doc) = h.OpenActive("chg.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.FormattingGate = new TaskCompletionSource<bool>();
@@ -466,9 +469,9 @@ public sealed class LanguageFormattingTests
     [Fact]
     public async Task Format_InactivePath_Unavailable()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var (pathA, docA) = h.OpenActive("a.cs", "class A {}");
-        var pathB = Path.Combine(TempRoot, Guid.NewGuid().ToString("N") + "-other.cs");
+        var pathB = Path.Combine(WorkspaceRoot, Guid.NewGuid().ToString("N") + "-other.cs");
         File.WriteAllText(pathB, "class B {}");
         h.Workspace.OpenDocument(pathB, "class B {}");
         h.Bridge.SetOpen(pathB, 1, 1);

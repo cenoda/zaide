@@ -4,7 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, M2c, M2d, M2e, and M3 are implemented and ready for review.
+closeout. M1, M2a, M2b, M2c, M2d, M2e, M3, and M4 are implemented and ready for review.
 
 ## Current findings
 
@@ -111,8 +111,33 @@ service polling.
   processes observed after the gates.
 - `git diff --check` passed.
 
+## M4 result (2026-07-26)
+
+- Added `TestFixturePaths`, `TestFilesystem.SharedReadOnlyWorkspaceRoot`, and
+  `TestTempDirectory` under `tests/Zaide.Tests/Infrastructure/`.
+- Replaced 24 per-class `TempRoot` + static constructor allocations: 12
+  path-only suites now share the committed `tests/fixtures` root; 12 writable
+  suites use per-test `TestTempDirectory` with `IDisposable` cleanup.
+- Consolidated five SourceControl `CreateTempDir()` copies onto
+  `TestTempDirectory`; removed redundant manual `Directory.Delete` finally
+  blocks where disposal now owns cleanup.
+- Pointed 13 workflow-console proof/command tests at `TestFixturePaths` instead
+  of duplicated `AppContext.BaseDirectory` path math.
+- Updated Settings persistence tests (`SettingsCoreTests`, `SecretStoreTests`,
+  `FileSecretStorePermissionTests`, `ProjectSystemProofOfConceptTests`) to use
+  `TestTempDirectory`.
+- Focused ProjectSystem/Language/SourceControl/Settings/Workspace gate: 839/839
+  passed in 5 seconds.
+- Ordinary selection: 3029/3029 passed in 7 seconds (M3 baseline 7 seconds).
+- Slow integration selection: 36/36 passed in 9 seconds (M3 baseline 9 seconds).
+- Combined coverage: 3065/3065 passed with 0 failures.
+- Testhost count remained 0 before and after; `/tmp/zaide*` +
+  `/tmp/Zaide*` counts were 8550 before and 8600 after the full gates (+50 from
+  pre-existing host accumulation and suites outside this slice).
+- `git diff --check` passed.
+
 ## Next task
 
-After review, continue with M4: reuse immutable filesystem fixtures and isolate
-writable cases, then continue the remaining language polling inventory
+After review, continue with M5: measure and split remaining gate/singleton
+contention, then continue the remaining language polling inventory
 (completion/hover/document-sync delays).

@@ -13,6 +13,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
@@ -22,17 +23,9 @@ namespace Zaide.Tests.Features.Language.Application;
 /// </summary>
 public sealed class LanguageSessionServiceTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m1-" + Guid.NewGuid().ToString("N"));
-
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     // ── Fakes ───────────────────────────────────────────────────────────
-
-    static LanguageSessionServiceTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
 
     private sealed class FakeProjectContextService : IProjectContextService
     {

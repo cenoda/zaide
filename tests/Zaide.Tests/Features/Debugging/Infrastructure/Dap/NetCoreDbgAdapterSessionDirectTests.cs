@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Zaide.Features.Debugging.Infrastructure.Dap;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
@@ -14,8 +15,7 @@ namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 [Trait("Category", "SlowIntegration")]
 public sealed class NetCoreDbgAdapterSessionDirectTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string AdapterPath =
         Environment.GetEnvironmentVariable("ZAIDE_NETCOREDBG_PATH")

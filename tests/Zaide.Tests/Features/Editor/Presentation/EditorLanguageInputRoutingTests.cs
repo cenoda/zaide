@@ -22,6 +22,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Presentation;
 
@@ -30,15 +31,7 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorLanguageInputRoutingTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m4-input-" + Guid.NewGuid().ToString("N"));
-
-
-    static EditorLanguageInputRoutingTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     private sealed class RecordingEditor : IEditorLanguageOperations
     {

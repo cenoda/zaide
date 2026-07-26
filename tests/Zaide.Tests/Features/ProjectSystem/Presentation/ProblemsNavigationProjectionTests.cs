@@ -19,23 +19,19 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 
 /// <summary>
 /// Focused editor-projection/navigation tests for Phase 10 M3 Problems.
 /// </summary>
-public sealed class ProblemsNavigationProjectionTests
+public sealed class ProblemsNavigationProjectionTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m3-nav-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-
-    static ProblemsNavigationProjectionTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     [Fact]
     public void EditorViewModel_RequestNavigate_SetsPendingFields()

@@ -14,6 +14,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.App.Composition;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
@@ -24,11 +25,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 public sealed class ProjectBuildCommandTests
 {
 
-    private static readonly string FixtureProjectPath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..",
-            "fixtures", "workflow-console", "WorkflowConsole.csproj"));
+    private static readonly string FixtureProjectPath = TestFixturePaths.WorkflowConsoleProject;
 
     [Fact]
     public void BuildAndCancel_AreRegisteredWithMetadata()

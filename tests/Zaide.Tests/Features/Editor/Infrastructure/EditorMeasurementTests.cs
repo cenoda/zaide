@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
@@ -14,10 +15,7 @@ namespace Zaide.Tests.Features.Editor.Infrastructure;
 public class EditorMeasurementTests
 {
     private static string WorkflowConsoleProgramPath =>
-        Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..",
-            "fixtures", "workflow-console", "Program.cs"));
+        TestFixturePaths.WorkflowConsoleProgram;
 
     private static string RepoRoot =>
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));

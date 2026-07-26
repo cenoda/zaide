@@ -12,6 +12,7 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 
@@ -21,25 +22,20 @@ namespace Zaide.Tests.Features.Settings.Infrastructure;
 /// </summary>
 public sealed class SettingsCoreTests : IDisposable
 {
-    private readonly string _tempDir;
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("ZaideCore-");
     private readonly string _settingsPath;
     private readonly string _lastKnownGoodPath;
     private readonly string _tempPath;
 
     public SettingsCoreTests()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), "ZaideCore_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_tempDir);
-        _settingsPath = Path.Combine(_tempDir, "settings.json");
-        _lastKnownGoodPath = Path.Combine(_tempDir, "settings.json.lastknowngood");
-        _tempPath = Path.Combine(_tempDir, "settings.json.tmp");
+        var tempDir = _workspace.Path;
+        _settingsPath = Path.Combine(tempDir, "settings.json");
+        _lastKnownGoodPath = Path.Combine(tempDir, "settings.json.lastknowngood");
+        _tempPath = Path.Combine(tempDir, "settings.json.tmp");
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_tempDir, recursive: true); }
-        catch { /* best-effort cleanup */ }
-    }
+    public void Dispose() => _workspace.Dispose();
 
     // ── Helpers ─────────────────────────────────────────────────────────
 

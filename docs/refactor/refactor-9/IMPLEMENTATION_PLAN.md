@@ -29,6 +29,33 @@ Those are later milestones and must retain independent verification gates.
 | M4 | Reuse immutable filesystem fixtures and isolate writable cases | project/language/filesystem-focused tests, then full suite |
 | M5 | Measure and split remaining gate/singleton contention; document impacted-test feasibility | full suite plus timing/process evidence |
 
+## M4 Verification Record
+
+Added `TestFixturePaths`, `TestFilesystem.SharedReadOnlyWorkspaceRoot`, and
+`TestTempDirectory` under `tests/Zaide.Tests/Infrastructure/`. Path-only tests
+now reuse the committed `tests/fixtures` tree instead of creating per-class
+temp roots; writable tests allocate isolated `TestTempDirectory` instances with
+guaranteed disposal. Consolidated duplicate `tests/fixtures/workflow-console`
+path literals onto `TestFixturePaths` and deduplicated five SourceControl
+`CreateTempDir()` helpers.
+
+| Category | Treatment |
+|---|---|
+| Shared read-only | `TestFilesystem.SharedReadOnlyWorkspaceRoot` → `tests/fixtures` (12 parser/resolution/language session tests, no disk writes) |
+| Shared immutable fixtures | `TestFixturePaths.WorkflowConsole*` (13 existing workflow proof/command tests) |
+| Per-test writable | `TestTempDirectory` via `IDisposable` test classes or `using var` (Language navigation/symbol/formatting, ProjectSystem presentation/debug resolver tests, Settings persistence, SourceControl repo tests) |
+
+| Gate | Result |
+|---|---|
+| `dotnet build Zaide.slnx` | pass, 0 errors, 4 existing warnings |
+| Focused ProjectSystem/Language/SourceControl/Settings/Workspace | pass, 839/839 in 5s |
+| `Category!=SlowIntegration` | pass, 3029/3029 in 7s (M3 baseline 7s) |
+| `Category=SlowIntegration` | pass, 36/36 in 9s (M3 baseline 9s) |
+| Combined coverage | 3065/3065 with 0 failures |
+| Testhost count before/after gates | 0 / 0 |
+| `/tmp/zaide*` + `/tmp/Zaide*` count before/after full gates | 8550 / 8600 (+50; pre-existing host accumulation; M4 slice adds cleanup for refactored tests) |
+| `git diff --check` | pass |
+
 ## M1 Entry and Exit Conditions
 
 - External process, PTY, and production DAP proof tests carry the

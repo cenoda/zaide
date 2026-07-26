@@ -19,23 +19,19 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 
 /// <summary>
 /// Phase 10 M3 tests for Problems projection and navigation.
 /// </summary>
-public sealed class ProblemsViewModelTests
+public sealed class ProblemsViewModelTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m3-problems-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-
-    static ProblemsViewModelTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class FakeDiagnosticsService : ILanguageDiagnosticsService
     {
@@ -73,6 +69,7 @@ public sealed class ProblemsViewModelTests
 
     private sealed class Harness : IDisposable
     {
+        private readonly string _workspaceRoot;
         public global::Zaide.Features.Workspace.Domain.Workspace Workspace { get; } = new();
         public FakeDiagnosticsService Diagnostics { get; } = new();
         public FakeBuildDiagnosticsService BuildDiagnostics { get; } = new();
@@ -80,8 +77,9 @@ public sealed class ProblemsViewModelTests
         public ProblemsViewModel Problems { get; }
         private readonly ServiceProvider _sp;
 
-        public Harness()
+        public Harness(string workspaceRoot)
         {
+            _workspaceRoot = workspaceRoot;
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
@@ -97,7 +95,7 @@ public sealed class ProblemsViewModelTests
 
         public string WriteCs(string name, string content)
         {
-            var path = Path.Combine(TempRoot, name + ".cs");
+            var path = Path.Combine(_workspaceRoot, name + ".cs");
             File.WriteAllText(path, content);
             return path;
         }
@@ -139,7 +137,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public void InitialProjection_UnavailableEmpty()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         Assert.Equal(LanguageSessionState.Unavailable, harness.Problems.State);
         Assert.Empty(harness.Problems.Problems);
         Assert.Contains("unavailable", harness.Problems.StatusMessage, StringComparison.OrdinalIgnoreCase);
@@ -148,7 +146,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public void ReadyEmpty_ShowsNoProblemsStatus()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         harness.Diagnostics.Publish(new LanguageDiagnosticsSnapshot(
             LanguageSessionState.Ready, 1, null, Array.Empty<LanguageDiagnostic>()));
 
@@ -160,7 +158,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public void ReadyWithDiagnostics_ProjectsItems()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var path = harness.WriteCs("proj", "class A { }");
         var diag = harness.MakeDiagnostic(path, "class A { }", "missing semi");
 
@@ -178,7 +176,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public void LoadingFailedStates_ProjectTruthfullyAndClearItems()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var path = harness.WriteCs("state", "x");
         var diag = harness.MakeDiagnostic(path, "x", "err");
 
@@ -208,7 +206,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public async Task NavigateLiveProblem_OpensFileAndRequestsCaret()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var content = "class A { }";
         var path = harness.WriteCs("nav-live", content);
         var diag = harness.MakeDiagnostic(path, content, "problem", startChar: 6, endChar: 7);
@@ -230,7 +228,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public async Task NavigateStaleGeneration_NoOps()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var content = "class A { }";
         var path = harness.WriteCs("nav-stale", content);
         var diag = harness.MakeDiagnostic(path, content, "stale", generation: 1);
@@ -251,7 +249,7 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public async Task NavigateWhenUnavailable_NoOps()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var content = "class A { }";
         var path = harness.WriteCs("nav-unavail", content);
         var diag = harness.MakeDiagnostic(path, content, "x");
@@ -269,14 +267,14 @@ public sealed class ProblemsViewModelTests
     [Fact]
     public async Task NavigateNullItem_NoOps()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         Assert.False(await harness.Problems.NavigateToProblemAsync(null));
     }
 
     [Fact]
     public void SnapshotReplace_DoesNotKeepStaleItems()
     {
-        using var harness = new Harness();
+        using var harness = new Harness(TempRoot);
         var path = harness.WriteCs("replace", "ab");
         var first = harness.MakeDiagnostic(path, "ab", "one");
         var second = harness.MakeDiagnostic(path, "ab", "two", startChar: 1, endChar: 2);
