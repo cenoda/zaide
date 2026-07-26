@@ -257,6 +257,28 @@ public class TownhallViewModel : ReactiveObject
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
 
+        _panelHost.Panels.CollectionChanged += (_, args) =>
+        {
+            if (args.NewItems != null)
+            {
+                foreach (AgentPanelState panel in args.NewItems)
+                {
+                    panel.PropertyChanged += OnAgentPanelPropertyChanged;
+                }
+            }
+            if (args.OldItems != null)
+            {
+                foreach (AgentPanelState panel in args.OldItems)
+                {
+                    panel.PropertyChanged -= OnAgentPanelPropertyChanged;
+                }
+            }
+        };
+        foreach (var panel in _panelHost.Panels)
+        {
+            panel.PropertyChanged += OnAgentPanelPropertyChanged;
+        }
+
         // Initialize explicit session seed state
         InitializeSessionState();
 
@@ -637,7 +659,7 @@ public class TownhallViewModel : ReactiveObject
         return projected;
     }
 
-    private void RefreshDirectNavItems()
+    internal void RefreshDirectNavItems()
     {
         var humanId = _actorCatalog.CanonicalHuman.Id;
         var selectedId = _state.ActiveConversationId;
@@ -1003,6 +1025,18 @@ public class TownhallViewModel : ReactiveObject
         }
 
         return "Direct";
+    }
+
+    private void OnAgentPanelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AgentPanelState.ContextDisclosureStatus) && sender is AgentPanelState panel)
+        {
+            var navItem = DirectNavItems.FirstOrDefault(i => i.ConversationId == panel.ConversationId);
+            if (navItem != null)
+            {
+                navItem.ContextDisclosureStatus = panel.ContextDisclosureStatus;
+            }
+        }
     }
 
     private System.Collections.ObjectModel.ReadOnlyCollection<TownhallMessage> ApplyFilter()

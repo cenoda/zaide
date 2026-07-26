@@ -7,6 +7,7 @@ using Xunit;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Debugging.Contracts;
@@ -19,6 +20,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.SourceControl.Application;
 using Zaide.Features.SourceControl.Contracts;
 using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
@@ -551,5 +553,33 @@ public sealed class Phase18DisclosureEventTests
         var matchingItem = directItems.FirstOrDefault(item => item.ConversationId == panel.ConversationId);
         Assert.NotNull(matchingItem);
         Assert.Equal("Context: 2 sources, 500 tokens", matchingItem.ContextDisclosureStatus);
+    }
+
+    [Fact]
+    public void ContextDisclosureStatus_PropagatesLive_AfterPanelUpdate()
+    {
+        // Arrange
+        var store = ConversationsTestSupport.CreateStore();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var panelHost = new AgentPanelHost(catalog, store);
+
+        var panel = panelHost.CreatePanel();
+        panel.ContextDisclosureStatus = string.Empty;
+
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(
+            state: null,
+            store: store,
+            panelHost: panelHost);
+
+        vm.RefreshDirectNavItems();
+        var matchingItem = vm.DirectNavItems.FirstOrDefault(item => item.ConversationId == panel.ConversationId);
+        Assert.NotNull(matchingItem);
+        Assert.Equal(string.Empty, matchingItem.ContextDisclosureStatus);
+
+        // Act: Update panel status after creation
+        panel.ContextDisclosureStatus = "Context: 1 source, 250 tokens";
+
+        // Assert: Nav item should reflect the update live without manual RefreshDirectNavItems
+        Assert.Equal("Context: 1 source, 250 tokens", matchingItem.ContextDisclosureStatus);
     }
 }

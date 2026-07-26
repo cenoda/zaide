@@ -48,7 +48,7 @@ Tests:
 - Registration module tests updated for publisher DI aliases.
 
 Verification (2026-07-26): `dotnet build Zaide.slnx --no-restore` succeeded;
-Phase18 73/73; Architecture 37/37; full fast 3154/3154; serial 3154/3154.
+Phase18 84/84; Architecture 37/37; full fast 3165/3165.
 Architecture source-file baseline corrected to 580 total / 535 Features.
 
 ## M3 corrective delivery (2026-07-26) - COMPLETE
