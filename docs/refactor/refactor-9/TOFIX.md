@@ -4,7 +4,8 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1, M2a, M2b, M2c, M2d, M2e, M3, and M4 are implemented and ready for review.
+closeout. M1, M2a, M2b, M2c, M2d, M2e, M3, M4, and M5 are implemented and
+ready for review.
 
 ## Current findings
 
@@ -136,8 +137,34 @@ service polling.
   pre-existing host accumulation and suites outside this slice).
 - `git diff --check` passed.
 
+## M5 result (2026-07-26)
+
+- Audited production serialization gates (`ProjectOperationGate`,
+  `ProjectContextService`, language services, DAP transport, `ConversationStore`,
+  settings/debug/agent singletons). All production gates are required for
+  correctness; no production concurrency weakening applied.
+- Test singleton audit: parallel tests allocate fresh instances or per-test DI
+  providers; no incorrect sharing of production singletons found. Process-wide
+  `ReactiveUiTestBootstrap` remains intentional (M3).
+- Removed unnecessary `DisableParallelization` from
+  `DapContentLengthTransportTests` — each test owns an isolated in-memory
+  harness; collection serialization was test-contingent and unjustified.
+- Impacted-test selection is feasible at feature-folder mirror,
+  composition-registration mirror, and cross-feature `using` scan tiers without
+  building a speculative dependency graph. Full symbol-level mapping is not
+  justified from live evidence.
+- Language polling inventory documented for closeout: 32 remaining `Task.Delay`
+  calls across completion (7), hover (8), document-sync (9), formatting (3),
+  session (2), symbol (2), navigation (1). Replacement needs production
+  completion/propagation signals for debounce, dwell, and bridge sync paths.
+- Focused DAP gate: 5/5 passed in 57 ms.
+- Ordinary selection: 3029/3029 passed in 7 seconds.
+- Slow integration selection: 36/36 passed in 9 seconds.
+- Combined coverage: 3065/3065 passed with 0 failures.
+- `git diff --check` passed.
+
 ## Next task
 
-After review, continue with M5: measure and split remaining gate/singleton
-contention, then continue the remaining language polling inventory
-(completion/hover/document-sync delays).
+After review, close Refactor 9: repeat unfiltered full gate on a clean test host,
+then address remaining language polling (completion/hover/document-sync) in a
+follow-up slice or defer to a later refactor milestone.

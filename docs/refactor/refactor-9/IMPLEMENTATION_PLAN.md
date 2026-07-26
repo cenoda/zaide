@@ -140,13 +140,113 @@ static initialization (temp-directory setup) in 24 test classes.
 | Testhost count before/after gates | 0 / 0 |
 | `git diff --check` | pass |
 
+## M5 Verification Record
+
+Analysis of production serialization gates, test singleton sharing, and
+impacted-test feasibility. One test-contingent fix: removed unnecessary
+`DisableParallelization` from `DapContentLengthTransportTests` (each test
+creates an isolated in-memory harness with no shared static state).
+
+### Serialization inventory
+
+| Component | Mechanism | Classification |
+|---|---|---|
+| `ProjectOperationGate` | `_admissionMutex` + `_criticalSectionMutex` | Production-required (workflow/debug mutual exclusion) |
+| `ProjectContextService` | `_gate` (`SemaphoreSlim`) | Production-required (overlapping load/reload sequence) |
+| `LanguageSessionService` | `_gate` | Production-required (session lifecycle) |
+| `LanguageDocumentBridge` | `_gate` | Production-required (document sync ordering) |
+| Language feature services (completion/hover/navigation/symbol/formatting) | `_gate` locks + request IDs | Production-required (in-flight request coalescing) |
+| `DebugSessionService` | `_gate` | Production-required (adapter session lifecycle) |
+| `DapContentLengthTransport` | `_writeGate` | Production-required (DAP frame write integrity) |
+| `SettingsService` | `_mutationGate` + queued writer | Production-required (concurrent mutation safety) |
+| `ConversationStore` | `_sync` | Production-required (in-memory store correctness) |
+| `ManagedProcessRunner` | `_sync` | Production-required (process ownership) |
+| Agent session/coordinator/broker services | various `_sync` / `_gate` / `_admissionGate` | Production-required |
+| `ReactiveUiTestBootstrap` | process-wide `lock(Sync)` + idempotent init | Test-contingent, intentional (M3); only `SettingsUiTests` uses serialized `AvaloniaUiInitialization` collection |
+| `SlowExternalResources` / `Phase16Isolation` / `LinuxTerminalProcessIsolation` / `AvaloniaUiInitialization` collections | xUnit `DisableParallelization` | Test-contingent, justified (external resources or mutable global UI state) |
+| ~~`DapContentLengthTransportTests` collection~~ | ~~removed~~ | Was test-contingent and unnecessary |
+
+### Test singleton / shared-state audit
+
+- Production DI singletons are not shared across parallel tests: unit and
+  integration tests construct per-test `ServiceProvider` instances or direct
+  `new` targets (`ConversationStore`, `ProjectOperationGate`, language fakes).
+- `TestOperationGateFactory`, `TestProjectWorkflowFactory`, and feature test
+  support classes allocate fresh instances per test class or method.
+- `TestFilesystem.SharedReadOnlyWorkspaceRoot` is read-only committed fixture
+  data (M4); writable cases use isolated `TestTempDirectory`.
+- Process-wide shared state is limited to `ReactiveUiTestBootstrap` (by design)
+  and xUnit testhost process lifetime; no evidence that ordinary parallel tests
+  incorrectly share production singletons.
+
+### Remaining language polling inventory (closeout note)
+
+| File | Delay count | Nature |
+|---|---|---|
+| `LanguageDocumentSyncTests` | 9 | Bridge propagation / generation settle waits |
+| `LanguageHoverTests` | 8 | Dwell/debounce policy + cancellation timing |
+| `LanguageCompletionTests` | 7 | Automatic debounce + trigger policy waits |
+| `LanguageFormattingTests` | 3 | Request settle waits |
+| `LanguageSessionServiceTests` | 2 | Reconcile timing |
+| `LanguageSymbolTests` | 2 | Workspace debounce + dismiss timing |
+| `LanguageNavigationTests` | 1 | Residual bounded wait |
+
+Replacing these requires production completion/propagation signals for
+document-bridge sync, hover dwell, and completion debounce paths — not
+test-only scope changes. Deferred to refactor closeout; not part of M5.
+
+### Impacted-test selection feasibility
+
+**Feasible at coarse tiers without a full dependency graph:**
+
+1. **Feature-folder mirror** — `src/Features/{Feature}/**` maps to
+   `tests/Zaide.Tests/Features/{Feature}/**` (11 features, 203 test files).
+2. **Composition registration mirror** —
+   `src/App/Composition/Registration/*ServiceCollectionExtensions.cs` maps to
+   `tests/Zaide.Tests/App/Composition/*RegistrationModuleTests.cs`.
+3. **Cross-feature import scan** — grep `using Zaide.Features.{Feature}.` across
+   `tests/Zaide.Tests` catches tests outside the feature folder that depend on
+   changed namespaces (e.g. Workspace referenced from 78 test files).
+4. **Architecture ratchet** — existing `ArchitectureInventoryReader` and ratchet
+   tests for structural/boundary changes.
+
+**Metadata/index required (no speculative graph engine):**
+
+- Changed-file path → feature name (directory rule).
+- Optional: changed namespace → feature (namespace declaration regex, already in
+  `ArchitectureInventoryReader`).
+- Test-side index: test file path → feature folder; plus `using` scan cache for
+  cross-feature references.
+- Selection trait map: `SlowIntegration` (36 tests), serialized collections.
+
+**Not justified without live evidence:** IL/symbol-level production→test
+dependency graph, Roslyn reference closure, or MSBuild per-type test mapping
+(tests reference single `Zaide.csproj`).
+
+### Duplicate / all-pairs patterns
+
+- No all-pairs cross-test duplication found.
+- Intentional in-test stress loops remain in `DapContentLengthTransportTests`
+  (50-attempt race loops) and agent broker admission tests; these are bounded
+  single-test stress, not suite-wide duplication.
+
+| Gate | Result |
+|---|---|
+| `dotnet build Zaide.slnx` | pass, 0 errors, 4 existing warnings |
+| `FullyQualifiedName~DapContentLengthTransportTests` | pass, 5/5 in 57 ms |
+| `Category!=SlowIntegration` | pass, 3029/3029 in 7 s |
+| `Category=SlowIntegration` | pass, 36/36 in 9 s |
+| Combined coverage | 3065/3065 with 0 failures |
+| `git diff --check` | pass |
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.
 - Tests that use only in-memory fakes remain in the ordinary suite even when
   their production area also has integration proofs.
-- The current repository does not yet have dependency graph data for
-  impacted-test selection; that remains M5 investigation.
+- Impacted-test selection is feasible at feature-folder and namespace-import
+  tiers; a full dependency graph is not justified for this refactor.
+- Language completion/hover/document-sync polling remains for closeout.
 
 ## Rollback Plan
 
