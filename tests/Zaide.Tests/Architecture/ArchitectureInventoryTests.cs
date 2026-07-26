@@ -221,7 +221,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1: +7 snapshot seam production files.
         // Phase 18 M1 corrective: +2 disclosure summary production files.
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
-        Assert.Equal(577, inventory.SourceFiles.Count);
+        // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
+        Assert.Equal(580, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -248,7 +249,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1 corrective: +2 disclosure summary production files.
         // Phase 18 M2: +11 internal context assembly service production files.
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
-        Assert.Equal(532, byFolder["Features"]);
+        // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
+        Assert.Equal(535, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
