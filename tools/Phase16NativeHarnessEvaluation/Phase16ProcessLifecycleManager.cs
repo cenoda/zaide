@@ -18,6 +18,15 @@ public static class Phase16ProcessLifecycleManager
         }
 
         var lifecycleEvents = new List<string>();
+        var lifecycleEventsGate = new object();
+        void AddLifecycleEvent(string lifecycleEvent)
+        {
+            lock (lifecycleEventsGate)
+            {
+                lifecycleEvents.Add(lifecycleEvent);
+            }
+        }
+
         var stdoutBuffer = new StreamCaptureBuffer(CaptureLimits.MaxStdoutBytes);
         var stderrBuffer = new StreamCaptureBuffer(CaptureLimits.MaxStderrBytes);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -31,9 +40,13 @@ public static class Phase16ProcessLifecycleManager
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardError = true;
 
-        lifecycleEvents.Add("process_start_requested");
+        AddLifecycleEvent("process_start_requested");
         process.Start();
-        lifecycleEvents.Add($"process_started pid={process.Id}");
+        AddLifecycleEvent($"process_started pid={process.Id}");
+
+        using var cancellationRegistration = cancellationToken.Register(
+            static state => ((Action)state!).Invoke(),
+            (Action)(() => AddLifecycleEvent("cancellation_requested")));
 
         var stdoutTask = PumpStreamAsync(process.StandardOutput, stdoutBuffer, CancellationToken.None);
         var stderrTask = PumpStreamAsync(process.StandardError, stderrBuffer, CancellationToken.None);
@@ -43,31 +56,52 @@ public static class Phase16ProcessLifecycleManager
         try
         {
             await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
-            lifecycleEvents.Add($"process_exited exit_code={process.ExitCode}");
+            AddLifecycleEvent($"process_exited exit_code={process.ExitCode}");
         }
         catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
         {
             cancelled = cancellationToken.IsCancellationRequested;
             timedOut = !cancelled && request.WallTimeout is not null;
-            lifecycleEvents.Add(cancelled ? "cancellation_requested" : "wall_timeout_reached");
-            await TerminateProcessTreeAsync(process, lifecycleEvents).ConfigureAwait(false);
-        }
+            if (!cancelled)
+            {
+                AddLifecycleEvent("wall_timeout_reached");
+            }
 
-        await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
+            await TerminateProcessTreeAsync(process, AddLifecycleEvent).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                await TerminateProcessTreeAsync(process, AddLifecycleEvent).ConfigureAwait(false);
+            }
+
+            await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
+        }
 
         if (cancellationToken.IsCancellationRequested)
         {
             cancelled = true;
+            lock (lifecycleEventsGate)
+            {
+                if (!lifecycleEvents.Contains("cancellation_requested", StringComparer.Ordinal))
+                {
+                    lifecycleEvents.Add("cancellation_requested");
+                }
+            }
         }
 
-        var orphanDetected = DetectOrphanProcesses(request.TrialMarker, process.Id, lifecycleEvents);
+        var orphanDetected = DetectOrphanProcesses(
+            request.TrialMarker,
+            process.Id,
+            AddLifecycleEvent);
         if (orphanDetected)
         {
-            lifecycleEvents.Add("orphan_process_detected");
+            AddLifecycleEvent("orphan_process_detected");
         }
         else
         {
-            lifecycleEvents.Add("orphan_absence_verified");
+            AddLifecycleEvent("orphan_absence_verified");
         }
 
         return new Phase16SandboxLaunchResult
@@ -82,53 +116,57 @@ public static class Phase16ProcessLifecycleManager
             ExactArgv = BuildExactArgv(startInfo),
             AppliedEnvironment = ReadAppliedEnvironment(startInfo),
             OrphanProcessesDetected = orphanDetected,
-            LifecycleEvents = lifecycleEvents,
+            LifecycleEvents = lifecycleEvents.ToArray(),
         };
     }
 
-    private static async Task TerminateProcessTreeAsync(Process process, List<string> lifecycleEvents)
+    private static async Task TerminateProcessTreeAsync(Process process, Action<string> addLifecycleEvent)
     {
         if (process.HasExited)
         {
-            lifecycleEvents.Add("terminate_skipped_already_exited");
+            addLifecycleEvent("terminate_skipped_already_exited");
             return;
         }
 
-        lifecycleEvents.Add("terminate_signal_sent");
+        addLifecycleEvent("terminate_signal_sent");
         try
         {
-            process.Kill(entireProcessTree: false);
+            process.Kill(entireProcessTree: true);
         }
         catch (InvalidOperationException)
         {
-            lifecycleEvents.Add("terminate_signal_failed");
+            addLifecycleEvent("terminate_signal_failed");
         }
 
         try
         {
             using var graceCts = new CancellationTokenSource(GracePeriod);
             await process.WaitForExitAsync(graceCts.Token).ConfigureAwait(false);
-            lifecycleEvents.Add("graceful_termination_observed");
+            addLifecycleEvent("graceful_termination_observed");
             return;
         }
         catch (OperationCanceledException)
         {
-            lifecycleEvents.Add("grace_period_elapsed");
+            addLifecycleEvent("grace_period_elapsed");
         }
 
         if (!process.HasExited)
         {
             process.Kill(entireProcessTree: true);
-            lifecycleEvents.Add("forced_tree_kill");
+            addLifecycleEvent("forced_tree_kill");
+
             await process.WaitForExitAsync().ConfigureAwait(false);
         }
     }
 
-    private static bool DetectOrphanProcesses(string? trialMarker, int rootPid, List<string> lifecycleEvents)
+    private static bool DetectOrphanProcesses(
+        string? trialMarker,
+        int rootPid,
+        Action<string> addLifecycleEvent)
     {
         if (string.IsNullOrWhiteSpace(trialMarker) || !OperatingSystem.IsLinux())
         {
-            lifecycleEvents.Add("orphan_scan_skipped");
+            addLifecycleEvent("orphan_scan_skipped");
             return false;
         }
 
@@ -153,7 +191,7 @@ public static class Phase16ProcessLifecycleManager
             var cmdline = File.ReadAllText(cmdlinePath);
             if (cmdline.Contains(trialMarker, StringComparison.Ordinal))
             {
-                lifecycleEvents.Add($"orphan_pid={pid}");
+                addLifecycleEvent($"orphan_pid={pid}");
                 return true;
             }
         }

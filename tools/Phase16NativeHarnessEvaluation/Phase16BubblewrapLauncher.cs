@@ -17,7 +17,10 @@ public static class Phase16BubblewrapLauncher
 
         var sandboxEnvironment = Phase16EnvironmentPolicy.CreateSandboxEnvironment(request.AllowedEnvironment);
         var startInfo = BuildBubblewrapStartInfo(request, sandboxEnvironment);
-        return await Phase16ProcessLifecycleManager.RunAsync(startInfo, request, cancellationToken)
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            request.CancellationToken);
+        return await Phase16ProcessLifecycleManager.RunAsync(startInfo, request, linkedCts.Token)
             .ConfigureAwait(false);
     }
 

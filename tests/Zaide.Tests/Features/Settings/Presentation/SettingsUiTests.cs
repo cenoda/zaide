@@ -62,6 +62,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Presentation;
 namespace Zaide.Tests.Features.Settings.Presentation;
 
+[Collection("AvaloniaUiInitialization")]
 public sealed class SettingsUiTests
 {
     static SettingsUiTests()

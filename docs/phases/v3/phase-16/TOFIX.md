@@ -12,6 +12,22 @@ block planning an independent production Native Harness or ACP phase.
 
 - [x] Define the post-Phase-16 V3 roadmap continuation before starting a new
       V3 implementation phase. This was accepted on 2026-07-24.
+- [x] Harden the repository-owned Phase 16 sandbox lifecycle test on branch
+      `perf/test-structure-phase1`: cancellation is recorded independently of
+      the process-exit race, process-tree termination runs from the cleanup
+      path, and the cancellation test uses `CancelAfter` rather than a test
+      body delay.
+
+  Verification record:
+  - Focused cancellation test: 10/10 passed after the change.
+  - Phase 16 evaluation collection: 75/75 passed.
+  - Full serial suite: 3065/3065 passed in 83.3 seconds. The earlier 52-second
+    baseline was not reproduced on the contaminated host, so this change is
+    not being claimed as a suite-time improvement yet.
+  - The baseline environment already contained 4 testhost processes and 29
+    sandbox/fixture-matching processes; after verification, no Phase 16 marker
+    process or Bubblewrap process remained, and the 3 remaining testhosts were
+    pre-existing processes outside this run.
 
 ## Next task
 

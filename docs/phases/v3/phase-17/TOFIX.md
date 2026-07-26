@@ -111,7 +111,7 @@ Implemented final adversarial closeout:
 | `dotnet build Zaide.slnx --no-restore` | pass, 0 errors |
 | `Phase17AdversarialCloseout` | pass, 16/16 |
 | Phase 17/Architecture targeted filters | pass, 300/300 |
-| Full fast suite | pass, 3064/3065 (1 pre-existing parallel fd-count flake) |
+| Full fast suite | pass, 3065/3065 after process lifecycle, PTY master-count, and Avalonia initialization isolation fixes |
 | Serial fallback | pass, 3065/3065 |
 | `git diff --check` | pass, clean |
 
