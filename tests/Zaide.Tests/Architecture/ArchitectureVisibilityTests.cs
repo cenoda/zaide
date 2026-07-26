@@ -206,7 +206,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 17 M4: +4 proposal generator, action proposal, proposal id, proposal result files.
         // Phase 17 M5: +4 mutation contract, mutation outcome/result, and mutation adapter files.
         // Phase 17 M8: +9 session/event integration production files.
-        Assert.Equal(520, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 18 M2: +10 internal context assembly service production files.
+        Assert.Equal(530, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

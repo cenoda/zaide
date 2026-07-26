@@ -99,7 +99,7 @@ changes. Legacy backend remains free of `AgentContextManifest` consumption.
 
 M3/M4 boundaries preserved:
 - no run wiring
-- no backend manifest consumption  
+- no backend manifest consumption
 - no ContextDisclosed event emission
 - no UI
 - no custom policy
