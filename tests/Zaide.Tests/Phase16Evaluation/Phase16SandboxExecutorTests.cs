@@ -10,6 +10,7 @@ using Xunit;
 namespace Zaide.Tests.Phase16Evaluation;
 
 [Collection("Phase16Isolation")]
+[Trait("Category", "SlowIntegration")]
 public sealed class Phase16SandboxExecutorTests
 {
     [Fact]
@@ -87,10 +88,12 @@ public sealed class Phase16SandboxExecutorTests
 
         var workspace = CreateWorkspace();
         using var cts = new CancellationTokenSource();
+        Task<Phase16SandboxLaunchResult>? launchTask = null;
         try
         {
             var marker = $"phase16-cancel-{Guid.NewGuid():N}";
-            var launchTask = Phase16BubblewrapLauncher.LaunchAsync(
+            cts.CancelAfter(TimeSpan.FromMilliseconds(500));
+            launchTask = Phase16BubblewrapLauncher.LaunchAsync(
                 new Phase16SandboxLaunchRequest
                 {
                     ExecutablePath = "/bin/sleep",
@@ -103,16 +106,25 @@ public sealed class Phase16SandboxExecutorTests
                 },
                 cts.Token);
 
-            await Task.Delay(500);
-            await cts.CancelAsync();
             var result = await launchTask;
 
             Assert.True(result.Cancelled);
             Assert.Contains("cancellation_requested", result.LifecycleEvents);
+            Assert.True(
+                result.LifecycleEvents.Contains("terminate_signal_sent")
+                || result.LifecycleEvents.Contains("terminate_skipped_already_exited")
+                || result.LifecycleEvents.Any(static lifecycleEvent =>
+                    lifecycleEvent.StartsWith("process_exited ", StringComparison.Ordinal)));
             Assert.False(result.OrphanProcessesDetected);
         }
         finally
         {
+            await cts.CancelAsync();
+            if (launchTask is not null)
+            {
+                await launchTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+
             Directory.Delete(workspace, recursive: true);
         }
     }

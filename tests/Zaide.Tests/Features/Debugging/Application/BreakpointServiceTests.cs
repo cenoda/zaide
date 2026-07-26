@@ -13,6 +13,7 @@ using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -21,10 +22,7 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// </summary>
 public sealed class BreakpointServiceTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m2-breakpoints-" + Guid.NewGuid().ToString("N"));
-
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-breakpoints-");
     private readonly string _tempDir;
     private readonly string _settingsPath;
     private readonly string _lastKnownGoodPath;
@@ -34,9 +32,7 @@ public sealed class BreakpointServiceTests : IDisposable
 
     public BreakpointServiceTests()
     {
-        Directory.CreateDirectory(TempRoot);
-        _tempDir = Path.Combine(TempRoot, Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_tempDir);
+        _tempDir = _workspace.Path;
         _settingsPath = Path.Combine(_tempDir, "settings.json");
         _lastKnownGoodPath = Path.Combine(_tempDir, "settings.json.lastknowngood");
         _tempPath = Path.Combine(_tempDir, "settings.json.tmp");
@@ -48,8 +44,7 @@ public sealed class BreakpointServiceTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_tempDir, recursive: true); }
-        catch { /* best-effort cleanup */ }
+        _workspace.Dispose();
     }
 
     private sealed class FakeProjectContextService : IProjectContextService

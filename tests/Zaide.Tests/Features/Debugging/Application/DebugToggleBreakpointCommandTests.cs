@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -33,10 +32,6 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// </summary>
 public sealed class DebugToggleBreakpointCommandTests
 {
-    static DebugToggleBreakpointCommandTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void Registry_ContainsSingleF9Command()

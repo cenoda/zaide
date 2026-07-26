@@ -12,6 +12,7 @@ using Zaide.Features.Language.Infrastructure.Lsp;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
@@ -20,14 +21,7 @@ namespace Zaide.Tests.Features.Language.Application;
 /// </summary>
 public sealed class LanguageDocumentSyncTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m2-" + Guid.NewGuid().ToString("N"));
-
-    static LanguageDocumentSyncTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     // ── Fakes ───────────────────────────────────────────────────────────
 

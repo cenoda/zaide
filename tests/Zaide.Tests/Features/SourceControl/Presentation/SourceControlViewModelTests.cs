@@ -5,7 +5,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.SourceControl;
 using Zaide.Features.SourceControl.Domain;
@@ -21,10 +20,6 @@ public class SourceControlViewModelTests
 {
     private const string DefaultRepoRoot = "/ws/.git/";
 
-    static SourceControlViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ISourceControlSnapshotOrchestrator CreateOrchestrator(RepositoryStatusSnapshot snapshot)
     {

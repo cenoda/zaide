@@ -5,7 +5,6 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
@@ -25,10 +24,6 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// </summary>
 public sealed class DebugStartOrContinueCommandTests
 {
-    static DebugStartOrContinueCommandTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static DebugSessionSnapshot MakeSnapshot(DebugSessionState state, int? threadId = null) =>
         new(

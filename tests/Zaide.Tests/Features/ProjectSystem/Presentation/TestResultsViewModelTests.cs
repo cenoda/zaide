@@ -5,7 +5,6 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -43,10 +42,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 /// </summary>
 public sealed class TestResultsViewModelTests
 {
-    static TestResultsViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void ApplySnapshot_ProjectsCasesAndSummary()

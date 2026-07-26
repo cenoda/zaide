@@ -1,7 +1,6 @@
 using System.Linq;
 using Avalonia;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Shell;
 using Zaide.Features.Settings.Presentation;
@@ -14,11 +13,6 @@ namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class InstalledFontCatalogTests
 {
-    static InstalledFontCatalogTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        EnsureApplication();
-    }
 
     [Fact]
     public void ExtractPrimaryFamilyName_TakesFirstCommaSeparatedEntry()
@@ -62,15 +56,4 @@ public sealed class InstalledFontCatalogTests
         Assert.Equal("sans-serif", preview.Name);
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-                app.Initialize();
-            return;
-        }
-
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 }

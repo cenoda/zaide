@@ -6,7 +6,6 @@ using System.Reactive.Concurrency;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -50,10 +49,6 @@ public sealed class AgentsRegistrationModuleTests
     };
 
 
-    static AgentsRegistrationModuleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     internal static ServiceProvider BuildProductionProvider()
     {

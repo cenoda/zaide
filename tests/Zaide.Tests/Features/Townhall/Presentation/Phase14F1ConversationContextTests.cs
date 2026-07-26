@@ -1,4 +1,5 @@
 using System;
+using Zaide.Tests.Infrastructure;
 using System.Linq;
 using Avalonia;
 using Xunit;
@@ -9,10 +10,6 @@ namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class Phase14F1ConversationContextTests
 {
-    static Phase14F1ConversationContextTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void ChannelSelected_HeaderAndInputContextMatchChannelName()
@@ -59,7 +56,7 @@ public class Phase14F1ConversationContextTests
     [Fact]
     public void ChannelToDirectSwitch_ProjectsMatchingHeaderAndInputContext()
     {
-        EnsureApplication();
+        ReactiveUiTestBootstrap.EnsureApplication();
         var vm = ConversationsTestSupport.CreateTownhallViewModel();
         var chatPanel = new TownhallChatPanel();
         var inputArea = new TownhallInputArea();
@@ -80,7 +77,7 @@ public class Phase14F1ConversationContextTests
     [Fact]
     public void DirectToChannelSwitch_ProjectsMatchingHeaderAndInputContext()
     {
-        EnsureApplication();
+        ReactiveUiTestBootstrap.EnsureApplication();
         var vm = ConversationsTestSupport.CreateTownhallViewModel();
         var chatPanel = new TownhallChatPanel();
         var inputArea = new TownhallInputArea();
@@ -97,19 +94,4 @@ public class Phase14F1ConversationContextTests
         Assert.Equal("Message #ai-status", inputArea.PlaceholderText);
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 }

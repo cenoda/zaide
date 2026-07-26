@@ -3,7 +3,6 @@ using System.IO;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Infrastructure.Dap;
@@ -14,23 +13,19 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Presentation;
 
 /// <summary>
 /// Phase 12 M5 tests for selected-frame current execution location projection.
 /// </summary>
-public sealed class DebugCurrentLocationViewModelTests
+public sealed class DebugCurrentLocationViewModelTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m5-location-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-    static DebugCurrentLocationViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     [Fact]
     public async Task SelectedFrame_OpensSourceAndProjectsMarker()

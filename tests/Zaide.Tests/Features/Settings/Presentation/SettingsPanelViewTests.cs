@@ -11,8 +11,6 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
-using Splat;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -25,12 +23,6 @@ namespace Zaide.Tests.Features.Settings.Presentation;
 
 public sealed class SettingsPanelViewTests
 {
-    static SettingsPanelViewTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Locator.CurrentMutable.Register(() => new AvaloniaActivationForViewFetcher(), typeof(IActivationForViewFetcher));
-        EnsureApplication();
-    }
 
     [Fact]
     public void PanelConstructs_WithoutThrowing()
@@ -287,15 +279,6 @@ public sealed class SettingsPanelViewTests
         }
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush")) app.Initialize();
-            return;
-        }
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 
     // ── Test doubles ──────────────────────────────────────────────────────
 

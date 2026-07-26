@@ -14,10 +14,6 @@ namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallChatPanelKindTests
 {
-    static TownhallChatPanelKindTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void ChatKind_RendersFullBubblePath_WithPossibleHeader()
@@ -102,21 +98,6 @@ public class TownhallChatPanelKindTests
         return messageList.Children.OfType<Border>().ToList();
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 
     /// <summary>
     /// Verifies that TownhallChatPanel renders only the filtered messages passed to it (simulates filter from VM).

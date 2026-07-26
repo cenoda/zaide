@@ -11,6 +11,7 @@ using Zaide.Features.ProjectSystem.Contracts;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -19,10 +20,11 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Fake-adapter-only paths are documented in
 /// <c>docs/phases/v2/phase-12/M6_DAP_RECOVERY_PROOF.md</c>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugRecoveryProofTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string ProgramSource = Path.Combine(FixtureRoot, "Program.cs");
 

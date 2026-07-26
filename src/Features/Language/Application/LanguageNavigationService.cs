@@ -22,6 +22,7 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
     private readonly ILanguageDocumentBridge _documentBridge;
     private readonly ILogger<LanguageNavigationService> _logger;
     private readonly Subject<LanguageNavigationSnapshot> _subject = new();
+    private readonly Subject<long> _requestCompleted = new();
     private readonly object _gate = new();
     private readonly IDisposable _sessionSubscription;
 
@@ -57,6 +58,9 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
 
     /// <inheritdoc />
     public IObservable<LanguageNavigationSnapshot> WhenChanged => _subject;
+
+    /// <inheritdoc />
+    public IObservable<long> WhenRequestCompleted => _requestCompleted;
 
     /// <inheritdoc />
     public void RequestDefinition(string filePath, int caretOffset)
@@ -288,6 +292,8 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
 
         _subject.OnCompleted();
         _subject.Dispose();
+        _requestCompleted.OnCompleted();
+        _requestCompleted.Dispose();
     }
 
     private bool IsSourceStillLive(LanguageNavigationSnapshot snapshot)
@@ -469,6 +475,10 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
                     tracked);
             }
         }
+        finally
+        {
+            NotifyRequestCompleted(requestId);
+        }
     }
 
     private void PublishTerminal(
@@ -528,10 +538,21 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
         _requestCts = null;
     }
 
-    private static void ObserveTask(Task task)
+    private void ObserveTask(Task task)
     {
         _ = task.ContinueWith(
             t => { _ = t.Exception; },
             TaskScheduler.Default);
+    }
+
+    private void NotifyRequestCompleted(long requestId)
+    {
+        lock (_gate)
+        {
+            if (_disposed)
+                return;
+        }
+
+        _requestCompleted.OnNext(requestId);
     }
 }

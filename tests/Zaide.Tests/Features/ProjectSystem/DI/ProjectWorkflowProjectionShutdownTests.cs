@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -34,10 +33,6 @@ namespace Zaide.Tests.Features.ProjectSystem.DI;
 /// </summary>
 public sealed class ProjectWorkflowProjectionShutdownTests
 {
-    static ProjectWorkflowProjectionShutdownTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProvider()
     {

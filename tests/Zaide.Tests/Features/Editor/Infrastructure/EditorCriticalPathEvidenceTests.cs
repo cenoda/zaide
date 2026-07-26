@@ -6,6 +6,7 @@ using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
@@ -19,11 +20,7 @@ namespace Zaide.Tests.Features.Editor.Infrastructure;
 /// </summary>
 public sealed class EditorCriticalPathEvidenceTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..",
-            "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string FixtureProject = Path.Combine(FixtureRoot, "WorkflowConsole.csproj");
 

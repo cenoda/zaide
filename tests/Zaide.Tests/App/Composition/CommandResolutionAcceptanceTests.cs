@@ -7,7 +7,6 @@ using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -49,10 +48,6 @@ namespace Zaide.Tests.App.Composition;
 /// </summary>
 public sealed class CommandResolutionAcceptanceTests
 {
-    static CommandResolutionAcceptanceTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private readonly TestLoggerProvider _loggerProvider;
     private readonly CommandRegistry _registry;

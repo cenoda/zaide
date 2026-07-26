@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -21,23 +20,20 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.App.Composition;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
 /// <summary>
 /// Phase 10 M5 tests for document and workspace symbol ownership.
 /// </summary>
-public sealed class LanguageSymbolTests
+public sealed class LanguageSymbolTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m5-sym-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-sym-");
+    private string WorkspaceRoot => _workspace.Path;
 
-    static LanguageSymbolTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
+
 
     private sealed class ConfigurableSession : ILanguageServerSession
     {
@@ -84,9 +80,11 @@ public sealed class LanguageSymbolTests
             DocumentCallCount++;
             if (DocumentGate is not null)
                 await DocumentGate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-            if (DocumentHandler is not null)
-                return await DocumentHandler(documentUri, cancellationToken).ConfigureAwait(false);
-            return new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>());
+
+            var result = DocumentHandler is not null
+                ? await DocumentHandler(documentUri, cancellationToken).ConfigureAwait(false)
+                : new LanguageServerSymbolResult(Array.Empty<LanguageSymbol>());
+            return result;
         }
 
         public async Task<LanguageServerSymbolResult?> RequestWorkspaceSymbolsAsync(
@@ -108,9 +106,12 @@ public sealed class LanguageSymbolTests
 
     private sealed class FakeSessionService : ILanguageSessionService
     {
+        private readonly string _workspaceRoot;
         private readonly Subject<LanguageSessionSnapshot> _subject = new();
         private LanguageSessionSnapshot _current = new(LanguageSessionState.Unavailable, 0, null, null, null, null);
         private ConfigurableSession? _session;
+
+        public FakeSessionService(string workspaceRoot) => _workspaceRoot = workspaceRoot;
 
         public LanguageSessionSnapshot Current => _current;
         public IObservable<LanguageSessionSnapshot> WhenChanged => _subject;
@@ -120,7 +121,7 @@ public sealed class LanguageSymbolTests
             _session = session;
             session.Generation = generation;
             _current = new LanguageSessionSnapshot(
-                LanguageSessionState.Ready, generation, "/p.csproj", TempRoot, 1, null);
+                LanguageSessionState.Ready, generation, "/p.csproj", _workspaceRoot, 1, null);
             _subject.OnNext(_current);
         }
 
@@ -176,7 +177,8 @@ public sealed class LanguageSymbolTests
         private readonly ServiceProvider _sp;
 
         public global::Zaide.Features.Workspace.Domain.Workspace Workspace { get; } = new();
-        public FakeSessionService SessionService { get; } = new();
+        private readonly string _workspaceRoot;
+        public FakeSessionService SessionService { get; }
         public FakeDocumentBridge Bridge { get; } = new();
         public ConfigurableSession Session { get; } = new();
         public LanguageSymbolService Service { get; }
@@ -184,8 +186,10 @@ public sealed class LanguageSymbolTests
         public EditorLanguageInputViewModel Input { get; }
         public List<LanguageSymbolSnapshot> Snapshots { get; } = new();
 
-        public Harness()
+        public Harness(string workspaceRoot)
         {
+            _workspaceRoot = workspaceRoot;
+            SessionService = new FakeSessionService(workspaceRoot);
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
@@ -212,7 +216,7 @@ public sealed class LanguageSymbolTests
 
         public string OpenActive(string name, string content, int version = 1, long generation = 1)
         {
-            var path = Path.Combine(TempRoot, name);
+            var path = Path.Combine(_workspaceRoot, name);
             File.WriteAllText(path, content);
             var doc = Workspace.OpenDocument(path, content);
             Workspace.SetActiveDocument(doc);
@@ -261,10 +265,31 @@ public sealed class LanguageSymbolTests
         }
     }
 
+    private static async Task WaitForChangeAsync<T>(
+        IObservable<T> changes,
+        Func<bool> predicate)
+    {
+        if (predicate())
+            return;
+
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = changes.Subscribe(_ =>
+        {
+            if (predicate())
+                completion.TrySetResult(null);
+        });
+
+        if (predicate())
+            return;
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
     [Fact]
     public async Task DocumentSymbols_ActiveDocumentOnly_OrderedAndFlattened()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("doc.cs", "class Z { void A(){} void B(){} }");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -291,9 +316,9 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_InactiveDocument_RejectedAsUnavailable()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var pathA = h.OpenActive("a.cs", "class A {}");
-        var pathB = Path.Combine(TempRoot, "b.cs");
+        var pathB = Path.Combine(WorkspaceRoot, "b.cs");
         await File.WriteAllTextAsync(pathB, "class B {}");
         // OpenDocument activates pathB; re-activate pathA so pathB is tracked but inactive.
         h.Workspace.OpenDocument(pathB, "class B {}");
@@ -314,7 +339,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task WorkspaceSymbols_QueryCancellationAndReplacement()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         h.OpenActive("ws.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.WorkspaceGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -332,7 +357,7 @@ public sealed class LanguageSymbolTests
         h.Session.WorkspaceHandler = (q, _) =>
             Task.FromResult<LanguageServerSymbolResult?>(new LanguageServerSymbolResult(new[]
             {
-                Sym("Match", Path.Combine(TempRoot, "ws.cs"), 0),
+                Sym("Match", Path.Combine(WorkspaceRoot, "ws.cs"), 0),
             }));
         h.Session.WorkspaceGate.TrySetResult(true);
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
@@ -345,7 +370,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task WorkspaceSymbols_EmptyAndUnavailable()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         h.OpenActive("empty-ws.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.WorkspaceHandler = (_, _) =>
@@ -371,7 +396,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task WorkspaceSymbols_FailureDoesNotLeaveStaleSurface()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         h.OpenActive("fail-ws.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.WorkspaceHandler = (_, _) =>
@@ -386,7 +411,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_StaleVersionDoesNotUpdateSurface()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("stale.cs", "class C {}", version: 1);
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -401,7 +426,9 @@ public sealed class LanguageSymbolTests
 
         h.Bridge.SetVersion(path, 2);
         h.Session.DocumentGate.TrySetResult(true);
-        await Task.Delay(150);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         // Stale response must not install Ready symbols; surface must collapse to Idle.
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
@@ -412,7 +439,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_ActiveTabChange_DismissesSurface()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("tab.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -435,7 +462,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task SymbolSelection_NavigatesThroughValidatedPath()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("nav-sym.cs", "class Hello { }");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -458,7 +485,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_EmptyState_Feedback()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("empty-doc.cs", "// empty");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -475,7 +502,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public void Ordering_IsDeterministicByNameThenRange()
     {
-        var path = Path.Combine(TempRoot, "order.cs");
+        var path = Path.Combine(WorkspaceRoot, "order.cs");
         var symbols = new[]
         {
             Sym("Beta", path, 2),
@@ -492,7 +519,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task MoveSelection_WrapsAroundBoundaries()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("wrap.cs", "class A {} class B {} class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -532,7 +559,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_CapabilityUnsupported_UnavailableThenIdle()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("nosup.cs", "class C {}");
         h.Session.Capabilities = new LanguageServerCapabilities(
             true, new[] { '.' }, true, true, DocumentSymbolSupported: false, WorkspaceSymbolSupported: true);
@@ -549,7 +576,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_RequestFailure_FailedThenIdle()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("fail-doc.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -564,7 +591,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_StaleGenerationDoesNotInstallReady()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("gen.cs", "class C {}", version: 1);
         h.SessionService.SetReady(h.Session, generation: 1);
         h.Session.DocumentGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -580,7 +607,9 @@ public sealed class LanguageSymbolTests
         // Advance generation before response arrives.
         h.SessionService.SetReady(h.Session, generation: 2);
         h.Session.DocumentGate.TrySetResult(true);
-        await Task.Delay(150);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.NotEqual(LanguageSymbolState.Ready, h.Service.Current.State);
         Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageSymbolState.Ready && s.Symbols.Count > 0);
@@ -589,7 +618,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task DocumentSymbols_DocumentClosed_DismissesSurface()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("close-me.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -602,7 +631,9 @@ public sealed class LanguageSymbolTests
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
 
         h.Workspace.CloseDocument(path);
-        await Task.Delay(50);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
     }
@@ -610,7 +641,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task SessionLeavesReady_DismissesSymbolSurface()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("session-die.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         h.Session.DocumentHandler = (_, _) =>
@@ -623,7 +654,9 @@ public sealed class LanguageSymbolTests
         await WaitForAsync(() => h.Service.Current.State == LanguageSymbolState.Ready);
 
         h.SessionService.SetState(LanguageSessionState.Cancelled);
-        await Task.Delay(50);
+        await WaitForChangeAsync(
+            h.Service.WhenChanged,
+            () => h.Service.Current.State == LanguageSymbolState.Idle);
 
         Assert.Equal(LanguageSymbolState.Idle, h.Service.Current.State);
     }
@@ -631,7 +664,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task WorkspaceSymbols_InvalidLocationsFilteredOut()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("loc-ws.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         var nullLoc = new LanguageSymbol("NullLoc", 5, null, null, null,
@@ -659,7 +692,7 @@ public sealed class LanguageSymbolTests
     [Fact]
     public async Task WorkspaceSymbols_AllInvalidLocations_Empty()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("all-bad.cs", "class C {}");
         h.SessionService.SetReady(h.Session);
         var nullLoc = new LanguageSymbol("NullLoc", 5, null, null, null,

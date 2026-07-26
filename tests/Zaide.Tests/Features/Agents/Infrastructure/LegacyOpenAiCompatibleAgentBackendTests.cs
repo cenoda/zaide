@@ -500,7 +500,7 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         var backend = CreateBackend(CreateService(handler));
 
         var executeTask = CollectEventsAsync(backend, "Hello", cts.Token);
-        await Task.Delay(50);
+        await handler.ReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cts.Cancel();
 
         var events = await executeTask;

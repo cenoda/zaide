@@ -15,10 +15,6 @@ namespace Zaide.Tests.Features.Terminal.Presentation;
 /// </summary>
 public class TerminalRenderControlTests
 {
-    static TerminalRenderControlTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void SnapshotProperty_IsRegistered()
@@ -470,19 +466,4 @@ public class TerminalRenderControlTests
         Assert.True(control.IsFollowingLiveBottom);
     }
 
-    private static void EnsureApplication()
-    {
-        if (Avalonia.Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 }

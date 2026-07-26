@@ -14,22 +14,19 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
 /// <summary>
 /// Phase 12 M3a tests for <see cref="ProjectDebugLaunchService"/> handoff orchestration.
 /// </summary>
-public sealed class ProjectDebugLaunchServiceTests
+public sealed class ProjectDebugLaunchServiceTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m3a-launch-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-    static ProjectDebugLaunchServiceTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class FakeProjectContextService : IProjectContextService
     {
@@ -101,7 +98,7 @@ public sealed class ProjectDebugLaunchServiceTests
                 BuildOutcome,
                 1,
                 ProjectWorkflowOperation.Build,
-                Path.Combine(TempRoot, "App.csproj"),
+                Path.Combine(TestFilesystem.SharedReadOnlyWorkspaceRoot, "App.csproj"),
                 BuildOutcome == ProjectWorkflowOutcomeKind.Succeeded ? 0 : 1);
         }
 
@@ -124,7 +121,7 @@ public sealed class ProjectDebugLaunchServiceTests
     private sealed class FakeTargetResolver : IProjectDebugTargetResolver
     {
         public ProjectDebugTargetResolution Next { get; set; } =
-            ProjectDebugTargetResolution.Success(Path.Combine(TempRoot, "App.dll"));
+            ProjectDebugTargetResolution.Success(Path.Combine(TestFilesystem.SharedReadOnlyWorkspaceRoot, "App.dll"));
 
         public Task<ProjectDebugTargetResolution> ResolveTargetPathAsync(
             string absoluteCsprojPath,
@@ -265,13 +262,13 @@ public sealed class ProjectDebugLaunchServiceTests
             sourcePaths.ToDictionary(path => path, _ => (IReadOnlyList<int>)Array.Empty<int>());
     }
 
-    private static ProjectCandidate MakeCandidate(string fileName, ProjectKind kind = ProjectKind.CSharpProject)
+    private ProjectCandidate MakeCandidate(string fileName, ProjectKind kind = ProjectKind.CSharpProject)
     {
         var path = Path.GetFullPath(Path.Combine(TempRoot, fileName));
         return new ProjectCandidate(path, Path.GetFileNameWithoutExtension(path), kind);
     }
 
-    private static (
+    private (
         ProjectDebugLaunchService Service,
         FakeProjectContextService Context,
         FakeWorkflowService Workflow,

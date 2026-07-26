@@ -4,6 +4,7 @@ using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
@@ -13,14 +14,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectTargetResolutionTests
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase11-m1-" + Guid.NewGuid().ToString("N"));
-
-    static ProjectTargetResolutionTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    private static readonly string TempRoot = TestFilesystem.SharedReadOnlyWorkspaceRoot;
 
     private static ProjectCandidate MakeCandidate(string fileName, ProjectKind kind)
     {

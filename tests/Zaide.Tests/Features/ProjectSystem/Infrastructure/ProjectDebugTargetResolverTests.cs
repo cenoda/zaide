@@ -7,22 +7,19 @@ using Zaide.App.Composition;
 using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.ProjectSystem.Contracts;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
 /// <summary>
 /// Phase 12 M3a tests for <see cref="ProjectDebugTargetResolver"/>.
 /// </summary>
-public sealed class ProjectDebugTargetResolverTests
+public sealed class ProjectDebugTargetResolverTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m3a-target-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-    static ProjectDebugTargetResolverTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class FakeManagedProcessRunner : IManagedProcessRunner
     {

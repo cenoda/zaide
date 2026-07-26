@@ -1,5 +1,4 @@
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.Terminal.Contracts;
 using Zaide.Features.Terminal.Presentation;
@@ -8,10 +7,6 @@ namespace Zaide.Tests.Features.Terminal.Presentation;
 
 public class TerminalTabCloseBehaviorTests
 {
-    static TerminalTabCloseBehaviorTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void ShouldHideBottomPanelInsteadOfClosing_ReturnsTrue_ForSoleTab()

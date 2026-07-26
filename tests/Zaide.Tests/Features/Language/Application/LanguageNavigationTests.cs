@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -21,23 +20,20 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.App.Composition;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
 /// <summary>
 /// Phase 10 M5 tests for Go to Definition ownership and validated navigation.
 /// </summary>
-public sealed class LanguageNavigationTests
+public sealed class LanguageNavigationTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m5-nav-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-nav-");
+    private string WorkspaceRoot => _workspace.Path;
 
-    static LanguageNavigationTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
+
 
     private sealed class ConfigurableSession : ILanguageServerSession
     {
@@ -76,10 +72,10 @@ public sealed class LanguageNavigationTests
             if (DefinitionGate is not null)
                 await DefinitionGate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            if (DefinitionHandler is not null)
-                return await DefinitionHandler(documentUri, line, character, cancellationToken).ConfigureAwait(false);
-
-            return new LanguageServerDefinitionResult(Array.Empty<LanguageLocation>());
+            var result = DefinitionHandler is not null
+                ? await DefinitionHandler(documentUri, line, character, cancellationToken).ConfigureAwait(false)
+                : new LanguageServerDefinitionResult(Array.Empty<LanguageLocation>());
+            return result;
         }
 
         public Task<LanguageServerSymbolResult?> RequestDocumentSymbolsAsync(
@@ -99,9 +95,12 @@ public sealed class LanguageNavigationTests
 
     private sealed class FakeSessionService : ILanguageSessionService
     {
+        private readonly string _workspaceRoot;
         private readonly Subject<LanguageSessionSnapshot> _subject = new();
         private LanguageSessionSnapshot _current = Unavailable(0);
         private ConfigurableSession? _session;
+
+        public FakeSessionService(string workspaceRoot) => _workspaceRoot = workspaceRoot;
 
         public LanguageSessionSnapshot Current => _current;
         public IObservable<LanguageSessionSnapshot> WhenChanged => _subject;
@@ -117,7 +116,7 @@ public sealed class LanguageNavigationTests
         {
             session.Generation = generation;
             SetSnapshot(new LanguageSessionSnapshot(
-                LanguageSessionState.Ready, generation, "/p.csproj", TempRoot, 1, null), session);
+                LanguageSessionState.Ready, generation, "/p.csproj", _workspaceRoot, 1, null), session);
         }
 
         public ILanguageServerSession? TryGetReadySession(long generation) =>
@@ -166,9 +165,10 @@ public sealed class LanguageNavigationTests
     private sealed class Harness : IDisposable
     {
         private readonly ServiceProvider _sp;
+        private readonly string _workspaceRoot;
 
         public global::Zaide.Features.Workspace.Domain.Workspace Workspace { get; } = new();
-        public FakeSessionService SessionService { get; } = new();
+        public FakeSessionService SessionService { get; }
         public FakeDocumentBridge Bridge { get; } = new();
         public ConfigurableSession Session { get; } = new();
         public LanguageNavigationService Service { get; }
@@ -177,8 +177,10 @@ public sealed class LanguageNavigationTests
         public List<LanguageNavigationSnapshot> Snapshots { get; } = new();
         public int OpenCommandExecutions { get; private set; }
 
-        public Harness()
+        public Harness(string workspaceRoot)
         {
+            _workspaceRoot = workspaceRoot;
+            SessionService = new FakeSessionService(workspaceRoot);
             var services = new ServiceCollection();
             services.AddSingleton(Workspace);
             services.AddSingleton<IFileService>(new FileService());
@@ -208,7 +210,7 @@ public sealed class LanguageNavigationTests
 
         public string OpenActive(string name, string content, int version = 1, long generation = 1)
         {
-            var path = Path.Combine(TempRoot, name);
+            var path = Path.Combine(_workspaceRoot, name);
             File.WriteAllText(path, content);
             var doc = Workspace.OpenDocument(path, content);
             Workspace.SetActiveDocument(doc);
@@ -239,10 +241,46 @@ public sealed class LanguageNavigationTests
         }
     }
 
+    private static async Task WaitForChangeAsync<T>(
+        IObservable<T> changes,
+        Func<bool> predicate)
+    {
+        if (predicate())
+            return;
+
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = changes.Subscribe(_ =>
+        {
+            if (predicate())
+                completion.TrySetResult(null);
+        });
+
+        if (predicate())
+            return;
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    private static async Task WaitForRequestCompletedAsync(
+        ILanguageNavigationService service,
+        long requestId)
+    {
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = service.WhenRequestCompleted.Subscribe(completedRequestId =>
+        {
+            if (completedRequestId == requestId)
+                completion.TrySetResult(null);
+        });
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
     [Fact]
     public async Task SingleDefinition_SameFile_ProducesReady()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C { void M() { M(); } }";
         var path = h.OpenActive("same.cs", content);
         h.SessionService.SetReady(h.Session);
@@ -260,11 +298,11 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task SingleDefinition_CrossFile_NavigatesThroughOpenFileCommand()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var sourceContent = "class Caller { void X() { Target.M(); } }";
         var targetContent = "class Target { public static void M() {} }";
         var source = h.OpenActive("caller.cs", sourceContent);
-        var target = Path.Combine(TempRoot, "target.cs");
+        var target = Path.Combine(WorkspaceRoot, "target.cs");
         await File.WriteAllTextAsync(target, targetContent);
 
         h.SessionService.SetReady(h.Session);
@@ -283,7 +321,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task ZeroResults_PublishesEmptyFeedback_NoNavigation()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("empty.cs", content);
         h.SessionService.SetReady(h.Session);
@@ -303,10 +341,10 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task MultipleResults_ShowsChooser_DeterministicOrder()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C { object x; }";
         var path = h.OpenActive("multi.cs", content);
-        var other = Path.Combine(TempRoot, "other-def.cs");
+        var other = Path.Combine(WorkspaceRoot, "other-def.cs");
         await File.WriteAllTextAsync(other, "class Other {}");
 
         h.SessionService.SetReady(h.Session);
@@ -331,7 +369,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task InvalidLocations_DoNotNavigate()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("invalid.cs", content);
         h.SessionService.SetReady(h.Session);
@@ -356,7 +394,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task UnsupportedCapability_UnavailableFeedback()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("unsup.cs", content);
         h.Session.Capabilities = new LanguageServerCapabilities(
@@ -374,7 +412,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task FailedRequest_PublishesFailure_NoNavigation()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("fail.cs", content);
         h.SessionService.SetReady(h.Session);
@@ -392,7 +430,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task CancelledRequest_DoesNotUpdateSurfaceOrNavigate()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("cancel.cs", content);
         h.SessionService.SetReady(h.Session);
@@ -403,7 +441,6 @@ public sealed class LanguageNavigationTests
 
         h.Service.Dismiss();
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(100);
 
         Assert.Equal(LanguageNavigationState.Idle, h.Service.Current.State);
         Assert.DoesNotContain(h.Snapshots, s => s.State == LanguageNavigationState.Ready);
@@ -413,7 +450,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task StaleGeneration_DoesNotAcceptResult()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("stale-gen.cs", content);
         h.SessionService.SetReady(h.Session, generation: 1);
@@ -424,12 +461,14 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(path, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         // Advance generation while request in flight.
         h.SessionService.SetReady(h.Session, generation: 2);
         h.Bridge.SetOpen(path, 1, 2);
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         // Stale generation must not leave a Ready/Choose surface.
         Assert.False(h.Service.Current.IsSingleNavigateReady);
@@ -439,7 +478,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task StaleDocumentVersion_DoesNotAcceptResult()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("stale-ver.cs", content, version: 1);
         h.SessionService.SetReady(h.Session);
@@ -450,10 +489,12 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(path, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         h.Bridge.SetVersion(path, 2);
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         Assert.False(h.Service.Current.IsSingleNavigateReady);
         Assert.Null(h.Service.TryTakeSingleLocation());
@@ -462,7 +503,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task ActiveTabChange_DismissesAndBlocksStaleNavigation()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var contentA = "class A {}";
         var pathA = h.OpenActive("a.cs", contentA);
         h.SessionService.SetReady(h.Session);
@@ -473,16 +514,18 @@ public sealed class LanguageNavigationTests
 
         h.Service.RequestDefinition(pathA, 0);
         await WaitForAsync(() => h.Service.Current.State == LanguageNavigationState.Loading);
+        var requestId = h.Service.Current.RequestId;
 
         var contentB = "class B {}";
-        var pathB = Path.Combine(TempRoot, "b.cs");
+        var pathB = Path.Combine(WorkspaceRoot, "b.cs");
         await File.WriteAllTextAsync(pathB, contentB);
         var docB = h.Workspace.OpenDocument(pathB, contentB);
         h.Workspace.SetActiveDocument(docB);
         h.Bridge.SetOpen(pathB, 1, 1);
-
+        var completionWait = WaitForRequestCompletedAsync(h.Service, requestId);
+        h.Input.ActiveDocumentId = pathB;
         h.Session.DefinitionGate.TrySetResult(true);
-        await Task.Delay(150);
+        await completionWait;
 
         Assert.Null(h.Service.TryTakeSingleLocation());
         Assert.False(h.Service.Current.IsChooserOpen);
@@ -492,7 +535,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task ClosedProjectSession_Unavailable()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var path = h.OpenActive("closed.cs", "class C {}");
         h.SessionService.SetSnapshot(new LanguageSessionSnapshot(
             LanguageSessionState.Unavailable, 3, null, null, null, null));
@@ -506,10 +549,10 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task TryAcceptSelected_NavigatesChosenLocation()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("choose.cs", content);
-        var other = Path.Combine(TempRoot, "choose-other.cs");
+        var other = Path.Combine(WorkspaceRoot, "choose-other.cs");
         await File.WriteAllTextAsync(other, "class Other { }");
 
         h.SessionService.SetReady(h.Session);
@@ -545,7 +588,7 @@ public sealed class LanguageNavigationTests
     [Fact]
     public async Task NavigateToLocation_InvalidRange_NoSelectionMutation()
     {
-        using var h = new Harness();
+        using var h = new Harness(WorkspaceRoot);
         var content = "class C {}";
         var path = h.OpenActive("range.cs", content);
         await h.Tabs.OpenFileCommand.Execute(path).FirstAsync();

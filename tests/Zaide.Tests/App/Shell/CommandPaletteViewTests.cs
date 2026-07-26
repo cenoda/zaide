@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -29,10 +28,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class CommandPaletteViewTests
 {
-    static CommandPaletteViewTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ICommandRegistry CreateRegistry()
         => CommandRegistryFactory.Create();

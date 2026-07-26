@@ -12,6 +12,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Application;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -19,10 +20,11 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Phase 12 M5 production Linux proof: breakpoint stop, stack/frame/scope/variable
 /// projection, and continue/stop through the production <see cref="DebugSessionService"/>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugStackProofTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string ProgramSource = Path.Combine(FixtureRoot, "Program.cs");
 

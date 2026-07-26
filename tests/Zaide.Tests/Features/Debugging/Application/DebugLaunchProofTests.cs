@@ -12,6 +12,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Infrastructure;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Application;
 
@@ -20,10 +21,11 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// MSBuild <c>TargetPath</c> resolution, and F5-equivalent launch through
 /// <see cref="ProjectDebugLaunchService"/>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugLaunchProofTests
 {
-    private static readonly string FixtureRoot = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "workflow-console"));
+    private static readonly string FixtureRoot = TestFixturePaths.WorkflowConsole;
 
     private static readonly string AdapterPath =
         Environment.GetEnvironmentVariable("ZAIDE_NETCOREDBG_PATH")

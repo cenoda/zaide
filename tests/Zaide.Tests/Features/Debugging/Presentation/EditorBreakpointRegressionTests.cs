@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Workspace.Domain;
@@ -20,10 +19,6 @@ namespace Zaide.Tests.Features.Debugging.Presentation;
 /// </summary>
 public sealed class EditorBreakpointRegressionTests
 {
-    static EditorBreakpointRegressionTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void FoldingCommands_StillRegistered_WithBreakpointViewModel()

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,8 @@ using Zaide.Features.Terminal.Presentation;
 
 namespace Zaide.Tests.Features.Terminal.Infrastructure;
 
-[Trait("Category", "Integration")]
+[Collection("LinuxTerminalProcessIsolation")]
+[Trait("Category", "SlowIntegration")]
 public class LinuxTerminalServiceTests
 {
     [Fact]
@@ -152,23 +154,45 @@ public class LinuxTerminalServiceTests
 
         // Warm up one full cycle, then take the fd baseline.
         await RunCycleAsync();
-        int baseline = CountOpenFds();
+        int baseline = CountOpenPtyMasterFds();
 
         // Several more restart cycles. A per-restart master-fd leak would grow
         // the count by roughly one per cycle.
         for (int i = 0; i < 5; i++)
             await RunCycleAsync();
 
-        int after = CountOpenFds();
+        int after = CountOpenPtyMasterFds();
 
         Assert.True(after <= baseline + 2,
-            $"Open fd count grew from {baseline} to {after} across 5 restarts — " +
+            $"Open PTY master count grew from {baseline} to {after} across 5 restarts — " +
             "likely a leaked PTY master fd.");
     }
 
-    // Counts this process's open file descriptors via /proc (Linux-only).
-    // The PTY master is a raw int fd, not a SafeHandle, so the GC never closes
-    // it — a leak here is deterministic.
-    private static int CountOpenFds()
-        => System.IO.Directory.GetFiles("/proc/self/fd").Length;
+    // Counts only PTY master descriptors via /proc (Linux-only). Other fd
+    // activity in the parallel testhost must not look like a PTY leak.
+    private static int CountOpenPtyMasterFds()
+    {
+        var count = 0;
+        foreach (var fdPath in System.IO.Directory.EnumerateFiles("/proc/self/fd"))
+        {
+            try
+            {
+                var target = System.IO.File.ResolveLinkTarget(fdPath, returnFinalTarget: false);
+                if (target?.FullName is "/dev/ptmx" or "/dev/pts/ptmx")
+                {
+                    count++;
+                }
+            }
+            catch (IOException)
+            {
+                // A descriptor can close between enumeration and inspection.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // A descriptor can disappear while the testhost is shutting down.
+            }
+        }
+
+        return count;
+    }
 }

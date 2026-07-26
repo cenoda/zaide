@@ -8,6 +8,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Presentation;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Settings.Infrastructure;
 
@@ -18,23 +19,19 @@ namespace Zaide.Tests.Features.Settings.Infrastructure;
 /// </summary>
 public sealed class SecretStoreTests : IDisposable
 {
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("ZaideSecretTests-");
     private readonly string _tempDir;
     private readonly string _secretsPath;
     private readonly string _tempPath;
 
     public SecretStoreTests()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), "ZaideSecretTests_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_tempDir);
+        _tempDir = _workspace.Path;
         _secretsPath = Path.Combine(_tempDir, "secrets.json");
         _tempPath = Path.Combine(_tempDir, "secrets.json.tmp");
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_tempDir, recursive: true); }
-        catch { /* best-effort */ }
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private FileSecretStore CreateStore() => new(_secretsPath, _tempPath);
 

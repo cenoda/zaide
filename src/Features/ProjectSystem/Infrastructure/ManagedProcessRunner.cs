@@ -90,11 +90,15 @@ internal sealed class ManagedProcessRunner : IManagedProcessRunner
             lock (_sync)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
+
+                if (!process.Start())
+                    return new ManagedProcessRunResult(null, false, StartupFailed: true);
+
+                // Publish only after Start succeeds. Dispose() can otherwise
+                // observe a not-yet-started Process and race the startup path,
+                // producing a null exit code for an apparently killed run.
                 _process = process;
             }
-
-            if (!process.Start())
-                return new ManagedProcessRunResult(null, false, StartupFailed: true);
 
             ProcessStarted?.Invoke();
 

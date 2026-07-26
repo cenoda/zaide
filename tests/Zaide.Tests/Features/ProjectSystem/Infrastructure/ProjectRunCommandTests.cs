@@ -6,7 +6,6 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -15,6 +14,7 @@ using Zaide.Features.ProjectSystem.Domain;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Tests.Features.ProjectSystem;
 using Zaide.Tests.App.Composition;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
@@ -24,16 +24,8 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectRunCommandTests
 {
-    static ProjectRunCommandTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
-    private static readonly string FixtureProjectPath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..",
-            "fixtures", "workflow-console", "WorkflowConsole.csproj"));
+    private static readonly string FixtureProjectPath = TestFixturePaths.WorkflowConsoleProject;
 
     private static readonly string FixtureSolutionPath = Path.GetFullPath(
         Path.Combine(

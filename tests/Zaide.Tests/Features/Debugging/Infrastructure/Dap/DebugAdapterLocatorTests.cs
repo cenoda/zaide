@@ -2,22 +2,19 @@ using System;
 using System.IO;
 using Xunit;
 using Zaide.Features.Debugging.Infrastructure.Dap;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 M1 tests for <see cref="DebugAdapterLocator"/> precedence and failure behavior.
 /// </summary>
-public sealed class DebugAdapterLocatorTests
+public sealed class DebugAdapterLocatorTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase12-m1-locator-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-    static DebugAdapterLocatorTests()
-    {
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     [Fact]
     public void Resolve_ConfiguredPathWins_WhenFileExists()

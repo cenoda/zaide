@@ -6,7 +6,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Tests.App.Composition;
@@ -27,10 +26,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public class EditorTabBarLifecycleTests
 {
-    static EditorTabBarLifecycleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
     private static EditorTabViewModel CreateViewModel()
     {
         var services = new ServiceCollection();

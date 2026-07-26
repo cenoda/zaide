@@ -11,7 +11,6 @@ using AvaloniaEdit.Folding;
 using AvaloniaEdit.Search;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Composition;
@@ -58,10 +57,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorUxProofTests
 {
-    static EditorUxProofTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     // ── 1. AvaloniaEdit assembly version proof ─────────────────────────────
 

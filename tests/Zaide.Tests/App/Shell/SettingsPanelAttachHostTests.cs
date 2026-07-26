@@ -15,8 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using ReactiveUI.Builder;
-using Splat;
 using Xunit;
 using Zaide.App.Shell;
 using Zaide.Features.Agents.Application;
@@ -57,14 +55,7 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class SettingsPanelAttachHostTests
 {
-    static SettingsPanelAttachHostTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Locator.CurrentMutable.Register(
-            () => new AvaloniaActivationForViewFetcher(),
-            typeof(IActivationForViewFetcher));
-        EnsureApplication();
-    }
+
 
     [Fact]
     public void ShowAndHide_AttachAndDetachPanelFromLayout()
@@ -250,17 +241,6 @@ public sealed class SettingsPanelAttachHostTests
         return vm;
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-                app.Initialize();
-            return;
-        }
-
-        new global::Zaide.App.Composition.App().Initialize();
-    }
 
     private sealed class TestSecretStore : ISecretStore
     {

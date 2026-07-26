@@ -8,6 +8,7 @@ using Zaide.App.Composition;
 using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Infrastructure;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 
@@ -18,6 +19,7 @@ namespace Zaide.Tests.Features.ProjectSystem.Infrastructure;
 /// </summary>
 public sealed class ProjectSystemProofOfConceptTests : IDisposable
 {
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("ZaidePhase8POC-");
     private readonly string _tempDir;
     private readonly string _settingsPath;
     private readonly string _lastKnownGoodPath;
@@ -25,18 +27,13 @@ public sealed class ProjectSystemProofOfConceptTests : IDisposable
 
     public ProjectSystemProofOfConceptTests()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), "ZaidePhase8POC_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_tempDir);
+        _tempDir = _workspace.Path;
         _settingsPath = Path.Combine(_tempDir, "settings.json");
         _lastKnownGoodPath = Path.Combine(_tempDir, "settings.json.lastknowngood");
         _tempPath = Path.Combine(_tempDir, "settings.json.tmp");
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_tempDir, recursive: true); }
-        catch { /* best-effort cleanup */ }
-    }
+    public void Dispose() => _workspace.Dispose();
 
     // ── Helpers ─────────────────────────────────────────────────────────
 

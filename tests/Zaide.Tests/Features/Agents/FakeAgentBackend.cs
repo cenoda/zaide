@@ -37,6 +37,9 @@ internal sealed class FakeAgentBackend : IAgentBackend
 
     public int ExecuteCallCount { get; private set; }
 
+    public TaskCompletionSource<object?> ExecutionStarted { get; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     public AgentBackendId BackendId { get; }
 
     public string BackendVersion { get; }
@@ -88,6 +91,7 @@ internal sealed class FakeAgentBackend : IAgentBackend
     {
         ArgumentNullException.ThrowIfNull(context);
         ExecuteCallCount++;
+        ExecutionStarted.TrySetResult(null);
         if (_plans.Count == 0)
         {
             throw new InvalidOperationException("No fake backend plan configured.");

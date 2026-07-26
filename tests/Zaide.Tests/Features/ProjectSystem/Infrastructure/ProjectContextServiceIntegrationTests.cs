@@ -78,11 +78,40 @@ public sealed class ProjectContextServiceIntegrationTests
     private sealed class SnapshotCollector : IDisposable
     {
         private readonly IDisposable _subscription;
+        private readonly object _sync = new();
+        private readonly List<(ProjectContextState State, TaskCompletionSource<object?> Completion)> _waiters = new();
         public List<ProjectContext> Snapshots { get; } = new();
 
         public SnapshotCollector(IProjectContextService svc)
         {
-            _subscription = svc.WhenChanged.Subscribe(s => Snapshots.Add(s));
+            _subscription = svc.WhenChanged.Subscribe(snapshot =>
+            {
+                lock (_sync)
+                {
+                    Snapshots.Add(snapshot);
+                    foreach (var waiter in _waiters.FindAll(waiter => waiter.State == snapshot.State))
+                    {
+                        _waiters.Remove(waiter);
+                        waiter.Completion.TrySetResult(null);
+                    }
+                }
+            });
+        }
+
+        public async Task WaitForStateAsync(ProjectContextState state)
+        {
+            var completion = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            lock (_sync)
+            {
+                if (Snapshots.Exists(snapshot => snapshot.State == state))
+                    return;
+
+                _waiters.Add((state, completion));
+            }
+
+            await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
         public void Dispose() => _subscription.Dispose();
@@ -125,7 +154,7 @@ public sealed class ProjectContextServiceIntegrationTests
         using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.NoProject);
 
         Assert.Equal(1, discovery.CallCount);
         Assert.Contains("/root", discovery.Roots);
@@ -141,16 +170,17 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, _) = Create();
         discovery.Enqueue(SingleProject("/root/a.csproj"));
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.SingleProject);
         Assert.Equal(ProjectContextState.SingleProject, svc.Current.State);
 
         discovery.Enqueue(NoProject()); // unused: UnloadAsync does not discover
-        using var collector = new SnapshotCollector(svc);
+        collector.Snapshots.Clear();
 
         ws.SetProjectFromPath(null);
-        await Task.Delay(100);
+        await collector.WaitForStateAsync(ProjectContextState.Unloaded);
 
         Assert.Equal(ProjectContextState.Unloaded, svc.Current.State);
         Assert.Single(collector.Snapshots);
@@ -170,7 +200,6 @@ public sealed class ProjectContextServiceIntegrationTests
         var logger = new Mock<ILogger<ProjectContextService>>();
 
         var svc = new ProjectContextService(ws, discovery, logger.Object);
-        await Task.Delay(100);
 
         Assert.Equal(1, discovery.CallCount);
         Assert.Contains("/already/open", discovery.Roots);
@@ -185,7 +214,6 @@ public sealed class ProjectContextServiceIntegrationTests
         var logger = new Mock<ILogger<ProjectContextService>>();
 
         var svc = new ProjectContextService(ws, discovery, logger.Object);
-        await Task.Delay(50);
 
         Assert.Equal(0, discovery.CallCount);
         Assert.Equal(ProjectContextState.Unloaded, svc.Current.State);
@@ -197,9 +225,10 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, _) = Create();
         discovery.Enqueue(Failed("disk gone"));
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.Failed);
 
         Assert.Equal(ProjectContextState.Failed, svc.Current.State);
         Assert.Equal("disk gone", svc.Current.ErrorMessage);
@@ -210,13 +239,14 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, logger) = Create();
         var gate = discovery.EnqueueGate();
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
         Assert.Equal(1, discovery.CallCount);
 
         gate.TrySetCanceled();
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.Unloaded);
 
         // Cancellation is logged at Debug (event ID 8302), not Error.
         logger.Verify(l => l.Log(
@@ -244,9 +274,10 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, logger) = Create();
         discovery.EnqueueThrow(new InvalidOperationException("boom"));
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.Loading);
 
         // Unexpected exception is logged once at Error with event ID 8301.
         logger.Verify(l => l.Log(
@@ -269,9 +300,10 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, _) = Create();
         discovery.Enqueue(NoProject());
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.NoProject);
         Assert.Equal(1, discovery.CallCount);
         Assert.Equal(ProjectContextState.NoProject, svc.Current.State);
 
@@ -279,7 +311,6 @@ public sealed class ProjectContextServiceIntegrationTests
 
         // Raising the event after disposal must not trigger discovery.
         ws.SetProjectFromPath("/other");
-        await Task.Delay(100);
 
         Assert.Equal(1, discovery.CallCount);
         Assert.Equal(ProjectContextState.NoProject, svc.Current.State);
@@ -290,16 +321,16 @@ public sealed class ProjectContextServiceIntegrationTests
     {
         var (svc, ws, discovery, _) = Create();
         discovery.Enqueue(SingleProject("/root/a.csproj"));
+        using var collector = new SnapshotCollector(svc);
 
         ws.SetProjectFromPath("/root");
-        await Task.Delay(150);
+        await collector.WaitForStateAsync(ProjectContextState.SingleProject);
         Assert.Equal(ProjectContextState.SingleProject, svc.Current.State);
 
         svc.Dispose();
 
         // A close event after disposal must not unload or re-discover.
         ws.SetProjectFromPath(null);
-        await Task.Delay(100);
 
         Assert.Equal(1, discovery.CallCount);
         Assert.Equal(ProjectContextState.SingleProject, svc.Current.State);

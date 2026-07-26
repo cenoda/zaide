@@ -9,7 +9,6 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
 using Moq;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Features.Workspace.Domain;
 using Zaide.Features.Workspace.Contracts;
@@ -21,10 +20,6 @@ namespace Zaide.Tests.Features.Workspace.Presentation;
 
 public class FileTreeViewModelTests
 {
-    static FileTreeViewModelTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private readonly FileTreeService _service = new();
     private readonly IScheduler _scheduler = CurrentThreadScheduler.Instance;

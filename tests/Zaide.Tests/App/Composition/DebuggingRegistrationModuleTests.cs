@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -101,10 +100,6 @@ public sealed class DebuggingRegistrationModuleTests
         "AddSingleton<EditorBreakpointViewModel>()",
     };
 
-    static DebuggingRegistrationModuleTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProductionProvider()
     {

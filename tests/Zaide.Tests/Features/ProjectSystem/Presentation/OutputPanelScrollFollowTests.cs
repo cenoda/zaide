@@ -7,7 +7,6 @@ using Avalonia;
 using Avalonia.Controls;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
-using Splat;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.App.Shell;
@@ -28,10 +27,6 @@ namespace Zaide.Tests.Features.ProjectSystem.Presentation;
 /// </summary>
 public sealed class OutputPanelScrollFollowTests
 {
-    static OutputPanelScrollFollowTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void Panel_Constructs_WithoutThrowing()
@@ -119,22 +114,7 @@ public sealed class OutputPanelScrollFollowTests
         Assert.Equal(1, changedCount);
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is not null)
-            return;
 
-        var app = new global::Zaide.App.Composition.App();
-        app.Initialize();
-        SetupReactiveUi();
-    }
-
-    private static void SetupReactiveUi()
-    {
-        Locator.CurrentMutable.Register(
-            () => new AvaloniaActivationForViewFetcher(),
-            typeof(IActivationForViewFetcher));
-    }
 
     private sealed class RecordingWorkflowService : IProjectWorkflowService
     {

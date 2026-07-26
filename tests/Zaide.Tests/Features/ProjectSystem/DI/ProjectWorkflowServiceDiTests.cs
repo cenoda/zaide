@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -15,10 +14,6 @@ namespace Zaide.Tests.Features.ProjectSystem.DI;
 /// </summary>
 public sealed class ProjectWorkflowServiceDiTests
 {
-    static ProjectWorkflowServiceDiTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     private static ServiceProvider BuildProvider()
     {

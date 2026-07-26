@@ -13,10 +13,6 @@ namespace Zaide.Tests.Features.Townhall.Presentation;
 
 public class TownhallChatPanelGroupingTests
 {
-    static TownhallChatPanelGroupingTests()
-    {
-        EnsureApplication();
-    }
 
     [Fact]
     public void ThreeConsecutiveSameSender_RendersOneHeader()
@@ -102,19 +98,4 @@ public class TownhallChatPanelGroupingTests
         return messageList.Children.OfType<Border>().ToList();
     }
 
-    private static void EnsureApplication()
-    {
-        if (Application.Current is global::Zaide.App.Composition.App app)
-        {
-            if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
-            {
-                app.Initialize();
-            }
-
-            return;
-        }
-
-        var createdApp = new global::Zaide.App.Composition.App();
-        createdApp.Initialize();
-    }
 }

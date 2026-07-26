@@ -16,6 +16,12 @@ public interface ILanguageNavigationService : IDisposable
     IObservable<LanguageNavigationSnapshot> WhenChanged { get; }
 
     /// <summary>
+    /// Emits the completed <see cref="LanguageNavigationSnapshot.RequestId"/> when an
+    /// in-flight definition request finishes, including discarded stale results.
+    /// </summary>
+    IObservable<long> WhenRequestCompleted { get; }
+
+    /// <summary>
     /// Requests <c>textDocument/definition</c> for the active document at
     /// <paramref name="caretOffset"/>. Cancels any outstanding definition work.
     /// </summary>

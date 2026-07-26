@@ -16,10 +16,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class RightColumnHostSourceTests
 {
-    static RightColumnHostSourceTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void RightColumnHost_IsInternalShellTypeWithExpectedSurfaceProperties()

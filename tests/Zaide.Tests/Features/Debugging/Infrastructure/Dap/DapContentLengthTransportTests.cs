@@ -16,11 +16,9 @@ namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 
 /// <summary>
 /// Phase 12 F1 unit tests for thread-safe DAP pending-request ownership.
+/// Each test owns an isolated in-memory transport harness; no shared collection
+/// serialization is required.
 /// </summary>
-[CollectionDefinition("DapContentLengthTransportTests", DisableParallelization = true)]
-public sealed class DapContentLengthTransportTestsCollection;
-
-[Collection("DapContentLengthTransportTests")]
 public sealed class DapContentLengthTransportTests
 {
     [Fact]

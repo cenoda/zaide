@@ -5,7 +5,6 @@ using System.Reactive.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.Tests.Features.Conversations;
 using Zaide.App.Shell;
@@ -39,10 +38,6 @@ namespace Zaide.Tests.App.Shell;
 /// </summary>
 public sealed class ShellPanelNavigationTests
 {
-    static ShellPanelNavigationTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     [Fact]
     public void SwitchToExplorer_AndSourceControl_SetLeftViaDelegate()

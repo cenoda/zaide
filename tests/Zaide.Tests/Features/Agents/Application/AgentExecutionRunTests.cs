@@ -137,7 +137,7 @@ public sealed class AgentExecutionRunTests : IDisposable
         var coordinator = CreateCoordinator(host, store, handler);
 
         var sendTask = coordinator.SendAsync(panel.PanelId, "Hello", cts.Token);
-        await Task.Delay(50);
+        await handler.ExecutionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cts.Cancel();
 
         var result = await sendTask;
@@ -330,6 +330,9 @@ public sealed class AgentExecutionRunTests : IDisposable
         private readonly TimeSpan _delay;
         private readonly string _content;
 
+        public TaskCompletionSource<object?> ExecutionStarted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public DelayedSuccessHandler(TimeSpan delay, string content)
         {
             _delay = delay;
@@ -338,6 +341,7 @@ public sealed class AgentExecutionRunTests : IDisposable
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            ExecutionStarted.TrySetResult(null);
             await Task.Delay(_delay, ct);
             return new HttpResponseMessage(HttpStatusCode.OK)
             {

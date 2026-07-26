@@ -142,7 +142,8 @@ public sealed class AgentSessionCoordinatorParityTests
         var sendTask = coordinator.SendAsync(panel.PanelId, "blocked");
         await WaitUntilAsync(
             () => store.TryGet(panel.ConversationId, out var conversation)
-                && conversation!.Entries.Any(e => e.Kind == ConversationEntryKind.UserChat));
+                && conversation!.Entries.Any(e => e.Kind == ConversationEntryKind.UserChat),
+            session.Events);
         Assert.Equal(1, backend.ExecuteCallCount);
         Assert.False(sendTask.IsCompleted);
         Assert.True(store.TryGet(panel.ConversationId, out var inFlight));
@@ -249,7 +250,8 @@ public sealed class AgentSessionCoordinatorParityTests
         var sendTask = coordinator.SendAsync(panel.PanelId, "cancel during admission", cts.Token);
         await WaitUntilAsync(() =>
             session.TryGetActiveRunSnapshot(panel.ConversationId)?.Status == AgentRunStatus.Running
-            || kinds.Contains(AgentEventKind.RunCancellationRequested));
+            || kinds.Contains(AgentEventKind.RunCancellationRequested),
+            session.Events);
         cts.Cancel();
 
         var result = await sendTask;
@@ -295,7 +297,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var coordinator = new AgentExecutionCoordinator(host, session, store);
 
         _ = coordinator.SendAsync(panel.PanelId, "first");
-        await Task.Delay(50);
+        await WaitForRunningAsync(session, panel.ConversationId);
         var rejected = await coordinator.SendAsync(panel.PanelId, "second");
 
         Assert.NotNull(rejected);
@@ -346,6 +348,8 @@ public sealed class AgentSessionCoordinatorParityTests
 
         var releaseRunATerminalProjection = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondRunAdmitted = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
         Task<AgentExecutionCoordinatorResult?>? second = null;
         ExecutionRunId? secondRunId = null;
 
@@ -363,15 +367,17 @@ public sealed class AgentSessionCoordinatorParityTests
             backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "second");
             second = coordinator.SendAsync(panel.PanelId, "second");
             await WaitUntilAsync(() =>
-                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId);
+                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId,
+                session.Events);
             secondRunId = session.TryGetActiveRunSnapshot(conversationId)!.RunId;
+            secondRunAdmitted.TrySetResult(null);
             await releaseRunATerminalProjection.Task;
         };
 
         try
         {
             firstGate.SetResult("first");
-            await WaitUntilAsync(() => secondRunId is not null);
+            await secondRunAdmitted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
             Assert.NotEqual(firstRunId, secondRunId);
             Assert.Equal(secondRunId, session.TryGetActiveRunSnapshot(panel.ConversationId)!.RunId);
@@ -413,6 +419,8 @@ public sealed class AgentSessionCoordinatorParityTests
 
         var releaseRunATerminalProjection = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondRunAdmitted = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
         Task<AgentExecutionCoordinatorResult?>? second = null;
         ExecutionRunId? secondRunId = null;
 
@@ -430,15 +438,17 @@ public sealed class AgentSessionCoordinatorParityTests
             backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "second");
             second = coordinator.SendAsync(panel.PanelId, "second");
             await WaitUntilAsync(() =>
-                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId);
+                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId,
+                session.Events);
             secondRunId = session.TryGetActiveRunSnapshot(conversationId)!.RunId;
+            secondRunAdmitted.TrySetResult(null);
             await releaseRunATerminalProjection.Task;
         };
 
         try
         {
             firstGate.SetResult("first");
-            await WaitUntilAsync(() => secondRunId is not null);
+            await secondRunAdmitted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
             Assert.Equal(secondRunId, session.TryGetActiveRunSnapshot(panel.ConversationId)!.RunId);
             Assert.True(panel.IsBusy);
@@ -475,6 +485,8 @@ public sealed class AgentSessionCoordinatorParityTests
         coordinator.ConversationBusyChanged += (_, isBusy) => busyChanges.Add(isBusy);
 
         var releaseRunAFinalizer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondRunAdmitted = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
         Task<AgentExecutionCoordinatorResult?>? second = null;
         ExecutionRunId? secondRunId = null;
 
@@ -492,15 +504,17 @@ public sealed class AgentSessionCoordinatorParityTests
             backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "second");
             second = coordinator.SendAsync(panel.PanelId, "second");
             await WaitUntilAsync(() =>
-                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId);
+                session.TryGetActiveRunSnapshot(conversationId)?.RunId != firstRunId,
+                session.Events);
             secondRunId = session.TryGetActiveRunSnapshot(conversationId)!.RunId;
+            secondRunAdmitted.TrySetResult(null);
             await releaseRunAFinalizer.Task;
         };
 
         try
         {
             firstGate.SetResult("first");
-            await WaitUntilAsync(() => secondRunId is not null);
+            await secondRunAdmitted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
             Assert.Equal(secondRunId, session.TryGetActiveRunSnapshot(panel.ConversationId)!.RunId);
             Assert.True(coordinator.IsConversationBusy(panel.ConversationId));
@@ -818,36 +832,35 @@ public sealed class AgentSessionCoordinatorParityTests
         Assert.DoesNotContain(typeof(IAgentExecutionService), parameters);
     }
 
-    private static async Task WaitUntilAsync(Func<bool> condition, int maxAttempts = 100)
+    private static async Task WaitUntilAsync(
+        Func<bool> condition,
+        IObservable<AgentEvent> events)
     {
-        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        if (condition())
         {
-            if (condition())
-            {
-                return;
-            }
-
-            await Task.Delay(10);
+            return;
         }
 
-        throw new TimeoutException("Timed out waiting for condition.");
+        var completion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = events.Subscribe(_ =>
+        {
+            if (condition())
+                completion.TrySetResult(null);
+        });
+
+        if (condition())
+            return;
+
+        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     private static async Task WaitForRunningAsync(
         IAgentSessionService session,
         ConversationId conversationId)
     {
-        for (var attempt = 0; attempt < 100; attempt++)
-        {
-            var run = session.TryGetActiveRunSnapshot(conversationId);
-            if (run?.Status == AgentRunStatus.Running)
-            {
-                return;
-            }
-
-            await Task.Delay(10);
-        }
-
-        throw new TimeoutException("Timed out waiting for running session.");
+        await WaitUntilAsync(
+            () => session.TryGetActiveRunSnapshot(conversationId)?.Status == AgentRunStatus.Running,
+            session.Events);
     }
 }

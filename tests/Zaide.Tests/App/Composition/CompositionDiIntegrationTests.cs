@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide;
 using Zaide.App.Composition;
@@ -16,12 +15,6 @@ namespace Zaide.Tests.App.Composition;
 /// </summary>
 public sealed class CompositionDiIntegrationTests
 {
-    static CompositionDiIntegrationTests()
-    {
-        // ReactiveUI must be initialized before resolving ViewModels that use
-        // WhenAnyValue/RaiseAndSetIfChanged in their constructors.
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     /// <summary>
     /// Builds the production container, substituting only the Avalonia scheduler
@@ -35,6 +28,7 @@ public sealed class CompositionDiIntegrationTests
         services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
         return services.BuildServiceProvider();
     }
+
 
     [Fact]
     public void CommandPaletteViewModel_ResolvesFromProductionContainer()

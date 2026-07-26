@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Features.Language.Infrastructure.Lsp;
@@ -21,23 +20,19 @@ using Zaide.Features.Editor.Domain;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
 /// <summary>
 /// Phase 10 M6 Format-on-Save execution contract and settings schema tests.
 /// </summary>
-public sealed class FormatOnSaveTests
+public sealed class FormatOnSaveTests : IDisposable
 {
-    private static readonly string TempRoot = Path.Combine(
-        Path.GetTempPath(),
-        "zaide-phase10-m6-fos-" + Guid.NewGuid().ToString("N"));
+    private readonly TestTempDirectory _workspace = TestTempDirectory.Create("zaide-writable-");
+    private string TempRoot => _workspace.Path;
 
-    static FormatOnSaveTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-        Directory.CreateDirectory(TempRoot);
-    }
+    public void Dispose() => _workspace.Dispose();
 
     private sealed class RecordingFileService : IFileService
     {

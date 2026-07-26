@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI.Builder;
 using Xunit;
 using Zaide.App.Composition;
 using Zaide.Tests.App.Composition;
@@ -23,10 +22,6 @@ namespace Zaide.Tests.Features.Editor.Presentation;
 /// </summary>
 public sealed class EditorTabReorderTests
 {
-    static EditorTabReorderTests()
-    {
-        RxAppBuilder.CreateReactiveUIBuilder().BuildApp();
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // Test Helpers
