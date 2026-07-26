@@ -44,8 +44,8 @@ a corrective pass and serial verification at 3049/3049.
 
 M9 adversarial closeout was implemented on 2026-07-25 with adversarial test
 inventory, shutdown-during-pending-action fix, non-deletion verification,
-architecture inventory confirmation, and documentation truth-sync. Phase 17 is
-pending final human acceptance.
+architecture inventory confirmation, and documentation truth-sync. Phase 17 was
+accepted by the user on 2026-07-26.
 
 ## Delivery boundary: shipped inert
 
@@ -75,7 +75,7 @@ phase (Phase 19 or Phase 20).
 
 ## Current work
 
-Phase 17 M9 closeout is complete pending final human acceptance. No Phase 18
+Phase 17 M9 closeout is complete and accepted. No further Phase 17 or Phase 18
 work is authorized.
 
 ## Completed milestones
@@ -103,7 +103,7 @@ work is authorized.
 - [x] Implement M8: session/event integration, audit snapshots, and bypass ratchets.
 - [x] M8 received GO on 2026-07-25.
 - [x] Implement M9: adversarial closeout, non-deletion verification, and truth-sync.
-- [ ] Phase 17 final human acceptance. Do not start Phase 18 without explicit authorization.
+- [x] Phase 17 final human acceptance on 2026-07-26. Phase 18 remains unauthorized.
 
 Manual mutation evidence recorded in `M5_WORKSPACE_MUTATION_EVIDENCE.md`.
 Manual reconciliation evidence recorded in `M6_DOCUMENT_RECONCILIATION_EVIDENCE.md`.

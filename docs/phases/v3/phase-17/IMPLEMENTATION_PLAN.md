@@ -29,10 +29,11 @@ implemented on 2026-07-25 with session/event integration, in-memory audit
 snapshots, fake action requester integration tests, projection ownership, and
 bypass-prevention architecture ratchets and received GO on 2026-07-25 after a
 corrective pass. M9 adversarial closeout was implemented on 2026-07-25 with
-full-suite verification, non-deletion checks, and documentation truth-sync;
-Phase 17 is pending final human acceptance.
+ full-suite verification, non-deletion checks, and documentation truth-sync.
+Phase 17 was accepted by the user on 2026-07-26.
 
-**Authorized work:** M9 closeout is complete pending final human acceptance.
+**Authorized work:** Phase 17 M0–M9 is complete and accepted. No further
+Phase 17 implementation work is authorized.
 Phase 18 is not authorized.
 
 **Explicit exclusions:** Native Harness and ACP backends, Phase 16 candidate
