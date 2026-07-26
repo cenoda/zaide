@@ -9,6 +9,13 @@ using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Debugging.Application;
+using Zaide.Features.Editor.Application;
+using Zaide.Features.Language.Application;
+using Zaide.Features.ProjectSystem.Domain;
+using Zaide.Features.SourceControl.Application;
+using Zaide.Features.SourceControl.Domain;
+using Zaide.Tests.Features.Agents;
 
 namespace Zaide.Tests.Features.Agents.Application;
 
@@ -17,6 +24,8 @@ namespace Zaide.Tests.Features.Agents.Application;
 /// </summary>
 public sealed class Phase18RunIntegrationTests
 {
+    private const string ContextAssemblyFailureReason = "IDE context assembly failed.";
+
     private static readonly DateTimeOffset FixedAssemblyTime =
         new(2026, 7, 26, 6, 0, 0, TimeSpan.Zero);
 
@@ -168,19 +177,19 @@ public sealed class Phase18RunIntegrationTests
     public async Task SessionService_WithContextAssembly_AttachesManifestToRequest()
     {
         var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
         var eventStream = new AgentEventStream();
-        
         var manifestBuilder = new AgentContextManifestBuilder();
-        
+        var snapshotSources = CreateDeterministicSnapshotSources();
+
         var sessionService = new AgentSessionService(
             new[] { backend },
             eventStream,
             contextManifestBuilder: manifestBuilder,
-            contextSnapshotSources: null);
+            contextSnapshotSources: snapshotSources);
 
         var conversationId = ConversationId.NewDirect();
         var messageEntryId = ConversationEntryId.New();
-        var messageText = "test message";
 
         var result = await sessionService.SendAsync(
             conversationId,
@@ -188,40 +197,296 @@ public sealed class Phase18RunIntegrationTests
             ActorId.PanelSeed("test"),
             backend.BackendId,
             messageEntryId,
-            messageText,
+            "test message",
             CancellationToken.None);
 
-        Assert.NotNull(result);
-        Assert.True(AgentRunStatusTransitions.IsTerminal(result.Status));
+        Assert.Equal(AgentRunStatus.Completed, result.Status);
+        Assert.Equal(1, backend.ExecuteCallCount);
+
+        var executionContext = backend.LastExecutionContext;
+        Assert.NotNull(executionContext);
+        var manifest = executionContext.ContextManifest;
+        Assert.NotNull(manifest);
+        Assert.Equal(conversationId, manifest.ConversationId);
+        Assert.Equal(result.RunId, manifest.RunId);
+        Assert.Equal(AgentContextPolicyLevel.Standard, manifest.PolicyLevelApplied);
+        Assert.Contains(manifest.Items, item => item.SourceId == AgentContextSourceId.ProjectContext);
+        Assert.IsType<System.Collections.ObjectModel.ReadOnlyCollection<AgentContextItem>>(manifest.Items);
     }
 
     [Fact]
-    public async Task SessionService_WithoutContextAssembly_DoesNotThrow()
+    public async Task SessionService_WithContextAssembly_ManifestIdentityMatchesAdmittedRun()
     {
         var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
         var eventStream = new AgentEventStream();
-        
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        var conversationId = ConversationId.NewDirect();
+        var result = await sessionService.SendAsync(
+            conversationId,
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        var manifest = backend.LastExecutionContext!.ContextManifest;
+        Assert.NotNull(manifest);
+
+        var sessionSnapshot = sessionService.TryGetSessionSnapshot(conversationId);
+        Assert.NotNull(sessionSnapshot);
+        Assert.Equal(sessionSnapshot.SessionId, manifest.SessionId);
+        Assert.Equal(result.RunId, manifest.RunId);
+        Assert.Equal(conversationId, manifest.ConversationId);
+    }
+
+    [Fact]
+    public async Task SessionService_WithContextAssembly_AttachesManifestBeforeBackendExecution()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        backend.SetGatedCompletion(gate, "done");
+        var eventStream = new AgentEventStream();
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        var sendTask = sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        await backend.ExecutionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.NotNull(backend.LastExecutionContext?.ContextManifest);
+
+        gate.SetResult("done");
+        var result = await sendTask;
+        Assert.Equal(AgentRunStatus.Completed, result.Status);
+    }
+
+    [Fact]
+    public async Task SessionService_WithoutContextAssembly_DoesNotAttachManifest()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+        var eventStream = new AgentEventStream();
+
         var sessionService = new AgentSessionService(
             new[] { backend },
             eventStream,
             contextManifestBuilder: null,
             contextSnapshotSources: null);
 
-        var conversationId = ConversationId.NewDirect();
-        var messageEntryId = ConversationEntryId.New();
-        var messageText = "test message";
-
         var result = await sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        Assert.Equal(AgentRunStatus.Completed, result.Status);
+        Assert.Null(backend.LastExecutionContext?.ContextManifest);
+    }
+
+    [Fact]
+    public async Task SessionService_WithOnlyManifestBuilder_DoesNotAttachManifest()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            new AgentEventStream(),
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: null);
+
+        await sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        Assert.Null(backend.LastExecutionContext?.ContextManifest);
+    }
+
+    [Fact]
+    public async Task SessionService_WithOnlySnapshotSources_DoesNotAttachManifest()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            new AgentEventStream(),
+            contextManifestBuilder: null,
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        await sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        Assert.Null(backend.LastExecutionContext?.ContextManifest);
+    }
+
+    [Fact]
+    public async Task SessionService_RejectedRun_DoesNotInvokeBackendOrAttachManifest()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        backend.SetGatedCompletion(gate, "done");
+        var eventStream = new AgentEventStream();
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        var conversationId = ConversationId.NewDirect();
+        var firstTask = sessionService.SendAsync(
             conversationId,
             ActorId.HumanUser,
             ActorId.PanelSeed("test"),
             backend.BackendId,
-            messageEntryId,
-            messageText,
+            ConversationEntryId.New(),
+            "first",
             CancellationToken.None);
 
-        Assert.NotNull(result);
-        Assert.True(AgentRunStatusTransitions.IsTerminal(result.Status));
+        await backend.ExecutionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.NotNull(backend.LastExecutionContext?.ContextManifest);
+
+        var rejected = await sessionService.SendAsync(
+            conversationId,
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "second",
+            CancellationToken.None);
+
+        Assert.Equal(AgentRunStatus.Rejected, rejected.Status);
+        Assert.Equal(1, backend.ExecuteCallCount);
+
+        gate.SetResult("done");
+        var first = await firstTask;
+        Assert.Equal(AgentRunStatus.Completed, first.Status);
+    }
+
+    [Fact]
+    public async Task SessionService_BackendFailure_PreservesRunLifecycleAndManifestAttachment()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetFailure(AgentFailureKind.Execution, "execution failed");
+        var eventStream = new AgentEventStream();
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        var result = await sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        Assert.Equal(AgentRunStatus.Failed, result.Status);
+        Assert.NotNull(backend.LastExecutionContext?.ContextManifest);
+    }
+
+    [Fact]
+    public async Task SessionService_Cancellation_PreservesRunLifecycleAndManifestAttachment()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        backend.SetGatedCompletion(gate, "done");
+        var eventStream = new AgentEventStream();
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateDeterministicSnapshotSources());
+
+        using var cts = new CancellationTokenSource();
+        var conversationId = ConversationId.NewDirect();
+        var sendTask = sessionService.SendAsync(
+            conversationId,
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            cts.Token);
+
+        await backend.ExecutionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.NotNull(backend.LastExecutionContext?.ContextManifest);
+        cts.Cancel();
+
+        var result = await sendTask;
+        Assert.Equal(AgentRunStatus.Cancelled, result.Status);
+    }
+
+    [Fact]
+    public async Task SessionService_AssemblyFailure_DoesNotAttachManifestAndEmitsSafeFailure()
+    {
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+        var eventStream = new AgentEventStream();
+        var failures = new List<AgentEvent>();
+        using var subscription = eventStream.Events.Subscribe(failures.Add);
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: new ThrowingAgentContextSnapshotSources());
+
+        var result = await sessionService.SendAsync(
+            ConversationId.NewDirect(),
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            ConversationEntryId.New(),
+            "test message",
+            CancellationToken.None);
+
+        Assert.Equal(AgentRunStatus.Completed, result.Status);
+        Assert.Null(backend.LastExecutionContext?.ContextManifest);
+
+        var failure = failures.Single(e => e.Kind == AgentEventKind.FailureReported);
+        var payload = Assert.IsType<AgentFailurePayload>(failure.Payload);
+        Assert.Equal(AgentFailureKind.Indeterminate, payload.FailureKind);
+        Assert.Equal(ContextAssemblyFailureReason, payload.Reason);
+        Assert.DoesNotContain("secret", payload.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -252,9 +517,9 @@ public sealed class Phase18RunIntegrationTests
 
         var executeMethod = typeof(LegacyOpenAiCompatibleAgentBackend)
             .GetMethod(nameof(LegacyOpenAiCompatibleAgentBackend.ExecuteAsync));
-        
+
         Assert.NotNull(executeMethod);
-        
+
         var methodBody = executeMethod.ToString();
         Assert.DoesNotContain("ContextManifest", methodBody);
         Assert.DoesNotContain("AgentContextManifest", methodBody);
@@ -294,9 +559,51 @@ public sealed class Phase18RunIntegrationTests
         Assert.NotSame(manifest1, manifest2);
     }
 
-    private static AgentContextItem CreateTestContextItem()
-    {
-        return new AgentContextItem(
+    private static DeterministicAgentContextSnapshotSources CreateDeterministicSnapshotSources() =>
+        new()
+        {
+            Editor = new EditorStateSnapshot(
+                generation: 1,
+                activeFilePath: "/workspace/Program.cs",
+                activeFileContent: "class Program {}",
+                openFilePaths: new[] { "/workspace/Program.cs" }),
+            SourceControl = new SourceControlStatusSnapshot(
+                generation: 1,
+                availability: SourceControlSnapshotAvailability.NoWorkspace),
+            LanguageDiagnostics = LanguageDiagnosticsSnapshot.Empty,
+            BuildDiagnostics = BuildDiagnosticsSnapshot.Empty,
+            Workflow = new ProjectWorkflowSnapshot(
+                ProjectWorkflowOperationState.Idle,
+                Generation: 0,
+                ActiveOperation: null,
+                LastOutcome: null,
+                TargetFilePath: null,
+                ProcessId: null,
+                OutputLines: [],
+                LastOperation: null),
+            TestResults = TestResultsSnapshot.Empty,
+            DebugSession = new DebugSessionSnapshot(
+                DebugSessionState.Idle,
+                Generation: 0,
+                ProgramPath: null,
+                WorkingDirectory: null,
+                AdapterProcessId: null,
+                StopInfo: null,
+                Failure: null,
+                LastOutcome: null,
+                DiagnosticOutput: [],
+                BreakpointVerifications: DebugSessionSnapshot.EmptyVerifications),
+            ProjectContext = new ProjectContext(
+                ProjectContextState.SingleProject,
+                WorkspaceRoot: "/workspace",
+                Candidates: [new ProjectCandidate("/workspace/App.csproj", "App", ProjectKind.CSharpProject)],
+                SelectedProject: new ProjectCandidate("/workspace/App.csproj", "App", ProjectKind.CSharpProject),
+                UnsupportedFiles: [],
+                ErrorMessage: null),
+        };
+
+    private static AgentContextItem CreateTestContextItem() =>
+        new(
             AgentContextSourceId.ActiveFile,
             "test content",
             "test://file",
@@ -310,5 +617,42 @@ public sealed class Phase18RunIntegrationTests
                 redactionApplied: false,
                 null),
             null);
+
+    private sealed record DeterministicAgentContextSnapshotSources : IAgentContextSnapshotSources
+    {
+        public required EditorStateSnapshot Editor { get; init; }
+
+        public required SourceControlStatusSnapshot SourceControl { get; init; }
+
+        public required LanguageDiagnosticsSnapshot LanguageDiagnostics { get; init; }
+
+        public required BuildDiagnosticsSnapshot BuildDiagnostics { get; init; }
+
+        public required ProjectWorkflowSnapshot Workflow { get; init; }
+
+        public required TestResultsSnapshot TestResults { get; init; }
+
+        public required DebugSessionSnapshot DebugSession { get; init; }
+
+        public required ProjectContext ProjectContext { get; init; }
+    }
+
+    private sealed class ThrowingAgentContextSnapshotSources : IAgentContextSnapshotSources
+    {
+        public EditorStateSnapshot Editor => throw new InvalidOperationException("secret snapshot failure");
+
+        public SourceControlStatusSnapshot SourceControl => throw new InvalidOperationException("secret snapshot failure");
+
+        public LanguageDiagnosticsSnapshot LanguageDiagnostics => throw new InvalidOperationException("secret snapshot failure");
+
+        public BuildDiagnosticsSnapshot BuildDiagnostics => throw new InvalidOperationException("secret snapshot failure");
+
+        public ProjectWorkflowSnapshot Workflow => throw new InvalidOperationException("secret snapshot failure");
+
+        public TestResultsSnapshot TestResults => throw new InvalidOperationException("secret snapshot failure");
+
+        public DebugSessionSnapshot DebugSession => throw new InvalidOperationException("secret snapshot failure");
+
+        public ProjectContext ProjectContext => throw new InvalidOperationException("secret snapshot failure");
     }
 }

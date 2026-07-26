@@ -72,7 +72,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Editor.Infrastructure"]);
         // Phase 17 M6: +1 internal WorkspaceEditorDocumentReconciler.
         // Phase 18 M1: +1 public EditorStateSnapshot.
-        Assert.Equal((2, 1, 1), byNamespace["Zaide.Features.Editor.Application"]);
+        // Phase 18 M3 corrective: +1 internal EditorStateSnapshotService.
+        Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.Editor.Application"]);
         Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
@@ -95,7 +96,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((6, 6, 0), byNamespace["Zaide.Features.SourceControl.Contracts"]);
         // M11c: SourceControlSnapshotOrchestrator + SourceControlActionDeriver + SourceControlDiffTabService public→internal (14p/0i → 11p/3i).
         // Phase 18 M1: +2 public SourceControlSnapshotAvailability and SourceControlStatusSnapshot.
-        Assert.Equal((16, 13, 3), byNamespace["Zaide.Features.SourceControl.Application"]);
+        // Phase 18 M3 corrective: +1 internal SourceControlSnapshotService.
+        Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.SourceControl.Application"]);
         // M11c: GitMutationService public→internal (1p/2i → 0p/3i).
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.SourceControl.Infrastructure"]);
         Assert.Equal((2, 2, 0), byNamespace["Zaide.Features.SourceControl.Presentation"]);
@@ -215,7 +217,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1: +17 IDE context contract production files.
         // Phase 18 M1: +7 snapshot seam production files.
         // Phase 18 M1 corrective: +2 disclosure summary production files.
-        Assert.Equal(575, inventory.SourceFiles.Count);
+        // Phase 18 M3 corrective: +2 passive snapshot service production files.
+        Assert.Equal(577, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -241,7 +244,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1: +24 IDE context contract and snapshot seam production files.
         // Phase 18 M1 corrective: +2 disclosure summary production files.
         // Phase 18 M2: +11 internal context assembly service production files.
-        Assert.Equal(530, byFolder["Features"]);
+        // Phase 18 M3 corrective: +2 passive snapshot service production files.
+        Assert.Equal(532, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

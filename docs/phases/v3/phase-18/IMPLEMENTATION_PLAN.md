@@ -3,15 +3,13 @@
 ## Status and authorization
 
 **Phase 18 status:** M0 accepted. M1 complete (including corrective pass). M2 policy
-evaluation and context assembly complete as of 2026-07-26. M3/M4 not started.
+evaluation and context assembly complete as of 2026-07-26. M3 run integration and
+consumption boundary complete as of 2026-07-26 (including production DI corrective
+pass). M4/M5 not started.
 
-**Authorized work:** This document authorizes M0 planning only. No production code, tests,
-UI, backend wiring, persistence, memory, raw traces, provider-specific prompt
-tuning, or Phase 19/20 work is authorized.
-
-**Phase 18 implementation is unauthorized until this M0 plan is explicitly
-reviewed and accepted by the user.** Acceptance of M0 authorizes M1 work to
-begin. Starting M1 before M0 acceptance is a stop condition.
+**Authorized work:** M0–M3 implementation is complete. M4/M5 remain unauthorized
+until explicitly started. No persistence, memory, raw traces, provider-specific
+prompt tuning, or Phase 19/20 work is authorized.
 
 **Planning baseline:**
 

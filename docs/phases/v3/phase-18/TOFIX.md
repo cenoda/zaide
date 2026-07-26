@@ -4,7 +4,9 @@
 
 M0 accepted. M1 implementation landed, failed NO-GO review, and the corrective pass
 is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
-2026-07-26 and is now complete. M3/M4 are not started.
+2026-07-26 and is complete. M3 run integration and consumption boundary landed
+2026-07-26, including the M3 corrective pass for production DI wiring and
+integration-test proof. M4/M5 are not started.
 
 ## Current work
 
@@ -12,119 +14,78 @@ is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
 - [x] M1 initial delivery.
 - [x] M1 corrective pass for NO-GO findings (2026-07-26).
 - [x] M2 policy evaluation and context assembly service (2026-07-26).
+- [x] M3 run integration and consumption boundary (2026-07-26).
+- [x] M3 corrective pass for production DI wiring and integration proof (2026-07-26).
+
+## M3 corrective delivery (2026-07-26) - COMPLETE
+
+Production:
+
+- **Production DI:** `AddZaideAgents` registers `AgentContextManifestBuilder` and
+  `LiveAgentContextSnapshotSources` as `IAgentContextSnapshotSources`. Production
+  `AgentSessionService` resolves with both context dependencies from the real
+  composition root.
+- **Snapshot service registration:** `AddZaideEditor` registers
+  `IEditorStateSnapshotService` / `EditorStateSnapshotService`.
+  `AddZaideSourceControl` registers `ISourceControlSnapshotService` /
+  `SourceControlSnapshotService`. Passive owners start empty/unavailable until
+  presentation publishes live state.
+- **Assembly failure behavior:** `AgentSessionService` fail-closed on assembly
+  exceptions — no manifest attached, safe `FailureReported` event with fixed
+  reason `IDE context assembly failed.` (no raw snapshot or exception detail).
+- **Legacy backend boundary preserved:** `LegacyOpenAiCompatibleAgentBackend`
+  remains inert to `ContextManifest`.
+
+Tests:
+
+- `AgentsRegistrationModuleTests` — context services registered, production
+  `AgentSessionService` resolves with usable context dependencies.
+- `Phase18RunIntegrationTests` — run-to-manifest integration with deterministic
+  snapshot sources, capturing backend, application-default policy path, rejected-run
+  non-assembly, backend failure/cancellation lifecycle, assembly-failure behavior,
+  and null-dependency guards.
+
+## M3 delivery (2026-07-26) - COMPLETE
+
+Production (`src/Features/Agents/`):
+
+- **Backend request extension:** `AgentBackendRequest` includes optional nullable
+  `AgentContextManifest? ContextManifest`.
+- **Execution context extension:** `AgentBackendExecutionContext` exposes
+  `ContextManifest` from the request.
+- **Run integration:** `AgentSessionService` integrates `AgentContextManifestBuilder`
+  and `IAgentContextSnapshotSources` through constructor injection.
+- **Context assembly:** `AssembleContextManifestLocked` creates a manifest per
+  admitted run using application-default policy and available snapshot sources.
+- **Manifest attachment:** Context manifest is attached to `AgentBackendRequest`
+  before backend execution begins.
 
 ## M2 delivery (2026-07-26) - COMPLETE
 
 Production (`src/Features/Agents/`):
 
 - **Policy evaluation:** `AgentContextPolicyEvaluationService` resolves application
-default and session override, applies the locked Off / Minimal / Standard / Detailed
-levels exclusively through `AgentContextSourcePolicyMatrix`, and records policy
-exclusion decisions. Custom policy remains unsupported.
+  default and session override, applies the locked Off / Minimal / Standard / Detailed
+  levels exclusively through `AgentContextSourcePolicyMatrix`, and records policy
+  exclusion decisions. Custom policy remains unsupported.
 - **Hard exclusions:** `AgentContextManifestBuilder` enforces
-`AgentContextHardExclusionRegistry` before budget accounting (binary active file,
-environment-line filtering in workflow output, fail-closed redaction drops with
-`RedactionPatternMatch`). No bypass path.
+  `AgentContextHardExclusionRegistry` before budget accounting.
 - **Snapshot consumption:** `LiveAgentContextSnapshotSources` reads contract-level
-services only (`IEditorStateSnapshotService`, `ISourceControlSnapshotService`,
-`ILanguageDiagnosticsService`, `IBuildDiagnosticsService`, `IProjectWorkflowService`,
-`ITestResultsService`, `IDebugSessionService`, `IProjectContextService`). No
-Presentation or cross-feature Infrastructure references.
-- **Assembly:** `AgentContextContentComposer` serializes snapshots deterministically;
-`AgentContextRedactionProcessor` redacts before `AgentContextTokenEstimator` counts;
-`AgentContextBudgetEnforcer` applies locked priority order with atomic drop/truncate;
-`AgentContextManifestBuilder` produces `AgentContextManifest` with provenance,
-exclusion, and truncation decisions.
-- **Domain helpers:** `AgentContextSourcePriority`, `AgentContextTokenEstimator`,
-`AgentContextPolicyEvaluationResult`, `AgentContextManifestCandidate`.
-
-Tests:
-
-- `Phase18ContextAssemblyTests` — policy precedence, matrix levels, hard exclusions,
-  unavailable capabilities, deterministic ordering, redaction-before-counting, budget
-  boundaries/overflow, atomic truncation, fail-closed redaction, provenance, and
-  repeated-input determinism.
-
-Architecture ratchets updated for M2 (+15 internal production types + 11 internal
-context assembly service types). Phase 18 bypass ratchets pass with
-`AgentContextManifestBuilder` naming (no forbidden `ContextAssembly` / `ContextService`
-type names).
-
-## M1 corrective findings addressed (2026-07-26)
-
-- **Hard-exclusion invariant restored in `AgentContextExclusionDecision`**
-- **Strengthened bypass ratchet** (`ContextAssemblyService_RequiresPolicyMatrixRegistration`)
-- **Complete snapshot immutability** (Editor, SourceControl nested clones)
-- **Contract invariant tests** in `Phase18ContextContractTests`
-- **Regression fix** for nested `FileChange` cloning in SourceControl tests
-
-## Verification status (M2 2026-07-26) - COMPLETE
-
-- `dotnet build Zaide.slnx --no-restore` — 0 errors, 0 warnings
-- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Phase18'` — 51/51 passed
-- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Architecture'` — 36/36 passed
-- `dotnet test Zaide.slnx --no-build` — 3116/3116 passed
-- `git diff --check` — clean
-
-## M3 delivery (2026-07-26) - COMPLETE
-
-Production (`src/Features/Agents/`):
-
-- **Backend request extension:** `AgentBackendRequest` now includes optional nullable `AgentContextManifest? ContextManifest` parameter with backward-compatible constructor.
-- **Execution context extension:** `AgentBackendExecutionContext` exposes `ContextManifest` property derived from the request.
-- **Run integration:** `AgentSessionService` integrates `AgentContextManifestBuilder` and `IAgentContextSnapshotSources` through optional constructor parameters.
-- **Context assembly:** `AssembleContextManifestLocked` method creates manifest per admitted run using application-default policy and available snapshot sources.
-- **Manifest attachment:** Context manifest is attached to `AgentBackendRequest` before backend execution begins.
-
-Tests:
-
-- `Phase18RunIntegrationTests` — backend request/response manifest slot, execution context exposure, read-only manifest collections, session service integration with and without context assembly, legacy backend inert verification, run-scoped manifest identity, policy level verification, session override precedence.
-
-Architecture ratchets updated for M3 (+1 integration test in bypass ratchets).
-
-## Verification status (M3 2026-07-26) - COMPLETE
-
-- `dotnet build Zaide.slnx --no-restore` — 0 errors, 0 warnings
-- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Phase18'` — 62/62 passed
-- `dotnet test Zaide.slnx --no-build --filter 'FullyQualifiedName~Architecture'` — 37/37 passed
-- `dotnet test Zaide.slnx --no-build` — 3127/3127 passed
-- `git diff --check` — clean
-
-## M1 delivery scope (unchanged)
-
-Implemented under `src/Features/Agents/Domain/`:
-
-- Context source identifier, item, manifest, provenance, redaction state/reason,
-  exclusion decision, token budget, truncation decision
-- Four policy levels (Off, Minimal, Standard, Detailed) with locked source matrix
-- Application default (`Standard`) and session override contracts
-- Hard exclusion registry with no Phase 18 escape hatch
-- Metadata-only `AgentContextDisclosurePayload` plus redaction/boundary summaries
-- `AgentCapabilityId.IdeContext` and `AgentEventKind.ContextDisclosed` taxonomy
-
-Contract-level passive snapshot seams:
-
-- `IEditorStateSnapshotService` / `EditorStateSnapshot`
-- `ITerminalSurfaceSnapshotService` / `TerminalSurfaceSnapshot` (no scrollback shape)
-- `ISourceControlSnapshotService` / `SourceControlStatusSnapshot`
-
-Legacy backend keeps `IdeContext` capability as `Unavailable`.
+  services only.
+- **Assembly:** `AgentContextContentComposer`, `AgentContextRedactionProcessor`,
+  `AgentContextBudgetEnforcer`, and `AgentContextManifestBuilder` produce
+  `AgentContextManifest` with provenance, exclusion, and truncation decisions.
 
 ## Next task
 
-- [x] M3 run integration and consumption boundary (2026-07-26).
+- [ ] M4 audit event and disclosure indicator (not started).
+- [ ] M5 session policy override and minimal UI (not started).
 
 ## Scope boundaries observed
 
-M2 does not implement run wiring, backend consumption, `ContextDisclosed` event
-emission, disclosure UI, session policy selector UI, custom policy support, viewport
-state, language identification, terminal scrollback, telemetry, or Phase 17 contract
-changes. Legacy backend remains free of `AgentContextManifest` consumption.
+M3 does not implement `ContextDisclosed` event emission, disclosure UI, session
+policy selector UI, custom policy support, telemetry, persistence, backend/provider
+prompt formatting, legacy backend context consumption, terminal scrollback,
+viewport state, or language identification.
 
-M3/M4 boundaries preserved:
-- run wiring implemented via AgentBackendRequest context manifest slot
-- backend manifest consumption prevented (legacy backend remains inert)
-- no ContextDisclosed event emission
-- no UI
-- no custom policy
-- no viewport/language-ID/terminal-scrollback work
+M4/M5 remain explicitly not started.

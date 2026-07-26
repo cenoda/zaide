@@ -18,6 +18,7 @@ internal static class SourceControlServiceCollectionExtensions
 
         // M3: focused snapshot refresh orchestration seam for Source Control
         services.AddSingleton<ISourceControlSnapshotOrchestrator, SourceControlSnapshotOrchestrator>();
+        services.AddSingleton<ISourceControlSnapshotService, SourceControlSnapshotService>();
 
         // M1: file diff service for Source Control diff view
         services.AddSingleton<IFileDiffService, FileDiffService>();

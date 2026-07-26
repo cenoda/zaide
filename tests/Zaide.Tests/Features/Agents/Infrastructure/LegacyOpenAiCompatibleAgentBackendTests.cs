@@ -616,7 +616,8 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         services.AddZaideAgents();
 
         // Phase 17 M3 corrective: +2 permission review surface registrations.
-        Assert.Equal(18, services.Count);
+        // Phase 18 M3 corrective: +2 context assembly registrations.
+        Assert.Equal(20, services.Count);
 
         var backendDescriptors = services
             .Where(d => d.ServiceType == typeof(IAgentBackend))

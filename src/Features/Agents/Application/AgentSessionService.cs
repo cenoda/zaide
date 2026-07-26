@@ -1034,6 +1034,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         public ContractAgentActionBroker? ActionBroker { get; set; }
     }
 
+    private const string ContextAssemblyFailureReason = "IDE context assembly failed.";
+
     private AgentContextManifest? AssembleContextManifestLocked(
         LiveSession session,
         LiveRun run)
@@ -1055,8 +1057,14 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
                 _contextSnapshotSources,
                 assembledAtUtc);
         }
-        catch
+        catch (Exception)
         {
+            EmitFailureLocked(
+                session,
+                run,
+                AgentFailureKind.Indeterminate,
+                ContextAssemblyFailureReason,
+                DateTimeOffset.UtcNow);
             return null;
         }
     }

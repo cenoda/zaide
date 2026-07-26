@@ -37,6 +37,8 @@ internal sealed class FakeAgentBackend : IAgentBackend
 
     public int ExecuteCallCount { get; private set; }
 
+    public AgentBackendExecutionContext? LastExecutionContext { get; private set; }
+
     public TaskCompletionSource<object?> ExecutionStarted { get; } =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -91,6 +93,7 @@ internal sealed class FakeAgentBackend : IAgentBackend
     {
         ArgumentNullException.ThrowIfNull(context);
         ExecuteCallCount++;
+        LastExecutionContext = context;
         ExecutionStarted.TrySetResult(null);
         if (_plans.Count == 0)
         {

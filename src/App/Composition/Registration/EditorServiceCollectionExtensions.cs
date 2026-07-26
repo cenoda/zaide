@@ -17,6 +17,7 @@ internal static class EditorServiceCollectionExtensions
         services.AddSingleton<IAgentDocumentReconciler, WorkspaceEditorDocumentReconciler>();
         services.AddSingleton<IEditorSessionFactory, EditorSessionFactory>();
         services.AddSingleton<IEditorReadOnlyTabService, EditorReadOnlyTabService>();
+        services.AddSingleton<IEditorStateSnapshotService, EditorStateSnapshotService>();
         services.AddSingleton<EditorSearchViewModel>();
         services.AddSingleton<EditorTabViewModel>();
         services.AddSingleton<EditorLanguageInputViewModel>();

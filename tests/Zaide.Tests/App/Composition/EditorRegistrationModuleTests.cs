@@ -33,6 +33,7 @@ public sealed class EditorRegistrationModuleTests
         typeof(IAgentDocumentReconciler).FullName!,
         typeof(IEditorSessionFactory).FullName!,
         typeof(IEditorReadOnlyTabService).FullName!,
+        typeof(IEditorStateSnapshotService).FullName!,
         typeof(EditorSearchViewModel).FullName!,
         typeof(EditorTabViewModel).FullName!,
         typeof(EditorLanguageInputViewModel).FullName!,
@@ -72,12 +73,12 @@ public sealed class EditorRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideEditor_RegistersExactlyEightPlannedServices()
+    public void AddZaideEditor_RegistersExactlyNinePlannedServices()
     {
         var services = new ServiceCollection();
         services.AddZaideEditor();
 
-        Assert.Equal(8, services.Count);
+        Assert.Equal(9, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -109,6 +110,10 @@ public sealed class EditorRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(IEditorReadOnlyTabService)
                 && d.ImplementationType == typeof(EditorReadOnlyTabService));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IEditorStateSnapshotService)
+                && d.ImplementationType == typeof(EditorStateSnapshotService));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(EditorSearchViewModel)
@@ -145,6 +150,11 @@ public sealed class EditorRegistrationModuleTests
         var readOnly2 = provider.GetRequiredService<IEditorReadOnlyTabService>();
         Assert.Same(readOnly1, readOnly2);
         Assert.IsType<EditorReadOnlyTabService>(readOnly1);
+
+        var editorSnapshot1 = provider.GetRequiredService<IEditorStateSnapshotService>();
+        var editorSnapshot2 = provider.GetRequiredService<IEditorStateSnapshotService>();
+        Assert.Same(editorSnapshot1, editorSnapshot2);
+        Assert.IsType<EditorStateSnapshotService>(editorSnapshot1);
 
         var search1 = provider.GetRequiredService<EditorSearchViewModel>();
         var search2 = provider.GetRequiredService<EditorSearchViewModel>();
@@ -243,12 +253,16 @@ public sealed class EditorRegistrationModuleTests
             Regex.Matches(
                 moduleSource,
                 @"AddSingleton<IEditorReadOnlyTabService,\s*EditorReadOnlyTabService>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IEditorStateSnapshotService,\s*EditorStateSnapshotService>\(\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<EditorSearchViewModel>\(\)"));
         Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<EditorTabViewModel>\(\)"));
         Assert.Single(
             Regex.Matches(moduleSource, @"AddSingleton<EditorLanguageInputViewModel>\(\)"));
 
-        Assert.Equal(8, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+        Assert.Equal(9, Regex.Matches(moduleSource, @"AddSingleton<").Count);
 
         // Locked exclusion: EditorViewModel must not be registered.
         Assert.DoesNotContain("EditorViewModel", moduleSource);

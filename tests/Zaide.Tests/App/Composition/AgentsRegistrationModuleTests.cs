@@ -28,6 +28,8 @@ public sealed class AgentsRegistrationModuleTests
     private static readonly string[] AgentsServiceTypeNames =
     {
         typeof(AgentEventStream).FullName!,
+        typeof(AgentContextManifestBuilder).FullName!,
+        typeof(IAgentContextSnapshotSources).FullName!,
         typeof(IAgentSessionService).FullName!,
         typeof(AgentConversationEventProjection).FullName!,
         typeof(IAgentPanelHost).FullName!,
@@ -88,7 +90,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(18, services.Count);
+        Assert.Equal(20, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -104,6 +106,14 @@ public sealed class AgentsRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(AgentEventStream)
                 && d.ImplementationType == typeof(AgentEventStream));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(AgentContextManifestBuilder)
+                && d.ImplementationType == typeof(AgentContextManifestBuilder));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(IAgentContextSnapshotSources)
+                && d.ImplementationType == typeof(LiveAgentContextSnapshotSources));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentSessionService)
@@ -194,6 +204,15 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Same(sessionService1, sessionService2);
         Assert.IsType<AgentSessionService>(sessionService1);
 
+        var manifestBuilder1 = provider.GetRequiredService<AgentContextManifestBuilder>();
+        var manifestBuilder2 = provider.GetRequiredService<AgentContextManifestBuilder>();
+        Assert.Same(manifestBuilder1, manifestBuilder2);
+
+        var snapshotSources1 = provider.GetRequiredService<IAgentContextSnapshotSources>();
+        var snapshotSources2 = provider.GetRequiredService<IAgentContextSnapshotSources>();
+        Assert.Same(snapshotSources1, snapshotSources2);
+        Assert.IsType<LiveAgentContextSnapshotSources>(snapshotSources1);
+
         var eventStream1 = provider.GetRequiredService<AgentEventStream>();
         var eventStream2 = provider.GetRequiredService<AgentEventStream>();
         Assert.Same(eventStream1, eventStream2);
@@ -215,6 +234,27 @@ public sealed class AgentsRegistrationModuleTests
         var presenter2 = provider.GetRequiredService<IAgentPermissionDialogPresenter>();
         Assert.Same(presenter1, presenter2);
         Assert.IsType<PermissionReviewDialogPresenter>(presenter1);
+    }
+
+    [Fact]
+    public void ProgramConfigureServices_ResolvesAgentSessionServiceWithContextDependencies()
+    {
+        using var provider = BuildProductionProvider();
+
+        var sessionService = provider.GetRequiredService<IAgentSessionService>();
+        var manifestBuilder = provider.GetRequiredService<AgentContextManifestBuilder>();
+        var snapshotSources = provider.GetRequiredService<IAgentContextSnapshotSources>();
+
+        Assert.IsType<AgentSessionService>(sessionService);
+        Assert.IsType<AgentContextManifestBuilder>(manifestBuilder);
+        Assert.IsType<LiveAgentContextSnapshotSources>(snapshotSources);
+
+        var constructor = typeof(AgentSessionService).GetConstructors(
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+            .Single();
+        var parameters = constructor.GetParameters().Select(p => p.ParameterType).ToArray();
+        Assert.Contains(typeof(AgentContextManifestBuilder), parameters);
+        Assert.Contains(typeof(IAgentContextSnapshotSources), parameters);
     }
 
     [Fact]
@@ -293,6 +333,14 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
+                @"AddSingleton<AgentContextManifestBuilder>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentContextSnapshotSources,\s*LiveAgentContextSnapshotSources>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
                 @"AddSingleton<IAgentSessionService,\s*AgentSessionService>\(\)"));
         Assert.Single(
             Regex.Matches(
@@ -332,7 +380,7 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(18, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(20, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

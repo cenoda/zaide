@@ -28,6 +28,7 @@ public sealed class SourceControlRegistrationModuleTests
         typeof(SourceControlViewModel).FullName!,
         typeof(IGitRepositoryService).FullName!,
         typeof(ISourceControlSnapshotOrchestrator).FullName!,
+        typeof(ISourceControlSnapshotService).FullName!,
         typeof(IFileDiffService).FullName!,
         typeof(ISourceControlDiffTabService).FullName!,
         typeof(IGitMutationService).FullName!,
@@ -67,13 +68,13 @@ public sealed class SourceControlRegistrationModuleTests
     }
 
     [Fact]
-    public void AddZaideSourceControl_RegistersExactlySixPlannedServices()
+    public void AddZaideSourceControl_RegistersExactlySevenPlannedServices()
     {
         var services = new ServiceCollection();
         var returned = services.AddZaideSourceControl();
 
         Assert.Same(services, returned);
-        Assert.Equal(6, services.Count);
+        Assert.Equal(7, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -100,6 +101,10 @@ public sealed class SourceControlRegistrationModuleTests
             services,
             d => d.ServiceType == typeof(ISourceControlSnapshotOrchestrator)
                 && d.ImplementationType == typeof(SourceControlSnapshotOrchestrator));
+        Assert.Contains(
+            services,
+            d => d.ServiceType == typeof(ISourceControlSnapshotService)
+                && d.ImplementationType == typeof(SourceControlSnapshotService));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IFileDiffService)
@@ -205,7 +210,7 @@ public sealed class SourceControlRegistrationModuleTests
     }
 
     [Fact]
-    public void SourceControlModuleSource_ContainsExactlyTheSixPlannedRegistrations()
+    public void SourceControlModuleSource_ContainsExactlyTheSevenPlannedRegistrations()
     {
         var moduleSource = ReadRepoFile(
             "src/App/Composition/Registration/SourceControlServiceCollectionExtensions.cs");
@@ -229,6 +234,10 @@ public sealed class SourceControlRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
+                @"AddSingleton<ISourceControlSnapshotService,\s*SourceControlSnapshotService>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
                 @"AddSingleton<IFileDiffService,\s*FileDiffService>\(\)"));
         Assert.Single(
             Regex.Matches(
@@ -239,7 +248,7 @@ public sealed class SourceControlRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IGitMutationService,\s*GitMutationService>\(\)"));
 
-        Assert.Equal(6, Regex.Matches(moduleSource, @"AddSingleton<").Count);
+        Assert.Equal(7, Regex.Matches(moduleSource, @"AddSingleton<").Count);
     }
 
 
