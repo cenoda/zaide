@@ -112,4 +112,15 @@ public class AgentPanelState : ReactiveObject
         get => _draftInput;
         set => this.RaiseAndSetIfChanged(ref _draftInput, value);
     }
+
+    /// <summary>
+    /// Read-only disclosure status for the last admitted run in this panel.
+    /// Phase 18 M4: Minimal visible indicator showing context disclosure state.
+    /// </summary>
+    private string _contextDisclosureStatus = string.Empty;
+    public string ContextDisclosureStatus
+    {
+        get => _contextDisclosureStatus;
+        set => this.RaiseAndSetIfChanged(ref _contextDisclosureStatus, value);
+    }
 }

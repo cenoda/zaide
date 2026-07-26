@@ -429,12 +429,16 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
             AgentEventKind.SessionRunning,
             AgentSessionStatus.Running);
 
-        run.StateMachine.TransitionTo(AgentRunStatus.Running);
-        EmitRunLifecycleLocked(session, run, AgentEventKind.RunRunning, AgentRunStatus.Running);
+        var contextManifest = AssembleContextManifestLocked(session, run);
+        if (contextManifest is not null)
+        {
+            EmitContextDisclosedLocked(session, run, contextManifest);
+        }
 
         run.ExecutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        var contextManifest = AssembleContextManifestLocked(session, run);
+        run.StateMachine.TransitionTo(AgentRunStatus.Running);
+        EmitRunLifecycleLocked(session, run, AgentEventKind.RunRunning, AgentRunStatus.Running);
         var request = new AgentBackendRequest(
             session.SessionId,
             run.RunId,
@@ -883,6 +887,23 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
         _eventStream.Publish(agentEvent);
     }
 
+    private void EmitContextDisclosedLocked(
+        LiveSession session,
+        LiveRun run,
+        AgentContextManifest manifest)
+    {
+        var payload = CreateDisclosurePayloadFromManifest(manifest);
+        var agentEvent = CreateEventLocked(
+            session,
+            run.RunId,
+            AgentEventKind.ContextDisclosed,
+            payload,
+            AgentActivityEvidenceLevel.ZaideExecuted,
+            occurredAtUtc: DateTimeOffset.UtcNow);
+
+        _eventStream.Publish(agentEvent);
+    }
+
     private AgentEvent CreateEventLocked(
         LiveSession session,
         ExecutionRunId runId,
@@ -1067,6 +1088,113 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
                 DateTimeOffset.UtcNow);
             return null;
         }
+    }
+
+    private AgentContextDisclosurePayload CreateDisclosurePayloadFromManifest(
+        AgentContextManifest manifest)
+    {
+        var disclosedSourceIds = manifest.Items
+            .Select(item => item.SourceId)
+            .Distinct()
+            .OrderBy(sourceId => sourceId.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        var redactionSummary = CreateRedactionSummary(manifest);
+        var boundarySummary = CreateBoundarySummary(manifest);
+
+        return new AgentContextDisclosurePayload(
+            manifest.SessionId,
+            manifest.RunId,
+            manifest.ConversationId,
+            manifest.PolicyLevelApplied,
+            disclosedSourceIds,
+            manifest.Items.Count,
+            manifest.TotalEstimatedTokenCount,
+            redactionSummary,
+            boundarySummary);
+    }
+
+    private AgentContextDisclosureRedactionSummary CreateRedactionSummary(
+        AgentContextManifest manifest)
+    {
+        int noRedaction = 0;
+        int partialRedaction = 0;
+        int fullRedaction = 0;
+        int processingFailed = 0;
+
+        foreach (var item in manifest.Items)
+        {
+            switch (item.RedactionState)
+            {
+                case AgentContextRedactionState.None:
+                    noRedaction++;
+                    break;
+                case AgentContextRedactionState.Partial:
+                    partialRedaction++;
+                    break;
+                case AgentContextRedactionState.Full:
+                    fullRedaction++;
+                    break;
+                case AgentContextRedactionState.ProcessingFailed:
+                    processingFailed++;
+                    break;
+            }
+        }
+
+        return new AgentContextDisclosureRedactionSummary(
+            noRedaction,
+            partialRedaction,
+            fullRedaction,
+            processingFailed);
+    }
+
+    private AgentContextDisclosureBoundarySummary CreateBoundarySummary(
+        AgentContextManifest manifest)
+    {
+        var excludedSourceIds = new List<AgentContextSourceId>();
+        var hardExclusionIds = new List<AgentContextHardExclusionId>();
+        var truncatedSourceIds = new List<AgentContextSourceId>();
+        int hardExclusionCount = 0;
+        int truncatedItemCount = 0;
+        int droppedItemCount = 0;
+
+        foreach (var exclusion in manifest.ExclusionDecisions)
+        {
+            if (exclusion.IsHardExclusion)
+            {
+                if (exclusion.HardExclusionId is { } hardExclusionId)
+                {
+                    hardExclusionIds.Add(hardExclusionId);
+                }
+                hardExclusionCount++;
+            }
+            else if (exclusion.SourceId is { } sourceId)
+            {
+                excludedSourceIds.Add(sourceId);
+            }
+        }
+
+        foreach (var truncation in manifest.TruncationDecisions)
+        {
+            if (truncation.ItemDropped)
+            {
+                droppedItemCount++;
+            }
+            else if (truncation.ItemTruncated)
+            {
+                truncatedItemCount++;
+                truncatedSourceIds.Add(truncation.SourceId);
+            }
+        }
+
+        return new AgentContextDisclosureBoundarySummary(
+            excludedSourceIds.Count,
+            hardExclusionCount,
+            truncatedItemCount,
+            droppedItemCount,
+            excludedSourceIds,
+            hardExclusionIds,
+            truncatedSourceIds);
     }
 
     private AgentBackendExecutionContext CreateExecutionContextLocked(

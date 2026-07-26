@@ -312,6 +312,11 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             panel.ConversationId,
             snapshot.RunId).ConfigureAwait(false);
 
+        ApplyPanelDisclosureProjection(
+            panel.ConversationId,
+            snapshot.RunId,
+            runEvents);
+
         var outcome = MapRunStatus(snapshot.Status);
         var resultPanelId = FindPanelForConversation(panel.ConversationId)?.PanelId ?? panel.PanelId;
         var run = new ExecutionRun(
@@ -665,6 +670,66 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
             livePanel.Status = status;
             livePanel.IsBusy = isBusy;
         }
+    }
+
+    private void ApplyPanelDisclosureProjection(
+        ConversationId conversationId,
+        ExecutionRunId runId,
+        IReadOnlyList<AgentEvent> runEvents)
+    {
+        lock (_sync)
+        {
+            var livePanel = FindPanelForConversation(conversationId);
+            if (livePanel is null)
+            {
+                return;
+            }
+
+            var disclosureStatus = ExtractDisclosureStatus(runEvents, runId);
+            if (!string.IsNullOrEmpty(disclosureStatus))
+            {
+                livePanel.ContextDisclosureStatus = disclosureStatus;
+            }
+        }
+    }
+
+    private static string? ExtractDisclosureStatus(
+        IReadOnlyList<AgentEvent> runEvents,
+        ExecutionRunId runId)
+    {
+        for (var index = runEvents.Count - 1; index >= 0; index--)
+        {
+            var agentEvent = runEvents[index];
+            if (agentEvent.RunId != runId
+                || agentEvent.Kind != AgentEventKind.ContextDisclosed
+                || agentEvent.Payload is not AgentContextDisclosurePayload payload)
+            {
+                continue;
+            }
+
+            return FormatDisclosureStatus(payload);
+        }
+
+        return null;
+    }
+
+    private static string FormatDisclosureStatus(AgentContextDisclosurePayload payload)
+    {
+        if (payload.ItemCount == 0)
+        {
+            return "No context";
+        }
+
+        var sourceCount = payload.DisclosedSourceIds.Count;
+        var tokenCount = payload.EstimatedTokenCount;
+        return payload.PolicyLevelApplied switch
+        {
+            AgentContextPolicyLevel.Off => "Context: Off",
+            AgentContextPolicyLevel.Minimal => $"Context: {sourceCount} sources, {tokenCount} tokens",
+            AgentContextPolicyLevel.Standard => $"Context: {sourceCount} sources, {tokenCount} tokens",
+            AgentContextPolicyLevel.Detailed => $"Context: {sourceCount} sources, {tokenCount} tokens",
+            _ => $"Context: {sourceCount} sources, {tokenCount} tokens"
+        };
     }
 
     private AgentPanelState? FindPanelForConversation(ConversationId conversationId) =>

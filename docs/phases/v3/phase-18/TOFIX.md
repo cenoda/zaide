@@ -111,7 +111,7 @@ Production (`src/Features/Agents/`):
 
 ## Next task
 
-- [ ] M4 audit event and disclosure indicator (not started).
+- [x] M4 audit event and disclosure indicator (2026-07-26).
 - [ ] M5 session policy override and minimal UI (not started).
 
 ## Scope boundaries observed
@@ -121,4 +121,5 @@ policy selector UI, custom policy support, telemetry, persistence, backend/provi
 prompt formatting, legacy backend context consumption, terminal scrollback,
 viewport state, or language identification.
 
-M4/M5 remain explicitly not started.
+M4 implemented `ContextDisclosed` audit event emission and minimal disclosure indicator.
+M5 remains explicitly not started.

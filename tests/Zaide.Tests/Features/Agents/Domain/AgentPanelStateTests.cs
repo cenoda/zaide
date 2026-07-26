@@ -194,6 +194,7 @@ public class AgentPanelStateTests
             "AgentId",
             "AgentName",
             "AvatarResourceKey",
+            "ContextDisclosureStatus",
             "ConversationId",
             "DraftInput",
             "IsBusy",
