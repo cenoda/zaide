@@ -67,10 +67,26 @@ feature folder is created.
 
 ### P18-D02: Dependency direction
 
-Context assembly reads from other features (Editor, Language, ProjectSystem,
-SourceControl, Debugging, Terminal, Workspace) through their **Contracts** or
-read-only service interfaces. It does not take dependencies on their
-Presentation or Infrastructure layers.
+Context assembly reads from other features (Language, ProjectSystem,
+Debugging, Workspace) through their **Contracts** or read-only service
+interfaces. It does not take dependencies on their Presentation or
+Infrastructure layers.
+
+**Verified gaps requiring M1 contract seams:**
+
+Three candidate sources currently live in Presentation or use active
+refresh, not passive snapshot exposure:
+
+| Source | Current layer | Gap |
+|--------|--------------|-----|
+| Editor state | `EditorViewModel` (Presentation) | No contract-level snapshot; caret, selection, and open-tab state live in Presentation ViewModels |
+| Terminal | `TerminalSnapshot` (Presentation) | No contract-level snapshot; terminal state lives in Presentation |
+| Source control | `ISourceControlSnapshotOrchestrator.Refresh()` | Active refresh method, not passive `.Current` / `.WhenChanged` pattern |
+
+M1 must define new contract-level, read-only snapshot seams for Editor,
+Terminal, and Source Control before the assembly service can consume them.
+These seams must be immutable, observable, and must not trigger side effects
+(no file I/O, no network, no process execution).
 
 ### P18-D03: Backend-neutral design
 
@@ -89,45 +105,89 @@ action permission does not imply context disclosure.
 
 ### P18-D05: Policy model
 
-The user-configurable context policy uses the five-level model from the
-roadmap (§10.1):
+Phase 18 implements **four** policy levels. `Custom` (per-source/per-event
+user configuration) is removed from Phase 18 scope because it requires
+configuration UI complexity that belongs to a later phase. The roadmap's
+five-level model remains the product target; Phase 18 delivers the first four.
 
 | Level | Automatic context attached |
 |-------|----------------------------|
 | **Off** | No automatic IDE context sharing |
 | **Minimal** | Failures, exceptions, and essential task state only |
-| **Standard** | Active file path, relevant diagnostics, and normal execution state |
-| **Detailed** | Stack frames, selected variables, richer activity, broader file context |
-| **Custom** | Per-source and per-event user configuration |
+| **Standard** | Active file, relevant diagnostics, and normal execution state |
+| **Detailed** | Open files, richer diagnostics, debug state, source control summary |
 
-The application default is deferred to M1 design and must be tuned through
+The application default is `Standard` and may be tuned through M1/M2
 implementation evidence. `Off` disables automatic injection; it does not
 silently grant or deny explicit file or tool access.
+
+**Source-by-policy matrix (locked for M1 contract design):**
+
+| Source | Off | Minimal | Standard | Detailed |
+|--------|-----|---------|----------|----------|
+| Build/test failures | ✗ | ✓ | ✓ | ✓ |
+| Debug exceptions | ✗ | ✓ | ✓ | ✓ |
+| Project context | ✗ | ✓ | ✓ | ✓ |
+| Active file (path + content) | ✗ | ✗ | ✓ | ✓ |
+| Language diagnostics (active file) | ✗ | ✗ | ✓ | ✓ |
+| Build diagnostics | ✗ | ✗ | ✓ | ✓ |
+| Test results summary | ✗ | ✗ | ✓ | ✓ |
+| Workflow state | ✗ | ✗ | ✓ | ✓ |
+| Open files (paths only) | ✗ | ✗ | ✗ | ✓ |
+| Source control summary | ✗ | ✗ | ✗ | ✓ |
+| Debug session state | ✗ | ✗ | ✗ | ✓ |
+| Editor caret/selection | ✗ | ✗ | ✗ | ✓ |
 
 ### P18-D06: Policy precedence
 
 ```text
 Session override
-  > Agent policy assignment
-  > Project policy
+  > Agent policy assignment (deferred)
+  > Project policy (deferred)
   > Application default
 ```
 
-Phase 18 implements Application default and Session override. Agent and Project
-levels are deferred to a later phase when the configuration surface justifies
-their complexity.
+Phase 18 implements Application default and Session override only. Agent and
+Project policy levels are deferred to a later phase when the configuration
+surface justifies their complexity. `Custom` (per-source/per-event
+configuration) is also deferred — see P18-D05.
 
-### P18-D07: Hard exclusions
+### P18-D07: Hard exclusions and redaction boundary
 
-The following categories are excluded from automatic context attachment at all
-policy levels unless the user explicitly selects or allows them:
+The following categories are **unconditionally excluded** from automatic
+context attachment at all policy levels. There is no escape hatch for
+explicit user selection in Phase 18 (that mechanism belongs to a later phase):
 
 - Raw terminal scrollback content
 - Debug variable trees and watch expressions
-- Environment variables and process secrets
+- Environment variables and process environment
 - Full LSP protocol internals
 - Binary file content
-- File content containing detected secrets (redaction boundary)
+- Content matching redaction patterns (see below)
+
+**Redaction contract (fail-closed):**
+
+| Secret class | Detection pattern | Behavior |
+|--------------|-------------------|----------|
+| API keys / tokens | Regex: common prefixes (`sk-`, `ghp_`, `AKIA`, `Bearer\s+`, `password=`, `secret=`) | Redact to `[REDACTED:<class>]` |
+| Connection strings | Regex: `ConnectionString=`, `Server=.*Password=` | Redact entire value |
+| Private keys | PEM markers (`-----BEGIN.*PRIVATE KEY-----`) | Redact entire block |
+| Hex secrets | 32+ hex chars following `key`, `token`, `secret` labels | Redact value |
+
+**Fail-closed behavior:** If redaction processing fails or throws, the
+entire context item is dropped (not passed through unredacted).
+
+**Canonicalization:** Content is normalized to UTF-8 with BOM stripped
+before pattern matching. No other normalization (case, whitespace, Unicode
+forms) is applied.
+
+**Structured data:** Structured context items (diagnostics, test results)
+are serialized to text before redaction scanning. Redaction is applied to
+the serialized form, not the structured object.
+
+**Workflow and debug output:** `ProjectWorkflowSnapshot.OutputLines` and
+`DebugSessionSnapshot.DiagnosticOutput` are subject to the same redaction
+patterns. They are included at `Standard`/`Detailed` only after redaction.
 
 ### P18-D08: Run-scoped context
 
@@ -136,14 +196,26 @@ merely because they share a conversation. Each run context manifest records
 source, scope, version/fingerprint, redaction state, destination trust
 boundary, and token budget.
 
-### P18-D09: Shipped inert
+### P18-D09: Shipped inert — assembled but not consumed
 
-Phase 18 ships inert. The only production backend
-(`LegacyOpenAiCompatibleAgentBackend`) does not consume structured context.
-The context assembly and policy infrastructure is registered and testable but
-is not reachable by any production user flow. The test-only
-`FakeActionRequesterBackend` (or a Phase 18 context-test double) validates
-the assembly path. Production activation belongs to Phase 19 or Phase 20.
+Phase 18 ships inert following Phase 17's pattern:
+
+- Context assembly runs for every admitted run when policy ≠ `Off`.
+- The assembled manifest is attached to `AgentBackendExecutionContext` as a
+  new optional member.
+- The legacy backend (`LegacyOpenAiCompatibleAgentBackend`) never reads the
+  manifest. It continues to read only `MessageText`.
+- No production user flow observes different backend behavior because of
+  Phase 18.
+- The test-only `FakeActionRequesterBackend` (or a Phase 18 context-test
+  double) validates the full assembly-and-consumption path.
+- Production activation belongs to Phase 19 or Phase 20, when a backend
+  implements a context-consuming interface.
+
+**Inert means: assembled and attached, but not consumed.** This matches
+Phase 17's shipped-inert boundary where `ContractAgentActionBroker` is
+created for capable backends but the legacy backend receives
+`UnavailableAgentActionBroker` and never invokes it.
 
 ### P18-D10: No multi-turn history replay
 
@@ -189,22 +261,28 @@ existing IDE snapshot services
 ### In scope
 
 - Typed contracts for context sources, context items, context manifests,
-  policy levels, exclusion rules, and provenance metadata.
-- A context assembly service that reads from existing IDE snapshot services
-  (workspace, editor, diagnostics, workflow, test, source control, debug,
-  project, terminal) and produces an attributed manifest.
-- Policy evaluation with the five-level model, session override, and hard
+  policy levels (Off/Minimal/Standard/Detailed), exclusion rules, and
+  provenance metadata.
+- Contract-level snapshot seams for Editor, Terminal, and Source Control
+  (M1) where existing services do not expose passive, read-only snapshots
+  in the Contracts layer.
+- A context assembly service that reads from contract-level IDE snapshot
+  services and produces an attributed manifest.
+- Policy evaluation with the four-level model, session override, and hard
   exclusions.
-- Token budget with deterministic truncation per source priority.
-- Privacy filtering and redaction for detected secrets and sensitive content.
-- Extension of `AgentBackendRequest` (or its context record) with an optional
-  context slot that backends may read.
+- Token budget with deterministic truncation per source priority (see
+  Budget Contract in Locked Phase 18 Contracts).
+- Privacy filtering and redaction for detected secrets (see Redaction
+  Contract in P18-D07).
+- Extension of `AgentBackendExecutionContext` with an optional context
+  manifest member that backends may read.
 - New `AgentEventKind` value(s) for context disclosure audit.
 - New `AgentCapabilityId` value for IDE context support.
 - A minimal disclosure indicator showing the user what context category and
   volume is attached to the current run.
 - A minimal policy selector for session-level override.
-- Architecture ratchets preventing context bypass around the policy boundary.
+- Architecture ratchets preventing context bypass around the policy
+  boundary.
 - Test doubles and integration tests validating assembly under each policy
   level.
 
@@ -219,8 +297,12 @@ existing IDE snapshot services
 - Raw model or protocol trace disclosure (Phase 21 concern).
 - Provider-specific prompt tuning, prompt engineering, or model selection.
 - Context persistence across application restarts.
-- Per-file or per-folder context configuration beyond the five-level policy.
+- Per-file or per-folder context configuration beyond the four-level policy.
 - Agent-level or project-level policy assignment (deferred per P18-D06).
+- `Custom` policy level (per-source/per-event user configuration) — deferred
+  per P18-D05.
+- User-selectable override for hard-excluded categories — no escape hatch in
+  Phase 18.
 - Visible range or viewport state for editors (not currently tracked; deferred
   to M1 design if it proves necessary).
 - Workspace mutation, file I/O, or action control (Phase 17 owns that
@@ -245,25 +327,25 @@ existing IDE snapshot services
 | HTTP body | `AgentExecutionService` | Constructs a single `{ role = "user", content = userMessage }` array. No system role, no history, no context. |
 | Run creation | `AgentSessionService.BeginAdmittedRunLocked` | Creates `AgentBackendRequest` from raw `messageText`. No context assembly. |
 | Capabilities | `AgentCapabilitySnapshot` / `AgentCapabilityId` | 10 capabilities defined. No context-related capability. |
-| Events | `AgentEventKind` | 25 values defined. No context-related event kind. |
+| Events | `AgentEventKind` | 38 values defined. No context-related event kind. |
 | Conversation store | `IConversationStore` / `AgentConversationEventProjection` | Write-only projection. History is stored for UI but never read back for backend consumption. |
 | Shipped inert | `AgentSessionService.CreateExecutionContextLocked` | Only backends implementing `IAgentActionRequestCapableBackend` get a real broker. Legacy backend gets `UnavailableAgentActionBroker`. |
 
-### IDE context sources (all available as immutable, observable snapshots)
+### IDE context sources
 
-| Source | Type | Observable via |
-|--------|------|----------------|
-| Workspace | `Workspace` (Documents, ActiveDocument, WorkspacePath) | Events: WorkspaceFolderChanged, DocumentOpened, DocumentClosed |
-| Editor state | `EditorViewModel` (CaretLine, CaretColumn, SelectionStart/Length/Text, FilePath, IsDirty) | Reactive properties |
-| Open tabs | `EditorTabViewModel.OpenTabs` (ObservableCollection\<EditorViewModel\>) | Reactive collection |
-| Language diagnostics | `LanguageDiagnosticsSnapshot` (State, Diagnostics[]) | `ILanguageDiagnosticsService.Current` / `.WhenChanged` |
-| Build diagnostics | `BuildDiagnosticsSnapshot` (LastOutcome, Diagnostics[]) | `IBuildDiagnosticsService.Current` / `.WhenChanged` |
-| Build/test workflow | `ProjectWorkflowSnapshot` (State, ActiveOperation, LastOutcome, OutputLines[]) | `IProjectWorkflowService.Current` / `.WhenChanged` |
-| Test results | `TestResultsSnapshot` (Summary, Cases[]) | `ITestResultsService.Current` / `.WhenChanged` |
-| Source control | `RepositoryStatusSnapshot` (CurrentBranch, Changes[], AheadBy, BehindBy) | `ISourceControlSnapshotOrchestrator.Refresh()` |
-| Debug session | `DebugSessionSnapshot` (State, StopInfo, DiagnosticOutput[]) | `IDebugSessionService.Current` / `.WhenChanged` |
-| Project context | `ProjectContext` (State, SelectedProject, Candidates[]) | `IProjectContextService.Current` / `.WhenChanged` |
-| Terminal | `TerminalSnapshot` (Lines[], ScrollbackLines[]) | View-layer projection |
+| Source | Type | Observable via | Status |
+|--------|------|----------------|--------|
+| Workspace | `Workspace` (Documents, ActiveDocument, WorkspacePath) | Events: WorkspaceFolderChanged, DocumentOpened, DocumentClosed | ✓ Contract-ready |
+| Language diagnostics | `LanguageDiagnosticsSnapshot` (State, Diagnostics[]) | `ILanguageDiagnosticsService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Build diagnostics | `BuildDiagnosticsSnapshot` (LastOutcome, Diagnostics[]) | `IBuildDiagnosticsService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Build/test workflow | `ProjectWorkflowSnapshot` (State, ActiveOperation, LastOutcome, OutputLines[]) | `IProjectWorkflowService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Test results | `TestResultsSnapshot` (Summary, Cases[]) | `ITestResultsService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Debug session | `DebugSessionSnapshot` (State, StopInfo, DiagnosticOutput[]) | `IDebugSessionService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Project context | `ProjectContext` (State, SelectedProject, Candidates[]) | `IProjectContextService.Current` / `.WhenChanged` | ✓ Contract-ready |
+| Editor state | `EditorViewModel` (CaretLine, CaretColumn, SelectionStart/Length/Text, FilePath, IsDirty) | Reactive properties | **Gap: M1 must create contract seam** |
+| Open tabs | `EditorTabViewModel.OpenTabs` (ObservableCollection\<EditorViewModel\>) | Reactive collection | **Gap: M1 must create contract seam** |
+| Source control | `RepositoryStatusSnapshot` (CurrentBranch, Changes[], AheadBy, BehindBy) | `ISourceControlSnapshotOrchestrator.Refresh()` | **Gap: M1 must create passive snapshot seam** |
+| Terminal | `TerminalSnapshot` (Lines[], ScrollbackLines[]) | View-layer projection | **Gap: M1 must create contract seam** |
 
 ### Context assembly gaps
 
@@ -272,9 +354,12 @@ existing IDE snapshot services
 | No context aggregate | No single type composes the above snapshots | M1 must define the context manifest contract; M2 must build the assembly service |
 | No system prompt | Never constructed anywhere | Phase 18 does not build one (P18-D10); it delivers context items that a later backend may embed |
 | No history replay | Conversation store is write-only from backend perspective | Deferred to Phase 19/20 |
-| No viewport state | EditorView does not push scroll position to ViewModel | Deferred; M1 may add if design shows it is needed for `Standard` or `Detailed` policy |
+| No viewport state | EditorView does not push scroll position to ViewModel | Deferred; M1 may add if design shows it is needed for `Detailed` policy |
 | No document language ID | `Document` does not track grammar scope | M1 may add a lightweight `LanguageId` if needed for context source attribution |
-| No token budget mechanism | No budget, truncation, or counting exists | M2 must design and implement a budget model |
+| No token budget mechanism | No budget, truncation, or counting exists | M2 must design and implement a budget model (see Budget Contract below) |
+| Editor contract seam | Editor state lives in Presentation | M1 must create read-only snapshot in Contracts |
+| Terminal contract seam | Terminal state lives in Presentation | M1 must create read-only snapshot in Contracts |
+| Source control passive seam | Uses active `Refresh()` method | M1 must create passive `.Current` / `.WhenChanged` pattern |
 
 ---
 
@@ -311,10 +396,58 @@ A context manifest is the assembled output for one run. It carries:
 ### Policy
 
 A context policy carries:
-- Level (Off, Minimal, Standard, Detailed, Custom)
+- Level (Off, Minimal, Standard, Detailed)
 - Hard exclusions (always enforced regardless of level)
 - Session override (nullable, takes precedence)
 - Application default
+
+### Token budget contract
+
+The token budget is a deterministic, policy-driven limit on context volume.
+
+**Budget owner and default:**
+
+| Policy level | Default budget | Tuning |
+|--------------|----------------|--------|
+| Off | 0 | Fixed |
+| Minimal | 2,000 tokens | Tunable in M2 |
+| Standard | 4,000 tokens | Tunable in M2 |
+| Detailed | 8,000 tokens | Tunable in M2 |
+
+**Source priority order (highest to lowest):**
+
+1. Build/test failures and exceptions
+2. Active file content
+3. Active file diagnostics
+4. Test results summary
+5. Workflow state
+6. Open file paths
+7. Source control summary
+8. Debug session state
+9. Editor caret/selection
+10. Other diagnostics
+
+**Truncation behavior:**
+
+- Items are dropped whole (atomic) in reverse priority order when budget is exceeded.
+- No partial truncation of individual items.
+- If a single highest-priority item exceeds the budget, it is included anyway with a `[TRUNCATED:exceeded-budget]` marker appended.
+- Redaction is applied **before** token counting.
+- Token count is heuristic: `ceil(character_count / 4)`.
+
+**Overflow handling:**
+
+- If total redacted content ≤ budget: all items included.
+- If total redacted content > budget: drop lowest-priority items until ≤ budget.
+- If single item > budget: include with truncation marker.
+- If all items are highest-priority and still exceed: include all with truncation markers on each.
+
+**Budget decisions recorded in manifest:**
+
+- Requested budget (from policy level)
+- Actual token count (after redaction, before truncation)
+- Items dropped (with reason: budget overflow)
+- Items truncated (with reason: single-item overflow)
 
 ### Provenance
 
@@ -338,7 +471,7 @@ it or request additional context through the same channel during the run.
 | Milestone | Description | Depends on | Test gate |
 |-----------|-------------|------------|-----------|
 | M0 | Planning acceptance: verify seams, lock scope, publish plan | — | `git diff --check` clean; build succeeds; this document reviewed and accepted by user |
-| M1 | Context contracts and policy model: typed context sources, items, manifest, policy levels, exclusion rules, capability and event kinds | M0 | Unit tests for all contract types; architecture inventory ratchet updated; build clean |
+| M1 | Context contracts, snapshot seams, and policy model: typed context sources, items, manifest, four policy levels (Off/Minimal/Standard/Detailed), exclusion rules, redaction contract, contract-level snapshot seams for Editor, Terminal, and Source Control, capability and event kinds | M0 | Unit tests for all contract types; snapshot seam tests; architecture inventory ratchet updated; build clean |
 | M2 | Policy evaluation and context assembly service: read from IDE snapshots, apply policy, budget, and produce attributed manifest with provenance and redaction | M1 | Unit tests per policy level with snapshot fixtures; budget enforcement tests; redaction tests; build clean |
 | M3 | Run integration and consumption boundary: extend backend request with context slot, assemble context during run creation, attach manifest to execution context | M2 | Integration tests: run with each policy level produces correct manifest; inert delivery verified (legacy backend ignores context); build clean |
 | M4 | Audit event and disclosure indicator: new `AgentEventKind` for context disclosure, minimal visible indicator showing context category and volume | M3 | Event emission tests; UI accessibility tests; build clean |
@@ -373,7 +506,7 @@ updates included. Corrective passes may add commits within the same milestone.
 
 | Milestone | Primary verification |
 |-----------|---------------------|
-| M1 | `dotnet build Zaide.slnx --no-restore` succeeds; contract unit tests pass; architecture inventory updated |
+| M1 | `dotnet build Zaide.slnx --no-restore` succeeds; contract unit tests pass; snapshot seam tests pass; architecture inventory updated |
 | M2 | Assembly service unit tests pass per policy level; budget and redaction tests pass |
 | M3 | Integration tests verify run → context → manifest pipeline; inert delivery confirmed |
 | M4 | Event emission tests pass; disclosure indicator accessible |
@@ -414,20 +547,26 @@ dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
 - **No system prompt construction:** Phase 18 delivers structured context
   items. How a backend embeds them (system role, tool result, metadata) is
   backend-specific and deferred.
-- **Inert in production:** No production backend consumes the context. The
-  infrastructure is testable but unreachable by a real user.
+- **Inert in production:** Context is assembled and attached to
+  `AgentBackendExecutionContext`, but the legacy backend never reads it. No
+  production user flow observes different backend behavior.
 - **No persistent policy:** Policy state is in-memory for the application
   lifetime. Persistence belongs to a later phase.
 - **No agent/project policy:** Only application default and session override
   are implemented. Agent-level and project-level policy assignment are
   deferred.
+- **No `Custom` policy level:** Per-source/per-event user configuration is
+  deferred. Phase 18 delivers four levels (Off/Minimal/Standard/Detailed).
+- **No hard-exclusion escape hatch:** Users cannot override hard exclusions
+  in Phase 18. That mechanism belongs to a later phase.
 - **No viewport state:** Editor visible range is not tracked. If `Detailed`
   policy requires it, M1 design must decide whether to add it.
-- **Redaction is best-effort:** Secret detection uses pattern matching, not a
-  guaranteed filter. The disclosure indicator must communicate this
-  limitation.
-- **Token budget is approximate:** Token counting is heuristic (character-based
-  or word-based). Exact model-specific tokenization is out of scope.
+- **Redaction is best-effort:** Secret detection uses pattern matching
+  (P18-D07), not a guaranteed filter. The disclosure indicator must
+  communicate this limitation.
+- **Token budget is approximate:** Token counting is heuristic
+  (`ceil(character_count / 4)`). Exact model-specific tokenization is out of
+  scope.
 
 ---
 
@@ -470,7 +609,10 @@ Stop work and ask the user if any of the following occur:
 - [ ] Hard exclusions enforced at all policy levels with test evidence
 - [ ] Token budget enforced with deterministic truncation and test evidence
 - [ ] Redaction boundary tested with representative secret patterns
-- [ ] Inert delivery confirmed: legacy backend receives no context
+- [ ] Inert delivery confirmed: legacy backend does not read context manifest
+- [ ] Redaction fail-closed behavior tested (failed redaction drops item)
+- [ ] Hard exclusions have no user-selectable escape hatch
+- [ ] Contract-level snapshot seams verified for Editor, Terminal, Source Control
 - [ ] Disclosure indicator accessible and truthful
 - [ ] Session policy override works with correct precedence
 - [ ] `git diff --check` clean
@@ -481,14 +623,24 @@ Stop work and ask the user if any of the following occur:
 
 ## Rollback plan
 
-Phase 18 is documentation-only at M0. If M0 is rejected, this file is deleted
-and no code changes are reverted.
+Phase 18 is documentation-only at M0. If M0 is rejected, this file and
+`TOFIX.md` are deleted and no code changes are reverted.
 
-If a later milestone implementation is reverted, the rollback target is the
-last known-good commit before Phase 18 implementation began. All Phase 18
-production and test files are additive; reverting removes them without
-affecting Phase 17 contracts.
+If a later milestone implementation is reverted, rollback is **commit-level
+reversal**, not file deletion. Phase 18 modifies existing types:
 
-- **Revert to:** `32a04cde` (Phase 17 accepted closeout)
-- **Files to remove:** All files created under Phase 18 milestones
-- **Architecture ratchets:** Revert to Phase 17 closeout baselines
+- `AgentBackendRequest` (adds context slot)
+- `AgentBackendExecutionContext` (adds context member)
+- `AgentEventKind` (adds context event)
+- `AgentCapabilityId` (adds context capability)
+- `AgentSessionService` (adds context assembly call)
+- DI registration (adds context services)
+
+Rollback procedure:
+
+1. Identify the last known-good commit before Phase 18 implementation.
+2. `git revert <phase-18-commit-range>` or `git reset --hard <baseline>`.
+3. Verify build and test suite pass.
+4. Architecture ratchets revert to Phase 17 closeout baselines.
+
+**Baseline commit:** `32a04cde` (Phase 17 accepted closeout)
