@@ -295,7 +295,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var coordinator = new AgentExecutionCoordinator(host, session, store);
 
         _ = coordinator.SendAsync(panel.PanelId, "first");
-        await Task.Delay(50);
+        await WaitForRunningAsync(session, panel.ConversationId);
         var rejected = await coordinator.SendAsync(panel.PanelId, "second");
 
         Assert.NotNull(rejected);

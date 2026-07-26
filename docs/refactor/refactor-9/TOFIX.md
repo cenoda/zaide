@@ -4,8 +4,7 @@
 
 M0 live audit is complete. The clean baseline is commit `e1873ce8` on
 `perf/test-structure-phase1`; the fast suite passed 3065/3065 in the prior
-closeout. M1 is implemented and ready for review. M2a is implemented and ready
-for review.
+closeout. M1, M2a, and M2b are implemented and ready for review.
 
 ## Current findings
 
@@ -45,8 +44,20 @@ The remaining polling inventory is intentionally not part of M2a. The next
 slice is the agent-session/application polling cluster, followed by language
 service polling.
 
+## M2b result (2026-07-26)
+
+- Replaced the agent-session admission delay with the typed running-session
+  signal.
+- Replaced cancellation delays in agent execution and legacy backend tests
+  with backend/read-start completion signals.
+- Focused agent gate: 94/94 passed in 7.598 seconds.
+
+The generic `WaitUntilAsync` helper in the parity tests remains a separate
+follow-up because its callers need an event-source-specific signal mapping.
+
 ## Next task
 
 After review, repeat the unfiltered full regression on a clean test host. If
-it is green, continue with M2b: replace the highest-value agent-session
-application polling sites with event/signal-based waits.
+it is green, continue with M2c: replace the remaining agent-session
+`WaitUntilAsync` polling helper with event-driven waits, then move to language
+service polling.

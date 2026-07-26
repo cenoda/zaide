@@ -450,7 +450,7 @@ public sealed class AgentExecutionServiceTests : IDisposable
 
         using var cts = new CancellationTokenSource();
         var executeTask = service.ExecuteAsync("Hello", cts.Token);
-        await Task.Delay(50);
+        await handler.ReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cts.Cancel();
 
         var result = await executeTask;
@@ -703,6 +703,9 @@ internal sealed class SlowReadHandler : HttpMessageHandler
     private readonly TimeSpan _readDelay;
     private readonly SlowReadMode _mode;
 
+    public TaskCompletionSource<object?> ReadStarted { get; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     public SlowReadHandler(TimeSpan readDelay, SlowReadMode mode = SlowReadMode.RespectCancellation)
     {
         _readDelay = readDelay;
@@ -715,7 +718,7 @@ internal sealed class SlowReadHandler : HttpMessageHandler
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StreamContent(new BlockingReadStream(_readDelay, _mode)),
+            Content = new StreamContent(new BlockingReadStream(_readDelay, _mode, ReadStarted)),
         };
         response.Content.Headers.ContentType =
             new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -733,12 +736,17 @@ internal sealed class BlockingReadStream : Stream
 {
     private readonly TimeSpan _delay;
     private readonly SlowReadMode _mode;
+    private readonly TaskCompletionSource<object?> _readStarted;
     private bool _delivered;
 
-    public BlockingReadStream(TimeSpan delay, SlowReadMode mode = SlowReadMode.RespectCancellation)
+    public BlockingReadStream(
+        TimeSpan delay,
+        SlowReadMode mode = SlowReadMode.RespectCancellation,
+        TaskCompletionSource<object?>? readStarted = null)
     {
         _delay = delay;
         _mode = mode;
+        _readStarted = readStarted ?? new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     public override bool CanRead => true;
@@ -777,6 +785,7 @@ internal sealed class BlockingReadStream : Stream
         int count,
         CancellationToken cancellationToken)
     {
+        _readStarted.TrySetResult(null);
         if (_mode == SlowReadMode.ThrowTimeoutOnRead)
         {
             await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);

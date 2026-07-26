@@ -57,6 +57,12 @@ observable snapshot signals and task completion. The focused gate passed
 48/48 in 0.569s. No production process is started by this slice; the existing
 shared-host counts were not changed.
 
+## M2b Verification Record
+
+The agent-session cancellation and admission tests now wait on backend/read
+start signals or typed session state instead of fixed delays. The focused agent
+gate passed 94/94 in 7.598s. No production process is started by this slice.
+
 ## Limitations
 
 - A trait is a selection boundary, not a performance fix by itself.
