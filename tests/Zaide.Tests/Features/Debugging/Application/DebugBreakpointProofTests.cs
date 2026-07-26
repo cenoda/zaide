@@ -21,6 +21,8 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// <summary>
 /// Phase 12 M3b production Linux proof: persisted breakpoint sent on F5 launch and hit after continue.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugBreakpointProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

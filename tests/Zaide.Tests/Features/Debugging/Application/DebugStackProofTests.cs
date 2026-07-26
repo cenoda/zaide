@@ -19,6 +19,8 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Phase 12 M5 production Linux proof: breakpoint stop, stack/frame/scope/variable
 /// projection, and continue/stop through the production <see cref="DebugSessionService"/>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugStackProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

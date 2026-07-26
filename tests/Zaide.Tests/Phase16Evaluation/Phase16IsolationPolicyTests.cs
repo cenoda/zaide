@@ -7,6 +7,7 @@ using Xunit;
 namespace Zaide.Tests.Phase16Evaluation;
 
 [Collection("Phase16Isolation")]
+[Trait("Category", "SlowIntegration")]
 public sealed class Phase16IsolationPolicyTests
 {
     [Fact]

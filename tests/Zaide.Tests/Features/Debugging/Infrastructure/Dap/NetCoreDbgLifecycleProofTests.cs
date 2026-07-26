@@ -16,6 +16,8 @@ namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 /// <summary>
 /// Phase 12 M1 production DAP transport lifecycle proof against NetCoreDbg.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class NetCoreDbgLifecycleProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

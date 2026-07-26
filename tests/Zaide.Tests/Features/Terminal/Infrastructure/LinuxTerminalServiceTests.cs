@@ -11,7 +11,7 @@ using Zaide.Features.Terminal.Presentation;
 namespace Zaide.Tests.Features.Terminal.Infrastructure;
 
 [Collection("LinuxTerminalProcessIsolation")]
-[Trait("Category", "Integration")]
+[Trait("Category", "SlowIntegration")]
 public class LinuxTerminalServiceTests
 {
     [Fact]

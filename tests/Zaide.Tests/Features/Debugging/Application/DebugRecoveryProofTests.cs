@@ -19,6 +19,8 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Fake-adapter-only paths are documented in
 /// <c>docs/phases/v2/phase-12/M6_DAP_RECOVERY_PROOF.md</c>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugRecoveryProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

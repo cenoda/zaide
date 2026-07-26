@@ -16,6 +16,8 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// Phase 12 M4 production Linux proof: launch, breakpoint stop, step, and stop
 /// through the production <see cref="DebugSessionService"/>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugExecutionProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

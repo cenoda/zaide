@@ -20,6 +20,8 @@ namespace Zaide.Tests.Features.Debugging.Application;
 /// MSBuild <c>TargetPath</c> resolution, and F5-equivalent launch through
 /// <see cref="ProjectDebugLaunchService"/>.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class DebugLaunchProofTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(

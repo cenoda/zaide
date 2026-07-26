@@ -10,6 +10,8 @@ namespace Zaide.Tests.Features.Debugging.Infrastructure.Dap;
 /// <summary>
 /// Direct adapter-session diagnostics for production transport debugging.
 /// </summary>
+[Collection("SlowExternalResources")]
+[Trait("Category", "SlowIntegration")]
 public sealed class NetCoreDbgAdapterSessionDirectTests
 {
     private static readonly string FixtureRoot = Path.GetFullPath(
