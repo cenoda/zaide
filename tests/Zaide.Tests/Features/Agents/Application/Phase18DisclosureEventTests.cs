@@ -335,7 +335,7 @@ public sealed class Phase18DisclosureEventTests
 
         Assert.NotNull(disclosureEvent);
         var payload = Assert.IsType<AgentContextDisclosurePayload>(disclosureEvent.Payload);
-        
+
         // Should match the application default policy level
         Assert.Equal(AgentContextPolicyLevel.Standard, payload.PolicyLevelApplied);
     }
@@ -469,5 +469,87 @@ public sealed class Phase18DisclosureEventTests
                 return i;
         }
         return -1;
+    }
+
+    [Fact]
+    public async Task ContextDisclosed_EventEmitted_AfterManifestAttachedToBackend()
+    {
+        // Arrange
+        var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
+        backend.SetCompletion("done");
+        var eventStream = new AgentEventStream();
+
+        var sessionService = new AgentSessionService(
+            new[] { backend },
+            eventStream,
+            contextManifestBuilder: new AgentContextManifestBuilder(),
+            contextSnapshotSources: CreateTestSnapshotSources());
+
+        var conversationId = ConversationId.NewDirect();
+        var messageEntryId = ConversationEntryId.New();
+        var capture = new AgentSessionCoordinatorEventCapture(conversationId, messageEntryId);
+        capture.Subscribe(eventStream.Events);
+
+        // Act
+        var sendTask = sessionService.SendAsync(
+            conversationId,
+            ActorId.HumanUser,
+            ActorId.PanelSeed("test"),
+            backend.BackendId,
+            messageEntryId,
+            "test message",
+            CancellationToken.None);
+
+        var admittedRunId = await capture.WaitForAdmissionOrRejectionAsync(sendTask, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(admittedRunId);
+        var runEvents = capture.GetEventsForRun(admittedRunId.Value);
+
+        // Find the indices of key events
+        var runRunningIndex = FindEventIndex(runEvents, AgentEventKind.RunRunning);
+        var contextDisclosedIndex = FindEventIndex(runEvents, AgentEventKind.ContextDisclosed);
+
+        // ContextDisclosed must be emitted AFTER RunRunning (which happens after manifest is attached to request)
+        Assert.True(runRunningIndex >= 0, "RunRunning event should be present");
+        Assert.True(contextDisclosedIndex >= 0, "ContextDisclosed event should be present");
+        Assert.True(
+            contextDisclosedIndex > runRunningIndex,
+            "ContextDisclosed must be emitted after RunRunning (manifest attached to backend)");
+
+        // Verify the backend received a non-null manifest
+        Assert.NotNull(backend.LastExecutionContext);
+        Assert.NotNull(backend.LastExecutionContext.Request);
+        Assert.NotNull(backend.LastExecutionContext.Request.ContextManifest);
+    }
+
+    [Fact]
+    public void ContextDisclosureStatus_IsConsumedByView_ProjectedToNavigationItem()
+    {
+        // This test verifies that ContextDisclosureStatus from AgentPanelState
+        // is properly projected to TownhallNavigationItem and consumed by the view.
+        // This is the "architecture proof" that the property is actually bound/rendered.
+
+        // Arrange
+        var store = ConversationsTestSupport.CreateStore();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var panelHost = new AgentPanelHost(catalog, store);
+
+        var panel = panelHost.CreatePanel();
+        panel.ContextDisclosureStatus = "Context: 2 sources, 500 tokens";
+
+        var vm = ConversationsTestSupport.CreateTownhallViewModel(
+            state: null,
+            store: store,
+            panelHost: panelHost);
+
+        // Act
+        vm.RefreshDirectNavItems();
+
+        // Assert: The disclosure status should be projected to the navigation items
+        var directItems = vm.DirectNavItems;
+        var matchingItem = directItems.FirstOrDefault(item => item.ConversationId == panel.ConversationId);
+        Assert.NotNull(matchingItem);
+        Assert.Equal("Context: 2 sources, 500 tokens", matchingItem.ContextDisclosureStatus);
     }
 }

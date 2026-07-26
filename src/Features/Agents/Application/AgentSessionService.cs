@@ -430,10 +430,6 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
             AgentSessionStatus.Running);
 
         var contextManifest = AssembleContextManifestLocked(session, run);
-        if (contextManifest is not null)
-        {
-            EmitContextDisclosedLocked(session, run, contextManifest);
-        }
 
         run.ExecutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -455,6 +451,11 @@ internal sealed class AgentSessionService : IAgentSessionService, IDisposable
             request,
             initiatorActorId,
             targetActorId);
+
+        if (contextManifest is not null)
+        {
+            EmitContextDisclosedLocked(session, run, contextManifest);
+        }
 
         run.ExecutionTask = ObserveBackendAsync(
             session,

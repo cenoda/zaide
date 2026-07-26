@@ -200,13 +200,17 @@ internal sealed class TownhallNavigationPanel : Panel
         ApplyRowForeground(nameText, item.IsSelected);
 
         var unreadDot = CreateUnreadDot(item.HasUnread);
+        var disclosureText = TextStyles.Caption(item.ContextDisclosureStatus);
+        disclosureText.VerticalAlignment = VerticalAlignment.Center;
+        disclosureText.Foreground = Brushes.Gray;
+        disclosureText.IsVisible = !string.IsNullOrEmpty(item.ContextDisclosureStatus);
 
         var contentStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { unreadDot, nameText }
+            Children = { unreadDot, nameText, disclosureText }
         };
 
         var row = CreateSelectableRow(contentStack, item.IsSelected);
@@ -222,6 +226,11 @@ internal sealed class TownhallNavigationPanel : Panel
             else if (e.PropertyName == nameof(TownhallNavigationItem.HasUnread))
             {
                 unreadDot.IsVisible = item.HasUnread;
+            }
+            else if (e.PropertyName == nameof(TownhallNavigationItem.ContextDisclosureStatus))
+            {
+                disclosureText.Text = item.ContextDisclosureStatus;
+                disclosureText.IsVisible = !string.IsNullOrEmpty(item.ContextDisclosureStatus);
             }
         }
 

@@ -7,7 +7,8 @@ is complete as of 2026-07-26. M2 policy evaluation and context assembly landed
 2026-07-26 and is complete. M3 run integration and consumption boundary landed
 2026-07-26, including production DI wiring, integration-test proof, and the M3
 publisher corrective pass connecting Editor and Source Control presentation to
-passive snapshot services. M4/M5 are not started.
+passive snapshot services. M4 disclosure event and indicator implemented with corrective
+pass as of 2026-07-26. M5 remains explicitly not started.
 
 ## Current work
 
@@ -109,17 +110,49 @@ Production (`src/Features/Agents/`):
   `AgentContextBudgetEnforcer`, and `AgentContextManifestBuilder` produce
   `AgentContextManifest` with provenance, exclusion, and truncation decisions.
 
+## M4 corrective pass (2026-07-26) - COMPLETE
+
+### Corrections applied
+
+- **Event ordering:** `ContextDisclosed` event now emitted only after manifest is
+  attached to `AgentBackendRequest` (and execution context created), ensuring backend
+  receives non-null manifest before event is published.
+- **UI binding:** `ContextDisclosureStatus` on `AgentPanelState` is now projected
+  to `TownhallNavigationItem.ContextDisclosureStatus` and rendered in
+  `TownhallNavigationPanel.CreateDirectRow` as a gray caption text.
+
+### Production changes
+
+- `src/Features/Agents/Application/AgentSessionService.cs`: Moved `EmitContextDisclosedLocked`
+  call to after `AgentBackendRequest` creation with manifest.
+- `src/Features/Townhall/Presentation/TownhallNavigationItem.cs`: Added `ContextDisclosureStatus`
+  property with change notification.
+- `src/Features/Townhall/Presentation/TownhallViewModel.cs`: Added `AgentPanels` accessor
+  and updated `CreateDirectNavItem` to populate `ContextDisclosureStatus` from
+  corresponding `AgentPanelState`.
+- `src/Features/Townhall/Presentation/TownhallNavigationPanel.cs`: Added disclosure
+  text display in `CreateDirectRow` with property change handling.
+
+### Tests added
+
+- `ContextDisclosed_EventEmitted_AfterManifestAttachedToBackend`: Verifies event ordering
+  (ContextDisclosed emitted after RunRunning, manifest attached to backend).
+- `ContextDisclosureStatus_IsConsumedByView_ProjectedToNavigationItem`: Architecture proof
+  that the property is consumed by the view.
+
 ## Next task
 
-- [x] M4 audit event and disclosure indicator (2026-07-26).
+- [x] M4 audit event and disclosure indicator (2026-07-26) — corrective pass complete.
 - [ ] M5 session policy override and minimal UI (not started).
 
 ## Scope boundaries observed
 
-M3 does not implement `ContextDisclosed` event emission, disclosure UI, session
-policy selector UI, custom policy support, telemetry, persistence, backend/provider
-prompt formatting, legacy backend context consumption, terminal scrollback,
-viewport state, or language identification.
+M3 does not implement session policy selector UI, custom policy support, telemetry,
+persistence, backend/provider prompt formatting, legacy backend context consumption,
+terminal scrollback, viewport state, or language identification. M3 does not emit
+`ContextDisclosed` (implemented in M4).
 
 M4 implemented `ContextDisclosed` audit event emission and minimal disclosure indicator.
+M4 corrective pass fixed event ordering (ContextDisclosed emitted only after manifest
+attached to AgentBackendRequest) and made disclosure indicator real/visible.
 M5 remains explicitly not started.

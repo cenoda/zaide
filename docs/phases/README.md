@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 M0–M3 complete** (M4/M5 not started); see each phase `TOFIX.md` for current work state |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 M0–M4 complete** (M5 not started); see each phase `TOFIX.md` for current work state |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
@@ -26,7 +26,7 @@ evaluation phase. Its implementation record and revert log remain in the phase
 folder; its current work state is in
 [`v3/phase-16/TOFIX.md`](v3/phase-16/TOFIX.md). [Phase
 17](v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 is complete and accepted.
-Phase 18 M0–M3 are complete. M4/M5 remain not started. See
+Phase 18 M0–M4 are complete. M5 remains not started. See
 [`v3/phase-18/IMPLEMENTATION_PLAN.md`](v3/phase-18/IMPLEMENTATION_PLAN.md) and
 [`v3/phase-18/TOFIX.md`](v3/phase-18/TOFIX.md). See
 [`v3/phase-17/TOFIX.md`](v3/phase-17/TOFIX.md).

@@ -50,6 +50,22 @@ internal sealed class TownhallNavigationItem : INotifyPropertyChanged
         }
     }
 
+    private string _contextDisclosureStatus = string.Empty;
+    public string ContextDisclosureStatus
+    {
+        get => _contextDisclosureStatus;
+        set
+        {
+            if (_contextDisclosureStatus == value)
+            {
+                return;
+            }
+
+            _contextDisclosureStatus = value;
+            OnPropertyChanged();
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>

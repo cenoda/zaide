@@ -56,6 +56,11 @@ public class TownhallViewModel : ReactiveObject
     /// </summary>
     internal ObservableCollection<TownhallNavigationItem> DirectNavItems { get; } = new();
 
+    /// <summary>
+    /// Gets the agent panel host panels for Phase 18 M4 context disclosure status binding.
+    /// </summary>
+    internal ObservableCollection<AgentPanelState> AgentPanels => _panelHost.Panels;
+
     private ObservableCollection<TownhallMessage> _messages = new();
 
     /// <summary>
@@ -674,6 +679,9 @@ public class TownhallViewModel : ReactiveObject
             label = "Direct";
         }
 
+        var panel = _panelHost.Panels.FirstOrDefault(p => p.ConversationId == conversation.Id);
+        var disclosureStatus = panel?.ContextDisclosureStatus ?? string.Empty;
+
         return new TownhallNavigationItem
         {
             ConversationId = conversation.Id,
@@ -681,7 +689,8 @@ public class TownhallViewModel : ReactiveObject
             Label = label,
             PeerActorId = peerId,
             IsSelected = selectedId.HasValue && selectedId.Value == conversation.Id,
-            HasUnread = _conversationUiState.IsUnread(conversation)
+            HasUnread = _conversationUiState.IsUnread(conversation),
+            ContextDisclosureStatus = disclosureStatus
         };
     }
 
