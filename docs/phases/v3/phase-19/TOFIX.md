@@ -94,10 +94,11 @@ M2 is complete at a read-only audit gate. **M3 is next but has not started.**
 Do not implement the Native Harness backend, production DI registration, or
 tool-loop execution until M2 artifacts are accepted.
 
-## Blockers
+## M2 acceptance and publication
 
-- None for M2 closeout.
-- M3 requires user acceptance of `M2_ARCHITECTURE_LOCK.md` and `M2_THREAT_MODEL.md`.
+M2 artifacts are **accepted and published**. Commits `c23f9666`, `a59d7105`, and
+`19b2ce27` are published; master is synchronized with origin/master. M2 document
+acceptance is complete; M3 has not started.
 
 ## M2 verification (2026-07-27)
 

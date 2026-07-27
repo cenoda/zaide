@@ -654,15 +654,17 @@ flows through the broker-event path, not a new `AgentBackendEvent` kind.
 
 | Metric | Baseline | Source |
 |--------|----------|--------|
-| Total top-level production types | 646 | `ArchitectureInventoryReader.M0TotalTopLevelTypes` |
+| Total top-level production types | 667 | `ArchitectureInventoryReader.M0TotalTopLevelTypes` |
 | Public top-level types | 350 | `PublicProductionTypeBaseline.PublicTopLevelTypes` |
-| Internal top-level types | 296 | `PublicProductionTypeBaseline.InternalTopLevelTypes` |
-| Total source files | 585 | `ArchitectureInventoryTests` |
-| `Features` files | 540 | `ArchitectureInventoryTests` |
+| Internal top-level types | 317 | `PublicProductionTypeBaseline.InternalTopLevelTypes` |
+| Total source files | 606 | `ArchitectureInventoryTests` |
+| `Features` files | 561 | `ArchitectureInventoryTests` |
 | `App` files | 41 | `ArchitectureInventoryTests` |
 | `UI` files | 4 | `ArchitectureInventoryTests` |
 | Legacy allowlist FindingIds | 2 (0 namespace + 2 locator + 0 root) | `ArchitectureRatchetTests` / `ArchitectureVisibilityTests` |
 | Locator sites | 2 (`Program.cs`, `App.axaml.cs`) | `ArchitectureRatchetTests` |
+
+**Pre-M2 baseline (historical):** 646 total / 296 internal / 585 source files / 540 Features files.
 
 ### Bypass ratchets
 
@@ -688,9 +690,12 @@ action plane for real tool use, Phase 19 must:
    `AgentConversationEventProjection` (which already projects
    `ActionResultReported`). Backend text/failure continues to flow through
    `AgentBackendEvent` (`MessageCompleted` / `FailureObserved`);
-4. update the architecture baselines (646 total / 350 public / 296 internal,
-   585 source files / 540 Features) and the `Phase17BypassRatchetTests` /
-   `Phase18ContextBypassRatchetTests` expectations for any new backend file.
+4. update the architecture baselines and ratchet expectations for any new
+   backend file. The M2 starting baseline is 667 total types, 350 public,
+   317 internal, 606 source files, 561 Features files — future M4 activation
+   ratchets from this baseline. (Pre-M2 reference values for historical
+   rollback: 646 total, 350 public, 296 internal, 585 source files,
+   540 Features.)
 
 ---
 
@@ -701,15 +706,9 @@ that has the evidence to resolve it.
 
 | Decision | Owner | Notes |
 |----------|-------|-------|
-| Backend selection model: replace legacy, add alongside with selection, or make Native Harness default | M2 | `IAgentBackend`/`AgentBackendId` support multiple backends; `AddZaideAgents` currently registers one. Selection mechanism (per-agent, per-conversation, or default) is a design question. |
-| Model provider and protocol: OpenAI-compatible function-calling, multi-provider, or model-agnostic abstraction | M2 | Legacy path is OpenAI-compatible non-streaming. Tool-calling requires function-calling API support. M1 research evidence does not select a winner. |
-| Streaming: does the harness implement `AgentCapabilityId.Streaming`? | M2 | Legacy marks `Streaming` as `NotSupported`. Streaming affects UX responsiveness and event granularity. |
-| New library: adopt a model client NuGet or implement manually with `HttpClient` | M2 | Requires focused proof, compatibility, license/provenance check, plan amendment (P19-D13). |
-| Tool-calling protocol format: OpenAI function-calling, provider-native, or neutral abstraction | M2 | Must not force ACP into a dishonest lowest common denominator (P19-D03). |
-| Turn budget and termination: max turns, model stop signal, cancellation, indeterminate-state handling | M2 | Late completion after cancellation must remain representable (V3 §7). |
-| Prior conversation replay (P19-D10 concern 2): replay prior `IConversationStore` entries into model context, or in-run loop only | M2 | Must specify the exact read-only seam, filtering, token budget, and no-persistence boundary. |
-| Townhall event payload: new `AgentEventKind`/payload types for tool activity, or reuse existing broker-event path | M2/M5 | Existing `ActionResultReported` → `ProjectActionResultReported` covers broker activity; richer rendering may need a bounded extension (P19-D02). |
 | Evaluation scope at closeout: which real-repository tasks verify the harness without a full comparative campaign | M6 | Phase 16 methodology may inform; reverted Qwen path must not be adopted (P19-D09). |
+
+**M2-resolved decisions:** Backend selection model (Native Harness replaces legacy in M4), model provider and protocol (OpenAI-compatible `/chat/completions` with tools/function-calling), streaming (SSE locked as M3 implementation contract), library (no new NuGet; use existing `HttpClient` extended for SSE), tool-calling protocol format (OpenAI tools/function-calling JSON), turn budget and termination (25 turns default, cooperative cancellation), prior conversation replay (bounded read-only via `INativeHarnessPriorConversationReader`), and townhall event surface (reuse existing broker-event path). See `M2_ARCHITECTURE_LOCK.md` §2.
 
 ---
 

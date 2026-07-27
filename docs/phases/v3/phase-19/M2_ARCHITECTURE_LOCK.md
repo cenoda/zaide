@@ -45,7 +45,7 @@ Phase 15 session/run/event surface
 |----------|---------|
 | Backend selection model | Phase 19 M4 registers **one** production `IAgentBackend`: Native Harness replaces legacy in `AddZaideAgents`. Legacy code remains for tests/reference but is not production-registered. No backend-selection UI in Phase 19. |
 | Model provider and protocol | **OpenAI-compatible** `/chat/completions` with **tools/function-calling** over HTTPS. Provider endpoint, API key, and model name reuse `AgentExecutionOptions` configuration surface. Multi-provider abstraction is deferred; transport is namespaced under Native Harness infrastructure. |
-| Streaming | **Implemented and honestly reported.** Internal SSE consumption for responsiveness; terminal completion remains a single `AgentBackendEvent.MessageCompleted` (Phase 15 contract preserved). No new `AgentBackendEventKind`. |
+| Streaming | **SSE streaming locked as the M3 implementation contract.** Internal SSE consumption for responsiveness; terminal completion remains a single `AgentBackendEvent.MessageCompleted` (Phase 15 contract preserved). No new `AgentBackendEventKind`. |
 | Model-client library (P19-D13) | **No new NuGet dependency.** M3 implements streaming and function-calling with the existing `HttpClient` registration extended for SSE parsing. A future library adoption requires focused proof, license/provenance check, and plan amendment. |
 | Tool-calling protocol format | **OpenAI tools/function-calling JSON** mapped to Phase 17 `AgentActionPayload` subtypes. Tool names are stable harness-defined identifiers (`read_file`, `create_file`, `replace_file`, `delete_file`, `execute_command`). No neutral abstraction that would force ACP into a dishonest lowest common denominator (P19-D03). |
 | Turn budget and termination | Default **25 model turns** per run (`NativeHarnessProviderProtocol.DefaultMaxTurns`, informed by M1 research ceilings). One model round (request + optional tool calls) consumes one turn. Broker tool execution does not consume turns. Exhaustion yields `NativeHarnessRunTerminationKind.TurnBudgetExceeded` → `AgentBackendEvent.FailureObserved`. Model stop with final text yields `Completed`. Unrecoverable transport/parse errors yield `Failed`. |
@@ -71,6 +71,8 @@ All types live under `src/Features/Agents/Contracts/` and `Domain/`. M3 consumes
 them; M2 does not register implementations.
 
 ### 4.1 In-run model/tool loop history (P19-D10 concern 1)
+
+**Published M2 baseline:** 667 total types, 350 public, 317 internal, 606 source files, 561 Features files.
 
 Private, in-memory, run-scoped records **distinct** from `AgentEvent`,
 `ConversationEntry`, and `IConversationStore`:
