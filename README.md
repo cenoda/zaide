@@ -304,7 +304,10 @@ Harness production and ACP implementation remain later independent outcomes.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
-Phase 17 was accepted on 2026-07-26. Phase 18 is not authorized.
+Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
+(2026-07-27). [Phase 19](docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was
+accepted on 2026-07-27; M1 research/provenance is next, with separate explicit
+authorization required before external activity.
 
 ## Why "Zaide"
 

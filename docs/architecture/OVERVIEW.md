@@ -47,7 +47,9 @@ remain outside the root-admission ratchet. **Phase 17 M0–M9 are complete
 [`docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-17/IMPLEMENTATION_PLAN.md);
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](../phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
-Phase 17 was accepted on 2026-07-26. Phase 18 is not authorized.
+Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
+(2026-07-27). Phase 19 M0 was accepted on 2026-07-27; M1 is next but its
+external-activity checkpoint has not been authorized.
 
 ---
 
@@ -94,7 +96,7 @@ Key target rules (detail in CONVENTIONS):
 - Root `Infrastructure/` and `UI/Shared/` are deny-by-default multi-consumer
   admissions; LSP stays under Language, DAP under Debugging.
 - Visibility is internal-by-default / public-by-exception (current ceiling
-  **320** public / **95** internal / **415** total after Refactor 6.3).
+  **350** public / **296** internal / **646** total after Phase 18 M6).
 - Current implemented lifetimes remain application, workspace, process,
   projection, editor session, and terminal session. Refactor 7 M0 accepted
   Conversation ownership (R61-LT01) and a minimum correlated execution-run
@@ -107,7 +109,10 @@ Key target rules (detail in CONVENTIONS):
   `AgentConversationEventProjection` the sole normalized event-to-conversation
   projection owner; `AgentPanelDirectConversationWriter` was removed only after
   M3b-2 parity; Townhall continues to observe authoritative `IConversationStore`
-  entries; sessions remain in-memory, non-resumable, and non-persistent.
+  entries. Phase 17 adds the backend-gated action control plane and workspace
+  mutation boundary. Phase 18 attaches policy-filtered IDE context manifests to
+  admitted runs while keeping the legacy backend inert. Sessions remain
+  in-memory, non-resumable, and non-persistent.
 
 Evidence, violation dispositions, and migration order:
 [Refactor 6.1 implementation plan](../refactor/refactor-6.1/IMPLEMENTATION_PLAN.md)
@@ -143,10 +148,10 @@ Technical-layer folders (`Models/`, `Services/`, `ViewModels/`, `Views/`) and
 root composition C# are gone. One production project (`src/Zaide.csproj`), one
 assembly (`Zaide`). Architecture tests under `tests/Zaide.Tests/Architecture/`
 enforce inventory, legacy allowlist ratchet, public full-name baseline, and
-tracked production **C#** root admission. Live inventory after Phase 15 M4
-closeout: total top-level **502** (public **337**, internal **165**), tracked
-production C# source files **450** (App **41**, UI **4**, Features **405**),
-Registration modules **12**, `AddSingleton` registrations **77**. FindingIds remaining: exactly **2**
+tracked production **C#** root admission. Live inventory after Phase 18 M6
+closeout: total top-level **646** (public **350**, internal **296**), tracked
+production C# source files **585** (App **41**, UI **4**, Features **540**),
+Registration modules **12**, `AddSingleton` registrations **93**. FindingIds remaining: exactly **2**
 (`R61-AL-LOC-Program`, `R61-AL-LOC-App`) — deliberate composition-boundary
 residuals. NamespaceDirection allowlist is empty. `ApplicationShutdown` is the
 ordered shutdown owner, not a third locator residual. Non-C# assets are not
@@ -161,6 +166,10 @@ governed by the root-admission detectors.
 | Refactor 8 | **Complete and closed** (M1 through M8; shell layout hosts extracted; `MainWindow.axaml.cs` **486** LOC) |
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
 | Phase 15 | **Complete and closed** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner (`AgentSessionService`), legacy HTTP compatibility backend (`LegacyOpenAiCompatibleAgentBackend`), coordinator/router session cutover, sole event projection owner (`AgentConversationEventProjection`), and M4 closeout audit |
+| Phase 16 | **Parked historical evaluation** — not a production prerequisite |
+| Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
+| Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
+| Phase 19 | **M0 accepted** (2026-07-27) — M1 research/provenance is next; external activity requires separate authorization |
 
 ---
 
@@ -369,4 +378,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-22 (Phase 15 M4 complete and closed; production baselines 337 public / 165 internal / 502 total top-level types, 450 tracked production C# source files, 77 AddSingleton registrations across 12 modules)*
+*Last updated: 2026-07-27 (Phase 18 M6 production baselines: 350 public / 296 internal / 646 total top-level types, 585 tracked production C# source files, 93 AddSingleton registrations across 12 modules)*

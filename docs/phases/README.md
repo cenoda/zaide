@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 closed** (M0–M6 complete); see each phase `TOFIX.md` for current work state |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 closed** — **Phase 19 M0 accepted; M1 next with external-activity checkpoint**; see each phase `TOFIX.md` for current work state |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
@@ -28,7 +28,11 @@ folder; its current work state is in
 17](v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 is complete and accepted.
 Phase 18 is complete and closed (M0–M6). See
 [`v3/phase-18/IMPLEMENTATION_PLAN.md`](v3/phase-18/IMPLEMENTATION_PLAN.md) and
-[`v3/phase-18/TOFIX.md`](v3/phase-18/TOFIX.md). See
+[`v3/phase-18/TOFIX.md`](v3/phase-18/TOFIX.md). [Phase
+19](v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was accepted on 2026-07-27; M1 is
+next, but external source acquisition, candidate execution, credentials,
+network egress, and paid API use require separate explicit authorization. See
+[`v3/phase-19/TOFIX.md`](v3/phase-19/TOFIX.md) and
 [`v3/phase-17/TOFIX.md`](v3/phase-17/TOFIX.md).
 
 ## Archive Policy
