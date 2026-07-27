@@ -2,14 +2,26 @@
 
 ## Status and authorization
 
-**Phase 19 status:** M0 accepted by the user on 2026-07-27. M1 open-source
-harness research and provenance is the next milestone but has not started.
+**Status:** M0 accepted by the user on 2026-07-27. M1 research/provenance is
+complete with limitation (the full-corpus benchmark gate was retired by explicit
+user-directed plan amendment on 2026-07-27; the research/provenance gate is
+satisfied by retained evidence). **M2 harness contracts and architecture lock is
+complete** (read-only audit gate; M3 not started).
 
 **Authorized work:** M0 acceptance locks this implementation plan. It does not
 authorize external source acquisition, candidate execution, credentials,
 network egress, paid API use, production code, or production tests. M1 external
-activity requires separate explicit authorization under docs-rules §11 and the
-M1 stop-and-ask checkpoint.
+activity required separate explicit authorization under docs-rules §11 and the
+M1 stop-and-ask checkpoint; that authorization was granted and is closed.
+
+**Plan amendment — M1 benchmark gate retired (2026-07-27):** The original M1
+requirement that at least two candidates complete the entire common corpus is
+retired by explicit user direction. The local model capability is insufficient
+for this campaign to produce meaningful architectural evidence. M1 closes as a
+research/provenance milestone with an explicit comparative-execution limitation.
+The retained evidence satisfies the research/provenance gate; no architecture
+winner was selected. M2 is next but has not started. Do not perform another
+full-corpus chase.
 
 **Prior phase:** Phase 18 (Live IDE Context for Agent Runs) is complete and
 closed. M0–M6 passed with full verification on 2026-07-27. The Phase 18
@@ -261,11 +273,28 @@ Before production harness architecture is locked (M2), Phase 19 must:
 
 For the M1 gate, "several" means at least three candidates inventoried at exact
 commits. Comparable runtime evidence must cover at least two runnable candidates
-executing the same repository-task corpus, including held-out tasks. A candidate
-that cannot be acquired or executed may remain in the source/license inventory
-with its blocker recorded, but it does not satisfy the two-candidate runtime
-comparison. If external-activity authorization is unavailable, M1 remains
-blocked rather than being marked complete from source inspection alone.
+attempting executable repository tasks with exact commands, reset/isolation
+method, results, failures, and resource limits recorded. A candidate that cannot
+be acquired or executed may remain in the source/license inventory with its
+blocker recorded, but it does not satisfy the two-candidate runtime comparison.
+Failed comparative execution is retained as research evidence, not treated as a
+candidate-selection winner or benchmark result.
+
+**Amendment (2026-07-27):** The original full-corpus benchmark gate
+(≥2 candidates completing all 8 common tasks green) is retired by explicit
+user-directed plan amendment. The local model capability is insufficient for
+meaningful architectural evidence from this campaign. M1 closes as a
+research/provenance milestone. The retained evidence satisfies the
+research/provenance gate: ≥3 candidates inventoried at exact commits with
+licenses, notices, and provenance recorded; ≥2 runnable candidates with
+comparable corpus attempts recorded (exact commands, reset/isolation method,
+results, failures, resource limits); task-loop, context, search, editing, tool
+execution, recovery, and compaction observations recorded. No production code,
+tests, tools, dependencies, or architecture decisions are introduced. The
+full-corpus failures remain visible as a documented limitation of the local
+model/execution environment. No architecture winner was selected. M1 runtime
+observations are informative research evidence only and do not select a winning
+external architecture.
 
 This research is a prerequisite milestone (M1), not optional. It informs the
 architecture locked at M2. The Phase 16 evaluation methodology
@@ -673,7 +702,7 @@ that has the evidence to resolve it.
 | Decision | Owner | Notes |
 |----------|-------|-------|
 | Backend selection model: replace legacy, add alongside with selection, or make Native Harness default | M2 | `IAgentBackend`/`AgentBackendId` support multiple backends; `AddZaideAgents` currently registers one. Selection mechanism (per-agent, per-conversation, or default) is a design question. |
-| Model provider and protocol: OpenAI-compatible function-calling, multi-provider, or model-agnostic abstraction | M1/M2 | Legacy path is OpenAI-compatible non-streaming. Tool-calling requires function-calling API support. |
+| Model provider and protocol: OpenAI-compatible function-calling, multi-provider, or model-agnostic abstraction | M2 | Legacy path is OpenAI-compatible non-streaming. Tool-calling requires function-calling API support. M1 research evidence does not select a winner. |
 | Streaming: does the harness implement `AgentCapabilityId.Streaming`? | M2 | Legacy marks `Streaming` as `NotSupported`. Streaming affects UX responsiveness and event granularity. |
 | New library: adopt a model client NuGet or implement manually with `HttpClient` | M2 | Requires focused proof, compatibility, license/provenance check, plan amendment (P19-D13). |
 | Tool-calling protocol format: OpenAI function-calling, provider-native, or neutral abstraction | M2 | Must not force ACP into a dishonest lowest common denominator (P19-D03). |
@@ -689,7 +718,7 @@ that has the evidence to resolve it.
 | Milestone | Description | Depends on | Test gate |
 |-----------|-------------|------------|-----------|
 | M0 | Planning gate: verify seams, lock scope, research/provenance obligations, threat-model requirement, milestone order, verification commands, rollback | — | `git diff --check` clean; `dotnet build Zaide.slnx --no-restore` succeeds; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37 baseline); this document reviewed and accepted by user |
-| M1 | Open-source harness research and provenance. Produce `docs/phases/v3/phase-19/M1_RESEARCH_RECORD.md` and `docs/phases/v3/phase-19/M1_PROVENANCE.md`. **Stop-and-ask checkpoint:** external source acquisition, candidate execution, credentials, network egress, or paid API use requires explicit user authorization before that activity begins (docs-rules §11). | M0 | `M1_RESEARCH_RECORD.md` inventories ≥3 candidates at exact commits with licenses verified; ≥2 runnable candidates complete the same comparable repository-task corpus including held-out tasks; candidate-selection rules, corpus/isolation/reset evidence, and rejection/blocker records are present; `M1_PROVENANCE.md` is complete for any code considered for reuse; no production code changed; `dotnet build Zaide.slnx --no-restore` clean; `git diff --check` clean (docs/evidence only). Without authorized comparable execution, M1 remains blocked. |
+| M1 | Open-source harness research and provenance. Produce `docs/phases/v3/phase-19/M1_RESEARCH_RECORD.md` and `docs/phases/v3/phase-19/M1_PROVENANCE.md`. **Amendment (2026-07-27):** The original full-corpus benchmark gate is retired by explicit user-directed plan amendment. M1 closes as a research/provenance gate with an explicit comparative-execution limitation. **Stop-and-ask checkpoint:** external source acquisition, candidate execution, credentials, network egress, or paid API use requires explicit user authorization before that activity begins (docs-rules §11). | M0 | `M1_RESEARCH_RECORD.md` inventories ≥3 candidates at exact commits with licenses verified; ≥2 candidates verified runnable through the authorized zero-cost local path; comparable corpus attempts recorded with exact commands, reset/isolation method, results, failures, and resource limits; task-loop, context, search, editing, tool execution, recovery, and compaction observations recorded; `M1_PROVENANCE.md` complete for any code considered for reuse; no production code changed; `dotnet build Zaide.slnx --no-restore` clean; `git diff --check` clean (docs/evidence only). Failed comparative execution retained as research evidence, not treated as a candidate-selection winner or benchmark result. |
 | M2 | Harness contracts and architecture lock. Produce `docs/phases/v3/phase-19/M2_ARCHITECTURE_LOCK.md` and `docs/phases/v3/phase-19/M2_THREAT_MODEL.md`. Define Native Harness internal contracts, six-fact capability rows (P19-D06), history seam (P19-D10 concern 2), event-surface extension decision (P19-D02). Resolve open decisions: backend selection model, model provider/protocol, streaming, library (P19-D13), tool-calling format, turn budget. | M1 | `M2_ARCHITECTURE_LOCK.md` exists, resolves every M2-owned open decision, and is reviewed and accepted; `M2_THREAT_MODEL.md` exists and is reviewed and accepted before M3; `dotnet build Zaide.slnx --no-restore` succeeds; contract unit tests pass: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Contracts"`; architecture inventory ratchet updated: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes |
 | M3 | Tool-calling execution loop: model turn management, tool-call parsing, `IAgentActionBroker.RequestAsync` dispatch for all five `AgentActionKind` values, tool-result formatting, failure recovery, in-run model/tool loop history (P19-D10 concern 1), system prompt with Phase 18 manifest, run-scoped cancellation | M2 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop"` passes; broker dispatch tests cover all 5 `AgentActionKind` values: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19BrokerDispatch"` passes; context manifest consumption tests: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ContextConsumption"` passes; `dotnet build Zaide.slnx --no-restore` clean |
 | M4 | Production wiring and capability truthfulness: register Native Harness in `AddZaideAgents`; six-fact `AgentCapabilitySnapshot` rows; action plane activation (`ContractAgentActionBroker` resolves for production runs) | M3 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes (production backend resolves `ContractAgentActionBroker`; end-to-end run with ≥1 tool call succeeds; capability rows verified); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with updated baselines; `dotnet build Zaide.slnx --no-restore` clean |
@@ -729,7 +758,7 @@ ratchet updates.
 | Milestone | Primary verification |
 |-----------|---------------------|
 | M0 | `dotnet build Zaide.slnx --no-restore` succeeds; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37); `git diff --check` clean; plan reviewed and accepted |
-| M1 | `M1_RESEARCH_RECORD.md` inventories ≥3 exact-commit candidates and records the same comparable corpus, including held-out tasks, completed by ≥2 runnable candidates; `M1_PROVENANCE.md` covers every reuse candidate; `dotnet build Zaide.slnx --no-restore` clean; `git diff --check` clean (no production code) |
+| M1 | `M1_RESEARCH_RECORD.md` inventories ≥3 exact-commit candidates with licenses verified; ≥2 candidates verified runnable through authorized zero-cost local path; comparable corpus attempts recorded (exact commands, reset/isolation method, results, failures, resource limits); task-loop, context, search, editing, tool execution, recovery, and compaction observations recorded; `M1_PROVENANCE.md` covers every reuse candidate; `dotnet build Zaide.slnx --no-restore` clean; `git diff --check` clean (no production code). Failed comparative execution retained as research evidence, not treated as a candidate-selection winner or benchmark result. The original full-corpus benchmark gate is retired by explicit user-directed plan amendment. |
 | M2 | `M2_ARCHITECTURE_LOCK.md` and `M2_THREAT_MODEL.md` both reviewed and accepted before M3; `dotnet build Zaide.slnx --no-restore` succeeds; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Contracts"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with updated inventory |
 | M3 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop|FullyQualifiedName~Phase19BrokerDispatch|FullyQualifiedName~Phase19ContextConsumption"` passes; `dotnet build Zaide.slnx --no-restore` clean |
 | M4 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with updated baselines; `dotnet build Zaide.slnx --no-restore` clean |
@@ -804,6 +833,12 @@ dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
   architecture but does not lock a winner. The harness is optimized for real
   agent performance, not for novelty or code ownership purity (V3 §3 principle
   5).
+- **M1 comparative-execution limitation:** The full-corpus benchmark gate was
+  retired by explicit user-directed plan amendment. The local model capability
+  is insufficient for this campaign to produce meaningful architectural
+  evidence. Failed comparative execution is retained as research evidence and
+  does not select a winning external architecture. No architecture winner was
+  selected at M1. Do not perform another full-corpus chase.
 
 ---
 
@@ -839,8 +874,10 @@ Stop work and ask the user if any of the following occur:
    cannot have its license verified, or the license/NOTICE obligations cannot
    be satisfied (P19-D08). License verification happens before code is copied
    into production.
-9. **Research obligation not met:** M2 architecture lock is attempted before M1
-   research obligations (V3 §8.1) are satisfied.
+ 9. **Research obligation not met:** M2 architecture lock is attempted before M1
+    research obligations (V3 §8.1) are satisfied. **(M1 research/provenance gate
+    satisfied by the amended plan; the full-corpus benchmark requirement was
+    retired. M2 may proceed when the M1 evidence record is accepted.)**
 10. **Threat model not locked before M3:** M3 tool-calling implementation
     begins before `M2_THREAT_MODEL.md` is accepted (P19-D15).
 11. **Phase 16 artifact adoption pressure:** A proposal to adopt the reverted

@@ -64,9 +64,14 @@ and closeout evidence accepted.
 Harness evaluation) is **parked** after M0/M1/M2a/M2b; the Qwen observational
 path was reverted. Current Phase 16 work state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
-Harness production and ACP implementation have not started. [Phase
-17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0 was accepted on
-2026-07-24; M1 action-contract and deterministic-state work is next.
+Harness production and ACP implementation have not started. [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) is complete and
+closed (accepted 2026-07-26). Phase 18 is complete and closed (2026-07-27).
+[Phase 19](docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was accepted on
+2026-07-27; M1 research/provenance is complete with limitation (the full-corpus
+benchmark gate was retired by explicit user-directed plan amendment; no
+architecture winner was selected); **M2 harness contracts and architecture lock
+is complete** (read-only audit gate; M3 not started; see
+`docs/phases/v3/phase-19/TOFIX.md`).
 
 ## Philosophy
 
@@ -306,8 +311,9 @@ closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
 Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
 (2026-07-27). [Phase 19](docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was
-accepted on 2026-07-27; M1 research/provenance is next, with separate explicit
-authorization required before external activity.
+accepted on 2026-07-27; M1 research/provenance is complete with limitation
+(full-corpus benchmark gate retired by plan amendment); **M2 complete** (M3 not
+started).
 
 ## Why "Zaide"
 

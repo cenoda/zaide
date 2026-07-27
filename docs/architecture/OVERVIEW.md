@@ -48,8 +48,10 @@ remain outside the root-admission ratchet. **Phase 17 M0–M9 are complete
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](../phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
 Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
-(2026-07-27). Phase 19 M0 was accepted on 2026-07-27; M1 is next but its
-external-activity checkpoint has not been authorized.
+(2026-07-27). Phase 19 M0 was accepted on 2026-07-27; M1 research/provenance is
+complete with limitation (full-corpus benchmark gate retired by explicit plan
+amendment; no architecture winner selected); **M2 harness contracts and
+architecture lock is complete** (M3 not started).
 
 ---
 
@@ -169,7 +171,7 @@ governed by the root-admission detectors.
 | Phase 16 | **Parked historical evaluation** — not a production prerequisite |
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
-| Phase 19 | **M0 accepted** (2026-07-27) — M1 research/provenance is next; external activity requires separate authorization |
+| Phase 19 | **M2 complete** (2026-07-27) — harness contracts, architecture lock, and threat model; M1 comparative-execution limitation retained; M3 not started |
 
 ---
 
