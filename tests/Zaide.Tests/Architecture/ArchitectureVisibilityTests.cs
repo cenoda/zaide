@@ -209,7 +209,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 18 M2: +10 internal context assembly service production files.
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
-        Assert.Equal(561, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 561 Features).
+        Assert.Equal(576, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

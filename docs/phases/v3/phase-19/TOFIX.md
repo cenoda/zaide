@@ -94,8 +94,10 @@ Under `src/Features/Agents/Infrastructure/`:
 ## Baseline
 
 - Pre-plan commit: `8eed91d3` (Phase 18 M6 closeout, 2026-07-27).
-- Architecture inventory updated for M2 types: 667 total / 350 public / 317 internal
-  top-level types (git-tracked source file count unchanged until commit).
+- Published M2 baseline (historical): 667 total / 350 public / 317 internal
+  top-level types; 606 source files / 561 Features files.
+- Post-M3 architecture inventory: 682 total / 350 public / 332 internal
+  top-level types; 621 source files / 576 Features files.
 
 ## Current work
 
@@ -107,6 +109,7 @@ Under `src/Features/Agents/Infrastructure/`:
 - [x] M2 contract/domain types and `Phase19Contracts` tests.
 - [x] Architecture inventory ratchet update for M2 types.
 - [x] M3 — tool-calling execution loop.
+- [x] Architecture inventory ratchet update for M3 types (682/350/332, 621/576).
 
 ## Next task
 
@@ -156,6 +159,20 @@ dotnet test Zaide.slnx --no-build \
 | `Phase19ContextConsumption` list-tests | 5 tests discovered |
 | `Phase19ContextConsumption` test run | 5/5 passed |
 | Combined M3 filter | 19/19 passed |
+
+## M3 architecture verification (2026-07-27)
+
+```bash
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Architecture'
+```
+
+| Command | Result (2026-07-27) |
+|---------|---------------------|
+| `Architecture` list-tests | 37 tests discovered |
+| `Architecture` test run | 37/37 passed |
 
 ## Unresolved decisions (post-M3)
 

@@ -135,7 +135,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1: +17 internal IDE context contract types.
         // Phase 18 M1 corrective: +2 internal disclosure summary types.
         // Phase 18 M2: +4 internal context assembly contract helpers.
-        Assert.Equal((128, 7, 121), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 19 M3: +4 internal provider contract production types.
+        Assert.Equal((132, 7, 125), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -143,7 +144,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +1 internal IAgentDocumentReconciler contract.
         // Phase 17 M7: +1 internal IAgentCommandExecutor contract.
         // Phase 17 M8: +4 internal IAgentActionEventPublisher, IAgentActionAuditStore, IAgentActionBrokerFactory, IAgentActionRequestCapableBackend contracts.
-        Assert.Equal((23, 6, 17), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 19 M3: +2 internal provider transport/options contracts.
+        Assert.Equal((25, 6, 19), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -153,14 +155,16 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +1 internal NullAgentDocumentReconciler.
         // Phase 17 M8: +3 internal AgentActionAuditStore, RunScopedAgentActionEventPublisher, AgentActionBrokerFactory.
         // Phase 18 M2: +11 internal context policy/assembly production types.
-        Assert.Equal((44, 7, 37), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 19 M3: +5 internal execution-loop production types.
+        Assert.Equal((49, 7, 42), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
         // Phase 17 M2: +1 internal WorkspaceFileReader read adapter.
         // Phase 17 M5: +1 internal WorkspaceFileMutator mutation adapter.
         // Phase 17 M7: +3 internal AgentCommandPathSupport, AgentCommandEnvironmentBuilder, WorkspaceCommandExecutor.
-        Assert.Equal((8, 0, 8), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
+        Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);
@@ -222,7 +226,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1 corrective: +2 disclosure summary production files.
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
-        Assert.Equal(606, inventory.SourceFiles.Count);
+        // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 606).
+        Assert.Equal(621, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -250,7 +255,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M2: +11 internal context assembly service production files.
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
-        Assert.Equal(561, byFolder["Features"]);
+        // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 561 Features).
+        Assert.Equal(576, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
