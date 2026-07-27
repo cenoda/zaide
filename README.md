@@ -70,8 +70,9 @@ closed (accepted 2026-07-26). Phase 18 is complete and closed (2026-07-27).
 2026-07-27; M1 research/provenance is complete with limitation (the full-corpus
 benchmark gate was retired by explicit user-directed plan amendment; no
 architecture winner was selected); **M2 harness contracts and architecture lock
-is complete**; **M3 tool-calling execution loop is complete** (read-only audit
-gate; M4 not started; see `docs/phases/v3/phase-19/TOFIX.md`).
+is complete**; **M3 tool-calling execution loop is complete**; **M4 production
+wiring and capability truthfulness is complete** (read-only audit gate; M5 not
+started; see `docs/phases/v3/phase-19/TOFIX.md`).
 
 ## Philosophy
 
@@ -313,7 +314,7 @@ Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
 (2026-07-27). [Phase 19](docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was
 accepted on 2026-07-27; M1 research/provenance is complete with limitation
 (full-corpus benchmark gate retired by plan amendment); **M2 complete**;
-**M3 tool-calling execution loop complete** (M4 not started).
+**M4 production wiring and capability truthfulness complete** (M5 not started).
 
 ## Why "Zaide"
 

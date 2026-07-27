@@ -6,7 +6,8 @@ M0 was accepted by the user on 2026-07-27. M1 research/provenance is **complete
 with limitation** (the full-corpus benchmark gate was retired by explicit
 user-directed plan amendment on 2026-07-27). **M2 harness contracts and
 architecture lock is complete** (read-only audit gate). **M3 tool-calling
-execution loop is complete** (read-only audit gate; M4 not started).
+execution loop is complete** (read-only audit gate). **M4 production wiring and
+capability truthfulness is complete** (read-only audit gate; M5 not started).
 
 ## Amendment — M1 full-corpus benchmark gate retired (2026-07-27)
 
@@ -86,18 +87,33 @@ Under `src/Features/Agents/Application/`:
 - `NativeHarnessToolResultFormatter` — bounded/sanitized tool-result summaries
 
 Under `src/Features/Agents/Infrastructure/`:
-- `NativeHarnessAgentBackend` — `IAgentActionRequestCapableBackend` (not production-registered; M4)
+- `NativeHarnessAgentBackend` — `IAgentActionRequestCapableBackend`
 - `NativeHarnessProviderClient` — SSE `/chat/completions` transport
 - `NativeHarnessSseReader` — incremental SSE parsing
 - `NativeHarnessProviderOptionsSource` — live provider options resolution
+
+## M4 implementation (production)
+
+Under `src/App/Composition/Registration/`:
+- `AgentsServiceCollectionExtensions` — registers `NativeHarnessAgentBackend` as
+  the sole production `IAgentBackend`; registers `INativeHarnessProviderTransport`,
+  `INativeHarnessProviderOptionsSource`, and `INativeHarnessPriorConversationReader`
+
+Production activation:
+- Action-capable runs resolve `ContractAgentActionBroker` (not
+  `UnavailableAgentActionBroker`)
+- Six-fact capability rows truthful for `Tools`, `Permissions`, `IdeContext`,
+  `Streaming`, `Cancellation`, and `MessageCompletion`
+- `LegacyOpenAiCompatibleAgentBackend` remains in source for tests/reference but
+  is not production-registered
 
 ## Baseline
 
 - Pre-plan commit: `8eed91d3` (Phase 18 M6 closeout, 2026-07-27).
 - Published M2 baseline (historical): 667 total / 350 public / 317 internal
   top-level types; 606 source files / 561 Features files.
-- Post-M3 architecture inventory: 682 total / 350 public / 332 internal
-  top-level types; 621 source files / 576 Features files.
+- Post-M3/M4 architecture inventory: 682 total / 350 public / 332 internal
+  top-level types; 621 source files / 576 Features files (unchanged by M4 wiring).
 
 ## Current work
 
@@ -110,12 +126,13 @@ Under `src/Features/Agents/Infrastructure/`:
 - [x] Architecture inventory ratchet update for M2 types.
 - [x] M3 — tool-calling execution loop.
 - [x] Architecture inventory ratchet update for M3 types (682/350/332, 621/576).
+- [x] M4 — production wiring and capability truthfulness.
 
 ## Next task
 
-M3 is complete at a read-only audit gate. **M4 is next but has not started.**
-Do not register the Native Harness backend in `AddZaideAgents` or implement
-production capability truthfulness until M4 is authorized.
+M4 is complete at a read-only audit gate. **M5 is next but has not started.**
+Do not implement Townhall richer rendering or bounded event-surface extensions
+until M5 is authorized.
 
 ## M2 acceptance and publication
 
@@ -174,15 +191,37 @@ dotnet test Zaide.slnx --no-build \
 | `Architecture` list-tests | 37 tests discovered |
 | `Architecture` test run | 37/37 passed |
 
-## Unresolved decisions (post-M3)
+## M4 verification (2026-07-27)
+
+```bash
+git add <M4-files>
+git diff --cached --check
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19Integration'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19Integration'
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet build Zaide.slnx --no-restore
+```
+
+| Command | Result (2026-07-27) |
+|---------|---------------------|
+| `Phase19Integration` list-tests | 5 tests discovered |
+| `Phase19Integration` test run | 5/5 passed |
+| `Architecture` list-tests | 37 tests discovered |
+| `Architecture` test run | 37/37 passed |
+| `dotnet build Zaide.slnx --no-restore` | Succeeded, 0 errors, 0 warnings |
+
+## Unresolved decisions (post-M4)
 
 All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Remaining
 work is implementation-owned:
 
 | Item | Owner |
 |------|-------|
-| Production DI registration | M4 |
-| Capability truthfulness | M4 |
 | Townhall richer rendering (if needed) | M5 |
 | Adversarial threat exercises | M6 |
 | Evaluation scope at closeout | M6 |

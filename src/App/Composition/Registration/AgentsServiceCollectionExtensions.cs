@@ -22,7 +22,10 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentConversationEventProjection>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
         services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
-        services.AddSingleton<IAgentBackend, LegacyOpenAiCompatibleAgentBackend>();
+        services.AddSingleton<INativeHarnessProviderTransport, NativeHarnessProviderClient>();
+        services.AddSingleton<INativeHarnessProviderOptionsSource, NativeHarnessProviderOptionsSource>();
+        services.AddSingleton<INativeHarnessPriorConversationReader, NativeHarnessPriorConversationReader>();
+        services.AddSingleton<IAgentBackend, NativeHarnessAgentBackend>();
         services.AddSingleton<IAgentExecutionCoordinator>(Program.CreateAgentExecutionCoordinator);
         services.AddSingleton<MentionParser>();
         services.AddSingleton<IAgentRouter, AgentRouter>();

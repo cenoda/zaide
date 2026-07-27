@@ -5,6 +5,7 @@ using System.Threading;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Infrastructure;
 
@@ -17,49 +18,60 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
 
     private readonly NativeHarnessLoopRunner _loopRunner;
     private readonly INativeHarnessProviderOptionsSource _optionsSource;
+    private readonly IWorkspaceActionAuthority? _workspaceAuthority;
     private readonly object _capabilitySync = new();
     private AgentCapabilitySnapshot _capabilitySnapshot;
+    private bool _capabilityInitialized;
+    private CapabilityObservationState _capabilityObservationState;
+
+    private enum CapabilityObservationState
+    {
+        Unconfigured,
+        ConfiguredWithoutWorkspace,
+        ConfiguredWithWorkspace,
+        ResolutionUnavailable,
+    }
 
     public NativeHarnessAgentBackend(
         AgentExecutionService executionService,
         INativeHarnessProviderTransport transport,
-        INativeHarnessPriorConversationReader priorConversationReader)
+        INativeHarnessPriorConversationReader priorConversationReader,
+        IWorkspaceActionAuthority? workspaceAuthority = null)
         : this(
             new NativeHarnessProviderOptionsSource(executionService),
             transport,
-            priorConversationReader)
+            priorConversationReader,
+            workspaceAuthority)
     {
     }
 
     public NativeHarnessAgentBackend(
         INativeHarnessProviderOptionsSource optionsSource,
         INativeHarnessProviderTransport transport,
-        INativeHarnessPriorConversationReader priorConversationReader)
+        INativeHarnessPriorConversationReader priorConversationReader,
+        IWorkspaceActionAuthority? workspaceAuthority = null)
     {
         _optionsSource = optionsSource
             ?? throw new ArgumentNullException(nameof(optionsSource));
+        _workspaceAuthority = workspaceAuthority;
         _loopRunner = new NativeHarnessLoopRunner(
             optionsSource,
             transport ?? throw new ArgumentNullException(nameof(transport)),
             priorConversationReader
                 ?? throw new ArgumentNullException(nameof(priorConversationReader)));
 
-        _capabilitySnapshot = NativeHarnessCapabilityRows.CreateInitialSnapshot(
-            providerConfigured: false,
-            workspaceCaptured: false,
-            contextManifestPresent: false,
-            streamingSupportedByProvider: true);
+        _capabilitySnapshot = CreateSnapshotForObservation(
+            CapabilityObservationState.Unconfigured,
+            version: 1);
     }
 
     internal NativeHarnessAgentBackend(NativeHarnessLoopRunner loopRunner)
     {
         _loopRunner = loopRunner ?? throw new ArgumentNullException(nameof(loopRunner));
         _optionsSource = new NullNativeHarnessProviderOptionsSource();
-        _capabilitySnapshot = NativeHarnessCapabilityRows.CreateInitialSnapshot(
-            providerConfigured: false,
-            workspaceCaptured: false,
-            contextManifestPresent: false,
-            streamingSupportedByProvider: true);
+        _capabilitySnapshot = CreateSnapshotForObservation(
+            CapabilityObservationState.Unconfigured,
+            version: 1);
     }
 
     public AgentBackendId BackendId => AgentBackendIds.NativeHarness;
@@ -121,20 +133,76 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         {
             var options = _optionsSource.ResolveOptions();
             var configured = options is not null && IsConfigured(options);
-            _capabilitySnapshot = NativeHarnessCapabilityRows.CreateInitialSnapshot(
-                providerConfigured: configured,
-                workspaceCaptured: false,
-                contextManifestPresent: false,
-                streamingSupportedByProvider: true);
+            if (!configured)
+            {
+                ApplyObservationStateLocked(CapabilityObservationState.Unconfigured);
+                return;
+            }
+
+            var workspaceCaptured = _workspaceAuthority?.TryCaptureCurrentScope(out _) ?? false;
+            ApplyObservationStateLocked(
+                workspaceCaptured
+                    ? CapabilityObservationState.ConfiguredWithWorkspace
+                    : CapabilityObservationState.ConfiguredWithoutWorkspace);
         }
         catch
         {
-            _capabilitySnapshot = NativeHarnessCapabilityRows.CreateInitialSnapshot(
-                providerConfigured: false,
-                workspaceCaptured: false,
-                contextManifestPresent: false,
-                streamingSupportedByProvider: true);
+            ApplyObservationStateLocked(CapabilityObservationState.ResolutionUnavailable);
         }
+    }
+
+    private void ApplyObservationStateLocked(CapabilityObservationState observation)
+    {
+        if (!_capabilityInitialized)
+        {
+            _capabilityObservationState = observation;
+            _capabilitySnapshot = CreateSnapshotForObservation(observation, version: 1);
+            _capabilityInitialized = true;
+            return;
+        }
+
+        if (_capabilityObservationState == observation)
+        {
+            return;
+        }
+
+        _capabilityObservationState = observation;
+        _capabilitySnapshot = CreateSnapshotForObservation(
+            observation,
+            version: _capabilitySnapshot.Version + 1);
+    }
+
+    private static AgentCapabilitySnapshot CreateSnapshotForObservation(
+        CapabilityObservationState observation,
+        int version)
+    {
+        return observation switch
+        {
+            CapabilityObservationState.Unconfigured =>
+                NativeHarnessCapabilityRows.CreateInitialSnapshot(
+                    providerConfigured: false,
+                    workspaceCaptured: false,
+                    contextManifestPresent: false,
+                    streamingSupportedByProvider: true,
+                    version: version),
+            CapabilityObservationState.ConfiguredWithoutWorkspace =>
+                NativeHarnessCapabilityRows.CreateInitialSnapshot(
+                    providerConfigured: true,
+                    workspaceCaptured: false,
+                    contextManifestPresent: false,
+                    streamingSupportedByProvider: true,
+                    version: version),
+            CapabilityObservationState.ConfiguredWithWorkspace =>
+                NativeHarnessCapabilityRows.CreateInitialSnapshot(
+                    providerConfigured: true,
+                    workspaceCaptured: true,
+                    contextManifestPresent: false,
+                    streamingSupportedByProvider: true,
+                    version: version),
+            CapabilityObservationState.ResolutionUnavailable =>
+                NativeHarnessCapabilityRows.CreateResolutionUnavailableSnapshot(version: version),
+            _ => throw new ArgumentOutOfRangeException(nameof(observation), observation, null),
+        };
     }
 
     private static bool IsConfigured(AgentExecutionOptions options) =>

@@ -35,6 +35,9 @@ public sealed class AgentsRegistrationModuleTests
         typeof(AgentConversationEventProjection).FullName!,
         typeof(IAgentPanelHost).FullName!,
         typeof(IAgentExecutionService).FullName!,
+        typeof(INativeHarnessProviderTransport).FullName!,
+        typeof(INativeHarnessProviderOptionsSource).FullName!,
+        typeof(INativeHarnessPriorConversationReader).FullName!,
         typeof(IAgentBackend).FullName!,
         typeof(IAgentExecutionCoordinator).FullName!,
         typeof(MentionParser).FullName!,
@@ -91,7 +94,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(21, services.Count);
+        Assert.Equal(24, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -134,7 +137,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentBackend)
-                && d.ImplementationType == typeof(LegacyOpenAiCompatibleAgentBackend));
+                && d.ImplementationType == typeof(NativeHarnessAgentBackend));
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentExecutionCoordinator)
@@ -184,7 +187,7 @@ public sealed class AgentsRegistrationModuleTests
         var backend1 = provider.GetRequiredService<IAgentBackend>();
         var backend2 = provider.GetRequiredService<IAgentBackend>();
         Assert.Same(backend1, backend2);
-        Assert.IsType<LegacyOpenAiCompatibleAgentBackend>(backend1);
+        Assert.IsType<NativeHarnessAgentBackend>(backend1);
 
         var coordinator1 = provider.GetRequiredService<IAgentExecutionCoordinator>();
         var coordinator2 = provider.GetRequiredService<IAgentExecutionCoordinator>();
@@ -363,7 +366,19 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentBackend,\s*LegacyOpenAiCompatibleAgentBackend>\(\)"));
+                @"AddSingleton<INativeHarnessProviderTransport,\s*NativeHarnessProviderClient>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<INativeHarnessProviderOptionsSource,\s*NativeHarnessProviderOptionsSource>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<INativeHarnessPriorConversationReader,\s*NativeHarnessPriorConversationReader>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentBackend,\s*NativeHarnessAgentBackend>\(\)"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -386,7 +401,7 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(21, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(24, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
 

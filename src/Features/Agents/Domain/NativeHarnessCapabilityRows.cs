@@ -11,7 +11,8 @@ internal static class NativeHarnessCapabilityRows
         bool providerConfigured,
         bool workspaceCaptured,
         bool contextManifestPresent,
-        bool streamingSupportedByProvider)
+        bool streamingSupportedByProvider,
+        int version = 1)
     {
         return AgentCapabilitySnapshot.CreateInitial(
             AgentBackendIds.NativeHarness,
@@ -24,8 +25,22 @@ internal static class NativeHarnessCapabilityRows
                 CreateStreamingRow(providerConfigured, streamingSupportedByProvider),
                 CreateCancellationRow(providerConfigured),
             },
-            version: 1);
+            version: version);
     }
+
+    public static AgentCapabilitySnapshot CreateResolutionUnavailableSnapshot(int version = 1) =>
+        AgentCapabilitySnapshot.CreateInitial(
+            AgentBackendIds.NativeHarness,
+            new[]
+            {
+                CreateResolutionUnavailableRow(AgentCapabilityId.MessageCompletion),
+                CreateToolsRow(providerConfigured: false, workspaceCaptured: false),
+                CreatePermissionsRow(providerConfigured: false, workspaceCaptured: false),
+                CreateIdeContextRow(providerConfigured: false, contextManifestPresent: false),
+                CreateStreamingRow(providerConfigured: false, streamingSupportedByProvider: true),
+                CreateResolutionUnavailableRow(AgentCapabilityId.Cancellation),
+            },
+            version: version);
 
     public static AgentCapabilityRow CreateMessageCompletionRow(bool providerConfigured) =>
         AgentCapabilityRow.Create(
@@ -189,4 +204,15 @@ internal static class NativeHarnessCapabilityRows
             permitted: AgentCapabilityFactValue.Unknown,
             degraded: AgentCapabilityFactValue.NotSupported,
             currentlyUsable: AgentCapabilityFactValue.Unavailable);
+
+    private static AgentCapabilityRow CreateResolutionUnavailableRow(AgentCapabilityId capabilityId) =>
+        AgentCapabilityRow.Create(
+            capabilityId,
+            AgentCapabilityState.Create(
+                advertised: AgentCapabilityFactValue.Supported,
+                available: AgentCapabilityFactValue.Unavailable,
+                configured: AgentCapabilityFactValue.Unknown,
+                permitted: AgentCapabilityFactValue.Unknown,
+                degraded: AgentCapabilityFactValue.NotSupported,
+                currentlyUsable: AgentCapabilityFactValue.Unavailable));
 }

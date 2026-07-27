@@ -822,7 +822,7 @@ public sealed class AgentSessionCoordinatorParityTests
 
         Assert.IsType<AgentExecutionCoordinator>(coordinator);
         Assert.IsType<AgentSessionService>(session);
-        Assert.IsType<LegacyOpenAiCompatibleAgentBackend>(backend);
+        Assert.IsType<NativeHarnessAgentBackend>(backend);
 
         var constructor = typeof(AgentExecutionCoordinator).GetConstructors(
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
