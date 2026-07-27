@@ -15,4 +15,16 @@ internal static class NativeHarnessProviderProtocol
     public const int DefaultMaxTurns = 25;
 
     public const int DefaultProviderTimeoutSeconds = 120;
+
+    public const int ToolResultSummaryMaxBytes = 8 * 1024;
+
+    public const string ReadFileToolName = "read_file";
+
+    public const string CreateFileToolName = "create_file";
+
+    public const string ReplaceFileToolName = "replace_file";
+
+    public const string DeleteFileToolName = "delete_file";
+
+    public const string ExecuteCommandToolName = "execute_command";
 }
