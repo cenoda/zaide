@@ -188,8 +188,10 @@ All M6 adversarial tests added to existing test files:
   `AgentContextDisclosurePayload`.
 - `ContextDisclosed_NoRawItemContentInDisclosureStatusText` — verified disclosure
   event payload contains only metadata (source IDs, counts), never file content.
-- `AssemblyFailure_EmitsSafeReasonWithoutRawSnapshotContent` — null sources
-  skip silently without leaking content or exception details.
+- `AssemblyFailure_EmitsSafeReasonWithoutRawSnapshotContent` — throwing snapshot
+  sources force an assembly exception; the manifest remains null,
+  `FailureReported` uses the fixed reason "IDE context assembly failed.", and
+  exception type names, implementation names, and stack traces are not exposed.
 - `ContextDisclosurePayload_IdentityMatchesRunSessionAndConversation` — verified
   each ContextDisclosed event carries correct run/session/conversation tuple
   across multiple runs.
