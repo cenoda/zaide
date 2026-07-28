@@ -104,4 +104,21 @@ public sealed class TownhallEntryProjectionTests
 
         Assert.Equal(expectedDisplay, TownhallEntryProjection.ToTownhallDisplayContent(entry));
     }
+
+    [Fact]
+    public void ToTownhallMessage_ActionActivityEntry_ProjectsToolResultWithEvidenceLabel()
+    {
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            ActorId.TownhallAgent,
+            Timestamp,
+            "zaide-action|v1|ReadFile|Read file|Succeeded|ZaideExecuted|0|0|result Succeeded; note.txt");
+
+        var message = TownhallEntryProjection.ToTownhallMessage(entry, catalog);
+
+        Assert.Equal(TownhallMessageKind.ToolResult, message.Kind);
+        Assert.Contains("Tool result: Read file", message.Content, StringComparison.Ordinal);
+        Assert.Contains("[Zaide-executed]", message.Content, StringComparison.Ordinal);
+    }
 }

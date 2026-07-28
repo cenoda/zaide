@@ -11,6 +11,7 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 internal static class TownhallEntryProjection
 {
+    private const string ActionActivityPrefix = "zaide-action|v1|";
     public static TownhallMessageKind ToTownhallMessageKind(ConversationEntryKind kind) =>
         kind switch
         {
@@ -50,6 +51,11 @@ internal static class TownhallEntryProjection
             ? catalog.CanonicalHuman.AvatarResourceKey
             : "avatar-agent";
 
+        var kind = entry.Kind == ConversationEntryKind.SystemNotification
+                   && TryParseActionActivityContent(entry.Content, out _)
+            ? ResolveActionActivityTownhallKind(entry.Content)
+            : ToTownhallMessageKind(entry.Kind);
+
         return new TownhallMessage
         {
             Id = entry.Id.Value,
@@ -58,7 +64,7 @@ internal static class TownhallEntryProjection
             SenderAvatar = avatar,
             Content = ToTownhallDisplayContent(entry),
             Timestamp = entry.Timestamp,
-            Kind = ToTownhallMessageKind(entry.Kind)
+            Kind = kind
         };
     }
 
@@ -69,6 +75,12 @@ internal static class TownhallEntryProjection
     public static string ToTownhallDisplayContent(ConversationEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && TryParseActionActivityContent(entry.Content, out var actionActivity))
+        {
+            return FormatActionActivityDisplayContent(actionActivity);
+        }
 
         return entry.Kind switch
         {
@@ -124,5 +136,137 @@ internal static class TownhallEntryProjection
         }
 
         return value;
+    }
+
+    internal static bool TryParseActionActivityContent(
+        string content,
+        out ActionActivityProjection projection)
+    {
+        projection = default!;
+        if (string.IsNullOrEmpty(content)
+            || !content.StartsWith(ActionActivityPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var parts = content.Split('|');
+        if (parts.Length < 9
+            || !string.Equals(parts[0], "zaide-action", StringComparison.Ordinal)
+            || !string.Equals(parts[1], "v1", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        projection = new ActionActivityProjection(
+            parts[2],
+            parts[3],
+            parts[4],
+            parts[5],
+            parts[6] == "1",
+            parts[7] == "1",
+            string.Join('|', parts, 8, parts.Length - 8));
+
+        return true;
+    }
+
+    private static TownhallMessageKind ResolveActionActivityTownhallKind(string content)
+    {
+        if (!TryParseActionActivityContent(content, out var activity))
+        {
+            return TownhallMessageKind.System;
+        }
+
+        return activity.ResultKind switch
+        {
+            "Succeeded" => TownhallMessageKind.ToolResult,
+            "Denied" or "Failed" or "Revoked" or "Cancelled" or "Conflict" => TownhallMessageKind.AgentError,
+            _ => TownhallMessageKind.AgentAction,
+        };
+    }
+
+    private static string FormatActionActivityDisplayContent(ActionActivityProjection activity)
+    {
+        var evidenceLabel = FormatEvidenceLevelLabel(activity.EvidenceLevel);
+        var summary = activity.Summary;
+        var boundedMarkers = BuildBoundedEvidenceMarkers(activity.WasTruncated, activity.WasRedacted);
+        var boundedSuffix = boundedMarkers.Length == 0 ? string.Empty : $" {boundedMarkers}";
+
+        return activity.ResultKind switch
+        {
+            "Succeeded" =>
+                $"Tool result: {activity.Headline} — {summary} [{evidenceLabel}]{boundedSuffix}",
+            "Denied" =>
+                $"Action denied: {activity.Headline} — {summary} [{evidenceLabel}]{boundedSuffix}",
+            "Failed" =>
+                $"Action failed: {activity.Headline} — {summary} [{evidenceLabel}]{boundedSuffix}",
+            _ =>
+                $"Agent action: {activity.Headline} — {summary} ({activity.ResultKind}) [{evidenceLabel}]{boundedSuffix}",
+        };
+    }
+
+    private static string FormatEvidenceLevelLabel(string evidenceLevel) =>
+        evidenceLevel switch
+        {
+            "ZaideExecuted" => "Zaide-executed",
+            "ZaideMediated" => "Zaide-mediated",
+            "BackendExecutedAndReported" => "Backend-reported",
+            "ExternallyObserved" => "Externally observed",
+            "Unobservable" => "Unobservable",
+            _ => evidenceLevel,
+        };
+
+    private static string BuildBoundedEvidenceMarkers(bool wasTruncated, bool wasRedacted)
+    {
+        if (wasTruncated && wasRedacted)
+        {
+            return "[truncated] [redacted]";
+        }
+
+        if (wasTruncated)
+        {
+            return "[truncated]";
+        }
+
+        if (wasRedacted)
+        {
+            return "[redacted]";
+        }
+
+        return string.Empty;
+    }
+
+    internal readonly struct ActionActivityProjection
+    {
+        public ActionActivityProjection(
+            string actionKind,
+            string headline,
+            string resultKind,
+            string evidenceLevel,
+            bool wasTruncated,
+            bool wasRedacted,
+            string summary)
+        {
+            ActionKind = actionKind;
+            Headline = headline;
+            ResultKind = resultKind;
+            EvidenceLevel = evidenceLevel;
+            WasTruncated = wasTruncated;
+            WasRedacted = wasRedacted;
+            Summary = summary;
+        }
+
+        public string ActionKind { get; }
+
+        public string Headline { get; }
+
+        public string ResultKind { get; }
+
+        public string EvidenceLevel { get; }
+
+        public bool WasTruncated { get; }
+
+        public bool WasRedacted { get; }
+
+        public string Summary { get; }
     }
 }

@@ -8,7 +8,8 @@ user-directed plan amendment on 2026-07-27; the research/provenance gate is
 satisfied by retained evidence). **M2 harness contracts and architecture lock is
 complete** (read-only audit gate). **M3 tool-calling execution loop is complete**
 (read-only audit gate). **M4 production wiring and capability truthfulness is
-complete** (read-only audit gate; M5 not started).
+complete** (read-only audit gate). **M5 Townhall structured activity projection
+is complete** (read-only audit gate; M6 not started).
 
 **M4 corrective closeout (2026-07-27):** The original M4 wiring used the
 `AddSingleton<IService, Concrete>(sp => (Concrete)sp.GetService(typeof(Concrete))!)`
@@ -744,8 +745,8 @@ that has the evidence to resolve it.
 | M1 | Open-source harness research and provenance. Produce `docs/phases/v3/phase-19/M1_RESEARCH_RECORD.md` and `docs/phases/v3/phase-19/M1_PROVENANCE.md`. **Amendment (2026-07-27):** The original full-corpus benchmark gate is retired by explicit user-directed plan amendment. M1 closes as a research/provenance gate with an explicit comparative-execution limitation. **Stop-and-ask checkpoint:** external source acquisition, candidate execution, credentials, network egress, or paid API use requires explicit user authorization before that activity begins (docs-rules §11). | M0 | `M1_RESEARCH_RECORD.md` inventories ≥3 candidates at exact commits with licenses verified; ≥2 candidates verified runnable through the authorized zero-cost local path; comparable corpus attempts recorded with exact commands, reset/isolation method, results, failures, and resource limits; task-loop, context, search, editing, tool execution, recovery, and compaction observations recorded; `M1_PROVENANCE.md` complete for any code considered for reuse; no production code changed; `dotnet build Zaide.slnx --no-restore` clean; `git diff --check` clean (docs/evidence only). Failed comparative execution retained as research evidence, not treated as a candidate-selection winner or benchmark result. |
 | M2 | Harness contracts and architecture lock. Produce `docs/phases/v3/phase-19/M2_ARCHITECTURE_LOCK.md` and `docs/phases/v3/phase-19/M2_THREAT_MODEL.md`. Define Native Harness internal contracts, six-fact capability rows (P19-D06), history seam (P19-D10 concern 2), event-surface extension decision (P19-D02). Resolve open decisions: backend selection model, model provider/protocol, streaming, library (P19-D13), tool-calling format, turn budget. | M1 | `M2_ARCHITECTURE_LOCK.md` exists, resolves every M2-owned open decision, and is reviewed and accepted; `M2_THREAT_MODEL.md` exists and is reviewed and accepted before M3; `dotnet build Zaide.slnx --no-restore` succeeds; contract unit tests pass: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Contracts"`; architecture inventory ratchet updated: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes |
 | M3 | Tool-calling execution loop: model turn management, tool-call parsing, `IAgentActionBroker.RequestAsync` dispatch for all five `AgentActionKind` values, tool-result formatting, failure recovery, in-run model/tool loop history (P19-D10 concern 1), system prompt with Phase 18 manifest, run-scoped cancellation | M2 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop"` passes (8/8); broker dispatch tests cover all 5 `AgentActionKind` values: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19BrokerDispatch"` passes (6/6); context manifest consumption tests: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ContextConsumption"` passes (5/5); architecture inventory ratchet updated to post-M3 baseline (682/350/332, 621/576): `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `dotnet build Zaide.slnx --no-restore` clean |
-| M4 | Production wiring and capability truthfulness: register Native Harness in `AddZaideAgents`; six-fact `AgentCapabilitySnapshot` rows; action plane activation (`ContractAgentActionBroker` resolves for production runs) | M3 | **Complete (read-only audit gate; M5 not started).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes (5/5); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with post-M3 baseline preserved (682/350/332, 621/576); `dotnet build Zaide.slnx --no-restore` clean. **M4 corrective closeout (2026-07-27):** the original M4 wiring used `(sp) => (Concrete)sp.GetService(typeof(Concrete))!` for both `IAgentExecutionService` and `IAgentBackend`; that shape crashed the production container at startup. The corrective commit keeps the concrete `AgentExecutionService` Singleton and the interface mapping factory, switches the `IAgentBackend` mapping to a factory that constructs `NativeHarnessAgentBackend` from its declared dependencies, and adds an explicit production-container resolution regression test that resolves the coordinator, the concrete and interface `IAgentExecutionService`, the `IAgentBackend` (typed as `NativeHarnessAgentBackend`), and the harness dependencies with zero test-replacement fakes and zero network egress. The legacy backend is not re-registered; Phase 17/18 contracts are unchanged. Full-suite totals recorded under "M4 corrective closeout verification (2026-07-27)". |
-| M5 | Townhall structured activity projection: verify the existing broker-event path (`IAgentActionBroker` → `RunScopedAgentActionEventPublisher` → `AgentEvent` → `AgentConversationEventProjection.ProjectActionResultReported`) renders Native Harness tool activity; extend the projection for richer rendering only if M2 authorized a bounded event-surface extension (P19-D02); honest evidence-level presentation | M3 (may parallelize with M4 if M2 event surface is unchanged) | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes; evidence-level presentation verified; `dotnet build Zaide.slnx --no-restore` clean |
+| M4 | Production wiring and capability truthfulness: register Native Harness in `AddZaideAgents`; six-fact `AgentCapabilitySnapshot` rows; action plane activation (`ContractAgentActionBroker` resolves for production runs) | M3 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes (5/5); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with post-M3 baseline preserved (682/350/332, 621/576); `dotnet build Zaide.slnx --no-restore` clean. **M4 corrective closeout (2026-07-27):** the original M4 wiring used `(sp) => (Concrete)sp.GetService(typeof(Concrete))!` for both `IAgentExecutionService` and `IAgentBackend`; that shape crashed the production container at startup. The corrective commit keeps the concrete `AgentExecutionService` Singleton and the interface mapping factory, switches the `IAgentBackend` mapping to a factory that constructs `NativeHarnessAgentBackend` from its declared dependencies, and adds an explicit production-container resolution regression test that resolves the coordinator, the concrete and interface `IAgentExecutionService`, the `IAgentBackend` (typed as `NativeHarnessAgentBackend`), and the harness dependencies with zero test-replacement fakes and zero network egress. The legacy backend is not re-registered; Phase 17/18 contracts are unchanged. Full-suite totals recorded under "M4 corrective closeout verification (2026-07-27)". |
+| M5 | Townhall structured activity projection: verify the existing broker-event path (`IAgentActionBroker` → `RunScopedAgentActionEventPublisher` → `AgentEvent` → `AgentConversationEventProjection.ProjectActionResultReported`) renders Native Harness tool activity; extend the projection for richer rendering only if M2 authorized a bounded event-surface extension (P19-D02); honest evidence-level presentation | M3 (may parallelize with M4 if M2 event surface is unchanged) | **Complete (read-only audit gate; M6 not started).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes (4/4); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37); `dotnet build Zaide.slnx --no-restore` clean. No new `AgentEventKind` or direct Townhall bypass was introduced; success, denial/failure, and bounded-result evidence are distinguishable through the existing broker-event path. |
 | M6 | Closeout: adversarial tests exercising the M2 threat model (`M2_THREAT_MODEL.md`); architecture ratchet + bypass ratchet finalization; full-suite verification; evaluation evidence on real repository work (not a comparative campaign); documentation truth-sync | M4, M5 | `dotnet test Zaide.slnx --no-build` passes (full fast suite); `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` passes (serial fallback); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `git diff --check` clean |
 
 ### Milestone dependency graph
@@ -785,7 +786,7 @@ ratchet updates.
 | M2 | `M2_ARCHITECTURE_LOCK.md` and `M2_THREAT_MODEL.md` both reviewed and accepted before M3; `dotnet build Zaide.slnx --no-restore` succeeds; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Contracts"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with updated inventory |
 | M3 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop|FullyQualifiedName~Phase19BrokerDispatch|FullyQualifiedName~Phase19ContextConsumption"` passes; `dotnet build Zaide.slnx --no-restore` clean |
 | M4 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with updated baselines; `dotnet build Zaide.slnx --no-restore` clean |
-| M5 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes; `dotnet build Zaide.slnx --no-restore` clean |
+| M5 | `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes (4/4); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37); `dotnet build Zaide.slnx --no-restore` clean |
 | M6 | `dotnet test Zaide.slnx --no-build` passes (full fast suite); `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `git diff --check` clean |
 
 ### Full regression gate
@@ -1062,5 +1063,49 @@ dotnet test Zaide.slnx --no-build \
 
 The corrective change set is limited to the five files recorded above plus
 this document and `TOFIX.md`. No other production, test, or tool surface
-was modified for the M4 corrective closeout. M5 is the next milestone and
-has not started.
+was modified for the M4 corrective closeout.
+
+---
+
+## M5 Townhall structured activity projection verification (2026-07-28)
+
+M5 verifies and exposes Native Harness tool activity through the existing
+broker-event path without adding a new `AgentEventKind` or direct Townhall
+bypass. `AgentConversationEventProjection.ProjectActionResultReported` writes a
+structured `zaide-action|v1|…` `SystemNotification` entry; `TownhallEntryProjection`
+renders success, denial/failure, and bounded-result evidence with honest
+evidence-level labels.
+
+### Required commands (run in an interactive terminal)
+
+```bash
+git add <allowed-M5-files>
+git diff --cached --check
+git diff --cached --name-only
+dotnet build Zaide.slnx --no-restore
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19TownhallProjection'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19TownhallProjection'
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Architecture'
+```
+
+### Recorded totals (2026-07-28)
+
+| Command | Result |
+|---------|--------|
+| `git diff --cached --check` | Clean |
+| `dotnet build Zaide.slnx --no-restore` | Succeeded, 0 errors, 0 warnings |
+| `Phase19TownhallProjection` list-tests | 4 tests discovered |
+| `Phase19TownhallProjection` test run | 4/4 passed |
+| `Architecture` list-tests | 37 tests discovered |
+| `Architecture` test run | 37/37 passed |
+
+### Scope guard
+
+M5 is complete at a read-only audit gate. M6 is next but has not started.

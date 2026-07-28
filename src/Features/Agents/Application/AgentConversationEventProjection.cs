@@ -162,16 +162,11 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
         var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
         var authorActorId = ResolveAgentAuthor(conversation);
-        var headline = payload.ActionKind switch
-        {
-            AgentActionKind.ReadFile => "Read file",
-            AgentActionKind.CreateFile => "Create file",
-            AgentActionKind.ReplaceFile => "Replace file",
-            AgentActionKind.DeleteFile => "Delete file",
-            AgentActionKind.ExecuteCommand => "Run command",
-            _ => "Agent action",
-        };
-        var content = $"{headline}: {payload.Summary.Text} ({payload.ResultKind})";
+        var content = FormatActionResultEntryContent(
+            payload.ActionKind,
+            payload.ResultKind.Value,
+            agentEvent.EvidenceLevel,
+            payload.Summary);
         var entry = ConversationEntry.SystemNotification(
             ConversationEntryId.New(),
             authorActorId,
@@ -182,6 +177,39 @@ internal sealed class AgentConversationEventProjection : IDisposable
         _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
         _projectedActionSummaryIds.Add(payload.ActionId);
     }
+
+    internal static string FormatActionResultEntryContent(
+        AgentActionKind actionKind,
+        AgentActionResultKind resultKind,
+        AgentActivityEvidenceLevel evidenceLevel,
+        AgentActionAuditSummary summary)
+    {
+        ArgumentNullException.ThrowIfNull(summary);
+
+        var headline = ResolveActionHeadline(actionKind);
+        return string.Join(
+            '|',
+            "zaide-action",
+            "v1",
+            actionKind.ToString(),
+            headline,
+            resultKind.ToString(),
+            evidenceLevel.ToString(),
+            summary.WasTruncated ? "1" : "0",
+            summary.WasRedacted ? "1" : "0",
+            summary.Text);
+    }
+
+    internal static string ResolveActionHeadline(AgentActionKind actionKind) =>
+        actionKind switch
+        {
+            AgentActionKind.ReadFile => "Read file",
+            AgentActionKind.CreateFile => "Create file",
+            AgentActionKind.ReplaceFile => "Replace file",
+            AgentActionKind.DeleteFile => "Delete file",
+            AgentActionKind.ExecuteCommand => "Run command",
+            _ => "Agent action",
+        };
 
     private void ProjectUserMessageAdmitted(AgentEvent agentEvent)
     {
