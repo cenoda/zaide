@@ -23,6 +23,7 @@ namespace Zaide.Tests.Features.Agents;
 public sealed class Phase19ToolLoopTests : IDisposable
 {
     private readonly string _tempDir;
+    private readonly List<IDisposable> _disposables = new();
 
     public Phase19ToolLoopTests()
     {
@@ -32,6 +33,13 @@ public sealed class Phase19ToolLoopTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var disposable in _disposables)
+        {
+            try { disposable.Dispose(); } catch { /* best-effort */ }
+        }
+
+        _disposables.Clear();
+
         try
         {
             Directory.Delete(_tempDir, recursive: true);
@@ -257,7 +265,7 @@ public sealed class Phase19ToolLoopTests : IDisposable
     }
 
     private AgentExecutionService CreateExecutionService(AgentExecutionOptions? options = null) =>
-        Phase19HarnessTestFactory.CreateExecutionService(_tempDir, options);
+        Phase19HarnessTestFactory.CreateExecutionService(_tempDir, options, _disposables);
 
     private static AgentBackendExecutionContext CreateContext(
         IAgentActionBroker broker,

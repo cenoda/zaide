@@ -34,6 +34,7 @@ public sealed class Phase19AdversarialTests : IDisposable
 
     private readonly string _tempDir;
     private readonly string _workspaceRoot;
+    private readonly List<IDisposable> _disposables = new();
 
     public Phase19AdversarialTests()
     {
@@ -45,6 +46,13 @@ public sealed class Phase19AdversarialTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var disposable in _disposables)
+        {
+            try { disposable.Dispose(); } catch { /* best-effort */ }
+        }
+
+        _disposables.Clear();
+
         try
         {
             Directory.Delete(_tempDir, recursive: true);
@@ -562,13 +570,13 @@ public sealed class Phase19AdversarialTests : IDisposable
 
     private NativeHarnessAgentBackend CreateBackend(ScriptedNativeHarnessProviderTransport transport) =>
         new(
-            Phase19HarnessTestFactory.CreateExecutionService(_tempDir),
+            Phase19HarnessTestFactory.CreateExecutionService(_tempDir, disposableTracker: _disposables),
             transport,
             new NativeHarnessPriorConversationReader(ConversationsTestSupport.CreateStore()));
 
     private NativeHarnessAgentBackend CreateBackend(BlockingNativeHarnessProviderTransport transport) =>
         new(
-            Phase19HarnessTestFactory.CreateExecutionService(_tempDir),
+            Phase19HarnessTestFactory.CreateExecutionService(_tempDir, disposableTracker: _disposables),
             transport,
             new NativeHarnessPriorConversationReader(ConversationsTestSupport.CreateStore()));
 

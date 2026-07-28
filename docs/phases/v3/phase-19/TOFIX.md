@@ -334,6 +334,70 @@ dotnet test Zaide.slnx --no-build \
 
 ## Unresolved decisions (post-M6)
 
+## M6 corrective closeout — full-suite hang (2026-07-28)
+
+The original M6 adversarial closeout passed all targeted gates
+(Phase19Adversarial: 40/40, Phase19Integration: 5/5,
+Phase19TownhallProjection: 4/4, Architecture: 41/41) but the full fast and
+serial suites both failed to complete.
+
+### Root cause
+
+`SettingsService` (`src/Features/Settings/Infrastructure/SettingsService.cs`)
+implements `IDisposable` and starts a `LongRunning` background writer loop task
+on construction. `Phase19HarnessTestFactory.CreateExecutionService()` creates a
+new `SettingsService` for each call. The four Phase19 test files that use this
+factory — `Phase19AdversarialTests` (2 call sites),
+`Phase19ToolLoopTests` (1 call site), `Phase19BrokerDispatchTests` (1 call site),
+and `Phase19ContextConsumptionTests` (1 call site) — never disposed the created
+`SettingsService` instances. Each test class's `Dispose()` only deleted the temp
+directory, leaving the background writer loops running with references to
+now-deleted file paths.
+
+Across the full ~3290+ test suite, these undisposed `LongRunning` tasks
+accumulated and exhausted the thread pool, causing the test runner to hang.
+
+### Corrective change
+
+- `Phase19TestSupport.cs`: `CreateExecutionService` now accepts an optional
+  `IList<IDisposable>? disposableTracker` parameter. When non-null, the
+  created `SettingsService` is added to the tracker before returning.
+- `Phase19AdversarialTests.cs`, `Phase19ToolLoopTests.cs`,
+  `Phase19BrokerDispatchTests.cs`, `Phase19ContextConsumptionTests.cs`: each
+  test class now stores a `List<IDisposable>`, passes it as the
+  `disposableTracker` to every `CreateExecutionService` call, and disposes all
+  tracked instances in `Dispose()` **before** deleting the temp directory.
+
+No test assertions, test count, or threat-model coverage was changed. The
+existing `SettingsService` disposal contract (`IDisposable`) is now honored.
+
+### Scope guard
+
+Changed files: `Phase19TestSupport.cs`, `Phase19AdversarialTests.cs`,
+`Phase19ToolLoopTests.cs`, `Phase19BrokerDispatchTests.cs`,
+`Phase19ContextConsumptionTests.cs`, and this `TOFIX.md`. No production code,
+Phase 15/17/18 contracts, architecture ratchets, or dependencies were modified.
+No tests were removed, weakened, or skipped. No parallelism was disabled.
+
+### Recorded totals at M6 corrective closeout (2026-07-28)
+
+| Command | Result |
+|---------|--------|
+| `git diff --cached --check` | Clean |
+| `git diff --cached --name-only` | 6 files (see scope guard above) |
+| `dotnet build Zaide.slnx --no-restore` | Succeeded, 0 errors, 0 warnings |
+| `Phase19Adversarial` list-tests | 40 tests discovered |
+| `Phase19Adversarial` test run | 40/40 passed |
+| `Phase19Integration` list-tests | 5 tests discovered |
+| `Phase19Integration` test run | 5/5 passed |
+| `Phase19TownhallProjection` list-tests | 4 tests discovered |
+| `Phase19TownhallProjection` test run | 4/4 passed |
+| `Architecture` list-tests | 41 tests discovered |
+| `Architecture` test run | 41/41 passed |
+| `Phase19ToolLoop\|Phase19BrokerDispatch\|Phase19ContextConsumption` test run | 19/19 passed |
+| Full fast suite | 3292/3292 passed (14 s) |
+| Serial fallback | 3292/3292 passed (49 s) |
+
 All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Phase 19
 closeout work is complete pending user acceptance/publication.
 

@@ -116,7 +116,8 @@ internal static class Phase19HarnessTestFactory
 {
     public static AgentExecutionService CreateExecutionService(
         string tempDir,
-        AgentExecutionOptions? options = null)
+        AgentExecutionOptions? options = null,
+        IList<IDisposable>? disposableTracker = null)
     {
         options ??= new AgentExecutionOptions
         {
@@ -138,6 +139,13 @@ internal static class Phase19HarnessTestFactory
             new SettingsMigrator(Array.Empty<ISettingsMigration>()));
         var secrets = new TestSecretStore();
         secrets.Set("llm.apiKey", options.ApiKey);
-        return new AgentExecutionService(new HttpClient(new HttpClientHandler()), settings, secrets);
+        var service = new AgentExecutionService(new HttpClient(new HttpClientHandler()), settings, secrets);
+
+        if (disposableTracker is not null)
+        {
+            disposableTracker.Add(settings);
+        }
+
+        return service;
     }
 }
