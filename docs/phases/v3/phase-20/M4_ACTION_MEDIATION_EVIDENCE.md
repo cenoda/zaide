@@ -5,7 +5,7 @@
 | Item | Value |
 |------|-------|
 | Milestone | M4 — Zaide-mediated client filesystem actions and separate ACP permission boundary |
-| Published commit | _pending publication_ |
+| Published commit | `63880c53c2317a4e4d85ade2088c96764c510b6f` |
 | Depends on | M3 at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c` |
 | Production surfaces | `src/Features/Agents/Application/Acp/` action bridge, minimal Infrastructure/Contracts wiring for inbound handler and capability advertisement |
 | Test surfaces | `tests/Zaide.Tests/Features/Agents/Acp/Actions/`, Phase 17 proposal/permission regression tests, architecture inventory ratchets |

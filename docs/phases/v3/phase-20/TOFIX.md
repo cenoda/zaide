@@ -2,7 +2,7 @@
 
 ## Status
 
-**M4 complete and published at _pending_. M5 and all later Phase 20 milestones are not started and not authorized. Phase 21 has not started.**
+**M4 complete and published at `63880c53c2317a4e4d85ade2088c96764c510b6f`. M5 and all later Phase 20 milestones are not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -26,8 +26,8 @@ authorized. Phase 21 has not started.
 - [x] Wire inbound handler/capability advertisement through `IAcpSessionClient`.
 - [x] Add `Phase20ActionBridge`, `Phase20Permission`, and action-bridge bypass tests.
 - [x] Add `M4_ACTION_MEDIATION_EVIDENCE.md` and architecture inventory ratchets.
-- [ ] Publish one reviewable M4 commit to `origin/master`.
-- [ ] Verify post-push clean state and `HEAD == origin/master`.
+- [x] Publish one reviewable M4 commit to `origin/master` at `63880c53c2317a4e4d85ade2088c96764c510b6f`.
+- [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M3 work board
 

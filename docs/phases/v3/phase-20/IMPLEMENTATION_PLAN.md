@@ -2,7 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M4 complete and published at _pending_ (depends on M3 at
+**Status:** M4 complete and published at `63880c53c2317a4e4d85ade2088c96764c510b6f` (depends on M3 at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`). M5 and all later milestones are
 not started and not authorized by this document. Phase 21 has not started.
 
@@ -987,10 +987,10 @@ Stop and ask before continuing when any of these occurs:
 - [x] Backend-reported tool activity remains distinct from broker-mediated filesystem work.
 - [x] `M4_ACTION_MEDIATION_EVIDENCE.md` recorded.
 - [x] Focused `Phase20ActionBridge` / `Phase20Permission` tests and architecture ratchets pass.
-- [ ] One reviewable M4 commit published to `origin/master`.
-- [ ] Working tree is clean and `HEAD == origin/master`.
-- [ ] M5 and later Phase 20 milestones remain not started and not authorized.
-- [ ] Phase 21 has not started.
+- [x] One reviewable M4 commit published to `origin/master` at `63880c53c2317a4e4d85ade2088c96764c510b6f`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] M5 and later Phase 20 milestones remain not started and not authorized.
+- [x] Phase 21 has not started.
 
 ### Phase exit after M6
 
