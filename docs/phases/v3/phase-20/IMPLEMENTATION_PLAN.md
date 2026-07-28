@@ -2,8 +2,9 @@
 
 ## Status and authorization
 
-**Status:** M1 complete. M2 and all later milestones are not authorized by this
-document. Phase 21 has not started.
+**Status:** M1 complete and published at
+`314076ebc8dcf2c9910baecc5ef96c461910cb1b`. M2 and all later milestones are
+not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
 internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
@@ -914,11 +915,36 @@ Stop and ask before continuing when any of these occurs:
 - [x] `git diff --cached --name-only -- src tests tools` empty.
 - [x] Build succeeds with `--no-restore`.
 - [x] Architecture filter discovers tests and passes with zero failures.
-- [ ] One documentation commit is published to `origin/master`.
-- [ ] Working tree is clean and `HEAD == origin/master`.
-- [ ] Phase 20 remains M0 planning / implementation not started.
-- [ ] Phase 19 remains accepted and closed.
-- [ ] Phase 21 has not started.
+- [x] One documentation commit is published to `origin/master` at
+      `0bb44c85b743dee9dc1c8f18553097fd4d4a8ca7`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] Phase 20 remains M0 planning / implementation not started. *(M0
+      historical exit evidence only; current status is M1 complete and
+      published.)*
+- [x] Phase 19 remains accepted and closed.
+- [x] Phase 21 has not started.
+
+### M1 exit
+
+- [x] Pinned `schema-v1.20.0` fixtures and digest conformance tests pass.
+- [x] ACP v1 JSON-RPC envelopes, wire DTOs, codec, and newline framing
+      implemented.
+- [x] Pure protocol session plumbing (`initialize`, `session/new`,
+      `session/prompt`, `session/cancel`, `session/update`, `$/cancel_request`)
+      implemented.
+- [x] Truthful M1 client capability profile (`terminal: false`, filesystem
+      flags false).
+- [x] `M1_SCHEMA_CONFORMANCE.md` and `M1_THREAT_MODEL.md` recorded.
+- [x] Focused `Phase20Protocol` tests and architecture inventory ratchets pass.
+- [x] No `System.Diagnostics.Process`, production DI, broker bridge,
+      Townhall/UI, authentication, network provider execution, Native Harness
+      reference, or new dependency.
+- [x] One reviewable M1 commit published to `origin/master` at
+      `314076ebc8dcf2c9910baecc5ef96c461910cb1b`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] M2 and later Phase 20 milestones remain not started and not authorized.
+- [x] Phase 19 remains complete, published, accepted, and closed.
+- [x] Phase 21 has not started.
 
 ### Phase exit after M6
 
@@ -963,8 +989,9 @@ composition. Never use a broad or unresolved process target.
 
 ---
 
-## M0 next gate
+## M0 next gate (historical)
 
 Stop after publishing this documentation at the read-only M0 audit gate. The
 next possible action is review of this plan. Do not begin M1 without a separate
-authorization.
+authorization. *(Historical M0 evidence; M1 is complete and published at
+`314076ebc8dcf2c9910baecc5ef96c461910cb1b`.)*

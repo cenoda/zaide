@@ -64,7 +64,7 @@ and closeout evidence accepted.
 Harness evaluation) is **parked** after M0/M1/M2a/M2b; the Qwen observational
 path was reverted. Current Phase 16 work state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
-Harness production and ACP implementation have not started. [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) is complete and
+Harness production has not started. [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) is complete and
 closed (accepted 2026-07-26). Phase 18 is complete and closed (2026-07-27).
 [Phase 19](docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md) M0 was accepted on
 2026-07-27; M1 research/provenance is complete with limitation (the full-corpus
@@ -77,8 +77,10 @@ adversarial closeout is complete and published** (commits `4b4e1914`,
 `ca896498`); Phase 19 final human acceptance: accepted. Phase 19 is complete,
 published, and closed. Publication is not pending. M1 comparative-execution
 limitation retained. [Phase
-20](docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md) M0 planning is established;
-implementation has not started. Phase 21 has not started. See
+20](docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md) M1 protocol foundation is
+**complete and published** at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; M2
+and later milestones are not started and not authorized. Phase 21 has not
+started. See
 `docs/phases/v3/phase-19/TOFIX.md` and
 `docs/phases/v3/phase-20/TOFIX.md`.
 
@@ -314,7 +316,8 @@ baseline `67da1394`).
 closed on 2026-07-22. [Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
 is parked after controlled evaluation work; current state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
-Harness production and ACP implementation remain later independent outcomes.
+Harness production remains a later independent outcome. Phase 20 M1 ACP protocol
+foundation is complete and published; M2+ not started or authorized.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
@@ -326,8 +329,10 @@ accepted on 2026-07-27; M1 research/provenance is complete with limitation
 (M4 corrective closeout); **M5 Townhall structured activity projection
 complete** (read-only audit gate); **M6 adversarial closeout complete and
 published** (commits `4b4e1914`, `ca896498`). Phase 19 final human acceptance:
-accepted. Phase 19 is complete, published, and closed. Phase 20 M0 planning is
-established; implementation has not started. Phase 21 has not started.
+accepted. Phase 19 is complete, published, and closed. Phase 20 M1 protocol
+foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`;
+M2 and later milestones are not started and not authorized. Phase 21 has not
+started.
 
 ## Why "Zaide"
 

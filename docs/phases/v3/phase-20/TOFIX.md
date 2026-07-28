@@ -2,11 +2,18 @@
 
 ## Status
 
-**M1 complete. M2 and all later Phase 20 milestones are not started. Phase 21 has not started.**
+**M1 complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`. M2
+and all later Phase 20 milestones are not started and not authorized. Phase 21
+has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
-independent sibling backend, not a Native Harness wrapper or fallback. M2 and
-all later Phase 20 milestones are not authorized. Phase 21 has not started.
+independent sibling backend, not a Native Harness wrapper or fallback. M1
+delivered ACP v1 and `schema-v1.20.0` codec lock, frozen schema fixtures,
+threat-model artifacts, and pure protocol session plumbing only — no Process,
+production DI, broker bridge, Townhall/UI, authentication, network provider
+execution, Native Harness reference, or new dependency. M2 owns bounded stdio
+process hosting. M2 and all later Phase 20 milestones are not authorized.
+Phase 21 has not started.
 
 ## M1 work board
 
@@ -19,8 +26,9 @@ all later Phase 20 milestones are not authorized. Phase 21 has not started.
 - [x] Add inbound client request router rejecting unsupported methods.
 - [x] Add `M1_SCHEMA_CONFORMANCE.md` and `M1_THREAT_MODEL.md`.
 - [x] Add focused `Phase20Protocol` tests and architecture inventory ratchets.
-- [ ] Publish one reviewable M1 commit.
-- [ ] Verify post-push clean state and `HEAD == origin/master`.
+- [x] Publish one reviewable M1 commit at
+      `314076ebc8dcf2c9910baecc5ef96c461910cb1b`.
+- [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M0 work board
 
@@ -59,8 +67,9 @@ all later Phase 20 milestones are not authorized. Phase 21 has not started.
       stop conditions without starting them.
 - [x] Stage exactly the intended M0 documentation/status files.
 - [x] Run the requested staged verification gates.
-- [ ] Publish one reviewable M0 documentation commit.
-- [ ] Verify clean post-push state and `HEAD == origin/master`.
+- [x] Publish one reviewable M0 documentation commit at
+      `0bb44c85b743dee9dc1c8f18553097fd4d4a8ca7`.
+- [x] Verify clean post-push state and `HEAD == origin/master`.
 
 ## Locked M0 decisions
 
@@ -134,14 +143,25 @@ Verification on 2026-07-28:
 - Default fast suite: not run because this documentation-only plan does not
   require it and the targeted gate exposed no regression.
 
-Publication and post-push verification remain pending. M0 preserves one
-reviewable documentation commit. The final publication hash is not required
-inside that same commit; it will be captured after commit/push in the
-post-push audit result or in later documentation if a separately authorized
-documentation update is needed.
+M0 publication and post-push verification are complete at
+`0bb44c85b743dee9dc1c8f18553097fd4d4a8ca7`. M1 publication and post-push
+verification are complete at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`.
+
+## M1 verification evidence
+
+Publication commit `314076ebc8dcf2c9910baecc5ef96c461910cb1b` on `origin/master`:
+
+- `git diff --cached --check`: passed with no output at publication time.
+- `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.
+- `dotnet test Zaide.slnx --no-build --filter
+  "FullyQualifiedName~Phase20Protocol"`: passed; at least one test discovered,
+  zero failures.
+- `dotnet test Zaide.slnx --no-build --filter
+  "FullyQualifiedName~Architecture"`: passed; at least one test discovered,
+  zero failures.
+- Post-push: working tree clean; `HEAD == origin/master`.
 
 ## Next task
 
-At the separately authorized publication step, publish the single M0
-documentation commit, capture its hash in the post-push audit result, verify
-the post-push state, then stop. Do not begin M1.
+Stop at the read-only corrective re-audit gate. M2 and all later Phase 20
+milestones are not authorized. Do not begin M2.

@@ -57,8 +57,9 @@ closeout**; **M5 Townhall structured activity projection is complete**
 (read-only audit gate); **M6 adversarial closeout is complete and published**
 (commits `4b4e1914`, `ca896498`). Phase 19 final human acceptance: accepted.
 Phase 19 is complete, published, and closed. Publication is not pending. Phase
-20 M0 planning is established; implementation has not started. Phase 21 has not
-started.
+20 M1 protocol foundation is complete and published at
+`314076ebc8dcf2c9910baecc5ef96c461910cb1b`; M2 and later milestones are not
+started and not authorized. Phase 21 has not started.
 
 ---
 
@@ -179,7 +180,7 @@ governed by the root-admission detectors.
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
 | Phase 19 | **M0–M6 complete, published, and accepted** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; M6 published (`4b4e1914`, `ca896498`); Phase 19 final human acceptance: accepted |
-| Phase 20 | **M0 planning established; implementation not started** (2026-07-28) — ACP Agent Backend remains an independent sibling backend; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
+| Phase 20 | **M1 protocol foundation complete and published** (2026-07-29 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`) — ACP v1 `schema-v1.20.0` codec lock, frozen fixtures, threat model; no Process, production DI, broker bridge, Townhall/UI, authentication, network provider execution, Native Harness reference, or new dependency; M2 owns bounded stdio process hosting; M2+ not started or authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
 | Phase 21 | Not started |
 
 ---
@@ -389,4 +390,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-27 (Phase 18 M6 production baselines: 350 public / 296 internal / 646 total top-level types, 585 tracked production C# source files, 93 AddSingleton registrations across 12 modules)*
+*Last updated: 2026-07-29 (Phase 18 M6 production baselines: 350 public / 296 internal / 646 total top-level types, 585 tracked production C# source files, 93 AddSingleton registrations across 12 modules; Phase 20 M1 protocol foundation complete and published)*
