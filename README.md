@@ -76,8 +76,11 @@ Townhall structured activity projection is complete** (read-only audit gate); **
 adversarial closeout is complete and published** (commits `4b4e1914`,
 `ca896498`); Phase 19 final human acceptance: accepted. Phase 19 is complete,
 published, and closed. Publication is not pending. M1 comparative-execution
-limitation retained. No Phase 20 or Phase 21 work has started. See
-`docs/phases/v3/phase-19/TOFIX.md`.
+limitation retained. [Phase
+20](docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md) M0 planning is established;
+implementation has not started. Phase 21 has not started. See
+`docs/phases/v3/phase-19/TOFIX.md` and
+`docs/phases/v3/phase-20/TOFIX.md`.
 
 ## Philosophy
 
@@ -323,8 +326,8 @@ accepted on 2026-07-27; M1 research/provenance is complete with limitation
 (M4 corrective closeout); **M5 Townhall structured activity projection
 complete** (read-only audit gate); **M6 adversarial closeout complete and
 published** (commits `4b4e1914`, `ca896498`). Phase 19 final human acceptance:
-accepted. Phase 19 is complete, published, and closed. No Phase 20 or Phase 21
-work has started.
+accepted. Phase 19 is complete, published, and closed. Phase 20 M0 planning is
+established; implementation has not started. Phase 21 has not started.
 
 ## Why "Zaide"
 
