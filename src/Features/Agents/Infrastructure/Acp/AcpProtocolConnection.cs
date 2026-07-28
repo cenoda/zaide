@@ -28,7 +28,10 @@ internal sealed class AcpProtocolConnection : IAsyncDisposable
     private Action<AcpJsonRpcNotification>? _notificationHandler;
     private Task? _readLoop;
     private int _nextRequestNumber = 1;
+    private int _lateResponseCount;
     private bool _disposed;
+
+    public int LateResponseCount => Volatile.Read(ref _lateResponseCount);
 
     public AcpProtocolConnection(Stream input, Stream output)
     {
@@ -207,6 +210,10 @@ internal sealed class AcpProtocolConnection : IAsyncDisposable
                 if (_pending.TryRemove(response.Id.ToString(), out var tcs))
                 {
                     tcs.TrySetResult(response);
+                }
+                else
+                {
+                    Interlocked.Increment(ref _lateResponseCount);
                 }
 
                 break;

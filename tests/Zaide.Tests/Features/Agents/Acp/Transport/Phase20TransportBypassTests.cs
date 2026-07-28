@@ -5,14 +5,14 @@ using System.Text.RegularExpressions;
 using Xunit;
 using Zaide.Tests.Architecture;
 
-namespace Zaide.Tests.Features.Agents.Acp.Protocol;
+namespace Zaide.Tests.Features.Agents.Acp.Transport;
 
-public sealed class Phase20ProtocolBypassTests
+public sealed class Phase20TransportBypassTests
 {
     private static readonly string RepositoryRoot = ArchitectureInventoryReader.ResolveRepositoryRoot();
 
     [Fact]
-    public void Phase20Protocol_AcpSources_DoNotReferenceNativeHarness()
+    public void Phase20Transport_AcpSources_DoNotReferenceNativeHarness()
     {
         var acpDir = Path.Combine(RepositoryRoot, "src/Features/Agents/Infrastructure/Acp");
         var files = Directory.GetFiles(acpDir, "*.cs", SearchOption.TopDirectoryOnly);
@@ -32,7 +32,7 @@ public sealed class Phase20ProtocolBypassTests
     }
 
     [Fact]
-    public void Phase20Protocol_ProcessLaunch_IsLimitedToAllowlistedFiles()
+    public void Phase20Transport_ProcessLaunch_IsLimitedToAllowlistedFiles()
     {
         var acpDir = Path.Combine(RepositoryRoot, "src/Features/Agents/Infrastructure/Acp");
         var allowed = new[]

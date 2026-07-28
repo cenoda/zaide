@@ -2,8 +2,7 @@
 
 ## Status
 
-**M1 complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`. M2
-and all later Phase 20 milestones are not started and not authorized. Phase 21
+**M2 complete and published. M3 and all later Phase 20 milestones are not started and not authorized. Phase 21
 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
@@ -11,9 +10,23 @@ independent sibling backend, not a Native Harness wrapper or fallback. M1
 delivered ACP v1 and `schema-v1.20.0` codec lock, frozen schema fixtures,
 threat-model artifacts, and pure protocol session plumbing only — no Process,
 production DI, broker bridge, Townhall/UI, authentication, network provider
-execution, Native Harness reference, or new dependency. M2 owns bounded stdio
-process hosting. M2 and all later Phase 20 milestones are not authorized.
-Phase 21 has not started.
+execution, Native Harness reference, or new dependency. M2 delivered bounded stdio
+process hosting, JSON-RPC lifecycle ownership, deterministic fake-process
+transport tests, and `ApplicationShutdown` host teardown. M3 owns backend/session
+adapter work. M3 and all later Phase 20 milestones are not authorized. Phase 21
+has not started.
+
+## M2 work board
+
+- [x] Implement `AcpStdioProcessHost` with bounded stdin/stdout/stderr and process-tree cleanup.
+- [x] Add `IAcpChildProcess` / `IAcpProcessLauncher` contracts and system launcher.
+- [x] Add lifecycle failure taxonomy, timeouts, cancellation, and late-response counting.
+- [x] Add repository-owned fake child-process fixture under `tests/fixtures/acp-fake-agent/`.
+- [x] Add `Phase20Transport` / `Phase20ProcessLifecycle` tests and architecture inventory ratchets.
+- [x] Add `M2_PROCESS_LIFECYCLE_EVIDENCE.md`.
+- [x] Wire `ApplicationShutdown` to `AcpProcessHostShutdownRegistry.ShutdownAll()`.
+- [x] Publish one reviewable M2 commit to `origin/master`.
+- [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M1 work board
 
@@ -161,7 +174,17 @@ Publication commit `314076ebc8dcf2c9910baecc5ef96c461910cb1b` on `origin/master`
   zero failures.
 - Post-push: working tree clean; `HEAD == origin/master`.
 
+## M2 verification evidence
+
+Publication commit pending post-push record.
+
+- `git diff --cached --check`: passed with no output at publication time.
+- `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.
+- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase20Transport|FullyQualifiedName~Phase20ProcessLifecycle"`: passed; 12 discovered, 12 passed, 0 failed.
+- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"`: passed; 41 discovered, 41 passed, 0 failed.
+- `git diff --check`: passed with no output after gates.
+
 ## Next task
 
-Stop at the read-only corrective re-audit gate. M2 and all later Phase 20
-milestones are not authorized. Do not begin M2.
+Stop at the read-only M2 audit gate. M3 and all later Phase 20 milestones are
+not authorized. Do not begin M3.

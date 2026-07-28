@@ -37,6 +37,8 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
 
     public string? ActiveSessionId => _activeSessionId;
 
+    internal AcpProtocolConnection Connection => _connection;
+
     public void Start() => _connection.StartReading();
 
     public async Task<AcpNegotiatedCapabilities> InitializeAsync(CancellationToken cancellationToken)

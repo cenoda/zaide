@@ -2,8 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M1 complete and published at
-`314076ebc8dcf2c9910baecc5ef96c461910cb1b`. M2 and all later milestones are
+**Status:** M2 complete and published. M3 and all later milestones are
 not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
@@ -943,6 +942,20 @@ Stop and ask before continuing when any of these occurs:
       `314076ebc8dcf2c9910baecc5ef96c461910cb1b`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [x] M2 and later Phase 20 milestones remain not started and not authorized.
+- [x] Phase 19 remains complete, published, accepted, and closed.
+- [x] Phase 21 has not started.
+
+### M2 exit
+
+- [x] Bounded stdio process host owns one child process, protocol session, and stderr reader.
+- [x] Request correlation, timeouts, cancellation, process exit, and late-response counting implemented.
+- [x] Exact process-tree cleanup and `ApplicationShutdown` host teardown proven by transport tests.
+- [x] Deterministic repository-owned fake child-process fixture and `M2_PROCESS_LIFECYCLE_EVIDENCE.md` recorded.
+- [x] Focused `Phase20Transport` / `Phase20ProcessLifecycle` tests and architecture inventory ratchets pass.
+- [x] No production DI, real ACP candidate, broker bridge, Townhall/UI, authentication, network provider execution, Native Harness reference, automatic restart, or M3+ surfaces.
+- [x] One reviewable M2 commit published to `origin/master`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] M3 and later Phase 20 milestones remain not started and not authorized.
 - [x] Phase 19 remains complete, published, accepted, and closed.
 - [x] Phase 21 has not started.
 
