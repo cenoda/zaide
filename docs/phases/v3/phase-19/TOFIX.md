@@ -9,12 +9,16 @@ architecture lock is complete** (read-only audit gate). **M3 tool-calling
 execution loop is complete** (read-only audit gate). **M4 production wiring and
 capability truthfulness is complete** at a corrective closeout (read-only audit
 gate). **M5 Townhall structured activity projection is complete** (read-only
-audit gate). **M6 adversarial closeout is complete** (read-only acceptance gate).
+audit gate). **M6 adversarial closeout is complete and published** (commits
+`4b4e1914`, `ca896498`). **Final explicit human acceptance is pending.**
+Publication is not pending. No Phase 20 or Phase 21 work has started.
 
 ### M6 corrective closeout publication (2026-07-28)
 
 Commit `4b4e1914` (`fix(phase-19): close M6 test lifecycle leak`) is published
-on `origin/master`. The corrective change tracks and disposes `SettingsService`
+on `origin/master`. Commit `ca896498`
+(`docs(phase-19): record M6 corrective closeout publication`) records the
+publication. The corrective change tracks and disposes `SettingsService`
 instances before temporary-directory cleanup, resolving the full-suite hang
 caused by accumulated undisposed `LongRunning` background writer tasks.
 
@@ -30,7 +34,8 @@ Post-push verification confirmed:
 - Full serial suite — 3292/3292 passed
 - No Phase 20 or Phase 21 files exist
 
-**Phase 19 is published and ready for explicit human final acceptance.**
+**Phase 19 M0–M6 implementation is complete. M6 is published. Final explicit
+human acceptance is pending.**
 
 ### M4 corrective closeout (2026-07-27)
 
@@ -63,8 +68,8 @@ The recorded totals at the corrective closeout are:
 - Serial fallback — 3244/3244 passed
 
 M4 corrective closeout work is complete. **M5 is complete at a read-only audit
-gate. M6 adversarial closeout is complete at a read-only acceptance gate pending
-user publication.**
+gate. M6 adversarial closeout is complete and published** (commits `4b4e1914`,
+`ca896498`); final explicit human acceptance is pending.
 
 ## Amendment — M1 full-corpus benchmark gate retired (2026-07-27)
 
@@ -197,8 +202,10 @@ Production activation:
 
 ## Next task
 
-**Phase 19 is published and ready for explicit human final acceptance.**
-Do not start Phase 20, Phase 21, or post-Phase-19 work until acceptance.
+**Phase 19 M0–M6 implementation is complete. M6 is published** (commits
+`4b4e1914`, `ca896498`). **Final explicit human acceptance is pending.**
+Publication is not pending. Do not start Phase 20, Phase 21, or post-Phase-19
+work until acceptance.
 
 ## M2 acceptance and publication
 
@@ -418,7 +425,8 @@ No tests were removed, weakened, or skipped. No parallelism was disabled.
 | Serial fallback | 3292/3292 passed (49 s) |
 
 All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Phase 19
-is published and ready for explicit human final acceptance.
+M0–M6 implementation is complete. M6 is published. Final explicit human
+acceptance is pending.
 
 ## M1 authorization (2026-07-27)
 

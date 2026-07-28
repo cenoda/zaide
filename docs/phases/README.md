@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 closed** — **Phase 19 M0–M6 complete; final status pending acceptance/publication**; see each phase `TOFIX.md` for current work state |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, and Phase 17 closed** — **Phase 16 parked** — **Phase 18 closed** — **Phase 19 M0–M6 complete and published; final explicit human acceptance pending**; see each phase `TOFIX.md` for current work state |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
@@ -35,7 +35,10 @@ retired by explicit plan amendment; no architecture winner selected); **M2
 harness contracts and architecture lock is complete**; **M3 tool-calling
 execution loop is complete**; **M4 production wiring and capability
 truthfulness is complete at corrective closeout**; **M5 Townhall structured
-activity projection is complete** (read-only audit gate; M6 not started). See
+activity projection is complete** (read-only audit gate); **M6 adversarial
+closeout is complete and published** (commits `4b4e1914`, `ca896498`; final
+explicit human acceptance pending; no Phase 20 or Phase 21 work has started).
+See
 [`v3/phase-19/TOFIX.md`](v3/phase-19/TOFIX.md) and
 [`v3/phase-17/TOFIX.md`](v3/phase-17/TOFIX.md).
 

@@ -9,8 +9,10 @@ satisfied by retained evidence). **M2 harness contracts and architecture lock is
 complete** (read-only audit gate). **M3 tool-calling execution loop is complete**
 (read-only audit gate). **M4 production wiring and capability truthfulness is
 complete** (read-only audit gate). **M5 Townhall structured activity projection is
-complete** (read-only audit gate). **M6 adversarial closeout is complete**
-(read-only acceptance gate pending user publication).
+complete** (read-only audit gate). **M6 adversarial closeout is complete and
+published** (commits `4b4e1914`, `ca896498`). **Final explicit human
+acceptance is pending.** Publication is not pending. No Phase 20 or Phase 21
+work has started.
 
 **M4 corrective closeout (2026-07-27):** The original M4 wiring used the
 `AddSingleton<IService, Concrete>(sp => (Concrete)sp.GetService(typeof(Concrete))!)`
@@ -748,7 +750,7 @@ that has the evidence to resolve it.
 | M3 | Tool-calling execution loop: model turn management, tool-call parsing, `IAgentActionBroker.RequestAsync` dispatch for all five `AgentActionKind` values, tool-result formatting, failure recovery, in-run model/tool loop history (P19-D10 concern 1), system prompt with Phase 18 manifest, run-scoped cancellation | M2 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop"` passes (8/8); broker dispatch tests cover all 5 `AgentActionKind` values: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19BrokerDispatch"` passes (6/6); context manifest consumption tests: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ContextConsumption"` passes (5/5); architecture inventory ratchet updated to post-M3 baseline (682/350/332, 621/576): `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `dotnet build Zaide.slnx --no-restore` clean |
 | M4 | Production wiring and capability truthfulness: register Native Harness in `AddZaideAgents`; six-fact `AgentCapabilitySnapshot` rows; action plane activation (`ContractAgentActionBroker` resolves for production runs) | M3 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes (5/5); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with post-M3 baseline preserved (682/350/332, 621/576); `dotnet build Zaide.slnx --no-restore` clean. **M4 corrective closeout (2026-07-27):** the original M4 wiring used `(sp) => (Concrete)sp.GetService(typeof(Concrete))!` for both `IAgentExecutionService` and `IAgentBackend`; that shape crashed the production container at startup. The corrective commit keeps the concrete `AgentExecutionService` Singleton and the interface mapping factory, switches the `IAgentBackend` mapping to a factory that constructs `NativeHarnessAgentBackend` from its declared dependencies, and adds an explicit production-container resolution regression test that resolves the coordinator, the concrete and interface `IAgentExecutionService`, the `IAgentBackend` (typed as `NativeHarnessAgentBackend`), and the harness dependencies with zero test-replacement fakes and zero network egress. The legacy backend is not re-registered; Phase 17/18 contracts are unchanged. Full-suite totals recorded under "M4 corrective closeout verification (2026-07-27)". |
 | M5 | Townhall structured activity projection: verify the existing broker-event path (`IAgentActionBroker` → `RunScopedAgentActionEventPublisher` → `AgentEvent` → `AgentConversationEventProjection.ProjectActionResultReported`) renders Native Harness tool activity; extend the projection for richer rendering only if M2 authorized a bounded event-surface extension (P19-D02); honest evidence-level presentation | M3 (may parallelize with M4 if M2 event surface is unchanged) | **Complete (read-only audit gate; M6 not started).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes (4/4); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37); `dotnet build Zaide.slnx --no-restore` clean. No new `AgentEventKind` or direct Townhall bypass was introduced; success, denial/failure, and bounded-result evidence are distinguishable through the existing broker-event path. |
-| M6 | Closeout: adversarial tests exercising the M2 threat model (`M2_THREAT_MODEL.md`); architecture ratchet + bypass ratchet finalization; full-suite verification; evaluation evidence on real repository work (not a comparative campaign); documentation truth-sync | M4, M5 | **Complete (read-only acceptance gate pending user publication).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; full fast and serial suites pass; `git diff --check` clean |
+| M6 | Closeout: adversarial tests exercising the M2 threat model (`M2_THREAT_MODEL.md`); architecture ratchet + bypass ratchet finalization; full-suite verification; evaluation evidence on real repository work (not a comparative campaign); documentation truth-sync | M4, M5 | **Complete and published** (commits `4b4e1914`, `ca896498`; final explicit human acceptance pending). `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; full fast and serial suites pass; `git diff --check` clean |
 
 ### Milestone dependency graph
 
@@ -1110,7 +1112,8 @@ dotnet test Zaide.slnx --no-build \
 ### Scope guard
 
 M5 is complete at a read-only audit gate. M6 adversarial closeout is complete
-at a read-only acceptance gate pending user publication.
+and published (commits `4b4e1914`, `ca896498`); final explicit human
+acceptance is pending.
 
 ---
 
