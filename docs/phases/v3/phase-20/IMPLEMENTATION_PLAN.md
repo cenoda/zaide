@@ -3,8 +3,9 @@
 ## Status and authorization
 
 **Status:** M2 complete and published at
-`880b4524c9c53190687aee0cc10843900191b8ce`. M3 and all later milestones are
-not started and not authorized by this document. Phase 21 has not started.
+`880b4524c9c53190687aee0cc10843900191b8ce` (publication record
+`6b197a8b`). M3 and all later milestones are not started and not authorized
+by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
 internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
@@ -919,7 +920,7 @@ Stop and ask before continuing when any of these occurs:
       `0bb44c85b743dee9dc1c8f18553097fd4d4a8ca7`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [x] Phase 20 remains M0 planning / implementation not started. *(M0
-      historical exit evidence only; current status is M1 complete and
+      historical exit evidence only; current status is M2 complete and
       published.)*
 - [x] Phase 19 remains accepted and closed.
 - [x] Phase 21 has not started.
@@ -955,7 +956,8 @@ Stop and ask before continuing when any of these occurs:
 - [x] Focused `Phase20Transport` / `Phase20ProcessLifecycle` tests and architecture inventory ratchets pass.
 - [x] No production DI, real ACP candidate, broker bridge, Townhall/UI, authentication, network provider execution, Native Harness reference, automatic restart, or M3+ surfaces.
 - [x] One reviewable M2 commit published to `origin/master` at
-      `880b4524c9c53190687aee0cc10843900191b8ce`.
+      `880b4524c9c53190687aee0cc10843900191b8ce`, with publication record
+      `6b197a8b`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [x] M3 and later Phase 20 milestones remain not started and not authorized.
 - [x] Phase 19 remains complete, published, accepted, and closed.
@@ -1009,4 +1011,6 @@ composition. Never use a broad or unresolved process target.
 Stop after publishing this documentation at the read-only M0 audit gate. The
 next possible action is review of this plan. Do not begin M1 without a separate
 authorization. *(Historical M0 evidence; M1 is complete and published at
-`314076ebc8dcf2c9910baecc5ef96c461910cb1b`.)*
+`314076ebc8dcf2c9910baecc5ef96c461910cb1b`; M2 complete and published at
+`880b4524c9c53190687aee0cc10843900191b8ce` with publication record
+`6b197a8b`. M3 and all later milestones are not started.)*

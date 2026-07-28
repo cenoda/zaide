@@ -79,7 +79,8 @@ published, and closed. Publication is not pending. M1 comparative-execution
 limitation retained. [Phase
 20](docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md) M1 protocol foundation is
 **complete and published** at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; **M2
-stdio process lifecycle is complete and published**; M3 and later milestones are
+stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
+publication record `6b197a8b`); M3 and later milestones are
 not started and not authorized. Phase 21 has not
 started. See
 `docs/phases/v3/phase-19/TOFIX.md` and
@@ -318,7 +319,9 @@ closed on 2026-07-22. [Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
 is parked after controlled evaluation work; current state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
 Harness production remains a later independent outcome. Phase 20 M1 ACP protocol
-foundation is complete and published; **M2 stdio process lifecycle is complete and published**; M3+ not started or authorized.
+foundation is complete and published; **M2 stdio process lifecycle is complete
+and published** (`880b4524c9c53190687aee0cc10843900191b8ce`, publication record
+`6b197a8b`); M3+ not started or authorized.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
@@ -332,7 +335,8 @@ complete** (read-only audit gate); **M6 adversarial closeout complete and
 published** (commits `4b4e1914`, `ca896498`). Phase 19 final human acceptance:
 accepted. Phase 19 is complete, published, and closed. Phase 20 M1 protocol
 foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`;
-**M2 stdio process lifecycle is complete and published**; M3 and later milestones are not started and not authorized. Phase 21 has not
+**M2 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
+publication record `6b197a8b`); M3 and later milestones are not started and not authorized. Phase 21 has not
 started.
 
 ## Why "Zaide"
