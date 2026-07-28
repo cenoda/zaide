@@ -137,7 +137,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M2: +4 internal context assembly contract helpers.
         // Phase 19 M3: +4 internal provider contract production types.
         // Phase 20 M1: +1 internal AcpSchemaProfile.
-        Assert.Equal((133, 7, 126), byNamespace["Zaide.Features.Agents.Domain"]);
+        Assert.Equal((138, 7, 131), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -146,7 +146,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M7: +1 internal IAgentCommandExecutor contract.
         // Phase 17 M8: +4 internal IAgentActionEventPublisher, IAgentActionAuditStore, IAgentActionBrokerFactory, IAgentActionRequestCapableBackend contracts.
         // Phase 19 M3: +2 internal provider transport/options contracts.
-        Assert.Equal((27, 6, 21), byNamespace["Zaide.Features.Agents.Contracts"]);
+        Assert.Equal((28, 6, 22), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -166,9 +166,12 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M7: +3 internal AgentCommandPathSupport, AgentCommandEnvironmentBuilder, WorkspaceCommandExecutor.
         // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
         Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 20 M3: +5 internal ACP backend adapter types under Application/Acp.
+        Assert.Equal((5, 0, 5), byNamespace["Zaide.Features.Agents.Application.Acp"]);
         // Phase 20 M1: +52 internal ACP protocol foundation types under Infrastructure/Acp.
         // Phase 20 M2: +13 internal ACP process lifecycle types under Infrastructure/Acp.
-        Assert.Equal((65, 0, 65), byNamespace["Zaide.Features.Agents.Infrastructure.Acp"]);
+        // Phase 20 M3: +2 internal ACP backend adapter types under Infrastructure/Acp.
+        Assert.Equal((67, 0, 67), byNamespace["Zaide.Features.Agents.Infrastructure.Acp"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);
@@ -232,7 +235,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 606).
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
-        Assert.Equal(659, inventory.SourceFiles.Count);
+        // Phase 20 M3: +11 internal ACP backend adapter production files.
+        Assert.Equal(670, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -262,7 +266,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 561 Features).
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
-        Assert.Equal(614, byFolder["Features"]);
+        // Phase 20 M3: +11 internal ACP backend adapter production files.
+        Assert.Equal(625, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

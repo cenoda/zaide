@@ -80,7 +80,8 @@ limitation retained. [Phase
 20](docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md) M1 protocol foundation is
 **complete and published** at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; **M2
 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
-publication record `6b197a8b`); M3 and later milestones are
+publication record `6b197a8b`); **M3 backend contract adapter is complete and
+published**; M4 and later milestones are
 not started and not authorized. Phase 21 has not
 started. See
 `docs/phases/v3/phase-19/TOFIX.md` and

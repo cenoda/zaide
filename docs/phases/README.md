@@ -9,7 +9,8 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, Phase 17, Phase 18, and Phase 19 closed** — **Phase 16 parked** — Phase 19 M0–M6 complete, published, and accepted. Phase 20 M1 protocol foundation complete and published (`314076ebc8dcf2c9910baecc5ef96c461910cb1b`); **M2 stdio process lifecycle complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`, publication record `6b197a8b`); M3+ not started or authorized. Phase 21 not started. See each phase `TOFIX.md` for current work state |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 onward | **Phase 14, Phase 15, Phase 17, Phase 18, and Phase 19 closed** — **Phase 16 parked** — Phase 19 M0–M6 complete, published, and accepted. Phase 20 M1 protocol foundation complete and published (`314076ebc8dcf2c9910baecc5ef96c461910cb1b`); **M2 stdio process lifecycle complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`, publication record `6b197a8b`); **M3 backend contract adapter is complete and
+published**; M4+ not started or authorized. Phase 21 not started. See each phase `TOFIX.md` for current work state |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The

@@ -298,6 +298,8 @@ internal sealed class AgentEvent
 
             AgentEventKind.ContextDisclosed => payload is AgentContextDisclosurePayload,
 
+            AgentEventKind.BackendActivityReported => payload is AgentBackendReportedActivityPayload,
+
             _ => false,
         };
 }

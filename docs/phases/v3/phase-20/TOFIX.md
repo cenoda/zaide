@@ -2,9 +2,8 @@
 
 ## Status
 
-**M2 complete and published at `880b4524c9c53190687aee0cc10843900191b8ce`. M3
-and all later Phase 20 milestones are not started and not authorized. Phase 21
-has not started.**
+**M3 complete and published at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01`. M4 and all later Phase 20
+milestones are not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -13,9 +12,22 @@ threat-model artifacts, and pure protocol session plumbing only — no Process,
 production DI, broker bridge, Townhall/UI, authentication, network provider
 execution, Native Harness reference, or new dependency. M2 delivered bounded stdio
 process hosting, JSON-RPC lifecycle ownership, deterministic fake-process
-transport tests, and `ApplicationShutdown` host teardown. M3 owns backend/session
-adapter work. M3 and all later Phase 20 milestones are not authorized. Phase 21
-has not started.
+transport tests, and `ApplicationShutdown` host teardown. M3 delivered the ACP
+backend/session adapter, Phase 18 manifest encoding, backend activity
+normalization, and six-fact capability mapping behind deterministic fake
+transport only. M4 owns broker-mediated client filesystem actions. M4 and all
+later Phase 20 milestones are not authorized. Phase 21 has not started.
+
+## M3 work board
+
+- [x] Add `AcpAgentBackend` and `AgentBackendIds.Acp`.
+- [x] Add `AcpAgentSessionAdapter`, context encoder, update normalizer, and capability mapper.
+- [x] Add additive backend/session activity payload and event normalization in `AgentSessionService`.
+- [x] Add `AcpFakeSessionClient` deterministic fake transport tests.
+- [x] Add `Phase20Backend`, `Phase20Context`, and `Phase20Capabilities` tests.
+- [x] Add `M3_BACKEND_CONTRACT_EVIDENCE.md` and architecture/context bypass ratchets.
+- [x] Publish one reviewable M3 commit to `origin/master` at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01`.
+- [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M2 work board
 
@@ -188,5 +200,5 @@ Publication commit `880b4524c9c53190687aee0cc10843900191b8ce` on `origin/master`
 
 ## Next task
 
-Stop at the read-only M2 audit gate. M3 and all later Phase 20 milestones are
-not authorized. Do not begin M3.
+Stop at the read-only M3 audit gate. M4 and all later Phase 20 milestones are
+not authorized. Do not begin M4.

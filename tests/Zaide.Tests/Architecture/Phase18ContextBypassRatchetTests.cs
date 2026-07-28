@@ -259,6 +259,36 @@ public sealed class Phase18ContextBypassRatchetTests
         Assert.Empty(violations);
     }
 
+    [Fact]
+    public void Acp_ConsumesContextManifestOnlyThroughContextManifestEncoder()
+    {
+        var violations = new List<string>();
+        var allowedDirectReferences = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "src/Features/Agents/Application/Acp/AcpContextManifestEncoder.cs",
+            "src/Features/Agents/Application/Acp/AcpAgentSessionAdapter.cs",
+        };
+
+        var root = Path.Combine(RepositoryRoot, "src/Features/Agents/Application/Acp");
+        foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.TopDirectoryOnly))
+        {
+            var relativePath = Path.GetRelativePath(RepositoryRoot, file).Replace('\\', '/');
+            if (allowedDirectReferences.Contains(relativePath))
+            {
+                continue;
+            }
+
+            var text = File.ReadAllText(file);
+            if (text.Contains(nameof(AgentContextManifest), StringComparison.Ordinal)
+                || text.Contains(nameof(AgentContextItem), StringComparison.Ordinal))
+            {
+                violations.Add(relativePath);
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
     private static bool ReferencesType(Type candidate, Type target) =>
         candidate == target
         || candidate.IsByRef && candidate.GetElementType() == target;

@@ -9,6 +9,8 @@ internal enum AgentBackendEventKind
 {
     MessageCompleted,
     FailureObserved,
+    ActivityReported,
+    CapabilitySnapshotChanged,
 }
 
 /// <summary>
@@ -34,6 +36,54 @@ internal sealed class AgentBackendMessageCompletedPayload : AgentBackendEventPay
     }
 
     public string AssistantText { get; }
+}
+
+/// <summary>
+/// Backend-reported structured activity observed during one run attempt.
+/// </summary>
+internal sealed class AgentBackendActivityReportedPayload : AgentBackendEventPayload
+{
+    public AgentBackendActivityReportedPayload(
+        AcpBackendActivityKind activityKind,
+        string summary,
+        string? acpCorrelationId = null)
+    {
+        if (!Enum.IsDefined(activityKind))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(activityKind),
+                activityKind,
+                "Activity kind is invalid.");
+        }
+
+        if (string.IsNullOrWhiteSpace(summary))
+        {
+            throw new ArgumentException("Activity summary is required.", nameof(summary));
+        }
+
+        ActivityKind = activityKind;
+        Summary = summary;
+        AcpCorrelationId = acpCorrelationId;
+    }
+
+    public AcpBackendActivityKind ActivityKind { get; }
+
+    public string Summary { get; }
+
+    public string? AcpCorrelationId { get; }
+}
+
+/// <summary>
+/// Capability snapshot change reported by a backend during one run.
+/// </summary>
+internal sealed class AgentBackendCapabilityChangedPayload : AgentBackendEventPayload
+{
+    public AgentBackendCapabilityChangedPayload(AgentCapabilitySnapshot snapshot)
+    {
+        Snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+    }
+
+    public AgentCapabilitySnapshot Snapshot { get; }
 }
 
 /// <summary>
@@ -101,6 +151,8 @@ internal sealed class AgentBackendEvent
         {
             AgentBackendEventKind.MessageCompleted => payload is AgentBackendMessageCompletedPayload,
             AgentBackendEventKind.FailureObserved => payload is AgentBackendFailurePayload,
+            AgentBackendEventKind.ActivityReported => payload is AgentBackendActivityReportedPayload,
+            AgentBackendEventKind.CapabilitySnapshotChanged => payload is AgentBackendCapabilityChangedPayload,
             _ => false,
         };
 }

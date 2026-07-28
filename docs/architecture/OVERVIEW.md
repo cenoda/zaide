@@ -182,7 +182,7 @@ governed by the root-admission detectors.
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
 | Phase 19 | **M0–M6 complete, published, and accepted** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; M6 published (`4b4e1914`, `ca896498`); Phase 19 final human acceptance: accepted |
-| Phase 20 | **M2 stdio process lifecycle complete and published** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`) — bounded process host, JSON-RPC lifecycle, fake-process transport tests, shutdown teardown; M3+ not started or authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
+| Phase 20 | **M3 backend contract adapter complete and published** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`) — bounded process host, JSON-RPC lifecycle, fake-process transport tests, shutdown teardown, backend/session adapter, context mapping, event normalization, and capability truthfulness; M4+ not started or authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
 | Phase 21 | Not started |
 
 ---

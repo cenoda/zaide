@@ -9,9 +9,14 @@ internal static class AgentBackendIds
 
     public const string NativeHarnessValue = "backend:zaide-native-harness";
 
+    public const string AcpValue = "backend:acp";
+
     public static AgentBackendId LegacyOpenAiCompatible { get; } =
         AgentBackendId.FromValue(LegacyOpenAiCompatibleValue);
 
     public static AgentBackendId NativeHarness { get; } =
         AgentBackendId.FromValue(NativeHarnessValue);
+
+    public static AgentBackendId Acp { get; } =
+        AgentBackendId.FromValue(AcpValue);
 }

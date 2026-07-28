@@ -2,10 +2,9 @@
 
 ## Status and authorization
 
-**Status:** M2 complete and published at
-`880b4524c9c53190687aee0cc10843900191b8ce` (publication record
-`6b197a8b`). M3 and all later milestones are not started and not authorized
-by this document. Phase 21 has not started.
+**Status:** M3 complete and published at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01` (depends on M2 at
+`880b4524c9c53190687aee0cc10843900191b8ce`). M4 and all later milestones are
+not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
 internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
@@ -962,6 +961,20 @@ Stop and ask before continuing when any of these occurs:
 - [x] M3 and later Phase 20 milestones remain not started and not authorized.
 - [x] Phase 19 remains complete, published, accepted, and closed.
 - [x] Phase 21 has not started.
+
+### M3 exit
+
+- [x] `AcpAgentBackend` implements `IAgentBackend` with independent `backend:acp` identity.
+- [x] Phase 18 context consumed only through `AcpContextManifestEncoder`.
+- [x] ACP `session/update` activity normalized separately from assistant completion.
+- [x] Six-fact capability rows and versioned usage observation implemented.
+- [x] Deterministic fake transport tests and `M3_BACKEND_CONTRACT_EVIDENCE.md` recorded.
+- [x] Focused `Phase20Backend` / `Phase20Context` / `Phase20Capabilities` tests and architecture ratchets pass.
+- [x] One reviewable M3 commit published at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01` to `origin/master`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [ ] M4 and later Phase 20 milestones remain not started and not authorized.
+- [ ] Phase 19 remains complete, published, accepted, and closed.
+- [ ] Phase 21 has not started.
 
 ### Phase exit after M6
 

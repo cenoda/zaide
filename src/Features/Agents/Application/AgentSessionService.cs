@@ -693,6 +693,29 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
                     AgentRunStatus.Completed);
                 break;
 
+            case AgentBackendEventKind.ActivityReported:
+                if (backendEvent.Payload is not AgentBackendActivityReportedPayload activityPayload)
+                {
+                    throw new InvalidOperationException("Backend activity payload is missing.");
+                }
+
+                EmitBackendActivityLocked(
+                    session,
+                    run,
+                    activityPayload,
+                    backendEvent.OccurredAtUtc);
+                break;
+
+            case AgentBackendEventKind.CapabilitySnapshotChanged:
+                if (backendEvent.Payload is not AgentBackendCapabilityChangedPayload capabilityPayload)
+                {
+                    throw new InvalidOperationException("Backend capability payload is missing.");
+                }
+
+                session.CapabilitySnapshot = capabilityPayload.Snapshot;
+                EmitCapabilitySnapshotLocked(session, run.RunId, capabilityPayload.Snapshot);
+                break;
+
             case AgentBackendEventKind.FailureObserved:
                 if (backendEvent.Payload is not AgentBackendFailurePayload failurePayload)
                 {
@@ -897,6 +920,27 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
             new AgentMessagePayload(messageEntryId, text),
             evidenceLevel,
             occurredAtUtc: DateTimeOffset.UtcNow,
+            causationEventId: run.LastLifecycleEventId);
+
+        _eventStream.Publish(agentEvent);
+    }
+
+    private void EmitBackendActivityLocked(
+        LiveSession session,
+        LiveRun run,
+        AgentBackendActivityReportedPayload activityPayload,
+        DateTimeOffset occurredAtUtc)
+    {
+        var agentEvent = CreateEventLocked(
+            session,
+            run.RunId,
+            AgentEventKind.BackendActivityReported,
+            new AgentBackendReportedActivityPayload(
+                activityPayload.ActivityKind,
+                activityPayload.Summary,
+                activityPayload.AcpCorrelationId),
+            AgentActivityEvidenceLevel.BackendExecutedAndReported,
+            occurredAtUtc,
             causationEventId: run.LastLifecycleEventId);
 
         _eventStream.Publish(agentEvent);

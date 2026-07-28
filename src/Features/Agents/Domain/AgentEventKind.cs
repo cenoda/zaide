@@ -38,4 +38,6 @@ internal enum AgentEventKind
     ActionRevoked,
 
     ContextDisclosed,
+
+    BackendActivityReported,
 }
