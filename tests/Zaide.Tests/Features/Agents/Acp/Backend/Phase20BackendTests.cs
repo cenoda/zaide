@@ -34,7 +34,7 @@ public sealed class Phase20BackendTests
         Assert.Empty(activityEvents);
 
         var completion = Assert.Single(
-            events.Where(e => e.Kind == AgentBackendEventKind.MessageCompleted));
+            events, e => e.Kind == AgentBackendEventKind.MessageCompleted);
         var payload = Assert.IsType<AgentBackendMessageCompletedPayload>(completion.Payload);
         Assert.Equal("final answer", payload.AssistantText);
     }
@@ -61,7 +61,7 @@ public sealed class Phase20BackendTests
         var events = await CollectBackendEventsAsync(script);
 
         var activity = Assert.Single(
-            events.Where(e => e.Kind == AgentBackendEventKind.ActivityReported));
+            events, e => e.Kind == AgentBackendEventKind.ActivityReported);
         var payload = Assert.IsType<AgentBackendActivityReportedPayload>(activity.Payload);
         Assert.Equal(AcpBackendActivityKind.ToolCall, payload.ActivityKind);
         Assert.Equal("tc-1", payload.AcpCorrelationId);
@@ -87,7 +87,7 @@ public sealed class Phase20BackendTests
 
         var events = await CollectBackendEventsAsync(backend, CreateContext(sessionId));
         var failure = Assert.Single(
-            events.Where(e => e.Kind == AgentBackendEventKind.FailureObserved));
+            events, e => e.Kind == AgentBackendEventKind.FailureObserved);
         var payload = Assert.IsType<AgentBackendFailurePayload>(failure.Payload);
         Assert.Equal(AgentFailureKind.Transport, payload.FailureKind);
         Assert.Contains("identity mismatch", payload.Reason, StringComparison.OrdinalIgnoreCase);
@@ -103,7 +103,7 @@ public sealed class Phase20BackendTests
 
         var events = await CollectBackendEventsAsync(script);
         var failure = Assert.Single(
-            events.Where(e => e.Kind == AgentBackendEventKind.FailureObserved));
+            events, e => e.Kind == AgentBackendEventKind.FailureObserved);
         var payload = Assert.IsType<AgentBackendFailurePayload>(failure.Payload);
         Assert.Equal(AgentFailureKind.Cancellation, payload.FailureKind);
     }

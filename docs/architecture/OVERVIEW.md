@@ -60,8 +60,10 @@ Phase 19 is complete, published, and closed. Publication is not pending. Phase
 20 M1 protocol foundation is complete and published at
 `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; **M2 stdio process lifecycle is
 complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
-publication record `6b197a8b`); M3 and later milestones are not
-started and not authorized. Phase 21 has not started.
+publication record `6b197a8b`); **M3 backend contract is complete and published**
+(`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
+`04831f1c`); M4 and later milestones are not started and not authorized. Phase 21
+has not started.
 
 ---
 
@@ -392,4 +394,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-29 (Phase 18 M6 production baselines: 350 public / 296 internal / 646 total top-level types, 585 tracked production C# source files, 93 AddSingleton registrations across 12 modules; Phase 20 M2 stdio process lifecycle complete and published)*
+*Last updated: 2026-07-29 (Phase 20 M3 backend contract adapter complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`; M4+ not started and not authorized; Phase 21 not started)*

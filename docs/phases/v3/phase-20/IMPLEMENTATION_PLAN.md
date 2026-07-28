@@ -2,7 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M3 complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` (depends on M2 at
+**Status:** M3 complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c` (depends on M2 at
 `880b4524c9c53190687aee0cc10843900191b8ce`). M4 and all later milestones are
 not started and not authorized by this document. Phase 21 has not started.
 
@@ -970,7 +970,7 @@ Stop and ask before continuing when any of these occurs:
 - [x] Six-fact capability rows and versioned usage observation implemented.
 - [x] Deterministic fake transport tests and `M3_BACKEND_CONTRACT_EVIDENCE.md` recorded.
 - [x] Focused `Phase20Backend` / `Phase20Context` / `Phase20Capabilities` tests and architecture ratchets pass.
-- [x] One reviewable M3 commit published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` to `origin/master`.
+- [x] One reviewable M3 commit published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` to `origin/master`, with publication-record correction `04831f1c`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [ ] M4 and later Phase 20 milestones remain not started and not authorized.
 - [ ] Phase 19 remains complete, published, accepted, and closed.
@@ -1026,4 +1026,6 @@ next possible action is review of this plan. Do not begin M1 without a separate
 authorization. *(Historical M0 evidence; M1 is complete and published at
 `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; M2 complete and published at
 `880b4524c9c53190687aee0cc10843900191b8ce` with publication record
-`6b197a8b`. M3 and all later milestones are not started.)*
+`6b197a8b`; M3 complete and published at
+`2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
+`04831f1c`. M4 and all later milestones are not started.)*
