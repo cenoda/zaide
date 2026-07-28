@@ -2,19 +2,14 @@
 
 ## Status and authorization
 
-**Status:** M0 planning only. Phase 20 implementation has not started. M1 and
-all later milestones are not authorized by this document. Phase 21 has not
-started.
+**Status:** M1 complete. M2 and all later milestones are not authorized by this
+document. Phase 21 has not started.
 
-**Authorized work in M0:** Read-only live-repository inspection, read-only
-public official ACP research, creation of this plan and `TOFIX.md`, truthful
-status synchronization, verification of the staged documentation, one
-documentation commit, and publication of that documentation.
-
-**Not authorized in M0:** Production code, tests or test-baseline changes,
-tools, dependencies, production DI, an ACP protocol client, UI, credentials,
-authentication, agent installation or execution, candidate execution, paid
-services, or any Phase 21 work.
+**Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
+internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
+truthful capability advertisement, focused protocol tests, and architecture
+inventory ratchets. No process execution, production DI, broker bridge, UI, or
+Native Harness references.
 
 **Prior phase:** Phase 19 is complete, published, accepted, and closed. Nothing
 in this plan reopens, modifies, or reinterprets Phase 19 history. Phase 20 is an

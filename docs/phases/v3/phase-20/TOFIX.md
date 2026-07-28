@@ -2,11 +2,25 @@
 
 ## Status
 
-**M0 planning only. Phase 20 implementation has not started.**
+**M1 complete. M2 and all later Phase 20 milestones are not started. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
-independent sibling backend, not a Native Harness wrapper or fallback. M1 and
+independent sibling backend, not a Native Harness wrapper or fallback. M2 and
 all later Phase 20 milestones are not authorized. Phase 21 has not started.
+
+## M1 work board
+
+- [x] Add pinned schema fixtures and digest conformance tests.
+- [x] Implement ACP v1 JSON-RPC envelopes, wire DTOs, codec, and newline framing.
+- [x] Implement pure protocol session plumbing (`initialize`, `session/new`,
+      `session/prompt`, `session/cancel`, `session/update`, `$/cancel_request`).
+- [x] Implement truthful M1 client capability profile (`terminal: false`,
+      filesystem flags false).
+- [x] Add inbound client request router rejecting unsupported methods.
+- [x] Add `M1_SCHEMA_CONFORMANCE.md` and `M1_THREAT_MODEL.md`.
+- [x] Add focused `Phase20Protocol` tests and architecture inventory ratchets.
+- [ ] Publish one reviewable M1 commit.
+- [ ] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M0 work board
 

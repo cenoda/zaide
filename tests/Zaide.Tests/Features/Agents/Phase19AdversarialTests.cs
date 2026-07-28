@@ -524,9 +524,9 @@ public sealed class Phase19AdversarialTests : IDisposable
     {
         var inventory = new ArchitectureInventoryReader().Read();
 
-        Assert.Equal(682, inventory.TotalTopLevelTypeCount);
-        Assert.Equal(621, inventory.SourceFiles.Count);
-        Assert.Equal(576, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(735, inventory.TotalTopLevelTypeCount);
+        Assert.Equal(644, inventory.SourceFiles.Count);
+        Assert.Equal(599, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }

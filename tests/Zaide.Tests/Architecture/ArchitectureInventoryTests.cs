@@ -136,7 +136,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M1 corrective: +2 internal disclosure summary types.
         // Phase 18 M2: +4 internal context assembly contract helpers.
         // Phase 19 M3: +4 internal provider contract production types.
-        Assert.Equal((132, 7, 125), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 20 M1: +1 internal AcpSchemaProfile.
+        Assert.Equal((133, 7, 126), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -165,6 +166,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M7: +3 internal AgentCommandPathSupport, AgentCommandEnvironmentBuilder, WorkspaceCommandExecutor.
         // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
         Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 20 M1: +52 internal ACP protocol foundation types under Infrastructure/Acp.
+        Assert.Equal((52, 0, 52), byNamespace["Zaide.Features.Agents.Infrastructure.Acp"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);
@@ -227,7 +230,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 606).
-        Assert.Equal(621, inventory.SourceFiles.Count);
+        // Phase 20 M1: +23 internal ACP protocol foundation production files.
+        Assert.Equal(644, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -256,7 +260,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M3 corrective: +2 passive snapshot service production files.
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 561 Features).
-        Assert.Equal(576, byFolder["Features"]);
+        // Phase 20 M1: +23 internal ACP protocol foundation production files.
+        Assert.Equal(599, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
