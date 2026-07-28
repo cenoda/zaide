@@ -54,7 +54,8 @@ amendment; no architecture winner selected); **M2 harness contracts and
 architecture lock is complete**; **M3 tool-calling execution loop is complete**;
 **M4 production wiring and capability truthfulness is complete at corrective
 closeout**; **M5 Townhall structured activity projection is complete**
-(read-only audit gate; M6 not started).
+(read-only audit gate); **M6 adversarial closeout is complete** (read-only
+acceptance gate pending user publication).
 
 ---
 
@@ -174,7 +175,7 @@ governed by the root-admission detectors.
 | Phase 16 | **Parked historical evaluation** — not a production prerequisite |
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
-| Phase 19 | **M5 complete** (2026-07-28) — Native Harness tool activity projected through existing broker-event path into Townhall with honest evidence-level presentation; no new `AgentEventKind`; `Phase19TownhallProjection` 4/4; architecture 37/37; M1 comparative-execution limitation retained; M6 not started |
+| Phase 19 | **M6 complete** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; final status pending acceptance/publication |
 
 ---
 

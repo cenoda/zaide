@@ -91,6 +91,28 @@ public sealed class Phase17BypassRatchetTests
             "tests/Zaide.Tests/Features/Agents/FakeActionRequesterBackend.cs")));
     }
 
+    [Fact]
+    public void NativeHarnessApplication_DoesNotUseForbiddenBclOrDirectWorkspaceIo()
+    {
+        var violations = ScanFiles(
+            "src/Features/Agents/Application",
+            file => Path.GetFileName(file).StartsWith("NativeHarness", StringComparison.Ordinal),
+            @"\bSystem\.IO\.|\bSystem\.Diagnostics\.Process\b|\bIAgentFileReader\b|\bIAgentFileMutator\b|\bIAgentCommandExecutor\b");
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void NativeHarnessInfrastructure_DoesNotBypassActionBroker()
+    {
+        var violations = ScanFiles(
+            "src/Features/Agents/Infrastructure",
+            file => Path.GetFileName(file).StartsWith("NativeHarness", StringComparison.Ordinal),
+            @"\bIAgentFileReader\b|\bIAgentFileMutator\b|\bIAgentCommandExecutor\b|\bWorkspaceFileReader\b|\bWorkspaceFileMutator\b|\bWorkspaceCommandExecutor\b");
+
+        Assert.Empty(violations);
+    }
+
     private static IReadOnlyList<string> ScanFiles(
         string relativeDirectory,
         Func<string, bool> include,

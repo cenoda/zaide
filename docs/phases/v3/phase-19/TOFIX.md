@@ -9,7 +9,8 @@ architecture lock is complete** (read-only audit gate). **M3 tool-calling
 execution loop is complete** (read-only audit gate). **M4 production wiring and
 capability truthfulness is complete** at a corrective closeout (read-only audit
 gate). **M5 Townhall structured activity projection is complete** (read-only
-audit gate; M6 not started).
+audit gate). **M6 adversarial closeout is complete** (read-only acceptance gate
+pending user publication).
 
 ### M4 corrective closeout (2026-07-27)
 
@@ -42,7 +43,8 @@ The recorded totals at the corrective closeout are:
 - Serial fallback — 3244/3244 passed
 
 M4 corrective closeout work is complete. **M5 is complete at a read-only audit
-gate. M6 is next but has not started.**
+gate. M6 adversarial closeout is complete at a read-only acceptance gate pending
+user publication.**
 
 ## Amendment — M1 full-corpus benchmark gate retired (2026-07-27)
 
@@ -168,12 +170,16 @@ Production activation:
 - [x] M5 — Townhall structured activity projection through the existing
       broker-event path; honest evidence-level presentation; no new
       `AgentEventKind` or direct Townhall bypass.
+- [x] M6 — adversarial closeout exercising `M2_THREAT_MODEL.md`; final
+      architecture and bypass ratchet state; full fast and serial suite
+      verification; real-repository evaluation evidence without comparative
+      benchmark claims.
 
 ## Next task
 
-M5 is complete at a read-only audit gate. **M6 is next but has not started.**
-Do not start adversarial closeout, broad cleanup, or speculative abstractions
-until M6 is authorized.
+M6 adversarial closeout is complete at a read-only acceptance gate. **Phase 19
+final status is pending user acceptance/publication.** Do not start Phase 20,
+Phase 21, or post-Phase-19 work until acceptance.
 
 ## M2 acceptance and publication
 
@@ -294,16 +300,42 @@ dotnet build Zaide.slnx --no-restore
 | `Architecture` test run | 37/37 passed |
 | `dotnet build Zaide.slnx --no-restore` | Succeeded, 0 errors, 0 warnings |
 
-## Unresolved decisions (post-M5)
+## M6 verification (2026-07-28)
 
-All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Remaining
-work is implementation-owned:
+```bash
+git add tests/Zaide.Tests/Features/Agents/Phase19AdversarialTests.cs \
+  tests/Zaide.Tests/Architecture/Phase17BypassRatchetTests.cs \
+  tests/Zaide.Tests/Architecture/Phase18ContextBypassRatchetTests.cs \
+  docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md \
+  docs/phases/v3/phase-19/TOFIX.md \
+  README.md docs/phases/README.md docs/architecture/OVERVIEW.md docs/roadmap/V3.md
+git diff --cached --check
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19Adversarial'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19Adversarial'
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build
+dotnet test Zaide.slnx --no-build \
+  --settings tests/Zaide.Tests/slow.runsettings
+```
 
-| Item | Owner |
-|------|-------|
-| Townhall richer rendering (if needed) | M5 (complete) |
-| Adversarial threat exercises | M6 |
-| Evaluation scope at closeout | M6 |
+| Command | Result (2026-07-28) |
+|---------|---------------------|
+| `Phase19Adversarial` list-tests | 40 tests discovered |
+| `Phase19Adversarial` test run | 40/40 passed |
+| `Architecture` list-tests | 41 tests discovered |
+| `Architecture` test run | 41/41 passed |
+| Full fast suite | 3292/3292 passed |
+| Serial fallback | 3292/3292 passed |
+
+## Unresolved decisions (post-M6)
+
+All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Phase 19
+closeout work is complete pending user acceptance/publication.
 
 ## M1 authorization (2026-07-27)
 

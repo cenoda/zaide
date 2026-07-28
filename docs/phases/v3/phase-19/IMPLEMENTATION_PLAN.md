@@ -8,8 +8,9 @@ user-directed plan amendment on 2026-07-27; the research/provenance gate is
 satisfied by retained evidence). **M2 harness contracts and architecture lock is
 complete** (read-only audit gate). **M3 tool-calling execution loop is complete**
 (read-only audit gate). **M4 production wiring and capability truthfulness is
-complete** (read-only audit gate). **M5 Townhall structured activity projection
-is complete** (read-only audit gate; M6 not started).
+complete** (read-only audit gate). **M5 Townhall structured activity projection is
+complete** (read-only audit gate). **M6 adversarial closeout is complete**
+(read-only acceptance gate pending user publication).
 
 **M4 corrective closeout (2026-07-27):** The original M4 wiring used the
 `AddSingleton<IService, Concrete>(sp => (Concrete)sp.GetService(typeof(Concrete))!)`
@@ -747,7 +748,7 @@ that has the evidence to resolve it.
 | M3 | Tool-calling execution loop: model turn management, tool-call parsing, `IAgentActionBroker.RequestAsync` dispatch for all five `AgentActionKind` values, tool-result formatting, failure recovery, in-run model/tool loop history (P19-D10 concern 1), system prompt with Phase 18 manifest, run-scoped cancellation | M2 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ToolLoop"` passes (8/8); broker dispatch tests cover all 5 `AgentActionKind` values: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19BrokerDispatch"` passes (6/6); context manifest consumption tests: `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19ContextConsumption"` passes (5/5); architecture inventory ratchet updated to post-M3 baseline (682/350/332, 621/576): `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `dotnet build Zaide.slnx --no-restore` clean |
 | M4 | Production wiring and capability truthfulness: register Native Harness in `AddZaideAgents`; six-fact `AgentCapabilitySnapshot` rows; action plane activation (`ContractAgentActionBroker` resolves for production runs) | M3 | **Complete (read-only audit gate).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes (5/5); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes with post-M3 baseline preserved (682/350/332, 621/576); `dotnet build Zaide.slnx --no-restore` clean. **M4 corrective closeout (2026-07-27):** the original M4 wiring used `(sp) => (Concrete)sp.GetService(typeof(Concrete))!` for both `IAgentExecutionService` and `IAgentBackend`; that shape crashed the production container at startup. The corrective commit keeps the concrete `AgentExecutionService` Singleton and the interface mapping factory, switches the `IAgentBackend` mapping to a factory that constructs `NativeHarnessAgentBackend` from its declared dependencies, and adds an explicit production-container resolution regression test that resolves the coordinator, the concrete and interface `IAgentExecutionService`, the `IAgentBackend` (typed as `NativeHarnessAgentBackend`), and the harness dependencies with zero test-replacement fakes and zero network egress. The legacy backend is not re-registered; Phase 17/18 contracts are unchanged. Full-suite totals recorded under "M4 corrective closeout verification (2026-07-27)". |
 | M5 | Townhall structured activity projection: verify the existing broker-event path (`IAgentActionBroker` → `RunScopedAgentActionEventPublisher` → `AgentEvent` → `AgentConversationEventProjection.ProjectActionResultReported`) renders Native Harness tool activity; extend the projection for richer rendering only if M2 authorized a bounded event-surface extension (P19-D02); honest evidence-level presentation | M3 (may parallelize with M4 if M2 event surface is unchanged) | **Complete (read-only audit gate; M6 not started).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes (4/4); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes (37/37); `dotnet build Zaide.slnx --no-restore` clean. No new `AgentEventKind` or direct Townhall bypass was introduced; success, denial/failure, and bounded-result evidence are distinguishable through the existing broker-event path. |
-| M6 | Closeout: adversarial tests exercising the M2 threat model (`M2_THREAT_MODEL.md`); architecture ratchet + bypass ratchet finalization; full-suite verification; evaluation evidence on real repository work (not a comparative campaign); documentation truth-sync | M4, M5 | `dotnet test Zaide.slnx --no-build` passes (full fast suite); `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` passes (serial fallback); `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; `git diff --check` clean |
+| M6 | Closeout: adversarial tests exercising the M2 threat model (`M2_THREAT_MODEL.md`); architecture ratchet + bypass ratchet finalization; full-suite verification; evaluation evidence on real repository work (not a comparative campaign); documentation truth-sync | M4, M5 | **Complete (read-only acceptance gate pending user publication).** `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Adversarial"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19Integration"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase19TownhallProjection"` passes; `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"` passes; full fast and serial suites pass; `git diff --check` clean |
 
 ### Milestone dependency graph
 
@@ -1108,4 +1109,98 @@ dotnet test Zaide.slnx --no-build \
 
 ### Scope guard
 
-M5 is complete at a read-only audit gate. M6 is next but has not started.
+M5 is complete at a read-only audit gate. M6 adversarial closeout is complete
+at a read-only acceptance gate pending user publication.
+
+---
+
+## M6 adversarial closeout verification (2026-07-28)
+
+M6 exercises every applicable threat in `M2_THREAT_MODEL.md` through
+`Phase19AdversarialTests` plus retained Phase 17/18/19 regression layers. Final
+Native Harness bypass ratchets were added to `Phase17BypassRatchetTests` and
+`Phase18ContextBypassRatchetTests`. Evaluation evidence is limited to real
+Zaide repository surfaces (production wiring, live `src/Features/Agents/`
+scans, and existing integration paths); no external-harness comparison campaign
+was run and the M1 comparative-execution limitation is preserved.
+
+### Required commands (run in an interactive terminal)
+
+```bash
+git add tests/Zaide.Tests/Features/Agents/Phase19AdversarialTests.cs \
+  tests/Zaide.Tests/Architecture/Phase17BypassRatchetTests.cs \
+  tests/Zaide.Tests/Architecture/Phase18ContextBypassRatchetTests.cs \
+  docs/phases/v3/phase-19/IMPLEMENTATION_PLAN.md \
+  docs/phases/v3/phase-19/TOFIX.md \
+  README.md docs/phases/README.md docs/architecture/OVERVIEW.md docs/roadmap/V3.md
+git diff --cached --check
+git diff --cached --name-only
+dotnet build Zaide.slnx --no-restore
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19Adversarial'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19Adversarial'
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19Integration'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19Integration'
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Phase19TownhallProjection'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Phase19TownhallProjection'
+
+dotnet test Zaide.slnx --no-build --list-tests \
+  --filter 'FullyQualifiedName~Architecture'
+dotnet test Zaide.slnx --no-build \
+  --filter 'FullyQualifiedName~Architecture'
+
+dotnet test Zaide.slnx --no-build
+dotnet test Zaide.slnx --no-build \
+  --settings tests/Zaide.Tests/slow.runsettings
+```
+
+### Recorded totals (2026-07-28)
+
+Recorded after the M6 verification run in this milestone.
+
+| Command | Result |
+|---------|--------|
+| `Phase19Adversarial` list-tests | 40 tests discovered |
+| `Phase19Adversarial` test run | 40/40 passed |
+| `Phase19Integration` list-tests | 5 tests discovered |
+| `Phase19Integration` test run | 5/5 passed |
+| `Phase19TownhallProjection` list-tests | 4 tests discovered |
+| `Phase19TownhallProjection` test run | 4/4 passed |
+| `Architecture` list-tests | 41 tests discovered |
+| `Architecture` test run | 41/41 passed |
+| Full fast suite | 3292/3292 passed |
+| Serial fallback | 3292/3292 passed |
+
+### M6 adversarial coverage map
+
+| Threat / requirement | Evidence |
+|----------------------|----------|
+| T-01, T-03 prompt injection channels | `Phase19Adversarial_PromptInjectionFromToolResult_DoesNotBypassBroker`, `Phase19Adversarial_BoundedToolResult_TruncatesLargeCommandOutput` |
+| T-02 adversarial replay | `Phase19ContextConsumption_PriorConversationReplay_IsIncludedInProviderMessages` (inventory) |
+| T-04, T-05 secret/command exfiltration | `Phase19Adversarial_ToolResultSummary_RedactsSecretPatterns`, Phase 17 shell-denylist regressions (inventory) |
+| T-06, T-07 workspace escape/stale scope | `Phase19Adversarial_PathTraversalThroughHarness_IsDeniedAtBrokerWithoutBypass`, Phase 17 stale-workspace regressions (inventory) |
+| T-08 shell residual | Phase 17 symlink/shell fingerprint regressions (inventory) |
+| T-09–T-11 DoS budgets | `Phase19ToolLoop_ExceedsTurnBudget_AfterConfiguredMaxTurns` (inventory) |
+| T-12 transport disclosure | `Phase19Adversarial_ProviderClient_SanitizesCredentialPatternsInTransportFailures` |
+| T-13, T-14 cancellation/process cleanup | `Phase19Adversarial_CancellationDuringProviderRequest_ReturnsCancelledFailure`, `Phase19Adversarial_LateToolCompletionAfterCancellation_ReturnsIndeterminate`, Phase 17 process-tree test (inventory) |
+| T-17 capability truthfulness | `Phase19Adversarial_CapabilityRows_NeverOverstateCurrentlyUsable` |
+| T-18 broker bypass | `Phase19Adversarial_NativeHarnessSources_DoNotReferenceDirectWorkspaceIo`, `Phase17BypassRatchetTests.NativeHarness*` |
+| T-19 context Off/redaction | `Phase19Adversarial_ContextOffPolicy_DoesNotEmbedManifestItems`, `Phase19ContextConsumption_ProcessingFailedItems_AreExcludedFromSystemPrompt` (inventory) |
+| All five `AgentActionKind` broker-mediated | `Phase19Adversarial_AllFiveAgentActionKinds_AreBrokerMediatedByHarnessLoop`, `Phase19BrokerDispatch_*` (inventory) |
+| Permission/stale/revoked bypass | `Phase19Adversarial_PermissionDenied_DoesNotReportToolSuccess`, `Phase19BrokerDispatch_RevokedBroker_*` (inventory) |
+| Townhall truthfulness | `Phase19TownhallProjectionTests` (inventory) |
+| Real-repository evaluation evidence | `Phase19Adversarial_EvaluationEvidence_UsesLiveZaideRepositorySurfaces` |
+
+### Scope guard
+
+M6 does not start Phase 20, Phase 21, or any post-Phase-19 work. No new
+`AgentBackendEventKind`, network tool, ACP, persistence, resume, or public API
+surface was introduced.

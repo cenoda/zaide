@@ -72,10 +72,9 @@ benchmark gate was retired by explicit user-directed plan amendment; no
 architecture winner was selected); **M2 harness contracts and architecture lock
 is complete**; **M3 tool-calling execution loop is complete**; **M4 production
 wiring and capability truthfulness is complete** (read-only audit gate); **M5
-Townhall structured activity projection is complete** (read-only audit gate; M6
-not started; M4 corrective closeout — production-container resolution crash
-fixed, explicit production-container resolution regression test added, full fast
-suite 3244/3244 and serial suite 3244/3244; see
+Townhall structured activity projection is complete** (read-only audit gate); **M6
+adversarial closeout is complete** (read-only acceptance gate pending user
+publication; M1 comparative-execution limitation retained; see
 `docs/phases/v3/phase-19/TOFIX.md`).
 
 ## Philosophy
