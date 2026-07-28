@@ -52,7 +52,10 @@ Phase 17 was accepted on 2026-07-26. Phase 18 is complete and closed
 complete with limitation (full-corpus benchmark gate retired by explicit plan
 amendment; no architecture winner selected); **M2 harness contracts and
 architecture lock is complete**; **M3 tool-calling execution loop is complete**;
-**M4 production wiring and capability truthfulness is complete** (M5 not started).
+**M4 production wiring and capability truthfulness is complete at corrective
+closeout** (production-container resolution crash fixed; explicit
+production-container resolution regression test added; full fast suite
+3244/3244 and serial suite 3244/3244; M5 not started).
 
 ---
 
@@ -172,7 +175,7 @@ governed by the root-admission detectors.
 | Phase 16 | **Parked historical evaluation** — not a production prerequisite |
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
-| Phase 19 | **M4 complete** (2026-07-27) — Native Harness registered in production DI; six-fact capability rows truthful; post-M3 baseline 682/350/332 types, 621/576 files preserved; M1 comparative-execution limitation retained; M5 not started |
+| Phase 19 | **M4 complete at corrective closeout** (2026-07-27) — Native Harness registered in production DI; production-container resolution crash fixed; explicit production-container resolution regression test added; six-fact capability rows truthful; post-M3 baseline 682/350/332 types, 621/576 files preserved; M1 comparative-execution limitation retained; full fast suite 3244/3244 and serial suite 3244/3244; M5 not started |
 
 ---
 

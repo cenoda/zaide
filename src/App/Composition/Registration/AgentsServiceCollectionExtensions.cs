@@ -21,11 +21,24 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentContextSessionPolicyService>(Program.ResolveAgentContextSessionPolicyService);
         services.AddSingleton<AgentConversationEventProjection>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
-        services.AddSingleton<IAgentExecutionService, AgentExecutionService>();
+        services.AddSingleton<AgentExecutionService>();
+        services.AddSingleton<IAgentExecutionService>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return (AgentExecutionService)get(typeof(AgentExecutionService))!;
+        });
         services.AddSingleton<INativeHarnessProviderTransport, NativeHarnessProviderClient>();
         services.AddSingleton<INativeHarnessProviderOptionsSource, NativeHarnessProviderOptionsSource>();
         services.AddSingleton<INativeHarnessPriorConversationReader, NativeHarnessPriorConversationReader>();
-        services.AddSingleton<IAgentBackend, NativeHarnessAgentBackend>();
+        services.AddSingleton<IAgentBackend>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new NativeHarnessAgentBackend(
+                (INativeHarnessProviderOptionsSource)get(typeof(INativeHarnessProviderOptionsSource))!,
+                (INativeHarnessProviderTransport)get(typeof(INativeHarnessProviderTransport))!,
+                (INativeHarnessPriorConversationReader)get(typeof(INativeHarnessPriorConversationReader))!,
+                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)));
+        });
         services.AddSingleton<IAgentExecutionCoordinator>(Program.CreateAgentExecutionCoordinator);
         services.AddSingleton<MentionParser>();
         services.AddSingleton<IAgentRouter, AgentRouter>();

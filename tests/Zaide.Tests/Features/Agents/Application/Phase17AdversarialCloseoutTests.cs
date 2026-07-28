@@ -217,8 +217,9 @@ public sealed class Phase17AdversarialCloseoutTests : IDisposable
         var registrationSource = File.ReadAllText(Path.Combine(
             RepositoryRoot,
             "src/App/Composition/Registration/AgentsServiceCollectionExtensions.cs"));
-        Assert.Contains("LegacyOpenAiCompatibleAgentBackend", registrationSource, StringComparison.Ordinal);
-        Assert.Contains("IAgentExecutionService", registrationSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("LegacyOpenAiCompatibleAgentBackend", registrationSource, StringComparison.Ordinal);
+        Assert.Contains("NativeHarnessAgentBackend", registrationSource, StringComparison.Ordinal);
+        Assert.Contains("AgentExecutionService", registrationSource, StringComparison.Ordinal);
 
         Assert.True(typeof(LegacyOpenAiCompatibleAgentBackend).IsAssignableTo(typeof(IAgentBackend)));
         Assert.Contains(typeof(IAgentExecutionService), typeof(AgentExecutionService).GetInterfaces());

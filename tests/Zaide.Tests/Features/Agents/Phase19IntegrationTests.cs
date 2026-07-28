@@ -230,7 +230,7 @@ public sealed class Phase19IntegrationTests : IDisposable
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentBackend)
-                 && d.ImplementationType == typeof(NativeHarnessAgentBackend));
+                 && d.ImplementationFactory is not null);
         Assert.DoesNotContain(
             services,
             d => d.ImplementationType == typeof(LegacyOpenAiCompatibleAgentBackend));

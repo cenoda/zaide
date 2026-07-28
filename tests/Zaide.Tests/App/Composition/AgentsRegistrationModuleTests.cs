@@ -34,6 +34,7 @@ public sealed class AgentsRegistrationModuleTests
         typeof(IAgentContextSessionPolicyService).FullName!,
         typeof(AgentConversationEventProjection).FullName!,
         typeof(IAgentPanelHost).FullName!,
+        typeof(AgentExecutionService).FullName!,
         typeof(IAgentExecutionService).FullName!,
         typeof(INativeHarnessProviderTransport).FullName!,
         typeof(INativeHarnessProviderOptionsSource).FullName!,
@@ -94,7 +95,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(24, services.Count);
+        Assert.Equal(25, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -132,12 +133,16 @@ public sealed class AgentsRegistrationModuleTests
                 && d.ImplementationType == typeof(AgentPanelHost));
         Assert.Contains(
             services,
-            d => d.ServiceType == typeof(IAgentExecutionService)
+            d => d.ServiceType == typeof(AgentExecutionService)
                 && d.ImplementationType == typeof(AgentExecutionService));
         Assert.Contains(
             services,
+            d => d.ServiceType == typeof(IAgentExecutionService)
+                && d.ImplementationFactory is not null);
+        Assert.Contains(
+            services,
             d => d.ServiceType == typeof(IAgentBackend)
-                && d.ImplementationType == typeof(NativeHarnessAgentBackend));
+                && d.ImplementationFactory is not null);
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentExecutionCoordinator)
@@ -362,7 +367,11 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentExecutionService,\s*AgentExecutionService>\(\)"));
+                @"AddSingleton<AgentExecutionService>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentExecutionService>\s*\([\s\S]*?\)"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -378,7 +387,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentBackend,\s*NativeHarnessAgentBackend>\(\)"));
+                @"AddSingleton<IAgentBackend>\s*\([\s\S]*?\)"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -401,7 +410,29 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(24, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(25, Regex.Matches(moduleSource, @"AddSingleton").Count);
+    }
+
+    [Fact]
+    public void Program_ConfigureServices_ResolvesExecutionCoordinatorAndNativeHarnessDependenciesWithoutTestReplacementsOrNetwork()
+    {
+        using var provider = BuildProductionProvider();
+        var coordinator = provider.GetRequiredService<IAgentExecutionCoordinator>();
+        var backend = provider.GetRequiredService<IAgentBackend>();
+        var optionsSource = provider.GetRequiredService<INativeHarnessProviderOptionsSource>();
+        var executionService = provider.GetRequiredService<IAgentExecutionService>();
+        var concreteExecutionService = provider.GetRequiredService<AgentExecutionService>();
+        var priorReader = provider.GetRequiredService<INativeHarnessPriorConversationReader>();
+        var transport = provider.GetRequiredService<INativeHarnessProviderTransport>();
+
+        Assert.NotNull(coordinator);
+        Assert.IsType<NativeHarnessAgentBackend>(backend);
+        Assert.NotNull(optionsSource);
+        Assert.NotNull(executionService);
+        Assert.NotNull(concreteExecutionService);
+        Assert.Same(concreteExecutionService, executionService);
+        Assert.NotNull(priorReader);
+        Assert.NotNull(transport);
     }
 
 

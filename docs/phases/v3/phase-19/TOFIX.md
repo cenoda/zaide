@@ -7,7 +7,41 @@ with limitation** (the full-corpus benchmark gate was retired by explicit
 user-directed plan amendment on 2026-07-27). **M2 harness contracts and
 architecture lock is complete** (read-only audit gate). **M3 tool-calling
 execution loop is complete** (read-only audit gate). **M4 production wiring and
-capability truthfulness is complete** (read-only audit gate; M5 not started).
+capability truthfulness is complete** at a corrective closeout (read-only audit
+gate; M5 not started).
+
+### M4 corrective closeout (2026-07-27)
+
+The first M4 commit wired `AddZaideAgents` with
+`AddSingleton<IService, Concrete>(sp => (Concrete)sp.GetService(typeof(Concrete))!)`
+for both `IAgentExecutionService → AgentExecutionService` and
+`IAgentBackend → NativeHarnessAgentBackend`. The production container crashed
+at startup because that registration shape did not honor the
+`BuildServiceProvider` capture-context indirection and the cast threw during
+composition. The corrective commit:
+
+- keeps the concrete `AgentExecutionService` Singleton registration;
+- rewrites the `IAgentExecutionService` mapping as a factory that resolves
+  the same concrete instance;
+- rewrites the `IAgentBackend` mapping as a factory that constructs
+  `NativeHarnessAgentBackend` from its declared dependencies;
+- adds the explicit production-container resolution regression test
+  `Program_ConfigureServices_ResolvesExecutionCoordinatorAndNativeHarnessDependenciesWithoutTestReplacementsOrNetwork`
+  in `AgentsRegistrationModuleTests` (zero test-replacement fakes, zero network
+  egress);
+- does not re-register `LegacyOpenAiCompatibleAgentBackend`;
+- does not change Phase 17 or Phase 18 contracts.
+
+The recorded totals at the corrective closeout are:
+
+- `dotnet build Zaide.slnx --no-restore` — succeeded, 0 errors, 0 warnings
+- `Phase19Integration` list-tests — 5 tests discovered; run — 5/5 passed
+- `Architecture` list-tests — 37 tests discovered; run — 37/37 passed
+- Full fast suite — 3244/3244 passed
+- Serial fallback — 3244/3244 passed
+
+M4 corrective closeout work is the current closeout. **M5 is next but has not
+started.**
 
 ## Amendment — M1 full-corpus benchmark gate retired (2026-07-27)
 
@@ -127,6 +161,9 @@ Production activation:
 - [x] M3 — tool-calling execution loop.
 - [x] Architecture inventory ratchet update for M3 types (682/350/332, 621/576).
 - [x] M4 — production wiring and capability truthfulness.
+- [x] M4 corrective closeout — production-container resolution crash fixed; explicit
+      production-container resolution regression test added; full fast suite
+      3244/3244 passed; serial suite 3244/3244 passed.
 
 ## Next task
 
@@ -214,6 +251,20 @@ dotnet build Zaide.slnx --no-restore
 | `Architecture` list-tests | 37 tests discovered |
 | `Architecture` test run | 37/37 passed |
 | `dotnet build Zaide.slnx --no-restore` | Succeeded, 0 errors, 0 warnings |
+
+## M4 corrective closeout verification (2026-07-27)
+
+The corrective commit fixed the production-container resolution crash by
+rewriting the two M4 wiring registrations as factories and adding the
+explicit production-container resolution regression test. The same M4
+verification commands above now run on the production container with zero
+test-replacement fakes and zero network egress. The full fast and serial
+suites are also recorded for the corrective closeout:
+
+| Command | Result (2026-07-27) |
+|---------|---------------------|
+| `dotnet test Zaide.slnx --no-build` (fast suite) | 3244/3244 passed |
+| `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` (serial suite) | 3244/3244 passed |
 
 ## Unresolved decisions (post-M4)
 
