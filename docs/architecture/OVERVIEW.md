@@ -62,7 +62,7 @@ Phase 19 is complete, published, and closed. Publication is not pending. Phase
 complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
-`04831f1c`); M4 and later milestones are not started and not authorized. Phase 21
+`04831f1c`); **M4 action mediation is complete and published**; M5 and later milestones are not started and not authorized. Phase 21
 has not started.
 
 ---
@@ -184,7 +184,7 @@ governed by the root-admission detectors.
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
 | Phase 19 | **M0–M6 complete, published, and accepted** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; M6 published (`4b4e1914`, `ca896498`); Phase 19 final human acceptance: accepted |
-| Phase 20 | **M3 backend contract adapter complete and published** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`) — bounded process host, JSON-RPC lifecycle, fake-process transport tests, shutdown teardown, backend/session adapter, context mapping, event normalization, and capability truthfulness; M4+ not started or authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
+| Phase 20 | **M4 action mediation complete and published** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`, M3 at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`) — broker-mediated client filesystem actions and separate ACP permission boundary; M5+ not started or authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
 | Phase 21 | Not started |
 
 ---
@@ -394,4 +394,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-29 (Phase 20 M3 backend contract adapter complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`; M4+ not started and not authorized; Phase 21 not started)*
+*Last updated: 2026-07-29 (Phase 20 M4 action mediation complete and published; M5+ not started and not authorized; Phase 21 not started)*

@@ -42,10 +42,16 @@ internal sealed class AcpInboundClientRequestRouter
             AcpMethodNames.FsWriteTextFile when !_advertisedCapabilities.Fs.WriteTextFile =>
                 Task.FromResult(MethodNotFound(request.Id, "fs.writeTextFile capability is not advertised.")),
 
+            AcpMethodNames.FsReadTextFile or AcpMethodNames.FsWriteTextFile
+                when _advertisedCapabilities.Fs.ReadTextFile || _advertisedCapabilities.Fs.WriteTextFile =>
+                Task.FromResult(MethodNotFound(
+                    request.Id,
+                    "ACP filesystem handler is not configured.")),
+
             AcpMethodNames.SessionRequestPermission =>
                 Task.FromResult(MethodNotFound(
                     request.Id,
-                    "ACP permission requests are not handled in M1 protocol foundation.")),
+                    "ACP permission handler is not configured.")),
 
             _ => Task.FromResult(MethodNotFound(request.Id, "ACP client method is not supported.")),
         };

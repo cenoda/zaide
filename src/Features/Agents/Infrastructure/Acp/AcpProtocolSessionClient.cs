@@ -38,6 +38,11 @@ internal sealed class AcpProtocolSessionClient : IAcpSessionClient
     public Task CancelPromptAsync(string sessionId, CancellationToken cancellationToken) =>
         _session.CancelPromptAsync(sessionId, cancellationToken);
 
+    public void ConfigureActionBridge(
+        AcpInboundClientRequestHandler? inboundHandler,
+        AcpClientCapabilities advertisedCapabilities) =>
+        _session.ConfigureActionBridge(inboundHandler, advertisedCapabilities);
+
     public ValueTask DisposeAsync()
     {
         if (_disposed)

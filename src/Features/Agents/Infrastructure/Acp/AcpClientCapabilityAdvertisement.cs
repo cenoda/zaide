@@ -23,10 +23,15 @@ internal static class AcpClientCapabilityAdvertisement
         };
 
     public static AcpInitializeParams CreateInitializeParams(int protocolVersion) =>
+        CreateInitializeParams(protocolVersion, CreateM1Profile());
+
+    public static AcpInitializeParams CreateInitializeParams(
+        int protocolVersion,
+        AcpClientCapabilities clientCapabilities) =>
         new()
         {
             ProtocolVersion = protocolVersion,
-            ClientCapabilities = CreateM1Profile(),
+            ClientCapabilities = clientCapabilities,
             ClientInfo = new AcpImplementationInfo
             {
                 Name = "zaide",

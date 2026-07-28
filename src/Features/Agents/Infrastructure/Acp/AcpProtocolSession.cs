@@ -14,8 +14,8 @@ namespace Zaide.Features.Agents.Infrastructure.Acp;
 internal sealed class AcpProtocolSession : IAsyncDisposable
 {
     private readonly AcpProtocolConnection _connection;
-    private readonly AcpInboundClientRequestRouter _inboundRouter;
-    private readonly AcpClientCapabilities _advertisedCapabilities;
+    private AcpInboundClientRequestRouter _inboundRouter;
+    private AcpClientCapabilities _advertisedCapabilities;
     private AcpNegotiatedCapabilities? _negotiated;
     private string? _activeSessionId;
     private bool _disposed;
@@ -41,13 +41,26 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
 
     public void Start() => _connection.StartReading();
 
+    public void ConfigureActionBridge(
+        AcpInboundClientRequestHandler? inboundHandler,
+        AcpClientCapabilities advertisedCapabilities)
+    {
+        _advertisedCapabilities = advertisedCapabilities
+            ?? throw new ArgumentNullException(nameof(advertisedCapabilities));
+        _inboundRouter = new AcpInboundClientRequestRouter(_advertisedCapabilities);
+        _connection.SetInboundRequestHandler(
+            inboundHandler ?? _inboundRouter.HandleAsync);
+    }
+
     public async Task<AcpNegotiatedCapabilities> InitializeAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var response = await _connection.SendRequestAsync(
             AcpMethodNames.Initialize,
-            AcpClientCapabilityAdvertisement.CreateInitializeParams(AcpSchemaProfile.WireProtocolVersion),
+            AcpClientCapabilityAdvertisement.CreateInitializeParams(
+                AcpSchemaProfile.WireProtocolVersion,
+                _advertisedCapabilities),
             cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccess)

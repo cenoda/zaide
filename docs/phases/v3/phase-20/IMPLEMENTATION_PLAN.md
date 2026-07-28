@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-**Status:** M3 complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c` (depends on M2 at
-`880b4524c9c53190687aee0cc10843900191b8ce`). M4 and all later milestones are
+**Status:** M4 complete and published at _pending_ (depends on M3 at
+`2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`). M5 and all later milestones are
 not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
@@ -972,8 +972,24 @@ Stop and ask before continuing when any of these occurs:
 - [x] Focused `Phase20Backend` / `Phase20Context` / `Phase20Capabilities` tests and architecture ratchets pass.
 - [x] One reviewable M3 commit published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` to `origin/master`, with publication-record correction `04831f1c`.
 - [x] Working tree is clean and `HEAD == origin/master`.
-- [ ] M4 and later Phase 20 milestones remain not started and not authorized.
+- [ ] M5 and later Phase 20 milestones remain not started and not authorized.
 - [ ] Phase 19 remains complete, published, accepted, and closed.
+- [ ] Phase 21 has not started.
+
+### M4 exit
+
+- [x] `AcpActionCapableAgentBackend` implements `IAgentActionRequestCapableBackend` when the action bridge is active.
+- [x] Filesystem client capabilities advertised only after bridge availability.
+- [x] ACP read/create/replace mapped to typed `AgentActionPayload` values and routed through `IAgentActionBroker`.
+- [x] ACP `session/request_permission` kept separate from Zaide broker authorization.
+- [x] Stale-base revalidation immediately before `TryConsume()` preserved; stale proposals do not consume published decisions.
+- [x] `terminal/*` rejected; terminal remains unadvertised.
+- [x] Backend-reported tool activity remains distinct from broker-mediated filesystem work.
+- [x] `M4_ACTION_MEDIATION_EVIDENCE.md` recorded.
+- [x] Focused `Phase20ActionBridge` / `Phase20Permission` tests and architecture ratchets pass.
+- [ ] One reviewable M4 commit published to `origin/master`.
+- [ ] Working tree is clean and `HEAD == origin/master`.
+- [ ] M5 and later Phase 20 milestones remain not started and not authorized.
 - [ ] Phase 21 has not started.
 
 ### Phase exit after M6

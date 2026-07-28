@@ -81,8 +81,9 @@ limitation retained. [Phase
 **complete and published** at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`; **M2
 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
 publication record `6b197a8b`); **M3 backend contract adapter is complete and
-published**; M4 and later milestones are
-not started and not authorized. Phase 21 has not
+published** (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record
+correction `04831f1c`); **M4 action mediation is complete and published**; M5 and
+later milestones are not started and not authorized. Phase 21 has not
 started. See
 `docs/phases/v3/phase-19/TOFIX.md` and
 `docs/phases/v3/phase-20/TOFIX.md`.
@@ -339,7 +340,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 **M2 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
-`04831f1c`); M4 and later milestones are not started and not authorized. Phase 21
+`04831f1c`); **M4 action mediation is complete and published**; M5 and later milestones are not started and not authorized. Phase 21
 has not started.
 
 ## Why "Zaide"

@@ -167,7 +167,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
         Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 20 M3: +5 internal ACP backend adapter types under Application/Acp.
-        Assert.Equal((5, 0, 5), byNamespace["Zaide.Features.Agents.Application.Acp"]);
+        // Phase 20 M4: +15 internal ACP action bridge types under Application/Acp.
+        Assert.Equal((20, 0, 20), byNamespace["Zaide.Features.Agents.Application.Acp"]);
         // Phase 20 M1: +52 internal ACP protocol foundation types under Infrastructure/Acp.
         // Phase 20 M2: +13 internal ACP process lifecycle types under Infrastructure/Acp.
         // Phase 20 M3: +2 internal ACP backend adapter types under Infrastructure/Acp.
@@ -236,7 +237,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 606).
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
-        Assert.Equal(670, inventory.SourceFiles.Count);
+        // Phase 20 M4: +7 internal ACP action bridge production files.
+        Assert.Equal(677, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -267,7 +269,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +15 internal execution-loop production files (M2 baseline 561 Features).
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
-        Assert.Equal(625, byFolder["Features"]);
+        // Phase 20 M4: +7 internal ACP action bridge production files.
+        Assert.Equal(632, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

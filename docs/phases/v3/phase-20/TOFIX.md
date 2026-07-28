@@ -2,8 +2,7 @@
 
 ## Status
 
-**M3 complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`. M4 and all later Phase 20
-milestones are not started and not authorized. Phase 21 has not started.**
+**M4 complete and published at _pending_. M5 and all later Phase 20 milestones are not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -15,8 +14,20 @@ process hosting, JSON-RPC lifecycle ownership, deterministic fake-process
 transport tests, and `ApplicationShutdown` host teardown. M3 delivered the ACP
 backend/session adapter, Phase 18 manifest encoding, backend activity
 normalization, and six-fact capability mapping behind deterministic fake
-transport only. M4 owns broker-mediated client filesystem actions. M4 and all
-later Phase 20 milestones are not authorized. Phase 21 has not started.
+transport only. M4 delivered broker-mediated client filesystem actions, a
+separate ACP permission boundary, and `AcpActionCapableAgentBackend` behind
+deterministic fake transport only. M5 and all later Phase 20 milestones are not
+authorized. Phase 21 has not started.
+
+## M4 work board
+
+- [x] Add `AcpClientActionBridge`, `AcpClientPermissionBridge`, and `AcpActionCapableAgentBackend`.
+- [x] Add workspace absolute-path conversion and truthful filesystem capability profiles.
+- [x] Wire inbound handler/capability advertisement through `IAcpSessionClient`.
+- [x] Add `Phase20ActionBridge`, `Phase20Permission`, and action-bridge bypass tests.
+- [x] Add `M4_ACTION_MEDIATION_EVIDENCE.md` and architecture inventory ratchets.
+- [ ] Publish one reviewable M4 commit to `origin/master`.
+- [ ] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M3 work board
 
@@ -200,5 +211,5 @@ Publication commit `880b4524c9c53190687aee0cc10843900191b8ce` on `origin/master`
 
 ## Next task
 
-Stop at the read-only M3 audit gate. M4 and all later Phase 20 milestones are
-not authorized. Do not begin M4.
+Stop at the read-only M4 audit gate. M5 and all later Phase 20 milestones are
+not authorized. Do not begin M5.

@@ -33,6 +33,22 @@ internal sealed class AcpAgentSessionAdapter
         AgentCapabilitySnapshot currentSnapshot,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        await foreach (var backendEvent in ExecuteAsync(
+                           context,
+                           currentSnapshot,
+                           enableActionBridge: false,
+                           cancellationToken).ConfigureAwait(false))
+        {
+            yield return backendEvent;
+        }
+    }
+
+    public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
+        AgentBackendExecutionContext context,
+        AgentCapabilitySnapshot currentSnapshot,
+        bool enableActionBridge,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(context);
 
         List<AgentBackendEvent>? events = null;
@@ -45,6 +61,13 @@ internal sealed class AcpAgentSessionAdapter
             var capabilitySnapshot = currentSnapshot;
 
             client = await _clientFactory(cancellationToken).ConfigureAwait(false);
+            var bridgeEnabled = enableActionBridge && context.Actions is not UnavailableAgentActionBroker;
+            client.ConfigureActionBridge(
+                null,
+                bridgeEnabled
+                    ? AcpClientCapabilityProfiles.CreateWithFilesystemBridge()
+                    : AcpClientCapabilityProfiles.CreateWithoutFilesystemBridge());
+
             var negotiated = await client.InitializeAsync(cancellationToken).ConfigureAwait(false);
             var binding = GetOrCreateBinding(context.Request.SessionId, negotiated);
             VerifyAgentIdentity(binding, negotiated);
@@ -61,6 +84,15 @@ internal sealed class AcpAgentSessionAdapter
                 var acpSessionId = await client.CreateSessionAsync(workingDirectory, cancellationToken)
                     .ConfigureAwait(false);
                 binding.AcpSessionId = acpSessionId;
+            }
+
+            if (bridgeEnabled)
+            {
+                var bridge = new AcpClientActionBridge(
+                    context.Actions,
+                    _workingDirectoryProvider(),
+                    binding.AcpSessionId!);
+                ConfigureClientForBridge(client, bridge);
             }
 
             var prompt = AcpContextManifestEncoder.BuildPrompt(
@@ -237,4 +269,11 @@ internal sealed class AcpAgentSessionAdapter
             AgentBackendEventKind.FailureObserved,
             DateTimeOffset.UtcNow,
             new AgentBackendFailurePayload(failureKind, reason));
+
+    private static void ConfigureClientForBridge(IAcpSessionClient client, AcpClientActionBridge bridge)
+    {
+        var capabilities = AcpClientCapabilityProfiles.CreateWithFilesystemBridge();
+        var fallbackRouter = new AcpInboundClientRequestRouter(capabilities);
+        client.ConfigureActionBridge(bridge.CreateInboundHandler(fallbackRouter), capabilities);
+    }
 }

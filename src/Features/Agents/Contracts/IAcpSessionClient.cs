@@ -25,4 +25,8 @@ internal interface IAcpSessionClient : IAsyncDisposable
         CancellationToken cancellationToken);
 
     Task CancelPromptAsync(string sessionId, CancellationToken cancellationToken);
+
+    void ConfigureActionBridge(
+        AcpInboundClientRequestHandler? inboundHandler,
+        AcpClientCapabilities advertisedCapabilities);
 }

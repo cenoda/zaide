@@ -16,11 +16,15 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
     private readonly AcpFakeSessionScript _script;
     private AcpNegotiatedCapabilities? _negotiated;
     private string? _activeSessionId;
+    private AcpInboundClientRequestHandler? _inboundHandler;
+    private AcpClientCapabilities _advertisedCapabilities = AcpClientCapabilityAdvertisement.CreateM1Profile();
 
     public AcpFakeSessionClient(AcpFakeSessionScript script)
     {
         _script = script ?? throw new ArgumentNullException(nameof(script));
     }
+
+    public AcpClientCapabilities AdvertisedCapabilities => _advertisedCapabilities;
 
     public AcpNegotiatedCapabilities? NegotiatedCapabilities => _negotiated;
 
@@ -53,6 +57,18 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         }
 
         _script.CapturePrompt?.Invoke(prompt);
+
+        foreach (var inbound in _script.InboundRequestsDuringPrompt)
+        {
+            if (_inboundHandler is null)
+            {
+                throw new AcpProtocolException("ACP inbound handler is not configured.");
+            }
+
+            var response = _inboundHandler(inbound.Request, cancellationToken).GetAwaiter().GetResult();
+            inbound.ResponseCallback?.Invoke(response);
+        }
+
         return Task.FromResult(_script.CreatePromptTurnResult());
     }
 
@@ -60,6 +76,15 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
     {
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
+    }
+
+    public void ConfigureActionBridge(
+        AcpInboundClientRequestHandler? inboundHandler,
+        AcpClientCapabilities advertisedCapabilities)
+    {
+        _inboundHandler = inboundHandler;
+        _advertisedCapabilities = advertisedCapabilities
+            ?? throw new ArgumentNullException(nameof(advertisedCapabilities));
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -81,6 +106,9 @@ internal sealed class AcpFakeSessionScript
 
     public Action<IReadOnlyList<AcpContentBlock>>? CapturePrompt { get; init; }
 
+    public IReadOnlyList<AcpFakeInboundRequest> InboundRequestsDuringPrompt { get; init; } =
+        Array.Empty<AcpFakeInboundRequest>();
+
     public AcpNegotiatedCapabilities CreateNegotiatedCapabilities() =>
         new(
             AcpSchemaProfile.WireProtocolVersion,
@@ -100,4 +128,11 @@ internal sealed class AcpFakeSessionScript
 
     public AcpPromptTurnResult CreatePromptTurnResult() =>
         new(StopReason, Updates, AgentMessageText);
+}
+
+internal sealed class AcpFakeInboundRequest
+{
+    public AcpJsonRpcRequest Request { get; init; } = new();
+
+    public Action<AcpJsonRpcResponse>? ResponseCallback { get; init; }
 }
