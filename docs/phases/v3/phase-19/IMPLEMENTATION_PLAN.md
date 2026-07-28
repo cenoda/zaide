@@ -10,9 +10,9 @@ complete** (read-only audit gate). **M3 tool-calling execution loop is complete*
 (read-only audit gate). **M4 production wiring and capability truthfulness is
 complete** (read-only audit gate). **M5 Townhall structured activity projection is
 complete** (read-only audit gate). **M6 adversarial closeout is complete and
-published** (commits `4b4e1914`, `ca896498`). **Final explicit human
-acceptance is pending.** Publication is not pending. No Phase 20 or Phase 21
-work has started.
+published** (commits `4b4e1914`, `ca896498`). **Phase 19 final human
+acceptance: accepted.** Phase 19 is complete, published, and closed.
+Publication is not pending. No Phase 20 or Phase 21 work has started.
 
 **M4 corrective closeout (2026-07-27):** The original M4 wiring used the
 `AddSingleton<IService, Concrete>(sp => (Concrete)sp.GetService(typeof(Concrete))!)`
@@ -1114,8 +1114,8 @@ dotnet test Zaide.slnx --no-build \
 ### Scope guard
 
 M5 is complete at a read-only audit gate. M6 adversarial closeout is complete
-and published (commits `4b4e1914`, `ca896498`); final explicit human
-acceptance is pending.
+and published (commits `4b4e1914`, `ca896498`); Phase 19 final human
+acceptance is accepted.
 
 ---
 

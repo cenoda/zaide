@@ -74,9 +74,10 @@ is complete**; **M3 tool-calling execution loop is complete**; **M4 production
 wiring and capability truthfulness is complete** (read-only audit gate); **M5
 Townhall structured activity projection is complete** (read-only audit gate); **M6
 adversarial closeout is complete and published** (commits `4b4e1914`,
-`ca896498`; final explicit human acceptance pending; publication is not pending;
-M1 comparative-execution limitation retained; no Phase 20 or Phase 21 work has
-started; see `docs/phases/v3/phase-19/TOFIX.md`).
+`ca896498`); Phase 19 final human acceptance: accepted. Phase 19 is complete,
+published, and closed. Publication is not pending. M1 comparative-execution
+limitation retained. No Phase 20 or Phase 21 work has started. See
+`docs/phases/v3/phase-19/TOFIX.md`.
 
 ## Philosophy
 
@@ -321,8 +322,9 @@ accepted on 2026-07-27; M1 research/provenance is complete with limitation
 **M3 complete**; **M4 production wiring and capability truthfulness complete**
 (M4 corrective closeout); **M5 Townhall structured activity projection
 complete** (read-only audit gate); **M6 adversarial closeout complete and
-published** (commits `4b4e1914`, `ca896498`; final explicit human acceptance
-pending; no Phase 20 or Phase 21 work has started).
+published** (commits `4b4e1914`, `ca896498`). Phase 19 final human acceptance:
+accepted. Phase 19 is complete, published, and closed. No Phase 20 or Phase 21
+work has started.
 
 ## Why "Zaide"
 
