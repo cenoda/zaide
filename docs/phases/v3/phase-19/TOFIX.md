@@ -9,8 +9,28 @@ architecture lock is complete** (read-only audit gate). **M3 tool-calling
 execution loop is complete** (read-only audit gate). **M4 production wiring and
 capability truthfulness is complete** at a corrective closeout (read-only audit
 gate). **M5 Townhall structured activity projection is complete** (read-only
-audit gate). **M6 adversarial closeout is complete** (read-only acceptance gate
-pending user publication).
+audit gate). **M6 adversarial closeout is complete** (read-only acceptance gate).
+
+### M6 corrective closeout publication (2026-07-28)
+
+Commit `4b4e1914` (`fix(phase-19): close M6 test lifecycle leak`) is published
+on `origin/master`. The corrective change tracks and disposes `SettingsService`
+instances before temporary-directory cleanup, resolving the full-suite hang
+caused by accumulated undisposed `LongRunning` background writer tasks.
+
+Post-push verification confirmed:
+- `HEAD == origin/master`
+- Clean working tree; no unrelated production, test, or tool changes
+- `dotnet build Zaide.slnx --no-restore` — 0 errors, 0 warnings
+- `Phase19Adversarial` — 40 discovered, 40/40 passed
+- `Phase19Integration` — 5 discovered, 5/5 passed
+- `Phase19TownhallProjection` — 4 discovered, 4/4 passed
+- `Architecture` — 41 discovered, 41/41 passed
+- Full fast suite — 3292/3292 passed
+- Full serial suite — 3292/3292 passed
+- No Phase 20 or Phase 21 files exist
+
+**Phase 19 is published and ready for explicit human final acceptance.**
 
 ### M4 corrective closeout (2026-07-27)
 
@@ -177,9 +197,8 @@ Production activation:
 
 ## Next task
 
-M6 adversarial closeout is complete at a read-only acceptance gate. **Phase 19
-final status is pending user acceptance/publication.** Do not start Phase 20,
-Phase 21, or post-Phase-19 work until acceptance.
+**Phase 19 is published and ready for explicit human final acceptance.**
+Do not start Phase 20, Phase 21, or post-Phase-19 work until acceptance.
 
 ## M2 acceptance and publication
 
@@ -399,7 +418,7 @@ No tests were removed, weakened, or skipped. No parallelism was disabled.
 | Serial fallback | 3292/3292 passed (49 s) |
 
 All M2-owned open decisions are resolved in `M2_ARCHITECTURE_LOCK.md`. Phase 19
-closeout work is complete pending user acceptance/publication.
+is published and ready for explicit human final acceptance.
 
 ## M1 authorization (2026-07-27)
 
