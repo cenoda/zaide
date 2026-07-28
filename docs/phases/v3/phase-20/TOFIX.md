@@ -2,7 +2,8 @@
 
 ## Status
 
-**M2 complete and published. M3 and all later Phase 20 milestones are not started and not authorized. Phase 21
+**M2 complete and published at `880b4524c9c53190687aee0cc10843900191b8ce`. M3
+and all later Phase 20 milestones are not started and not authorized. Phase 21
 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
@@ -25,7 +26,8 @@ has not started.
 - [x] Add `Phase20Transport` / `Phase20ProcessLifecycle` tests and architecture inventory ratchets.
 - [x] Add `M2_PROCESS_LIFECYCLE_EVIDENCE.md`.
 - [x] Wire `ApplicationShutdown` to `AcpProcessHostShutdownRegistry.ShutdownAll()`.
-- [x] Publish one reviewable M2 commit to `origin/master`.
+- [x] Publish one reviewable M2 commit to `origin/master` at
+      `880b4524c9c53190687aee0cc10843900191b8ce`.
 - [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M1 work board
@@ -176,7 +178,7 @@ Publication commit `314076ebc8dcf2c9910baecc5ef96c461910cb1b` on `origin/master`
 
 ## M2 verification evidence
 
-Publication commit pending post-push record.
+Publication commit `880b4524c9c53190687aee0cc10843900191b8ce` on `origin/master`:
 
 - `git diff --cached --check`: passed with no output at publication time.
 - `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.

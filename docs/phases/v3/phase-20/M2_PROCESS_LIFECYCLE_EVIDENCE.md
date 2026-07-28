@@ -5,6 +5,7 @@
 | Item | Value |
 |------|-------|
 | Milestone | M2 — bounded stdio process and JSON-RPC lifecycle |
+| Published commit | `880b4524c9c53190687aee0cc10843900191b8ce` |
 | Depends on | M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b` |
 | Production surfaces | `src/Features/Agents/Infrastructure/Acp/` process host, bounded stdio, lifecycle exceptions; `src/Features/Agents/Contracts/` launch abstractions; `src/App/Composition/ApplicationShutdown.cs` shutdown hook |
 | Test surfaces | `tests/Zaide.Tests/Features/Agents/Acp/Transport/` |

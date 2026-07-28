@@ -2,7 +2,8 @@
 
 ## Status and authorization
 
-**Status:** M2 complete and published. M3 and all later milestones are
+**Status:** M2 complete and published at
+`880b4524c9c53190687aee0cc10843900191b8ce`. M3 and all later milestones are
 not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
@@ -953,7 +954,8 @@ Stop and ask before continuing when any of these occurs:
 - [x] Deterministic repository-owned fake child-process fixture and `M2_PROCESS_LIFECYCLE_EVIDENCE.md` recorded.
 - [x] Focused `Phase20Transport` / `Phase20ProcessLifecycle` tests and architecture inventory ratchets pass.
 - [x] No production DI, real ACP candidate, broker bridge, Townhall/UI, authentication, network provider execution, Native Harness reference, automatic restart, or M3+ surfaces.
-- [x] One reviewable M2 commit published to `origin/master`.
+- [x] One reviewable M2 commit published to `origin/master` at
+      `880b4524c9c53190687aee0cc10843900191b8ce`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [x] M3 and later Phase 20 milestones remain not started and not authorized.
 - [x] Phase 19 remains complete, published, accepted, and closed.
