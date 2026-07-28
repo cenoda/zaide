@@ -5,7 +5,7 @@
 | Item | Value |
 |------|-------|
 | Milestone | M3 — ACP backend/session adapter, context mapping, event normalization, and six-fact capability mapping |
-| Published commit | `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01` |
+| Published commit | `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` |
 | Depends on | M2 at `880b4524c9c53190687aee0cc10843900191b8ce` |
 | Production surfaces | `src/Features/Agents/Application/Acp/`, `src/Features/Agents/Infrastructure/Acp/AcpAgentBackend.cs`, additive Agents Domain activity/capability types, narrowly additive `AgentSessionService` backend-activity normalization |
 | Test surfaces | `tests/Zaide.Tests/Features/Agents/Acp/Backend/`, Phase 20 context/capability/backend tests, Phase 18 context-bypass ratchet extension |

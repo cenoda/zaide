@@ -2,7 +2,7 @@
 
 ## Status
 
-**M3 complete and published at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01`. M4 and all later Phase 20
+**M3 complete and published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6`. M4 and all later Phase 20
 milestones are not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
@@ -26,7 +26,7 @@ later Phase 20 milestones are not authorized. Phase 21 has not started.
 - [x] Add `AcpFakeSessionClient` deterministic fake transport tests.
 - [x] Add `Phase20Backend`, `Phase20Context`, and `Phase20Capabilities` tests.
 - [x] Add `M3_BACKEND_CONTRACT_EVIDENCE.md` and architecture/context bypass ratchets.
-- [x] Publish one reviewable M3 commit to `origin/master` at `e9f6d5ff78c348c77eb00dc5edd24c0f25ca9b01`.
+- [x] Publish one reviewable M3 commit to `origin/master` at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6`.
 - [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M2 work board
