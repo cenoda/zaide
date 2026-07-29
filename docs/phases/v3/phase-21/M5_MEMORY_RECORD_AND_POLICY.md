@@ -3,7 +3,7 @@
 **Milestone:** M5 — durable scoped memory records
 **Depends on:** M1 published at `4db83202`
 **Status:** Complete; published; verification gates pass with zero failures.
-**Published commit:** `9f779fc0` (`feat(phase-21): establish M5 durable scoped memory records`)
+**Published commit:** `59f2050c` (`feat(phase-21): establish M5 durable scoped memory records`)
 
 M5 stores user-controllable derived knowledge at explicit Session, Agent,
 Conversation, or Project/Shared scope without automatically injecting it into

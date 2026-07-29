@@ -6,7 +6,7 @@
 **M2 is complete and published at `f75de2344ee57fdd59f771c7e17c9059edffcca1`.**
 **M3 is complete and published at `ae920091eb931eba2f0e43be086cab7f7fecff6d`.**
 **M4 is complete and published at `4b2af9f341df21cea11c99787a2de95b7be0e7f7`.**
-**M5 is complete and published at `9f779fc0`.**
+**M5 is complete and published at `59f2050c`.**
 **M6–M7 are not started and not authorized.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
