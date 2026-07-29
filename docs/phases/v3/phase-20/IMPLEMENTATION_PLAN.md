@@ -1044,4 +1044,6 @@ authorization. *(Historical M0 evidence; M1 is complete and published at
 `880b4524c9c53190687aee0cc10843900191b8ce` with publication record
 `6b197a8b`; M3 complete and published at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
-`04831f1c`. M4 and all later milestones are not started.)*
+`04831f1c`; M4 complete and published at
+`63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction
+`51ee2691`. M5 and all later milestones are not started.)*
