@@ -10,7 +10,7 @@
 **M5 final evidence/hash correction at `04aa3692ca00879e67bf2cf16de0d26d45cbcf01`.**
 **M6 is complete and published at `928a17c801f664bd43896d10cff2cde2ed968934`.**
 **M6 publication-record correction at `85af80d3f89fa25288f5282654da6267bdba9e3a`.**
-**M7 is in progress: the M7 closeout commit, `M7_CLOSEOUT_EVIDENCE.md`, and the corrected expectations in three M0/M6f-era test files are staged but uncommitted. M7 publication hash and any subsequent documentation correction commit are recorded in `M7_CLOSEOUT_EVIDENCE.md` after publication.**
+**M7 is complete and published at `4ec4f31febfb963e5373d72b749519c788d319cf` (`docs(phase-21): establish M7 adversarial and release closeout`).**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
 independent ACP sibling backend, not a Native Harness wrapper or fallback.

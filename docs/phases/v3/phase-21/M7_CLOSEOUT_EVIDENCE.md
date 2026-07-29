@@ -5,7 +5,7 @@
 | Item | Value |
 |------|-------|
 | Milestone | M7 — adversarial coverage and final Phase 21 verification |
-| Published commit | The M7 closeout commit recorded in `IMPLEMENTATION_PLAN.md` and `TOFIX.md`; publication-record correction commit (if any) recorded alongside it |
+| Published commit | `4ec4f31febfb963e5373d72b749519c788d319cf` (`docs(phase-21): establish M7 adversarial and release closeout`) |
 | Depends on | M1–M6 published; M6 at `928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a` |
 | Production surfaces | None (M1–M6 surfaces only) |
 | Test surfaces | `tests/Zaide.Tests/Features/Agents/Transparency/Phase21AdversarialTests.cs`, the three M0/M6f test files whose stale expectations were corrected against the current M5/M6 contracts (`Phase18ContextAssemblyTests`, `AgentsRegistrationModuleTests`, `LegacyOpenAiCompatibleAgentBackendTests`), existing M1–M6 regression suites, architecture/bypass ratchets |
