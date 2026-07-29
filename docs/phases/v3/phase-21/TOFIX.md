@@ -3,7 +3,7 @@
 ## Status
 
 **M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`.**
-**M2 is complete and pending publication; M3 and all later milestones are not
+**M2 is complete and published; M3 and all later milestones are not
 started.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
@@ -65,12 +65,12 @@ M3+ product behavior.
 
 ## M2 publication gate
 
-1. Stage exact M2 files.
-2. Run required build/test gates.
-3. Publish one reviewable commit for M2.
-4. Verify clean synchronized post-push state and post-push audit.
-5. Confirm M3–M7 remain not started and not authorized.
-6. Stop at the read-only M2 post-push audit gate.
+1. [x] Stage exact M2 files.
+2. [x] Run required build/test gates.
+3. [x] Publish one reviewable commit for M2.
+4. [x] Verify clean synchronized post-push state and post-push audit.
+5. [x] Confirm M3–M7 remain not started and not authorized.
+6. [x] Stop at the read-only M2 post-push audit gate.
 
 ## Locked M1 boundaries
 

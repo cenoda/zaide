@@ -2,7 +2,10 @@
 
 **Milestone:** M2 — Mandatory-redaction trace capture and bounded inspection
 **Depends on:** M1 published at `4db83202` (`feat(phase-21): establish M1 durable record storage foundation`)
-**Status:** Implementation complete; verification gates pass with zero failures.
+**Status:** Complete; published; verification gates pass with zero failures.
+**Published commit:** M2 commit published to `origin/master`; the
+post-push audit gate records the new commit hash and confirms a clean
+synchronized tree.
 
 M2 captures and inspects the deepest truthful backend-exposed trace layer
 only after mandatory redaction, bounded admission, and explicit
