@@ -10,7 +10,7 @@
 **Implementation commit:** `29bfb296` (`feat(phase-21): establish M3 usage and cost evidence ledger`)
 **Fixup commit:** `c1810872` (`fix(phase-21): add missing imports for M3 usage ledger`)
 **Publication commit:** `ae920091eb931eba2f0e43be086cab7f7fecff6d` (`docs(phase-21): mark M3 publication gate complete`)
-**M4 is complete and published at `3a415790e984fc50fc705cb0f9a77552470d3f4b`.**
+**M4 is complete and published at `4b2af9f341df21cea11c99787a2de95b7be0e7f7`.**
 **M5–M7 are not started and not authorized.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
