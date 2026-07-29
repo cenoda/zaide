@@ -32,8 +32,6 @@ internal sealed class AgentTraceInspector : IAgentTraceInspector
 
     public AgentTraceInspectionSummary GetSummary(AgentDurableWorkspaceStorageKey workspaceKey)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
-
         var records = ReplayAll(workspaceKey);
         if (records.Count == 0)
         {
@@ -91,8 +89,6 @@ internal sealed class AgentTraceInspector : IAgentTraceInspector
         long afterOrderingSequence,
         int maxRecords)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
-
         if (maxRecords <= 0)
         {
             return Array.Empty<AgentTraceRecord>();

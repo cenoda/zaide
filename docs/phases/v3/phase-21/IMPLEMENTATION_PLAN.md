@@ -2,17 +2,23 @@
 
 ## Status and authorization
 
-**Status:** M1 complete and published. M2 and every later milestone are not
-started and are not authorized.
+**Status:** M1 complete and published. M2 complete and published. M3 and every
+later milestone are not started and are not authorized.
 
-**Authorized work through M1:** Backend-neutral durable record/storage
-foundation, M1 evidence documents, focused tests, and architecture ratchets on
-the approved surfaces only.
+**Authorized work through M2:** Backend-neutral durable record/storage
+foundation, mandatory-redaction trace capture and bounded inspection lifecycle,
+M1/M2 evidence documents, focused tests, and architecture ratchets on the
+approved surfaces only.
 
-**Production authorization:** M1 storage foundation only. M1 does not
-authorize trace capture, usage/cost UI, session recovery product behavior,
-memory retrieval/injection, credentials, paid services, or Phase 16
-evaluation activity.
+**Production authorization:** M1 storage foundation and M2 trace redaction
+evidence capture only. M1 does not authorize trace capture, usage/cost UI,
+session recovery product behavior, memory retrieval/injection, credentials,
+paid services, or Phase 16 evaluation activity. M2 does not authorize usage/
+cost UI, session recovery, memory retrieval/injection, or any M3+ product
+behavior.
+
+**Next gate:** M2 review and acceptance. M3+ trace/usage/recovery/memory work
+remains unauthorized.
 
 ### M0 repository baseline
 

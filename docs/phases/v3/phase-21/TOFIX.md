@@ -3,8 +3,10 @@
 ## Status
 
 **M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`.**
-**M2 is complete and published; M3 and all later milestones are not
-started.**
+**M2 is complete and published.**
+**Implementation commit:** `f75de2344ee57fdd59f771c7e17c9059edffcca1`
+**Publication/hash-correction commit:** `474a15b015649d50aa95ae30223a56bcb1bba3e6`
+**M3–M7 are not started and not authorized.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
 independent ACP sibling backend, not a Native Harness wrapper or fallback.
@@ -111,5 +113,5 @@ M3+ product behavior.
 
 ## Next task
 
-Stop for review/acceptance of M2. Do not begin M3 or any later milestone
-without separate authorization.
+M2 review and acceptance. M3+ trace/usage/recovery/memory work remains
+unauthorized. Do not begin M3 without separate authorization.
