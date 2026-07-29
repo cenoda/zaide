@@ -2,13 +2,13 @@
 
 ## Status and authorization
 
-**Status:** M1, M2, M3, M4, M5, M6, and M7 are complete and published. M6 is published at `928a17c801f664bd43896d10cff2cde2ed968934` with publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`. M7 is published at `4ec4f31febfb963e5373d72b749519c788d319cf` (`docs(phase-21): establish M7 adversarial and release closeout`).
+**Status:** M0–M7 complete, published, and accepted. Final closeout recorded in `docs(phase-21): accept final closeout`. External candidate/provider smoke remains not executed (separate authorization not provided). Phase 22 remains not started and not authorized.
 
-**Authorized work through M7:** Session continuity, explicit termination, durable scoped memory records, budgeted memory retrieval/influence attribution, integrated management, and adversarial closeout are complete; M7 added no new product behavior. Final human acceptance remains a separate gate.
+**Authorized work through M7:** Session continuity, explicit termination, durable scoped memory records, budgeted memory retrieval/influence attribution, integrated management, and adversarial closeout are complete; M7 added no new product behavior. Phase 21 is complete, published, and closed.
 
 **Production authorization:** extends through M7 only.
 
-**Next gate:** Phase 21 final human acceptance remains a separate gate. Phase 22 remains not started and not authorized.
+**Next gate:** Phase 22 remains not started and not authorized.
 
 ### M0 repository baseline
 

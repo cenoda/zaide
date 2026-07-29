@@ -155,5 +155,6 @@ git diff --check
 ## Stop boundary
 
 M7 implementation and automated verification are complete at publish.
-**Phase 21 final human acceptance remains a separate gate.** Phase 22 has
-not started and is not authorized.
+**Phase 21 final human acceptance: accepted** (recorded in
+`docs(phase-21): accept final closeout`). Phase 21 is complete, published,
+and closed. Phase 22 has not started and is not authorized.
