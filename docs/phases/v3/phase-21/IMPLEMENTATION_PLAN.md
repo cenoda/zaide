@@ -2,23 +2,26 @@
 
 ## Status and authorization
 
-**Status:** M1 complete and published. M2 complete and published. M3 and every
-later milestone are not started and are not authorized.
+**Status:** M1, M2, and M3 are complete and published. M4 and every later
+milestone are not started and are not authorized.
 
-**Authorized work through M2:** Backend-neutral durable record/storage
+**Authorized work through M3:** Backend-neutral durable record/storage
 foundation, mandatory-redaction trace capture and bounded inspection lifecycle,
-M1/M2 evidence documents, focused tests, and architecture ratchets on the
+usage and cost evidence ledger with provenance and truthful origin distinctions,
+M1–M3 evidence documents, focused tests, and architecture ratchets on the
 approved surfaces only.
 
-**Production authorization:** M1 storage foundation and M2 trace redaction
-evidence capture only. M1 does not authorize trace capture, usage/cost UI,
-session recovery product behavior, memory retrieval/injection, credentials,
-paid services, or Phase 16 evaluation activity. M2 does not authorize usage/
-cost UI, session recovery, memory retrieval/injection, or any M3+ product
-behavior.
+**Production authorization:** M1 storage foundation, M2 trace redaction
+evidence capture, and M3 usage/cost evidence ledger only. M1 does not authorize
+trace capture, usage/cost UI, session recovery product behavior, memory
+retrieval/injection, credentials, paid services, or Phase 16 evaluation activity.
+M2 does not authorize usage/cost UI, session recovery, memory retrieval/injection,
+or any M3+ product behavior. M3 usage/cost evidence is authorized and complete;
+M3 does not authorize session recovery, memory retrieval/injection, or any M4+
+product behavior.
 
-**Next gate:** M2 review and acceptance. M3+ trace/usage/recovery/memory work
-remains unauthorized.
+**Next gate:** M3 review and acceptance. M4+ session recovery/termination/memory
+work remains unauthorized.
 
 ### M0 repository baseline
 
@@ -985,7 +988,8 @@ after M7:
 
 ---
 
-## M1 next gate
+## M3 next gate
 
-M1 is published. Stop for review/acceptance. Do not begin M2 or create any
-trace/usage/recovery/memory product behavior without separate M2+ authorization.
+M3 is published. Stop for review/acceptance. Do not begin M4 or create any
+session recovery, memory, or integrated management behavior without separate
+M4+ authorization.

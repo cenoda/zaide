@@ -3,6 +3,9 @@
 **Milestone:** M3 — Usage and cost evidence ledger
 **Depends on:** M1 published at `4db83202` (`feat(phase-21): establish M1 durable record storage foundation`)
 **Status:** Complete; published; verification gates pass with zero failures.
+**Published commit (implementation):** `29bfb296` (`feat(phase-21): establish M3 usage and cost evidence ledger`)
+**Published commit (fixup):** `c1810872` (`fix(phase-21): add missing imports for M3 usage ledger`)
+**Published commit (final publication):** `ae920091eb931eba2f0e43be086cab7f7fecff6d` (`docs(phase-21): mark M3 publication gate complete`)
 
 M3 preserves and presents truthful usage/cost evidence without converting
 missing or backend-reported data into false billing certainty. The usage
