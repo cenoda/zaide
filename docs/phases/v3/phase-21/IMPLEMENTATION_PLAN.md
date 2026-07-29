@@ -2,26 +2,13 @@
 
 ## Status and authorization
 
-**Status:** M1, M2, and M3 are complete and published. M4 and every later
-milestone are not started and are not authorized.
+**Status:** M1, M2, M3, and M4 are complete and published; M5–M7 are not started and not authorized.
 
-**Authorized work through M3:** Backend-neutral durable record/storage
-foundation, mandatory-redaction trace capture and bounded inspection lifecycle,
-usage and cost evidence ledger with provenance and truthful origin distinctions,
-M1–M3 evidence documents, focused tests, and architecture ratchets on the
-approved surfaces only.
+**Authorized work through M4:** Session continuity and explicit termination are complete; memory and later integrated-management work remain unauthorized.
 
-**Production authorization:** M1 storage foundation, M2 trace redaction
-evidence capture, and M3 usage/cost evidence ledger only. M1 does not authorize
-trace capture, usage/cost UI, session recovery product behavior, memory
-retrieval/injection, credentials, paid services, or Phase 16 evaluation activity.
-M2 does not authorize usage/cost UI, session recovery, memory retrieval/injection,
-or any M3+ product behavior. M3 usage/cost evidence is authorized and complete;
-M3 does not authorize session recovery, memory retrieval/injection, or any M4+
-product behavior.
+**Production authorization:** extends through M4 only.
 
-**Next gate:** M3 review and acceptance. M4+ session recovery/termination/memory
-work remains unauthorized.
+**Next gate:** M4 review/acceptance; M5–M7 remain not started and not authorized.
 
 ### M0 repository baseline
 

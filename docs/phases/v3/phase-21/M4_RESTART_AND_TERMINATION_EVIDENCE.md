@@ -3,7 +3,9 @@
 **Milestone:** M4 — session continuity and explicit termination
 **Depends on:** M1 `SessionRecovery` record class; M2/M3 optional evidence references
 **Status:** Complete; published; verification gates pass with zero failures.
-**Published commit (implementation):** `4b2af9f341df21cea11c99787a2de95b7be0e7f7` (`feat(phase-21): establish M4 session continuity and explicit termination`)
+**Implementation commit:** `4b2af9f341df21cea11c99787a2de95b7be0e7f7` (`feat(phase-21): establish M4 session continuity and explicit termination`)
+**Publication commit:** `3cb3428bb66f3be3746936cde401a71039afba06` (`docs(phase-21): mark M4 publication gate complete`)
+**Final evidence correction commit:** `f54d1b6e61c4f810b7b72fcdecb0d70058fc96bb` (`docs(phase-21): remove stale M4 publication hash from evidence`)
 
 ---
 

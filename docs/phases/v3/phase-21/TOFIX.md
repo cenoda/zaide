@@ -5,7 +5,8 @@
 **M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`.**
 **M2 is complete and published.**
 **Implementation commit:** `f75de2344ee57fdd59f771c7e17c9059edffcca1`
-**Publication/hash-correction commit:** `474a15b015649d50aa95ae30223a56bcb1bba3e6`
+**Publication commit:** `3cb3428bb66f3be3746936cde401a71039afba06` (`docs(phase-21): mark M4 publication gate complete`)
+**Final evidence correction commit:** `f54d1b6e61c4f810b7b72fcdecb0d70058fc96bb` (`docs(phase-21): remove stale M4 publication hash from evidence`)
 **M3 is complete and published.**
 **Implementation commit:** `29bfb296` (`feat(phase-21): establish M3 usage and cost evidence ledger`)
 **Fixup commit:** `c1810872` (`fix(phase-21): add missing imports for M3 usage ledger`)

@@ -2,7 +2,7 @@
 
 **Milestone:** M4 — session continuity and explicit termination
 **Depends on:** M1 published at `4db83202`; M2/M3 record contracts where recovery evidence references trace or usage
-**Status:** Complete pending publication gate
+**Status:** Complete; published; verification gates pass with zero failures
 
 M4 reconciles interrupted sessions after restart and offers explicit recovery
 only when current evidence and capabilities make it safe; otherwise it offers
