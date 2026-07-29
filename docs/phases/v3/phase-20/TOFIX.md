@@ -2,7 +2,7 @@
 
 ## Status
 
-**M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4`. M6 is not started and not authorized. Phase 21 has not started.**
+**M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`. M6 is not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -31,7 +31,7 @@ is not started and not authorized. Phase 21 has not started.
 - [x] Add bounded backend/auth presentation in the existing Townhall conversation surface.
 - [x] Add `Phase20Integration`, `Phase20IdentityBinding`, and `Phase20TownhallProjection` tests.
 - [x] Add `M5_INTEGRATION_EVIDENCE.md` and architecture inventory ratchets.
-- [x] Publish one reviewable M5 commit to `origin/master` at `84469cea40c554a9c306fff056985a5abec0dec4`.
+- [x] Publish one reviewable M5 commit to `origin/master` at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`.
 - [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M4 work board
@@ -175,7 +175,7 @@ occurred.
 
 ## M5 verification evidence
 
-Publication commit `84469cea40c554a9c306fff056985a5abec0dec4` on `origin/master`:
+Publication commit `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`) on `origin/master`:
 
 - `git diff --cached --check`: passed with no output at publication time.
 - `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.

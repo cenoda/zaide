@@ -2,7 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (depends on M4 at
+**Status:** M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8` (depends on M4 at
 `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction `51ee2691`). M6 is
 not started and not authorized by this document. Phase 21 has not started.
 
@@ -1001,7 +1001,7 @@ Stop and ask before continuing when any of these occurs:
 - [x] Bounded authentication method/state presentation with no credential handling or real login execution.
 - [x] `M5_INTEGRATION_EVIDENCE.md` recorded.
 - [x] Focused `Phase20Integration` / `Phase20TownhallProjection` / `Phase20IdentityBinding` tests and architecture ratchets pass.
-- [x] One reviewable M5 commit published to `origin/master` at `84469cea40c554a9c306fff056985a5abec0dec4`.
+- [x] One reviewable M5 commit published to `origin/master` at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`.
 - [x] Working tree is clean and `HEAD == origin/master`.
 - [x] M6 remains not started and not authorized.
 - [x] Phase 21 has not started.
@@ -1060,4 +1060,4 @@ authorization. *(Historical M0 evidence; M1 is complete and published at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
 `04831f1c`; M4 complete and published at
 `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction
-`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4`. M6 is not started.)*
+`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`). M6 is not started.)*

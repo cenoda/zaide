@@ -83,7 +83,7 @@ stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc1
 publication record `6b197a8b`); **M3 backend contract adapter is complete and
 published** (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record
 correction `04831f1c`); **M4 action mediation is complete and published**
-(`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`); M6 is
+(`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); M6 is
 not started and not authorized. Phase 21 has not
 started. See
 `docs/phases/v3/phase-19/TOFIX.md` and
@@ -322,9 +322,13 @@ closed on 2026-07-22. [Phase 16](docs/phases/v3/phase-16/IMPLEMENTATION_PLAN.md)
 is parked after controlled evaluation work; current state is
 [`docs/phases/v3/phase-16/TOFIX.md`](docs/phases/v3/phase-16/TOFIX.md). Native
 Harness production remains a later independent outcome. Phase 20 M1 ACP protocol
-foundation is complete and published; **M2 stdio process lifecycle is complete
-and published** (`880b4524c9c53190687aee0cc10843900191b8ce`, publication record
-`6b197a8b`); M3+ not started or authorized.
+Phase 20 M1 ACP protocol
+foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`;
+**M2 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
+publication record `6b197a8b`); **M3 backend contract is complete and published**
+(`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
+`04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); M6 is not started and not authorized. Phase 21
+has not started.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
@@ -341,7 +345,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 **M2 stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
-`04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`); M6 is not started and not authorized. Phase 21
+`04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); M6 is not started and not authorized. Phase 21
 has not started.
 
 ## Why "Zaide"

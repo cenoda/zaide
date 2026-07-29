@@ -5,7 +5,7 @@
 | Item | Value |
 |------|-------|
 | Milestone | M5 — Explicit identity binding, production composition, equal Townhall placement, authentication boundary |
-| Published commit | `84469cea40c554a9c306fff056985a5abec0dec4` |
+| Published commit | `84469cea40c554a9c306fff056985a5abec0dec4` with publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8` |
 | Depends on | M4 at `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction `51ee2691` and status correction `f0e266c6` |
 | Production surfaces | `IAgentActorBackendBindingStore`, `IAgentActorBackendSelectionService`, `IAcpSessionClientFactory`, `AgentsServiceCollectionExtensions`, `TownhallViewModel` / projection path, `AgentBackendBindingPanel` |
 | Test surfaces | `tests/Zaide.Tests/Features/Agents/Acp/Integration/`, composition registration tests, architecture inventory ratchets |
