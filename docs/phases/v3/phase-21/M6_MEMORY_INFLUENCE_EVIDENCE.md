@@ -3,7 +3,7 @@
 **Milestone:** M6 — memory influence and integrated management (retrieval/influence)
 **Depends on:** M1 `Memory` record class; M5 durable scoped memory records
 **Status:** Complete; published; verification gates pass with zero failures.
-**Published commit:** `03d6f5b42cde48c7d4093ed852676f29d308516a`
+**Published commit:** `928a17c801f664bd43896d10cff2cde2ed968934`
 
 ---
 

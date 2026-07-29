@@ -3,7 +3,7 @@
 **Milestone:** M6 — cross-record lifecycle integration
 **Depends on:** M1 durable partitions; M2–M5 record-owner contracts
 **Status:** Complete; published; verification gates pass with zero failures.
-**Published commit:** `03d6f5b42cde48c7d4093ed852676f29d308516a`
+**Published commit:** `928a17c801f664bd43896d10cff2cde2ed968934`
 
 ---
 

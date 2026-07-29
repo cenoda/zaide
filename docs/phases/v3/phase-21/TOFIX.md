@@ -8,7 +8,7 @@
 **M4 is complete and published at `4b2af9f341df21cea11c99787a2de95b7be0e7f7`.**
 **M5 is complete and published at `59f2050c987131a4e2c124406ac51ddce8096835`.**
 **M5 final evidence/hash correction at `04aa3692ca00879e67bf2cf16de0d26d45cbcf01`.**
-**M6 is complete and published at `03d6f5b42cde48c7d4093ed852676f29d308516a`.**
+**M6 is complete and published at `928a17c801f664bd43896d10cff2cde2ed968934`.**
 **M7 is not started and not authorized.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
