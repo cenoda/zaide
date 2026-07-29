@@ -4,21 +4,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Application.Continuity;
+using Zaide.Features.Agents.Application.Memory;
 using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Contracts.Transparency;
+using Zaide.Features.Agents.Contracts.Transparency.Memory;
 using Zaide.Features.Agents.Contracts.Transparency.Trace;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Workspace.Contracts;
 
@@ -156,6 +160,17 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentSessionContinuityAvailabilityProjection>();
         services.AddSingleton<AgentSessionContinuityInspectionViewModel>();
         services.AddSingleton<IAgentSessionService, AgentSessionService>();
+
+        // Phase 21 M5: durable scoped memory records (store only; no retrieval/injection).
+        services.AddSingleton<AgentMemoryStoreWriter>();
+        services.AddSingleton<AgentMemoryInspector>();
+        services.AddSingleton<IAgentMemoryInspector, AgentMemoryInspector>();
+        services.AddSingleton<IAgentMemoryPolicyEvaluator, AgentMemoryPolicyEvaluator>();
+        services.AddSingleton<IAgentMemoryLifecycleService, AgentMemoryLifecycleService>();
+        services.AddSingleton<AgentMemoryCoordinator>();
+        services.AddSingleton<IAgentMemoryCoordinator, AgentMemoryCoordinator>();
+        services.AddSingleton<AgentMemoryAvailabilityProjection>();
+        services.AddSingleton<AgentMemoryInspectionViewModel>();
 
         return services;
     }

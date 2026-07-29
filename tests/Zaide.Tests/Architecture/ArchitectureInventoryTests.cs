@@ -276,7 +276,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M1: +23 internal durable-record/storage production files.
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
-        Assert.Equal(792, inventory.SourceFiles.Count);
+        // Phase 21 M5: +33 internal durable memory production files.
+        Assert.Equal(825, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -311,7 +312,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M1: +23 internal durable-record/storage production files.
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
-        Assert.Equal(747, byFolder["Features"]);
+        // Phase 21 M5: +33 internal durable memory production files.
+        Assert.Equal(780, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
