@@ -72,7 +72,8 @@ public sealed class Phase20CapabilitiesTests
         };
 
         var backend = new AcpAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => "/tmp/zaide-acp");
 
         var initialVersion = backend.CapabilitySnapshot.Version;

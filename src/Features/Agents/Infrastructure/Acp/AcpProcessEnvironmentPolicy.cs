@@ -69,4 +69,11 @@ internal static class AcpProcessEnvironmentPolicy
         || key.Contains("TOKEN", StringComparison.OrdinalIgnoreCase)
         || key.Contains("PASSWORD", StringComparison.OrdinalIgnoreCase)
         || key.Contains("API_KEY", StringComparison.OrdinalIgnoreCase);
+
+    public static IReadOnlyDictionary<string, string> CreateAllowlistedEnvironment() =>
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["DOTNET_ENVIRONMENT"] = "Production",
+            ["PATH"] = Environment.GetEnvironmentVariable("PATH") ?? string.Empty,
+        };
 }

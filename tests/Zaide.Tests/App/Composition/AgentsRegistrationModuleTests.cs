@@ -11,8 +11,10 @@ using Zaide;
 using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Infrastructure;
+using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Presentation;
 
 namespace Zaide.Tests.App.Composition;
@@ -27,7 +29,9 @@ public sealed class AgentsRegistrationModuleTests
 {
     private static readonly string[] AgentsServiceTypeNames =
     {
+        typeof(AcpActionCapableAgentBackend).FullName!,
         typeof(AgentEventStream).FullName!,
+        typeof(AgentBackendBindingPresenter).FullName!,
         typeof(AgentContextManifestBuilder).FullName!,
         typeof(IAgentContextSnapshotSources).FullName!,
         typeof(IAgentSessionService).FullName!,
@@ -39,6 +43,12 @@ public sealed class AgentsRegistrationModuleTests
         typeof(INativeHarnessProviderTransport).FullName!,
         typeof(INativeHarnessProviderOptionsSource).FullName!,
         typeof(INativeHarnessPriorConversationReader).FullName!,
+        typeof(IAgentActorBackendBindingStore).FullName!,
+        typeof(IAgentActorBackendSelectionService).FullName!,
+        typeof(IAcpProcessLauncher).FullName!,
+        typeof(IAcpSessionClientFactory).FullName!,
+        typeof(NativeHarnessAgentBackend).FullName!,
+        typeof(IAgentBackend).FullName!,
         typeof(IAgentBackend).FullName!,
         typeof(IAgentExecutionCoordinator).FullName!,
         typeof(MentionParser).FullName!,
@@ -95,7 +105,7 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(25, services.Count);
+        Assert.Equal(33, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -387,7 +397,29 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentBackend>\s*\([\s\S]*?\)"));
+                @"AddSingleton<IAgentActorBackendBindingStore,\s*AgentActorBackendBindingStore>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAgentActorBackendSelectionService,\s*AgentActorBackendSelectionService>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<AgentBackendBindingPresenter>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAcpProcessLauncher,\s*AcpSystemDiagnosticsProcessLauncher>\(\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<IAcpSessionClientFactory>\s*\([\s\S]*?\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<NativeHarnessAgentBackend>\s*\([\s\S]*?\)"));
+        Assert.Single(
+            Regex.Matches(
+                moduleSource,
+                @"AddSingleton<AcpActionCapableAgentBackend>\s*\([\s\S]*?\)"));
+        Assert.Equal(2, Regex.Matches(moduleSource, @"AddSingleton<IAgentBackend>\s*\([\s\S]*?\)").Count);
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -410,7 +442,7 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(25, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(33, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
     [Fact]

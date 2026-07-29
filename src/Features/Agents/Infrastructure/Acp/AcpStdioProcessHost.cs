@@ -104,10 +104,21 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
             AcpProcessLifecycleLimits.SessionOperationTimeout,
             cancellationToken);
 
+    public void ConfigureActionBridge(
+        AcpInboundClientRequestHandler? inboundHandler,
+        AcpClientCapabilities advertisedCapabilities) =>
+        _session.ConfigureActionBridge(inboundHandler, advertisedCapabilities);
+
     public Task CancelRequestAsync(AcpJsonRpcRequestId requestId, CancellationToken cancellationToken) =>
         ExecuteWithTimeoutAsync(
             ct => _session.CancelRequestAsync(requestId, ct),
             AcpProcessLifecycleLimits.SessionOperationTimeout,
+            cancellationToken);
+
+    public Task AuthenticateAsync(string methodId, CancellationToken cancellationToken) =>
+        ExecuteWithTimeoutAsync(
+            ct => _session.AuthenticateAsync(methodId, ct),
+            AcpProcessLifecycleLimits.InitializeTimeout,
             cancellationToken);
 
     private Task ExecuteWithTimeoutAsync(

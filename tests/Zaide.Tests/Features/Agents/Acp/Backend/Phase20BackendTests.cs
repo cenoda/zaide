@@ -72,14 +72,14 @@ public sealed class Phase20BackendTests
     {
         var callCount = 0;
         var backend = new AcpAgentBackend(
-            _ =>
+            new DelegatingAcpSessionClientFactory(ct =>
             {
                 callCount++;
                 var script = callCount == 1
                     ? new AcpFakeSessionScript { AgentName = "agent-a", AgentVersion = "1" }
                     : new AcpFakeSessionScript { AgentName = "agent-b", AgentVersion = "1" };
                 return Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script));
-            },
+            }),
             () => "/tmp/zaide-acp");
 
         var sessionId = AgentSessionId.New();
@@ -191,7 +191,10 @@ public sealed class Phase20BackendTests
     }
 
     private static AcpAgentBackend CreateBackend(AcpFakeSessionScript script) =>
-        new(_ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)), () => "/tmp/zaide-acp");
+        new(
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
+            () => "/tmp/zaide-acp");
 
     private static AgentBackendExecutionContext CreateContext(AgentSessionId sessionId) =>
         new(

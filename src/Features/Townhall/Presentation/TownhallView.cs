@@ -11,6 +11,7 @@ using System.Collections.Specialized;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using ReactiveUI;
+using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Townhall.Domain;
 using Zaide.UI.DesignSystem;
@@ -31,6 +32,7 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallNavigationPanel _navigationPanel;
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallContextPolicySelector _contextPolicySelector;
+    private readonly AgentBackendBindingPanel _backendBindingPanel;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
@@ -57,6 +59,11 @@ public class TownhallView : Panel, IDisposable
         _navigationPanel = new TownhallNavigationPanel { Background = PaletteTokens.SurfacePanelBrush };
         _chatPanel = new TownhallChatPanel { Background = PaletteTokens.SurfacePanelBrush };
         _contextPolicySelector = new TownhallContextPolicySelector
+        {
+            Background = PaletteTokens.SurfacePanelBrush,
+            IsVisible = false,
+        };
+        _backendBindingPanel = new AgentBackendBindingPanel
         {
             Background = PaletteTokens.SurfacePanelBrush,
             IsVisible = false,
@@ -163,12 +170,14 @@ public class TownhallView : Panel, IDisposable
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
             {
                 filterGroup,
                 _chatPanel,
+                _backendBindingPanel,
                 _contextPolicySelector,
                 inputSeparator,
                 _inputArea
@@ -176,9 +185,10 @@ public class TownhallView : Panel, IDisposable
         };
         Grid.SetRow(filterGroup, 0);
         Grid.SetRow(_chatPanel, 1);
-        Grid.SetRow(_contextPolicySelector, 2);
-        Grid.SetRow(inputSeparator, 3);
-        Grid.SetRow(_inputArea, 4);
+        Grid.SetRow(_backendBindingPanel, 2);
+        Grid.SetRow(_contextPolicySelector, 3);
+        Grid.SetRow(inputSeparator, 4);
+        Grid.SetRow(_inputArea, 5);
 
         return chatArea;
     }
@@ -336,6 +346,19 @@ public class TownhallView : Panel, IDisposable
                     _contextPolicySelector.IsSelectorVisible = visible;
                     _contextPolicySelector.SetPolicyProjection(selectorIndex, statusCaption, isOverrideActive);
                     _contextPolicySelector.SetSelectorEnabled(inputEnabled);
+                }));
+
+        _disposables.Add(
+            _viewModel.WhenAnyValue(
+                    x => x.IsBackendBindingStatusVisible,
+                    x => x.BackendBindingLabel,
+                    x => x.BackendAuthStatusCaption,
+                    x => x.IsBackendDisconnected)
+                .Subscribe(tuple =>
+                {
+                    var (visible, backendLabel, authCaption, isDisconnected) = tuple;
+                    _backendBindingPanel.IsPanelVisible = visible;
+                    _backendBindingPanel.SetBindingProjection(backendLabel, authCaption, isDisconnected);
                 }));
 
         _contextPolicySelector.PolicySelectionChanged += (_, index) =>

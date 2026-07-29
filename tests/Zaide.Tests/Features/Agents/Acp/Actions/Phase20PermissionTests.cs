@@ -83,7 +83,8 @@ public sealed class Phase20PermissionTests : IDisposable
         };
 
         var backend = new AcpActionCapableAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => _workspaceRoot);
 
         await foreach (var _ in backend.ExecuteAsync(CreateContext(broker), CancellationToken.None))
@@ -131,7 +132,8 @@ public sealed class Phase20PermissionTests : IDisposable
         };
 
         var backend = new AcpActionCapableAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => _workspaceRoot);
 
         await foreach (var _ in backend.ExecuteAsync(CreateContext(broker), CancellationToken.None))

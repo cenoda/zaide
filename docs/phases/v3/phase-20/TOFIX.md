@@ -2,7 +2,7 @@
 
 ## Status
 
-**M4 complete and published at `63880c53c2317a4e4d85ade2088c96764c510b6f`. M5 and all later Phase 20 milestones are not started and not authorized. Phase 21 has not started.**
+**M5 complete and published at `35aa2aac2badde681b6e7ab862d2c59547ce3407`. M6 is not started and not authorized. Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -16,8 +16,23 @@ backend/session adapter, Phase 18 manifest encoding, backend activity
 normalization, and six-fact capability mapping behind deterministic fake
 transport only. M4 delivered broker-mediated client filesystem actions, a
 separate ACP permission boundary, and `AcpActionCapableAgentBackend` behind
-deterministic fake transport only. M5 and all later Phase 20 milestones are not
-authorized. Phase 21 has not started.
+deterministic fake transport only. M5 delivered explicit Actor/backend/runtime
+binding, production composition for both backends, equal Townhall placement
+through the existing projection path, and a truthful non-credential-handling
+authentication boundary behind the repository-owned fake ACP process only. M6
+is not started and not authorized. Phase 21 has not started.
+
+## M5 work board
+
+- [x] Add typed `AcpRuntimeIdentity`, `AgentActorBackendBinding`, and binding store/selection services.
+- [x] Integrate per-actor backend resolution in `AgentExecutionCoordinator` with fail-closed unbound behavior.
+- [x] Register ACP production services in `AgentsServiceCollectionExtensions` without silent Native Harness fallback.
+- [x] Project backend activity through `AgentConversationEventProjection` and `TownhallEntryProjection`.
+- [x] Add bounded backend/auth presentation in the existing Townhall conversation surface.
+- [x] Add `Phase20Integration`, `Phase20IdentityBinding`, and `Phase20TownhallProjection` tests.
+- [x] Add `M5_INTEGRATION_EVIDENCE.md` and architecture inventory ratchets.
+- [x] Publish one reviewable M5 commit to `origin/master` at `35aa2aac2badde681b6e7ab862d2c59547ce3407`.
+- [x] Verify post-push clean state and `HEAD == origin/master`.
 
 ## M4 work board
 
@@ -158,58 +173,18 @@ These are not compatibility results. No acquisition, execution, login,
 credential use, network provider request, subscription check, or paid call
 occurred.
 
-## M0 verification evidence
+## M5 verification evidence
 
-Final staged scope:
-
-- `README.md`
-- `docs/architecture/OVERVIEW.md`
-- `docs/phases/README.md`
-- `docs/phases/v3/phase-20/IMPLEMENTATION_PLAN.md`
-- `docs/phases/v3/phase-20/TOFIX.md`
-- `docs/roadmap/V3.md`
-
-Verification on 2026-07-28:
-
-- `git diff --cached --check`: passed with no output.
-- `git diff --cached --name-only`: the six documentation files above.
-- `git diff --cached --name-only -- src tests tools`: empty.
-- `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.
-- `dotnet test Zaide.slnx --no-build --filter
-  "FullyQualifiedName~Architecture"`: passed; 41 discovered, 41 passed, 0
-  failed, 0 skipped.
-- Default fast suite: not run because this documentation-only plan does not
-  require it and the targeted gate exposed no regression.
-
-M0 publication and post-push verification are complete at
-`0bb44c85b743dee9dc1c8f18553097fd4d4a8ca7`. M1 publication and post-push
-verification are complete at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`.
-
-## M1 verification evidence
-
-Publication commit `314076ebc8dcf2c9910baecc5ef96c461910cb1b` on `origin/master`:
+Publication commit `35aa2aac2badde681b6e7ab862d2c59547ce3407` on `origin/master`:
 
 - `git diff --cached --check`: passed with no output at publication time.
 - `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.
-- `dotnet test Zaide.slnx --no-build --filter
-  "FullyQualifiedName~Phase20Protocol"`: passed; at least one test discovered,
-  zero failures.
-- `dotnet test Zaide.slnx --no-build --filter
-  "FullyQualifiedName~Architecture"`: passed; at least one test discovered,
-  zero failures.
-- Post-push: working tree clean; `HEAD == origin/master`.
-
-## M2 verification evidence
-
-Publication commit `880b4524c9c53190687aee0cc10843900191b8ce` on `origin/master`:
-
-- `git diff --cached --check`: passed with no output at publication time.
-- `dotnet build Zaide.slnx --no-restore`: passed; 0 warnings, 0 errors.
-- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase20Transport|FullyQualifiedName~Phase20ProcessLifecycle"`: passed; 12 discovered, 12 passed, 0 failed.
-- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"`: passed; 41 discovered, 41 passed, 0 failed.
+- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase20Integration"`: passed; 2 discovered, 0 failed.
+- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Phase20TownhallProjection|FullyQualifiedName~Phase20IdentityBinding"`: passed; 6 discovered, 0 failed (serial settings when fast parallel hangs).
+- `dotnet test Zaide.slnx --no-build --filter "FullyQualifiedName~Architecture"`: passed; 42 discovered, 0 failed.
 - `git diff --check`: passed with no output after gates.
+- Post-push: working tree clean; `HEAD == origin/master`.
 
 ## Next task
 
-Stop at the read-only M4 audit gate. M5 and all later Phase 20 milestones are
-not authorized. Do not begin M5.
+Stop at the read-only M5 audit gate. M6 is not started and not authorized. Do not begin M6.

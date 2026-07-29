@@ -34,6 +34,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentExecutionCoordinator _executionCoordinator;
     private readonly IAgentContextSessionPolicyService _sessionPolicyService;
+    private readonly IAgentActorBackendSelectionService? _backendSelectionService;
     private readonly IAgentRouter? _agentRouter;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
@@ -46,6 +47,10 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private string _contextPolicyStatusCaption = string.Empty;
     private bool _isContextPolicyOverrideActive;
     private int _contextPolicySelectorIndex;
+    private bool _isBackendBindingStatusVisible;
+    private string _backendBindingLabel = string.Empty;
+    private string _backendAuthStatusCaption = string.Empty;
+    private bool _isBackendDisconnected;
 
     /// <summary>
     /// Gets the list of channels.
@@ -233,6 +238,42 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
+    /// True when the active direct conversation exposes backend binding status.
+    /// </summary>
+    public bool IsBackendBindingStatusVisible
+    {
+        get => _isBackendBindingStatusVisible;
+        private set => this.RaiseAndSetIfChanged(ref _isBackendBindingStatusVisible, value);
+    }
+
+    /// <summary>
+    /// Backend label for the active direct conversation binding.
+    /// </summary>
+    public string BackendBindingLabel
+    {
+        get => _backendBindingLabel;
+        private set => this.RaiseAndSetIfChanged(ref _backendBindingLabel, value);
+    }
+
+    /// <summary>
+    /// Authentication status caption for the active direct conversation binding.
+    /// </summary>
+    public string BackendAuthStatusCaption
+    {
+        get => _backendAuthStatusCaption;
+        private set => this.RaiseAndSetIfChanged(ref _backendAuthStatusCaption, value);
+    }
+
+    /// <summary>
+    /// True when the active direct conversation backend is disconnected or failed.
+    /// </summary>
+    public bool IsBackendDisconnected
+    {
+        get => _isBackendDisconnected;
+        private set => this.RaiseAndSetIfChanged(ref _isBackendDisconnected, value);
+    }
+
+    /// <summary>
     /// Command to select a context policy level from the selector index.
     /// </summary>
     public ReactiveCommand<int, Unit> SetContextPolicyFromSelectorCommand { get; }
@@ -285,7 +326,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             new TownhallConversationUiState(),
             persistenceBridge: null,
             persistenceService: null,
-            agentRouter: agentRouter)
+            agentRouter: agentRouter,
+            backendSelectionService: null)
     {
     }
 
@@ -299,7 +341,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         TownhallConversationUiState conversationUiState,
         IConversationWorkspacePersistenceBridge? persistenceBridge,
         ConversationPersistenceService? persistenceService,
-        IAgentRouter? agentRouter = null)
+        IAgentRouter? agentRouter = null,
+        IAgentActorBackendSelectionService? backendSelectionService = null)
     {
         _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -309,6 +352,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         _executionCoordinator = executionCoordinator ?? throw new ArgumentNullException(nameof(executionCoordinator));
         _sessionPolicyService = sessionPolicyService
             ?? throw new ArgumentNullException(nameof(sessionPolicyService));
+        _backendSelectionService = backendSelectionService;
         _agentRouter = agentRouter;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
@@ -1053,7 +1097,49 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         }
 
         RefreshActiveContextPolicyProjection();
+        RefreshActiveBackendBindingProjection();
     }
+
+    private void RefreshActiveBackendBindingProjection()
+    {
+        if (_backendSelectionService is null
+            || _state.ActiveConversationId is not { } activeConversationId
+            || !_conversationStore.TryGet(activeConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            IsBackendBindingStatusVisible = false;
+            BackendBindingLabel = string.Empty;
+            BackendAuthStatusCaption = string.Empty;
+            IsBackendDisconnected = false;
+            return;
+        }
+
+        IsBackendBindingStatusVisible = true;
+        var peer = conversation.Participants.All.FirstOrDefault(p => p != _actorCatalog.CanonicalHuman.Id);
+        if (peer == default)
+        {
+            BackendBindingLabel = "Unbound";
+            BackendAuthStatusCaption = "No agent participant";
+            IsBackendDisconnected = true;
+            return;
+        }
+
+        var snapshot = _backendSelectionService.GetSnapshot(peer);
+        BackendBindingLabel = snapshot.BackendLabel;
+        BackendAuthStatusCaption = FormatAuthStateCaption(snapshot.AuthenticationState);
+        IsBackendDisconnected = snapshot.IsDisconnected;
+    }
+
+    private static string FormatAuthStateCaption(AgentAuthenticationConnectionState authState) =>
+        authState switch
+        {
+            AgentAuthenticationConnectionState.NotRequired => "Auth not required",
+            AgentAuthenticationConnectionState.Authenticated => "Authenticated",
+            AgentAuthenticationConnectionState.PendingUserAction => "Authentication required",
+            AgentAuthenticationConnectionState.Disconnected => "Disconnected",
+            AgentAuthenticationConnectionState.Failed => "Authentication failed",
+            _ => authState.ToString(),
+        };
 
     private void ApplyContextPolicySelection(int selectorIndex)
     {

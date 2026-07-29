@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Infrastructure.Acp;
 
 namespace Zaide.Features.Agents.Infrastructure.Acp;
 
@@ -20,19 +21,23 @@ internal sealed class AcpAgentBackend : IAgentBackend
     private readonly object _capabilitySync = new();
     private AgentCapabilitySnapshot _capabilitySnapshot;
 
-    public AcpAgentBackend(Func<CancellationToken, Task<IAcpSessionClient>> clientFactory)
+    public AcpAgentBackend(IAcpSessionClientFactory clientFactory)
         : this(clientFactory, () => "/tmp/zaide-acp")
     {
     }
 
     internal AcpAgentBackend(
-        Func<CancellationToken, Task<IAcpSessionClient>> clientFactory,
-        Func<string> workingDirectoryProvider)
+        IAcpSessionClientFactory clientFactory,
+        Func<string> workingDirectoryProvider,
+        IAgentActorBackendBindingStore? bindingStore = null)
     {
         ArgumentNullException.ThrowIfNull(clientFactory);
         ArgumentNullException.ThrowIfNull(workingDirectoryProvider);
 
-        _sessionAdapter = new AcpAgentSessionAdapter(clientFactory, workingDirectoryProvider);
+        _sessionAdapter = new AcpAgentSessionAdapter(
+            clientFactory,
+            workingDirectoryProvider,
+            bindingStore);
         _capabilitySnapshot = AcpCapabilitySnapshotMapper.CreateInitialSnapshot();
     }
 

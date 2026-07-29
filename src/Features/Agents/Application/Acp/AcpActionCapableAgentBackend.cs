@@ -19,13 +19,17 @@ internal sealed class AcpActionCapableAgentBackend : IAgentBackend, IAgentAction
     private AgentCapabilitySnapshot _capabilitySnapshot;
 
     public AcpActionCapableAgentBackend(
-        Func<CancellationToken, Task<IAcpSessionClient>> clientFactory,
-        Func<string> workingDirectoryProvider)
+        IAcpSessionClientFactory clientFactory,
+        Func<string> workingDirectoryProvider,
+        IAgentActorBackendBindingStore? bindingStore = null)
     {
         ArgumentNullException.ThrowIfNull(clientFactory);
         ArgumentNullException.ThrowIfNull(workingDirectoryProvider);
 
-        _sessionAdapter = new AcpAgentSessionAdapter(clientFactory, workingDirectoryProvider);
+        _sessionAdapter = new AcpAgentSessionAdapter(
+            clientFactory,
+            workingDirectoryProvider,
+            bindingStore);
         _capabilitySnapshot = AcpCapabilitySnapshotMapper.CreateInitialSnapshot();
     }
 

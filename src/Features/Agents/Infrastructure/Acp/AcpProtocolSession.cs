@@ -186,6 +186,26 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
     public Task CancelRequestAsync(AcpJsonRpcRequestId requestId, CancellationToken cancellationToken) =>
         _connection.CancelRequestAsync(requestId, cancellationToken);
 
+    public async Task AuthenticateAsync(string methodId, CancellationToken cancellationToken)
+    {
+        EnsureInitialized();
+
+        if (string.IsNullOrWhiteSpace(methodId))
+        {
+            throw new ArgumentException("Auth method id is required.", nameof(methodId));
+        }
+
+        var response = await _connection.SendRequestAsync(
+            AcpMethodNames.Authenticate,
+            new AcpAuthenticateParams { MethodId = methodId },
+            cancellationToken).ConfigureAwait(false);
+
+        if (!response.IsSuccess)
+        {
+            throw CreateProtocolFailure("authenticate", response.Error);
+        }
+    }
+
     private void EnsureInitialized()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

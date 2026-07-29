@@ -38,6 +38,9 @@ internal sealed class AcpProtocolSessionClient : IAcpSessionClient
     public Task CancelPromptAsync(string sessionId, CancellationToken cancellationToken) =>
         _session.CancelPromptAsync(sessionId, cancellationToken);
 
+    public Task AuthenticateAsync(string methodId, CancellationToken cancellationToken) =>
+        _session.AuthenticateAsync(methodId, cancellationToken);
+
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities) =>

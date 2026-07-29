@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-**Status:** M4 complete and published at `63880c53c2317a4e4d85ade2088c96764c510b6f` (depends on M3 at
-`2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`). M5 and all later milestones are
+**Status:** M5 complete and published at `35aa2aac2badde681b6e7ab862d2c59547ce3407` (depends on M4 at
+`63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction `51ee2691`). M6 is
 not started and not authorized by this document. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
@@ -972,9 +972,9 @@ Stop and ask before continuing when any of these occurs:
 - [x] Focused `Phase20Backend` / `Phase20Context` / `Phase20Capabilities` tests and architecture ratchets pass.
 - [x] One reviewable M3 commit published at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` to `origin/master`, with publication-record correction `04831f1c`.
 - [x] Working tree is clean and `HEAD == origin/master`.
-- [ ] M5 and later Phase 20 milestones remain not started and not authorized.
-- [ ] Phase 19 remains complete, published, accepted, and closed.
-- [ ] Phase 21 has not started.
+- [x] M4 and later Phase 20 milestones remained not started and not authorized at M3 closeout.
+- [x] Phase 19 remains complete, published, accepted, and closed.
+- [x] Phase 21 has not started.
 
 ### M4 exit
 
@@ -989,7 +989,21 @@ Stop and ask before continuing when any of these occurs:
 - [x] Focused `Phase20ActionBridge` / `Phase20Permission` tests and architecture ratchets pass.
 - [x] One reviewable M4 commit published to `origin/master` at `63880c53c2317a4e4d85ade2088c96764c510b6f`.
 - [x] Working tree is clean and `HEAD == origin/master`.
-- [x] M5 and later Phase 20 milestones remain not started and not authorized.
+- [x] M6 and later Phase 20 milestones remain not started and not authorized.
+- [x] Phase 21 has not started.
+
+### M5 exit
+
+- [x] Explicit typed Actor/backend/runtime binding with fail-closed unbound and identity-mismatch behavior.
+- [x] Explicit user selection required before binding an ACP runtime to an actor.
+- [x] ACP production services registered through `AgentsServiceCollectionExtensions` without silent Native Harness fallback.
+- [x] Equal Townhall placement through `AgentConversationEventProjection` and `TownhallEntryProjection` only.
+- [x] Bounded authentication method/state presentation with no credential handling or real login execution.
+- [x] `M5_INTEGRATION_EVIDENCE.md` recorded.
+- [x] Focused `Phase20Integration` / `Phase20TownhallProjection` / `Phase20IdentityBinding` tests and architecture ratchets pass.
+- [x] One reviewable M5 commit published to `origin/master` at `35aa2aac2badde681b6e7ab862d2c59547ce3407`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] M6 remains not started and not authorized.
 - [x] Phase 21 has not started.
 
 ### Phase exit after M6
@@ -1046,4 +1060,4 @@ authorization. *(Historical M0 evidence; M1 is complete and published at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
 `04831f1c`; M4 complete and published at
 `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction
-`51ee2691`. M5 and all later milestones are not started.)*
+`51ee2691`; M5 complete and published at `35aa2aac2badde681b6e7ab862d2c59547ce3407`. M6 is not started.)*

@@ -137,7 +137,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M2: +4 internal context assembly contract helpers.
         // Phase 19 M3: +4 internal provider contract production types.
         // Phase 20 M1: +1 internal AcpSchemaProfile.
-        Assert.Equal((138, 7, 131), byNamespace["Zaide.Features.Agents.Domain"]);
+        Assert.Equal((143, 7, 136), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -146,7 +146,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M7: +1 internal IAgentCommandExecutor contract.
         // Phase 17 M8: +4 internal IAgentActionEventPublisher, IAgentActionAuditStore, IAgentActionBrokerFactory, IAgentActionRequestCapableBackend contracts.
         // Phase 19 M3: +2 internal provider transport/options contracts.
-        Assert.Equal((28, 6, 22), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 20 M5: +3 internal actor/backend binding contracts.
+        Assert.Equal((31, 6, 25), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -157,7 +158,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M8: +3 internal AgentActionAuditStore, RunScopedAgentActionEventPublisher, AgentActionBrokerFactory.
         // Phase 18 M2: +11 internal context policy/assembly production types.
         // Phase 19 M3: +5 internal execution-loop production types.
-        Assert.Equal((49, 7, 42), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 20 M5: +2 internal actor/backend binding application services.
+        Assert.Equal((51, 7, 44), byNamespace["Zaide.Features.Agents.Application"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
@@ -168,14 +170,17 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 20 M3: +5 internal ACP backend adapter types under Application/Acp.
         // Phase 20 M4: +15 internal ACP action bridge types under Application/Acp.
-        Assert.Equal((20, 0, 20), byNamespace["Zaide.Features.Agents.Application.Acp"]);
+        // Phase 20 M5: +2 internal ACP session client factory types under Application/Acp.
+        Assert.Equal((22, 0, 22), byNamespace["Zaide.Features.Agents.Application.Acp"]);
         // Phase 20 M1: +52 internal ACP protocol foundation types under Infrastructure/Acp.
         // Phase 20 M2: +13 internal ACP process lifecycle types under Infrastructure/Acp.
         // Phase 20 M3: +2 internal ACP backend adapter types under Infrastructure/Acp.
-        Assert.Equal((67, 0, 67), byNamespace["Zaide.Features.Agents.Infrastructure.Acp"]);
+        // Phase 20 M5: +2 internal ACP authenticate wire and stdio session client types.
+        Assert.Equal((69, 0, 69), byNamespace["Zaide.Features.Agents.Infrastructure.Acp"]);
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
-        Assert.Equal((4, 2, 2), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 20 M5: +1 public AgentBackendBindingPanel and +1 internal AgentBackendBindingPresenter.
+        Assert.Equal((6, 3, 3), byNamespace["Zaide.Features.Agents.Presentation"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -238,7 +243,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
         // Phase 20 M4: +7 internal ACP action bridge production files.
-        Assert.Equal(677, inventory.SourceFiles.Count);
+        Assert.Equal(693, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -270,7 +275,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
         // Phase 20 M4: +7 internal ACP action bridge production files.
-        Assert.Equal(632, byFolder["Features"]);
+        Assert.Equal(648, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

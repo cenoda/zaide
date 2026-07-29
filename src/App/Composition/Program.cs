@@ -48,6 +48,7 @@ class Program
             services.GetRequiredService<IAgentPanelHost>(),
             services.GetRequiredService<IAgentSessionService>(),
             services.GetRequiredService<IConversationStore>(),
+            services.GetRequiredService<IAgentActorBackendBindingStore>(),
             services.GetService<IConversationDraftState>());
     }
 

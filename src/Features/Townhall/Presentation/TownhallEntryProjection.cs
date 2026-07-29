@@ -12,6 +12,7 @@ namespace Zaide.Features.Townhall.Presentation;
 internal static class TownhallEntryProjection
 {
     private const string ActionActivityPrefix = "zaide-action|v1|";
+    private const string BackendActivityPrefix = "zaide-backend-activity|v1|";
     public static TownhallMessageKind ToTownhallMessageKind(ConversationEntryKind kind) =>
         kind switch
         {
@@ -54,7 +55,10 @@ internal static class TownhallEntryProjection
         var kind = entry.Kind == ConversationEntryKind.SystemNotification
                    && TryParseActionActivityContent(entry.Content, out _)
             ? ResolveActionActivityTownhallKind(entry.Content)
-            : ToTownhallMessageKind(entry.Kind);
+            : entry.Kind == ConversationEntryKind.SystemNotification
+              && TryParseBackendActivityContent(entry.Content, out _)
+                ? TownhallMessageKind.AgentAction
+                : ToTownhallMessageKind(entry.Kind);
 
         return new TownhallMessage
         {
@@ -80,6 +84,12 @@ internal static class TownhallEntryProjection
             && TryParseActionActivityContent(entry.Content, out var actionActivity))
         {
             return FormatActionActivityDisplayContent(actionActivity);
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && TryParseBackendActivityContent(entry.Content, out var backendActivity))
+        {
+            return FormatBackendActivityDisplayContent(backendActivity);
         }
 
         return entry.Kind switch
@@ -169,6 +179,34 @@ internal static class TownhallEntryProjection
         return true;
     }
 
+    internal static bool TryParseBackendActivityContent(
+        string content,
+        out BackendActivityProjection projection)
+    {
+        projection = default!;
+        if (string.IsNullOrEmpty(content)
+            || !content.StartsWith(BackendActivityPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var parts = content.Split('|');
+        if (parts.Length < 6
+            || !string.Equals(parts[0], "zaide-backend-activity", StringComparison.Ordinal)
+            || !string.Equals(parts[1], "v1", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        projection = new BackendActivityProjection(
+            parts[2],
+            parts[3],
+            parts[4],
+            string.Join('|', parts, 5, parts.Length - 5));
+
+        return true;
+    }
+
     private static TownhallMessageKind ResolveActionActivityTownhallKind(string content)
     {
         if (!TryParseActionActivityContent(content, out var activity))
@@ -183,6 +221,27 @@ internal static class TownhallEntryProjection
             _ => TownhallMessageKind.AgentAction,
         };
     }
+
+    private static string FormatBackendActivityDisplayContent(BackendActivityProjection activity)
+    {
+        var evidenceLabel = FormatEvidenceLevelLabel(activity.EvidenceLevel);
+        var headline = ResolveBackendActivityHeadline(activity.ActivityKind);
+        var correlationSuffix = string.IsNullOrWhiteSpace(activity.AcpCorrelationId)
+            ? string.Empty
+            : $" ({activity.AcpCorrelationId})";
+        return $"Backend activity: {headline} — {activity.Summary}{correlationSuffix} [{evidenceLabel}]";
+    }
+
+    private static string ResolveBackendActivityHeadline(string activityKind) =>
+        activityKind switch
+        {
+            "ToolCall" => "Tool call",
+            "ToolCallUpdate" => "Tool call update",
+            "Plan" => "Plan update",
+            "UsageUpdate" => "Usage update",
+            "SessionControlUpdate" => "Session control update",
+            _ => "Backend activity",
+        };
 
     private static string FormatActionActivityDisplayContent(ActionActivityProjection activity)
     {
@@ -233,6 +292,29 @@ internal static class TownhallEntryProjection
         }
 
         return string.Empty;
+    }
+
+    internal readonly struct BackendActivityProjection
+    {
+        public BackendActivityProjection(
+            string activityKind,
+            string evidenceLevel,
+            string acpCorrelationId,
+            string summary)
+        {
+            ActivityKind = activityKind;
+            EvidenceLevel = evidenceLevel;
+            AcpCorrelationId = acpCorrelationId;
+            Summary = summary;
+        }
+
+        public string ActivityKind { get; }
+
+        public string EvidenceLevel { get; }
+
+        public string AcpCorrelationId { get; }
+
+        public string Summary { get; }
     }
 
     internal readonly struct ActionActivityProjection

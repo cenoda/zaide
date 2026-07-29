@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Agents.Infrastructure.Acp;
 
 namespace Zaide.Features.Agents.Application.Acp;
@@ -14,18 +15,21 @@ namespace Zaide.Features.Agents.Application.Acp;
 /// </summary>
 internal sealed class AcpAgentSessionAdapter
 {
-    private readonly Func<CancellationToken, Task<IAcpSessionClient>> _clientFactory;
+    private readonly IAcpSessionClientFactory _clientFactory;
     private readonly Func<string> _workingDirectoryProvider;
+    private readonly IAgentActorBackendBindingStore? _bindingStore;
     private readonly Dictionary<AgentSessionId, AcpAgentSessionBinding> _bindings = new();
 
     public AcpAgentSessionAdapter(
-        Func<CancellationToken, Task<IAcpSessionClient>> clientFactory,
-        Func<string> workingDirectoryProvider)
+        IAcpSessionClientFactory clientFactory,
+        Func<string> workingDirectoryProvider,
+        IAgentActorBackendBindingStore? bindingStore = null)
     {
         _clientFactory = clientFactory
             ?? throw new ArgumentNullException(nameof(clientFactory));
         _workingDirectoryProvider = workingDirectoryProvider
             ?? throw new ArgumentNullException(nameof(workingDirectoryProvider));
+        _bindingStore = bindingStore;
     }
 
     public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
@@ -60,7 +64,7 @@ internal sealed class AcpAgentSessionAdapter
             events = new List<AgentBackendEvent>();
             var capabilitySnapshot = currentSnapshot;
 
-            client = await _clientFactory(cancellationToken).ConfigureAwait(false);
+            client = await _clientFactory.CreateAsync(context, cancellationToken).ConfigureAwait(false);
             var bridgeEnabled = enableActionBridge && context.Actions is not UnavailableAgentActionBroker;
             client.ConfigureActionBridge(
                 null,
@@ -69,7 +73,10 @@ internal sealed class AcpAgentSessionAdapter
                     : AcpClientCapabilityProfiles.CreateWithoutFilesystemBridge());
 
             var negotiated = await client.InitializeAsync(cancellationToken).ConfigureAwait(false);
-            var binding = GetOrCreateBinding(context.Request.SessionId, negotiated);
+            var binding = GetOrCreateBinding(
+                context.Request.SessionId,
+                context.Request.TargetActorId,
+                negotiated);
             VerifyAgentIdentity(binding, negotiated);
 
             capabilitySnapshot = AcpCapabilitySnapshotMapper.CreateAfterNegotiation(
@@ -186,6 +193,7 @@ internal sealed class AcpAgentSessionAdapter
 
     private AcpAgentSessionBinding GetOrCreateBinding(
         AgentSessionId sessionId,
+        ActorId targetActorId,
         AcpNegotiatedCapabilities negotiated)
     {
         if (_bindings.TryGetValue(sessionId, out var existing))
@@ -193,9 +201,22 @@ internal sealed class AcpAgentSessionAdapter
             return existing;
         }
 
-        var agentName = negotiated.AgentInfo?.Name ?? "unknown-agent";
-        var agentVersion = negotiated.AgentInfo?.Version ?? "unknown-version";
-        var binding = new AcpAgentSessionBinding(sessionId, agentName, agentVersion);
+        string expectedName;
+        string expectedVersion;
+        if (_bindingStore?.TryGetBinding(targetActorId, out var actorBinding) == true
+            && !string.IsNullOrWhiteSpace(actorBinding.ExpectedAgentName)
+            && !string.IsNullOrWhiteSpace(actorBinding.ExpectedAgentVersion))
+        {
+            expectedName = actorBinding.ExpectedAgentName;
+            expectedVersion = actorBinding.ExpectedAgentVersion;
+        }
+        else
+        {
+            expectedName = negotiated.AgentInfo?.Name ?? "unknown-agent";
+            expectedVersion = negotiated.AgentInfo?.Version ?? "unknown-version";
+        }
+
+        var binding = new AcpAgentSessionBinding(sessionId, expectedName, expectedVersion);
         _bindings[sessionId] = binding;
         return binding;
     }

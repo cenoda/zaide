@@ -70,13 +70,15 @@ public sealed class Phase20ActionBridgeTests : IDisposable
     public void Phase20ActionBridge_Backend_ImplementsActionRequestCapableMarkerOnlyWhenBridgeEnabled()
     {
         var actionCapable = new AcpActionCapableAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(new AcpFakeSessionScript())),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(new AcpFakeSessionScript()))),
             () => _workspaceRoot);
 
         Assert.IsAssignableFrom<IAgentActionRequestCapableBackend>(actionCapable);
 
         var legacy = new AcpAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(new AcpFakeSessionScript())),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(new AcpFakeSessionScript()))),
             () => _workspaceRoot);
 
         Assert.IsNotAssignableFrom<IAgentActionRequestCapableBackend>(legacy);
@@ -296,7 +298,8 @@ public sealed class Phase20ActionBridgeTests : IDisposable
         IAgentActionBroker broker)
     {
         var backend = new AcpActionCapableAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => _workspaceRoot);
 
         await foreach (var _ in backend.ExecuteAsync(CreateContext(broker), CancellationToken.None))
@@ -309,7 +312,8 @@ public sealed class Phase20ActionBridgeTests : IDisposable
         IAgentActionBroker broker)
     {
         var backend = new AcpActionCapableAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => _workspaceRoot);
         var events = new List<AgentBackendEvent>();
         await foreach (var backendEvent in backend.ExecuteAsync(CreateContext(broker), CancellationToken.None))

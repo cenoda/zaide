@@ -21,6 +21,9 @@ internal static class AcpFakeAgentFixture
         RepositoryRoot,
         "tests/fixtures/acp-fake-agent/bin/TransportFixture/net10.0");
     private static readonly string DllPath = Path.Combine(OutputDirectory, "AcpFakeAgent.dll");
+    private static readonly string ProgramPath = Path.Combine(
+        RepositoryRoot,
+        "tests/fixtures/acp-fake-agent/Program.cs");
     private static readonly object BuildGate = new();
     private static bool _built;
 
@@ -54,7 +57,11 @@ internal static class AcpFakeAgentFixture
     {
         lock (BuildGate)
         {
-            if (_built && File.Exists(DllPath))
+            var needsBuild = !File.Exists(DllPath)
+                || !_built
+                || (File.Exists(ProgramPath)
+                    && File.GetLastWriteTimeUtc(ProgramPath) > File.GetLastWriteTimeUtc(DllPath));
+            if (!needsBuild)
             {
                 return;
             }

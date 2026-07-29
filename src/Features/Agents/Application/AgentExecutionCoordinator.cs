@@ -21,7 +21,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 {
     private readonly IAgentPanelHost _panelHost;
     private readonly IAgentSessionService _sessionService;
-    private readonly AgentBackendId _backendId;
+    private readonly IAgentActorBackendBindingStore _bindingStore;
     private readonly IConversationStore _conversationStore;
     private readonly IConversationDraftState? _draftState;
     private readonly Dictionary<ConversationId, ExecutionRunId> _inFlightRuns = new();
@@ -51,8 +51,22 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         IAgentPanelHost panelHost,
         IAgentSessionService sessionService,
         IConversationStore conversationStore,
+        IAgentActorBackendBindingStore bindingStore,
+        IConversationDraftState? draftState = null)
+    {
+        _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
+        _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
+        _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
+        _bindingStore = bindingStore ?? throw new ArgumentNullException(nameof(bindingStore));
+        _draftState = draftState;
+    }
+
+    internal AgentExecutionCoordinator(
+        IAgentPanelHost panelHost,
+        IAgentSessionService sessionService,
+        IConversationStore conversationStore,
         IConversationDraftState? draftState)
-        : this(panelHost, sessionService, conversationStore, draftState, null)
+        : this(panelHost, sessionService, conversationStore, new AgentActorBackendBindingStore(), draftState)
     {
     }
 
@@ -60,22 +74,8 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         IAgentPanelHost panelHost,
         IAgentSessionService sessionService,
         IConversationStore conversationStore)
-        : this(panelHost, sessionService, conversationStore, null, null)
+        : this(panelHost, sessionService, conversationStore, new AgentActorBackendBindingStore(), null)
     {
-    }
-
-    private AgentExecutionCoordinator(
-        IAgentPanelHost panelHost,
-        IAgentSessionService sessionService,
-        IConversationStore conversationStore,
-        IConversationDraftState? draftState,
-        AgentBackendId? backendId)
-    {
-        _panelHost = panelHost ?? throw new ArgumentNullException(nameof(panelHost));
-        _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
-        _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
-        _draftState = draftState;
-        _backendId = backendId ?? AgentBackendIds.LegacyOpenAiCompatible;
     }
 
     public event Action<ConversationId, bool>? ConversationBusyChanged;
@@ -105,6 +105,24 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
 
         var conversationId = panel.ConversationId;
         var messageEntryId = ConversationEntryId.New();
+
+        AgentBackendId backendId;
+        try
+        {
+            backendId = _bindingStore.GetRequiredBackendId(panel.ActorId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var rejectedRun = new ExecutionRun(
+                ExecutionRunId.New(),
+                conversationId,
+                ActorId.HumanUser,
+                panel.ActorId,
+                panel.PanelId,
+                ExecutionRunOutcome.Rejected);
+            return AgentExecutionCoordinatorResult.Rejected(rejectedRun, ex.Message);
+        }
+
         using var capture = new AgentSessionCoordinatorEventCapture(
             conversationId,
             messageEntryId);
@@ -120,7 +138,7 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
                 conversationId,
                 ActorId.HumanUser,
                 panel.ActorId,
-                _backendId,
+                backendId,
                 messageEntryId,
                 userMessage,
                 ct);

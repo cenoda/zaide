@@ -89,7 +89,8 @@ public sealed class Phase20ContextTests
                 provenance: CreateProvenance()));
 
         var backend = new AcpAgentBackend(
-            _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script)),
+            new DelegatingAcpSessionClientFactory(
+                _ => Task.FromResult<IAcpSessionClient>(new AcpFakeSessionClient(script))),
             () => "/tmp/zaide-acp");
 
         var context = new AgentBackendExecutionContext(

@@ -2,8 +2,10 @@ using System;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Infrastructure;
+using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Workspace.Contracts;
 
@@ -30,7 +32,19 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<INativeHarnessProviderTransport, NativeHarnessProviderClient>();
         services.AddSingleton<INativeHarnessProviderOptionsSource, NativeHarnessProviderOptionsSource>();
         services.AddSingleton<INativeHarnessPriorConversationReader, NativeHarnessPriorConversationReader>();
-        services.AddSingleton<IAgentBackend>(sp =>
+        services.AddSingleton<IAgentActorBackendBindingStore, AgentActorBackendBindingStore>();
+        services.AddSingleton<IAgentActorBackendSelectionService, AgentActorBackendSelectionService>();
+        services.AddSingleton<AgentBackendBindingPresenter>();
+        services.AddSingleton<IAcpProcessLauncher, AcpSystemDiagnosticsProcessLauncher>();
+        services.AddSingleton<IAcpSessionClientFactory>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new AcpProductionSessionClientFactory(
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
+                (IAcpProcessLauncher)get(typeof(IAcpProcessLauncher))!,
+                () => Environment.CurrentDirectory);
+        });
+        services.AddSingleton<NativeHarnessAgentBackend>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;
             return new NativeHarnessAgentBackend(
@@ -38,6 +52,24 @@ internal static class AgentsServiceCollectionExtensions
                 (INativeHarnessProviderTransport)get(typeof(INativeHarnessProviderTransport))!,
                 (INativeHarnessPriorConversationReader)get(typeof(INativeHarnessPriorConversationReader))!,
                 (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)));
+        });
+        services.AddSingleton<AcpActionCapableAgentBackend>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new AcpActionCapableAgentBackend(
+                (IAcpSessionClientFactory)get(typeof(IAcpSessionClientFactory))!,
+                () => Environment.CurrentDirectory,
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!);
+        });
+        services.AddSingleton<IAgentBackend>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return (IAgentBackend)get(typeof(AcpActionCapableAgentBackend))!;
+        });
+        services.AddSingleton<IAgentBackend>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return (IAgentBackend)get(typeof(NativeHarnessAgentBackend))!;
         });
         services.AddSingleton<IAgentExecutionCoordinator>(Program.CreateAgentExecutionCoordinator);
         services.AddSingleton<MentionParser>();

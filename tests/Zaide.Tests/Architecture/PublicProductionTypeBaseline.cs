@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (Phase 20 M4 +15 ACP action bridge types; Phase 20 M3 baseline 763).</summary>
-    public const int TotalTopLevelTypes = 778;
+    /// <summary>Total non-nested, non-compiler-generated production types (Phase 20 M5 +16 identity binding/composition types; Phase 20 M4 baseline 778).</summary>
+    public const int TotalTopLevelTypes = 794;
 
-    /// <summary>Public top-level production type ceiling and baseline count (Phase 18 M5 +4 public policy contracts/UI).</summary>
-    public const int PublicTopLevelTypes = 350;
+    /// <summary>Public top-level production type ceiling and baseline count (Phase 20 M5 +1 AgentBackendBindingPanel).</summary>
+    public const int PublicTopLevelTypes = 351;
 
-    /// <summary>Internal top-level production type count (Phase 20 M4 +15 ACP action bridge types; Phase 20 M3 baseline 413).</summary>
-    public const int InternalTopLevelTypes = 428;
+    /// <summary>Internal top-level production type count (Phase 20 M5 +15 identity binding/composition types; Phase 20 M4 baseline 428).</summary>
+    public const int InternalTopLevelTypes = 443;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

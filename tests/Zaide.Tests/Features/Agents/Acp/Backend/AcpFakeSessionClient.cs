@@ -78,6 +78,17 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         return Task.CompletedTask;
     }
 
+    public Task AuthenticateAsync(string methodId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(methodId))
+        {
+            throw new ArgumentException("Auth method id is required.", nameof(methodId));
+        }
+
+        return Task.CompletedTask;
+    }
+
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities)

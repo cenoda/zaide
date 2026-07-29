@@ -24,6 +24,7 @@ internal sealed class AgentConversationEventProjection : IDisposable
     private readonly HashSet<ExecutionRunId> _admittedRunIds = new();
     private readonly HashSet<ExecutionRunId> _projectedTerminalRunIds = new();
     private readonly HashSet<AgentActionId> _projectedActionSummaryIds = new();
+    private readonly HashSet<string> _projectedBackendActivityKeys = new();
 
     public AgentConversationEventProjection(
         AgentEventStream stream,
@@ -134,6 +135,10 @@ internal sealed class AgentConversationEventProjection : IDisposable
                 case AgentEventKind.ActionResultReported:
                     ProjectActionResultReported(agentEvent);
                     break;
+
+                case AgentEventKind.BackendActivityReported:
+                    ProjectBackendActivityReported(agentEvent);
+                    break;
             }
         }
     }
@@ -176,6 +181,68 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
         _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
         _projectedActionSummaryIds.Add(payload.ActionId);
+    }
+
+    private void ProjectBackendActivityReported(AgentEvent agentEvent)
+    {
+        if (agentEvent.Payload is not AgentBackendReportedActivityPayload payload)
+        {
+            return;
+        }
+
+        var dedupeKey = string.Join(
+            '|',
+            agentEvent.RunId.Value,
+            payload.ActivityKind.ToString(),
+            payload.AcpCorrelationId ?? string.Empty,
+            payload.Summary);
+        if (_projectedBackendActivityKeys.Contains(dedupeKey))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var content = FormatBackendActivityEntryContent(
+            payload.ActivityKind,
+            agentEvent.EvidenceLevel,
+            payload.Summary,
+            payload.AcpCorrelationId);
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            content,
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedBackendActivityKeys.Add(dedupeKey);
+    }
+
+    internal static string FormatBackendActivityEntryContent(
+        AcpBackendActivityKind activityKind,
+        AgentActivityEvidenceLevel evidenceLevel,
+        string summary,
+        string? acpCorrelationId)
+    {
+        if (string.IsNullOrWhiteSpace(summary))
+        {
+            throw new ArgumentException("Activity summary is required.", nameof(summary));
+        }
+
+        return string.Join(
+            '|',
+            "zaide-backend-activity",
+            "v1",
+            activityKind.ToString(),
+            evidenceLevel.ToString(),
+            acpCorrelationId ?? string.Empty,
+            summary);
     }
 
     internal static string FormatActionResultEntryContent(

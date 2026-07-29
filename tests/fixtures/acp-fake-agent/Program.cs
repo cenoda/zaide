@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 
 var mode = args.Length > 0 ? args[0] : "healthy";
+var initializeCount = 0;
 
 if (mode == "spawn-child")
 {
@@ -82,9 +83,43 @@ while (true)
         await Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
     }
 
+    if (method == "session/prompt")
+    {
+        if (mode == "tool-activity")
+        {
+            await WriteSessionUpdateAsync(
+                "fake-session-1",
+                new
+                {
+                    sessionUpdate = "tool_call",
+                    toolCall = new { toolCallId = "tc-fake-1", title = "read_file" },
+                }).ConfigureAwait(false);
+            await WriteSessionUpdateAsync(
+                "fake-session-1",
+                new
+                {
+                    sessionUpdate = "tool_call_update",
+                    toolCallUpdate = new { toolCallId = "tc-fake-1", status = "completed" },
+                }).ConfigureAwait(false);
+        }
+
+        await WriteSessionUpdateAsync(
+            "fake-session-1",
+            new
+            {
+                sessionUpdate = "agent_message_chunk",
+                content = new { type = "text", text = mode == "tool-activity" ? "tool activity complete" : "fake agent response" },
+            }).ConfigureAwait(false);
+    }
+
     if (root.TryGetProperty("id", out var idElement))
     {
-        var response = BuildResponse(idElement, method);
+        if (method == "initialize")
+        {
+            initializeCount++;
+        }
+
+        var response = BuildResponse(idElement, method, mode, initializeCount);
         var payload = JsonSerializer.Serialize(response);
         await Console.Out.WriteLineAsync(payload).ConfigureAwait(false);
         await Console.Out.FlushAsync().ConfigureAwait(false);
@@ -100,7 +135,25 @@ while (true)
 
 return 0;
 
-static object BuildResponse(JsonElement id, string method) =>
+static async Task WriteSessionUpdateAsync(string sessionId, object updateBody)
+{
+    var notification = new
+    {
+        jsonrpc = "2.0",
+        method = "session/update",
+        @params = new
+        {
+            sessionId,
+            update = updateBody,
+        },
+    };
+
+    var payload = JsonSerializer.Serialize(notification);
+    await Console.Out.WriteLineAsync(payload).ConfigureAwait(false);
+    await Console.Out.FlushAsync().ConfigureAwait(false);
+}
+
+static object BuildResponse(JsonElement id, string method, string mode, int initializeCount) =>
     method switch
     {
         "initialize" => new
@@ -117,7 +170,7 @@ static object BuildResponse(JsonElement id, string method) =>
                     mcpCapabilities = new { http = false, sse = false },
                 },
                 authMethods = Array.Empty<object>(),
-                agentInfo = new { name = "acp-fake-agent", version = "phase-20-m2" },
+                agentInfo = ResolveAgentInfo(mode, initializeCount),
             },
         },
         "session/new" => new
@@ -132,6 +185,12 @@ static object BuildResponse(JsonElement id, string method) =>
             id = ReadId(id),
             result = new { stopReason = "end_turn" },
         },
+        "authenticate" => new
+        {
+            jsonrpc = "2.0",
+            id = ReadId(id),
+            result = new { },
+        },
         _ => new
         {
             jsonrpc = "2.0",
@@ -139,6 +198,11 @@ static object BuildResponse(JsonElement id, string method) =>
             error = new { code = -32601, message = "Method not found" },
         },
     };
+
+static object ResolveAgentInfo(string mode, int initializeCount) =>
+    mode == "identity-mismatch" && initializeCount > 1
+        ? new { name = "acp-fake-agent-wrong", version = "phase-20-m2" }
+        : new { name = "acp-fake-agent", version = "phase-20-m2" };
 
 static object ReadId(JsonElement id) =>
     id.ValueKind switch
