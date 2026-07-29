@@ -31,6 +31,6 @@ block planning an independent production Native Harness or ACP phase.
 
 ## Next task
 
-Phase 17 M0 was accepted on 2026-07-24. Continue with Phase 17 M1 as tracked in
-`../phase-17/TOFIX.md`. Do not resume candidate qualification under Phase 16
-unless a future roadmap decision assigns that work again.
+Roadmap V3 is complete and closed. Phase 16 remains parked historical
+evaluation work with no active task. Do not resume candidate qualification
+unless a future roadmap explicitly assigns and authorizes that work.

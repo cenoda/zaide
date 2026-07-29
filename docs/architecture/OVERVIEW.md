@@ -17,8 +17,8 @@ Phase 12 (DAP debugging) are complete. Phase 13 (Release Hardening) is
 performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
-[Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is an **accepted
-implementation-order roadmap**. Refactor 6.1 **M0–M5 are complete and closed**.
+[Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is **complete and
+closed** (2026-07-29). Refactor 6.1 **M0–M5 are complete and closed**.
 Refactor 6.2 **M1–M12 scheduled mechanical migration is complete** on `master`
 at `72102da` (feature-first tree under `App`, `Features`, and
 `UI/DesignSystem`). Optional 6.2 M13 root admissions are **declined**.
@@ -41,8 +41,9 @@ compatibility backend, coordinator/router session cutover, sole event
 projection owner, and M4 closeout audit). **Phase 16** (controlled Native
 Harness evaluation) is **parked** after M0/M1/M2a/M2b; current work state is
 [`docs/phases/v3/phase-16/TOFIX.md`](../phases/v3/phase-16/TOFIX.md). Native
-Harness production and ACP remain later independent outcomes. Non-C# assets
-remain outside the root-admission ratchet. **Phase 17 M0–M9 are complete
+Harness production and ACP were delivered later as independent sibling
+outcomes in Phases 19 and 20. Non-C# assets remain outside the root-admission
+ratchet. **Phase 17 M0–M9 are complete
 (2026-07-25)** at
 [`docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md`](../phases/v3/phase-17/IMPLEMENTATION_PLAN.md);
 closeout evidence is in
@@ -181,8 +182,8 @@ governed by the root-admission detectors.
 | Phase 14 | **Accepted and closed** (2026-07-21; accepted baseline `67da1394`) |
 | Phase 15 | **Complete and closed** (2026-07-22) — backend-neutral session/run/event contracts, in-memory lifecycle owner (`AgentSessionService`), legacy HTTP compatibility backend (`LegacyOpenAiCompatibleAgentBackend`), coordinator/router session cutover, sole event projection owner (`AgentConversationEventProjection`), and M4 closeout audit |
 | Phase 16 | **Parked historical evaluation** — not a production prerequisite |
-| Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
-| Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
+| Phase 17 | **Complete, accepted, and closed** (2026-07-26) — action control plane and workspace mutation, activated later by the Phase 19 and Phase 20 production backends |
+| Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs and consumed through the later production backend paths |
 | Phase 19 | **M0–M6 complete, published, and accepted** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; M6 published (`4b4e1914`, `ca896498`); Phase 19 final human acceptance: accepted |
 | Phase 20 | **M0–M6 complete, published, and accepted** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`, M3 at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`, M4 at `63880c53c2317a4e4d85ade2088c96764c510b6f`, M5 at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`, M6 `test(phase-20): close adversarial ACP verification`; final closeout `docs(phase-20): accept final closeout`) — external candidate smoke remains not executed (separate authorization not provided); see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
 | Phase 21 | **M0–M7 complete, published, and accepted** — M6 memory influence and integrated management complete and published (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); M7 adversarial and release closeout complete and published (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`); external candidate/provider smoke remains not executed (separate authorization not provided); Phase 22 remains not started and not authorized; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-21/IMPLEMENTATION_PLAN.md) |
@@ -351,10 +352,10 @@ invoke them autonomously.
 
 ---
 
-## Roadmap V3 Direction
+## Roadmap V3 Closeout
 
-V3 is expected to add AI-native orchestration without making the IDE dependent
-on one provider or harness. The accepted direction is:
+V3 delivered AI-native orchestration without making the IDE dependent on one
+provider or harness. Its accepted direction is:
 
 - one Townhall conversation model for public channels and direct
   conversations;
@@ -371,9 +372,10 @@ on one provider or harness. The accepted direction is:
   boundaries;
 - feature-first source/module refactoring before Phase 14.
 
-The live V2 code remains authoritative until each refactor or phase completes.
-See the V3 roadmap for observed debt, unresolved questions, and the
-required Refactor 6.1–6.3, Refactor 7, Refactor 8, and Phase 14 ordering.
+Roadmap V3 is complete and closed. Its roadmap, phase plans, work boards, and
+evidence records preserve the accepted Refactor 6.1–6.3, Refactor 7,
+Refactor 8, and Phase 14–21 sequence. Phase 16 remains parked historical
+evaluation work.
 
 ---
 
@@ -394,4 +396,6 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-29 (Phase 20 M0–M6 complete, published, and accepted; external candidate smoke remains not executed (separate authorization not provided); Phase 21 M0–M7 complete, published, and accepted, M6 published at `928a17c801f664bd43896d10cff2cde2ed968934` with publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`, M7 published at `4ec4f31febfb963e5373d72b749519c788d319cf` with publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`; external candidate/provider smoke remains not executed (separate authorization not provided); Phase 22 remains not started and not authorized)*
+*Last updated: 2026-07-29 (Roadmap V3 complete and closed; Phase 16 parked;
+external candidate/provider smoke not executed; successor roadmap not
+authorized)*

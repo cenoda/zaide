@@ -2,6 +2,8 @@
 
 ## Status
 
+Phase 17 is complete, accepted, and closed.
+
 M0 was accepted by the user on 2026-07-24. The accepted implementation
 boundary and decisions P17-D01–P17-D12 are recorded in
 `IMPLEMENTATION_PLAN.md`.
@@ -47,36 +49,22 @@ inventory, shutdown-during-pending-action fix, non-deletion verification,
 architecture inventory confirmation, and documentation truth-sync. Phase 17 was
 accepted by the user on 2026-07-26.
 
-## Delivery boundary: shipped inert
+## Delivery boundary and later activation
 
-Phase 17 delivers a complete but backend-gated control plane. It is not
-reachable by any production user flow today, and that is the intended M0
-boundary rather than a defect:
+Phase 17 shipped a complete but backend-gated control plane. At its closeout,
+the only action-capable backend was test-only, so production runs resolved
+`UnavailableAgentActionBroker`. That was the intended Phase 17 boundary.
 
-- `AgentSessionService.CreateExecutionContextLocked` creates a run-scoped
-  `ContractAgentActionBroker` only for backends implementing
-  `IAgentActionRequestCapableBackend`.
-- The only production backend registered in `AddZaideAgents` is
-  `LegacyOpenAiCompatibleAgentBackend`, which does not implement that
-  interface.
-- Every production run therefore resolves `UnavailableAgentActionBroker`, so
-  reads, proposals, permission review, mutation, reconciliation, and command
-  execution cannot be triggered by a real user.
-- The only action-capable backend is `FakeActionRequesterBackend`, which lives
-  in `tests/` and is not registered in production DI.
-
-Earlier M2/M3/M5 scope notes state that "live broker wiring remains M8". That
-is accurate only for the session-side seam: M8 wired the broker lifecycle,
-events, and audit into `AgentSessionService`. M8 did not deliver a production
-tool-using backend, and explicitly excluded one. Production activation of the
-action plane requires a backend that implements
-`IAgentActionRequestCapableBackend` and belongs to the first tool-using backend
-phase (Phase 19 or Phase 20).
+Phase 19 later activated the control plane through the production Native
+Harness, and Phase 20 added the independent ACP sibling path. Both preserve
+the Phase 17 broker lifecycle, permission review, event/audit ownership, and
+final `AgentPermissionDecision.TryConsume()` authorization step. Historical
+M2–M9 scope notes remain accurate for their milestone dates.
 
 ## Current work
 
-Phase 17 M9 closeout is complete and accepted. No further Phase 17 or Phase 18
-work is authorized.
+Phase 17 M9 closeout is complete and accepted. Later Phases 18–21 are also
+complete, and Roadmap V3 is closed. No current Phase 17 work remains.
 
 ## Completed milestones
 
@@ -90,7 +78,7 @@ work is authorized.
 - [x] M2 corrective pass #3: event-driven generation, thread-safe full-state IsCurrent, direct authority tests.
 - [x] M2 corrective pass #4: fail-closed for relative paths (".", "src") before realpath/stat.
 
-## Next task
+## Completed closeout checklist
 
 - [x] M4 received GO on 2026-07-25 after corrective passes #1–#3.
 - [x] Implement M5: safe workspace mutation behind accepted immutable proposals.

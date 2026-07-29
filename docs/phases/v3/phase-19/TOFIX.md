@@ -10,10 +10,10 @@ execution loop is complete** (read-only audit gate). **M4 production wiring and
 capability truthfulness is complete** at a corrective closeout (read-only audit
 gate). **M5 Townhall structured activity projection is complete** (read-only
 audit gate). **M6 adversarial closeout is complete and published** (commits
-`4b4e1914`, `ca896498`). **Phase 19 final human acceptance: accepted**
+`4b4e1914`, `ca896498`). **Phase 19 final human acceptance: accepted.**
 Phase 19 is complete, published, and closed.
-Phase 20 remains separate and not started
-Publication is not pending. No Phase 20 or Phase 21 work has started.
+Phases 20 and 21 later completed their independent outcomes, and Roadmap V3 is
+complete and closed. Publication is not pending.
 
 ### M6 corrective closeout publication (2026-07-28)
 
@@ -207,8 +207,8 @@ Production activation:
 **Phase 19 M0–M6 implementation is complete. M6 is published** (commits
 `4b4e1914`, `ca896498`). **Phase 19 final human acceptance: accepted.**
 Phase 19 is complete, published, and closed.
-Phase 20 remains separate and not started.
-Publication is not pending. Phase 21 has not started.
+Phases 20 and 21 later completed their independent outcomes. Roadmap V3 is
+complete and closed; no successor roadmap is authorized.
 
 ## M2 acceptance and publication
 

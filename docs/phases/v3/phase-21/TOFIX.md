@@ -2,7 +2,7 @@
 
 ## Status
 
-**M0–M7 complete, published, and accepted. Final closeout recorded in `docs(phase-21): accept final closeout`. External candidate/provider smoke remains not executed (separate authorization not provided). Phase 22 remains not started and not authorized.**
+**M0–M7 complete, published, and accepted. Final closeout recorded in `docs(phase-21): accept final closeout`. Roadmap V3 is complete and closed after the 2026-07-29 user-approved closeout correction. External candidate/provider smoke remains not executed (separate authorization not provided). Phase 22 remains not started and not authorized.**
 
 **M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`.**
 **M2 is complete and published at `f75de2344ee57fdd59f771c7e17c9059edffcca1`.**
@@ -77,4 +77,5 @@ admitted boundary.
 
 ## Next task
 
-Phase 21 M0–M7 is complete, published, and accepted. Phase 22 remains not started and not authorized. Do not begin Phase 22.
+Phase 21 M0–M7 is complete, published, and accepted. Roadmap V3 is complete
+and closed. Phase 22 remains not started and not authorized.
