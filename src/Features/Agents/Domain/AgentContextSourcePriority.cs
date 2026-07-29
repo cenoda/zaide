@@ -24,6 +24,7 @@ internal static class AgentContextSourcePriority
             [AgentContextSourceId.EditorCaretSelection] = 9,
             [AgentContextSourceId.BuildDiagnostics] = 10,
             [AgentContextSourceId.ProjectContext] = 10,
+            [AgentContextSourceId.DurableMemory] = 11,
         };
 
     public static int GetPriority(AgentContextSourceId sourceId)

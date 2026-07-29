@@ -4,12 +4,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Application.Continuity;
+using Zaide.Features.Agents.Application.Memory;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Contracts.Continuity;
+using Zaide.Features.Agents.Contracts.Transparency.Memory;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Contracts;
 
@@ -29,6 +32,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
     private readonly IAgentContextSnapshotSources? _contextSnapshotSources;
     private readonly IAgentSessionContinuityCoordinator? _continuityCoordinator;
     private readonly AgentDurableWorkspaceStorageKeyResolver? _workspaceKeyResolver;
+    private readonly IAgentMemoryRetrievalService? _memoryRetrievalService;
+    private readonly IAgentMemoryInfluenceRecorder? _memoryInfluenceRecorder;
     private readonly Func<string?> _workspaceRootProvider;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
     private readonly Dictionary<ConversationId, AgentContextPolicyLevel> _sessionPolicyOverrides = new();
@@ -45,6 +50,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         IAgentContextSnapshotSources? contextSnapshotSources = null,
         IAgentSessionContinuityCoordinator? continuityCoordinator = null,
         AgentDurableWorkspaceStorageKeyResolver? workspaceKeyResolver = null,
+        IAgentMemoryRetrievalService? memoryRetrievalService = null,
+        IAgentMemoryInfluenceRecorder? memoryInfluenceRecorder = null,
         Func<string?>? workspaceRootProvider = null)
     {
         ArgumentNullException.ThrowIfNull(backends);
@@ -59,6 +66,8 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         _contextSnapshotSources = contextSnapshotSources;
         _continuityCoordinator = continuityCoordinator;
         _workspaceKeyResolver = workspaceKeyResolver;
+        _memoryRetrievalService = memoryRetrievalService;
+        _memoryInfluenceRecorder = memoryInfluenceRecorder;
         _workspaceRootProvider = workspaceRootProvider ?? (() => Environment.CurrentDirectory);
 
         if (_workspaceAuthority is not null)
@@ -587,7 +596,7 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
             AgentEventKind.SessionRunning,
             AgentSessionStatus.Running);
 
-        var contextManifest = AssembleContextManifestLocked(session, run);
+        var contextManifest = AssembleContextManifestLocked(session, run, targetActorId);
 
         run.ExecutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -1262,10 +1271,12 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
 
     private AgentContextManifest? AssembleContextManifestLocked(
         LiveSession session,
-        LiveRun run)
+        LiveRun run,
+        ActorId targetActorId)
     {
         if (_contextManifestBuilder is null || _contextSnapshotSources is null)
         {
+            RecordMemoryInfluenceUnavailableLocked(session, run, "Context assembly is not configured.");
             return null;
         }
 
@@ -1273,16 +1284,22 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         {
             var policy = ResolveContextPolicyLocked(session.ConversationId);
             var assembledAtUtc = DateTimeOffset.UtcNow;
-            return _contextManifestBuilder.Build(
+            var memoryRetrieval = RetrieveMemoryLocked(session, run, targetActorId);
+            var manifest = _contextManifestBuilder.Build(
                 session.SessionId,
                 run.RunId,
                 session.ConversationId,
                 policy,
                 _contextSnapshotSources,
-                assembledAtUtc);
+                assembledAtUtc,
+                memoryRetrieval);
+
+            RecordMemoryInfluenceFromManifestLocked(session, run, manifest, memoryRetrieval);
+            return manifest;
         }
         catch (Exception)
         {
+            RecordMemoryInfluenceUnavailableLocked(session, run, "IDE context assembly failed.");
             EmitFailureLocked(
                 session,
                 run,
@@ -1291,6 +1308,119 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
                 DateTimeOffset.UtcNow);
             return null;
         }
+    }
+
+    private AgentMemoryRetrievalResult? RetrieveMemoryLocked(
+        LiveSession session,
+        LiveRun run,
+        ActorId targetActorId)
+    {
+        if (_memoryRetrievalService is null || _workspaceKeyResolver is null)
+        {
+            return AgentMemoryRetrievalResult.Unavailable("Memory retrieval is not configured.");
+        }
+
+        var workspaceKey = _workspaceKeyResolver.Resolve(_workspaceRootProvider());
+        var context = new AgentMemoryRetrievalContext(
+            session.SessionId,
+            run.RunId,
+            session.ConversationId,
+            targetActorId,
+            projectId: workspaceKey.Value);
+
+        return _memoryRetrievalService.Retrieve(
+            new AgentMemoryRetrievalRequest(workspaceKey, context));
+    }
+
+    private void RecordMemoryInfluenceFromManifestLocked(
+        LiveSession session,
+        LiveRun run,
+        AgentContextManifest manifest,
+        AgentMemoryRetrievalResult? memoryRetrieval)
+    {
+        if (_memoryInfluenceRecorder is null || _workspaceKeyResolver is null)
+        {
+            return;
+        }
+
+        if (memoryRetrieval is null || memoryRetrieval.IsUnavailable)
+        {
+            RecordMemoryInfluenceUnavailableLocked(
+                session,
+                run,
+                memoryRetrieval?.UnavailableReason ?? "Memory retrieval unavailable.");
+            return;
+        }
+
+        var influenced = manifest.Items
+            .Where(item => item.SourceId == AgentContextSourceId.DurableMemory)
+            .Select(item => ParseMemoryInfluenceRevision(item))
+            .Where(revision => revision is not null)
+            .Select(revision => revision!)
+            .ToArray();
+
+        var workspaceKey = _workspaceKeyResolver.Resolve(_workspaceRootProvider());
+        var state = influenced.Length == 0
+            ? AgentMemoryInfluenceState.NoneEligible
+            : AgentMemoryInfluenceState.Recorded;
+
+        _memoryInfluenceRecorder.RecordInfluence(
+            workspaceKey,
+            run.RunId,
+            session.SessionId,
+            state,
+            influenced);
+    }
+
+    private void RecordMemoryInfluenceUnavailableLocked(
+        LiveSession session,
+        LiveRun run,
+        string reason)
+    {
+        if (_memoryInfluenceRecorder is null || _workspaceKeyResolver is null)
+        {
+            return;
+        }
+
+        var workspaceKey = _workspaceKeyResolver.Resolve(_workspaceRootProvider());
+        _memoryInfluenceRecorder.RecordInfluence(
+            workspaceKey,
+            run.RunId,
+            session.SessionId,
+            AgentMemoryInfluenceState.Unavailable,
+            Array.Empty<AgentMemoryInfluenceRevision>(),
+            reason);
+    }
+
+    private static AgentMemoryInfluenceRevision? ParseMemoryInfluenceRevision(AgentContextItem item)
+    {
+        var fingerprint = item.Fingerprint;
+        if (!fingerprint.StartsWith("mem:", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        const string revisionMarker = ":rev:";
+        var revisionIndex = fingerprint.IndexOf(revisionMarker, StringComparison.Ordinal);
+        if (revisionIndex < 0)
+        {
+            return null;
+        }
+
+        var memoryIdValue = fingerprint.Substring(4, revisionIndex - 4);
+        var tail = fingerprint.Substring(revisionIndex + revisionMarker.Length);
+        var tailParts = tail.Split(':');
+        if (tailParts.Length < 1 || !long.TryParse(tailParts[0], out var orderingSequence))
+        {
+            return null;
+        }
+
+        var isStale = tailParts.Length > 1 && tailParts[1] == "stale";
+        return new AgentMemoryInfluenceRevision(
+            AgentMemoryId.FromValue(memoryIdValue),
+            orderingSequence,
+            AgentMemoryLimits.PayloadSchemaVersion,
+            isStale);
     }
 
     private AgentContextDisclosurePayload CreateDisclosurePayloadFromManifest(

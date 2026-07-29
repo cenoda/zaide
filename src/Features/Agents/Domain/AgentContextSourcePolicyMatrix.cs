@@ -35,6 +35,8 @@ internal static class AgentContextSourcePolicyMatrix
             (AgentContextSourceId.SourceControlSummary, AgentContextPolicyLevel.Detailed),
             (AgentContextSourceId.DebugSessionState, AgentContextPolicyLevel.Detailed),
             (AgentContextSourceId.EditorCaretSelection, AgentContextPolicyLevel.Detailed),
+            (AgentContextSourceId.DurableMemory, AgentContextPolicyLevel.Standard),
+            (AgentContextSourceId.DurableMemory, AgentContextPolicyLevel.Detailed),
         };
 
     public static bool DefinesSource(AgentContextSourceId sourceId) =>

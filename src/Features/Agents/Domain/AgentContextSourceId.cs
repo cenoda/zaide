@@ -53,6 +53,9 @@ internal readonly struct AgentContextSourceId : IEquatable<AgentContextSourceId>
     public static AgentContextSourceId EditorCaretSelection { get; } =
         FromValue("context-source:editor-caret-selection");
 
+    public static AgentContextSourceId DurableMemory { get; } =
+        FromValue("context-source:durable-memory");
+
     public static IReadOnlyList<AgentContextSourceId> All { get; } =
         new[]
         {
@@ -68,6 +71,7 @@ internal readonly struct AgentContextSourceId : IEquatable<AgentContextSourceId>
             SourceControlSummary,
             DebugSessionState,
             EditorCaretSelection,
+            DurableMemory,
         };
 
     public static AgentContextSourceId FromValue(string value)

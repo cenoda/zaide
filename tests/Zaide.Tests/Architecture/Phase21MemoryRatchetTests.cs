@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 using Zaide.Features.Agents.Application.Memory;
+using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
 
@@ -60,11 +61,26 @@ public sealed class Phase21MemoryRatchetTests
     }
 
     [Fact]
-    public void MemoryPipeline_DoesNotInjectIntoContextManifestOrPrompts()
+    public void ContextSourcePolicyMatrix_DefinesDurableMemorySource()
+    {
+        Assert.True(AgentContextSourcePolicyMatrix.DefinesSource(AgentContextSourceId.DurableMemory));
+        Assert.True(AgentContextSourcePolicyMatrix.IsSourceIncluded(
+            AgentContextSourceId.DurableMemory,
+            AgentContextPolicyLevel.Standard));
+        Assert.False(AgentContextSourcePolicyMatrix.IsSourceIncluded(
+            AgentContextSourceId.DurableMemory,
+            AgentContextPolicyLevel.Minimal));
+    }
+
+    [Fact]
+    public void MemoryRetrieval_IntegratesOnlyThroughContextManifestBuilder()
     {
         var memoryRoot = Path.Combine(
             RepositoryRoot,
             "src/Features/Agents/Application/Memory");
+        var manifestBuilderPath = Path.Combine(
+            RepositoryRoot,
+            "src/Features/Agents/Application/AgentContextManifestBuilder.cs");
         var violations = new List<string>();
 
         foreach (var file in Directory.EnumerateFiles(memoryRoot, "*.cs", SearchOption.AllDirectories))
@@ -80,6 +96,8 @@ public sealed class Phase21MemoryRatchetTests
         }
 
         Assert.Empty(violations);
+        Assert.Contains("AppendMemoryCandidates", File.ReadAllText(manifestBuilderPath), StringComparison.Ordinal);
+        Assert.Contains("DurableMemory", File.ReadAllText(manifestBuilderPath), StringComparison.Ordinal);
     }
 
     [Fact]

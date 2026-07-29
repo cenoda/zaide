@@ -211,7 +211,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 18 M3 publisher corrective: +3 publisher contract and mapper production files.
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
-        Assert.Equal(780, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
+        Assert.Equal(798, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

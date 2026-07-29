@@ -139,7 +139,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +1 internal AcpSchemaProfile.
         Assert.Equal((143, 7, 136), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 21 M1: +13 internal durable-record envelope/domain types.
-        Assert.Equal((13, 0, 13), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
+        Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 21 M2: +10 internal trace evidence domain types.
         Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Domain.Transparency.Trace"]);
         // Phase 21 M3: +9 internal usage/cost evidence domain types.
@@ -157,7 +157,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M5: +3 internal actor/backend binding contracts.
         Assert.Equal((31, 6, 25), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 21 M1: +2 internal durable-record store contracts.
-        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Contracts.Transparency"]);
+        // Phase 21 M6: +1 internal transparency lifecycle coordinator contract.
+        Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Agents.Contracts.Transparency"]);
         // Phase 21 M2: +4 internal trace evidence source/sink/inspector/registry contracts.
         Assert.Equal((4, 0, 4), byNamespace["Zaide.Features.Agents.Contracts.Transparency.Trace"]);
         // Phase 21 M3: +3 internal usage/cost evidence capture/inspector/source contracts.
@@ -177,7 +178,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M5: +2 internal actor/backend binding application services.
         Assert.Equal((51, 7, 44), byNamespace["Zaide.Features.Agents.Application"]);
         // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
-        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
+        // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
+        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
         // Phase 21 M2: +17 internal trace evidence capture/redaction/queue/inspector/source types.
         Assert.Equal((17, 0, 17), byNamespace["Zaide.Features.Agents.Application.Transparency.Trace"]);
         // Phase 21 M3: +6 internal usage/cost evidence coordinator/sink/inspector/adapter types.
@@ -210,7 +212,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M2: +3 internal trace availability/inspection presentation types.
         // Phase 21 M3: +3 internal usage/cost availability/inspection presentation types.
         // Phase 21 M4: +3 internal session continuity availability/inspection presentation types.
-        Assert.Equal((9, 0, 9), byNamespace["Zaide.Features.Agents.Presentation.Transparency"]);
+        // Phase 21 M6: +1 internal transparency management view model.
+        Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Presentation.Transparency"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -277,7 +280,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
-        Assert.Equal(825, inventory.SourceFiles.Count);
+        // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
+        Assert.Equal(843, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -313,7 +317,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
-        Assert.Equal(780, byFolder["Features"]);
+        // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
+        Assert.Equal(798, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

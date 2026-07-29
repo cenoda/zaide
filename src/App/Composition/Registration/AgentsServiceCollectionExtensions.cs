@@ -171,6 +171,14 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentMemoryCoordinator, AgentMemoryCoordinator>();
         services.AddSingleton<AgentMemoryAvailabilityProjection>();
         services.AddSingleton<AgentMemoryInspectionViewModel>();
+        // Phase 21 M6: budgeted memory retrieval, influence attribution, integrated lifecycle.
+        services.AddSingleton<AgentMemoryRetriever>();
+        services.AddSingleton<IAgentMemoryRetrievalService, AgentMemoryRetriever>();
+        services.AddSingleton<AgentMemoryInfluenceRecorder>();
+        services.AddSingleton<IAgentMemoryInfluenceRecorder, AgentMemoryInfluenceRecorder>();
+        services.AddSingleton<AgentTransparencyLifecycleCoordinator>();
+        services.AddSingleton<IAgentTransparencyLifecycleCoordinator, AgentTransparencyLifecycleCoordinator>();
+        services.AddSingleton<AgentTransparencyManagementViewModel>();
 
         return services;
     }

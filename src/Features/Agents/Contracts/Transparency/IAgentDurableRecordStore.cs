@@ -13,5 +13,7 @@ internal interface IAgentDurableRecordStore
 
     AgentDurableRecordReplayResult Replay(AgentDurableRecordReplayRequest request);
 
+    string GetWorkspaceDirectoryPath(AgentDurableWorkspaceStorageKey workspaceKey);
+
     void Flush();
 }

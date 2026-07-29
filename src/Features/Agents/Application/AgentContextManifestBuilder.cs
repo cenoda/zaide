@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Application;
@@ -19,7 +20,8 @@ internal sealed class AgentContextManifestBuilder
         ConversationId conversationId,
         AgentContextPolicy policy,
         IAgentContextSnapshotSources snapshots,
-        DateTimeOffset assembledAtUtc)
+        DateTimeOffset assembledAtUtc,
+        AgentMemoryRetrievalResult? memoryRetrieval = null)
     {
         if (sessionId == default)
         {
@@ -69,6 +71,7 @@ internal sealed class AgentContextManifestBuilder
         }
 
         foreach (var sourceId in policyEvaluation.IncludedSources
+                     .Where(source => source != AgentContextSourceId.DurableMemory)
                      .OrderBy(source => AgentContextSourcePriority.GetPriority(source))
                      .ThenBy(source => source.Value, StringComparer.Ordinal))
         {
@@ -139,6 +142,12 @@ internal sealed class AgentContextManifestBuilder
                     AgentContextSourcePriority.GetPriority(sourceId)));
         }
 
+        AppendMemoryCandidates(
+            policyEvaluation,
+            exclusionDecisions,
+            candidates,
+            memoryRetrieval);
+
         var requestedBudget = AgentContextSourcePolicyMatrix.GetDefaultTokenBudget(
             policyEvaluation.EffectiveLevel);
         var budgetResult = AgentContextBudgetEnforcer.Apply(candidates, requestedBudget);
@@ -154,6 +163,89 @@ internal sealed class AgentContextManifestBuilder
             budgetResult.TruncationDecisions,
             exclusionDecisions,
             assembledAtUtc);
+    }
+
+    private static void AppendMemoryCandidates(
+        AgentContextPolicyEvaluationResult policyEvaluation,
+        List<AgentContextExclusionDecision> exclusionDecisions,
+        List<AgentContextManifestCandidate> candidates,
+        AgentMemoryRetrievalResult? memoryRetrieval)
+    {
+        if (!policyEvaluation.IncludedSources.Contains(AgentContextSourceId.DurableMemory))
+        {
+            return;
+        }
+
+        if (memoryRetrieval is null)
+        {
+            exclusionDecisions.Add(
+                new AgentContextExclusionDecision(
+                    sourceId: AgentContextSourceId.DurableMemory,
+                    hardExclusionId: null,
+                    reason: "Memory retrieval was not performed.",
+                    isHardExclusion: false));
+            return;
+        }
+
+        if (memoryRetrieval.IsUnavailable)
+        {
+            exclusionDecisions.Add(
+                new AgentContextExclusionDecision(
+                    sourceId: AgentContextSourceId.DurableMemory,
+                    hardExclusionId: null,
+                    reason: memoryRetrieval.UnavailableReason ?? "Durable memory is unavailable.",
+                    isHardExclusion: false));
+            return;
+        }
+
+        if (memoryRetrieval.EligibleRecords.Count == 0)
+        {
+            exclusionDecisions.Add(
+                new AgentContextExclusionDecision(
+                    sourceId: AgentContextSourceId.DurableMemory,
+                    hardExclusionId: null,
+                    reason: "No eligible durable memory for this run scope.",
+                    isHardExclusion: false));
+            return;
+        }
+
+        foreach (var record in memoryRetrieval.EligibleRecords)
+        {
+            var scopeDescriptor =
+                $"memory:{record.MemoryId.Value}:{record.ScopeTarget.Scope}:{record.OrderingSequence}";
+            var redactionOutcome = AgentContextRedactionProcessor.Apply(record.Content);
+            if (redactionOutcome.DidProcessingFail)
+            {
+                exclusionDecisions.Add(
+                    CreateHardExclusionDecision(
+                        AgentContextHardExclusionId.RedactionPatternMatch,
+                        scopeDescriptor));
+                continue;
+            }
+
+            var provenance = new AgentContextProvenance(
+                "Zaide.Features.Agents.Application.Memory.AgentMemoryRetriever",
+                snapshotGeneration: record.OrderingSequence,
+                wasLiveSnapshot: false,
+                redactionApplied: redactionOutcome.State != AgentContextRedactionState.None,
+                redactionOutcome.Reason);
+
+            var staleMarker = record.IsStaleFact ? "stale" : "current";
+            var item = new AgentContextItem(
+                AgentContextSourceId.DurableMemory,
+                redactionOutcome.Content,
+                scopeDescriptor,
+                fingerprint: $"mem:{record.MemoryId.Value}:rev:{record.OrderingSequence}:{staleMarker}",
+                redactionOutcome.State,
+                AgentContextTokenEstimator.Estimate(redactionOutcome.Content),
+                provenance,
+                redactionOutcome.Reason);
+
+            candidates.Add(
+                new AgentContextManifestCandidate(
+                    item,
+                    AgentContextSourcePriority.GetPriority(AgentContextSourceId.DurableMemory)));
+        }
     }
 
     private static AgentContextExclusionDecision CreateHardExclusionDecision(
