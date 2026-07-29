@@ -615,7 +615,13 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         var services = new ServiceCollection();
         services.AddZaideAgents();
 
-        Assert.Equal(33, services.Count);
+        // Phase 21 M1–M6 expanded the Agents DI membership to admit durable
+        // record storage, trace/usage capture pipelines, session continuity,
+        // memory records, retrieval/influence, and the integrated lifecycle
+        // coordinator. The total reflects every AddSingleton admitted by
+        // M1–M6 in registration order; the legacy `IAgentBackend` shape is
+        // still owned by Native Harness + ACP sibling registration.
+        Assert.Equal(83, services.Count);
 
         var backendDescriptors = services
             .Where(d => d.ServiceType == typeof(IAgentBackend))

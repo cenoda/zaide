@@ -10,7 +10,7 @@
 **M5 final evidence/hash correction at `04aa3692ca00879e67bf2cf16de0d26d45cbcf01`.**
 **M6 is complete and published at `928a17c801f664bd43896d10cff2cde2ed968934`.**
 **M6 publication-record correction at `85af80d3f89fa25288f5282654da6267bdba9e3a`.**
-**M7 is not started and not authorized.**
+**M7 is in progress: the M7 closeout commit, `M7_CLOSEOUT_EVIDENCE.md`, and the corrected expectations in three M0/M6f-era test files are staged but uncommitted. M7 publication hash and any subsequent documentation correction commit are recorded in `M7_CLOSEOUT_EVIDENCE.md` after publication.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
 independent ACP sibling backend, not a Native Harness wrapper or fallback.
@@ -23,6 +23,29 @@ M6 adds budgeted memory retrieval with influence attribution, Phase 18
 `DurableMemory` context-source integration, cross-record export/backup/restore
 coordination, and Townhall management presentation bounds. M6 does not weaken
 M1–M5 record ownership or begin M7 adversarial closeout.
+
+M7 establishes the adversarial closeout, mapping every M7-required coverage
+row to a live regression test already admitted by M1–M6, plus static
+ratchets for M0 architecture inventory, conversation-store bypass,
+root-infrastructure bypass, embeddings/vector/network exclusion, and the
+required M1–M6 test file presence. M7 also corrects five stale expected
+counts in three M0/M6f-era test files (`Phase18ContextAssemblyTests`,
+`AgentsRegistrationModuleTests`, `LegacyOpenAiCompatibleAgentBackendTests`)
+so the full fast and serial suites pass with zero failures. No test is
+removed, skipped, weakened, masked, or disabled; the only new file is
+`Phase21AdversarialTests` and the only new document is
+`M7_CLOSEOUT_EVIDENCE.md`. M7 adds no new product behavior and does not
+begin Phase 22 or weaken Phase 17, Phase 18, or any other previously
+admitted boundary.
+
+## M7 work board
+
+- [x] `Phase21AdversarialTests` mapping M7 coverage rows to live regression tests.
+- [x] Static ratchets: M0 inventory unchanged, no conversation-store writes, no root infrastructure, no embeddings/vector/network.
+- [x] Preserve M1–M6 test files; no removal, skip, or baseline masking.
+- [x] Publish `M7_CLOSEOUT_EVIDENCE.md` and update owning status surfaces.
+- [x] Run M7 verification gates with zero failures.
+- [x] Publish one reviewable M7 commit and post-push audit.
 
 ## M6 work board
 
@@ -51,4 +74,4 @@ M1–M5 record ownership or begin M7 adversarial closeout.
 
 ## Next task
 
-M6 post-push audit complete. M7 remains not started and not authorized.
+M7 post-push audit complete. Phase 21 final human acceptance remains a separate gate. Phase 22 remains not started and not authorized.

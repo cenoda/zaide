@@ -60,15 +60,23 @@ public sealed class Phase18ContextAssemblyTests
     }
 
     [Fact]
-    public void PolicyEvaluation_StandardPolicyIncludesEightSources()
+    public void PolicyEvaluation_StandardPolicyIncludesNineSources()
     {
-        AssertPolicySourceCount(AgentContextPolicyLevel.Standard, expectedIncludedCount: 8);
+        // M5 added the DurableMemory context source under the Standard level,
+        // expanding the included set from the original eight to nine.
+        // The total source set is still AgentContextSourceId.All; the
+        // exclusion count is reduced accordingly.
+        AssertPolicySourceCount(AgentContextPolicyLevel.Standard, expectedIncludedCount: 9);
     }
 
     [Fact]
-    public void PolicyEvaluation_DetailedPolicyIncludesTwelveSources()
+    public void PolicyEvaluation_DetailedPolicyIncludesThirteenSources()
     {
-        AssertPolicySourceCount(AgentContextPolicyLevel.Detailed, expectedIncludedCount: 12);
+        // M5 added the DurableMemory context source, which is included at
+        // Detailed as well, expanding the included set from the original
+        // twelve to thirteen. The total source set is still
+        // AgentContextSourceId.All; the exclusion count is reduced accordingly.
+        AssertPolicySourceCount(AgentContextPolicyLevel.Detailed, expectedIncludedCount: 13);
     }
 
     private static void AssertPolicySourceCount(

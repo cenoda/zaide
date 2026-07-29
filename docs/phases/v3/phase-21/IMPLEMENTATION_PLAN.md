@@ -2,13 +2,13 @@
 
 ## Status and authorization
 
-**Status:** M1, M2, M3, M4, M5, and M6 are complete and published; M6 is published at `928a17c801f664bd43896d10cff2cde2ed968934` with publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`; M7 is not started and not authorized.
+**Status:** M1, M2, M3, M4, M5, and M6 are complete and published; M6 is published at `928a17c801f664bd43896d10cff2cde2ed968934` with publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`. M7 is in progress and not yet published: the M7 closeout commit, `M7_CLOSEOUT_EVIDENCE.md`, and the corrected expectations in three M0/M6f-era test files are staged but uncommitted. M7 publication hash and any subsequent documentation correction commit are recorded in `M7_CLOSEOUT_EVIDENCE.md` after publication.
 
-**Authorized work through M6:** Session continuity, explicit termination, durable scoped memory records, budgeted memory retrieval/influence attribution, and integrated management are complete; M7 adversarial and release closeout remains unauthorized.
+**Authorized work through M6:** Session continuity, explicit termination, durable scoped memory records, budgeted memory retrieval/influence attribution, and integrated management are complete. M7 adversarial and release closeout is in progress.
 
-**Production authorization:** extends through M6 only.
+**Production authorization:** extends through M6 only; M7 closeout adds no new product behavior.
 
-**Next gate:** M7 remains not started and not authorized.
+**Next gate:** M7 closeout commit, push to `origin/master`, and post-push verification remain. Phase 21 final human acceptance remains a separate gate. Phase 22 remains not started and not authorized.
 
 ### M0 repository baseline
 

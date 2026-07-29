@@ -12,10 +12,25 @@ using Zaide.App.Composition;
 using Zaide.App.Composition.Registration;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
+using Zaide.Features.Agents.Application.Continuity;
+using Zaide.Features.Agents.Application.Memory;
+using Zaide.Features.Agents.Application.Transparency;
+using Zaide.Features.Agents.Application.Transparency.Trace;
+using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Continuity;
+using Zaide.Features.Agents.Contracts.Transparency;
+using Zaide.Features.Agents.Contracts.Transparency.Memory;
+using Zaide.Features.Agents.Contracts.Transparency.Trace;
+using Zaide.Features.Agents.Contracts.Transparency.Usage;
+using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Infrastructure.Acp;
+using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Memory;
+using Zaide.Features.Agents.Presentation.Transparency;
 
 namespace Zaide.Tests.App.Composition;
 
@@ -63,6 +78,62 @@ public sealed class AgentsRegistrationModuleTests
         typeof(IAgentCommandResolver).FullName!,
         typeof(IAgentCommandExecutor).FullName!,
         typeof(IAgentActionBrokerFactory).FullName!,
+        // Phase 21 M1: backend-neutral durable record storage foundation.
+        typeof(IAgentDurableRecordStore).FullName!,
+        typeof(AgentDurableRecordCoordinator).FullName!,
+        // Phase 21 M2: backend-neutral redacted trace evidence capture and inspection.
+        typeof(AgentTraceCaptureLimits).FullName!,
+        typeof(AgentUsageCaptureLimits).FullName!,
+        typeof(AgentDurableWorkspaceStorageKeyResolver).FullName!,
+        typeof(AgentTraceBoundedCaptureQueue).FullName!,
+        typeof(AgentTraceCaptureSink).FullName!,
+        typeof(IAgentTraceSourceRegistry).FullName!,
+        typeof(IAgentTraceInspector).FullName!,
+        typeof(AgentTraceCoordinator).FullName!,
+        typeof(AgentTraceBackendEvidenceSourceWriter).FullName!,
+        typeof(IAgentTraceBackendEvidenceSource).FullName!,
+        typeof(IAgentTraceBackendEvidenceSource).FullName!,
+        typeof(AgentTraceAvailabilityProjection).FullName!,
+        typeof(AgentTraceInspectionViewModel).FullName!,
+        // Phase 21 M3: usage and cost evidence ledger.
+        typeof(AgentUsageCaptureSink).FullName!,
+        typeof(IAgentUsageInspector).FullName!,
+        typeof(AgentUsageCoordinator).FullName!,
+        typeof(AgentUsageBackendEvidenceSourceWriter).FullName!,
+        typeof(IAgentUsageBackendEvidenceSource).FullName!,
+        typeof(IAgentUsageBackendEvidenceSource).FullName!,
+        typeof(AgentUsageAvailabilityProjection).FullName!,
+        typeof(AgentUsageInspectionViewModel).FullName!,
+        // Phase 21 M4: session continuity, explicit recovery, and termination.
+        typeof(AgentSessionContinuityCheckpointWriter).FullName!,
+        typeof(AgentSessionContinuityInspector).FullName!,
+        typeof(IAgentSessionContinuityInspector).FullName!,
+        typeof(AgentSessionContinuityRevalidator).FullName!,
+        typeof(IAgentBackendContinuityAdapter).FullName!,
+        typeof(IAgentBackendContinuityAdapter).FullName!,
+        typeof(IAgentSessionContinuityCoordinator).FullName!,
+        typeof(AgentSessionContinuityStartupReconciler).FullName!,
+        typeof(AgentSessionContinuityEventSubscriber).FullName!,
+        typeof(AgentSessionContinuityAvailabilityProjection).FullName!,
+        typeof(AgentSessionContinuityInspectionViewModel).FullName!,
+        // Phase 21 M5: durable scoped memory records (store only; no retrieval/injection).
+        typeof(AgentMemoryStoreWriter).FullName!,
+        typeof(AgentMemoryInspector).FullName!,
+        typeof(IAgentMemoryInspector).FullName!,
+        typeof(IAgentMemoryPolicyEvaluator).FullName!,
+        typeof(IAgentMemoryLifecycleService).FullName!,
+        typeof(AgentMemoryCoordinator).FullName!,
+        typeof(IAgentMemoryCoordinator).FullName!,
+        typeof(AgentMemoryAvailabilityProjection).FullName!,
+        typeof(AgentMemoryInspectionViewModel).FullName!,
+        // Phase 21 M6: budgeted memory retrieval, influence attribution, integrated lifecycle.
+        typeof(AgentMemoryRetriever).FullName!,
+        typeof(IAgentMemoryRetrievalService).FullName!,
+        typeof(AgentMemoryInfluenceRecorder).FullName!,
+        typeof(IAgentMemoryInfluenceRecorder).FullName!,
+        typeof(AgentTransparencyLifecycleCoordinator).FullName!,
+        typeof(IAgentTransparencyLifecycleCoordinator).FullName!,
+        typeof(AgentTransparencyManagementViewModel).FullName!,
     };
 
 
@@ -105,7 +176,12 @@ public sealed class AgentsRegistrationModuleTests
         var returned = services.AddZaideAgents();
 
         Assert.Same(services, returned);
-        Assert.Equal(33, services.Count);
+        // Phase 21 M1–M6 expanded the Agents DI membership to admit durable
+        // record storage, trace/usage capture pipelines, session continuity,
+        // memory records, retrieval/influence, and the integrated lifecycle
+        // coordinator. The total reflects every AddSingleton admitted by
+        // M1–M6 in registration order.
+        Assert.Equal(83, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -442,7 +518,10 @@ public sealed class AgentsRegistrationModuleTests
                 moduleSource,
                 @"AddSingleton<IAgentPermissionReviewService,\s*InteractiveAgentPermissionReviewService>\(\)"));
 
-        Assert.Equal(33, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        // Phase 21 M1–M6 expanded the Agents DI membership; the count now
+        // reflects the durable record, trace/usage, continuity, memory, and
+        // integrated-lifecycle registrations admitted through M6.
+        Assert.Equal(83, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
     [Fact]
