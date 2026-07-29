@@ -5,6 +5,7 @@ using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
@@ -19,7 +20,8 @@ internal static class AgentExecutionTestSupport
         AgentPanelHost host,
         IAgentExecutionService executionService,
         IConversationStore? conversationStore = null,
-        IConversationDraftState? draftState = null)
+        IConversationDraftState? draftState = null,
+        IActorCatalog? catalog = null)
     {
         if (executionService is not AgentExecutionService concrete)
         {
@@ -29,6 +31,8 @@ internal static class AgentExecutionTestSupport
         }
 
         var backend = new LegacyOpenAiCompatibleAgentBackend(concrete);
+        var bindingStore = new AgentActorBackendBindingStore();
+        BindActorsForCoordinator(host, bindingStore, backend.BackendId, catalog);
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
         var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
         _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
@@ -36,6 +40,7 @@ internal static class AgentExecutionTestSupport
             host,
             session,
             store,
+            bindingStore,
             draftState);
     }
 
@@ -43,9 +48,12 @@ internal static class AgentExecutionTestSupport
         AgentPanelHost host,
         Func<string, Task<AgentExecutionResult>> handler,
         IConversationStore? conversationStore = null,
-        IConversationDraftState? draftState = null)
+        IConversationDraftState? draftState = null,
+        IActorCatalog? catalog = null)
     {
         var backend = new ResultMappingAgentBackend(handler);
+        var bindingStore = new AgentActorBackendBindingStore();
+        BindActorsForCoordinator(host, bindingStore, backend.BackendId, catalog);
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
         var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
         _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
@@ -53,7 +61,21 @@ internal static class AgentExecutionTestSupport
             host,
             session,
             store,
+            bindingStore,
             draftState);
+    }
+
+    public static AgentExecutionCoordinator CreateCoordinator(
+        AgentPanelHost host,
+        IAgentSessionService session,
+        IConversationStore store,
+        AgentBackendId backendId,
+        IConversationDraftState? draftState = null,
+        IActorCatalog? catalog = null)
+    {
+        var bindingStore = new AgentActorBackendBindingStore();
+        BindActorsForCoordinator(host, bindingStore, backendId, catalog);
+        return new AgentExecutionCoordinator(host, session, store, bindingStore, draftState);
     }
 
     public static (AgentExecutionCoordinator Coordinator, FakeAgentBackend Backend, IAgentSessionService Session)
@@ -61,10 +83,13 @@ internal static class AgentExecutionTestSupport
             AgentPanelHost host,
             IConversationStore? conversationStore = null,
             IConversationDraftState? draftState = null,
-            AgentBackendId? backendId = null)
+            AgentBackendId? backendId = null,
+            IActorCatalog? catalog = null)
     {
         var backend = new FakeAgentBackend(
             backendId ?? AgentBackendId.FromValue(LegacyOpenAiCompatibleAgentBackend.BackendIdValue));
+        var bindingStore = new AgentActorBackendBindingStore();
+        BindActorsForCoordinator(host, bindingStore, backend.BackendId, catalog);
         var session = new AgentSessionService(new[] { backend }, new AgentEventStream());
         var store = conversationStore ?? Conversations.ConversationsTestSupport.CreateStore();
         _ = new AgentConversationEventProjection(session.Events, store, Conversations.ConversationsTestSupport.CreateCatalog());
@@ -72,8 +97,34 @@ internal static class AgentExecutionTestSupport
             host,
             session,
             store,
+            bindingStore,
             draftState);
         return (coordinator, backend, session);
+    }
+
+    private static void BindActorsForCoordinator(
+        AgentPanelHost host,
+        IAgentActorBackendBindingStore bindingStore,
+        AgentBackendId backendId,
+        IActorCatalog? catalog = null)
+    {
+        catalog ??= new ActorCatalog();
+
+        foreach (var actor in catalog.ListAgents())
+        {
+            if (!bindingStore.HasBinding(actor.Id))
+            {
+                bindingStore.SetBinding(new AgentActorBackendBinding(actor.Id, backendId));
+            }
+        }
+
+        foreach (var panel in host.Panels)
+        {
+            if (!bindingStore.HasBinding(panel.ActorId))
+            {
+                bindingStore.SetBinding(new AgentActorBackendBinding(panel.ActorId, backendId));
+            }
+        }
     }
 
     public static AgentExecutionCoordinatorResult SuccessResult(

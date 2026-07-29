@@ -42,7 +42,8 @@ public sealed class Phase15TownhallParityTests
         var session = new AgentSessionService(new[] { backend }, stream);
         var projection = new AgentConversationEventProjection(stream.Events, store, catalog);
 
-        var coordinator = new AgentExecutionCoordinator(host, session, store, draftState);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(
+            host, session, store, backend.BackendId, draftState, catalog);
         var router = new AgentRouter(new MentionParser(), host, coordinator, catalog, store);
 
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
@@ -202,7 +203,8 @@ public sealed class Phase15TownhallParityTests
         var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
         var session = new AgentSessionService(new[] { backend }, stream);
         var host = ConversationsTestSupport.CreatePanelHost(catalog, store);
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(
+            host, session, store, backend.BackendId, catalog: catalog);
         var vm = ConversationsTestSupport.CreateTownhallViewModel(
             catalog: catalog,
             store: store,

@@ -615,12 +615,12 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         var services = new ServiceCollection();
         services.AddZaideAgents();
 
-        Assert.Equal(25, services.Count);
+        Assert.Equal(33, services.Count);
 
         var backendDescriptors = services
             .Where(d => d.ServiceType == typeof(IAgentBackend))
             .ToArray();
-        Assert.Single(backendDescriptors);
+        Assert.Equal(2, backendDescriptors.Length);
         Assert.Equal(ServiceLifetime.Singleton, backendDescriptors[0].Lifetime);
         Assert.NotNull(backendDescriptors[0].ImplementationFactory);
     }

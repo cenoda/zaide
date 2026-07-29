@@ -18,7 +18,13 @@ internal static class TownhallServiceCollectionExtensions
         services.AddSingleton<TownhallState>();
         services.AddSingleton<TownhallConversationUiState>();
         services.AddSingleton<IConversationWorkspacePersistenceBridge, TownhallConversationPersistenceBridge>();
-        services.AddSingleton<ConversationPersistenceService>();
+        services.AddSingleton<ConversationPersistenceService>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new ConversationPersistenceService(
+                (IConversationStore)get(typeof(IConversationStore))!,
+                (IConversationWorkspacePersistenceBridge)get(typeof(IConversationWorkspacePersistenceBridge))!);
+        });
         services.AddSingleton<TownhallViewModel>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;

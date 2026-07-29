@@ -162,10 +162,11 @@ internal sealed class ManagedProcessRunner : IManagedProcessRunner
             {
                 if (ReferenceEquals(_process, process))
                 {
-                    _process?.Dispose();
                     _process = null;
                 }
             }
+
+            process?.Dispose();
         }
     }
 
@@ -209,7 +210,8 @@ internal sealed class ManagedProcessRunner : IManagedProcessRunner
             // Best effort during app shutdown.
         }
 
-        process?.Dispose();
+        // RunAsync owns Process disposal once startup completes; disposing here
+        // can race an in-flight wait and yield a null exit code.
     }
 
     private async Task PumpStreamAsync(

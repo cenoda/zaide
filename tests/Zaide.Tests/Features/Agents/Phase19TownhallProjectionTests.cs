@@ -212,7 +212,7 @@ public sealed class Phase19TownhallProjectionTests : IDisposable
     public void ActionActivity_UsesExistingBrokerPath_NoNewAgentEventKind()
     {
         var eventKindCount = Enum.GetValues<AgentEventKind>().Length;
-        Assert.Equal(27, eventKindCount);
+        Assert.Equal(28, eventKindCount);
         Assert.Contains(AgentEventKind.ActionResultReported, Enum.GetValues<AgentEventKind>());
 
         var store = ConversationsTestSupport.CreateStore();

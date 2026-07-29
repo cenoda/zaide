@@ -15,6 +15,7 @@ using Zaide.Tests.Features.Agents.Acp.Transport;
 
 namespace Zaide.Tests.Features.Agents.Acp.Integration;
 
+[Collection("AcpProcessIsolation")]
 public sealed class Phase20IntegrationTests
 {
     [Fact]

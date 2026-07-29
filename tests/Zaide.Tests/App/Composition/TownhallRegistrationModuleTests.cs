@@ -154,8 +154,8 @@ public sealed class TownhallRegistrationModuleTests
             Regex.Matches(
                 moduleSource,
                 @"AddSingleton<IConversationWorkspacePersistenceBridge,\s*TownhallConversationPersistenceBridge>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<ConversationPersistenceService>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallViewModel>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<ConversationPersistenceService>\("));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<TownhallViewModel>\("));
 
         Assert.Equal(5, Regex.Matches(moduleSource, @"AddSingleton<").Count);
     }

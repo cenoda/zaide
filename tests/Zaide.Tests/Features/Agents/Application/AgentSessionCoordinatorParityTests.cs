@@ -43,7 +43,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetCompletion("session reply");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var result = await coordinator.SendAsync(panel.PanelId, "hello");
 
@@ -94,7 +94,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetCompletion("stable");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         var events = new List<AgentEvent>();
         using var subscription = session.Events.Subscribe(events.Add);
 
@@ -120,7 +120,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetCompletion("ordered");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         await coordinator.SendAsync(panel.PanelId, "first");
 
@@ -137,7 +137,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "late");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var sendTask = coordinator.SendAsync(panel.PanelId, "blocked");
         await WaitUntilAsync(
@@ -157,7 +157,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetCompletion("exact assistant");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var result = await coordinator.SendAsync(panel.PanelId, "hello");
 
@@ -203,7 +203,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetFailure(failureKind, "typed reason");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var result = await coordinator.SendAsync(panel.PanelId, "hello");
 
@@ -219,7 +219,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromSeconds(5), "never");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -234,7 +234,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromSeconds(5), "late");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         using var cts = new CancellationTokenSource();
         var kinds = new List<AgentEventKind>();
         ExecutionRunId? admittedRunId = null;
@@ -272,7 +272,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromSeconds(5), "never");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         using var cts = new CancellationTokenSource();
         var kinds = new List<AgentEventKind>();
         using var subscription = session.Events.Subscribe(e => kinds.Add(e.Kind));
@@ -294,7 +294,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "busy");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         _ = coordinator.SendAsync(panel.PanelId, "first");
         await WaitForRunningAsync(session, panel.ConversationId);
@@ -310,7 +310,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(300), "winner");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         var busyChanges = new List<bool>();
         coordinator.ConversationBusyChanged += (_, isBusy) => busyChanges.Add(isBusy);
 
@@ -342,7 +342,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var (host, panel, store, backend, session) = CreateSurface();
         var firstGate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         backend.SetGatedCompletion(firstGate, "first");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         var busyChanges = new List<bool>();
         coordinator.ConversationBusyChanged += (_, isBusy) => busyChanges.Add(isBusy);
 
@@ -415,7 +415,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var (host, panel, store, backend, session) = CreateSurface();
         var firstGate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         backend.SetGatedCompletion(firstGate, "first");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var releaseRunATerminalProjection = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -480,7 +480,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var (host, panel, store, backend, session) = CreateSurface();
         var firstGate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         backend.SetGatedCompletion(firstGate, "first");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         var busyChanges = new List<bool>();
         coordinator.ConversationBusyChanged += (_, isBusy) => busyChanges.Add(isBusy);
 
@@ -704,7 +704,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromMilliseconds(250), "done");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         var busyChanges = new List<(ConversationId Id, bool IsBusy)>();
         coordinator.ConversationBusyChanged += (id, isBusy) => busyChanges.Add((id, isBusy));
 
@@ -729,7 +729,7 @@ public sealed class AgentSessionCoordinatorParityTests
         var (host, panel, store, backend, session) = CreateSurface();
         var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         backend.SetGatedCompletion(gate, "after close");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
 
         var sendTask = coordinator.SendAsync(panel.PanelId, "stay alive");
         await WaitForRunningAsync(session, panel.ConversationId);
@@ -750,7 +750,7 @@ public sealed class AgentSessionCoordinatorParityTests
     {
         var (host, panel, store, backend, session) = CreateSurface();
         backend.SetDelayedCompletion(TimeSpan.FromSeconds(5), "late");
-        var coordinator = new AgentExecutionCoordinator(host, session, store);
+        var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, session, store, LegacyBackendId);
         using var cts = new CancellationTokenSource();
         var busyChanges = new List<bool>();
         coordinator.ConversationBusyChanged += (_, isBusy) => busyChanges.Add(isBusy);

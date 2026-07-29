@@ -8,6 +8,7 @@ using Zaide.Features.Agents.Infrastructure.Acp;
 
 namespace Zaide.Tests.Features.Agents.Acp.Transport;
 
+[Collection("AcpProcessIsolation")]
 public sealed class Phase20ProcessLifecycleOwnershipTests
 {
     [Fact]

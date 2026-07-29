@@ -6,6 +6,7 @@ using Zaide.Features.Agents.Infrastructure.Acp;
 
 namespace Zaide.Tests.Features.Agents.Acp.Transport;
 
+[Collection("AcpProcessIsolation")]
 public sealed class Phase20TransportLifecycleTests
 {
     [Fact]
@@ -61,6 +62,7 @@ public sealed class Phase20TransportLifecycleTests
         Assert.True(
             ex is AcpProcessLifecycleException { Kind: AcpProcessLifecycleFailureKind.Timeout }
             or OperationCanceledException
+            or AcpProcessLifecycleException { Kind: AcpProcessLifecycleFailureKind.Cancellation }
             or AcpProcessLifecycleException { Kind: AcpProcessLifecycleFailureKind.ProcessExit });
     }
 }

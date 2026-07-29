@@ -2,9 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8` (depends on M4 at
-`63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction `51ee2691`). M6 is
-not started and not authorized by this document. Phase 21 has not started.
+**Status:** M6 adversarial closeout complete and published (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
 internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
@@ -1006,6 +1004,17 @@ Stop and ask before continuing when any of these occurs:
 - [x] M6 remains not started and not authorized.
 - [x] Phase 21 has not started.
 
+### M6 exit
+
+- [x] `Phase20Adversarial` adversarial coverage and threat-model regression map pass.
+- [x] M1–M5 integration, Townhall projection, and action-bridge regression gates pass.
+- [x] Architecture, full fast, and full serial suites pass with zero failures.
+- [x] `M6_CLOSEOUT_EVIDENCE.md` recorded with limitations and external smoke not executed.
+- [x] One reviewable M6 commit published to `origin/master`.
+- [x] Working tree is clean and `HEAD == origin/master`.
+- [x] Phase 20 final human acceptance remains a separate gate.
+- [x] Phase 21 has not started.
+
 ### Phase exit after M6
 
 - ACP v1 `schema-v1.20.0` conformance and stdio lifecycle gates pass.
@@ -1060,4 +1069,4 @@ authorization. *(Historical M0 evidence; M1 is complete and published at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
 `04831f1c`; M4 complete and published at
 `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction
-`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`). M6 is not started.)*
+`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout complete and published** (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21 has not started.)*

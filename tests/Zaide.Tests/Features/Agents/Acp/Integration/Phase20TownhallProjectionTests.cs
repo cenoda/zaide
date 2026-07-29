@@ -16,6 +16,7 @@ using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Agents.Acp.Integration;
 
+[Collection("AcpProcessIsolation")]
 public sealed class Phase20TownhallProjectionTests
 {
     [Fact]
