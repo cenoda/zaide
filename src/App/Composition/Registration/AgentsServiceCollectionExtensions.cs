@@ -5,11 +5,14 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Application.Transparency.Trace;
+using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Contracts.Transparency.Trace;
+using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
@@ -127,6 +130,17 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentTraceBackendEvidenceSource, AcpAgentTraceSource>();
         services.AddSingleton<AgentTraceAvailabilityProjection>();
         services.AddSingleton<AgentTraceInspectionViewModel>();
+
+        // Phase 21 M3: usage and cost evidence ledger.
+        services.AddSingleton(_ => AgentUsageCaptureLimits.Default);
+        services.AddSingleton<AgentUsageCaptureSink>();
+        services.AddSingleton<IAgentUsageInspector, AgentUsageInspector>();
+        services.AddSingleton<AgentUsageCoordinator>();
+        services.AddSingleton<AgentUsageBackendEvidenceSourceWriter>();
+        services.AddSingleton<IAgentUsageBackendEvidenceSource, NativeHarnessAgentUsageSource>();
+        services.AddSingleton<IAgentUsageBackendEvidenceSource, AcpAgentUsageSource>();
+        services.AddSingleton<AgentUsageAvailabilityProjection>();
+        services.AddSingleton<AgentUsageInspectionViewModel>();
 
         return services;
     }
