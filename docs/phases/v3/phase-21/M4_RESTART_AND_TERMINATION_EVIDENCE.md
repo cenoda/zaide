@@ -4,7 +4,6 @@
 **Depends on:** M1 `SessionRecovery` record class; M2/M3 optional evidence references
 **Status:** Complete; published; verification gates pass with zero failures.
 **Published commit (implementation):** `4b2af9f341df21cea11c99787a2de95b7be0e7f7` (`feat(phase-21): establish M4 session continuity and explicit termination`)
-**Published commit (final publication):** `fbf5f5c31618ec4dc318873b3c8c5e3117762af1` (`docs(phase-21): mark M4 publication gate complete`)
 
 ---
 
