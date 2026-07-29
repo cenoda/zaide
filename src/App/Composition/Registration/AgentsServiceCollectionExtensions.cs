@@ -3,10 +3,12 @@ using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Contracts.Transparency.Trace;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
@@ -30,7 +32,6 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentEventStream>();
         services.AddSingleton<AgentContextManifestBuilder>();
         services.AddSingleton<IAgentContextSnapshotSources, LiveAgentContextSnapshotSources>();
-        services.AddSingleton<IAgentSessionService, AgentSessionService>();
         services.AddSingleton<IAgentContextSessionPolicyService>(Program.ResolveAgentContextSessionPolicyService);
         services.AddSingleton<AgentConversationEventProjection>();
         services.AddSingleton<IAgentPanelHost, AgentPanelHost>();
@@ -118,6 +119,7 @@ internal static class AgentsServiceCollectionExtensions
         // container; the existing pattern keeps the M3 locator-site ratchet
         // honest for this file.
         services.AddSingleton(_ => AgentTraceCaptureLimits.Default);
+        services.AddSingleton(_ => AgentUsageCaptureLimits.Default);
         services.AddSingleton<AgentDurableWorkspaceStorageKeyResolver>(
             _ => new PathDerivedAgentDurableWorkspaceStorageKeyResolver());
         services.AddSingleton<AgentTraceBoundedCaptureQueue>();
@@ -132,7 +134,6 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentTraceInspectionViewModel>();
 
         // Phase 21 M3: usage and cost evidence ledger.
-        services.AddSingleton(_ => AgentUsageCaptureLimits.Default);
         services.AddSingleton<AgentUsageCaptureSink>();
         services.AddSingleton<IAgentUsageInspector, AgentUsageInspector>();
         services.AddSingleton<AgentUsageCoordinator>();
@@ -141,6 +142,20 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentUsageBackendEvidenceSource, AcpAgentUsageSource>();
         services.AddSingleton<AgentUsageAvailabilityProjection>();
         services.AddSingleton<AgentUsageInspectionViewModel>();
+
+        // Phase 21 M4: session continuity, explicit recovery, and termination.
+        services.AddSingleton<AgentSessionContinuityCheckpointWriter>();
+        services.AddSingleton<AgentSessionContinuityInspector>();
+        services.AddSingleton<IAgentSessionContinuityInspector, AgentSessionContinuityInspector>();
+        services.AddSingleton<AgentSessionContinuityRevalidator>();
+        services.AddSingleton<IAgentBackendContinuityAdapter, NativeHarnessAgentContinuityAdapter>();
+        services.AddSingleton<IAgentBackendContinuityAdapter, AcpAgentContinuityAdapter>();
+        services.AddSingleton<IAgentSessionContinuityCoordinator, AgentSessionContinuityCoordinator>();
+        services.AddSingleton<AgentSessionContinuityStartupReconciler>();
+        services.AddSingleton<AgentSessionContinuityEventSubscriber>();
+        services.AddSingleton<AgentSessionContinuityAvailabilityProjection>();
+        services.AddSingleton<AgentSessionContinuityInspectionViewModel>();
+        services.AddSingleton<IAgentSessionService, AgentSessionService>();
 
         return services;
     }

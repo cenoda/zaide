@@ -3,8 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Agents.Application.Continuity;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Domain.Continuity;
+using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Contracts;
 
@@ -22,6 +27,9 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
     private readonly IWorkspaceActionAuthority? _workspaceAuthority;
     private readonly AgentContextManifestBuilder? _contextManifestBuilder;
     private readonly IAgentContextSnapshotSources? _contextSnapshotSources;
+    private readonly IAgentSessionContinuityCoordinator? _continuityCoordinator;
+    private readonly AgentDurableWorkspaceStorageKeyResolver? _workspaceKeyResolver;
+    private readonly Func<string?> _workspaceRootProvider;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
     private readonly Dictionary<ConversationId, AgentContextPolicyLevel> _sessionPolicyOverrides = new();
     private readonly object _sessionsSync = new();
@@ -34,7 +42,10 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         IAgentActionAuditStore? auditStore = null,
         IWorkspaceActionAuthority? workspaceAuthority = null,
         AgentContextManifestBuilder? contextManifestBuilder = null,
-        IAgentContextSnapshotSources? contextSnapshotSources = null)
+        IAgentContextSnapshotSources? contextSnapshotSources = null,
+        IAgentSessionContinuityCoordinator? continuityCoordinator = null,
+        AgentDurableWorkspaceStorageKeyResolver? workspaceKeyResolver = null,
+        Func<string?>? workspaceRootProvider = null)
     {
         ArgumentNullException.ThrowIfNull(backends);
         ArgumentNullException.ThrowIfNull(eventStream);
@@ -46,6 +57,9 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         _workspaceAuthority = workspaceAuthority;
         _contextManifestBuilder = contextManifestBuilder;
         _contextSnapshotSources = contextSnapshotSources;
+        _continuityCoordinator = continuityCoordinator;
+        _workspaceKeyResolver = workspaceKeyResolver;
+        _workspaceRootProvider = workspaceRootProvider ?? (() => Environment.CurrentDirectory);
 
         if (_workspaceAuthority is not null)
         {
@@ -361,6 +375,85 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
         }
     }
 
+    public AgentSessionContinuityReconcileSummary ReconcileInterruptedSessions(
+        AgentSessionContinuityReconcileRequest request)
+    {
+        if (_continuityCoordinator is null)
+        {
+            throw new InvalidOperationException("Session continuity is not configured.");
+        }
+
+        return _continuityCoordinator.Reconcile(request);
+    }
+
+    public AgentSessionContinuityOperationResult ResumeInterruptedSession(
+        AgentSessionContinuityResumeRequest request)
+    {
+        if (_continuityCoordinator is null)
+        {
+            throw new InvalidOperationException("Session continuity is not configured.");
+        }
+
+        return _continuityCoordinator.Resume(request);
+    }
+
+    public AgentSessionContinuityOperationResult TerminateInterruptedSession(
+        AgentSessionContinuityTerminateRequest request)
+    {
+        if (_continuityCoordinator is null)
+        {
+            throw new InvalidOperationException("Session continuity is not configured.");
+        }
+
+        return _continuityCoordinator.Terminate(request);
+    }
+
+    private void RecordContinuityCheckpointLocked(
+        LiveSession session,
+        LiveRun? run,
+        AgentSessionContinuityCheckpointPhase phase,
+        AgentSessionContinuityClassification classification)
+    {
+        if (_continuityCoordinator is null || _workspaceKeyResolver is null)
+        {
+            return;
+        }
+
+        var workspaceRoot = _workspaceRootProvider();
+        if (string.IsNullOrWhiteSpace(workspaceRoot))
+        {
+            return;
+        }
+
+        var workspaceKey = _workspaceKeyResolver.Resolve(workspaceRoot);
+        var fingerprint = AgentSessionContinuityBindingFingerprint.Compute(
+            session.AgentIdentity,
+            session.BackendId,
+            workspaceRoot);
+
+        var scope = new AgentSessionContinuityScope(
+            session.AgentIdentity,
+            session.ConversationId,
+            session.SessionId,
+            run?.RunId,
+            session.BackendId,
+            workspaceKey,
+            workspaceRoot);
+
+        var checkpoint = new AgentSessionContinuityCheckpoint(
+            phase,
+            scope,
+            classification,
+            session.SessionState.Status,
+            run?.StateMachine.Status,
+            AgentSessionContinuityLimits.PayloadSchemaVersion,
+            fingerprint,
+            session.CapabilitySnapshot.Version,
+            DateTimeOffset.UtcNow);
+
+        _continuityCoordinator.RecordCheckpoint(checkpoint);
+    }
+
     public AgentContextSessionPolicyState GetPolicyState(ConversationId conversationId)
     {
         if (conversationId == default)
@@ -421,8 +514,14 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
             return existing;
         }
 
+        var sessionId = AgentSessionId.New();
+        if (_continuityCoordinator?.TryGetResumedSessionId(conversationId, out var resumedSessionId) == true)
+        {
+            sessionId = resumedSessionId;
+        }
+
         var session = new LiveSession(
-            AgentSessionId.New(),
+            sessionId,
             conversationId,
             targetActorId,
             backend.BackendId,
@@ -431,6 +530,11 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
 
         _sessions[conversationId] = session;
         isNewSession = true;
+        RecordContinuityCheckpointLocked(
+            session,
+            run: null,
+            AgentSessionContinuityCheckpointPhase.BeforeSessionStart,
+            AgentSessionContinuityClassification.Recoverable);
         return session;
     }
 
@@ -462,6 +566,11 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
 
         run.StateMachine.TransitionTo(AgentRunStatus.Accepted);
         EmitRunLifecycleLocked(session, run, AgentEventKind.RunAccepted, AgentRunStatus.Accepted);
+        RecordContinuityCheckpointLocked(
+            session,
+            run,
+            AgentSessionContinuityCheckpointPhase.BeforeRunStart,
+            AgentSessionContinuityClassification.Recoverable);
 
         EmitMessageLocked(
             session,

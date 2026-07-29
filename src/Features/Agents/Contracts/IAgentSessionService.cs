@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Domain.Continuity;
+using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Conversations.Domain;
 
 namespace Zaide.Features.Agents.Contracts;
@@ -34,4 +36,13 @@ internal interface IAgentSessionService
     AgentSessionSnapshot? TryGetSessionSnapshot(ConversationId conversationId);
 
     AgentRunSnapshot? TryGetActiveRunSnapshot(ConversationId conversationId);
+
+    AgentSessionContinuityReconcileSummary ReconcileInterruptedSessions(
+        AgentSessionContinuityReconcileRequest request);
+
+    AgentSessionContinuityOperationResult ResumeInterruptedSession(
+        AgentSessionContinuityResumeRequest request);
+
+    AgentSessionContinuityOperationResult TerminateInterruptedSession(
+        AgentSessionContinuityTerminateRequest request);
 }

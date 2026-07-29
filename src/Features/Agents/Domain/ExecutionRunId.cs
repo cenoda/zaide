@@ -18,6 +18,16 @@ public readonly struct ExecutionRunId : IEquatable<ExecutionRunId>
 
     public static ExecutionRunId New() => new($"run:{Guid.NewGuid():N}");
 
+    public static ExecutionRunId FromValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Run id value is required.", nameof(value));
+        }
+
+        return new ExecutionRunId(value);
+    }
+
     public bool Equals(ExecutionRunId other) =>
         string.Equals(_value, other._value, StringComparison.Ordinal);
 

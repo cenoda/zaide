@@ -10,6 +10,7 @@ using Zaide.Features.Workspace.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
 
@@ -84,6 +85,14 @@ public partial class App : Application
             {
                 reviewDialogPresenter.SetOwner(desktop.MainWindow);
             }
+
+            // Phase 21 M4: reconcile interrupted sessions on startup without
+            // resuming side-effecting work. Construct the event subscriber so
+            // lifecycle checkpoints are recorded for the app lifetime.
+            CompositionRoot.Services
+                .GetRequiredService<AgentSessionContinuityStartupReconciler>()
+                .ReconcileOnStartupIfNeeded();
+            _ = CompositionRoot.Services.GetRequiredService<AgentSessionContinuityEventSubscriber>();
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.
