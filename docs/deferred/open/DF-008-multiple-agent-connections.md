@@ -1,6 +1,6 @@
-# DF-008: Allow connecting more than one agent at a time
+# DF-008: Add production management for multiple agent backend connections
 
-**Area:** settings
+**Area:** agents
 **Status:** open
 **Priority:** medium
 **Discovered:** 2026-07-29
@@ -8,44 +8,55 @@
 
 ## Observation
 
-The application currently allows only one agent to be connected at a
-time. The user wants multiple agent connections to be available
-simultaneously.
+The product UI does not expose a supported workflow for configuring and
+maintaining backend connections for multiple agents. This is not a confirmed
+single-agent limitation in the underlying application model.
 
 ## Expected
 
-Users should be able to configure and connect to more than one agent
-from inside the application, and the UI should make clear which agent
-is the active one for a given conversation or action.
+Users should be able to configure and connect more than one agent from inside
+the application. Each direct conversation should make its actor/backend
+binding, authentication state, and connection state clear.
 
 ## Current behavior
 
-Only one agent connection is available. Whether the limitation is in
-the settings tab, the connection lifecycle, the conversation routing,
-or some combination of those has not been inventoried.
+`AgentActorBackendBindingStore` is keyed by `ActorId` and can hold multiple
+bindings concurrently. `AgentActorBackendSelectionService` and
+`AgentBackendBindingPresenter` can bind either the Native Harness or an ACP
+runtime per actor.
+
+The production UI does not call `BindNativeHarness` or `BindAcpRuntime`, and
+the settings model has no persisted agent/backend connection section. The
+missing product capability is therefore a discoverable configuration,
+connection, and persistence workflow rather than a proven one-agent storage
+constraint.
 
 ## Evidence
 
-- Test or smoke-check: Manual UI review
-- Reproduction steps: Open the settings or agent connection surface and
-  try to add a second agent
+- Test or smoke-check: Manual UI review plus live source inventory on
+  2026-07-29
+- Reproduction steps: Open a direct agent conversation and attempt to
+  configure or connect its backend from the application
 - Output, screenshot, or log: None captured
-- Relevant code path: Agent configuration storage, agent connection
-  lifecycle, and conversation routing (exact paths not yet traced)
+- Relevant code paths:
+  - `src/Features/Agents/Application/AgentActorBackendBindingStore.cs`
+  - `src/Features/Agents/Application/AgentActorBackendSelectionService.cs`
+  - `src/Features/Agents/Presentation/AgentBackendBindingPresenter.cs`
+  - `src/Features/Settings/Domain/SettingsModel.cs`
 
 ## Why deferred
 
-Multiple agent connections touch configuration storage, the connection
-lifecycle, conversation routing, and the UI affordance for picking an
-active agent. They should be designed and planned as a single feature
-rather than a series of tweaks. No work is being attempted in this
-note.
+Production connection management touches configuration storage, process and
+authentication lifecycle, conversation routing, and per-actor UI state. It
+should be planned as one product workflow rather than as disconnected UI
+tweaks. No implementation is attempted in this note.
 
 ## Investigation notes
 
-Unknown — not investigated yet. Confirm where the current single-agent
-restriction lives (settings, lifecycle, or both) and whether any
-existing scaffolding supports more than one.
+Initial source inventory confirms that the in-memory binding store supports
+more than one actor. The remaining investigation must inventory creation,
+editing, persistence, authentication, reconnect, removal, and failure
+recovery as one end-to-end user journey.
 
 ## Revisit trigger
 

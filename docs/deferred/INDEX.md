@@ -9,8 +9,8 @@
 | [DF-005](open/DF-005-theme-refresh-cursor-like.md) | Refresh the application theme toward a modern, Cursor-like look | UI | medium | open |
 | [DF-006](open/DF-006-more-settings-options.md) | Add more options to the settings tab | settings | medium | open |
 | [DF-007](open/DF-007-debugger-output-discoverability.md) | Debugger and output panel are not discoverable | UI | medium | open |
-| [DF-008](open/DF-008-multiple-agent-connections.md) | Allow connecting more than one agent at a time | settings | medium | open |
-| [DF-009](open/DF-009-real-acp-integrations.md) | Ship real ACP integrations (Claude Code, OpenCode) so users do not need JSON | other | high | open |
+| [DF-008](open/DF-008-multiple-agent-connections.md) | Add production management for multiple agent backend connections | agents | medium | open |
+| [DF-009](open/DF-009-real-acp-integrations.md) | Ship user-facing ACP backend onboarding and integrations | other | high | open |
 | [DF-010](open/DF-010-header-bar-with-menu.md) | Add a header bar with menu | UI | medium | open |
 
 ---

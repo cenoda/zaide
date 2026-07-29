@@ -9,12 +9,16 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 through Phase 21 | **Complete and closed** (2026-07-29) — Phases 14, 15, and 17–21 complete and accepted; Phase 16 parked as historical evaluation; external candidate/provider smoke not executed; successor roadmap not authorized |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 through Phase 21 | **Implementation sequence complete and technically closed** (2026-07-29) — product-readiness acceptance withheld pending a V1–V3 product reality audit; Phase 16 parked as historical evaluation; successor roadmap not authorized |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
-[Roadmap V3](../roadmap/V3.md) is complete and closed. Refactors
-6.1–6.3, 7, and 8 are complete and closed. Phase 14 lives at
+[Roadmap V3](../roadmap/V3.md) has a complete and technically closed
+implementation sequence. Product readiness is not accepted, and V4 or any
+successor implementation is blocked until a V1–V3 product reality audit
+compares goals, production wiring, and clean-profile user behavior and receives
+an explicit proceed decision. Refactors 6.1–6.3, 7, and 8 are complete and
+closed. Phase 14 lives at
 [`v3/phase-14/IMPLEMENTATION_PLAN.md`](v3/phase-14/IMPLEMENTATION_PLAN.md)
 with closeout evidence in
 [`v3/phase-14/M9_MANUAL_EVIDENCE.md`](v3/phase-14/M9_MANUAL_EVIDENCE.md) and F1 evidence

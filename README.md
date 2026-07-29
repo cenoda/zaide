@@ -19,9 +19,10 @@ smoke, and doc truth-sync. Zaide has the IDE foundation, Townhall workspace,
 direct agent panels, `@mention` routing, and local Git
 status/diff/stage/commit workflows delivered by V1, plus the V2 IDE core.
 Completed plans are archived under [`docs/phases/`](docs/phases/).
-[Roadmap V3 — AI-Native Orchestration](docs/roadmap/V3.md) is **complete and
-closed** (2026-07-29) after a user-approved final closeout. Refactor 6.1 is
-closed and
+[Roadmap V3 — AI-Native Orchestration](docs/roadmap/V3.md) has a **complete
+and technically closed implementation sequence** (2026-07-29), but product
+readiness is not accepted pending a V1–V3 product reality audit. Refactor 6.1
+is closed and
 Refactor 6.2's scheduled M1–M12 feature-first migration is accepted closed.
 Optional M13 root admissions are declined. Refactor 6.3 M0 is accepted; **M1**
 is complete at `e590a79`, **M2** at `d9799ad`, **M3** at `22b869e` (manual
@@ -276,8 +277,9 @@ an IDE, not merely an editor. V2 is done.
 
 ## Roadmap V3
 
-[Roadmap V3](docs/roadmap/V3.md) is complete and closed while preserving the
-completed V2 IDE core. It delivered:
+[Roadmap V3](docs/roadmap/V3.md) has a complete and technically closed
+implementation sequence while preserving the completed V2 IDE core. It
+delivered:
 
 - unify Townhall channels and Agent direct conversations;
 - build a research-driven native Zaide harness with license-compliant
@@ -287,6 +289,13 @@ completed V2 IDE core. It delivered:
   memory scopes, tools, permissions, and attributable workspace changes;
 - begin with bounded architecture refactors (`6.1`–`6.3`, then Refactors 7
   and 8) before Phase 14.
+
+This technical closeout is not product-readiness acceptance. Before V4 or any
+successor implementation, a clean-profile V1–V3 product reality audit must
+compare the documented goals, live production wiring, and actual
+user-observable workflows. Existing issues and deferred findings are initial
+symptoms rather than an exhaustive inventory. V4 remains blocked pending an
+explicit audit decision.
 
 The accepted implementation order is complete. Refactor 6.3 **M6a** is complete at
 `c59ad7b` (AppCore DI registration module — first completed M6 slice). **M6b**
@@ -330,7 +339,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
 `04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
-M0–M7 are complete, published, and accepted; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); **M7 adversarial and release closeout is complete and published** (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`). External candidate/provider smoke remains not executed (separate authorization not provided). Roadmap V3 is complete and closed. Phase 22 remains not started and not authorized.
+M0–M7 are complete, published, and accepted; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); **M7 adversarial and release closeout is complete and published** (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`). External candidate/provider smoke remains not executed (separate authorization not provided). Roadmap V3's implementation sequence is technically closed; product-readiness acceptance remains pending the V1–V3 product reality audit. Phase 22 remains not started and not authorized.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
@@ -348,7 +357,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
 `04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
-M0–M7 are complete, published, and accepted; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); **M7 adversarial and release closeout is complete and published** (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`). External candidate/provider smoke remains not executed (separate authorization not provided). Roadmap V3 is complete and closed. Phase 22 remains not started and not authorized.
+M0–M7 are complete, published, and accepted; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); **M7 adversarial and release closeout is complete and published** (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`). External candidate/provider smoke remains not executed (separate authorization not provided). Roadmap V3's implementation sequence is technically closed; product-readiness acceptance remains pending the V1–V3 product reality audit. Phase 22 remains not started and not authorized.
 
 ## Why "Zaide"
 

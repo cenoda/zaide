@@ -17,8 +17,10 @@ Phase 12 (DAP debugging) are complete. Phase 13 (Release Hardening) is
 performance budgets, settings/workflow/LSP/DAP recovery inventories, critical-
 path evidence, Linux release smoke with honest not-validated rows, and
 documentation truth-sync.
-[Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) is **complete and
-closed** (2026-07-29). Refactor 6.1 **M0–M5 are complete and closed**.
+[Roadmap V3 — AI-Native Orchestration](../roadmap/V3.md) has a **complete and
+technically closed implementation sequence** (2026-07-29), but product
+readiness is not accepted pending a V1–V3 product reality audit. Refactor 6.1
+**M0–M5 are complete and closed**.
 Refactor 6.2 **M1–M12 scheduled mechanical migration is complete** on `master`
 at `72102da` (feature-first tree under `App`, `Features`, and
 `UI/DesignSystem`). Optional 6.2 M13 root admissions are **declined**.
@@ -352,7 +354,7 @@ invoke them autonomously.
 
 ---
 
-## Roadmap V3 Closeout
+## Roadmap V3 Technical Closeout
 
 V3 delivered AI-native orchestration without making the IDE dependent on one
 provider or harness. Its accepted direction is:
@@ -372,10 +374,18 @@ provider or harness. Its accepted direction is:
   boundaries;
 - feature-first source/module refactoring before Phase 14.
 
-Roadmap V3 is complete and closed. Its roadmap, phase plans, work boards, and
-evidence records preserve the accepted Refactor 6.1–6.3, Refactor 7,
-Refactor 8, and Phase 14–21 sequence. Phase 16 remains parked historical
-evaluation work.
+Roadmap V3's implementation sequence is complete and technically closed. Its
+roadmap, phase plans, work boards, and evidence records preserve the accepted
+Refactor 6.1–6.3, Refactor 7, Refactor 8, and Phase 14–21 sequence. Phase 16
+remains parked historical evaluation work.
+
+This architecture and its automated gates do not by themselves prove that a
+clean-profile user can discover, configure, and complete the promised product
+workflows. V4 or any successor implementation is blocked on a V1–V3 product
+reality audit comparing documented goals, live production wiring, and
+user-observable behavior. Completed milestone evidence remains valid technical
+history; product-readiness acceptance is withheld until that separate gate is
+explicitly decided.
 
 ---
 
@@ -396,6 +406,6 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-29 (Roadmap V3 complete and closed; Phase 16 parked;
-external candidate/provider smoke not executed; successor roadmap not
-authorized)*
+*Last updated: 2026-07-29 (V3 implementation sequence technically closed;
+product-readiness acceptance withheld pending V1–V3 product reality audit;
+Phase 16 parked; successor roadmap not authorized)*
