@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Usage;

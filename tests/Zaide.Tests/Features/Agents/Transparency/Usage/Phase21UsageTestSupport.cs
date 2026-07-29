@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;

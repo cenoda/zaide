@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
@@ -15,6 +16,7 @@ internal sealed class AgentUsageCaptureSink : IAgentUsageCaptureSink
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
 
     private readonly AgentUsageCaptureLimits _limits;
@@ -119,7 +121,7 @@ internal sealed class AgentUsageCaptureSink : IAgentUsageCaptureSink
                 reason: "Idempotent duplicate ignored.");
         }
 
-        if (result.Status != AgentDurableRecordAppendStatus.Accepted)
+        if (result.Status != AgentDurableRecordAppendStatus.Appended)
         {
             return new AgentUsageCaptureResult(
                 AgentUsageCaptureStatus.InvalidRequest,
@@ -128,7 +130,7 @@ internal sealed class AgentUsageCaptureSink : IAgentUsageCaptureSink
 
         return new AgentUsageCaptureResult(
             AgentUsageCaptureStatus.Accepted,
-            orderingSequence: result.OrderingSequence);
+            orderingSequence: result.Envelope?.OrderingSequence ?? 0);
     }
 
     private static string BuildIdempotencyKey(AgentUsageCaptureRequest request)

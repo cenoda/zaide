@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Usage;

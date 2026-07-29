@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Xunit;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
@@ -108,7 +109,7 @@ public sealed class Phase21CostEvidenceTests : IDisposable
         var records = Phase21UsageTestSupport.ReplayUsageRecords(_store, _workspaceKey);
         var single = Assert.Single(records);
         Assert.Contains("unavailable", single.PayloadJson.ToLowerInvariant());
-        Assert.Contains("TotalCost", single.PayloadJson);
+        Assert.Contains("totalCost", single.PayloadJson);
     }
 
     [Fact]

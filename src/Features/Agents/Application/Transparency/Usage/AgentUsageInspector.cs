@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
@@ -14,6 +15,7 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
 
     private readonly IAgentDurableRecordStore _store;

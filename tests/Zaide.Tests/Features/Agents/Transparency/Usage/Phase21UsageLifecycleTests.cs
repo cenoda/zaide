@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Xunit;
 using Zaide.Features.Agents.Application.Transparency.Usage;
@@ -141,8 +142,8 @@ public sealed class Phase21UsageLifecycleTests : IDisposable
             "cost", "USD", 0.003m,
             model: "gpt-4",
             pricingSourceId: "openai-2026-07",
-            pricingVersion: 1,
-            formula: "input_tokens * 0.00001 + output_tokens * 0.00003",
+            pricingSourceVersion: 1,
+            pricingFormula: "input_tokens * 0.00001 + output_tokens * 0.00003",
             currency: "USD",
             idempotencyKey: "summary-2"));
 
