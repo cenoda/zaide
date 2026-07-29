@@ -9,6 +9,8 @@
 | 005 | `dotnet test` hangs under redirected output | BUG | high | closed |
 | 006 | Editor crashes on selection change via GetOffset(line, column) | BUG | critical | closed |
 | 007 | Unsaved-changes dialog crashes with XAML InvalidCastException | BUG | critical | closed |
+| 008 | Agent response does not appear in the chat | BUG | high | open |
+| 009 | Chat shows `m6g-townhall-di-singleton-sync` text on agent panel selection | BUG | high | open |
 
 ---
 
