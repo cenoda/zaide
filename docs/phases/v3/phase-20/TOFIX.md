@@ -2,7 +2,7 @@
 
 ## Status
 
-**M6 adversarial closeout complete and published (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21 has not started.**
+**M0–M6 complete, published, and accepted. Final closeout recorded in `docs(phase-20): accept final closeout`. External candidate smoke remains not executed (separate authorization not provided). Phase 21 has not started.**
 
 Phase 19 remains complete, published, accepted, and closed. Phase 20 is an
 independent sibling backend, not a Native Harness wrapper or fallback. M1
@@ -22,7 +22,8 @@ through the existing projection path, and a truthful non-credential-handling
 authentication boundary behind the repository-owned fake ACP process only. M6
 delivered adversarial coverage, `Phase20AdversarialTests`, and
 `M6_CLOSEOUT_EVIDENCE.md` with full fast/serial verification. Phase 20 final
-human acceptance remains a separate gate. Phase 21 has not started.
+human acceptance: **accepted** (recorded in `docs(phase-20): accept final closeout`).
+Phase 21 has not started.
 
 ## M5 work board
 
@@ -194,7 +195,8 @@ Publication commit `84469cea40c554a9c306fff056985a5abec0dec4` (publication-recor
 - [x] Run M6 verification gates (adversarial, integration/Townhall/action-bridge, architecture, full fast, full serial).
 - [x] Publish one reviewable commit: `test(phase-20): close adversarial ACP verification`.
 - [x] Verify post-push clean state and `HEAD == origin/master`.
+- [x] Record explicit human acceptance: `docs(phase-20): accept final closeout`.
 
 ## Next task
 
-Stop at the Phase 20 final read-only human acceptance gate. Phase 21 has not started. Do not begin Phase 21.
+Phase 20 M0–M6 is complete, published, and accepted. Phase 21 has not started. Do not begin Phase 21.

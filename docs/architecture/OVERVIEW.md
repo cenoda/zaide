@@ -62,7 +62,7 @@ Phase 19 is complete, published, and closed. Publication is not pending. Phase
 complete and published** (`880b4524c9c53190687aee0cc10843900191b8ce`,
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
-`04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21
+`04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
 has not started.
 
 ---
@@ -184,7 +184,7 @@ governed by the root-admission detectors.
 | Phase 17 | **Complete, accepted, and closed** (2026-07-26) — backend-gated action control plane and workspace mutation |
 | Phase 18 | **Complete and closed** (2026-07-27) — policy-filtered live IDE context attached to runs; legacy backend remains inert |
 | Phase 19 | **M0–M6 complete, published, and accepted** (2026-07-28) — Native Harness adversarial closeout exercising `M2_THREAT_MODEL.md`; final bypass ratchets; `Phase19Adversarial` 40/40; architecture 41/41; full fast/serial suites 3292/3292; real-repository evaluation evidence only; M1 comparative-execution limitation retained; M6 published (`4b4e1914`, `ca896498`); Phase 19 final human acceptance: accepted |
-| Phase 20 | **M6 adversarial closeout complete and published** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`, M3 at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`, M4 at `63880c53c2317a4e4d85ade2088c96764c510b6f`, M5 at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`, M6 `test(phase-20): close adversarial ACP verification`) — Phase 20 final human acceptance remains a separate gate; see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
+| Phase 20 | **M0–M6 complete, published, and accepted** (M1 at `314076ebc8dcf2c9910baecc5ef96c461910cb1b`, M2 at `880b4524c9c53190687aee0cc10843900191b8ce` with publication record `6b197a8b`, M3 at `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction `04831f1c`, M4 at `63880c53c2317a4e4d85ade2088c96764c510b6f`, M5 at `84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`, M6 `test(phase-20): close adversarial ACP verification`; final closeout `docs(phase-20): accept final closeout`) — external candidate smoke remains not executed (separate authorization not provided); see [`IMPLEMENTATION_PLAN.md`](../phases/v3/phase-20/IMPLEMENTATION_PLAN.md) |
 | Phase 21 | Not started |
 
 ---
@@ -394,4 +394,4 @@ authorize production implementation by itself.
 
 ---
 
-*Last updated: 2026-07-29 (Phase 20 M6 adversarial closeout complete and published; Phase 20 final human acceptance remains a separate gate; Phase 21 not started)*
+*Last updated: 2026-07-29 (Phase 20 M0–M6 complete, published, and accepted; external candidate smoke remains not executed (separate authorization not provided); Phase 21 not started)*

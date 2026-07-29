@@ -2,7 +2,7 @@
 
 ## Status and authorization
 
-**Status:** M6 adversarial closeout complete and published (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21 has not started.
+**Status:** M0–M6 complete, published, and accepted. Final closeout recorded in `docs(phase-20): accept final closeout`. External candidate smoke remains not executed (separate authorization not provided). Phase 21 has not started.
 
 **Authorized work in M1:** Stable ACP v1 schema/codec lock, threat model,
 internal wire DTOs, JSON-RPC/newline framing, pure protocol session plumbing,
@@ -1012,7 +1012,7 @@ Stop and ask before continuing when any of these occurs:
 - [x] `M6_CLOSEOUT_EVIDENCE.md` recorded with limitations and external smoke not executed.
 - [x] One reviewable M6 commit published to `origin/master`.
 - [x] Working tree is clean and `HEAD == origin/master`.
-- [x] Phase 20 final human acceptance remains a separate gate.
+- [x] Phase 20 final human acceptance: **accepted** (recorded in `docs(phase-20): accept final closeout`).
 - [x] Phase 21 has not started.
 
 ### Phase exit after M6
@@ -1026,7 +1026,7 @@ Stop and ask before continuing when any of these occurs:
 - Authentication and external-process limitations are visible.
 - Threat-model/adversarial gates and full fast/serial suites pass.
 - No Phase 21 behavior is claimed.
-- Final human acceptance remains a separate gate.
+- Final human acceptance: **accepted**.
 
 ---
 
@@ -1069,4 +1069,4 @@ authorization. *(Historical M0 evidence; M1 is complete and published at
 `2d90604991dd9b87cb6e22a2c8c9a7b771504de6` with publication-record correction
 `04831f1c`; M4 complete and published at
 `63880c53c2317a4e4d85ade2088c96764c510b6f` with publication-record correction
-`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout complete and published** (`test(phase-20): close adversarial ACP verification`). Phase 20 final human acceptance remains a separate gate. Phase 21 has not started.)*
+`51ee2691`; M5 complete and published at `84469cea40c554a9c306fff056985a5abec0dec4` (publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout complete and published** (`test(phase-20): close adversarial ACP verification`); **Phase 20 final human acceptance: accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21 has not started.)*
