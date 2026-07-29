@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Debugging.Contracts;
 using Zaide.Features.Debugging.Presentation;
@@ -74,6 +75,9 @@ internal static class ApplicationShutdown
 
         // Revoke pending action authority before process exit.
         DisposeOwner(services.GetService<IAgentSessionService>());
+
+        // Flush Phase 21 durable record partitions before process exit.
+        DisposeOwner(services.GetService<IAgentDurableRecordStore>());
 
         // Terminate any owned ACP stdio process trees before application exit.
         AcpProcessHostShutdownRegistry.ShutdownAll();

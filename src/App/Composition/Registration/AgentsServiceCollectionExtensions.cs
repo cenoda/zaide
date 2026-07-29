@@ -3,9 +3,12 @@ using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Infrastructure.Acp;
+using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Workspace.Contracts;
 
@@ -97,6 +100,10 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentCommandResolver, DefaultAgentCommandResolver>();
         services.AddSingleton<IAgentCommandExecutor, WorkspaceCommandExecutor>();
         services.AddSingleton<IAgentActionBrokerFactory, AgentActionBrokerFactory>();
+
+        // Phase 21 M1: backend-neutral durable record storage foundation.
+        services.AddSingleton<IAgentDurableRecordStore, AgentDurableRecordFileStore>();
+        services.AddSingleton<AgentDurableRecordCoordinator>();
 
         return services;
     }

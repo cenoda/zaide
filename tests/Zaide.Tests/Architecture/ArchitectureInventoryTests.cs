@@ -138,6 +138,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +4 internal provider contract production types.
         // Phase 20 M1: +1 internal AcpSchemaProfile.
         Assert.Equal((143, 7, 136), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 21 M1: +13 internal durable-record envelope/domain types.
+        Assert.Equal((13, 0, 13), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -148,6 +150,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +2 internal provider transport/options contracts.
         // Phase 20 M5: +3 internal actor/backend binding contracts.
         Assert.Equal((31, 6, 25), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 21 M1: +2 internal durable-record store contracts.
+        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Contracts.Transparency"]);
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
         // Phase 15 M2: +4 in-memory session lifecycle owner production files.
         // Phase 15 M3b-1: +1 session coordinator event capture production file.
@@ -160,6 +164,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +5 internal execution-loop production types.
         // Phase 20 M5: +2 internal actor/backend binding application services.
         Assert.Equal((51, 7, 44), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
+        Assert.Equal((1, 0, 1), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.
@@ -168,6 +174,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M7: +3 internal AgentCommandPathSupport, AgentCommandEnvironmentBuilder, WorkspaceCommandExecutor.
         // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
         Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 21 M1: +10 internal durable-record file-store production types.
+        Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Infrastructure.Transparency.Storage"]);
         // Phase 20 M3: +5 internal ACP backend adapter types under Application/Acp.
         // Phase 20 M4: +15 internal ACP action bridge types under Application/Acp.
         // Phase 20 M5: +2 internal ACP session client factory types under Application/Acp.
@@ -243,7 +251,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
         // Phase 20 M4: +7 internal ACP action bridge production files.
-        Assert.Equal(693, inventory.SourceFiles.Count);
+        // Phase 21 M1: +23 internal durable-record/storage production files.
+        Assert.Equal(716, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -275,7 +284,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +23 internal ACP protocol foundation production files.
         // Phase 20 M3: +11 internal ACP backend adapter production files.
         // Phase 20 M4: +7 internal ACP action bridge production files.
-        Assert.Equal(648, byFolder["Features"]);
+        // Phase 21 M1: +23 internal durable-record/storage production files.
+        Assert.Equal(671, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

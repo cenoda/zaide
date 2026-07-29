@@ -2,16 +2,16 @@
 
 ## Status and authorization
 
-**Status:** M0 planning only. This plan defines the verified live baseline,
-ownership boundaries, open decisions, and M1+ gates. M1 and every later
-milestone are not started and are not authorized.
+**Status:** M1 complete and published. M2 and every later milestone are not
+started and are not authorized.
 
-**Authorized work in M0:** Documentation-only planning in this file and the
-phase-local `TOFIX.md`.
+**Authorized work through M1:** Backend-neutral durable record/storage
+foundation, M1 evidence documents, focused tests, and architecture ratchets on
+the approved surfaces only.
 
-**Production authorization:** None. M0 does not authorize production code,
-tests, tools, dependencies, UI, persistence, memory, trace, recovery, backend
-behavior, provider execution, credentials, paid services, or Phase 16
+**Production authorization:** M1 storage foundation only. M1 does not
+authorize trace capture, usage/cost UI, session recovery product behavior,
+memory retrieval/injection, credentials, paid services, or Phase 16
 evaluation activity.
 
 ### M0 repository baseline
@@ -170,7 +170,7 @@ UI implementation details.
 | Usage and cost evidence | Backend-neutral Agents usage ledger owner | Backend reports, local token accounting, price catalogs, and invoice facts remain separately attributed evidence |
 | Durable memory | Backend-neutral Agents memory owner keyed to explicit scope and workspace | Conversation store remains history; context assembly remains per-run selection; backend-private memory cannot silently become shared Zaide memory |
 | Projection and management UI | Existing Townhall/conversation experience plus narrowly justified Agents presentation surfaces | No Native-Harness-only or ACP-only transparency, recovery, usage, or memory silo |
-| Storage engine and physical files | **Open for M1** | No root `Infrastructure/`, database, serializer, encryption scheme, or file layout is selected by M0 |
+| Storage engine and physical files | **Resolved at M1** — Agents-owned JSON partitions under `{config}/agents-durable/`; no database or new package |
 
 Cross-feature access follows existing architecture rules: another feature may
 consume only a minimal contract or approved application façade. Infrastructure
@@ -979,9 +979,7 @@ after M7:
 
 ---
 
-## M0 next gate
+## M1 next gate
 
-Stop after publishing this documentation-only M0 plan. The next possible
-action is review and explicit acceptance of M0. Do not begin M1 or create any
-production/test/tool/dependency/UI/persistence/memory/trace/recovery/backend
-behavior without a separate M1 authorization.
+M1 is published. Stop for review/acceptance. Do not begin M2 or create any
+trace/usage/recovery/memory product behavior without separate M2+ authorization.
