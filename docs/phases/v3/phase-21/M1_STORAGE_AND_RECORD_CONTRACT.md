@@ -3,7 +3,7 @@
 **Milestone:** M1 — durable record and storage foundation
 **Status:** Complete (published after verification gate)
 **Depends on:** M0 accepted at `8bb1a179` (`docs(phase-21): establish M0 plan`)  
-**Published commit:** `e030f766` (`feat(phase-21): establish M1 durable record storage foundation`)
+**Published commit:** `4db8320293bf443b6249b70fd2c42eab8d13b7a6` (`feat(phase-21): establish M1 durable record storage foundation`)
 
 M1 resolves the M0 storage-ownership open decision with live evidence. It
 implements only backend-neutral versioned record envelopes, workspace-isolated

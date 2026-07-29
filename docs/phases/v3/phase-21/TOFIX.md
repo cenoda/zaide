@@ -2,7 +2,7 @@
 
 ## Status
 
-**M1 is complete and published at `e030f766`. M2 and all later milestones are not started.**
+**M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`. M2 and all later milestones are not started.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
 independent ACP sibling backend, not a Native Harness wrapper or fallback.
