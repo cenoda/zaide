@@ -3,7 +3,9 @@
 **Milestone:** M5 — durable scoped memory records
 **Depends on:** M1 `Memory` record class
 **Status:** Complete; published; verification gates pass with zero failures.
-**Published commit:** `59f2050c` (`feat(phase-21): establish M5 durable scoped memory records`)
+**Published commits:**
+- `59f2050c987131a4e2c124406ac51ddce8096835` (`feat(phase-21): establish M5 durable scoped memory records`)
+- `04aa3692ca00879e67bf2cf16de0d26d45cbcf01` (`docs(phase-21): correct M5 published commit hash in evidence`)
 
 ---
 

@@ -2,13 +2,13 @@
 
 ## Status and authorization
 
-**Status:** M1, M2, M3, and M4 are complete and published; M5–M7 are not started and not authorized.
+**Status:** M1, M2, M3, M4, and M5 are complete and published; M6–M7 are not started and not authorized.
 
-**Authorized work through M4:** Session continuity and explicit termination are complete; memory and later integrated-management work remain unauthorized.
+**Authorized work through M5:** Session continuity, explicit termination, and durable scoped memory records are complete; memory retrieval/influence and integrated management remain unauthorized.
 
-**Production authorization:** extends through M4 only.
+**Production authorization:** extends through M5 only.
 
-**Next gate:** M4 review/acceptance; M5–M7 remain not started and not authorized.
+**Next gate:** M5 review/acceptance; M6–M7 remain not started and not authorized.
 
 ### M0 repository baseline
 
