@@ -2,14 +2,18 @@
 
 ## Status
 
-**M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`. M2 and all later milestones are not started.**
+**M1 is complete and published at `4db8320293bf443b6249b70fd2c42eab8d13b7a6`.**
+**M2 is complete and pending publication; M3 and all later milestones are not
+started.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
 independent ACP sibling backend, not a Native Harness wrapper or fallback.
 
 M1 delivered the backend-neutral durable record and storage foundation only.
-No trace capture, usage UI, session resume, memory retrieval, prompt injection,
-or M2+ product behavior is authorized.
+M2 adds the redacted trace evidence capture, bounded admission, and
+inspection pipeline over the M1 Trace record class. M2 does not introduce
+usage/cost UI, session resume, memory retrieval, prompt injection, or any
+M3+ product behavior.
 
 ## M1 work board
 
@@ -28,12 +32,45 @@ or M2+ product behavior is authorized.
       `M1_MIGRATION_AND_ROLLBACK_MATRIX.md`.
 - [x] Run M1 verification gates with zero failures.
 
+## M2 work board
+
+- [x] Capture the deepest truthful backend-exposed trace layer only after
+      mandatory redaction (fail-closed) and bounded admission.
+- [x] Enforce bounded payload size and bounded queue depth with backpressure
+      reporting and nonblocking submission.
+- [x] Record explicit capture states: disabled, unavailable, captured,
+      redacted, truncated, failed. (Sampled and summarized reserved for later
+      evidence layers.)
+- [x] Add narrow Native Harness and ACP evidence adapters that produce
+      neutral trace inputs without sharing backend-private internals.
+- [x] Keep durable security audit independent from optional trace capture.
+- [x] Add a presentation seam for trace availability, redaction state, and an
+      inspection entry point. (Townhall projection surface is unchanged.)
+- [x] Preserve workspace isolation and M1 record ownership.
+- [x] Persist through the M1 Trace record class only; no new store or
+      dependency.
+- [x] Add focused Phase 21 trace/redaction/lifecycle tests and
+      `Phase21TraceRatchetTests` (mandatory redaction, bounded queue,
+      backend-private isolation, no conversation coupling, no root
+      `Infrastructure/` admission).
+- [x] Publish `M2_TRACE_REDACTION_AND_RETENTION_EVIDENCE.md`.
+- [x] Run M2 verification gates with zero failures.
+
 ## M1 publication gate
 
 1. Stage exact M1 files.
 2. Run required build/test gates.
 3. Publish one reviewable commit for M1.
 4. Verify clean synchronized post-push state and post-push audit.
+
+## M2 publication gate
+
+1. Stage exact M2 files.
+2. Run required build/test gates.
+3. Publish one reviewable commit for M2.
+4. Verify clean synchronized post-push state and post-push audit.
+5. Confirm M3–M7 remain not started and not authorized.
+6. Stop at the read-only M2 post-push audit gate.
 
 ## Locked M1 boundaries
 
@@ -45,16 +82,34 @@ or M2+ product behavior is authorized.
 - Trace, usage, recovery, audit, and memory payloads remain foundation-only;
   product behavior stays in M2+.
 
-## Open decisions (M2+)
+## Locked M2 boundaries
 
-- Trace capture default, redaction detectors, and retention enforcement.
+- Trace records are Agents-owned and persisted through the M1 Trace record
+  class only.
+- Capture is fail-closed: redaction runs before retention, rendering, export,
+  logging, indexing, backup, and cross-process transfer.
+- Capture state is explicit per record; missing evidence is reported as
+  `Unavailable`, never as `Captured` or `Redacted`.
+- Capture is bounded: payload size and queue depth; backpressure is
+  reported, never silently swallowed; the agent event pipeline is never
+  blocked.
+- Backend evidence adapters do not share backend-private internals; the
+  Native Harness and ACP sources are independent siblings.
+- The display surface is read-only; capture is enabled by composition and
+  display settings do not change provider or model context.
+- M3–M7 remain not started and not authorized.
+
+## Open decisions (M3+)
+
 - Usage taxonomy, pricing source, and cost presentation.
 - Recovery state machine and backend continuity subset.
 - Memory representation, retrieval/index strategy, and influence attribution.
 - Canonical workspace identity beyond path-derived storage keys.
 - Encryption at rest and cross-device synchronization.
+- Whether backend execution paths forward evidence to the registered
+  sources (M2 admits the pipeline; future milestones own the wiring).
 
 ## Next task
 
-Stop for review/acceptance of M1. Do not begin M2 or any later milestone
+Stop for review/acceptance of M2. Do not begin M3 or any later milestone
 without separate authorization.

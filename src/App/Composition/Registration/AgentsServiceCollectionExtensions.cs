@@ -4,12 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Acp;
 using Zaide.Features.Agents.Application.Transparency;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Contracts.Transparency;
+using Zaide.Features.Agents.Contracts.Transparency.Trace;
+using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Infrastructure;
 using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.App.Composition.Registration;
@@ -104,6 +109,24 @@ internal static class AgentsServiceCollectionExtensions
         // Phase 21 M1: backend-neutral durable record storage foundation.
         services.AddSingleton<IAgentDurableRecordStore, AgentDurableRecordFileStore>();
         services.AddSingleton<AgentDurableRecordCoordinator>();
+
+        // Phase 21 M2: backend-neutral redacted trace evidence capture and inspection.
+        // Composition uses constructor injection through the singleton
+        // container; the existing pattern keeps the M3 locator-site ratchet
+        // honest for this file.
+        services.AddSingleton(_ => AgentTraceCaptureLimits.Default);
+        services.AddSingleton<AgentDurableWorkspaceStorageKeyResolver>(
+            _ => new PathDerivedAgentDurableWorkspaceStorageKeyResolver());
+        services.AddSingleton<AgentTraceBoundedCaptureQueue>();
+        services.AddSingleton<AgentTraceCaptureSink>();
+        services.AddSingleton<IAgentTraceSourceRegistry, AgentTraceSourceRegistry>();
+        services.AddSingleton<IAgentTraceInspector, AgentTraceInspector>();
+        services.AddSingleton<AgentTraceCoordinator>();
+        services.AddSingleton<AgentTraceBackendEvidenceSourceWriter>();
+        services.AddSingleton<IAgentTraceBackendEvidenceSource, NativeHarnessAgentTraceSource>();
+        services.AddSingleton<IAgentTraceBackendEvidenceSource, AcpAgentTraceSource>();
+        services.AddSingleton<AgentTraceAvailabilityProjection>();
+        services.AddSingleton<AgentTraceInspectionViewModel>();
 
         return services;
     }
