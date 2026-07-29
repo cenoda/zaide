@@ -7,6 +7,8 @@
 **Implementation commit:** `f75de2344ee57fdd59f771c7e17c9059edffcca1`
 **Publication/hash-correction commit:** `474a15b015649d50aa95ae30223a56bcb1bba3e6`
 **M3 is complete and published.**
+**Implementation commit:** `29bfb296` (`feat(phase-21): establish M3 usage and cost evidence ledger`)
+**Fixup commit:** `c1810872` (`fix(phase-21): add missing imports for M3 usage ledger`)
 **M4–M7 are not started and not authorized.**
 
 Phase 20 remains complete, published, accepted, and unchanged. It is an
@@ -111,12 +113,12 @@ memory retrieval, prompt injection, or any M4+ product behavior.
 
 ## M3 publication gate
 
-1. [ ] Stage exact M3 files.
-2. [ ] Run required build/test gates.
-3. [ ] Publish one reviewable commit for M3.
-4. [ ] Verify clean synchronized post-push state and post-push audit.
-5. [ ] Confirm M4–M7 remain not started and not authorized.
-6. [ ] Stop at the read-only M3 post-push audit gate.
+1. [x] Stage exact M3 files.
+2. [x] Run required build/test gates.
+3. [x] Publish one reviewable commit for M3.
+4. [x] Verify clean synchronized post-push state and post-push audit.
+5. [x] Confirm M4–M7 remain not started and not authorized.
+6. [x] Stop at the read-only M3 post-push audit gate.
 
 ## Locked M2 boundaries
 
