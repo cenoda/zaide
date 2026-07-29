@@ -28,8 +28,6 @@ internal sealed class AgentTransparencyLifecycleCoordinator : IAgentTransparency
 
     public AgentTransparencyExportPackage Export(AgentDurableWorkspaceStorageKey workspaceKey)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
-
         var sections = new List<AgentTransparencyExportSection>();
         var hasPartialUnavailable = false;
 
@@ -66,8 +64,6 @@ internal sealed class AgentTransparencyLifecycleCoordinator : IAgentTransparency
 
     public AgentTransparencyBackupPackage Backup(AgentDurableWorkspaceStorageKey workspaceKey)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
-
         var load = _store.LoadWorkspace(workspaceKey);
         if (load == AgentDurableRecordLoadOutcome.UnsupportedVersion
             || load == AgentDurableRecordLoadOutcome.Quarantined)
@@ -108,7 +104,6 @@ internal sealed class AgentTransparencyLifecycleCoordinator : IAgentTransparency
         AgentDurableWorkspaceStorageKey workspaceKey,
         string backupDirectory)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
         if (string.IsNullOrWhiteSpace(backupDirectory))
         {
             throw new ArgumentException("Backup directory is required.", nameof(backupDirectory));
@@ -141,7 +136,6 @@ internal sealed class AgentTransparencyLifecycleCoordinator : IAgentTransparency
 
     public AgentDurableRecordLoadOutcome Migrate(AgentDurableWorkspaceStorageKey workspaceKey)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
         return _store.LoadWorkspace(workspaceKey);
     }
 

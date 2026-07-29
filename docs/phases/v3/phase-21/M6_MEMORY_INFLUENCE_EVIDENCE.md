@@ -4,6 +4,7 @@
 **Depends on:** M1 `Memory` record class; M5 durable scoped memory records
 **Status:** Complete; published; verification gates pass with zero failures.
 **Published commit:** `928a17c801f664bd43896d10cff2cde2ed968934`
+**Publication-record correction:** `85af80d3f89fa25288f5282654da6267bdba9e3a`
 
 ---
 

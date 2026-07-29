@@ -83,10 +83,11 @@ stdio process lifecycle is complete and published** (`880b4524c9c53190687aee0cc1
 publication record `6b197a8b`); **M3 backend contract adapter is complete and
 published** (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record
 correction `04831f1c`); **M4 action mediation is complete and published**
-(`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21 has not
-started. See
-`docs/phases/v3/phase-19/TOFIX.md` and
-`docs/phases/v3/phase-20/TOFIX.md`.
+(`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). [Phase
+21](docs/phases/v3/phase-21/IMPLEMENTATION_PLAN.md) M1–M6 are complete and published; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); M7 is not started and not authorized. See
+`docs/phases/v3/phase-19/TOFIX.md`,
+`docs/phases/v3/phase-20/TOFIX.md`, and
+`docs/phases/v3/phase-21/TOFIX.md`.
 
 ## Philosophy
 
@@ -327,7 +328,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
 `04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
-has not started.
+M1–M6 are complete and published; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); M7 is not started and not authorized.
 [Phase 17](docs/phases/v3/phase-17/IMPLEMENTATION_PLAN.md) M0–M9 are complete;
 closeout evidence is in
 [`M9_CLOSEOUT_EVIDENCE.md`](docs/phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md).
@@ -345,7 +346,7 @@ foundation is complete and published at `314076ebc8dcf2c9910baecc5ef96c461910cb1
 publication record `6b197a8b`); **M3 backend contract is complete and published**
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
 `04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
-has not started.
+M1–M6 are complete and published; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); M7 is not started and not authorized.
 
 ## Why "Zaide"
 

@@ -189,7 +189,6 @@ internal sealed class AgentDurableRecordFileStore : IAgentDurableRecordStore, ID
     public string GetWorkspaceDirectoryPath(AgentDurableWorkspaceStorageKey workspaceKey)
     {
         ThrowIfDisposed();
-        ArgumentNullException.ThrowIfNull(workspaceKey);
         return Path.Combine(_rootDirectory, workspaceKey.Value);
     }
 

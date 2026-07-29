@@ -33,7 +33,6 @@ internal sealed class AgentMemoryInfluenceRecorder : IAgentMemoryInfluenceRecord
         IReadOnlyList<AgentMemoryInfluenceRevision> revisions,
         string? unavailableReason = null)
     {
-        ArgumentNullException.ThrowIfNull(workspaceKey);
         if (runId == default)
         {
             throw new ArgumentException("Run id is required.", nameof(runId));
