@@ -14,6 +14,11 @@ the code wins — but the docs must be fixed immediately.
 
 ```
 docs/
+├── audits/              # Cross-version product-reality audit plans and evidence
+│   └── <audit-name>/
+│       ├── AUDIT_PLAN.md   # Audit plan: scope, phases (A0–A4), safety, quality gates
+│       ├── GOAL_MATRIX.md  # Inventory of user-observable promises, one per row
+│       └── evidence/       # Audit-phase evidence files (added per phase)
 ├── architecture/        # How Zaide is designed (high-level diagrams, subsystems)
 │   └── OVERVIEW.md      # Two-layer architecture, agent-to-agent model
 ├── roadmap/
@@ -56,6 +61,7 @@ Create these folders/files when first needed — not all at once.
 | Trigger | Update |
 |---------|--------|
 | Defining a successor roadmap | Create `docs/roadmap/VN.md`; preserve completed roadmap records |
+| Starting a cross-version product-reality audit | Create `docs/audits/<audit-name>/AUDIT_PLAN.md` and `GOAL_MATRIX.md`; do not place audit content in a single phase folder |
 | Completing a planned implementation item | Update the current phase or refactor `TOFIX.md`; update the roadmap only if the phase outcome, order, or dependency changed |
 | Adding a NuGet package | Add entry to `docs/LIBRARIES.md` |
 | Changing architecture (DI, interfaces, new subsystem) | Update `docs/architecture/` |
@@ -503,3 +509,67 @@ Before marking a milestone `[x]` or a phase complete, run the exact verification
 commands and check that every file the plan says should exist actually exists.
 "Build passes and tests pass" is not enough — the plan may list test files
 that were never created.
+
+---
+
+## 14. Cross-Version Product-Reality Audits
+
+A cross-version audit compares **documented goals**, **live code/wiring**, and
+**clean-profile user-observable behavior** across one or more completed roadmap
+versions before the next roadmap can begin. It is not a phase, not a refactor,
+and not a regular review. It is the gate that releases (or withholds)
+authorization for successor-roadmap planning.
+
+Audits live under `docs/audits/<audit-name>/`. The folder is the sole owner of
+audit plans, goal matrices, and audit evidence.
+
+### Document ownership
+
+| Document | Owns | Update when |
+|----------|------|------------|
+| `AUDIT_PLAN.md` | Audit scope, phase decomposition (A0–A4), safety rules, isolation rules, quality gates, evidence expectations | The audit plan changes, or a phase transitions to the next |
+| `GOAL_MATRIX.md` | The complete inventory of user-observable promises extracted from roadmap and phase documents, organized by user journey | A new promise is added during the inventory phase, a duplicate is merged, or a phase adds a documented promise |
+| `evidence/` | Per-phase evidence files (wiring audit, clean-profile smoke, gap analysis) | Each audit phase produces its evidence |
+
+### Audit phase convention
+
+Audits use a fixed phase sequence so a successor audit can build on prior
+findings without re-inventing the structure:
+
+| Phase | Name | Purpose | Allowed output |
+|-------|------|---------|----------------|
+| A0 | Baseline lock | Confirm repository state, read governing docs, establish audit-only safety rules | Audit plan only |
+| A1 | Goal inventory | Extract every user-observable promise into the goal matrix, organized by user journey | `GOAL_MATRIX.md` only |
+| A2 | Wiring audit | For each goal, inspect the production code/wiring and classify the implementation state | Evidence files only; no production-code edits |
+| A3 | Clean-profile smoke | Run targeted user-behavior scenarios on a disposable isolated profile | Evidence files only; never against the real user profile or store |
+| A4 | Gap report and proceed decision | Aggregate gaps, classify severity, recommend proceed / partial / withhold for the successor roadmap | Audit gap report only |
+
+### Safety and isolation rules (mandatory for A0–A4)
+
+- The audit must never read, write, or mutate the real user configuration,
+  settings file, conversation store, or any other state directory the real
+  application uses.
+- Any future runtime/test executed for the audit must use a disposable isolated
+  profile (temporary `XDG_CONFIG_HOME` or equivalent override) and must clean
+  it up after the run.
+- The audit must not run the real application, build, or test suites against
+  the real user data during A0–A1. A2 and A3 may run code-analysis tools and
+  test suites only against the disposable profile, never the real one.
+- The audit must not fix any issue, modify production code, or modify tests
+  until the gap report in A4 is accepted and corrective work is explicitly
+  authorized.
+- The audit must not start A2, A3, stabilization work, or successor-roadmap
+  planning inside the same session that performed A0–A1 unless an explicit
+  proceed decision is recorded.
+
+### Boundaries
+
+- A cross-version audit does not own feature or refactor work. It produces
+  findings; corrective work belongs in a separate phase, refactor, or issue
+  that the audit gap report names.
+- The audit does not authorize roadmap or phase planning for a successor
+  version. That authorization requires a separate planning decision after the
+  gap report is reviewed.
+- The audit may reference evidence files in phase or refactor folders, but
+  must not duplicate or rewrite that evidence. Phase and refactor documents
+  remain the historical owners of their own work.

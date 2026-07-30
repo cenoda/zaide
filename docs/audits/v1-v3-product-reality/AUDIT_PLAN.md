@@ -1,0 +1,356 @@
+# V1–V3 Product Reality Audit — Plan
+
+**Audit name:** `v1-v3-product-reality`
+**Owner folder:** `docs/audits/v1-v3-product-reality/`
+**Audit phases:** A0 (Baseline lock) → A1 (Goal inventory, A1-acceptance gate) →
+A2 (Wiring audit) → A3 (Clean-profile smoke) → A4 (Gap report and V4 proceed decision)
+**Current phase:** **A1 accepted; A2 not begun.** A1 corrective rounds
+1–8 resolved the missing Phase 10 LSP coverage, non-clickable
+citations, inconsistent ID rule, inaccurate counts, and circular
+A1/A4 gate that caused earlier drafts to be rejected. The
+A1-acceptance proceed decision is recorded in
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). **A1 is accepted.** The
+preserved counts are 57 user-observable goals + 5 `A1-XX-*` rows = 62
+total. The first A2 wiring-audit slice is named **`A2_AGENT_SEND`** in
+[A1_ACCEPTANCE.md §3](./A1_ACCEPTANCE.md#3-first-a2-wiring-audit-slice)
+and
+[GOAL_MATRIX.md §17.5](./GOAL_MATRIX.md#175-recommended-first-a2-wiring-audit-slice).
+**Proceed authority:** A2 does not begin in the session that recorded
+the A1-acceptance proceed decision; A2 begins in a new session. A4
+does not begin until A2 and A3 evidence is complete. V4 or
+successor-roadmap planning does not begin until A4 produces an
+explicit proceed decision.
+
+---
+
+## 1. Audit Purpose
+
+Roadmap V3 closed its implementation sequence on 2026-07-29 and explicitly
+withheld product-readiness acceptance until a cross-version audit compares, for
+each user journey:
+
+1. the documented implementation goal;
+2. the live code and production wiring;
+3. clean-profile user-observable behavior, including discoverability, failure
+   feedback, persistence, recovery, and workflow cost.
+
+This audit performs that comparison for V1, V2, and V3 together. It is the gate
+that releases (or withholds) authorization for V4 or any successor-roadmap
+planning.
+
+This audit is **not** a phase, **not** a refactor, and **not** a regular
+review. It does not own feature work, refactor work, or production code edits.
+Its job is to inventory, inspect, and report.
+
+---
+
+## 2. Audit Phase Decomposition
+
+| Phase | Name | Inputs | Output | Allowed side effects |
+|-------|------|--------|--------|----------------------|
+| A0 | Baseline lock | Repository state, `AGENTS.md`, `docs-rules.md`, roadmaps | This `AUDIT_PLAN.md` (initial) | Docs-only: this file and the `docs/audits/` folder registration |
+| A1 | Goal inventory (closes with the **A1-acceptance gate**) | V1/V2/V3 roadmaps, `docs/phases/README.md`, every `IMPLEMENTATION_PLAN.md` and `TOFIX.md` for completed phases, `docs/architecture/OVERVIEW.md`, `README.md`, `docs/issues/INDEX.md`, `docs/deferred/INDEX.md` | `GOAL_MATRIX.md` only | No production-code or production-test edits |
+| A2 | Wiring audit | Accepted `GOAL_MATRIX.md` + `src/`, `tests/`, DI composition, command registry | `evidence/A2_WIRING_AUDIT.md` plus per-journey evidence files | Read-only: no production-code edits; may add evidence files |
+| A3 | Clean-profile smoke | Accepted `GOAL_MATRIX.md` + A2 evidence | `evidence/A3_CLEAN_PROFILE_SMOKE.md` plus per-journey evidence files | Test/runtime only against a disposable isolated profile; never the real user profile or store |
+| A4 | Gap report and **V4 proceed decision** (closes with a separate proceed gate) | A0–A3 evidence | `A4_GAP_REPORT.md` and a recorded V4 proceed decision | Docs-only |
+
+### A0 — Baseline lock (this phase)
+
+A0 establishes the audit-only safety rules, registers the audit folder in
+`docs-rules.md`, and creates this `AUDIT_PLAN.md`. A0 may not begin A1's
+inventory work, may not touch the source tree, and may not run the application,
+build, or test suites.
+
+### A1 — Goal inventory
+
+A1 extracts every user-observable promise from the V1, V2, and V3 roadmaps
+plus the completed-phase plans and `TOFIX.md` files. Promises are organized by
+user journey, not by class or roadmap section. Each row in the goal matrix
+carries the metadata required by the audit's own quality gates; A1 does not
+assign implementation verdicts.
+
+A1 may not begin A2 work, may not inspect production code beyond the document
+read needed to extract a promise's source citation, and may not modify any
+production code or test.
+
+### A2 — Wiring audit
+
+A2 inspects the production wiring for each goal matrix row. For each row it
+classifies the implementation state as one of:
+
+- **Wired** — the production code path exists, follows the documented contract,
+  and is reachable from the documented user entry point.
+- **Wired-with-gap** — the code path exists but is incomplete, partial, or
+  fails one of the documented exit conditions.
+- **Missing** — the code path does not exist in the production tree.
+- **Ambiguous** — the source documents do not specify enough to map the
+  promise to a code target; A2 cannot make a verdict without A1 first
+  resolving the ambiguity.
+
+A2 produces a wiring audit evidence file per journey plus a cross-journey
+summary. A2 may not edit production code, may not edit tests, and may not
+begin A3.
+
+### A3 — Clean-profile smoke
+
+A3 runs targeted user-behavior scenarios on a disposable isolated profile
+only. It never reads, writes, or mutates the real user configuration, settings
+file, conversation store, or any other state directory the real application
+uses. Every scenario documents the disposable profile location, the exact
+entry-point action, the expected observable behavior, and the observed
+result. A3 may not begin A4 work and may not modify production code.
+
+### A4 — Gap report and proceed decision
+
+A4 aggregates A0–A3 evidence into a single gap report and a recorded proceed
+decision:
+
+- **Proceed** — audit finds no blocking gaps; V4 or successor planning may
+  begin.
+- **Partial proceed** — audit finds gaps; corrective work is named and
+  sequenced before V4 planning may begin.
+- **Withhold** — audit finds blocking gaps; V4 planning is not authorized.
+
+A4 may not begin corrective work; corrective work belongs in a separately
+authorized phase, refactor, or issue named in the gap report.
+
+---
+
+## 3. Safety and Isolation Rules (Mandatory for A0–A4)
+
+These rules are mandatory for every audit phase and bind every tool, agent,
+and human reviewer that touches this folder. They are not relaxable by
+expedience.
+
+1. **No real user data.** The audit must never read, write, copy, or mutate
+   the real user configuration, settings file, conversation store, or any
+   other state directory the real application uses. A real user profile is
+   out of scope for every phase.
+2. **Disposable profile only.** Any runtime, smoke test, or future
+   verification executed for the audit must use a disposable isolated
+   profile. The disposable profile is created at scenario start, used for
+   that scenario only, and removed at scenario end. No scenario may share
+   state with another scenario or with the real user profile.
+3. **No application, build, or test execution during A0–A1.** A0 and A1 are
+   documentation-only phases. The application is not launched, the build
+   is not run, the test suite is not run, and no scenario is executed
+   against any profile during A0 or A1.
+4. **No issue fixing or production-code modification.** No issue is fixed,
+   no production code is edited, and no test is added or changed by any
+   audit phase until A4 is accepted and corrective work is explicitly
+   authorized in a separate planning decision.
+5. **No phase skipping, stabilization, or successor planning in this
+   session.** A0–A1 may not begin A2, A3, stabilization work, V4 planning,
+   or any successor-roadmap planning in the same session unless an explicit
+   proceed decision is recorded in this folder.
+6. **Read-only on production code in A1.** A1 may read production code only
+   to confirm the document citation for a user-observable promise. It may
+   not extract implementation details, may not classify implementation
+   state, and may not begin wiring analysis.
+7. **A2 reads but does not edit.** A2 may inspect production code and
+   tests; it may not edit them. A2 evidence files are the only output.
+8. **A3 uses disposable profile only.** A3 may execute runtime, build, and
+   test commands only against a disposable profile. A3 may not modify
+   production code, and may not touch the real user profile even by
+   accident.
+9. **A4 is docs-only.** A4 may not begin corrective work. Corrective work
+   is named in the gap report and lives in a separate planning decision.
+
+These rules are also recorded in `docs-rules.md` §14 (Cross-Version
+Product-Reality Audits). Any change to these rules belongs in
+`docs-rules.md` and not in this file.
+
+---
+
+## 4. Inventory Scope — User Journeys
+
+The goal matrix is organized by user journey, not by phase or class. The
+audit must cover every journey below. A1 may not skip a journey even when
+no completed phase claims to address it; missing journeys are themselves
+findings for A4.
+
+1. **First launch and settings** — application boot, default settings,
+   settings persistence and recovery, secret handling, environment-variable
+   fallback.
+2. **Workspace / project opening** — folder picker, recent workspaces, project
+   discovery and selection, no-project and ambiguous-project behavior.
+3. **File navigation and editing** — file tree, file open, tabs, dirty state,
+   save, search, replace, folding, focus and caret, multi-tab lifecycle.
+4. **Search and command discovery** — Command Palette, keybindings, key
+   conflict resolution, command availability and registration.
+5. **Build / run / test** — target selection, structured Output, build
+   diagnostics projection into Problems, test results surface, cancellation
+   and one-at-a-time policy.
+6. **Debugging and output** — DAP launch, breakpoints, step controls, call
+   stack, variables, debug console/output, adapter failure recovery.
+7. **Terminal** — embedded terminal sessions, multi-tab bottom panel,
+   resize, key forwarding, alternate screen, search and selection.
+8. **Git workflow** — repo discovery, status, branch display, diff view,
+   stage/unstage, local commit. (Push/pull/merge/rebase are out of V1–V3
+   scope and remain out of scope for this audit.)
+9. **Townhall / conversations** — channels, direct conversations, unified
+   conversation model, draft and read state, persistent versus in-memory
+   history, migration from the temporary agent panel.
+10. **Agent creation and backend onboarding** — agent identity, profile,
+    runtime binding, provider configuration, secret handling, capability
+    advertisement, Native Harness versus ACP equality of placement.
+11. **Agent send / response / failure feedback** — direct send, routed send,
+    `@mention` syntax, structured response, error and rejection
+    projection, cancellation, timeout, disconnect, conversation
+    attribution.
+12. **Tools, permissions, and workspace mutation** — read/write operations,
+    command execution, permission decisions, audit attribution,
+    optimistic concurrency, conflict reconciliation, file-watcher
+    reconciliation.
+13. **Multi-agent routing** — `@mention` routing, source-to-target identity
+    resolution, delegation lineage, Townhall surfacing of routed flow.
+14. **Trace, context, memory, persistence, restart, and recovery** — raw
+    trace redaction and retention, live IDE context policy, durable
+    memory scopes, session resume semantics, restart of interrupted
+    runs, retention and deletion contracts, cross-workspace isolation.
+
+---
+
+## 5. Goal Matrix Schema
+
+Every goal matrix row carries:
+
+- `id` — stable audit identifier `A1-<journey-key>-<nn>`. The
+  `<journey-key>` is one of the 14 journey abbreviations used in §4
+  (for example `FL`, `WO`, `FN`, `SC`, `BR`, `DB`, `TR`, `GT`, `TH`,
+  `AC`, `AS`, `TP`, `MR`, `TC`). The `nn` is a zero-padded sequence
+  number scoped to the journey. Rows that cannot be translated into a
+  user-observable promise use the `XX` key and are recorded in a
+  dedicated "cannot be translated" section that is **not** counted
+  toward the user goal total. IDs are stable and never reused; a
+  retired ID (one whose row was removed, merged into another row, or
+  moved to a different journey) leaves a permanent gap in the
+  original journey.
+- `journey` — one of the 14 journeys above.
+- `roadmap_version` — `V1`, `V2`, or `V3`.
+- `phase` — the phase or sub-phase that owns the promise.
+- `source_document` — clickable repo-relative markdown link plus the
+  exact section/heading cited. Backtick-only paths are not acceptable
+  citations.
+- `promised_outcome` — the user-observable outcome the document claims.
+- `user_entry_point` — the user action or surface the document names.
+- `success_condition` — the observable behavior that proves the promise.
+- `failure_recovery` — the documented failure or recovery behavior the
+  user should see when the promise fails.
+- `claimed_completion_evidence` — clickable repo-relative links to
+  existing evidence files (or "no evidence file cited" if the document
+  records a claim without naming a file). The completion claim is
+  recorded verbatim from the document.
+- `likely_a2_target` — the production code/wiring path A2 will inspect
+  (named class, file, command, or service — best current guess).
+- `planned_a3_scenario` — the disposable-profile smoke scenario A3 will
+  execute (action → expected → observation).
+
+A1 does not assign implementation verdicts. A1 does not conclude that a
+documented promise is or is not implemented. A1 reports what the
+documents claim and where the evidence file lives. A2 reuses the same
+row keys and adds `a2_wiring_verdict` plus per-row evidence pointers.
+
+---
+
+## 6. Quality Gates
+
+The audit passes A0–A1 only when all of the following are true. Quality
+gates for A2–A4 are recorded in their own evidence files when those
+phases begin.
+
+- Every goal in the matrix cites a real repository document and a
+  concrete section. Citations are clickable repo-relative links, not
+  paraphrases.
+- Duplicate promises across phases are merged into one row, with the
+  merged source list recorded in `source_document`.
+- Purely internal architecture work is excluded unless it directly
+  enables a user-observable outcome; the exclusion reason is recorded in
+  the row's notes.
+- Promises that cannot yet be translated into user behavior are flagged
+  in a dedicated `notes` field and are not silently absorbed.
+- The matrix covers every journey in §4. A missing journey is itself a
+  finding noted in the A1 closeout summary.
+- `git diff --check` runs clean on every commit that lands in this
+  folder.
+- Every new relative link in the audit folder resolves to an existing
+  repository file. Broken links are a quality-gate failure.
+- This folder does not commit, push, or modify the production tree.
+- No production code, no production test, and no real user data is
+  touched during A0–A1.
+
+---
+
+## 7. Gates: A1 Acceptance and A4 V4 Proceed Decision
+
+The audit has two distinct proceed gates. They are recorded separately
+because they authorize different things.
+
+### 7.1 A1-acceptance gate (authorizes A2)
+
+A1 is **not** accepted when A1 finishes drafting. A1 becomes accepted
+only when the `GOAL_MATRIX.md` meets the §6 quality gates and a recorded
+A1-acceptance proceed decision is written in this folder. The
+A1-acceptance proceed decision is the only artifact that authorizes A2.
+
+| Condition | Required before A1 acceptance |
+|-----------|------------------------------|
+| Every `source_document` cell is a clickable repo-relative markdown link to an existing file. | yes |
+| Every `claimed_completion_evidence` cell that points to a file is a clickable repo-relative markdown link to an existing file. | yes |
+| Every journey in §4 has at least one user-observable row, or the gap is explicitly recorded in the A1 closeout. | yes |
+| The `A1-XX-*` "cannot be translated" section is recorded as a separate count, not merged into the user-goal total. | yes |
+| No implementation verdict appears in any A1 row's columns. | yes |
+| The first A2 wiring-audit slice is named in the A1 closeout summary. | yes |
+| The A1 closeout is recorded in `GOAL_MATRIX.md` §17. | yes |
+
+A2 does **not** begin in the same session that records an A1-acceptance
+proceed decision. A2 begins in a new session.
+
+### 7.2 A4 V4-proceed decision (authorizes V4 planning)
+
+A4 is **not** accepted when A4 finishes drafting. A4 becomes accepted
+only when the gap report meets its own quality gates and a recorded
+V4-proceed decision is written in this folder. The V4-proceed decision
+is the only artifact that authorizes V4 or successor-roadmap planning.
+
+| Condition | Required before V4 proceed |
+|-----------|---------------------------|
+| A2 evidence is complete for every accepted goal row, or the missing-evidence row is explicitly listed as a blocker. | yes |
+| A3 evidence is complete for every accepted goal row targeted for smoke, or the missing-smoke row is explicitly listed as a blocker. | yes |
+| The gap report classifies every A2/A3 finding by severity. | yes |
+| The V4-proceed decision is one of `Proceed`, `Partial proceed`, or `Withhold`. | yes |
+
+V4 or successor-roadmap planning does **not** begin in the same session
+that records a V4-proceed decision. V4 planning begins in a new session
+after the recorded decision.
+
+---
+
+## 8. A1 Closeout and Hand-off
+
+After A1 finishes drafting (or after any A1 corrective round), the A1
+closeout summary in this folder records:
+
+- the number of unique user goals inventoried (the `A1-*-NN` count,
+  excluding `A1-XX-*`);
+- the number of `A1-XX-*` rows that cannot be translated into user
+  behavior (recorded separately from the user goal total);
+- the coverage by journey (count per journey, with zero-coverage
+  journeys flagged);
+- unresolved documentation ambiguities that block A2's wiring analysis
+  (these become A1's contribution to the A4 gap report);
+- the recommended first A2 wiring-audit slice;
+- the A1-acceptance status (`accepted` or `not accepted`); if
+  `not accepted`, the corrective items still required.
+
+A2 does not begin in the same session that performs A1, regardless of
+acceptance status. A2 begins in a new session after a recorded
+A1-acceptance proceed decision in this folder.
+
+---
+
+*Created: 2026-07-30 (A0 baseline lock, A1 corrective rounds 1–8).
+A1 accepted on 2026-07-30 via
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md); first A2 slice named
+`A2_AGENT_SEND`. A2 not begun in this session; no production code or
+test edits; no commit or push.*
