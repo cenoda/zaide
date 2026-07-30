@@ -5,13 +5,22 @@
 **Audit phases:** A0 (Baseline lock) → A1 (Goal inventory, A1-acceptance gate) →
 A2 (Wiring audit) → A3 (Clean-profile smoke) → A4 (Gap report and V4 proceed decision)
 **Current phase:** **A1 accepted; A2 in progress.** A1 is accepted
-([A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md)). The first A2 wiring-audit
-slice **`A2_AGENT_SEND`** is complete and published
-([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)). Its
-verdicts are:
-- `A1-AS-01`: **Missing**
-- `A1-AS-02`: **Wired-with-gap**
-The next slice is **`A2_MULTI_AGENT_ROUTING`**, not begun.
+([A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md)). A2 as a whole is **not**
+complete. Completed A2 slices:
+
+- **`A2_AGENT_SEND`** — complete and published
+  ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)):
+  - `A1-AS-01`: **Missing**
+  - `A1-AS-02`: **Wired-with-gap**
+- **`A2_MULTI_AGENT_ROUTING`** — complete and published
+  ([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md)):
+  - `A1-MR-01`: **Missing**
+  - `A1-MR-03`: **Wired-with-gap**
+  - `A1-XX-02`: confirmed absent (scoped disposition only; not a
+    user-goal verdict)
+
+The next recommended A2 slice is
+**`A2_TRACE_MEMORY_USAGE_TERMINATION`**, explicitly not begun.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -348,7 +357,10 @@ A1-acceptance proceed decision in this folder.
 
 *Created: 2026-07-30 (A0 baseline lock, A1 corrective rounds 1–8).
 A1 accepted on 2026-07-30 via
-[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). `A2_AGENT_SEND` complete and
-published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)).
-A2 in progress; next slice `A2_MULTI_AGENT_ROUTING` not begun. A3,
-A4, stabilization, and V4 work not begun.*
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). Status 2026-07-31: A2 in
+progress (not complete as a whole). `A2_AGENT_SEND` complete and
+published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
+`A2_MULTI_AGENT_ROUTING` complete and published
+([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md)).
+Next recommended A2 slice `A2_TRACE_MEMORY_USAGE_TERMINATION`
+explicitly not begun. A3, A4, stabilization, and V4 work not begun.*

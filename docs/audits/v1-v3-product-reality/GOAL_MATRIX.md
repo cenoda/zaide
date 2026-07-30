@@ -2,12 +2,16 @@
 
 **Audit name:** `v1-v3-product-reality`
 **Owner folder:** `docs/audits/v1-v3-product-reality/`
-**Phase:** A1 corrective round 8 — **A1 accepted** (2026-07-30, see [§17](#17-a1-closeout-and-status) and [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md))
+**Phase:** A1 accepted (2026-07-30); **A2 in progress** (not complete as
+a whole). See [§17](#17-a1-closeout-and-status),
+[§17.8](#178-current-a2-progress), and
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 **Audit plan:** [AUDIT_PLAN.md](./AUDIT_PLAN.md)
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
-they cover. A1 does not assign implementation verdicts. A2 will inspect
-production wiring for each row.
+they cover. A1 does not assign implementation verdicts. A2 inspects
+production wiring for each row; two A2 slices are complete and
+published (see [§17.8](#178-current-a2-progress)).
 
 ---
 
@@ -253,6 +257,11 @@ source, or implementation scope was changed. The A1-acceptance
 proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
+**A2 status (2026-07-31):** **in progress** (not complete as a whole).
+Two wiring-audit slices are complete and published; the next
+recommended slice is not begun. See
+[§17.8](#178-current-a2-progress).
+
 ### 17.1 Counts
 
 | Quantity | Count | Source |
@@ -372,6 +381,12 @@ must.
 
 ### 17.5 Recommended first A2 wiring-audit slice
 
+**Historical first-slice definition (A1 closeout).** This subsection
+records the A1-named first A2 wiring-audit slice. It is preserved as
+the historical charter for `A2_AGENT_SEND`. For live A2 progress
+(completed slices, verdicts, and the next recommended slice), see
+[§17.8](#178-current-a2-progress).
+
 **Slice name:** `A2_AGENT_SEND`. The first A2 wiring-audit slice was
 `A2_AGENT_SEND` and its evidence file is
 [evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md).
@@ -442,8 +457,9 @@ The A1-acceptance proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md) and is the sole artifact that
 authorizes A2. A2 does **not** begin in the A1-acceptance session. A2
 begins in a new session after that recorded proceed decision. A2 has
-since begun in a subsequent session; the first slice
-`A2_AGENT_SEND` is complete and published.
+since begun in subsequent sessions; completed slices and the next
+recommended slice are recorded in
+[§17.8](#178-current-a2-progress).
 
 ### 17.7 Corrective history
 
@@ -477,15 +493,37 @@ since begun in a subsequent session; the first slice
 | 26 | Round 8 closeout-staleness fixes: §17.7 item 23's last clause no longer claims round 5 corrected the `57 + 5 = 62` attribution (it only updated the count); round attribution is now explicitly attributed to round 6. §17.7 item 25 rephrased to distinguish round 5 re-verification of the count from the round 6 correction of the count's round attribution, without claiming the prior parenthetical had asserted an attribution fix. | done in round 8 |
 | 27 | A1 acceptance recorded. `A1_ACCEPTANCE.md` created with the A1-acceptance proceed decision; `AUDIT_PLAN.md` current-phase line and footer updated to reflect A1 accepted; `GOAL_MATRIX.md` header status, §17 status, §17.5 (slice name `A2_AGENT_SEND`), §17.6, and this item updated. Counts preserved at 57 user goals + 5 `A1-XX-*` rows = 62 total. A2 not begun in this session; no production code or test edits; no commit or push. | done in acceptance round (2026-07-30) |
 
-All items above are completed corrective history. A1 was **accepted
-on 2026-07-30** via
+All items above are completed **A1** corrective history. A1 was
+**accepted on 2026-07-30** via
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md), which is the sole artifact
 that authorizes A2. A2 was **not** begun in the A1-acceptance session
-(per rule); A2 has since begun in a subsequent session and the first
-slice `A2_AGENT_SEND` is complete and published.
+(per rule). A2 progress after acceptance is recorded in
+[§17.8](#178-current-a2-progress) and is not an A1 corrective round.
+
+### 17.8 Current A2 progress
+
+**A2 status:** **in progress** (not complete as a whole). Status date:
+2026-07-31.
+
+| Slice | Status | Evidence | Verdicts / dispositions |
+|-------|--------|----------|-------------------------|
+| `A2_AGENT_SEND` | **Complete and published** | [evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md) | `A1-AS-01` = **Missing**; `A1-AS-02` = **Wired-with-gap** |
+| `A2_MULTI_AGENT_ROUTING` | **Complete and published** | [evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md) | `A1-MR-01` = **Missing**; `A1-MR-03` = **Wired-with-gap**; `A1-XX-02` = **confirmed absent** (scoped disposition only; not a user-goal verdict) |
+| `A2_TRACE_MEMORY_USAGE_TERMINATION` | **Next recommended; explicitly not begun** | (no evidence file) | — |
+
+Notes:
+
+- A2 remains open after these two slices; remaining user-goal rows
+  still require wiring audit.
+- `A1-XX-02` is recorded here only as a scoped disposition from the
+  multi-agent routing slice, not as a third user-goal verdict and not
+  as a change to the §15 row data.
+- A3, A4, stabilization, and V4 work are not begun.
 
 ---
 
-*Last updated: 2026-07-30 (`A2_AGENT_SEND` complete and published;
-A2 in progress; next slice `A2_MULTI_AGENT_ROUTING` not begun; A3,
-A4, stabilization, and V4 work not begun.)*
+*Last updated: 2026-07-31 (`A2_AGENT_SEND` and
+`A2_MULTI_AGENT_ROUTING` complete and published; A2 in progress, not
+complete as a whole; next recommended slice
+`A2_TRACE_MEMORY_USAGE_TERMINATION` explicitly not begun; A3, A4,
+stabilization, and V4 work not begun.)*
