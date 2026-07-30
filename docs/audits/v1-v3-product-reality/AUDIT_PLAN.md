@@ -4,17 +4,14 @@
 **Owner folder:** `docs/audits/v1-v3-product-reality/`
 **Audit phases:** A0 (Baseline lock) → A1 (Goal inventory, A1-acceptance gate) →
 A2 (Wiring audit) → A3 (Clean-profile smoke) → A4 (Gap report and V4 proceed decision)
-**Current phase:** **A1 accepted; A2 not begun.** A1 corrective rounds
-1–8 resolved the missing Phase 10 LSP coverage, non-clickable
-citations, inconsistent ID rule, inaccurate counts, and circular
-A1/A4 gate that caused earlier drafts to be rejected. The
-A1-acceptance proceed decision is recorded in
-[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). **A1 is accepted.** The
-preserved counts are 57 user-observable goals + 5 `A1-XX-*` rows = 62
-total. The first A2 wiring-audit slice is named **`A2_AGENT_SEND`** in
-[A1_ACCEPTANCE.md §3](./A1_ACCEPTANCE.md#3-first-a2-wiring-audit-slice)
-and
-[GOAL_MATRIX.md §17.5](./GOAL_MATRIX.md#175-recommended-first-a2-wiring-audit-slice).
+**Current phase:** **A1 accepted; A2 in progress.** A1 is accepted
+([A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md)). The first A2 wiring-audit
+slice **`A2_AGENT_SEND`** is complete and published
+([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)). Its
+verdicts are:
+- `A1-AS-01`: **Missing**
+- `A1-AS-02`: **Wired-with-gap**
+The next slice is **`A2_MULTI_AGENT_ROUTING`**, not begun.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -351,6 +348,7 @@ A1-acceptance proceed decision in this folder.
 
 *Created: 2026-07-30 (A0 baseline lock, A1 corrective rounds 1–8).
 A1 accepted on 2026-07-30 via
-[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md); first A2 slice named
-`A2_AGENT_SEND`. A2 not begun in this session; no production code or
-test edits; no commit or push.*
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). `A2_AGENT_SEND` complete and
+published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)).
+A2 in progress; next slice `A2_MULTI_AGENT_ROUTING` not begun. A3,
+A4, stabilization, and V4 work not begun.*

@@ -372,9 +372,9 @@ must.
 
 ### 17.5 Recommended first A2 wiring-audit slice
 
-**Slice name:** `A2_AGENT_SEND`. The first A2 wiring-audit slice is
-named `A2_AGENT_SEND` and its evidence file will be
-`evidence/A2_AGENT_SEND.md`.
+**Slice name:** `A2_AGENT_SEND`. The first A2 wiring-audit slice was
+`A2_AGENT_SEND` and its evidence file is
+[evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md).
 
 The scope of the `A2_AGENT_SEND` slice is the **agent send and response
 feedback journey** ([§11](#11-agent-send--response--failure-feedback),
@@ -440,8 +440,10 @@ A1-acceptance gate has passed. Concretely:
 
 The A1-acceptance proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md) and is the sole artifact that
-authorizes A2. A2 does **not** begin in this session. A2 begins in a
-new session after that recorded proceed decision.
+authorizes A2. A2 does **not** begin in the A1-acceptance session. A2
+begins in a new session after that recorded proceed decision. A2 has
+since begun in a subsequent session; the first slice
+`A2_AGENT_SEND` is complete and published.
 
 ### 17.7 Corrective history
 
@@ -468,7 +470,7 @@ new session after that recorded proceed decision.
 | 19 | Fragment anchors verified against actual headings in target files. Broken anchors repaired. | done in round 4 |
 | 20 | A1 closeout counts re-recorded with accurate values (57 user goals + 5 XX = 62). The 57+5=62 count was determined in round 4 after `A1-AS-03` and `A1-TC-06` were merged; earlier rounds recorded 59+5=64 and 65+5=68. | done in round 4 (counts re-verified in later rounds; round attribution corrected in round 6) |
 | 21 | `git diff --check` and link verification re-run after this corrective round. | enforced every round |
-| 22 | A2 not started; no app, build, or test execution; no production code or test edits; no commit or push. | enforced every round |
+| 22 | A2 not started in A1 corrective/acceptance rounds; no app, build, or test execution; no production code or test edits; no commit or push. | enforced in A1 rounds (current state: A2 in progress) |
 | 23 | Round 5 closeout-staleness fixes: §17.6 line credited all duplicate merges to round 2 (now reflects round 4), §17.7 had duplicate item numbers 12–14 (renumbered to 20–22), §17.7 had a stale `59 + 5 = 64` count, the `Outstanding corrective items` header was renamed to `Corrective history`, the §17.3 header was widened to `Corrective changes through round 4`, and the current count was updated to `57 + 5 = 62`. | done in round 5 (round attribution of that count remained stale and was corrected in round 6) |
 | 24 | Round 6 closeout-staleness fixes: §17.2 DB and AC `in this round` → `in round 2`; §17.5 agent-send slice updated from `3 rows` to `2 rows`; §17.5 deferred-finding count updated from `one` to `two`; §17.7 title widened to `rounds 1–5`; §17.7 item 20 attribution corrected from `round 2` to `round 4`. | done in round 6 |
 | 25 | Round 7 closeout-staleness fixes: §17.7 title `rounds 1–5` collapsed to plain `Corrective history` so the range no longer has to be re-widened each round; §17.7 item 20 trailing parenthetical rephrased to distinguish round 5 re-verification of the count from the round 6 correction of the count's round attribution. | done in round 7 |
@@ -478,12 +480,12 @@ new session after that recorded proceed decision.
 All items above are completed corrective history. A1 was **accepted
 on 2026-07-30** via
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md), which is the sole artifact
-that authorizes A2. A2 begins in a new session; A2 is **not** begun in
-this session.
+that authorizes A2. A2 was **not** begun in the A1-acceptance session
+(per rule); A2 has since begun in a subsequent session and the first
+slice `A2_AGENT_SEND` is complete and published.
 
 ---
 
-*Last updated: 2026-07-30 (A1 corrective round 8; A1 accepted via
-[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md); first A2 slice named
-`A2_AGENT_SEND`; A2/A3/stabilization/V4 work not begun; no commit,
-push, or production-code edit.)*
+*Last updated: 2026-07-30 (`A2_AGENT_SEND` complete and published;
+A2 in progress; next slice `A2_MULTI_AGENT_ROUTING` not begun; A3,
+A4, stabilization, and V4 work not begun.)*
