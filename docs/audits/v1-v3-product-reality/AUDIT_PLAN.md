@@ -18,9 +18,23 @@ complete. Completed A2 slices:
   - `A1-MR-03`: **Wired-with-gap**
   - `A1-XX-02`: confirmed absent (scoped disposition only; not a
     user-goal verdict)
+- **`A2_TRACE_MEMORY_USAGE_TERMINATION`** — complete and published
+  ([evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md)):
+  - `A1-TC-02`: **Missing**
+  - `A1-TC-03`: **Missing**
+  - `A1-TC-08`: **Missing**
+  - `A1-TC-09`: **Missing**
+  - `A1-XX-03`: scoped disposition only (not a user-goal verdict).
+    Production appends memory-influence evidence during session
+    context assembly; production does not expose user-managed
+    lifecycle-memory creation or management UI; trace and usage
+    producers and explicit termination UI remain absent.
 
 The next recommended A2 slice is
-**`A2_TRACE_MEMORY_USAGE_TERMINATION`**, explicitly not begun.
+**`A2_RESTART_RECOVERY_AND_CONTEXT`**, explicitly not begun (no
+evidence file exists; no verdict has been assigned). Scope:
+`A1-TC-01`, `A1-TC-04`, `A1-TC-05`, and optional scoped disposition
+for `A1-XX-05`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -361,6 +375,9 @@ A1 accepted on 2026-07-30 via
 progress (not complete as a whole). `A2_AGENT_SEND` complete and
 published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 `A2_MULTI_AGENT_ROUTING` complete and published
-([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md)).
-Next recommended A2 slice `A2_TRACE_MEMORY_USAGE_TERMINATION`
-explicitly not begun. A3, A4, stabilization, and V4 work not begun.*
+([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md));
+`A2_TRACE_MEMORY_USAGE_TERMINATION` complete and published
+([evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md)).
+Next recommended A2 slice `A2_RESTART_RECOVERY_AND_CONTEXT`
+explicitly not begun (no evidence file; no verdict assigned). A3,
+A4, stabilization, and V4 work not begun.*

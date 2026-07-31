@@ -10,7 +10,7 @@ a whole). See [§17](#17-a1-closeout-and-status),
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
 they cover. A1 does not assign implementation verdicts. A2 inspects
-production wiring for each row; two A2 slices are complete and
+production wiring for each row; three A2 slices are complete and
 published (see [§17.8](#178-current-a2-progress)).
 
 ---
@@ -258,7 +258,7 @@ proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
 **A2 status (2026-07-31):** **in progress** (not complete as a whole).
-Two wiring-audit slices are complete and published; the next
+Three wiring-audit slices are complete and published; the next
 recommended slice is not begun. See
 [§17.8](#178-current-a2-progress).
 
@@ -509,21 +509,28 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 |-------|--------|----------|-------------------------|
 | `A2_AGENT_SEND` | **Complete and published** | [evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md) | `A1-AS-01` = **Missing**; `A1-AS-02` = **Wired-with-gap** |
 | `A2_MULTI_AGENT_ROUTING` | **Complete and published** | [evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md) | `A1-MR-01` = **Missing**; `A1-MR-03` = **Wired-with-gap**; `A1-XX-02` = **confirmed absent** (scoped disposition only; not a user-goal verdict) |
-| `A2_TRACE_MEMORY_USAGE_TERMINATION` | **Next recommended; explicitly not begun** | (no evidence file) | — |
+| `A2_TRACE_MEMORY_USAGE_TERMINATION` | **Complete and published** | [evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md) | `A1-TC-02` = **Missing**; `A1-TC-03` = **Missing**; `A1-TC-08` = **Missing**; `A1-TC-09` = **Missing**; `A1-XX-03` = scoped disposition only (not a user-goal verdict): production appends memory-influence evidence during session context assembly; production does not expose user-managed lifecycle-memory creation or management UI; trace and usage producers and explicit termination UI remain absent |
+| `A2_RESTART_RECOVERY_AND_CONTEXT` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-TC-01`, `A1-TC-04`, `A1-TC-05`; optional scoped disposition for `A1-XX-05` |
 
 Notes:
 
-- A2 remains open after these two slices; remaining user-goal rows
+- A2 remains open after these three slices; remaining user-goal rows
   still require wiring audit.
 - `A1-XX-02` is recorded here only as a scoped disposition from the
   multi-agent routing slice, not as a third user-goal verdict and not
   as a change to the §15 row data.
+- `A1-XX-03` is recorded here only as a scoped disposition from the
+  trace/memory/usage/termination slice, not as a fifth user-goal
+  verdict and not as a change to the §15 row data.
+- `A2_RESTART_RECOVERY_AND_CONTEXT` is not begun; no evidence file
+  exists and no verdict has been assigned.
 - A3, A4, stabilization, and V4 work are not begun.
 
 ---
 
-*Last updated: 2026-07-31 (`A2_AGENT_SEND` and
-`A2_MULTI_AGENT_ROUTING` complete and published; A2 in progress, not
-complete as a whole; next recommended slice
-`A2_TRACE_MEMORY_USAGE_TERMINATION` explicitly not begun; A3, A4,
-stabilization, and V4 work not begun.)*
+*Last updated: 2026-07-31 (`A2_AGENT_SEND`,
+`A2_MULTI_AGENT_ROUTING`, and `A2_TRACE_MEMORY_USAGE_TERMINATION`
+complete and published; A2 in progress, not complete as a whole; next
+recommended slice `A2_RESTART_RECOVERY_AND_CONTEXT` explicitly not
+begun (no evidence file; no verdict assigned); A3, A4, stabilization,
+and V4 work not begun.)*
