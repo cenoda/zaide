@@ -174,11 +174,21 @@ complete. Completed A2 slices:
     clicking a row does not reselect that row before execution
   - `A1-SC-03`: **Wired** — Phase 9 find/replace, folding, and tab
     commands are registered and remain palette-reachable when unbound
+- **`A2_BUILD_RUN_AND_TEST`** — complete and published
+  ([evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md)):
+  - `A1-BR-01`: **Wired** — project target selection, locked build/run/test
+    profiles, cancellation, and one-at-a-time operation gating are wired
+  - `A1-BR-02`: **Wired** — build diagnostics parse into Problems while
+    preserving LSP diagnostics and generation-safe navigation
+  - `A1-BR-03`: **Wired** — test parsing, summary/status/case projection,
+    dedicated Test Results surface, and shared cancellation are wired
+  - `A1-BR-04`: **Wired** — redirected project output is separate from the
+    PTY terminal and bottom-panel modes remain mutually exclusive
 
 The next recommended A2 slice is
-**`A2_BUILD_RUN_AND_TEST`**, explicitly not begun
+**`A2_DEBUGGING_AND_OUTPUT`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-BR-01` through `A1-BR-04`.
+the debugging and output rows named by the evidence plan.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -538,6 +548,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_FILE_NAVIGATION_AND_EDITING.md](./evidence/A2_FILE_NAVIGATION_AND_EDITING.md)).
 `A2_SEARCH_AND_COMMAND_DISCOVERY` complete and published
 ([evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md](./evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md)).
-Next recommended A2 slice `A2_BUILD_RUN_AND_TEST` explicitly not begun
+`A2_BUILD_RUN_AND_TEST` complete and published
+([evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md)).
+Next recommended A2 slice `A2_DEBUGGING_AND_OUTPUT` explicitly not begun
 (no evidence file; no verdict assigned; no production work or A3
 execution). A3, A4, stabilization, and V4 work not begun.*

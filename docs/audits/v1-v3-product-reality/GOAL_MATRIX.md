@@ -10,7 +10,7 @@ a whole). See [§17](#17-a1-closeout-and-status),
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
 they cover. A1 does not assign implementation verdicts. A2 inspects
-production wiring for each row; eleven A2 slices are complete and
+production wiring for each row; twelve A2 slices are complete and
 published (see [§17.8](#178-current-a2-progress)).
 
 ---
@@ -258,7 +258,7 @@ proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
 **A2 status (2026-07-31):** **in progress** (not complete as a whole).
-Eleven wiring-audit slices are complete and published; the next
+Twelve wiring-audit slices are complete and published; the next
 recommended slice is not begun. See
 [§17.8](#178-current-a2-progress).
 
@@ -518,11 +518,12 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 | `A2_WORKSPACE_AND_PROJECT_OPENING` | **Complete and published** | [evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md](./evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md) | `A1-WO-01` = **Wired-with-gap** (folder open, tree, ignore rules, hidden-file toggle, and new file/folder paths user-reachable; file-tree failure messages not projected to UI); `A1-WO-02` = **Wired-with-gap** (one project-context service shared by status, LSP, Build, and Debug; ambiguous multi-project selection has no user-reachable picker and is mislabeled “Project error”); `A1-WO-03` = **Wired-with-gap** (folder open/close updates `WorkspacePath`, emits `WorkspaceFolderChanged`, refreshes project context and Source Control; Source Control refresh coupled to RootPath host path rather than workspace event) |
 | `A2_FILE_NAVIGATION_AND_EDITING` | **Complete and published** | [evidence/A2_FILE_NAVIGATION_AND_EDITING.md](./evidence/A2_FILE_NAVIGATION_AND_EDITING.md) | `A1-FN-01`, `A1-FN-03`–`A1-FN-06`, `A1-FN-09`, and `A1-FN-11`–`A1-FN-14` = **Wired**; `A1-FN-02` = **Wired-with-gap** (left splitter is 180–320px, not the claimed 180–500px); `A1-FN-08` = **Wired-with-gap** (Problems projection wired, but diagnostics only for open tracked documents and cold success requires eligible project context plus external `csharp-ls`); `A1-FN-10` = **Wired-with-gap** (caret-dwell rather than pointer hover); `A1-FN-15` = **Wired-with-gap** (default-off setting and save path wired, but save suppresses formatting failures and uses a different apply path) |
 | `A2_SEARCH_AND_COMMAND_DISCOVERY` | **Complete and published** | [evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md](./evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md) | `A1-SC-01` = **Wired-with-gap** (registry, defaults, settings overrides, empty-string unbind, conflict logging, and live keybinding materialization wired; no Settings keybindings editor and conflicts are log-only); `A1-SC-02` = **Wired-with-gap** (palette open/filter/order/availability/execute/focus path wired; pointer click does not reselect the clicked row before execution); `A1-SC-03` = **Wired** (Phase 9 find/replace, folding, and tab command IDs registered and palette-reachable when unbound) |
-| `A2_BUILD_RUN_AND_TEST` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-BR-01` through `A1-BR-04` |
+| `A2_BUILD_RUN_AND_TEST` | **Complete and published** | [evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md) | `A1-BR-01` = **Wired** (project target selection reads the shared project context; locked build/run/test profiles, cancellation, one-at-a-time admission, output/state streams, and show-on-start surfaces are wired); `A1-BR-02` = **Wired** (build diagnostics parse into a separate Problems list with generation-safe navigation while preserving LSP items); `A1-BR-03` = **Wired** (console-first test parsing, summary/status/cases, dedicated Test Results panel, and shared cancellation); `A1-BR-04` = **Wired** (redirected managed-process output is separate from the PTY terminal and bottom-panel modes are mutually exclusive) |
+| `A2_DEBUGGING_AND_OUTPUT` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: debugging and output rows named by the evidence plan |
 
 Notes:
 
-- A2 remains open after these eleven slices; remaining user-goal rows
+- A2 remains open after these twelve slices; remaining user-goal rows
   still require wiring audit.
 - `A1-XX-02` is recorded here only as a scoped disposition from the
   multi-agent routing slice, not as a third user-goal verdict and not
@@ -537,7 +538,7 @@ Notes:
 - `A1-XX-01` is recorded here only as a scoped disposition from the
   agent-creation/backend-onboarding slice, not as a third user-goal
   verdict and not as a change to the §15 row data.
-- `A2_BUILD_RUN_AND_TEST` is next recommended and explicitly not begun;
+- `A2_DEBUGGING_AND_OUTPUT` is next recommended and explicitly not begun;
   no evidence file exists, no verdict has been assigned, and no
   production work or A3 execution has started.
 - A3, A4, stabilization, and V4 work are not begun.
@@ -551,9 +552,9 @@ Notes:
 `A2_TOWNHALL_AND_CONVERSATIONS`, and
 `A2_FIRST_LAUNCH_AND_SETTINGS`, and
 `A2_WORKSPACE_AND_PROJECT_OPENING`, and
-`A2_FILE_NAVIGATION_AND_EDITING`, and
-`A2_SEARCH_AND_COMMAND_DISCOVERY` complete and published; A2 in
+`A2_FILE_NAVIGATION_AND_EDITING`, `A2_SEARCH_AND_COMMAND_DISCOVERY`, and
+`A2_BUILD_RUN_AND_TEST` complete and published; A2 in
 progress, not complete as a whole; next recommended slice
-`A2_BUILD_RUN_AND_TEST` explicitly not begun (no evidence file; no
+`A2_DEBUGGING_AND_OUTPUT` explicitly not begun (no evidence file; no
 verdict assigned; no production work or A3 execution); A3,
 A4, stabilization, and V4 work not begun.)*
