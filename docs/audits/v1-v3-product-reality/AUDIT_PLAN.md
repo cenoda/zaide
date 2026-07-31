@@ -194,11 +194,20 @@ complete. Completed A2 slices:
   - `A1-XX-04`: scoped disposition only — DAP validation requires a
     disposable host that supplies NetCoreDbg through `ZAIDE_NETCOREDBG_PATH`
     or `PATH`; this is not a user-goal verdict
+- **`A2_TERMINAL`** — complete and published
+  ([evidence/A2_TERMINAL.md](./evidence/A2_TERMINAL.md)):
+  - `A1-TR-01`: **Wired-with-gap** — bottom-panel terminal, Linux PTY,
+    ANSI/CSI parsing, alternate screen, selection, scrollback, search,
+    and restart lifecycle are wired; terminal-mode forcing, non-Linux
+    backends, visible scroll affordance, and live TUI behavior remain gaps
+  - `A1-TR-02`: **Wired-with-gap** — per-tab service ownership, panel
+    caching, tab strip, and disposal are wired; static tab titles and
+    runtime PTY isolation remain gaps
 
 The next recommended A2 slice is
-**`A2_TERMINAL`**, explicitly not begun
+**`A2_GIT`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-TR-01` and `A1-TR-02`.
+`A1-GT-01` through `A1-GT-04`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -562,6 +571,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md)).
 `A2_DEBUGGING_AND_OUTPUT` complete and published
 ([evidence/A2_DEBUGGING_AND_OUTPUT.md](./evidence/A2_DEBUGGING_AND_OUTPUT.md)).
-Next recommended A2 slice `A2_TERMINAL` explicitly not begun
+`A2_TERMINAL` complete and published
+([evidence/A2_TERMINAL.md](./evidence/A2_TERMINAL.md)).
+Next recommended A2 slice `A2_GIT` explicitly not begun
 (no evidence file; no verdict assigned; no production work or A3
 execution). A3, A4, stabilization, and V4 work not begun.*
