@@ -115,11 +115,30 @@ complete. Completed A2 slices:
     outcomes appear in the target direct conversation; successful
     routed flow is not shown in the source and pre-admission
     rejection remains invisible
+- **`A2_FIRST_LAUNCH_AND_SETTINGS`** — complete and published
+  ([evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md](./evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md)):
+  - `A1-FL-01`: **Wired-with-gap** — current multi-column shell and
+    bottom-panel toggles are user-reachable, but the historical
+    Phase 0 three-panel/right-agent layout no longer describes it
+  - `A1-FL-02`: **Wired-with-gap** — Dark, Fluent, Semi.Avalonia,
+    and the Navy palette are composed; historical “Ayaka Violet”
+    wording and a user theme switcher are absent
+  - `A1-FL-03`: **Wired-with-gap** — schema-v3 load/save/migration
+    and status-bar settings UI are production-wired, but load/write
+    recovery and disk-write failures are not surfaced to the user
+  - `A1-FL-04`: **Wired-with-gap** — API keys use a separate secret
+    store with environment fallback, while on-disk permission and
+    plaintext-absence behavior remain A3 verification
+  - `A1-FL-05`: **Wired** — editor and terminal defaults are
+    configurable, persisted, and live-applied
+  - `A1-FL-06`: **Wired-with-gap** — settings recovery is
+    product-wired, while performance budgets remain harness/closeout
+    evidence rather than a product surface
 
 The next recommended A2 slice is
-**`A2_FIRST_LAUNCH_AND_SETTINGS`**, explicitly not begun
+**`A2_WORKSPACE_AND_PROJECT_OPENING`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-FL-01` through `A1-FL-06`.
+`A1-WO-01` through `A1-WO-03`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -471,6 +490,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md](./evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md)).
 `A2_TOWNHALL_AND_CONVERSATIONS` complete and published
 ([evidence/A2_TOWNHALL_AND_CONVERSATIONS.md](./evidence/A2_TOWNHALL_AND_CONVERSATIONS.md)).
-Next recommended A2 slice `A2_FIRST_LAUNCH_AND_SETTINGS` explicitly
+`A2_FIRST_LAUNCH_AND_SETTINGS` complete and published
+([evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md](./evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md)).
+Next recommended A2 slice `A2_WORKSPACE_AND_PROJECT_OPENING` explicitly
 not begun (no evidence file; no verdict assigned; no production work
 or A3 execution). A3, A4, stabilization, and V4 work not begun.*
