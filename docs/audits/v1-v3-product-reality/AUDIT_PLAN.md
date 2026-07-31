@@ -29,12 +29,34 @@ complete. Completed A2 slices:
     context assembly; production does not expose user-managed
     lifecycle-memory creation or management UI; trace and usage
     producers and explicit termination UI remain absent.
+- **`A2_RESTART_RECOVERY_AND_CONTEXT`** — complete and published
+  ([evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md)):
+  - `A1-TC-01`: **Wired-with-gap** — Townhall direct-conversation
+    context selector is user-reachable; no settings entry or
+    configurable application default; overrides are in-memory and
+    lost on restart; Off produces a zero-item/zero-token manifest
+    while policy metadata may still reach the backend
+  - `A1-TC-04`: **Wired-with-gap** — conversation snapshot
+    load/save/restore is production-composed; persistence failures
+    and recovery outcomes are not shown to the user; Zaide’s
+    explicit shutdown sequence does not dispose or flush
+    `ConversationPersistenceService`; possible later
+    framework/root-provider disposal remains unproven
+  - `A1-TC-05`: **Wired-with-gap** — startup calls `Reconcile`, not
+    `Resume` (no automatic backend re-invocation); stored
+    checkpoints may be `Recoverable`; on a normal cold start the
+    unpersisted binding store is empty so revalidation returns
+    `Indeterminate`; reconciled classification and required re-send
+    action are not projected to Townhall
+  - `A1-XX-05`: scoped disposition only (not a user-goal verdict).
+    Conversation persistence is application/user-config scoped; no
+    multi-window synchronization; Phase 21 durable keys are
+    path-derived but current production uses process CWD, not a
+    proven opened-workspace-root provider
 
-The next recommended A2 slice is
-**`A2_RESTART_RECOVERY_AND_CONTEXT`**, explicitly not begun (no
-evidence file exists; no verdict has been assigned). Scope:
-`A1-TC-01`, `A1-TC-04`, `A1-TC-05`, and optional scoped disposition
-for `A1-XX-05`.
+The next recommended A2 slice is **`A2_TOOLS_PERMISSIONS`**,
+explicitly not begun (no evidence file exists; no verdict has been
+assigned). Scope: `A1-TP-01`, `A1-TP-02`, `A1-TP-03`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -377,7 +399,9 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 `A2_MULTI_AGENT_ROUTING` complete and published
 ([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md));
 `A2_TRACE_MEMORY_USAGE_TERMINATION` complete and published
-([evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md)).
-Next recommended A2 slice `A2_RESTART_RECOVERY_AND_CONTEXT`
-explicitly not begun (no evidence file; no verdict assigned). A3,
-A4, stabilization, and V4 work not begun.*
+([evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md));
+`A2_RESTART_RECOVERY_AND_CONTEXT` complete and published
+([evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md)).
+Next recommended A2 slice `A2_TOOLS_PERMISSIONS` explicitly not
+begun (no evidence file; no verdict assigned). A3, A4,
+stabilization, and V4 work not begun.*
