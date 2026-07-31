@@ -2,15 +2,15 @@
 
 **Audit name:** `v1-v3-product-reality`
 **Owner folder:** `docs/audits/v1-v3-product-reality/`
-**Phase:** A1 accepted (2026-07-30); **A2 in progress** (not complete as
-a whole). See [§17](#17-a1-closeout-and-status),
+**Phase:** A1 accepted (2026-07-30); **A2 complete** (2026-07-31).
+See [§17](#17-a1-closeout-and-status),
 [§17.8](#178-current-a2-progress), and
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 **Audit plan:** [AUDIT_PLAN.md](./AUDIT_PLAN.md)
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
 they cover. A1 does not assign implementation verdicts. A2 inspects
-production wiring for each row; fourteen A2 slices are complete and
+production wiring for each row; fifteen A2 slices are complete and
 published (see [§17.8](#178-current-a2-progress)).
 
 ---
@@ -257,9 +257,9 @@ source, or implementation scope was changed. The A1-acceptance
 proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
-**A2 status (2026-07-31):** **in progress** (not complete as a whole).
-Fourteen wiring-audit slices are complete and published; the next
-recommended slice is not begun. See
+**A2 status (2026-07-31):** **complete** for all accepted user-goal rows.
+Fifteen wiring-audit slices are complete and published. A3 and
+cross-slice A2 consolidation are not begun. See
 [§17.8](#178-current-a2-progress).
 
 ### 17.1 Counts
@@ -502,7 +502,7 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 
 ### 17.8 Current A2 progress
 
-**A2 status:** **in progress** (not complete as a whole). Status date:
+**A2 status:** **complete** for all accepted user-goal rows. Status date:
 2026-07-31.
 
 | Slice | Status | Evidence | Verdicts / dispositions |
@@ -521,12 +521,12 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 | `A2_BUILD_RUN_AND_TEST` | **Complete and published** | [evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md) | `A1-BR-01` = **Wired** (project target selection reads the shared project context; locked build/run/test profiles, cancellation, one-at-a-time admission, output/state streams, and show-on-start surfaces are wired); `A1-BR-02` = **Wired** (build diagnostics parse into a separate Problems list with generation-safe navigation while preserving LSP items); `A1-BR-03` = **Wired** (console-first test parsing, summary/status/cases, dedicated Test Results panel, and shared cancellation); `A1-BR-04` = **Wired** (redirected managed-process output is separate from the PTY terminal and bottom-panel modes are mutually exclusive) |
 | `A2_DEBUGGING_AND_OUTPUT` | **Complete and published** | [evidence/A2_DEBUGGING_AND_OUTPUT.md](./evidence/A2_DEBUGGING_AND_OUTPUT.md) | `A1-DB-01` = **Wired-with-gap** (DAP lifecycle, supported C# launch handoff, breakpoints, execution controls, stack/scopes/variables, current location, debug console, panel composition, and recovery are wired; NetCoreDbg availability, launch configurability, and visual/interactive limitations remain); `A1-XX-04` = scoped disposition only (DAP validation requires a disposable host with NetCoreDbg via `ZAIDE_NETCOREDBG_PATH` or `PATH`; not a user-goal verdict) |
 | `A2_TERMINAL` | **Complete and published** | [evidence/A2_TERMINAL.md](./evidence/A2_TERMINAL.md) | `A1-TR-01` = **Wired-with-gap** (bottom-panel terminal stack, Linux PTY, ANSI/CSI parsing, alternate screen, selection, scrollback, search, and restart lifecycle wired; Ctrl+` toggles visibility without forcing Terminal mode; Linux-only backend, visible scroll affordance debt, and live TUI behavior remain); `A1-TR-02` = **Wired-with-gap** (per-tab factory/host, panel cache, tab strip, and disposal wired; all tabs use static `Terminal` titles and per-tab PTY isolation remains A3-unproven) |
-| `A2_GIT` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-GT-01` through `A1-GT-04` |
+| `A2_GIT` | **Complete and published** | [evidence/A2_GIT.md](./evidence/A2_GIT.md) | `A1-GT-01` = **Wired** (LibGit2Sharp repository discovery, status refresh, truthful non-repository/failure labels); `A1-GT-02` = **Wired** (staged/unstaged unified diff, binary notice, read-only diff tabs, refresh-safe selection); `A1-GT-03` = **Wired** (stage/unstage/stage-all, local commit, empty-message/nothing-staged/identity guards, truthful errors, refresh); `A1-GT-04` = **Wired** (branch name or detached-HEAD SHA reflected in the status bar) |
 
 Notes:
 
-- A2 remains open after these fourteen slices; remaining user-goal rows
-  still require wiring audit.
+- A2 wiring is complete after these fifteen slices; all 57 accepted
+  user-observable goal rows have a primary wiring verdict.
 - `A1-XX-02` is recorded here only as a scoped disposition from the
   multi-agent routing slice, not as a third user-goal verdict and not
   as a change to the §15 row data.
@@ -540,10 +540,8 @@ Notes:
 - `A1-XX-01` is recorded here only as a scoped disposition from the
   agent-creation/backend-onboarding slice, not as a third user-goal
   verdict and not as a change to the §15 row data.
-- `A2_GIT` is next recommended and explicitly not begun;
-  no evidence file exists, no verdict has been assigned, and no
-  production work or A3 execution has started.
-- A3, A4, stabilization, and V4 work are not begun.
+- A3 and cross-slice A2 consolidation are explicitly not begun. No A3
+  evidence exists, and no A4, stabilization, or V4 work has started.
 
 ---
 
@@ -555,9 +553,7 @@ Notes:
 `A2_FIRST_LAUNCH_AND_SETTINGS`, and
 `A2_WORKSPACE_AND_PROJECT_OPENING`, and
 `A2_FILE_NAVIGATION_AND_EDITING`, `A2_SEARCH_AND_COMMAND_DISCOVERY`,
-`A2_BUILD_RUN_AND_TEST`, `A2_DEBUGGING_AND_OUTPUT`, and `A2_TERMINAL`
-complete and published; A2 in
-progress, not complete as a whole; next recommended slice
-`A2_GIT` explicitly not begun (no evidence file; no
-verdict assigned; no production work or A3 execution); A3,
-A4, stabilization, and V4 work not begun.)*
+`A2_BUILD_RUN_AND_TEST`, `A2_DEBUGGING_AND_OUTPUT`, `A2_TERMINAL`, and
+`A2_GIT` complete and published; A2 complete for all accepted
+user-goal rows; A3 and cross-slice A2 consolidation explicitly not
+begun; no A3 evidence, A4, stabilization, or V4 work begun.)*

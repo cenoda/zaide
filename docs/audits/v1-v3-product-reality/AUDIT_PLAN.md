@@ -4,9 +4,9 @@
 **Owner folder:** `docs/audits/v1-v3-product-reality/`
 **Audit phases:** A0 (Baseline lock) → A1 (Goal inventory, A1-acceptance gate) →
 A2 (Wiring audit) → A3 (Clean-profile smoke) → A4 (Gap report and V4 proceed decision)
-**Current phase:** **A1 accepted; A2 in progress.** A1 is accepted
-([A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md)). A2 as a whole is **not**
-complete. Completed A2 slices:
+**Current phase:** **A1 accepted; A2 complete.** A1 is accepted
+([A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md)). A2 as a whole is **complete**
+for all accepted user-goal rows. Completed A2 slices:
 
 - **`A2_AGENT_SEND`** — complete and published
   ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md)):
@@ -203,16 +203,24 @@ complete. Completed A2 slices:
   - `A1-TR-02`: **Wired-with-gap** — per-tab service ownership, panel
     caching, tab strip, and disposal are wired; static tab titles and
     runtime PTY isolation remain gaps
+- **`A2_GIT`** — complete and published
+  ([evidence/A2_GIT.md](./evidence/A2_GIT.md)):
+  - `A1-GT-01`: **Wired** — repository discovery, live status, truthful
+    non-repository/failure labels, and refresh reachability are wired
+  - `A1-GT-02`: **Wired** — staged/unstaged unified diffs, binary notices,
+    read-only diff tabs, and refresh-safe selection are wired
+  - `A1-GT-03`: **Wired** — stage/unstage/stage-all, local commit,
+    validation guards, truthful identity/errors, and refresh are wired
+  - `A1-GT-04`: **Wired** — branch and detached-HEAD SHA display are
+    reflected truthfully in the status bar
 
-The next recommended A2 slice is
-**`A2_GIT`**, explicitly not begun
-(no evidence file exists; no verdict has been assigned). Scope:
-`A1-GT-01` through `A1-GT-04`.
+**A2 wiring audit is complete.** A3 and cross-slice A2 consolidation are
+explicitly not begun. A4 does not begin until A3 evidence is complete.
+V4 or successor-roadmap planning does not begin until A4 produces an
+explicit proceed decision.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
-does not begin until A2 and A3 evidence is complete. V4 or
-successor-roadmap planning does not begin until A4 produces an
-explicit proceed decision.
+does not begin until A2 and A3 evidence is complete.
 
 ---
 
@@ -573,6 +581,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_DEBUGGING_AND_OUTPUT.md](./evidence/A2_DEBUGGING_AND_OUTPUT.md)).
 `A2_TERMINAL` complete and published
 ([evidence/A2_TERMINAL.md](./evidence/A2_TERMINAL.md)).
-Next recommended A2 slice `A2_GIT` explicitly not begun
-(no evidence file; no verdict assigned; no production work or A3
-execution). A3, A4, stabilization, and V4 work not begun.*
+`A2_GIT` complete and published
+([evidence/A2_GIT.md](./evidence/A2_GIT.md)).
+A2 wiring is complete for all accepted user-goal rows. A3 and
+cross-slice A2 consolidation are explicitly not begun; A4,
+stabilization, and V4 work are not begun.*
