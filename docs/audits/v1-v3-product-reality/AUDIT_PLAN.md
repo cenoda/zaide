@@ -82,11 +82,28 @@ complete. Completed A2 slices:
     effect; multi-file transactions, agent change sets, rollback
     UI/commands, and multi-file partial-apply cancellation semantics
     are absent
+- **`A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`** — complete and
+  published
+  ([evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md](./evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md)):
+  - `A1-AC-01`: **Missing** — the historical Phase 5 Agent Panel
+    creation path is retired; production has no user-reachable
+    create, rename, remove, or configure-agent workflow
+  - `A1-AC-02`: **Wired-with-gap** — Native Harness and ACP are
+    independently composed sibling backends with in-memory
+    per-actor binding and pull-based status projection; production
+    has no user bind/configure/unbind/persist workflow; ACP
+    selection-state authentication is not bridged to the real ACP
+    `authenticate` protocol call; negotiated auth methods and
+    capability changes are not user-projected
+  - `A1-XX-01`: gap confirmed (scoped disposition only; not a
+    user-goal verdict). Binding infrastructure and status visibility
+    exist, but the supported user onboarding entry point remains
+    absent
 
 The next recommended A2 slice is
-**`A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`**, explicitly not begun
+**`A2_TOWNHALL_AND_CONVERSATIONS`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-AC-01`, `A1-AC-02`, optional scoped disposition for `A1-XX-01`.
+`A1-TH-01`, `A1-TH-02`, `A1-TH-04`, `A1-TH-05`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -434,7 +451,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md));
 `A2_TOOLS_PERMISSIONS` complete and published
 ([evidence/A2_TOOLS_PERMISSIONS.md](./evidence/A2_TOOLS_PERMISSIONS.md)).
-Next recommended A2 slice `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`
-explicitly not begun (no evidence file; no verdict assigned; no
-production work or A3 execution). A3, A4, stabilization, and V4 work
-not begun.*
+`A2_AGENT_CREATION_AND_BACKEND_ONBOARDING` complete and published
+([evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md](./evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md)).
+Next recommended A2 slice `A2_TOWNHALL_AND_CONVERSATIONS` explicitly
+not begun (no evidence file; no verdict assigned; no production work
+or A3 execution). A3, A4, stabilization, and V4 work not begun.*
