@@ -552,8 +552,8 @@ A1-acceptance proceed decision in this folder.
 
 *Created: 2026-07-30 (A0 baseline lock, A1 corrective rounds 1–8).
 A1 accepted on 2026-07-30 via
-[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). Status 2026-07-31: A2 in
-progress (not complete as a whole). `A2_AGENT_SEND` complete and
+[A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md). Status 2026-07-31: A2
+complete for all accepted user-goal rows. `A2_AGENT_SEND` complete and
 published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 `A2_MULTI_AGENT_ROUTING` complete and published
 ([evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md));
