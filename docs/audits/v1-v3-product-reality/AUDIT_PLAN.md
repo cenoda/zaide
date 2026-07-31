@@ -48,15 +48,45 @@ complete. Completed A2 slices:
     unpersisted binding store is empty so revalidation returns
     `Indeterminate`; reconciled classification and required re-send
     action are not projected to Townhall
-  - `A1-XX-05`: scoped disposition only (not a user-goal verdict).
-    Conversation persistence is application/user-config scoped; no
-    multi-window synchronization; Phase 21 durable keys are
-    path-derived but current production uses process CWD, not a
-    proven opened-workspace-root provider
+   - `A1-XX-05`: scoped disposition only (not a user-goal verdict).
+     Conversation persistence is application/user-config scoped; no
+     multi-window synchronization; Phase 21 durable keys are
+     path-derived but current production uses process CWD, not a
+     proven opened-workspace-root provider
+- **`A2_TOOLS_PERMISSIONS`** — complete and published
+  ([evidence/A2_TOOLS_PERMISSIONS.md](./evidence/A2_TOOLS_PERMISSIONS.md)):
+  - `A1-TP-01`: **Wired-with-gap** — run-scoped Phase 17 broker paths
+    exist for tool-capable Native Harness and ACP backends; default
+    product has no user-reachable backend-binding workflow;
+    `AgentActionFactPayload` and `AgentActionAuditRecord` contain no
+    explicit initiating/target actor IDs; several pre-admission and
+    early broker returns remain backend-visible only; Townhall
+    projects only emitted `ActionResultReported`; ACP lacks
+    delete/command mediation
+  - `A1-TP-02`: **Wired-with-gap** — five-kind permission model,
+    exact-request decisions, expiry, and lifecycle revocation are
+    partially wired; dedicated network, Git, secrets, destructive,
+    and memory permission dimensions are absent; no selectable
+    approval scope or user-reachable permission management/revocation
+    UI; ACP `session/request_permission` is automatic and
+    reject-preferring (`reject_once` when present, otherwise the
+    first supplied option, which may be permissive); this ACP
+    protocol handling is not user-reachable, not guaranteed
+    fail-closed, and is separate from Phase 17 broker authorization
+  - `A1-TP-03`: **Wired-with-gap** — base-revision checks,
+    workspace-generation invalidation, and single non-terminal action
+    admission are wired; `TryConsume()` is the final authorization
+    step, not the final safety check; pre-consume stale detection
+    preserves a `Published` decision; post-consume validation can
+    fail after the decision becomes `Consumed` without applying the
+    effect; multi-file transactions, agent change sets, rollback
+    UI/commands, and multi-file partial-apply cancellation semantics
+    are absent
 
-The next recommended A2 slice is **`A2_TOOLS_PERMISSIONS`**,
-explicitly not begun (no evidence file exists; no verdict has been
-assigned). Scope: `A1-TP-01`, `A1-TP-02`, `A1-TP-03`.
+The next recommended A2 slice is
+**`A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`**, explicitly not begun
+(no evidence file exists; no verdict has been assigned). Scope:
+`A1-AC-01`, `A1-AC-02`, optional scoped disposition for `A1-XX-01`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -401,7 +431,10 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 `A2_TRACE_MEMORY_USAGE_TERMINATION` complete and published
 ([evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md));
 `A2_RESTART_RECOVERY_AND_CONTEXT` complete and published
-([evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md)).
-Next recommended A2 slice `A2_TOOLS_PERMISSIONS` explicitly not
-begun (no evidence file; no verdict assigned). A3, A4,
-stabilization, and V4 work not begun.*
+([evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md));
+`A2_TOOLS_PERMISSIONS` complete and published
+([evidence/A2_TOOLS_PERMISSIONS.md](./evidence/A2_TOOLS_PERMISSIONS.md)).
+Next recommended A2 slice `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`
+explicitly not begun (no evidence file; no verdict assigned; no
+production work or A3 execution). A3, A4, stabilization, and V4 work
+not begun.*

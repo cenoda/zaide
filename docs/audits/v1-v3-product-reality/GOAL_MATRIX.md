@@ -10,7 +10,7 @@ a whole). See [§17](#17-a1-closeout-and-status),
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
 they cover. A1 does not assign implementation verdicts. A2 inspects
-production wiring for each row; four A2 slices are complete and
+production wiring for each row; five A2 slices are complete and
 published (see [§17.8](#178-current-a2-progress)).
 
 ---
@@ -258,7 +258,7 @@ proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
 **A2 status (2026-07-31):** **in progress** (not complete as a whole).
-Four wiring-audit slices are complete and published; the next
+Five wiring-audit slices are complete and published; the next
 recommended slice is not begun. See
 [§17.8](#178-current-a2-progress).
 
@@ -511,11 +511,12 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 | `A2_MULTI_AGENT_ROUTING` | **Complete and published** | [evidence/A2_MULTI_AGENT_ROUTING.md](./evidence/A2_MULTI_AGENT_ROUTING.md) | `A1-MR-01` = **Missing**; `A1-MR-03` = **Wired-with-gap**; `A1-XX-02` = **confirmed absent** (scoped disposition only; not a user-goal verdict) |
 | `A2_TRACE_MEMORY_USAGE_TERMINATION` | **Complete and published** | [evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md](./evidence/A2_TRACE_MEMORY_USAGE_TERMINATION.md) | `A1-TC-02` = **Missing**; `A1-TC-03` = **Missing**; `A1-TC-08` = **Missing**; `A1-TC-09` = **Missing**; `A1-XX-03` = scoped disposition only (not a user-goal verdict): production appends memory-influence evidence during session context assembly; production does not expose user-managed lifecycle-memory creation or management UI; trace and usage producers and explicit termination UI remain absent |
 | `A2_RESTART_RECOVERY_AND_CONTEXT` | **Complete and published** | [evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md](./evidence/A2_RESTART_RECOVERY_AND_CONTEXT.md) | `A1-TC-01` = **Wired-with-gap** (Townhall direct-conversation context selector user-reachable; no settings entry or configurable application default; overrides in-memory and lost on restart; Off zero-item/zero-token manifest with possible policy metadata); `A1-TC-04` = **Wired-with-gap** (conversation snapshot load/save/restore production-composed; persistence failures/recovery outcomes not user-visible; Zaide’s explicit shutdown does not dispose/flush `ConversationPersistenceService`; later framework/root-provider disposal unproven); `A1-TC-05` = **Wired-with-gap** (startup `Reconcile` not `Resume`; no automatic backend re-invocation; stored checkpoints may be `Recoverable`; normal cold start empty unpersisted binding store → revalidation `Indeterminate`; classification and re-send not projected to Townhall); `A1-XX-05` = scoped disposition only (not a user-goal verdict): conversation persistence application/user-config scoped; no multi-window sync; Phase 21 durable keys path-derived but production uses process CWD, not a proven opened-workspace-root provider |
-| `A2_TOOLS_PERMISSIONS` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-TP-01`, `A1-TP-02`, `A1-TP-03` |
+| `A2_TOOLS_PERMISSIONS` | **Complete and published** | [evidence/A2_TOOLS_PERMISSIONS.md](./evidence/A2_TOOLS_PERMISSIONS.md) | `A1-TP-01` = **Wired-with-gap** (run-scoped Phase 17 broker paths for tool-capable Native Harness and ACP; no user-reachable backend-binding workflow; `AgentActionFactPayload` / `AgentActionAuditRecord` lack explicit initiating/target actor IDs; several pre-admission/early broker returns backend-visible only; Townhall projects only emitted `ActionResultReported`; ACP lacks delete/command mediation); `A1-TP-02` = **Wired-with-gap** (five-kind permission model, exact-request decisions, expiry, lifecycle revocation partially wired; no dedicated network/Git/secrets/destructive/memory dimensions; no selectable approval scope or user-reachable permission management/revocation UI; ACP `session/request_permission` automatic reject-preferring: `reject_once` when present else first option, which may be permissive; not user-reachable, not guaranteed fail-closed, separate from Phase 17 broker authorization); `A1-TP-03` = **Wired-with-gap** (base-revision checks, workspace-generation invalidation, single non-terminal action admission wired; `TryConsume()` is final authorization not final safety check; pre-consume stale detection preserves `Published`; post-consume validation can fail after `Consumed` without applying effect; no multi-file transactions, agent change sets, rollback UI/commands, or multi-file partial-apply cancellation semantics) |
+| `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-AC-01`, `A1-AC-02`, optional scoped disposition for `A1-XX-01` |
 
 Notes:
 
-- A2 remains open after these four slices; remaining user-goal rows
+- A2 remains open after these five slices; remaining user-goal rows
   still require wiring audit.
 - `A1-XX-02` is recorded here only as a scoped disposition from the
   multi-agent routing slice, not as a third user-goal verdict and not
@@ -527,15 +528,18 @@ Notes:
   restart/recovery/context slice, not as a user-goal verdict and not
   as a change to the §15 row data. It is not represented as
   `Wired`, `Wired-with-gap`, `Missing`, or `Ambiguous`.
-- `A2_TOOLS_PERMISSIONS` is next recommended and explicitly not
-  begun; no evidence file exists and no verdict has been assigned.
+- `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING` is next recommended and
+  explicitly not begun; no evidence file exists, no verdict has been
+  assigned, and no production work or A3 execution has started.
 - A3, A4, stabilization, and V4 work are not begun.
 
 ---
 
 *Last updated: 2026-07-31 (`A2_AGENT_SEND`,
-`A2_MULTI_AGENT_ROUTING`, `A2_TRACE_MEMORY_USAGE_TERMINATION`, and
-`A2_RESTART_RECOVERY_AND_CONTEXT` complete and published; A2 in
-progress, not complete as a whole; next recommended slice
-`A2_TOOLS_PERMISSIONS` explicitly not begun (no evidence file; no
-verdict assigned); A3, A4, stabilization, and V4 work not begun.)*
+`A2_MULTI_AGENT_ROUTING`, `A2_TRACE_MEMORY_USAGE_TERMINATION`,
+`A2_RESTART_RECOVERY_AND_CONTEXT`, and `A2_TOOLS_PERMISSIONS`
+complete and published; A2 in progress, not complete as a whole; next
+recommended slice `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`
+explicitly not begun (no evidence file; no verdict assigned; no
+production work or A3 execution); A3, A4, stabilization, and V4 work
+not begun.)*
