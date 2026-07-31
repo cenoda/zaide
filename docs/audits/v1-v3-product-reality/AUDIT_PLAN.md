@@ -99,11 +99,27 @@ complete. Completed A2 slices:
     user-goal verdict). Binding infrastructure and status visibility
     exist, but the supported user onboarding entry point remains
     absent
+- **`A2_TOWNHALL_AND_CONVERSATIONS`** — complete and published
+  ([evidence/A2_TOWNHALL_AND_CONVERSATIONS.md](./evidence/A2_TOWNHALL_AND_CONVERSATIONS.md)):
+  - `A1-TH-01`: **Wired-with-gap** — center-shell channels, activity,
+    and All/Chat/Activity filters are user-reachable; presentation
+    kinds and filter scope remain limited, and custom channels are
+    not user-creatable
+  - `A1-TH-02`: **Wired** — People → Zaide Agent opens one private
+    direct conversation per unordered pair, with persisted selection,
+    drafts, unread state, and read state
+  - `A1-TH-04`: **Wired** — Agent Panel chrome is retired and
+    Townhall is the sole user-facing direct-conversation re-entry
+  - `A1-TH-05`: **Wired-with-gap** — routing failures appear in the
+    source conversation, while admitted execution and terminal
+    outcomes appear in the target direct conversation; successful
+    routed flow is not shown in the source and pre-admission
+    rejection remains invisible
 
 The next recommended A2 slice is
-**`A2_TOWNHALL_AND_CONVERSATIONS`**, explicitly not begun
+**`A2_FIRST_LAUNCH_AND_SETTINGS`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-TH-01`, `A1-TH-02`, `A1-TH-04`, `A1-TH-05`.
+`A1-FL-01` through `A1-FL-06`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -453,6 +469,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_TOOLS_PERMISSIONS.md](./evidence/A2_TOOLS_PERMISSIONS.md)).
 `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING` complete and published
 ([evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md](./evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md)).
-Next recommended A2 slice `A2_TOWNHALL_AND_CONVERSATIONS` explicitly
+`A2_TOWNHALL_AND_CONVERSATIONS` complete and published
+([evidence/A2_TOWNHALL_AND_CONVERSATIONS.md](./evidence/A2_TOWNHALL_AND_CONVERSATIONS.md)).
+Next recommended A2 slice `A2_FIRST_LAUNCH_AND_SETTINGS` explicitly
 not begun (no evidence file; no verdict assigned; no production work
 or A3 execution). A3, A4, stabilization, and V4 work not begun.*
