@@ -184,11 +184,21 @@ complete. Completed A2 slices:
     dedicated Test Results surface, and shared cancellation are wired
   - `A1-BR-04`: **Wired** — redirected project output is separate from the
     PTY terminal and bottom-panel modes remain mutually exclusive
+- **`A2_DEBUGGING_AND_OUTPUT`** — complete and published
+  ([evidence/A2_DEBUGGING_AND_OUTPUT.md](./evidence/A2_DEBUGGING_AND_OUTPUT.md)):
+  - `A1-DB-01`: **Wired-with-gap** — DAP lifecycle, C# launch handoff,
+    breakpoints, execution controls, stack/scopes/variables, current
+    location, debug console, panel composition, and recovery are wired;
+    NetCoreDbg availability, launch configurability, and several visual
+    or interactive capabilities remain gaps
+  - `A1-XX-04`: scoped disposition only — DAP validation requires a
+    disposable host that supplies NetCoreDbg through `ZAIDE_NETCOREDBG_PATH`
+    or `PATH`; this is not a user-goal verdict
 
 The next recommended A2 slice is
-**`A2_DEBUGGING_AND_OUTPUT`**, explicitly not begun
+**`A2_TERMINAL`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-the debugging and output rows named by the evidence plan.
+`A1-TR-01` and `A1-TR-02`.
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -550,6 +560,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md](./evidence/A2_SEARCH_AND_COMMAND_DISCOVERY.md)).
 `A2_BUILD_RUN_AND_TEST` complete and published
 ([evidence/A2_BUILD_RUN_AND_TEST.md](./evidence/A2_BUILD_RUN_AND_TEST.md)).
-Next recommended A2 slice `A2_DEBUGGING_AND_OUTPUT` explicitly not begun
+`A2_DEBUGGING_AND_OUTPUT` complete and published
+([evidence/A2_DEBUGGING_AND_OUTPUT.md](./evidence/A2_DEBUGGING_AND_OUTPUT.md)).
+Next recommended A2 slice `A2_TERMINAL` explicitly not begun
 (no evidence file; no verdict assigned; no production work or A3
 execution). A3, A4, stabilization, and V4 work not begun.*
