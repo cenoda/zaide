@@ -134,11 +134,25 @@ complete. Completed A2 slices:
   - `A1-FL-06`: **Wired-with-gap** — settings recovery is
     product-wired, while performance budgets remain harness/closeout
     evidence rather than a product surface
+- **`A2_WORKSPACE_AND_PROJECT_OPENING`** — complete and published
+  ([evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md](./evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md)):
+  - `A1-WO-01`: **Wired-with-gap** — folder open, tree, ignore rules,
+    hidden-file toggle, and new file/folder paths are user-reachable,
+    but file-tree failure messages are not projected to the UI
+  - `A1-WO-02`: **Wired-with-gap** — one production project-context
+    service is shared by status, LSP, Build, and Debug; ambiguous
+    multi-project selection has no user-reachable picker and is
+    mislabeled as “Project error”
+  - `A1-WO-03`: **Wired-with-gap** — folder open/close updates
+    `WorkspacePath`, emits `WorkspaceFolderChanged`, refreshes
+    project context and Source Control; Source Control refresh is
+    coupled to the RootPath host path rather than the workspace event
 
 The next recommended A2 slice is
-**`A2_WORKSPACE_AND_PROJECT_OPENING`**, explicitly not begun
+**`A2_FILE_NAVIGATION_AND_EDITING`**, explicitly not begun
 (no evidence file exists; no verdict has been assigned). Scope:
-`A1-WO-01` through `A1-WO-03`.
+`A1-FN-01` through `A1-FN-06` and `A1-FN-08` through `A1-FN-15`
+(`A1-FN-07` is retired).
 **Proceed authority:** A2 does not begin in the session that recorded
 the A1-acceptance proceed decision; A2 begins in a new session. A4
 does not begin until A2 and A3 evidence is complete. V4 or
@@ -492,6 +506,8 @@ published ([evidence/A2_AGENT_SEND.md](./evidence/A2_AGENT_SEND.md));
 ([evidence/A2_TOWNHALL_AND_CONVERSATIONS.md](./evidence/A2_TOWNHALL_AND_CONVERSATIONS.md)).
 `A2_FIRST_LAUNCH_AND_SETTINGS` complete and published
 ([evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md](./evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md)).
-Next recommended A2 slice `A2_WORKSPACE_AND_PROJECT_OPENING` explicitly
+`A2_WORKSPACE_AND_PROJECT_OPENING` complete and published
+([evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md](./evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md)).
+Next recommended A2 slice `A2_FILE_NAVIGATION_AND_EDITING` explicitly
 not begun (no evidence file; no verdict assigned; no production work
 or A3 execution). A3, A4, stabilization, and V4 work not begun.*

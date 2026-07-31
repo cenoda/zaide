@@ -10,7 +10,7 @@ a whole). See [§17](#17-a1-closeout-and-status),
 **Scope:** Every user-observable promise extracted from V1, V2, and V3
 roadmaps and the implementation plans and `TOFIX.md` files of the phases
 they cover. A1 does not assign implementation verdicts. A2 inspects
-production wiring for each row; eight A2 slices are complete and
+production wiring for each row; nine A2 slices are complete and
 published (see [§17.8](#178-current-a2-progress)).
 
 ---
@@ -258,7 +258,7 @@ proceed decision is recorded in
 [A1_ACCEPTANCE.md](./A1_ACCEPTANCE.md).
 
 **A2 status (2026-07-31):** **in progress** (not complete as a whole).
-Eight wiring-audit slices are complete and published; the next
+Nine wiring-audit slices are complete and published; the next
 recommended slice is not begun. See
 [§17.8](#178-current-a2-progress).
 
@@ -515,11 +515,12 @@ that authorizes A2. A2 was **not** begun in the A1-acceptance session
 | `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING` | **Complete and published** | [evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md](./evidence/A2_AGENT_CREATION_AND_BACKEND_ONBOARDING.md) | `A1-AC-01` = **Missing** (historical Phase 5 Agent Panel creation path retired; no user create/rename/remove/configure-agent workflow); `A1-AC-02` = **Wired-with-gap** (Native Harness and ACP independently composed as sibling backends; in-memory per-actor binding and pull-based status projection exist; no user bind/configure/unbind/persist workflow; local selection-service auth is not bridged to real ACP `authenticate`; negotiated auth methods and capability changes are not user-projected); `A1-XX-01` = gap **confirmed** (scoped disposition only; not a user-goal verdict): binding infrastructure and status visibility exist, but supported user onboarding entry point remains absent |
 | `A2_TOWNHALL_AND_CONVERSATIONS` | **Complete and published** | [evidence/A2_TOWNHALL_AND_CONVERSATIONS.md](./evidence/A2_TOWNHALL_AND_CONVERSATIONS.md) | `A1-TH-01` = **Wired-with-gap** (center-shell channels, channel activity, and All/Chat/Activity filters are user-reachable; presentation kinds and filter scope remain limited, and custom channels are not user-creatable); `A1-TH-02` = **Wired** (People → Zaide Agent uses one private direct conversation per unordered pair, with persisted selection, drafts, unread state, and read state); `A1-TH-04` = **Wired** (Agent Panel chrome retired; Townhall is the sole user-facing direct-conversation re-entry); `A1-TH-05` = **Wired-with-gap** (routing failures appear in the source; admitted execution and terminal outcomes appear in the target direct conversation; successful routed flow is not shown in the source and pre-admission rejection remains invisible) |
 | `A2_FIRST_LAUNCH_AND_SETTINGS` | **Complete and published** | [evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md](./evidence/A2_FIRST_LAUNCH_AND_SETTINGS.md) | `A1-FL-01` = **Wired-with-gap** (current multi-column shell and bottom-panel toggles user-reachable; historical Phase 0 three-panel/right-agent layout no longer describes it); `A1-FL-02` = **Wired-with-gap** (Dark, Fluent, Semi.Avalonia, and Navy palette composed; historical “Ayaka Violet” wording and user theme switcher absent); `A1-FL-03` = **Wired-with-gap** (schema-v3 load/save/migration and status-bar settings UI production-wired; load/write recovery and disk-write failure not user-visible); `A1-FL-04` = **Wired-with-gap** (separate secret store and environment fallback wired; on-disk permission/plaintext-absence behavior A3-unproven); `A1-FL-05` = **Wired** (editor and terminal defaults configurable, persisted, and live-applied); `A1-FL-06` = **Wired-with-gap** (settings recovery product-wired; performance budgets harness/closeout evidence, not product surface) |
-| `A2_WORKSPACE_AND_PROJECT_OPENING` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-WO-01` through `A1-WO-03` |
+| `A2_WORKSPACE_AND_PROJECT_OPENING` | **Complete and published** | [evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md](./evidence/A2_WORKSPACE_AND_PROJECT_OPENING.md) | `A1-WO-01` = **Wired-with-gap** (folder open, tree, ignore rules, hidden-file toggle, and new file/folder paths user-reachable; file-tree failure messages not projected to UI); `A1-WO-02` = **Wired-with-gap** (one project-context service shared by status, LSP, Build, and Debug; ambiguous multi-project selection has no user-reachable picker and is mislabeled “Project error”); `A1-WO-03` = **Wired-with-gap** (folder open/close updates `WorkspacePath`, emits `WorkspaceFolderChanged`, refreshes project context and Source Control; Source Control refresh coupled to RootPath host path rather than workspace event) |
+| `A2_FILE_NAVIGATION_AND_EDITING` | **Next recommended; explicitly not begun** | (no evidence file; no verdict assigned) | Scope: `A1-FN-01` through `A1-FN-06` and `A1-FN-08` through `A1-FN-15` (`A1-FN-07` retired) |
 
 Notes:
 
-- A2 remains open after these eight slices; remaining user-goal rows
+- A2 remains open after these nine slices; remaining user-goal rows
   still require wiring audit.
 - `A1-XX-02` is recorded here only as a scoped disposition from the
   multi-agent routing slice, not as a third user-goal verdict and not
@@ -534,7 +535,7 @@ Notes:
 - `A1-XX-01` is recorded here only as a scoped disposition from the
   agent-creation/backend-onboarding slice, not as a third user-goal
   verdict and not as a change to the §15 row data.
-- `A2_WORKSPACE_AND_PROJECT_OPENING` is next recommended and
+- `A2_FILE_NAVIGATION_AND_EDITING` is next recommended and
   explicitly not begun; no evidence file exists, no verdict has been
   assigned, and no production work or A3 execution has started.
 - A3, A4, stabilization, and V4 work are not begun.
@@ -546,8 +547,9 @@ Notes:
 `A2_RESTART_RECOVERY_AND_CONTEXT`, `A2_TOOLS_PERMISSIONS`, and
 `A2_AGENT_CREATION_AND_BACKEND_ONBOARDING`, and
 `A2_TOWNHALL_AND_CONVERSATIONS`, and
-`A2_FIRST_LAUNCH_AND_SETTINGS` complete and published; A2 in
+`A2_FIRST_LAUNCH_AND_SETTINGS`, and
+`A2_WORKSPACE_AND_PROJECT_OPENING` complete and published; A2 in
 progress, not complete as a whole; next recommended slice
-`A2_WORKSPACE_AND_PROJECT_OPENING` explicitly not begun (no evidence
+`A2_FILE_NAVIGATION_AND_EDITING` explicitly not begun (no evidence
 file; no verdict assigned; no production work or A3 execution); A3,
 A4, stabilization, and V4 work not begun.)*
