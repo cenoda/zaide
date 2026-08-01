@@ -77,7 +77,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M3 corrective: +1 internal EditorStateSnapshotService.
         Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.Editor.Application"]);
         // Phase 22.1 M1: +1 internal EditorLanguageUiProjection.
-        Assert.Equal((18, 13, 5), byNamespace["Zaide.Features.Editor.Presentation"]);
+        // ISSUE-010: +1 internal IndentGuideLevelCache.
+        Assert.Equal((19, 13, 6), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
         // M11b: 4 ProjectSystem Infrastructure services public→internal (13p/0i → 9p/4i).
@@ -283,7 +284,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
-        Assert.Equal(844, inventory.SourceFiles.Count);
+        // ISSUE-010: +1 IndentGuideLevelCache production file.
+        Assert.Equal(845, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -320,7 +322,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
-        Assert.Equal(799, byFolder["Features"]);
+        // ISSUE-010: +1 IndentGuideLevelCache production file.
+        Assert.Equal(800, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;
