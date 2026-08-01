@@ -2,8 +2,8 @@
 
 ## Status and Authorization
 
-**M0 accepted at `8856bdf7`; M1 complete.** Implementation authorized for
-accepted milestones only.
+**Phase 22.1 complete (M0–M4).** M0 accepted at `8856bdf7`; M1–M4 landed on
+`master` with current A3 evidence under `docs/phases/v3/phase-22.1/evidence/`.
 
 ## A4 Ownership
 
@@ -178,13 +178,13 @@ retain the resulting evidence before deleting disposable profile state.
 
 ## Exit Conditions
 
-- [ ] M0 and implementation approvals are recorded separately.
-- [ ] The five affected positive paths reach truthful terminal results.
-- [ ] Cancellation, stale response, unsupported/no-result, and failure paths
+- [x] M0 and implementation approvals are recorded separately.
+- [x] The five affected positive paths reach truthful terminal results.
+- [x] Cancellation, stale response, unsupported/no-result, and failure paths
   leave the editor consistent.
-- [ ] Focused, build, fast-suite, and serial-fallback requirements pass.
-- [ ] `A1-FN-09`…`A1-FN-13` have current isolated re-smoke evidence.
-- [ ] Documentation and `TOFIX.md` reflect observed results without rewriting
+- [x] Focused, build, fast-suite, and serial-fallback requirements pass.
+- [x] `A1-FN-09`…`A1-FN-13` have current isolated re-smoke evidence.
+- [x] Documentation and `TOFIX.md` reflect observed results without rewriting
   audit history.
 
 ## Rollback Note
