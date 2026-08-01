@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Zaide.Features.Language.Application;
@@ -24,4 +25,7 @@ public static class LanguageNavigationPolicy
 
     /// <summary>Truthful feedback when the request failed.</summary>
     public const string FailedMessage = "Go to Definition failed.";
+
+    /// <summary>Bounded terminalization deadline for in-flight definition requests.</summary>
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
 }

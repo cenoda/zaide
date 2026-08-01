@@ -19,6 +19,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
 using Zaide.Tests.App.Composition;
+using Zaide.Tests.Infrastructure;
 namespace Zaide.Tests.Features.Editor.Infrastructure;
 
 /// <summary>
@@ -48,6 +49,7 @@ public sealed class FormatDocumentCommandTests
             new LanguageSymbolService(workspace, sessionService, bridge, NullLogger<LanguageSymbolService>.Instance),
             new LanguageFormattingService(workspace, sessionService, bridge, NullLogger<LanguageFormattingService>.Instance),
             sessionService,
+            new SynchronousEditorUiDispatcher(),
             tabs,
             registry);
 

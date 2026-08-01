@@ -2,7 +2,7 @@
 
 ## Status
 
-**M1 complete; M2–M4 in progress.** A4 package 1 and `A1-FN-09`…`A1-FN-13` are
+**M1–M3 complete; M4 in progress.** A4 package 1 and `A1-FN-09`…`A1-FN-13` are
 assigned here. M0 accepted at `8856bdf7`.
 
 ## Work Board
@@ -15,7 +15,7 @@ assigned here. M0 accepted at `8856bdf7`.
 - [x] Receive and record explicit human G2 / M0 acceptance.
 - [x] M1 — completion UI dispatch/projection on `IEditorUiDispatcher`.
 - [x] M2 — hover UI dispatch/projection.
-- [ ] M3 — definition timeout + navigation/symbol dispatch/projection.
+- [x] M3 — definition timeout + navigation/symbol dispatch/projection.
 - [ ] M4 — regression gates and `A1-FN-09`…`A1-FN-13` re-smoke.
 
 ## M0 Findings
@@ -41,4 +41,4 @@ assigned here. M0 accepted at `8856bdf7`.
 
 ## Next Task
 
-Implement M3 definition timeout plus navigation/symbol dispatch/projection.
+Run M4 A3 re-smoke for `A1-FN-09`…`A1-FN-13` and record evidence.

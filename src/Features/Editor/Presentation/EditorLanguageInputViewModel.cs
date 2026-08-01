@@ -29,6 +29,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private readonly ILanguageSymbolService _symbolService;
     private readonly ILanguageFormattingService _formattingService;
     private readonly ILanguageSessionService _sessionService;
+    private readonly IEditorUiDispatcher _uiDispatcher;
     private readonly EditorTabViewModel _editorTabs;
     private readonly ICommandRegistry _registry;
 
@@ -38,13 +39,14 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private int _navigationInFlight;
     private int _formatInFlight;
 
-    public EditorLanguageInputViewModel(
+    internal EditorLanguageInputViewModel(
         ILanguageCompletionService completionService,
         ILanguageHoverService hoverService,
         ILanguageNavigationService navigationService,
         ILanguageSymbolService symbolService,
         ILanguageFormattingService formattingService,
         ILanguageSessionService sessionService,
+        IEditorUiDispatcher uiDispatcher,
         EditorTabViewModel editorTabs,
         ICommandRegistry registry)
     {
@@ -54,6 +56,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         _symbolService = symbolService ?? throw new ArgumentNullException(nameof(symbolService));
         _formattingService = formattingService ?? throw new ArgumentNullException(nameof(formattingService));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
+        _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
         _editorTabs = editorTabs ?? throw new ArgumentNullException(nameof(editorTabs));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
 
@@ -102,8 +105,14 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
         SymbolDismissCommand = ReactiveCommand.Create(() => _symbolService.Dismiss());
 
         // Auto-navigate single definition results; project feedback for terminal states.
-        _ = _navigationService.WhenChanged.Subscribe(OnNavigationSnapshot);
-        _ = _symbolService.WhenChanged.Subscribe(OnSymbolSnapshot);
+        _ = EditorLanguageUiProjection.Subscribe(
+            _navigationService.WhenChanged,
+            _uiDispatcher,
+            OnNavigationSnapshot);
+        _ = EditorLanguageUiProjection.Subscribe(
+            _symbolService.WhenChanged,
+            _uiDispatcher,
+            OnSymbolSnapshot);
         _ = _formattingService.WhenChanged.Subscribe(OnFormattingSnapshot);
 
         RegisterCommands();

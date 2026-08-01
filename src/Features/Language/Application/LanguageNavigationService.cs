@@ -17,6 +17,8 @@ namespace Zaide.Features.Language.Application;
 /// </summary>
 internal sealed class LanguageNavigationService : ILanguageNavigationService
 {
+    internal static TimeSpan? TestRequestTimeoutOverride { get; set; }
+
     private readonly global::Zaide.Features.Workspace.Domain.Workspace _workspace;
     private readonly ILanguageSessionService _sessionService;
     private readonly ILanguageDocumentBridge _documentBridge;
@@ -28,6 +30,7 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
 
     private LanguageNavigationSnapshot _current = LanguageNavigationSnapshot.Idle;
     private CancellationTokenSource? _requestCts;
+    private CancellationTokenSource? _requestTimeoutCts;
     private long _requestId;
     private bool _disposed;
 
@@ -141,8 +144,14 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
         }
 
         _requestCts = new CancellationTokenSource();
+        var requestTimeout = TestRequestTimeoutOverride ?? LanguageNavigationPolicy.RequestTimeout;
+        _requestTimeoutCts = new CancellationTokenSource(requestTimeout);
+        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            _requestCts.Token,
+            _requestTimeoutCts.Token);
         var requestId = Interlocked.Increment(ref _requestId);
-        var requestToken = _requestCts.Token;
+        var requestToken = linkedCts.Token;
+        var timeoutToken = _requestTimeoutCts.Token;
 
         var loading = new LanguageNavigationSnapshot(
             LanguageNavigationState.Loading,
@@ -165,7 +174,8 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
             document.Content,
             caretOffset,
             session,
-            requestToken));
+            requestToken,
+            timeoutToken));
     }
 
     /// <inheritdoc />
@@ -347,7 +357,8 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
         string documentText,
         int caretOffset,
         ILanguageServerSession session,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        CancellationToken timeoutToken)
     {
         try
         {
@@ -454,6 +465,17 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
 
             PublishLocked(choose);
         }
+        catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
+        {
+            PublishTerminal(
+                LanguageNavigationState.Failed,
+                generation,
+                filePath,
+                caretOffset,
+                LanguageNavigationPolicy.FailedMessage,
+                requestId,
+                tracked);
+        }
         catch (OperationCanceledException)
         {
             // Superseded by a newer request or dismiss — no surface mutation.
@@ -536,6 +558,8 @@ internal sealed class LanguageNavigationService : ILanguageNavigationService
         _requestCts?.Cancel();
         _requestCts?.Dispose();
         _requestCts = null;
+        _requestTimeoutCts?.Dispose();
+        _requestTimeoutCts = null;
     }
 
     private void ObserveTask(Task task)

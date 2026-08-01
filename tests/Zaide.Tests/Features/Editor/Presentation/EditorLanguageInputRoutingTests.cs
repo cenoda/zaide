@@ -232,7 +232,8 @@ public sealed class EditorLanguageInputRoutingTests
             Formatting = new LanguageFormattingService(
                 Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
             Input = new EditorLanguageInputViewModel(
-                Completion, Hover, Navigation, Symbols, Formatting, SessionService, Tabs, CommandRegistryFactory.Create());
+                Completion, Hover, Navigation, Symbols, Formatting, SessionService,
+                new SynchronousEditorUiDispatcher(), Tabs, CommandRegistryFactory.Create());
         }
 
         public string OpenActive(string name, string content)
@@ -352,6 +353,7 @@ public sealed class EditorLanguageInputRoutingTests
             new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
             new LanguageFormattingService(workspace, session, bridge, NullLogger<LanguageFormattingService>.Instance),
             session,
+            new SynchronousEditorUiDispatcher(),
             tabs,
             registry);
 
@@ -381,6 +383,7 @@ public sealed class EditorLanguageInputRoutingTests
             new LanguageSymbolService(workspace, session, bridge, NullLogger<LanguageSymbolService>.Instance),
             new LanguageFormattingService(workspace, session, bridge, NullLogger<LanguageFormattingService>.Instance),
             session,
+            new SynchronousEditorUiDispatcher(),
             tabs,
             registry);
 

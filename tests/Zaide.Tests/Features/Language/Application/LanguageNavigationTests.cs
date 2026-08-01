@@ -202,7 +202,8 @@ public sealed class LanguageNavigationTests : IDisposable
                 Workspace, SessionService, Bridge, NullLogger<LanguageFormattingService>.Instance);
 
             Input = new EditorLanguageInputViewModel(
-                completion, hover, Service, symbols, formatting, SessionService, Tabs, CommandRegistryFactory.Create());
+                completion, hover, Service, symbols, formatting, SessionService,
+                new SynchronousEditorUiDispatcher(), Tabs, CommandRegistryFactory.Create());
 
             // Count open attempts without consuming command execution semantics.
             Tabs.OpenFileCommand.IsExecuting.Subscribe(_ => { });
@@ -599,5 +600,34 @@ public sealed class LanguageNavigationTests : IDisposable
         Assert.False(ok);
         Assert.Equal(before, h.Tabs.ActiveTab.NavigationRequestId);
         Assert.Null(h.Tabs.ActiveTab.PendingNavigationOffset);
+    }
+
+    [Fact]
+    public async Task TimedOutRequest_PublishesFailed()
+    {
+        LanguageNavigationService.TestRequestTimeoutOverride = TimeSpan.FromMilliseconds(100);
+        try
+        {
+            using var h = new Harness(WorkspaceRoot);
+            var content = "class C {}";
+            var path = h.OpenActive("timeout.cs", content);
+            h.SessionService.SetReady(h.Session);
+            h.Session.DefinitionGate = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            h.Service.RequestDefinition(path, 0);
+            await WaitForAsync(
+                () => h.Snapshots.Any(s => s.State == LanguageNavigationState.Failed),
+                TimeSpan.FromSeconds(2));
+
+            Assert.Equal(
+                LanguageNavigationPolicy.FailedMessage,
+                h.Snapshots.Last(s => s.State == LanguageNavigationState.Failed).FeedbackMessage);
+            Assert.Equal(LanguageNavigationState.Idle, h.Service.Current.State);
+        }
+        finally
+        {
+            LanguageNavigationService.TestRequestTimeoutOverride = null;
+        }
     }
 }

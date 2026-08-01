@@ -17,6 +17,7 @@ using Zaide.Features.Editor.Infrastructure;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Language.Application;
+using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.Features.Language.Application;
 
@@ -100,7 +101,8 @@ public sealed class LanguageCommandAvailabilityTests
         var formatting = new LanguageFormattingService(
             workspace, session, bridge, NullLogger<LanguageFormattingService>.Instance);
         var input = new EditorLanguageInputViewModel(
-            completion, hover, navigation, symbols, formatting, session, tabs, CommandRegistryFactory.Create());
+            completion, hover, navigation, symbols, formatting, session,
+            new SynchronousEditorUiDispatcher(), tabs, CommandRegistryFactory.Create());
 
         session.SetReady(1, new ConfigurableSession { Capabilities = capabilities });
         session.Emit(new LanguageSessionSnapshot(state, 1, "/p.csproj", "/p", 1, null));
