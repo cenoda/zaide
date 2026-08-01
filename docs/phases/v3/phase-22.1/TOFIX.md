@@ -14,7 +14,7 @@ assigned here. M0 accepted at `8856bdf7`.
   boundaries, and current seam names.
 - [x] Receive and record explicit human G2 / M0 acceptance.
 - [x] M1 — completion UI dispatch/projection on `IEditorUiDispatcher`.
-- [ ] M2 — hover UI dispatch/projection.
+- [x] M2 — hover UI dispatch/projection.
 - [ ] M3 — definition timeout + navigation/symbol dispatch/projection.
 - [ ] M4 — regression gates and `A1-FN-09`…`A1-FN-13` re-smoke.
 
@@ -41,4 +41,4 @@ assigned here. M0 accepted at `8856bdf7`.
 
 ## Next Task
 
-Implement M2 hover UI dispatch/projection and its focused regression tests.
+Implement M3 definition timeout plus navigation/symbol dispatch/projection.

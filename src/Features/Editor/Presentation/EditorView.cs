@@ -331,7 +331,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                 _languageInput.CompletionWhenChanged,
                 _uiDispatcher,
                 ApplyCompletionSnapshot));
-            d.Add(_languageInput.HoverWhenChanged.Subscribe(ApplyHoverSnapshot));
+            d.Add(EditorLanguageUiProjection.Subscribe(
+                _languageInput.HoverWhenChanged,
+                _uiDispatcher,
+                ApplyHoverSnapshot));
             d.Add(_languageInput.NavigationWhenChanged.Subscribe(ApplyNavigationSnapshot));
             d.Add(_languageInput.SymbolWhenChanged.Subscribe(ApplySymbolSnapshot));
 
