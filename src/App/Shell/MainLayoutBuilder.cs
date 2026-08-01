@@ -4,7 +4,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Microsoft.Extensions.DependencyInjection;
+using Zaide.App.Composition;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.SourceControl.Presentation;
@@ -26,6 +29,7 @@ internal sealed class MainLayoutBuilder
         EditorBreakpointViewModel editorBreakpointViewModel,
         DebugCurrentLocationViewModel debugCurrentLocationViewModel)
     {
+        var editorUiDispatcher = CompositionRoot.Services.GetRequiredService<IEditorUiDispatcher>();
         var grid = new Grid
         {
             ColumnDefinitions =
@@ -124,6 +128,7 @@ internal sealed class MainLayoutBuilder
         // --- Column 5: Right — Editor (top) + Agent Panel (bottom) ---
         var rightColumnHost = new RightColumnHost(
             settings,
+            editorUiDispatcher,
             searchViewModel,
             languageInputViewModel,
             editorBreakpointViewModel,

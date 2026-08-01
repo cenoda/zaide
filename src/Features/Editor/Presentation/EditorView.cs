@@ -41,6 +41,7 @@ namespace Zaide.Features.Editor.Presentation;
 public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposable, IEditorLanguageOperations
 {
     private readonly TextEditor _textEditor;
+    private readonly IEditorUiDispatcher _uiDispatcher;
     private readonly EditorLanguageInputViewModel _languageInput;
     private readonly EditorCompletionPopup _completionPopup;
     private readonly EditorHoverPopup _hoverPopup;
@@ -68,13 +69,15 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private FontFamily _proseFont = new("Georgia, serif");
     private bool _disposed;
 
-    public EditorView(
+    internal EditorView(
         ISettingsService settings,
+        IEditorUiDispatcher uiDispatcher,
         EditorLanguageInputViewModel languageInput,
         EditorBreakpointViewModel breakpointViewModel,
         DebugCurrentLocationViewModel currentLocationViewModel)
     {
         _settings = settings;
+        _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
         _languageInput = languageInput ?? throw new ArgumentNullException(nameof(languageInput));
         _breakpointViewModel = breakpointViewModel
             ?? throw new ArgumentNullException(nameof(breakpointViewModel));
@@ -324,7 +327,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
                     ClearLanguagePresentation();
                 }));
 
-            d.Add(_languageInput.CompletionWhenChanged.Subscribe(ApplyCompletionSnapshot));
+            d.Add(EditorLanguageUiProjection.Subscribe(
+                _languageInput.CompletionWhenChanged,
+                _uiDispatcher,
+                ApplyCompletionSnapshot));
             d.Add(_languageInput.HoverWhenChanged.Subscribe(ApplyHoverSnapshot));
             d.Add(_languageInput.NavigationWhenChanged.Subscribe(ApplyNavigationSnapshot));
             d.Add(_languageInput.SymbolWhenChanged.Subscribe(ApplySymbolSnapshot));

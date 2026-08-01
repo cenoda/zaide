@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.Features.Debugging.Presentation;
+using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Settings.Contracts;
 using Zaide.UI.DesignSystem;
@@ -17,6 +18,7 @@ internal sealed class RightColumnHost
 {
     public RightColumnHost(
         ISettingsService settings,
+        IEditorUiDispatcher editorUiDispatcher,
         EditorSearchViewModel searchViewModel,
         EditorLanguageInputViewModel languageInputViewModel,
         EditorBreakpointViewModel editorBreakpointViewModel,
@@ -26,6 +28,7 @@ internal sealed class RightColumnHost
         SearchBar = new SearchBar(searchViewModel);
         EditorView = new EditorView(
             settings,
+            editorUiDispatcher,
             languageInputViewModel,
             editorBreakpointViewModel,
             debugCurrentLocationViewModel);

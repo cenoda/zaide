@@ -2,9 +2,8 @@
 
 ## Status
 
-**M0 docs complete; awaiting HUMAN G2 acceptance.** A4 package 1 and
-`A1-FN-09`…`A1-FN-13` are assigned here. Implementation remains unauthorized;
-G2 acceptance and separate G3 implementation approval are pending.
+**M1 complete; M2–M4 in progress.** A4 package 1 and `A1-FN-09`…`A1-FN-13` are
+assigned here. M0 accepted at `8856bdf7`.
 
 ## Work Board
 
@@ -13,10 +12,11 @@ G2 acceptance and separate G3 implementation approval are pending.
   seams in M0.
 - [x] Record exact focused filters, A3 producer path/command, rollback
   boundaries, and current seam names.
-- [ ] Receive and record explicit human G2 / M0 acceptance.
-- [ ] Obtain separate implementation approval.
-- [ ] Implement only the accepted corrective milestones.
-- [ ] Re-smoke `A1-FN-09`…`A1-FN-13` with the preserved A3 model.
+- [x] Receive and record explicit human G2 / M0 acceptance.
+- [x] M1 — completion UI dispatch/projection on `IEditorUiDispatcher`.
+- [ ] M2 — hover UI dispatch/projection.
+- [ ] M3 — definition timeout + navigation/symbol dispatch/projection.
+- [ ] M4 — regression gates and `A1-FN-09`…`A1-FN-13` re-smoke.
 
 ## M0 Findings
 
@@ -41,5 +41,4 @@ G2 acceptance and separate G3 implementation approval are pending.
 
 ## Next Task
 
-Human audit the M0 plan and seam record for G2 acceptance. Do not implement
-Phase 22.1, request G3, or begin any sibling/later phase during this stop gate.
+Implement M2 hover UI dispatch/projection and its focused regression tests.

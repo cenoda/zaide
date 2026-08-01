@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Zaide.App.Composition;
 using Zaide.App.Shell;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;

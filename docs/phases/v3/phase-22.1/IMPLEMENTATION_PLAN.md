@@ -2,9 +2,8 @@
 
 ## Status and Authorization
 
-**M0 documentation complete; awaiting HUMAN G2 acceptance.** Implementation is
-not authorized. A human must first accept M0 and then grant separate G3
-implementation approval.
+**M0 accepted at `8856bdf7`; M1 complete.** Implementation authorized for
+accepted milestones only.
 
 ## A4 Ownership
 
@@ -43,7 +42,7 @@ M0 was completed read-only against `master` at
 - [x] Inventory focused tests and the Phase 10 smoke tools; replace the
   verification placeholders below with exact filters and producer commands.
 - [x] Lock milestone and rollback boundaries.
-- [ ] Receive explicit human G2 / M0 plan acceptance.
+- [x] Receive explicit human G2 / M0 plan acceptance.
 
 The named production seams are verified current. No production class name was
 stale; the corrected assumption is that the temporary A3 runner is not retained
