@@ -2,9 +2,9 @@
 
 ## Status and Authorization
 
-**Planning only; not implemented.** M0 is not accepted. Implementation is not
-authorized until this plan passes live-seam verification, receives explicit
-human M0 acceptance, and then receives separate implementation approval.
+**M0 documentation complete; awaiting HUMAN G2 acceptance.** Implementation is
+not authorized. A human must first accept M0 and then grant separate G3
+implementation approval.
 
 ## A4 Ownership
 
@@ -20,29 +20,34 @@ Baseline evidence:
 
 ## M0 — Live-Seam Verification and Plan Acceptance
 
-M0 is read-only and must be completed against the implementation-session HEAD.
+M0 was completed read-only against `master` at
+`938227b2c2fd743ac8f4d84b30ffdfac0500f6c1`. `HEAD` and freshly fetched
+`origin/master` were equal before documentation edits. Detailed findings are in
+[M0 live-seam verification](./M0_SEAM_VERIFICATION.md).
 
-- [ ] Reproduce and trace the five A3 failures without changing the historical
-  evidence file.
-- [ ] Verify production DI in `LanguageServiceCollectionExtensions` and the
+- [x] Reconcile and trace the five historical A3 failures against live code
+  without re-running A3 or changing the historical evidence file.
+- [x] Verify production DI in `LanguageServiceCollectionExtensions` and the
   application/editor ownership of UI scheduling.
-- [ ] Trace completion from `LanguageCompletionService` through
+- [x] Trace completion from `LanguageCompletionService` through
   `EditorLanguageInputViewModel` and `EditorView`; identify the exact
   thread-affinity boundary before selecting a fix.
-- [ ] Trace hover through `LanguageHoverService` and the editor hover trigger/
+- [x] Trace hover through `LanguageHoverService` and the editor hover trigger/
   projection path; distinguish request, timeout, stale-document, and rendering
   failures.
-- [ ] Trace definition and document/workspace symbol requests through
+- [x] Trace definition and document/workspace symbol requests through
   `LanguageNavigationService`, `LanguageSymbolService`, LSP parsers, and their
   command/projection owners.
-- [ ] Verify active-document, cancellation, stale-response, and no-project/
+- [x] Verify active-document, cancellation, stale-response, and no-project/
   ambiguous-project contracts remain protected.
-- [ ] Inventory focused tests and the Phase 10 smoke tools; replace the
+- [x] Inventory focused tests and the Phase 10 smoke tools; replace the
   verification placeholders below with exact filters and producer commands.
-- [ ] Lock rollback boundaries and receive explicit human M0 acceptance.
+- [x] Lock milestone and rollback boundaries.
+- [ ] Receive explicit human G2 / M0 plan acceptance.
 
-Candidate seams are planning pointers, not verified-current claims. M0 must
-replace stale names or assumptions with live truth.
+The named production seams are verified current. No production class name was
+stale; the corrected assumption is that the temporary A3 runner is not retained
+in the repository or `/tmp` and must be recreated out-of-tree before M4 smoke.
 
 ## Scope
 
@@ -69,29 +74,108 @@ subsystem or change LSP/provider policy without M0 evidence.
 | M0 | Live seams, failure mechanisms, commands, boundaries, and rollback are verified; plan accepted | Read-only seam checklist + human acceptance |
 | M1 | Completion returns and projects usable items on the correct UI ownership path without stale/cancelled mutation | Focused completion/editor routing tests |
 | M2 | Hover reaches a terminal truthful state and shows known-symbol content | Focused hover and editor projection tests |
-| M3 | Definition plus document/workspace symbols return and project known fixture results with truthful empty/failure outcomes | Focused navigation/symbol tests |
+| M3 | Definition reaches a bounded terminal result; definition plus document/workspace symbols project known fixture results with truthful empty/failure outcomes | Focused navigation/symbol tests |
 | M4 | Regression gates pass and `A1-FN-09`…`A1-FN-13` are re-smoked under the A3 contract | Build, fast/serial gates, out-of-tree A3 smoke |
 
-Each milestone is independently reviewable. Do not combine M1–M3 until M0
-proves a shared root cause and records why one coherent implementation is safer.
+Each milestone is independently reviewable and revertible. M0 proved a shared
+unscheduled-observer failure family, but also proved distinct failure points and
+presentation contracts, so M1-M3 remain separate.
 
-## Verification Command Placeholders
+## Verification Commands
 
-M0 must replace angle-bracket placeholders with exact live filters/paths:
+M0 validated the focused filters with `--no-build --list-tests` against the
+existing baseline test assembly. Later approved implementation uses these exact
+commands.
+
+### M0 DI and composition
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.App.Composition.LanguageRegistrationModuleTests|FullyQualifiedName~Zaide.Tests.Features.Language.DI.LanguageSessionServiceDiTests"
+```
+
+### M1 completion and editor routing
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageCompletionTests|FullyQualifiedName~Zaide.Tests.Features.Editor.Presentation.EditorLanguageInputRoutingTests"
+```
+
+### M2 hover and editor routing
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageHoverTests|FullyQualifiedName~Zaide.Tests.Features.Editor.Presentation.EditorLanguageInputRoutingTests"
+```
+
+### M3 definition, symbols, and editor routing
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageNavigationTests|FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageSymbolTests|FullyQualifiedName~Zaide.Tests.Features.Editor.Presentation.EditorLanguageInputRoutingTests"
+```
+
+### Preservation and common gates
 
 ```bash
 dotnet build Zaide.slnx
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<LanguageCompletion and editor-routing filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<LanguageHover filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<LanguageNavigation and LanguageSymbol filter>"
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageCommandAvailabilityTests|FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageDocumentSyncTests|FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageDiagnosticsServiceTests|FullyQualifiedName~Zaide.Tests.Features.Language.Application.LanguageFormattingTests"
 dotnet test Zaide.slnx --no-build
 dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
-<out-of-tree A3 language-intelligence producer with disposable HOME/XDG/workspace>
 git diff --check
 ```
 
 Run the fast suite interactively; use serial mode if it fails or hangs. The A3
 producer must follow the umbrella [re-smoke contract](../phase-22/IMPLEMENTATION_PLAN.md#re-smoke-contract).
+
+### Retained exploratory service tools
+
+These commands are optional implementation diagnostics only. They do not
+compose `EditorView` and cannot close A3 rows.
+
+```bash
+dotnet run --project tools/Phase10M4CompletionHoverSmoke/Phase10M4CompletionHoverSmoke.csproj --no-build
+dotnet run --project tools/Phase10M5NavigationSymbolsSmoke/Phase10M5NavigationSymbolsSmoke.csproj --no-build
+```
+
+### M4 A3 producer
+
+The historical runner source/output was intentionally disposable and is absent
+at M0. M4 must first recreate and publish the approved out-of-tree runner to
+`/tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll`, with its fixture at
+`/tmp/zaide-a3-lang/fixtures/workspace`. The exact producer command is then:
+
+```bash
+test -f /tmp/zaide-a3-lang/runner/Zaide.Tests.csproj
+dotnet restore /tmp/zaide-a3-lang/runner/Zaide.Tests.csproj
+dotnet publish /tmp/zaide-a3-lang/runner/Zaide.Tests.csproj --no-restore -c Release -o /tmp/zaide-a3-lang/out/Release/net10.0
+test -f /tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll
+test -d /tmp/zaide-a3-lang/fixtures/workspace
+mkdir -p /tmp/zaide-a3-lang/evidence
+for scenario in A1-FN-09 A1-FN-10 A1-FN-11 A1-FN-12 A1-FN-13; do
+  profile_root="$(mktemp -d /tmp/zaide-a3-lang-profile-XXXXXXXX)"
+  mkdir -p "$profile_root/home" "$profile_root/config" "$profile_root/data" "$profile_root/state" "$profile_root/cache"
+  cp -a /tmp/zaide-a3-lang/fixtures/workspace "$profile_root/workspace"
+  env HOME="$profile_root/home" \
+    XDG_CONFIG_HOME="$profile_root/config" \
+    XDG_DATA_HOME="$profile_root/data" \
+    XDG_STATE_HOME="$profile_root/state" \
+    XDG_CACHE_HOME="$profile_root/cache" \
+    PATH="/home/cenoda/.dotnet/tools:$PATH" \
+    dotnet restore "$profile_root/workspace/LanguageIntel.csproj"
+  env HOME="$profile_root/home" \
+    XDG_CONFIG_HOME="$profile_root/config" \
+    XDG_DATA_HOME="$profile_root/data" \
+    XDG_STATE_HOME="$profile_root/state" \
+    XDG_CACHE_HOME="$profile_root/cache" \
+    PATH="/home/cenoda/.dotnet/tools:$PATH" \
+    dotnet /tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll \
+    --scenario "$scenario" \
+    --profile "$profile_root" \
+    --evidence "/tmp/zaide-a3-lang/evidence/$scenario.json" \
+    --repo-head "$(git rev-parse HEAD)" \
+    --workspace "$profile_root/workspace"
+done
+```
+
+This command is locked for later M4 preparation; it was not run in M0. M4 must
+retain the resulting evidence before deleting disposable profile state.
 
 ## Exit Conditions
 
@@ -106,7 +190,17 @@ producer must follow the umbrella [re-smoke contract](../phase-22/IMPLEMENTATION
 
 ## Rollback Note
 
-Revert the smallest owning milestone commit. If a shared scheduling or LSP
-lifetime change affects more than one milestone, M0 must record the pre-change
-behavior and a single coherent revert boundary. Do not revert unrelated Phase
-10 or V3 history.
+Use one independently revertible commit per accepted milestone:
+
+- M1 owns only completion dispatch/projection and its tests/docs.
+- M2 owns only hover dwell/terminal dispatch and its tests/docs.
+- M3 owns definition plus document/workspace symbol dispatch/projection and its
+  tests/docs.
+- M4 owns regression/re-smoke evidence and closeout documentation; it does not
+  retroactively combine M1-M3 code.
+
+Revert only the owning milestone commit. Do not change or revert the global
+`IScheduler` registration, LSP request shapes/parsers, provider policy, packages,
+unrelated Phase 10/V3 history, or another milestone to roll back one correction.
+If later implementation proves a cross-cutting seam is unavoidable, stop and
+record a renewed human-approved commit/rollback boundary before editing it.
