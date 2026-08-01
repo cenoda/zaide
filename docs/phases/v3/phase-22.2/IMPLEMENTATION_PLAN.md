@@ -2,9 +2,9 @@
 
 ## Status and Authorization
 
-**Planning only; not implemented.** M0 is not accepted. Implementation is not
-authorized until explicit human M0 acceptance and a separate implementation
-approval are recorded.
+**M0 live-seam verification documented; not implemented.** M0 awaits explicit
+human G2 acceptance. Implementation remains unauthorized until that acceptance
+and a later, separate implementation prompt are recorded.
 
 ## A4 Ownership and Dependency
 
@@ -21,30 +21,35 @@ Baseline evidence:
 
 ## M0 — Live-Seam Verification and Plan Acceptance
 
-- [ ] Reconcile the current `AgentBackendBindingPanel` and
+- [x] Reconcile the current `AgentBackendBindingPanel` and
   `AgentBackendBindingPresenter` with A3's finding that no supported user
   configure/bind/unbind/persist workflow was reachable.
-- [ ] Verify Townhall reachability, selection state, empty/unbound state,
+- [x] Verify Townhall reachability, selection state, empty/unbound state,
   keyboard/focus/accessibility bounds, and production DI.
-- [ ] Verify `IAgentActorBackendBindingStore`,
+- [x] Verify `IAgentActorBackendBindingStore`,
   `IAgentActorBackendSelectionService`, current in-memory/persistence truth,
   Actor/workspace/backend/runtime identity rules, and revalidation boundaries.
-- [ ] Verify Native Harness configuration inputs and capability truth without
+- [x] Verify Native Harness configuration inputs and capability truth without
   inventing provider or model support.
-- [ ] Verify ACP executable/runtime configuration, initialize/authenticate/
+- [x] Verify ACP executable/runtime configuration, initialize/authenticate/
   logout support, credential ownership, and current `authenticate` bridge
   behavior.
-- [ ] Define supported secret storage and ensure ordinary settings/logs never
+- [x] Define supported secret storage and ensure ordinary settings/logs never
   receive plaintext credentials.
-- [ ] Define bind, update, unbind, restart, stale-runtime, disconnect, auth
+- [x] Define bind, update, unbind, restart, stale-runtime, disconnect, auth
   failure, and partial-write outcomes.
-- [ ] Inventory focused production-composition and integration tests, then
+- [x] Inventory focused production-composition and integration tests, then
   replace command placeholders.
-- [ ] Lock migration/rollback behavior and receive explicit human M0
-  acceptance.
+- [x] Lock migration and rollback behavior.
+- [ ] Receive explicit human G2 / M0 acceptance.
 
-Candidate seams are planning pointers only. M0 must verify their current
-reachability and ownership before any implementation decision.
+Detailed live findings, outcome contracts, test inventory, and the locked
+re-smoke producer are in
+[M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). The verified production
+names are current. M0 corrected the earlier assumption that the binding status
+panel and local selection auth API formed a user workflow: the panel is
+status-only, and local `RequestAuthenticateAsync` does not call ACP
+`authenticate`.
 
 ## Scope
 
@@ -73,9 +78,9 @@ capability differences.
 | Milestone | Outcome | Verification gate |
 |-----------|---------|-------------------|
 | M0 | Live reachability, ownership, persistence, secret, identity, backend-specific, and rollback contracts are verified; plan accepted | Read-only checklist + human acceptance |
-| M1 | Backend-neutral binding configuration and durable/revalidated state contract supports truthful bind/update/unbind outcomes | Focused binding store/service and persistence tests |
+| M1 | A schema-v1 durable backend-neutral store with revisions, atomic bind/update/unbind, recovery, and reactive state supports truthful mutation outcomes | Focused binding store/service and persistence tests |
 | M2 | Native Harness workflow is user-reachable and reports configured/available/usable state truthfully | Focused Native Harness UI/composition tests |
-| M3 | ACP workflow is user-reachable, including supported authentication and explicit failure/logout behavior | Focused ACP UI/auth/composition tests |
+| M3 | ACP workflow is user-reachable, including runtime identity probe, real `authenticate` bridge, capability-gated logout, and explicit failure behavior | Focused ACP UI/auth/composition tests |
 | M4 | Restart/revalidation, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial gates, isolated binding smoke |
 
 ## Affected Re-Smoke
@@ -86,20 +91,51 @@ sub-paths of `A1-AS-02`, `A1-TH-05`, `A1-MR-03`, `A1-TC-01`, and
 records reachability and honest remaining outcomes rather than claiming those
 later packages complete.
 
-## Verification Command Placeholders
+## Verification Commands
+
+M0 verified the existing class filters with `--no-build --list-tests`. The
+exact `Phase22*` classes below are required additions in their owning later
+milestone; they do not exist at M0.
+
+### M0 existing composition and identity seams
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.App.Composition.AgentsRegistrationModuleTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Integration.Phase20IntegrationTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Integration.Phase20IdentityBindingTests"
+```
+
+### M1 binding state and persistence
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22BackendBindingStoreTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22BackendBindingPersistenceTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22BackendBindingSelectionServiceTests"
+```
+
+### M2 Native Harness workflow
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22NativeHarnessBindingWorkflowTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Phase19IntegrationTests|FullyQualifiedName~Zaide.Tests.Features.Settings.Infrastructure.SecretStoreTests|FullyQualifiedName~Zaide.Tests.Features.Settings.Infrastructure.FileSecretStorePermissionTests|FullyQualifiedName~Zaide.Tests.App.Composition.AgentsRegistrationModuleTests"
+```
+
+### M3 ACP workflow and authentication
+
+```bash
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22AcpBindingWorkflowTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22AcpAuthenticationBridgeTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Protocol.Phase20ProtocolCapabilityTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Transport.Phase20TransportLifecycleTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Transport.Phase20TransportStderrBoundaryTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Integration.Phase20IdentityBindingTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Acp.Phase20AdversarialTests"
+```
+
+### M4 restart, accessibility, and preservation
 
 ```bash
 dotnet build Zaide.slnx
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<binding store/selection/persistence filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<Native Harness binding UI/composition filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<ACP binding/auth/UI/composition filter>"
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22BackendBindingTownhallTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Binding.Phase22BackendBindingRestartTests|FullyQualifiedName~Zaide.Tests.Features.Townhall.Presentation.Phase15TownhallParityTests|FullyQualifiedName~Zaide.Tests.Features.Townhall.Presentation.TownhallDirectSendTests|FullyQualifiedName~Zaide.Tests.Features.Agents.Continuity.Phase21RestartTests"
 dotnet test Zaide.slnx --no-build
 dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
-<out-of-tree A3 backend-binding producer with disposable HOME/XDG/workspace>
 git diff --check
 ```
 
-M0 must replace every placeholder. Re-smoke follows the umbrella
+Run the fast suite interactively and use the serial command if it fails or
+hangs. The exact out-of-tree M4 producer and its two-backend eight-row scenario
+matrix are locked in
+[M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md#locked-local-re-smoke-set).
+Re-smoke follows the umbrella
 [contract](../phase-22/IMPLEMENTATION_PLAN.md#re-smoke-contract).
 
 ## Exit Conditions
@@ -115,7 +151,13 @@ M0 must replace every placeholder. Re-smoke follows the umbrella
 
 ## Rollback Note
 
-Binding persistence must be backward-compatible or use an M0-approved migration
-with backup and restore. Revert UI, persistence, and composition changes as one
-coherent milestone when partial rollback could leave unreadable or unsafe
-binding state. Never remove or reinterpret an existing binding silently.
+Use one independently revertible commit per accepted milestone. M1 owns the
+additive schema-v1 binding document and its atomic/LKG store; M2 owns Native
+Harness Townhall workflow; M3 owns ACP runtime/auth/logout workflow; M4 owns
+restart/revalidation, regression, re-smoke evidence, and closeout docs.
+
+Pre-22.2 code ignores the additive binding file, so rollback preserves it as
+recoverable user data rather than deleting or rewriting it. Revert only the
+owning Phase 22.2 milestone. Never remove or reinterpret an existing binding
+silently, and never roll back Phase 22.1 or historical Phase 19-21 commits to
+undo Phase 22.2.
