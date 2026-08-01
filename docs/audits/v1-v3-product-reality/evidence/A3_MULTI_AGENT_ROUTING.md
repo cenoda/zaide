@@ -3,7 +3,7 @@
 **Audit name:** `v1-v3-product-reality`
 **Phase scope of this note:** **A3 multi-agent routing execution slice only** — rows `A1-MR-01`, `A1-MR-03`.
 **Evidence date:** 2026-08-01
-**Repo head at run:** `7cc605ce79e062317d324b453fb92a1cac8f962c`
+**Repo head at run:** `d69ed5bd21bccda0754cfc857ddeabf190ad209f`
 
 ---
 
@@ -125,15 +125,15 @@ dotnet "/tmp/zaide-a3-mr/runner/bin/Release/net10.0/Zaide.Tests.dll" \
   --scenario A1-MR-0N \
   --profile "$PROFILE_ROOT" \
   --evidence "/tmp/zaide-a3-mr/evidence/A1-MR-0N.json" \
-  --repo-head "7cc605ce79e062317d324b453fb92a1cac8f962c"
+  --repo-head "d69ed5bd21bccda0754cfc857ddeabf190ad209f"
 ```
 
 ### 2.4 Disposable profiles (final capture)
 
 | Scenario | Profile root | Exit | Assertions |
 |----------|--------------|------|------------|
-| `A1-MR-01` | `/tmp/zaide-a3-mr-profile-N5xzhwqC` | **0** | 7/7 pass |
-| `A1-MR-03` | `/tmp/zaide-a3-mr-profile-1flqhMMM` | **0** | 25/25 pass |
+| `A1-MR-01` | `/tmp/zaide-a3-mr-profile-gLKxoQ1L` | **0** | 7/7 pass |
+| `A1-MR-03` | `/tmp/zaide-a3-mr-profile-faBXYDlq` | **0** | 25/25 pass |
 
 **Total:** 32 product-runtime assertions, all pass on final capture.
 
@@ -186,7 +186,7 @@ Chat/error chrome paint is **UNVERIFIED-VIS**.
 | Check | Result |
 |-------|--------|
 | People roster | `User`, `Zaide Agent` |
-| Source `ConversationId` | `direct:2bdf397c2610441ea3e2cb1830d7a272` |
+| Source `ConversationId` | `direct:676310f228884aedabf9d359da5f61a1` |
 | Catalog roster (`ListAgents`) | `Alpha`, `Beta`, `Delta`, `Gamma`, `Zaide Agent` |
 
 ### 4.2 Negative routing cases (active direct conversation)
@@ -195,7 +195,7 @@ Each case was sent sequentially from the same source DM. After four failures the
 
 | Input | Source `ConversationId` | `RoutingFailure` entry | Townhall `AgentError` projection | Draft after send | Target direct changes |
 |-------|-------------------------|------------------------|----------------------------------|------------------|------------------------|
-| `@Ghost hello` | `direct:2bdf397c2610441ea3e2cb1830d7a272` | `RoutingFailure:Unknown target` | `AgentError\|Zaide Agent\|Routing failed: Unknown target` | **cleared** | No new directs; panel host 0→1 (source thin panel created on first send) |
+| `@Ghost hello` | `direct:676310f228884aedabf9d359da5f61a1` | `RoutingFailure:Unknown target` | `AgentError\|Zaide Agent\|Routing failed: Unknown target` | **cleared** | No new directs; panel host 0→1 (source thin panel created on first send) |
 | `@Alpha @Beta` | same | `RoutingFailure:Multiple mentions` | `AgentError\|…\|Routing failed: Multiple mentions` | **cleared** | No new directs with admitted entries |
 | `@Alpha` | same | `RoutingFailure:Empty content after stripping` | `AgentError\|…\|Routing failed: Empty content after stripping` | **cleared** | No new directs with admitted entries |
 | `@` | same | `RoutingFailure:Empty mention target` | `AgentError\|…\|Routing failed: Empty mention target` | **cleared** | No new directs with admitted entries |
@@ -207,10 +207,10 @@ All negative cases: `draftCleared: true`; no fabricated target execution; channe
 | Check | Result |
 |-------|--------|
 | Input | `@Alpha hello routed A3-MR-03` |
-| Source `ConversationId` | `direct:2bdf397c2610441ea3e2cb1830d7a272` |
+| Source `ConversationId` | `direct:676310f228884aedabf9d359da5f61a1` |
 | Alpha `ActorId` | `panel-seed:alpha` |
 | Backend binding | **Unbound** — `No explicit backend binding exists for this actor.` |
-| Target direct created | `direct:f57a67d2bf79475eab3d300eb3bb7a34` (empty shell via get-or-create panel host) |
+| Target direct created | `direct:3471c405086d4f9d9ae7bde37825168d` (empty shell via get-or-create panel host) |
 | Admitted `UserChat` / `AssistantResponse` on source or target | **No** |
 | Townhall draft after send | **cleared** |
 | Inferred outcome | `pre_admission_unbound_reject_no_admitted_store_entry_truthful` |
@@ -255,7 +255,7 @@ Reconciles A2 **Wired-with-gap** without reopening `A1-AS-*` or `A1-TH-*` verdic
 {
   "scenarioId": "A1-MR-03",
   "exitCode": 0,
-  "source.conversationId": "direct:2bdf397c2610441ea3e2cb1830d7a272",
+  "source.conversationId": "direct:676310f228884aedabf9d359da5f61a1",
   "negative_routing_cases": [
     {
       "input": "@Ghost hello",
@@ -281,7 +281,7 @@ Reconciles A2 **Wired-with-gap** without reopening `A1-AS-*` or `A1-TH-*` verdic
   ],
   "canonical_alpha_route": {
     "backend.bound": false,
-    "targetConversationId": "direct:f57a67d2bf79475eab3d300eb3bb7a34",
+    "targetConversationId": "direct:3471c405086d4f9d9ae7bde37825168d",
     "targetHasAdmittedEntries": false,
     "outcome": "pre_admission_unbound_reject_no_admitted_store_entry_truthful"
   },
@@ -332,7 +332,7 @@ Reconciles A2 **Wired-with-gap** without reopening `A1-AS-*` or `A1-TH-*` verdic
 After evidence capture:
 
 - Removed `/tmp/zaide-a3-mr/` (runner, obj, bin, evidence JSON working copies).
-- Removed disposable `/tmp/zaide-a3-mr-profile-N5xzhwqC` and `/tmp/zaide-a3-mr-profile-1flqhMMM`.
+- Removed disposable `/tmp/zaide-a3-mr-profile-gLKxoQ1L` and `/tmp/zaide-a3-mr-profile-faBXYDlq`.
 - No tracked tree changes except this evidence document.
 
 ---
