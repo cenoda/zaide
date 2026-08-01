@@ -49,7 +49,7 @@ cheap instead of leaving guides off.
   3. Keep `.cs`-only enablement; do not enable on `.md`.
 - **Automated tests:** `IndentGuideMetricsTests`, `IndentGuideLevelCacheTests`
   (level counts, tabs/spaces, version and indent-size invalidation, midpoint X).
-- **Commit:** `f16d845c`
+- **Commit:** `538bd908`
 - **Closed date:** 2026-08-01
 
 ## Manual verification
