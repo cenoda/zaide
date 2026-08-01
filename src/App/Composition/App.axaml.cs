@@ -8,6 +8,7 @@ using Zaide.App.Shell;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Presentation;
@@ -40,6 +41,7 @@ public partial class App : Application
             // MainWindow.MaterializeRegistryBindings() materialises Ctrl+Shift+P.
             var paletteVm = CompositionRoot.Services.GetRequiredService<CommandPaletteViewModel>();
             var searchVm = CompositionRoot.Services.GetRequiredService<EditorSearchViewModel>();
+            var editorUiDispatcher = CompositionRoot.Services.GetRequiredService<IEditorUiDispatcher>();
             var languageInputVm = CompositionRoot.Services.GetRequiredService<EditorLanguageInputViewModel>();
 
             // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
@@ -68,6 +70,7 @@ public partial class App : Application
                 statusBar,
                 paletteVm,
                 searchVm,
+                editorUiDispatcher,
                 languageInputVm,
                 editorBreakpointVm,
                 debugCurrentLocationVm,

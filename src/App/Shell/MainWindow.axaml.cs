@@ -23,6 +23,7 @@ using Zaide.Features.Settings.Domain;
 using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Settings.Presentation;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.Features.Editor.Contracts;
 using Zaide.Features.Editor.Presentation;
 using Zaide.Features.ProjectSystem.Presentation;
 using Zaide.Features.Debugging.Presentation;
@@ -52,6 +53,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly CommandPaletteViewModel _paletteViewModel;
     private readonly EditorSearchViewModel _searchViewModel;
+    private readonly IEditorUiDispatcher _editorUiDispatcher;
     private readonly EditorLanguageInputViewModel _languageInputViewModel;
     private readonly EditorBreakpointViewModel _editorBreakpointViewModel;
     private readonly DebugCurrentLocationViewModel _debugCurrentLocationViewModel;
@@ -91,6 +93,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         ICommandRegistry registry, StatusBarViewModel statusBarViewModel,
         CommandPaletteViewModel paletteViewModel,
         EditorSearchViewModel searchViewModel,
+        IEditorUiDispatcher editorUiDispatcher,
         EditorLanguageInputViewModel languageInputViewModel,
         EditorBreakpointViewModel editorBreakpointViewModel,
         DebugCurrentLocationViewModel debugCurrentLocationViewModel,
@@ -103,6 +106,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _statusBarViewModel = statusBarViewModel;
         _paletteViewModel = paletteViewModel;
         _searchViewModel = searchViewModel;
+        _editorUiDispatcher = editorUiDispatcher
+            ?? throw new ArgumentNullException(nameof(editorUiDispatcher));
         _languageInputViewModel = languageInputViewModel;
         _editorBreakpointViewModel = editorBreakpointViewModel
             ?? throw new ArgumentNullException(nameof(editorBreakpointViewModel));
@@ -138,6 +143,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // === Build Layout (M6: nav bar | left slot | townhall | editor | status bar) ===
         var layout = new MainLayoutBuilder().Build(
             _settings,
+            _editorUiDispatcher,
             _searchViewModel,
             _languageInputViewModel,
             _editorBreakpointViewModel,

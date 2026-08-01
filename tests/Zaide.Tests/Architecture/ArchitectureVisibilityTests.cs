@@ -212,7 +212,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 21 M2: +25 internal trace evidence production files.
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
-        Assert.Equal(798, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(799, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -68,14 +68,16 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M6: +1 internal IEditorUiDispatcher contract.
         // Phase 18 M1: +1 public IEditorStateSnapshotService contract.
         // Phase 18 M3 publisher corrective: +1 public IEditorStateSnapshotPublisher contract.
-        Assert.Equal((9, 8, 1), byNamespace["Zaide.Features.Editor.Contracts"]);
+        // Phase 22.1 M3 follow-up: IEditorUiDispatcher public for DI resolution.
+        Assert.Equal((9, 9, 0), byNamespace["Zaide.Features.Editor.Contracts"]);
         // Phase 17 M6: +1 internal AvaloniaEditorUiDispatcher.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Editor.Infrastructure"]);
         // Phase 17 M6: +1 internal WorkspaceEditorDocumentReconciler.
         // Phase 18 M1: +1 public EditorStateSnapshot.
         // Phase 18 M3 corrective: +1 internal EditorStateSnapshotService.
         Assert.Equal((3, 1, 2), byNamespace["Zaide.Features.Editor.Application"]);
-        Assert.Equal((17, 13, 4), byNamespace["Zaide.Features.Editor.Presentation"]);
+        // Phase 22.1 M1: +1 internal EditorLanguageUiProjection.
+        Assert.Equal((18, 13, 5), byNamespace["Zaide.Features.Editor.Presentation"]);
         Assert.Equal((35, 35, 0), byNamespace["Zaide.Features.ProjectSystem.Domain"]);
         Assert.Equal((14, 14, 0), byNamespace["Zaide.Features.ProjectSystem.Contracts"]);
         // M11b: 4 ProjectSystem Infrastructure services public→internal (13p/0i → 9p/4i).
@@ -281,7 +283,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
-        Assert.Equal(843, inventory.SourceFiles.Count);
+        Assert.Equal(844, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -318,7 +320,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +20 internal usage/cost evidence production files.
         // Phase 21 M5: +33 internal durable memory production files.
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
-        Assert.Equal(798, byFolder["Features"]);
+        Assert.Equal(799, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

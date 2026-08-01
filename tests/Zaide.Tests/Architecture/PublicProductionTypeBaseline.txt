@@ -107,6 +107,7 @@ Zaide.Features.Editor.Contracts.IEditorReadOnlyTabService
 Zaide.Features.Editor.Contracts.IEditorStateSnapshotPublisher
 Zaide.Features.Editor.Contracts.IEditorStateSnapshotService
 Zaide.Features.Editor.Contracts.IEditorTextOperations
+Zaide.Features.Editor.Contracts.IEditorUiDispatcher
 Zaide.Features.Editor.Contracts.IFileService
 Zaide.Features.Editor.Contracts.IFoldingOperations
 Zaide.Features.Editor.Domain.BraceFoldingStrategy

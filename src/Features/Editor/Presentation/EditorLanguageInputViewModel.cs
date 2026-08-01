@@ -39,7 +39,7 @@ public sealed class EditorLanguageInputViewModel : ReactiveObject
     private int _navigationInFlight;
     private int _formatInFlight;
 
-    internal EditorLanguageInputViewModel(
+    public EditorLanguageInputViewModel(
         ILanguageCompletionService completionService,
         ILanguageHoverService hoverService,
         ILanguageNavigationService navigationService,
