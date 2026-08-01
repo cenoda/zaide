@@ -11,4 +11,6 @@ internal sealed class SynchronousEditorUiDispatcher : IEditorUiDispatcher
     public void Invoke(Action action) => action();
 
     public T Invoke<T>(Func<T> func) => func();
+
+    public void Post(Action action) => action();
 }

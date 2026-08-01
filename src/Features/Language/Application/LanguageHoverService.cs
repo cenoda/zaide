@@ -397,6 +397,14 @@ internal sealed class LanguageHoverService : ILanguageHoverService
             if (_disposed)
                 return;
 
+            // Skip redundant Idle→Idle publishes (e.g. caret thrash while already idle)
+            // so projection and UI work are not flooded with no-ops.
+            if (snapshot.State == LanguageHoverState.Idle &&
+                _current.State == LanguageHoverState.Idle)
+            {
+                return;
+            }
+
             _current = snapshot;
         }
 

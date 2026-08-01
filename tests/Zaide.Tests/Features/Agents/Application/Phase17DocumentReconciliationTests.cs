@@ -361,5 +361,12 @@ public sealed class Phase17DocumentReconciliationTests : IDisposable
             LastInvokeRanSynchronously = true;
             return func();
         }
+
+        public void Post(Action action)
+        {
+            WasInvoked = true;
+            LastInvokeRanSynchronously = true;
+            action();
+        }
     }
 }
