@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Application.Acp;
@@ -19,7 +20,7 @@ internal static class AcpWorkspaceWorkingDirectory
 
         if (!workspaceAuthority.TryCaptureCurrentScope(out var scope)
             || string.IsNullOrWhiteSpace(scope.RootPath)
-            || !System.IO.Path.IsPathRooted(scope.RootPath))
+            || !Path.IsPathRooted(scope.RootPath))
         {
             return false;
         }

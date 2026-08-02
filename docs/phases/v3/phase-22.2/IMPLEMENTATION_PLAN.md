@@ -2,13 +2,12 @@
 
 ## Status and Authorization
 
-**M0 accepted. M1 + M2 + M3 implemented.** Human G2 / M0 acceptance is
-recorded. M1 durable store, M2 Native Townhall workflow, and M3 ACP
-probe/authenticate/logout bridge are shipped.
+**Phase 22.2 complete for package 2.** M0–M4 delivered. Human G2 / M0
+acceptance is recorded. M1 durable store, M2 Native Townhall workflow, M3 ACP
+probe/authenticate/logout bridge, and M4 restart/A3 re-smoke closeout are
+shipped. See [CLOSEOUT.md](./CLOSEOUT.md).
 
-Implementation of M4 (restart/A3 re-smoke), Phase 22.3–22.5, and V4 remains
-the next authorized work (M4 under the Phase 22.2 remaining-implementation
-authorization).
+Phase 22.3–22.5 and V4 remain unauthorized from this package.
 
 ## A4 Ownership and Dependency
 
@@ -112,7 +111,7 @@ capability differences.
 | M1 | A schema-v1 durable backend-neutral store with revisions, atomic bind/update/unbind, recovery, and reactive state supports truthful mutation outcomes | Focused binding store/service and persistence tests |
 | M2 | Native Harness workflow is user-reachable and reports configured/available/usable state truthfully | Focused Native Harness UI/composition tests — **done** |
 | M3 | ACP workflow is user-reachable, including runtime identity probe, real `authenticate` bridge, capability-gated logout, and explicit failure behavior | Focused ACP UI/auth/composition tests — **done** |
-| M4 | Restart/revalidation, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial gates, isolated binding smoke |
+| M4 | Restart/revalidation, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial gates, isolated binding smoke — **done** |
 
 ## Affected Re-Smoke
 
@@ -172,14 +171,17 @@ Re-smoke follows the umbrella
 ## Exit Conditions
 
 - [x] M0 and implementation approvals are recorded separately (M0 accepted;
-  M1 implementation authorized and completed).
-- [ ] A user can configure, bind, inspect, restart/revalidate, and unbind both
-  backend types through supported product entry points.
-- [ ] Secrets, identity, capability, availability, authentication, disconnect,
+  M1–M4 implementation authorized and completed).
+- [x] A user can configure, bind, inspect, restart/revalidate, and unbind both
+  backend types through supported product entry points (Townhall panel).
+- [x] Secrets, identity, capability, availability, authentication, disconnect,
   and failure states remain explicit and truthful.
-- [x] Focused, build, and suite gates pass for M1.
-- [ ] The affected local A3 re-smoke is recorded.
-- [ ] 22.2 completion is explicitly recorded before 22.3 or 22.4 begins.
+- [x] Focused, build, and suite gates pass for M1–M4.
+- [x] The affected local A3 re-smoke is recorded under `evidence/` and
+  [CLOSEOUT.md](./CLOSEOUT.md).
+- [x] 22.2 completion is explicitly recorded before 22.3 or 22.4 begins.
+  A1-AC-02 WORKS both backends; dependent rows remain WORKS_WITH_FRICTION for
+  22.3/22.4-owned residuals.
 
 ## Rollback Note
 

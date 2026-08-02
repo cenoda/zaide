@@ -294,7 +294,7 @@ public sealed class ArchitectureInventoryTests
         // ISSUE-011: +1 CodeFontResolver production file.
         // Phase 22.2 M2: +1 AgentBackendBindingWorkflowProjection production file.
         // Phase 22.2 M3: +7 ACP onboarding/logout/provider-configured production files.
-        Assert.Equal(858, inventory.SourceFiles.Count);
+        Assert.Equal(865, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -333,7 +333,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
         // ISSUE-010: +1 IndentGuideLevelCache production file.
         // ISSUE-011: +1 CodeFontResolver production file.
-        Assert.Equal(813, byFolder["Features"]);
+        Assert.Equal(820, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

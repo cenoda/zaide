@@ -214,7 +214,7 @@ public sealed class ArchitectureVisibilityTests
         // Phase 21 M6: +18 internal memory influence/lifecycle/management production files.
         // ISSUE-010: +1 IndentGuideLevelCache production file.
         // ISSUE-011: +1 CodeFontResolver production file.
-        Assert.Equal(813, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(820, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

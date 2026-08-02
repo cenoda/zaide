@@ -18,7 +18,7 @@ namespace Zaide.Features.Agents.Application.Acp;
 /// identity verify without prompt session), real authenticate bridge, and
 /// capability-gated logout. Runtime-only state; durable binding unchanged.
 /// </summary>
-internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionService, IAsyncDisposable
+internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionService, IAsyncDisposable, IDisposable
 {
     private readonly IAgentActorBackendBindingStore _bindingStore;
     private readonly IAgentActorBackendSelectionService _selectionService;
@@ -380,6 +380,11 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 ? connection.AuthMethodIds
                 : Array.Empty<string>();
         }
+    }
+
+    public void Dispose()
+    {
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     public async ValueTask DisposeAsync()

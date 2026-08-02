@@ -2,10 +2,11 @@
 
 ## Status
 
-**M0 accepted. M1 + M2 + M3 implemented.** A4 package 2 remains assigned here.
-M1 durable store, M2 Native Townhall workflow, and M3 ACP probe/auth/logout
-bridge are shipped. M4 (restart/A3 re-smoke + closeout) remains next. 22.3
-and 22.4 remain dependent and must not start implementation.
+**Phase 22.2 complete for A4 package 2 scope.** M0–M4 delivered: durable
+schema-v1 store, Native and ACP Townhall workflows, real ACP authenticate
+bridge, capability-gated logout, restart/revalidation, accessibility gates,
+and out-of-tree A3 re-smoke with retained evidence. 22.3 and 22.4 remain
+dependent and must not start from this gate as "already done."
 
 ## Work Board
 
@@ -26,7 +27,7 @@ and 22.4 remain dependent and must not start implementation.
 - [x] Human M1 audit / acceptance (PASS; nits fixed in M2).
 - [x] Implement M2 Native Harness Townhall workflow.
 - [x] Implement M3 ACP workflow + authenticate bridge + logout.
-- [ ] Implement M4 restart/regression/A3 re-smoke + closeout.
+- [x] Implement M4 restart/regression/A3 re-smoke + closeout.
 
 ## M0 Findings
 
@@ -103,9 +104,20 @@ and 22.4 remain dependent and must not start implementation.
 - Focused tests: `Phase22AcpBindingWorkflowTests`,
   `Phase22AcpAuthenticationBridgeTests`.
 
-## Next Task
+## M4 Delivered
 
-Implement M4 restart/revalidation gates, accessibility/regression, out-of-tree
-A3 re-smoke matrix, evidence under `docs/phases/v3/phase-22.2/evidence/`, and
-closeout docs. Do not implement or release Phase 22.3, 22.4, 22.5, or V4 work
-from this gate.
+- Restart/revalidation tests: durable rehydrate only; no auth zombies; unbind
+  sticks (`Phase22BackendBindingRestartTests`).
+- Townhall reactive/accessibility/both-backends surface tests
+  (`Phase22BackendBindingTownhallTests`).
+- Out-of-tree A3 re-smoke at `/tmp/zaide-a3-backend-binding/` with retained
+  evidence under [evidence/](./evidence/).
+- A1-AC-02 **WORKS** for both backends; dependent rows **WORKS_WITH_FRICTION**
+  with honest 22.3/22.4 residual ownership.
+- Closeout: [CLOSEOUT.md](./CLOSEOUT.md).
+
+## Remaining (not Phase 22.2)
+
+- Phase 22.3: send/routing outcome polish, tools/permissions positive paths.
+- Phase 22.4: context/trace/memory/usage surfaces.
+- Phase 22.5 / V4 / G5: not authorized from this package.
