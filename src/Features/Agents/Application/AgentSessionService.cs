@@ -21,7 +21,11 @@ namespace Zaide.Features.Agents.Application;
 /// <summary>
 /// Application-owned in-memory Agent Session and run lifecycle coordinator.
 /// </summary>
-internal sealed class AgentSessionService : IAgentSessionService, IAgentContextSessionPolicyService, IDisposable
+internal sealed class AgentSessionService
+    : IAgentSessionService,
+      IAgentContextSessionPolicyService,
+      IAgentActorActiveRunQuery,
+      IDisposable
 {
     private readonly IReadOnlyDictionary<AgentBackendId, IAgentBackend> _backends;
     private readonly AgentEventStream _eventStream;
@@ -382,6 +386,37 @@ internal sealed class AgentSessionService : IAgentSessionService, IAgentContextS
 
             return CreateRunSnapshotLocked(session, session.ActiveRun);
         }
+    }
+
+    /// <summary>
+    /// True when any live session for the actor currently has a non-terminal
+    /// active run. Used as the Phase 22.2 M1 busy gate for binding update/unbind.
+    /// </summary>
+    public bool HasActiveRun(ActorId actorId)
+    {
+        if (actorId == default)
+        {
+            return false;
+        }
+
+        lock (_sessionsSync)
+        {
+            foreach (var session in _sessions.Values)
+            {
+                if (session.AgentIdentity != actorId)
+                {
+                    continue;
+                }
+
+                var activeRun = session.ActiveRun;
+                if (activeRun is not null && !activeRun.StateMachine.IsTerminal)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public AgentSessionContinuityReconcileSummary ReconcileInterruptedSessions(

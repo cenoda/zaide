@@ -16,7 +16,8 @@ internal sealed class AgentActorBackendBinding
         string? expectedAgentVersion = null,
         string? selectedAuthMethodId = null,
         AgentAuthenticationConnectionState authenticationState =
-            AgentAuthenticationConnectionState.NotRequired)
+            AgentAuthenticationConnectionState.NotRequired,
+        long revision = 1)
     {
         if (actorId == default)
         {
@@ -26,6 +27,14 @@ internal sealed class AgentActorBackendBinding
         if (backendId == default)
         {
             throw new ArgumentException("Backend id is required.", nameof(backendId));
+        }
+
+        if (revision < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(revision),
+                revision,
+                "Binding revision must be >= 1.");
         }
 
         if (backendId == AgentBackendIds.Acp)
@@ -59,6 +68,7 @@ internal sealed class AgentActorBackendBinding
         ExpectedAgentVersion = expectedAgentVersion?.Trim();
         SelectedAuthMethodId = NormalizeOptional(selectedAuthMethodId);
         AuthenticationState = authenticationState;
+        Revision = revision;
     }
 
     public ActorId ActorId { get; }
@@ -75,6 +85,11 @@ internal sealed class AgentActorBackendBinding
 
     public AgentAuthenticationConnectionState AuthenticationState { get; }
 
+    /// <summary>
+    /// Durable binding revision. Advanced only by successful bind/update mutations.
+    /// </summary>
+    public long Revision { get; }
+
     public AgentActorBackendBinding WithAuthentication(
         string? selectedAuthMethodId,
         AgentAuthenticationConnectionState authenticationState) =>
@@ -85,7 +100,32 @@ internal sealed class AgentActorBackendBinding
             ExpectedAgentName,
             ExpectedAgentVersion,
             selectedAuthMethodId,
-            authenticationState);
+            authenticationState,
+            Revision);
+
+    public AgentActorBackendBinding WithRevision(long revision) =>
+        new(
+            ActorId,
+            BackendId,
+            AcpRuntime,
+            ExpectedAgentName,
+            ExpectedAgentVersion,
+            SelectedAuthMethodId,
+            AuthenticationState,
+            revision);
+
+    public AgentActorBackendBinding WithClearedRuntimeAuth() =>
+        new(
+            ActorId,
+            BackendId,
+            AcpRuntime,
+            ExpectedAgentName,
+            ExpectedAgentVersion,
+            selectedAuthMethodId: null,
+            authenticationState: BackendId == AgentBackendIds.Acp
+                ? AgentAuthenticationConnectionState.Disconnected
+                : AgentAuthenticationConnectionState.NotRequired,
+            Revision);
 
     private static string? NormalizeOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

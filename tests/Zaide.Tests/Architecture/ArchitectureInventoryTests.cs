@@ -141,7 +141,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M2: +4 internal context assembly contract helpers.
         // Phase 19 M3: +4 internal provider contract production types.
         // Phase 20 M1: +1 internal AcpSchemaProfile.
-        Assert.Equal((143, 7, 136), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 22.2 M1: +9 internal durable binding mutation/load/document types.
+        Assert.Equal((152, 7, 145), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 21 M1: +13 internal durable-record envelope/domain types.
         Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 21 M2: +10 internal trace evidence domain types.
@@ -159,7 +160,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M8: +4 internal IAgentActionEventPublisher, IAgentActionAuditStore, IAgentActionBrokerFactory, IAgentActionRequestCapableBackend contracts.
         // Phase 19 M3: +2 internal provider transport/options contracts.
         // Phase 20 M5: +3 internal actor/backend binding contracts.
-        Assert.Equal((31, 6, 25), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 22.2 M1: +1 internal IAgentActorActiveRunQuery busy-gate contract.
+        Assert.Equal((32, 6, 26), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 21 M1: +2 internal durable-record store contracts.
         // Phase 21 M6: +1 internal transparency lifecycle coordinator contract.
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Agents.Contracts.Transparency"]);
@@ -180,7 +182,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 18 M2: +11 internal context policy/assembly production types.
         // Phase 19 M3: +5 internal execution-loop production types.
         // Phase 20 M5: +2 internal actor/backend binding application services.
-        Assert.Equal((51, 7, 44), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 22.2 M1: +1 internal LazyAgentActorActiveRunQuery.
+        Assert.Equal((52, 7, 45), byNamespace["Zaide.Features.Agents.Application"]);
         // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
         // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
@@ -197,7 +200,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M5: +1 internal WorkspaceFileMutator mutation adapter.
         // Phase 17 M7: +3 internal AgentCommandPathSupport, AgentCommandEnvironmentBuilder, WorkspaceCommandExecutor.
         // Phase 19 M3: +4 internal provider client, SSE reader, options source, and backend types.
-        Assert.Equal((12, 0, 12), byNamespace["Zaide.Features.Agents.Infrastructure"]);
+        // Phase 22.2 M1: +2 internal binding path resolver and serializer.
+        Assert.Equal((14, 0, 14), byNamespace["Zaide.Features.Agents.Infrastructure"]);
         // Phase 21 M1: +10 internal durable-record file-store production types.
         Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Infrastructure.Transparency.Storage"]);
         // Phase 20 M3: +5 internal ACP backend adapter types under Application/Acp.

@@ -2,9 +2,14 @@
 
 ## Status and Authorization
 
-**M0 live-seam verification documented; not implemented.** M0 awaits explicit
-human G2 acceptance. Implementation remains unauthorized until that acceptance
-and a later, separate implementation prompt are recorded.
+**M0 accepted. M1 implemented.** Human G2 / M0 acceptance is recorded. M1
+shipped a durable schema-v1 backend-neutral binding store with typed
+bind/update/unbind outcomes, revisions, atomic persistence, recovery, busy
+rejection, and reactive change notification.
+
+Implementation of M2 (Townhall Native Harness UI), M3 (ACP auth bridge /
+logout UI), M4 (restart/A3 re-smoke), Phase 22.3–22.5, and V4 remains
+**unauthorized** until a later explicit prompt.
 
 ## A4 Ownership and Dependency
 
@@ -41,7 +46,7 @@ Baseline evidence:
 - [x] Inventory focused production-composition and integration tests, then
   replace command placeholders.
 - [x] Lock migration and rollback behavior.
-- [ ] Receive explicit human G2 / M0 acceptance.
+- [x] Receive explicit human G2 / M0 acceptance.
 
 Detailed live findings, outcome contracts, test inventory, and the locked
 re-smoke producer are in
@@ -50,6 +55,33 @@ names are current. M0 corrected the earlier assumption that the binding status
 panel and local selection auth API formed a user workflow: the panel is
 status-only, and local `RequestAuthenticateAsync` does not call ACP
 `authenticate`.
+
+## M1 — Durable schema-v1 binding store
+
+- [x] Schema-v1 DTO + serializer/validator under Agents.
+- [x] Path resolver under the Zaide configuration directory (same roots as
+  settings via `SettingsPathResolver`):
+  - primary: `agent-backend-bindings.json`
+  - temp: `agent-backend-bindings.json.tmp`
+  - LKG: `agent-backend-bindings.json.lastknowngood`
+- [x] Durable store with atomic temp → LKG backup → replace primary writes.
+- [x] Typed bind/update/unbind mutation results, revisions, conflict rejection.
+- [x] Busy rejection for update/unbind via `IAgentActorActiveRunQuery`
+  implemented by `AgentSessionService.HasActiveRun(ActorId)` and resolved
+  lazily through `LazyAgentActorActiveRunQuery` in production DI.
+- [x] Reactive `BindingChanged` events after durable success only (store and
+  selection).
+- [x] Startup load + corrupt/unknown-schema recovery (fail closed; LKG when
+  valid; no silent rewrite).
+- [x] Idle update clears runtime auth/capability cache (advertised methods +
+  auth state). Runtime auth remains in-memory only via
+  `SetRuntimeAuthentication`.
+- [x] Focused M1 tests and composition/identity preservation gates.
+- [ ] Human M1 audit / acceptance (separate from this implementation commit).
+
+M1 is application + persistence + selection/store contract work only. It does
+**not** ship a user-facing Townhall configure workflow (M2/M3). Package 2 /
+`A1-AC-02` WORKS is **not** claimed.
 
 ## Scope
 
@@ -140,12 +172,13 @@ Re-smoke follows the umbrella
 
 ## Exit Conditions
 
-- [ ] M0 and implementation approvals are recorded separately.
+- [x] M0 and implementation approvals are recorded separately (M0 accepted;
+  M1 implementation authorized and completed).
 - [ ] A user can configure, bind, inspect, restart/revalidate, and unbind both
   backend types through supported product entry points.
 - [ ] Secrets, identity, capability, availability, authentication, disconnect,
   and failure states remain explicit and truthful.
-- [ ] Focused, build, and suite gates pass.
+- [x] Focused, build, and suite gates pass for M1.
 - [ ] The affected local A3 re-smoke is recorded.
 - [ ] 22.2 completion is explicitly recorded before 22.3 or 22.4 begins.
 

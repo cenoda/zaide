@@ -18,14 +18,14 @@ namespace Zaide.Tests.Architecture;
 /// </summary>
 public sealed class ArchitectureInventoryReader
 {
-    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
-    public const int M0TotalTopLevelTypes = 965;
+    /// <summary>M0 baseline: non-nested, non-compiler-generated top-level types (Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
+    public const int M0TotalTopLevelTypes = 978;
 
     /// <summary>M0 baseline public top-level type count (Phase 22.1 M1 +1 IEditorUiDispatcher).</summary>
     public const int M0PublicTopLevelTypes = 352;
 
-    /// <summary>M0 baseline internal top-level type count (ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
-    public const int M0InternalTopLevelTypes = 613;
+    /// <summary>M0 baseline internal top-level type count (Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
+    public const int M0InternalTopLevelTypes = 626;
 
     private static readonly Regex NamespaceDeclarationRegex = new(
         @"^\s*namespace\s+([A-Za-z_][\w.]*)\s*[;{]?",

@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
-    public const int TotalTopLevelTypes = 965;
+    /// <summary>Total non-nested, non-compiler-generated production types (Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
+    public const int TotalTopLevelTypes = 978;
 
     /// <summary>Public top-level production type ceiling and baseline count (Phase 20 M5 +1 AgentBackendBindingPanel).</summary>
     public const int PublicTopLevelTypes = 352;
 
-    /// <summary>Internal top-level production type count (ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
-    public const int InternalTopLevelTypes = 613;
+    /// <summary>Internal top-level production type count (Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
+    public const int InternalTopLevelTypes = 626;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

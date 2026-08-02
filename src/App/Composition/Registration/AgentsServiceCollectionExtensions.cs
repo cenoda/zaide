@@ -48,7 +48,22 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<INativeHarnessProviderTransport, NativeHarnessProviderClient>();
         services.AddSingleton<INativeHarnessProviderOptionsSource, NativeHarnessProviderOptionsSource>();
         services.AddSingleton<INativeHarnessPriorConversationReader, NativeHarnessPriorConversationReader>();
-        services.AddSingleton<IAgentActorBackendBindingStore, AgentActorBackendBindingStore>();
+        // Phase 22.2 M1: durable schema-v1 binding store under the Zaide config
+        // directory. Active-run busy gate is resolved lazily from the session
+        // service (registered later) to avoid constructor cycles.
+        services.AddSingleton<IAgentActorBackendBindingStore>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            // Lazy projection: session service implements IAgentActorActiveRunQuery.
+            // Binding store construction must not force session creation first.
+            var activeRunQuery = new LazyAgentActorActiveRunQuery(
+                () => (IAgentActorActiveRunQuery?)get(typeof(IAgentSessionService)));
+            return new AgentActorBackendBindingStore(
+                AgentActorBackendBindingPathResolver.GetPrimaryPath(),
+                AgentActorBackendBindingPathResolver.GetTempPath(),
+                AgentActorBackendBindingPathResolver.GetLastKnownGoodPath(),
+                activeRunQuery);
+        });
         services.AddSingleton<IAgentActorBackendSelectionService, AgentActorBackendSelectionService>();
         services.AddSingleton<AgentBackendBindingPresenter>();
         services.AddSingleton<IAcpProcessLauncher, AcpSystemDiagnosticsProcessLauncher>();

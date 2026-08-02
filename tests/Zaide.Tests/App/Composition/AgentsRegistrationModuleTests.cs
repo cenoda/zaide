@@ -473,7 +473,11 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentActorBackendBindingStore,\s*AgentActorBackendBindingStore>\(\)"));
+                @"AddSingleton<IAgentActorBackendBindingStore>\s*\([\s\S]*?\)"));
+        Assert.Contains("AgentActorBackendBindingPathResolver.GetPrimaryPath()", moduleSource);
+        Assert.Contains("AgentActorBackendBindingPathResolver.GetTempPath()", moduleSource);
+        Assert.Contains("AgentActorBackendBindingPathResolver.GetLastKnownGoodPath()", moduleSource);
+        Assert.Contains("LazyAgentActorActiveRunQuery", moduleSource);
         Assert.Single(
             Regex.Matches(
                 moduleSource,

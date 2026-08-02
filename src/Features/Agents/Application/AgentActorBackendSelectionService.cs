@@ -11,16 +11,48 @@ namespace Zaide.Features.Agents.Application;
 
 /// <summary>
 /// Application service for explicit actor/backend selection and bounded auth state.
+/// Durable mutations go through the typed binding store; runtime auth/method
+/// caches are cleared on successful update/unbind.
 /// </summary>
 internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSelectionService
 {
     private readonly IAgentActorBackendBindingStore _bindingStore;
     private readonly Dictionary<ActorId, IReadOnlyList<string>> _advertisedAuthMethods = new();
     private readonly object _sync = new();
+    private readonly List<Action<AgentActorBackendBindingChangedEvent>> _changeHandlers = new();
 
     public AgentActorBackendSelectionService(IAgentActorBackendBindingStore bindingStore)
     {
         _bindingStore = bindingStore ?? throw new ArgumentNullException(nameof(bindingStore));
+        _bindingStore.BindingChanged += OnStoreBindingChanged;
+    }
+
+    public event Action<AgentActorBackendBindingChangedEvent>? BindingChanged
+    {
+        add
+        {
+            if (value is null)
+            {
+                return;
+            }
+
+            lock (_sync)
+            {
+                _changeHandlers.Add(value);
+            }
+        }
+        remove
+        {
+            if (value is null)
+            {
+                return;
+            }
+
+            lock (_sync)
+            {
+                _changeHandlers.Remove(value);
+            }
+        }
     }
 
     public AgentActorBackendBindingSnapshot GetSnapshot(ActorId actorId)
@@ -55,15 +87,27 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             authMethods);
     }
 
-    public void BindNativeHarness(ActorId actorId)
-    {
-        _bindingStore.SetBinding(new AgentActorBackendBinding(
-            actorId,
-            AgentBackendIds.NativeHarness,
-            authenticationState: AgentAuthenticationConnectionState.NotRequired));
-    }
+    public void BindNativeHarness(ActorId actorId) =>
+        _ = TryBindNativeHarness(actorId);
 
     public void BindAcpRuntime(
+        ActorId actorId,
+        AcpRuntimeIdentity runtimeIdentity,
+        string expectedAgentName,
+        string expectedAgentVersion) =>
+        _ = TryBindAcpRuntime(actorId, runtimeIdentity, expectedAgentName, expectedAgentVersion);
+
+    public AgentActorBackendBindingMutationResult TryBindNativeHarness(ActorId actorId)
+    {
+        var candidate = new AgentActorBackendBinding(
+            actorId,
+            AgentBackendIds.NativeHarness,
+            authenticationState: AgentAuthenticationConnectionState.NotRequired);
+
+        return _bindingStore.TryBind(candidate);
+    }
+
+    public AgentActorBackendBindingMutationResult TryBindAcpRuntime(
         ActorId actorId,
         AcpRuntimeIdentity runtimeIdentity,
         string expectedAgentName,
@@ -71,18 +115,99 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
     {
         ArgumentNullException.ThrowIfNull(runtimeIdentity);
 
-        _bindingStore.SetBinding(new AgentActorBackendBinding(
-            actorId,
-            AgentBackendIds.Acp,
-            runtimeIdentity,
-            expectedAgentName,
-            expectedAgentVersion,
-            authenticationState: AgentAuthenticationConnectionState.Disconnected));
-
-        lock (_sync)
+        try
         {
-            _advertisedAuthMethods.Remove(actorId);
+            var candidate = new AgentActorBackendBinding(
+                actorId,
+                AgentBackendIds.Acp,
+                runtimeIdentity,
+                expectedAgentName,
+                expectedAgentVersion,
+                authenticationState: AgentAuthenticationConnectionState.Disconnected);
+
+            var result = _bindingStore.TryBind(candidate);
+            if (result.IsSuccess)
+            {
+                ClearAdvertisedAuthMethods(actorId);
+            }
+
+            return result;
         }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return AgentActorBackendBindingMutationResult.ValidationFailed(
+                AgentActorBackendBindingMutationKind.Bind,
+                actorId,
+                _bindingStore.GetRevision(actorId),
+                ex.Message);
+        }
+    }
+
+    public AgentActorBackendBindingMutationResult TryUpdateNativeHarness(
+        ActorId actorId,
+        long expectedRevision)
+    {
+        var candidate = new AgentActorBackendBinding(
+            actorId,
+            AgentBackendIds.NativeHarness,
+            authenticationState: AgentAuthenticationConnectionState.NotRequired);
+
+        var result = _bindingStore.TryUpdate(actorId, candidate, expectedRevision);
+        if (result.IsSuccess)
+        {
+            ClearAdvertisedAuthMethods(actorId);
+        }
+
+        return result;
+    }
+
+    public AgentActorBackendBindingMutationResult TryUpdateAcpRuntime(
+        ActorId actorId,
+        AcpRuntimeIdentity runtimeIdentity,
+        string expectedAgentName,
+        string expectedAgentVersion,
+        long expectedRevision)
+    {
+        ArgumentNullException.ThrowIfNull(runtimeIdentity);
+
+        try
+        {
+            var candidate = new AgentActorBackendBinding(
+                actorId,
+                AgentBackendIds.Acp,
+                runtimeIdentity,
+                expectedAgentName,
+                expectedAgentVersion,
+                authenticationState: AgentAuthenticationConnectionState.Disconnected);
+
+            var result = _bindingStore.TryUpdate(actorId, candidate, expectedRevision);
+            if (result.IsSuccess)
+            {
+                // Idle durable update invalidates cached runtime auth/capability state.
+                ClearAdvertisedAuthMethods(actorId);
+            }
+
+            return result;
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return AgentActorBackendBindingMutationResult.ValidationFailed(
+                AgentActorBackendBindingMutationKind.Update,
+                actorId,
+                _bindingStore.GetRevision(actorId),
+                ex.Message);
+        }
+    }
+
+    public AgentActorBackendBindingMutationResult TryUnbind(ActorId actorId, long expectedRevision)
+    {
+        var result = _bindingStore.TryUnbind(actorId, expectedRevision);
+        if (result.IsSuccess)
+        {
+            ClearAdvertisedAuthMethods(actorId);
+        }
+
+        return result;
     }
 
     public IReadOnlyList<string> GetAdvertisedAuthMethodIds(ActorId actorId)
@@ -123,17 +248,48 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         if (advertised.Count > 0
             && !advertised.Any(method => string.Equals(method, methodId, StringComparison.Ordinal)))
         {
-            _bindingStore.SetBinding(binding.WithAuthentication(
+            // Runtime-only auth state rewrite; not a durable identity mutation.
+            _bindingStore.SetRuntimeAuthentication(
+                actorId,
                 methodId,
-                AgentAuthenticationConnectionState.Failed));
+                AgentAuthenticationConnectionState.Failed);
             throw new InvalidOperationException("Authentication method is not advertised by the agent.");
         }
 
-        _bindingStore.SetBinding(binding.WithAuthentication(
+        _bindingStore.SetRuntimeAuthentication(
+            actorId,
             methodId,
-            AgentAuthenticationConnectionState.Authenticated));
+            AgentAuthenticationConnectionState.Authenticated);
 
         return Task.CompletedTask;
+    }
+
+    private void ClearAdvertisedAuthMethods(ActorId actorId)
+    {
+        lock (_sync)
+        {
+            _advertisedAuthMethods.Remove(actorId);
+        }
+    }
+
+    private void OnStoreBindingChanged(AgentActorBackendBindingChangedEvent change)
+    {
+        if (change.Kind is AgentActorBackendBindingMutationKind.Update
+            or AgentActorBackendBindingMutationKind.Unbind)
+        {
+            ClearAdvertisedAuthMethods(change.ActorId);
+        }
+
+        Action<AgentActorBackendBindingChangedEvent>[] handlers;
+        lock (_sync)
+        {
+            handlers = _changeHandlers.ToArray();
+        }
+
+        foreach (var handler in handlers)
+        {
+            handler(change);
+        }
     }
 
     private static string ResolveBackendLabel(AgentBackendId backendId) =>
