@@ -859,7 +859,10 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
     internal static EditorSettingsProjection ProjectSettings(EditorSettings settings) =>
         new(
-            new FontFamily(settings.CodeFontFamily),
+            // Live code editor must use monospaced metrics; proportional/unloadable
+            // faces (e.g. legacy bitmap "B&H LucidaBright") cause multi-hundred-ms
+            // caret/scroll steps on large .cs files while .md (prose font) stays fine.
+            CodeFontResolver.Resolve(settings.CodeFontFamily),
             new FontFamily(settings.ProseFontFamily),
             settings.CodeFontSize,
             settings.TabSize,

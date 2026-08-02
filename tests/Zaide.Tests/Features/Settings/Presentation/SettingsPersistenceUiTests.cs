@@ -74,14 +74,15 @@ public sealed class SettingsPersistenceUiTests
         var initialProjection = EditorView.ProjectSettings(initial);
         var liveProjection = EditorView.ProjectSettings(live);
 
-        Assert.Equal("Initial Code", initialProjection.CodeFont.Name);
+        // Fake code family names are not fixed-pitch → monospaced fallback for live editor.
+        Assert.Equal(CodeFontResolver.MonospaceFallback, initialProjection.CodeFont.Name);
         Assert.Equal("Initial Prose", initialProjection.ProseFont.Name);
         Assert.Equal(17, initialProjection.CodeFontSize);
         Assert.Equal(2, initialProjection.TabSize);
         Assert.False(initialProjection.InsertSpaces);
         Assert.True(initialProjection.ShowTabs);
         Assert.False(initialProjection.ShowSpaces);
-        Assert.Equal("Live Code", liveProjection.CodeFont.Name);
+        Assert.Equal(CodeFontResolver.MonospaceFallback, liveProjection.CodeFont.Name);
         Assert.Equal("Live Prose", liveProjection.ProseFont.Name);
         Assert.Equal(21, liveProjection.CodeFontSize);
         Assert.Equal(8, liveProjection.TabSize);
@@ -100,7 +101,8 @@ public sealed class SettingsPersistenceUiTests
         });
 
         Assert.Equal("Configured Prose", EditorView.SelectFont(projection, "README.md").Name);
-        Assert.Equal("Configured Code", EditorView.SelectFont(projection, "Program.cs").Name);
+        // Non-monospaced configured code face resolves to the monospaced fallback.
+        Assert.Equal(CodeFontResolver.MonospaceFallback, EditorView.SelectFont(projection, "Program.cs").Name);
     }
 
     [Fact]

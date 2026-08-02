@@ -12,6 +12,7 @@
 | 008 | Agent response does not appear in the chat | BUG | high | open |
 | 009 | Production DI test contaminates persisted conversation drafts | BUG | high | open |
 | 010 | C# editor scroll jank from IndentGuideRenderer paint cost | BUG | high | closed |
+| 011 | C# editor slow-motion when code font is not monospaced | BUG | high | closed |
 
 ---
 
