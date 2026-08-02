@@ -124,5 +124,5 @@ internal sealed class AgentBackendBindingWorkflowProjection
         "Configure base URL, model, and API key in Settings. Secrets are never entered in this panel.";
 
     public static string AcpSecretsCaption { get; } =
-        "ACP credentials belong to the ACP agent. Do not enter secrets as launch arguments.";
+        "Secrets are owned by the ACP agent. Do not enter secrets as launch arguments.";
 }

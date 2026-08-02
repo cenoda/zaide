@@ -19,18 +19,29 @@ public sealed class AgentBackendBindingPanel : Panel
     private readonly TextBlock _settingsCaption;
     private readonly TextBlock _mutationErrorCaption;
     private readonly TextBlock _acpRuntimeCaption;
+    private readonly TextBox _acpExecutableInput;
+    private readonly TextBox _acpArgumentsInput;
+    private readonly TextBox _acpExpectedNameInput;
+    private readonly TextBox _acpExpectedVersionInput;
     private readonly Button _bindNativeButton;
+    private readonly Button _bindAcpButton;
     private readonly Button _unbindButton;
     private readonly Button _probeAcpButton;
+    private readonly Button _authenticateAcpButton;
     private readonly Button _logoutButton;
     private readonly StackPanel _actionsRow;
     private readonly StackPanel _acpRow;
+    private readonly StackPanel _acpConfigRow;
 
     public event EventHandler? BindNativeHarnessRequested;
+
+    public event EventHandler? BindAcpRequested;
 
     public event EventHandler? UnbindRequested;
 
     public event EventHandler? ProbeAcpRequested;
+
+    public event EventHandler? AuthenticateAcpRequested;
 
     public event EventHandler? LogoutRequested;
 
@@ -67,10 +78,20 @@ public sealed class AgentBackendBindingPanel : Panel
         _acpRuntimeCaption.IsVisible = false;
         AutomationProperties.SetName(_acpRuntimeCaption, "ACP runtime identity");
 
+        _acpExecutableInput = CreateConfigInput("ACP executable path");
+        _acpArgumentsInput = CreateConfigInput("ACP non-secret arguments");
+        _acpExpectedNameInput = CreateConfigInput("ACP expected agent name");
+        _acpExpectedVersionInput = CreateConfigInput("ACP expected agent version");
+
         _bindNativeButton = CreateActionButton(
             "Bind Native Harness",
             "Bind Native Harness backend");
         _bindNativeButton.Click += (_, _) => BindNativeHarnessRequested?.Invoke(this, EventArgs.Empty);
+
+        _bindAcpButton = CreateActionButton(
+            "Bind ACP",
+            "Bind ACP backend");
+        _bindAcpButton.Click += (_, _) => BindAcpRequested?.Invoke(this, EventArgs.Empty);
 
         _unbindButton = CreateActionButton(
             "Unbind",
@@ -82,6 +103,12 @@ public sealed class AgentBackendBindingPanel : Panel
             "Probe ACP runtime configuration");
         _probeAcpButton.Click += (_, _) => ProbeAcpRequested?.Invoke(this, EventArgs.Empty);
         _probeAcpButton.IsVisible = false;
+
+        _authenticateAcpButton = CreateActionButton(
+            "Authenticate ACP",
+            "Authenticate ACP with advertised method");
+        _authenticateAcpButton.Click += (_, _) => AuthenticateAcpRequested?.Invoke(this, EventArgs.Empty);
+        _authenticateAcpButton.IsVisible = false;
 
         _logoutButton = CreateActionButton(
             "Logout ACP",
@@ -97,9 +124,24 @@ public sealed class AgentBackendBindingPanel : Panel
             Children =
             {
                 _bindNativeButton,
+                _bindAcpButton,
                 _unbindButton,
                 _probeAcpButton,
+                _authenticateAcpButton,
                 _logoutButton,
+            },
+        };
+
+        _acpConfigRow = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = LayoutTokens.SpacingXs,
+            Children =
+            {
+                _acpExecutableInput,
+                _acpArgumentsInput,
+                _acpExpectedNameInput,
+                _acpExpectedVersionInput,
             },
         };
 
@@ -107,7 +149,7 @@ public sealed class AgentBackendBindingPanel : Panel
         {
             Orientation = Orientation.Vertical,
             Spacing = LayoutTokens.SpacingXs,
-            Children = { _acpRuntimeCaption },
+            Children = { _acpRuntimeCaption, _acpConfigRow },
         };
 
         var statusRow = new StackPanel
@@ -174,7 +216,9 @@ public sealed class AgentBackendBindingPanel : Panel
             canUnbind: false,
             acpRuntimeCaption: null,
             canProbeAcp: false,
-            canLogout: false);
+            canAuthenticateAcp: false,
+            canLogout: false,
+            canBindAcp: false);
     }
 
     public void SetWorkflowProjection(
@@ -188,7 +232,9 @@ public sealed class AgentBackendBindingPanel : Panel
         bool canUnbind,
         string? acpRuntimeCaption = null,
         bool canProbeAcp = false,
-        bool canLogout = false)
+        bool canAuthenticateAcp = false,
+        bool canLogout = false,
+        bool canBindAcp = true)
     {
         _backendLabel.Text = backendLabel;
         _authStatusCaption.Text = authStatusCaption;
@@ -206,15 +252,44 @@ public sealed class AgentBackendBindingPanel : Panel
 
         _bindNativeButton.IsEnabled = canBindNativeHarness;
         _bindNativeButton.IsVisible = true;
+        _bindAcpButton.IsEnabled = canBindAcp;
+        _bindAcpButton.IsVisible = true;
         _unbindButton.IsEnabled = canUnbind;
         _unbindButton.IsVisible = true;
 
         _acpRuntimeCaption.Text = acpRuntimeCaption ?? string.Empty;
         _acpRuntimeCaption.IsVisible = !string.IsNullOrEmpty(acpRuntimeCaption);
+        _acpConfigRow.IsVisible = true;
         _probeAcpButton.IsVisible = canProbeAcp;
         _probeAcpButton.IsEnabled = canProbeAcp;
+        _authenticateAcpButton.IsVisible = canAuthenticateAcp;
+        _authenticateAcpButton.IsEnabled = canAuthenticateAcp;
         _logoutButton.IsVisible = canLogout;
         _logoutButton.IsEnabled = canLogout;
+    }
+
+    public string AcpExecutablePath
+    {
+        get => _acpExecutableInput.Text ?? string.Empty;
+        set => _acpExecutableInput.Text = value;
+    }
+
+    public string AcpArgumentsText
+    {
+        get => _acpArgumentsInput.Text ?? string.Empty;
+        set => _acpArgumentsInput.Text = value;
+    }
+
+    public string AcpExpectedAgentName
+    {
+        get => _acpExpectedNameInput.Text ?? string.Empty;
+        set => _acpExpectedNameInput.Text = value;
+    }
+
+    public string AcpExpectedAgentVersion
+    {
+        get => _acpExpectedVersionInput.Text ?? string.Empty;
+        set => _acpExpectedVersionInput.Text = value;
     }
 
     /// <summary>
@@ -222,9 +297,13 @@ public sealed class AgentBackendBindingPanel : Panel
     /// </summary>
     public Button BindNativeHarnessButton => _bindNativeButton;
 
+    public Button BindAcpButton => _bindAcpButton;
+
     public Button UnbindButton => _unbindButton;
 
     public Button ProbeAcpButton => _probeAcpButton;
+
+    public Button AuthenticateAcpButton => _authenticateAcpButton;
 
     public Button LogoutButton => _logoutButton;
 
@@ -240,5 +319,18 @@ public sealed class AgentBackendBindingPanel : Panel
         };
         AutomationProperties.SetName(button, automationName);
         return button;
+    }
+
+    private static TextBox CreateConfigInput(string automationName)
+    {
+        var input = new TextBox
+        {
+            PlaceholderText = automationName,
+            MinWidth = 220,
+            Focusable = true,
+            IsTabStop = true,
+        };
+        AutomationProperties.SetName(input, automationName);
+        return input;
     }
 }

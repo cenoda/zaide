@@ -2,10 +2,9 @@
 
 ## Status
 
-**M0 accepted. M1 + M2 implemented.** A4 package 2 remains assigned here. M1
-shipped the durable schema-v1 binding store. M2 shipped the Native Harness
-Townhall binding workflow (configure/bind/inspect/unbind with capability
-truth). M3 (ACP auth bridge) and M4 (restart/A3 re-smoke) remain next. 22.3
+**M0 accepted. M1 + M2 + M3 implemented.** A4 package 2 remains assigned here.
+M1 durable store, M2 Native Townhall workflow, and M3 ACP probe/auth/logout
+bridge are shipped. M4 (restart/A3 re-smoke + closeout) remains next. 22.3
 and 22.4 remain dependent and must not start implementation.
 
 ## Work Board
@@ -26,7 +25,7 @@ and 22.4 remain dependent and must not start implementation.
   atomic persist, recovery, reactive change, busy gate).
 - [x] Human M1 audit / acceptance (PASS; nits fixed in M2).
 - [x] Implement M2 Native Harness Townhall workflow.
-- [ ] Implement M3 ACP workflow + authenticate bridge + logout.
+- [x] Implement M3 ACP workflow + authenticate bridge + logout.
 - [ ] Implement M4 restart/regression/A3 re-smoke + closeout.
 
 ## M0 Findings
@@ -89,9 +88,24 @@ and 22.4 remain dependent and must not start implementation.
   mutation errors.
 - Focused tests: `Phase22NativeHarnessBindingWorkflowTests`.
 
+## M3 Delivered
+
+- ACP Townhall bind fields (absolute executable, non-secret args, expected
+  name/version) with secrets ownership caption (no ACP credential field).
+- `AcpOnboardingConnectionService`: workspace-rooted cwd (fail closed),
+  launch + initialize + agentInfo verify without prompt session, publish
+  negotiated auth methods, real `IAcpSessionClient.AuthenticateAsync` bridge,
+  capability-gated logout protocol path, clear local runtime only.
+- Production ACP factories use `AcpWorkspaceWorkingDirectory` instead of
+  `Environment.CurrentDirectory`.
+- Selection `RequestAuthenticateAsync` resolves onboarding lazily and calls
+  the real bridge in production.
+- Focused tests: `Phase22AcpBindingWorkflowTests`,
+  `Phase22AcpAuthenticationBridgeTests`.
+
 ## Next Task
 
-Implement M3 ACP Townhall workflow, configuration probe, real
-`authenticate(methodId)` bridge, and capability-gated logout. Do not implement
-or release Phase 22.3, 22.4, 22.5, or V4 work from this gate. Do not claim
-`A1-AC-02` WORKS or package 2 complete until M4 re-smoke.
+Implement M4 restart/revalidation gates, accessibility/regression, out-of-tree
+A3 re-smoke matrix, evidence under `docs/phases/v3/phase-22.2/evidence/`, and
+closeout docs. Do not implement or release Phase 22.3, 22.4, 22.5, or V4 work
+from this gate.

@@ -621,7 +621,7 @@ public sealed class LegacyOpenAiCompatibleAgentBackendTests : IDisposable
         // coordinator. The total reflects every AddSingleton admitted by
         // M1–M6 in registration order; the legacy `IAgentBackend` shape is
         // still owned by Native Harness + ACP sibling registration.
-        Assert.Equal(83, services.Count);
+        Assert.Equal(84, services.Count);
 
         var backendDescriptors = services
             .Where(d => d.ServiceType == typeof(IAgentBackend))

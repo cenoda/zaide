@@ -206,6 +206,21 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
         }
     }
 
+    public async Task LogoutAsync(CancellationToken cancellationToken)
+    {
+        EnsureInitialized();
+
+        var response = await _connection.SendRequestAsync(
+            AcpMethodNames.Logout,
+            parameters: null,
+            cancellationToken).ConfigureAwait(false);
+
+        if (!response.IsSuccess)
+        {
+            throw CreateProtocolFailure("logout", response.Error);
+        }
+    }
+
     private void EnsureInitialized()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

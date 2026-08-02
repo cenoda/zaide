@@ -2,15 +2,13 @@
 
 ## Status and Authorization
 
-**M0 accepted. M1 + M2 implemented.** Human G2 / M0 acceptance is recorded. M1
-shipped a durable schema-v1 backend-neutral binding store with typed
-bind/update/unbind outcomes, revisions, atomic persistence, recovery, busy
-rejection, and reactive change notification. M2 shipped the Townhall Native
-Harness configure/bind/inspect/unbind workflow with capability projection.
+**M0 accepted. M1 + M2 + M3 implemented.** Human G2 / M0 acceptance is
+recorded. M1 durable store, M2 Native Townhall workflow, and M3 ACP
+probe/authenticate/logout bridge are shipped.
 
-Implementation of M3 (ACP auth bridge / logout UI), M4 (restart/A3 re-smoke),
-Phase 22.3–22.5, and V4 remains the next authorized work (M3/M4 under the
-Phase 22.2 remaining-implementation authorization).
+Implementation of M4 (restart/A3 re-smoke), Phase 22.3–22.5, and V4 remains
+the next authorized work (M4 under the Phase 22.2 remaining-implementation
+authorization).
 
 ## A4 Ownership and Dependency
 
@@ -113,7 +111,7 @@ capability differences.
 | M0 | Live reachability, ownership, persistence, secret, identity, backend-specific, and rollback contracts are verified; plan accepted | Read-only checklist + human acceptance |
 | M1 | A schema-v1 durable backend-neutral store with revisions, atomic bind/update/unbind, recovery, and reactive state supports truthful mutation outcomes | Focused binding store/service and persistence tests |
 | M2 | Native Harness workflow is user-reachable and reports configured/available/usable state truthfully | Focused Native Harness UI/composition tests — **done** |
-| M3 | ACP workflow is user-reachable, including runtime identity probe, real `authenticate` bridge, capability-gated logout, and explicit failure behavior | Focused ACP UI/auth/composition tests |
+| M3 | ACP workflow is user-reachable, including runtime identity probe, real `authenticate` bridge, capability-gated logout, and explicit failure behavior | Focused ACP UI/auth/composition tests — **done** |
 | M4 | Restart/revalidation, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial gates, isolated binding smoke |
 
 ## Affected Re-Smoke

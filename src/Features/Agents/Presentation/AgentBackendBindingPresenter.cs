@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Conversations.Domain;
@@ -18,6 +20,7 @@ internal sealed class AgentBackendBindingPresenter
     private readonly IAgentActorBackendBindingStore _bindingStore;
     private readonly INativeHarnessProviderOptionsSource? _optionsSource;
     private readonly IWorkspaceActionAuthority? _workspaceAuthority;
+    private readonly IAcpOnboardingConnectionService? _onboarding;
     private readonly Dictionary<ActorId, string> _mutationErrors = new();
     private readonly object _sync = new();
 
@@ -25,7 +28,8 @@ internal sealed class AgentBackendBindingPresenter
         IAgentActorBackendSelectionService selectionService,
         IAgentActorBackendBindingStore bindingStore,
         INativeHarnessProviderOptionsSource? optionsSource = null,
-        IWorkspaceActionAuthority? workspaceAuthority = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null,
+        IAcpOnboardingConnectionService? onboarding = null)
     {
         _selectionService = selectionService
             ?? throw new ArgumentNullException(nameof(selectionService));
@@ -33,6 +37,7 @@ internal sealed class AgentBackendBindingPresenter
             ?? throw new ArgumentNullException(nameof(bindingStore));
         _optionsSource = optionsSource;
         _workspaceAuthority = workspaceAuthority;
+        _onboarding = onboarding;
         _selectionService.BindingChanged += OnSelectionBindingChanged;
     }
 
@@ -86,6 +91,10 @@ internal sealed class AgentBackendBindingPresenter
         var isNativeBound = snapshot.IsBound && snapshot.BackendId == AgentBackendIds.NativeHarness;
         var canBindNative = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.NativeHarness;
         var canUnbind = snapshot.IsBound;
+        var isAcpBound = snapshot.IsBound && snapshot.BackendId == AgentBackendIds.Acp;
+        var logoutSupported = isAcpBound
+            && _onboarding?.IsLogoutSupported(actorId) == true
+            && snapshot.AuthenticationState == AgentAuthenticationConnectionState.Authenticated;
 
         return new AgentBackendBindingWorkflowProjection(
             actorId,
@@ -112,12 +121,11 @@ internal sealed class AgentBackendBindingPresenter
             acpArgumentsCaption: acpArgsCaption,
             acpExpectedAgentName: acpName,
             acpExpectedAgentVersion: acpVersion,
-            canProbeAcp: snapshot.IsBound && snapshot.BackendId == AgentBackendIds.Acp,
-            canAuthenticate: snapshot.AdvertisedAuthMethodIds.Count > 0
+            canProbeAcp: isAcpBound,
+            canAuthenticate: isAcpBound
+                && snapshot.AdvertisedAuthMethodIds.Count > 0
                 && snapshot.AuthenticationState != AgentAuthenticationConnectionState.Authenticated,
-            canLogout: snapshot.IsBound
-                && snapshot.BackendId == AgentBackendIds.Acp
-                && snapshot.AuthenticationState == AgentAuthenticationConnectionState.Authenticated,
+            canLogout: logoutSupported,
             acpRuntimeCaption: acpRuntimeCaption);
     }
 
@@ -188,6 +196,102 @@ internal sealed class AgentBackendBindingPresenter
         }
     }
 
+    public async Task<AcpOnboardingProbeResult> ProbeAcpAsync(
+        ActorId actorId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_onboarding is null)
+        {
+            var missing = AcpOnboardingProbeResult.Failed(
+                actorId,
+                "ACP onboarding connection service is not available.");
+            RecordMutationMessage(actorId, missing.Message);
+            return missing;
+        }
+
+        var result = await _onboarding.ProbeAsync(actorId, cancellationToken).ConfigureAwait(false);
+        if (result.IsSuccess)
+        {
+            ClearMutationError(actorId);
+        }
+        else
+        {
+            RecordMutationMessage(actorId, result.Message);
+        }
+
+        return result;
+    }
+
+    public async Task<AcpOnboardingAuthResult> AuthenticateAcpAsync(
+        ActorId actorId,
+        string methodId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_onboarding is null)
+        {
+            var missing = AcpOnboardingAuthResult.Failed(
+                actorId,
+                "ACP onboarding connection service is not available.",
+                methodId);
+            RecordMutationMessage(actorId, missing.Message);
+            return missing;
+        }
+
+        var result = await _onboarding.AuthenticateAsync(actorId, methodId, cancellationToken)
+            .ConfigureAwait(false);
+        if (result.IsSuccess)
+        {
+            ClearMutationError(actorId);
+        }
+        else
+        {
+            RecordMutationMessage(actorId, result.Message);
+        }
+
+        return result;
+    }
+
+    public async Task<AcpOnboardingLogoutResult> LogoutAcpAsync(
+        ActorId actorId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_onboarding is null)
+        {
+            var missing = AcpOnboardingLogoutResult.Failed(
+                actorId,
+                "ACP onboarding connection service is not available.");
+            RecordMutationMessage(actorId, missing.Message);
+            return missing;
+        }
+
+        var result = await _onboarding.LogoutAsync(actorId, cancellationToken).ConfigureAwait(false);
+        if (result.IsSuccess)
+        {
+            ClearMutationError(actorId);
+        }
+        else
+        {
+            RecordMutationMessage(actorId, result.Message);
+        }
+
+        return result;
+    }
+
+    private void RecordMutationMessage(ActorId actorId, string? message)
+    {
+        lock (_sync)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                _mutationErrors.Remove(actorId);
+            }
+            else
+            {
+                _mutationErrors[actorId] = message;
+            }
+        }
+    }
+
     private void RecordMutationOutcome(ActorId actorId, AgentActorBackendBindingMutationResult result)
     {
         lock (_sync)
@@ -222,15 +326,8 @@ internal sealed class AgentBackendBindingPresenter
     private bool ResolveProviderConfigured()
     {
         var options = _optionsSource?.ResolveOptions();
-        if (options is null)
-        {
-            return false;
-        }
-
-        // Never expose key material; only emptiness truth.
-        return !string.IsNullOrWhiteSpace(options.BaseUrl)
-            && !string.IsNullOrWhiteSpace(options.Model)
-            && !string.IsNullOrWhiteSpace(options.ApiKey);
+        return options is not null
+            && Application.NativeHarnessProviderConfigured.IsConfigured(options);
     }
 
     private static string BuildCapabilityCaption(

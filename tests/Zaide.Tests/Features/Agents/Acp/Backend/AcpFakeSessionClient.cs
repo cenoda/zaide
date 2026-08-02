@@ -86,8 +86,33 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
             throw new ArgumentException("Auth method id is required.", nameof(methodId));
         }
 
+        AuthenticateCallCount++;
+        LastAuthenticateMethodId = methodId;
+        if (_script.AuthenticateShouldFail)
+        {
+            throw new AcpProtocolException("ACP authenticate failed: simulated failure.");
+        }
+
         return Task.CompletedTask;
     }
+
+    public Task LogoutAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        LogoutCallCount++;
+        if (_script.LogoutShouldFail)
+        {
+            throw new AcpProtocolException("ACP logout failed: simulated failure.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public int AuthenticateCallCount { get; private set; }
+
+    public string? LastAuthenticateMethodId { get; private set; }
+
+    public int LogoutCallCount { get; private set; }
 
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
@@ -113,6 +138,12 @@ internal sealed class AcpFakeSessionScript
 
     public string AgentMessageText { get; init; } = "hello from fake acp";
 
+    public IReadOnlyList<AcpAuthMethod> AuthMethods { get; init; } = Array.Empty<AcpAuthMethod>();
+
+    public bool AuthenticateShouldFail { get; init; }
+
+    public bool LogoutShouldFail { get; init; }
+
     public IReadOnlyList<AcpSessionUpdate> Updates { get; init; } = Array.Empty<AcpSessionUpdate>();
 
     public Action<IReadOnlyList<AcpContentBlock>>? CapturePrompt { get; init; }
@@ -130,7 +161,7 @@ internal sealed class AcpFakeSessionScript
                     EmbeddedContext = false,
                 },
             },
-            Array.Empty<AcpAuthMethod>(),
+            AuthMethods,
             new AcpImplementationInfo
             {
                 Name = AgentName,

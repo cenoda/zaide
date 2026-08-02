@@ -371,7 +371,31 @@ public class TownhallView : Panel, IDisposable
                     ? null
                     : _viewModel.AcpRuntimeCaption,
                 _viewModel.CanProbeAcp,
-                _viewModel.CanLogoutAcp);
+                _viewModel.CanAuthenticateAcp,
+                _viewModel.CanLogoutAcp,
+                _viewModel.CanBindAcp);
+
+            // Push draft fields into the panel when the VM is the source of truth
+            // (bound ACP identity). User edits flow back via request handlers.
+            if (!string.IsNullOrEmpty(_viewModel.AcpExecutableDraft))
+            {
+                _backendBindingPanel.AcpExecutablePath = _viewModel.AcpExecutableDraft;
+            }
+
+            if (!string.IsNullOrEmpty(_viewModel.AcpArgumentsDraft))
+            {
+                _backendBindingPanel.AcpArgumentsText = _viewModel.AcpArgumentsDraft;
+            }
+
+            if (!string.IsNullOrEmpty(_viewModel.AcpExpectedNameDraft))
+            {
+                _backendBindingPanel.AcpExpectedAgentName = _viewModel.AcpExpectedNameDraft;
+            }
+
+            if (!string.IsNullOrEmpty(_viewModel.AcpExpectedVersionDraft))
+            {
+                _backendBindingPanel.AcpExpectedAgentVersion = _viewModel.AcpExpectedVersionDraft;
+            }
         }
 
         _disposables.Add(
@@ -395,14 +419,44 @@ public class TownhallView : Panel, IDisposable
                     x => x.CanProbeAcp,
                     x => x.CanLogoutAcp)
                 .Subscribe(_ => ApplyBackendBindingProjection()));
+        _disposables.Add(
+            _viewModel.WhenAnyValue(
+                    x => x.CanAuthenticateAcp,
+                    x => x.CanBindAcp)
+                .Subscribe(_ => ApplyBackendBindingProjection()));
 
         _backendBindingPanel.BindNativeHarnessRequested += (_, _) =>
         {
             _viewModel?.BindNativeHarnessCommand.Execute().Subscribe();
         };
+        _backendBindingPanel.BindAcpRequested += (_, _) =>
+        {
+            if (_viewModel is null)
+            {
+                return;
+            }
+
+            _viewModel.AcpExecutableDraft = _backendBindingPanel.AcpExecutablePath;
+            _viewModel.AcpArgumentsDraft = _backendBindingPanel.AcpArgumentsText;
+            _viewModel.AcpExpectedNameDraft = _backendBindingPanel.AcpExpectedAgentName;
+            _viewModel.AcpExpectedVersionDraft = _backendBindingPanel.AcpExpectedAgentVersion;
+            _viewModel.BindAcpCommand.Execute().Subscribe();
+        };
         _backendBindingPanel.UnbindRequested += (_, _) =>
         {
             _viewModel?.UnbindBackendCommand.Execute().Subscribe();
+        };
+        _backendBindingPanel.ProbeAcpRequested += (_, _) =>
+        {
+            _viewModel?.ProbeAcpCommand.Execute().Subscribe();
+        };
+        _backendBindingPanel.AuthenticateAcpRequested += (_, _) =>
+        {
+            _viewModel?.AuthenticateAcpCommand.Execute().Subscribe();
+        };
+        _backendBindingPanel.LogoutRequested += (_, _) =>
+        {
+            _viewModel?.LogoutAcpCommand.Execute().Subscribe();
         };
 
         _contextPolicySelector.PolicySelectionChanged += (_, index) =>

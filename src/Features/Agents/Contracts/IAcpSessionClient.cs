@@ -28,6 +28,11 @@ internal interface IAcpSessionClient : IAsyncDisposable
 
     Task AuthenticateAsync(string methodId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Capability-gated ACP logout. Clears agent-side auth when supported.
+    /// </summary>
+    Task LogoutAsync(CancellationToken cancellationToken);
+
     void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities);

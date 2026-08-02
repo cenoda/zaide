@@ -17,13 +17,22 @@ namespace Zaide.Features.Agents.Application;
 internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSelectionService
 {
     private readonly IAgentActorBackendBindingStore _bindingStore;
+    private readonly Func<IAcpOnboardingConnectionService?>? _onboardingResolver;
     private readonly Dictionary<ActorId, IReadOnlyList<string>> _advertisedAuthMethods = new();
     private readonly object _sync = new();
     private readonly List<Action<AgentActorBackendBindingChangedEvent>> _changeHandlers = new();
 
     public AgentActorBackendSelectionService(IAgentActorBackendBindingStore bindingStore)
+        : this(bindingStore, onboardingResolver: null)
+    {
+    }
+
+    public AgentActorBackendSelectionService(
+        IAgentActorBackendBindingStore bindingStore,
+        Func<IAcpOnboardingConnectionService?>? onboardingResolver)
     {
         _bindingStore = bindingStore ?? throw new ArgumentNullException(nameof(bindingStore));
+        _onboardingResolver = onboardingResolver;
         _bindingStore.BindingChanged += OnStoreBindingChanged;
     }
 
@@ -240,7 +249,7 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         }
     }
 
-    public Task RequestAuthenticateAsync(
+    public async Task RequestAuthenticateAsync(
         ActorId actorId,
         string methodId,
         CancellationToken cancellationToken)
@@ -268,12 +277,26 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             throw new InvalidOperationException("Authentication method is not advertised by the agent.");
         }
 
+        // Production path: real ACP authenticate bridge (onboarding connection service).
+        var onboarding = _onboardingResolver?.Invoke();
+        if (onboarding is not null)
+        {
+            var result = await onboarding.AuthenticateAsync(actorId, methodId, cancellationToken)
+                .ConfigureAwait(false);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    result.Message ?? "ACP authenticate failed.");
+            }
+
+            return;
+        }
+
+        // Unit-test harness path without onboarding: local runtime rewrite only.
         _bindingStore.SetRuntimeAuthentication(
             actorId,
             methodId,
             AgentAuthenticationConnectionState.Authenticated);
-
-        return Task.CompletedTask;
     }
 
     private void ClearAdvertisedAuthMethods(ActorId actorId)

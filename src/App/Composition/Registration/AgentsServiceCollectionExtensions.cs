@@ -64,7 +64,15 @@ internal static class AgentsServiceCollectionExtensions
                 AgentActorBackendBindingPathResolver.GetLastKnownGoodPath(),
                 activeRunQuery);
         });
-        services.AddSingleton<IAgentActorBackendSelectionService, AgentActorBackendSelectionService>();
+        // Phase 22.2 M3: selection resolves onboarding lazily so authenticate
+        // bridges to the real ACP protocol path without a constructor cycle.
+        services.AddSingleton<IAgentActorBackendSelectionService>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new AgentActorBackendSelectionService(
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
+                () => (IAcpOnboardingConnectionService?)get(typeof(IAcpOnboardingConnectionService)));
+        });
         // Phase 22.2 M2: production-owned Townhall binding workflow presenter.
         services.AddSingleton<AgentBackendBindingPresenter>(sp =>
         {
@@ -73,16 +81,30 @@ internal static class AgentsServiceCollectionExtensions
                 (IAgentActorBackendSelectionService)get(typeof(IAgentActorBackendSelectionService))!,
                 (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
                 (INativeHarnessProviderOptionsSource?)get(typeof(INativeHarnessProviderOptionsSource)),
-                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)));
+                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)),
+                (IAcpOnboardingConnectionService?)get(typeof(IAcpOnboardingConnectionService)));
         });
         services.AddSingleton<IAcpProcessLauncher, AcpSystemDiagnosticsProcessLauncher>();
+        // Phase 22.2 M3: ACP cwd from workspace authority (fail closed), not CurrentDirectory.
         services.AddSingleton<IAcpSessionClientFactory>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;
+            var workspaceAuthority = (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority));
             return new AcpProductionSessionClientFactory(
                 (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
                 (IAcpProcessLauncher)get(typeof(IAcpProcessLauncher))!,
-                () => Environment.CurrentDirectory);
+                AcpWorkspaceWorkingDirectory.CreateProvider(workspaceAuthority));
+        });
+        services.AddSingleton<IAcpOnboardingConnectionService>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new AcpOnboardingConnectionService(
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
+                (IAgentActorBackendSelectionService)get(typeof(IAgentActorBackendSelectionService))!,
+                (IAcpProcessLauncher)get(typeof(IAcpProcessLauncher))!,
+                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)),
+                new LazyAgentActorActiveRunQuery(
+                    () => (IAgentActorActiveRunQuery?)get(typeof(IAgentSessionService))));
         });
         services.AddSingleton<NativeHarnessAgentBackend>(sp =>
         {
@@ -96,9 +118,10 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AcpActionCapableAgentBackend>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;
+            var workspaceAuthority = (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority));
             return new AcpActionCapableAgentBackend(
                 (IAcpSessionClientFactory)get(typeof(IAcpSessionClientFactory))!,
-                () => Environment.CurrentDirectory,
+                AcpWorkspaceWorkingDirectory.CreateProvider(workspaceAuthority),
                 (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!);
         });
         services.AddSingleton<IAgentBackend>(sp =>

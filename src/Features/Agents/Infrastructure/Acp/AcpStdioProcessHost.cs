@@ -121,6 +121,12 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
             AcpProcessLifecycleLimits.InitializeTimeout,
             cancellationToken);
 
+    public Task LogoutAsync(CancellationToken cancellationToken) =>
+        ExecuteWithTimeoutAsync(
+            ct => _session.LogoutAsync(ct),
+            AcpProcessLifecycleLimits.InitializeTimeout,
+            cancellationToken);
+
     private Task ExecuteWithTimeoutAsync(
         Func<CancellationToken, Task> operation,
         TimeSpan timeout,

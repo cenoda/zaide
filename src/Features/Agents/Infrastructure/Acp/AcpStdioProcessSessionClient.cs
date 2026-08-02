@@ -41,6 +41,9 @@ internal sealed class AcpStdioProcessSessionClient : IAcpSessionClient
     public Task AuthenticateAsync(string methodId, CancellationToken cancellationToken) =>
         _host.AuthenticateAsync(methodId, cancellationToken);
 
+    public Task LogoutAsync(CancellationToken cancellationToken) =>
+        _host.LogoutAsync(cancellationToken);
+
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities) =>

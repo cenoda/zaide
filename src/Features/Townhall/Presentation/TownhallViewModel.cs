@@ -59,7 +59,14 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private bool _canUnbindBackend;
     private string _acpRuntimeCaption = string.Empty;
     private bool _canProbeAcp;
+    private bool _canAuthenticateAcp;
     private bool _canLogoutAcp;
+    private bool _canBindAcp;
+    private string _acpExecutableDraft = string.Empty;
+    private string _acpArgumentsDraft = string.Empty;
+    private string _acpExpectedNameDraft = string.Empty;
+    private string _acpExpectedVersionDraft = string.Empty;
+    private string _acpAuthMethodDraft = string.Empty;
     private ActorId? _activeBackendActorId;
 
     /// <summary>
@@ -334,10 +341,52 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _canProbeAcp, value);
     }
 
+    public bool CanAuthenticateAcp
+    {
+        get => _canAuthenticateAcp;
+        private set => this.RaiseAndSetIfChanged(ref _canAuthenticateAcp, value);
+    }
+
     public bool CanLogoutAcp
     {
         get => _canLogoutAcp;
         private set => this.RaiseAndSetIfChanged(ref _canLogoutAcp, value);
+    }
+
+    public bool CanBindAcp
+    {
+        get => _canBindAcp;
+        private set => this.RaiseAndSetIfChanged(ref _canBindAcp, value);
+    }
+
+    public string AcpExecutableDraft
+    {
+        get => _acpExecutableDraft;
+        set => this.RaiseAndSetIfChanged(ref _acpExecutableDraft, value ?? string.Empty);
+    }
+
+    public string AcpArgumentsDraft
+    {
+        get => _acpArgumentsDraft;
+        set => this.RaiseAndSetIfChanged(ref _acpArgumentsDraft, value ?? string.Empty);
+    }
+
+    public string AcpExpectedNameDraft
+    {
+        get => _acpExpectedNameDraft;
+        set => this.RaiseAndSetIfChanged(ref _acpExpectedNameDraft, value ?? string.Empty);
+    }
+
+    public string AcpExpectedVersionDraft
+    {
+        get => _acpExpectedVersionDraft;
+        set => this.RaiseAndSetIfChanged(ref _acpExpectedVersionDraft, value ?? string.Empty);
+    }
+
+    public string AcpAuthMethodDraft
+    {
+        get => _acpAuthMethodDraft;
+        set => this.RaiseAndSetIfChanged(ref _acpAuthMethodDraft, value ?? string.Empty);
     }
 
     /// <summary>
@@ -359,6 +408,26 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     /// Unbinds the active direct agent's backend via the production presenter.
     /// </summary>
     public ReactiveCommand<Unit, Unit> UnbindBackendCommand { get; }
+
+    /// <summary>
+    /// Binds the active direct agent to ACP using the draft runtime identity fields.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> BindAcpCommand { get; }
+
+    /// <summary>
+    /// Probes the durable ACP binding (initialize + identity; no prompt session).
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> ProbeAcpCommand { get; }
+
+    /// <summary>
+    /// Authenticates the ACP agent with the selected advertised method id.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> AuthenticateAcpCommand { get; }
+
+    /// <summary>
+    /// Capability-gated ACP logout for the active agent binding.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> LogoutAcpCommand { get; }
 
     /// <summary>
     /// Command to select a channel by its ID.
@@ -518,6 +587,10 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         ClearContextPolicyOverrideCommand = ReactiveCommand.Create(ClearActiveContextPolicyOverride);
         BindNativeHarnessCommand = ReactiveCommand.Create(ExecuteBindNativeHarness);
         UnbindBackendCommand = ReactiveCommand.Create(ExecuteUnbindBackend);
+        BindAcpCommand = ReactiveCommand.Create(ExecuteBindAcp);
+        ProbeAcpCommand = ReactiveCommand.CreateFromTask(ExecuteProbeAcpAsync);
+        AuthenticateAcpCommand = ReactiveCommand.CreateFromTask(ExecuteAuthenticateAcpAsync);
+        LogoutAcpCommand = ReactiveCommand.CreateFromTask(ExecuteLogoutAcpAsync);
         UpdateDirectSendBusyTracking();
     }
 
@@ -554,6 +627,72 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         }
 
         // Fallback without presenter: revision-aware unbind is unavailable.
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private void ExecuteBindAcp()
+    {
+        if (_activeBackendActorId is not { } actorId || _backendBindingPresenter is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var args = string.IsNullOrWhiteSpace(AcpArgumentsDraft)
+                ? Array.Empty<string>()
+                : AcpArgumentsDraft.Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var runtime = new AcpRuntimeIdentity(AcpExecutableDraft.Trim(), args);
+            _ = _backendBindingPresenter.TryBindAcpRuntime(
+                actorId,
+                runtime,
+                AcpExpectedNameDraft.Trim(),
+                AcpExpectedVersionDraft.Trim());
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            // Presenter records typed failures for durable path; surface validation here.
+            BackendMutationErrorCaption = ex.Message;
+        }
+
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private async Task ExecuteProbeAcpAsync()
+    {
+        if (_activeBackendActorId is not { } actorId || _backendBindingPresenter is null)
+        {
+            return;
+        }
+
+        await _backendBindingPresenter.ProbeAcpAsync(actorId).ConfigureAwait(true);
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private async Task ExecuteAuthenticateAcpAsync()
+    {
+        if (_activeBackendActorId is not { } actorId || _backendBindingPresenter is null)
+        {
+            return;
+        }
+
+        var methodId = string.IsNullOrWhiteSpace(AcpAuthMethodDraft)
+            ? (_backendBindingPresenter.GetSnapshot(actorId).AdvertisedAuthMethodIds.FirstOrDefault() ?? string.Empty)
+            : AcpAuthMethodDraft.Trim();
+        await _backendBindingPresenter.AuthenticateAcpAsync(actorId, methodId).ConfigureAwait(true);
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private async Task ExecuteLogoutAcpAsync()
+    {
+        if (_activeBackendActorId is not { } actorId || _backendBindingPresenter is null)
+        {
+            return;
+        }
+
+        await _backendBindingPresenter.LogoutAcpAsync(actorId).ConfigureAwait(true);
         RefreshActiveBackendBindingProjection();
     }
 
@@ -1254,7 +1393,9 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanUnbindBackend = false;
             AcpRuntimeCaption = string.Empty;
             CanProbeAcp = false;
+            CanAuthenticateAcp = false;
             CanLogoutAcp = false;
+            CanBindAcp = false;
             return;
         }
 
@@ -1273,7 +1414,9 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanUnbindBackend = false;
             AcpRuntimeCaption = string.Empty;
             CanProbeAcp = false;
+            CanAuthenticateAcp = false;
             CanLogoutAcp = false;
+            CanBindAcp = false;
             return;
         }
 
@@ -1292,7 +1435,39 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanUnbindBackend = projection.CanUnbind;
             AcpRuntimeCaption = projection.AcpRuntimeCaption ?? string.Empty;
             CanProbeAcp = projection.CanProbeAcp;
+            CanAuthenticateAcp = projection.CanAuthenticate;
             CanLogoutAcp = projection.CanLogout;
+            CanBindAcp = !projection.IsBound || projection.BackendId != AgentBackendIds.Acp;
+            if (projection.IsBound && projection.BackendId == AgentBackendIds.Acp)
+            {
+                if (!string.IsNullOrEmpty(projection.AcpExecutablePath))
+                {
+                    AcpExecutableDraft = projection.AcpExecutablePath;
+                }
+
+                if (!string.IsNullOrEmpty(projection.AcpArgumentsCaption)
+                    && projection.AcpArgumentsCaption != "(no arguments)")
+                {
+                    AcpArgumentsDraft = projection.AcpArgumentsCaption;
+                }
+
+                if (!string.IsNullOrEmpty(projection.AcpExpectedAgentName))
+                {
+                    AcpExpectedNameDraft = projection.AcpExpectedAgentName!;
+                }
+
+                if (!string.IsNullOrEmpty(projection.AcpExpectedAgentVersion))
+                {
+                    AcpExpectedVersionDraft = projection.AcpExpectedAgentVersion!;
+                }
+
+                if (projection.AdvertisedAuthMethodIds.Count > 0
+                    && string.IsNullOrWhiteSpace(AcpAuthMethodDraft))
+                {
+                    AcpAuthMethodDraft = projection.AdvertisedAuthMethodIds[0];
+                }
+            }
+
             return;
         }
 
@@ -1307,7 +1482,9 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         CanUnbindBackend = snapshot.IsBound;
         AcpRuntimeCaption = string.Empty;
         CanProbeAcp = false;
+        CanAuthenticateAcp = false;
         CanLogoutAcp = false;
+        CanBindAcp = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.Acp;
     }
 
     private static string FormatAuthStateCaption(AgentAuthenticationConnectionState authState) =>
