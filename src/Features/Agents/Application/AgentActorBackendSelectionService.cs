@@ -104,6 +104,12 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             AgentBackendIds.NativeHarness,
             authenticationState: AgentAuthenticationConnectionState.NotRequired);
 
+        // Use TryBind only when unbound; existing bindings must update.
+        if (_bindingStore.TryGetBinding(actorId, out var existing))
+        {
+            return _bindingStore.TryUpdate(actorId, candidate, existing.Revision);
+        }
+
         return _bindingStore.TryBind(candidate);
     }
 
@@ -125,12 +131,18 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
                 expectedAgentVersion,
                 authenticationState: AgentAuthenticationConnectionState.Disconnected);
 
-            var result = _bindingStore.TryBind(candidate);
-            if (result.IsSuccess)
+            // Use TryBind only when unbound; existing bindings must update.
+            AgentActorBackendBindingMutationResult result;
+            if (_bindingStore.TryGetBinding(actorId, out var existing))
             {
-                ClearAdvertisedAuthMethods(actorId);
+                result = _bindingStore.TryUpdate(actorId, candidate, existing.Revision);
+            }
+            else
+            {
+                result = _bindingStore.TryBind(candidate);
             }
 
+            // Store/selection clear advertised methods on any successful durable mutation.
             return result;
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
@@ -274,7 +286,10 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
 
     private void OnStoreBindingChanged(AgentActorBackendBindingChangedEvent change)
     {
-        if (change.Kind is AgentActorBackendBindingMutationKind.Update
+        // Any successful durable mutation invalidates cached advertised methods
+        // (bind, rebind/update, and unbind). Runtime auth is never durable.
+        if (change.Kind is AgentActorBackendBindingMutationKind.Bind
+            or AgentActorBackendBindingMutationKind.Update
             or AgentActorBackendBindingMutationKind.Unbind)
         {
             ClearAdvertisedAuthMethods(change.ActorId);

@@ -65,7 +65,16 @@ internal static class AgentsServiceCollectionExtensions
                 activeRunQuery);
         });
         services.AddSingleton<IAgentActorBackendSelectionService, AgentActorBackendSelectionService>();
-        services.AddSingleton<AgentBackendBindingPresenter>();
+        // Phase 22.2 M2: production-owned Townhall binding workflow presenter.
+        services.AddSingleton<AgentBackendBindingPresenter>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            return new AgentBackendBindingPresenter(
+                (IAgentActorBackendSelectionService)get(typeof(IAgentActorBackendSelectionService))!,
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
+                (INativeHarnessProviderOptionsSource?)get(typeof(INativeHarnessProviderOptionsSource)),
+                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)));
+        });
         services.AddSingleton<IAcpProcessLauncher, AcpSystemDiagnosticsProcessLauncher>();
         services.AddSingleton<IAcpSessionClientFactory>(sp =>
         {

@@ -238,15 +238,33 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
         {
             try
             {
-                // Bind always starts a durable revision series at 1 for a new actor
-                // or advances past the existing revision when rebinding.
-                var nextRevision = _bindings.TryGetValue(binding.ActorId, out var existing)
-                    ? existing.Revision + 1
-                    : 1;
+                // Bind is only for unbound actors. Existing bindings must use
+                // TryUpdate / TryUnbind so rebind cannot silently overwrite.
+                if (_bindings.TryGetValue(binding.ActorId, out var existing))
+                {
+                    result = AgentActorBackendBindingMutationResult.ValidationFailed(
+                        AgentActorBackendBindingMutationKind.Bind,
+                        binding.ActorId,
+                        existing.Revision,
+                        "Actor is already bound; use update or unbind.");
+                    return result;
+                }
+
+                if (IsActorBusy(binding.ActorId))
+                {
+                    result = AgentActorBackendBindingMutationResult.Busy(
+                        AgentActorBackendBindingMutationKind.Bind,
+                        binding.ActorId,
+                        currentRevision: 0,
+                        "Cannot bind while the actor has an active run.");
+                    return result;
+                }
+
+                // Bind always starts a durable revision series at 1 for a new actor.
                 // Durable bind never treats auth/capability runtime state as durable truth.
                 var candidate = binding
                     .WithClearedRuntimeAuth()
-                    .WithRevision(nextRevision);
+                    .WithRevision(1);
 
                 var nextBindings = CloneBindings();
                 nextBindings[candidate.ActorId] = candidate;
@@ -256,7 +274,7 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
                     result = AgentActorBackendBindingMutationResult.PersistenceFailed(
                         AgentActorBackendBindingMutationKind.Bind,
                         binding.ActorId,
-                        existing?.Revision ?? 0,
+                        currentRevision: 0,
                         persistenceError ?? "Failed to persist binding document.");
                     return result;
                 }

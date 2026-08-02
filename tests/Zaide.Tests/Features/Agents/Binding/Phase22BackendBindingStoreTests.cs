@@ -75,7 +75,7 @@ public sealed class Phase22BackendBindingStoreTests
     [Fact]
     public void Update_RejectsStaleRevision_AndBusyActor()
     {
-        var busy = new FixedActiveRunQuery(isBusy: true);
+        var busy = new FixedActiveRunQuery(isBusy: false);
         using var harness = DurableHarness.Create(busy);
         var actorId = ActorId.TownhallAgent;
 
@@ -83,6 +83,7 @@ public sealed class Phase22BackendBindingStoreTests
             actorId,
             AgentBackendIds.NativeHarness)).IsSuccess);
 
+        busy.IsBusy = true;
         var busyResult = harness.Store.TryUpdate(
             actorId,
             new AgentActorBackendBinding(actorId, AgentBackendIds.NativeHarness),
@@ -97,6 +98,31 @@ public sealed class Phase22BackendBindingStoreTests
             expectedRevision: 99);
         Assert.Equal(AgentActorBackendBindingMutationStatus.Conflict, conflict.Status);
         Assert.Equal(1, conflict.Revision);
+    }
+
+    [Fact]
+    public void Bind_RejectsWhenAlreadyBound_OrBusy()
+    {
+        var busy = new FixedActiveRunQuery(isBusy: true);
+        using var harness = DurableHarness.Create(busy);
+        var actorId = ActorId.TownhallAgent;
+
+        var busyBind = harness.Store.TryBind(new AgentActorBackendBinding(
+            actorId,
+            AgentBackendIds.NativeHarness));
+        Assert.Equal(AgentActorBackendBindingMutationStatus.Busy, busyBind.Status);
+
+        busy.IsBusy = false;
+        Assert.True(harness.Store.TryBind(new AgentActorBackendBinding(
+            actorId,
+            AgentBackendIds.NativeHarness)).IsSuccess);
+
+        var rebind = harness.Store.TryBind(new AgentActorBackendBinding(
+            actorId,
+            AgentBackendIds.NativeHarness));
+        Assert.Equal(AgentActorBackendBindingMutationStatus.ValidationFailed, rebind.Status);
+        Assert.Contains("already bound", rebind.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, harness.Store.GetRevision(actorId));
     }
 
     [Fact]

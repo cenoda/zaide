@@ -35,6 +35,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IAgentExecutionCoordinator _executionCoordinator;
     private readonly IAgentContextSessionPolicyService _sessionPolicyService;
     private readonly IAgentActorBackendSelectionService? _backendSelectionService;
+    private readonly AgentBackendBindingPresenter? _backendBindingPresenter;
     private readonly IAgentRouter? _agentRouter;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
@@ -51,6 +52,15 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private string _backendBindingLabel = string.Empty;
     private string _backendAuthStatusCaption = string.Empty;
     private bool _isBackendDisconnected;
+    private string _backendCapabilityCaption = string.Empty;
+    private string _backendSettingsCaption = string.Empty;
+    private string _backendMutationErrorCaption = string.Empty;
+    private bool _canBindNativeHarness;
+    private bool _canUnbindBackend;
+    private string _acpRuntimeCaption = string.Empty;
+    private bool _canProbeAcp;
+    private bool _canLogoutAcp;
+    private ActorId? _activeBackendActorId;
 
     /// <summary>
     /// Gets the list of channels.
@@ -274,6 +284,63 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
+    /// Capability truth caption (configured / available / usable distinctions).
+    /// </summary>
+    public string BackendCapabilityCaption
+    {
+        get => _backendCapabilityCaption;
+        private set => this.RaiseAndSetIfChanged(ref _backendCapabilityCaption, value);
+    }
+
+    /// <summary>
+    /// Settings / secret ownership caption for the active binding.
+    /// </summary>
+    public string BackendSettingsCaption
+    {
+        get => _backendSettingsCaption;
+        private set => this.RaiseAndSetIfChanged(ref _backendSettingsCaption, value);
+    }
+
+    /// <summary>
+    /// Actionable mutation error (Busy / Conflict / PersistenceFailed / validation).
+    /// </summary>
+    public string BackendMutationErrorCaption
+    {
+        get => _backendMutationErrorCaption;
+        private set => this.RaiseAndSetIfChanged(ref _backendMutationErrorCaption, value);
+    }
+
+    public bool CanBindNativeHarness
+    {
+        get => _canBindNativeHarness;
+        private set => this.RaiseAndSetIfChanged(ref _canBindNativeHarness, value);
+    }
+
+    public bool CanUnbindBackend
+    {
+        get => _canUnbindBackend;
+        private set => this.RaiseAndSetIfChanged(ref _canUnbindBackend, value);
+    }
+
+    public string AcpRuntimeCaption
+    {
+        get => _acpRuntimeCaption;
+        private set => this.RaiseAndSetIfChanged(ref _acpRuntimeCaption, value);
+    }
+
+    public bool CanProbeAcp
+    {
+        get => _canProbeAcp;
+        private set => this.RaiseAndSetIfChanged(ref _canProbeAcp, value);
+    }
+
+    public bool CanLogoutAcp
+    {
+        get => _canLogoutAcp;
+        private set => this.RaiseAndSetIfChanged(ref _canLogoutAcp, value);
+    }
+
+    /// <summary>
     /// Command to select a context policy level from the selector index.
     /// </summary>
     public ReactiveCommand<int, Unit> SetContextPolicyFromSelectorCommand { get; }
@@ -282,6 +349,16 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     /// Command to clear the session policy override for the active direct conversation.
     /// </summary>
     public ReactiveCommand<Unit, Unit> ClearContextPolicyOverrideCommand { get; }
+
+    /// <summary>
+    /// Binds the active direct agent to Native Harness via the production presenter.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> BindNativeHarnessCommand { get; }
+
+    /// <summary>
+    /// Unbinds the active direct agent's backend via the production presenter.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> UnbindBackendCommand { get; }
 
     /// <summary>
     /// Command to select a channel by its ID.
@@ -327,7 +404,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             persistenceBridge: null,
             persistenceService: null,
             agentRouter: agentRouter,
-            backendSelectionService: null)
+            backendSelectionService: null,
+            backendBindingPresenter: null)
     {
     }
 
@@ -342,7 +420,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         IConversationWorkspacePersistenceBridge? persistenceBridge,
         ConversationPersistenceService? persistenceService,
         IAgentRouter? agentRouter = null,
-        IAgentActorBackendSelectionService? backendSelectionService = null)
+        IAgentActorBackendSelectionService? backendSelectionService = null,
+        AgentBackendBindingPresenter? backendBindingPresenter = null)
     {
         _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -353,9 +432,19 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         _sessionPolicyService = sessionPolicyService
             ?? throw new ArgumentNullException(nameof(sessionPolicyService));
         _backendSelectionService = backendSelectionService;
+        _backendBindingPresenter = backendBindingPresenter;
         _agentRouter = agentRouter;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
+
+        if (_backendBindingPresenter is not null)
+        {
+            _backendBindingPresenter.BindingChanged += OnBackendBindingChanged;
+        }
+        else if (_backendSelectionService is not null)
+        {
+            _backendSelectionService.BindingChanged += OnBackendBindingChanged;
+        }
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
         _panelHost.Panels.CollectionChanged += OnAgentPanelsCollectionChanged;
@@ -427,7 +516,53 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         SendMessageCommand = ReactiveCommand.CreateFromTask(SendMessageAsync);
         SetContextPolicyFromSelectorCommand = ReactiveCommand.Create<int>(ApplyContextPolicySelection);
         ClearContextPolicyOverrideCommand = ReactiveCommand.Create(ClearActiveContextPolicyOverride);
+        BindNativeHarnessCommand = ReactiveCommand.Create(ExecuteBindNativeHarness);
+        UnbindBackendCommand = ReactiveCommand.Create(ExecuteUnbindBackend);
         UpdateDirectSendBusyTracking();
+    }
+
+    private void ExecuteBindNativeHarness()
+    {
+        if (_activeBackendActorId is not { } actorId)
+        {
+            return;
+        }
+
+        if (_backendBindingPresenter is not null)
+        {
+            _ = _backendBindingPresenter.TryBindNativeHarness(actorId);
+            RefreshActiveBackendBindingProjection();
+            return;
+        }
+
+        _backendSelectionService?.TryBindNativeHarness(actorId);
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private void ExecuteUnbindBackend()
+    {
+        if (_activeBackendActorId is not { } actorId)
+        {
+            return;
+        }
+
+        if (_backendBindingPresenter is not null)
+        {
+            _ = _backendBindingPresenter.TryUnbind(actorId);
+            RefreshActiveBackendBindingProjection();
+            return;
+        }
+
+        // Fallback without presenter: revision-aware unbind is unavailable.
+        RefreshActiveBackendBindingProjection();
+    }
+
+    private void OnBackendBindingChanged(AgentActorBackendBindingChangedEvent change)
+    {
+        if (_activeBackendActorId is { } active && active == change.ActorId)
+        {
+            RefreshActiveBackendBindingProjection();
+        }
     }
 
     private async Task SendMessageAsync()
@@ -1102,15 +1237,24 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
     private void RefreshActiveBackendBindingProjection()
     {
-        if (_backendSelectionService is null
+        if ((_backendBindingPresenter is null && _backendSelectionService is null)
             || _state.ActiveConversationId is not { } activeConversationId
             || !_conversationStore.TryGet(activeConversationId, out var conversation)
             || conversation.Kind != ConversationKind.Direct)
         {
+            _activeBackendActorId = null;
             IsBackendBindingStatusVisible = false;
             BackendBindingLabel = string.Empty;
             BackendAuthStatusCaption = string.Empty;
             IsBackendDisconnected = false;
+            BackendCapabilityCaption = string.Empty;
+            BackendSettingsCaption = string.Empty;
+            BackendMutationErrorCaption = string.Empty;
+            CanBindNativeHarness = false;
+            CanUnbindBackend = false;
+            AcpRuntimeCaption = string.Empty;
+            CanProbeAcp = false;
+            CanLogoutAcp = false;
             return;
         }
 
@@ -1118,16 +1262,52 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         var peer = conversation.Participants.All.FirstOrDefault(p => p != _actorCatalog.CanonicalHuman.Id);
         if (peer == default)
         {
+            _activeBackendActorId = null;
             BackendBindingLabel = "Unbound";
             BackendAuthStatusCaption = "No agent participant";
             IsBackendDisconnected = true;
+            BackendCapabilityCaption = string.Empty;
+            BackendSettingsCaption = string.Empty;
+            BackendMutationErrorCaption = string.Empty;
+            CanBindNativeHarness = false;
+            CanUnbindBackend = false;
+            AcpRuntimeCaption = string.Empty;
+            CanProbeAcp = false;
+            CanLogoutAcp = false;
             return;
         }
 
-        var snapshot = _backendSelectionService.GetSnapshot(peer);
+        _activeBackendActorId = peer;
+
+        if (_backendBindingPresenter is not null)
+        {
+            var projection = _backendBindingPresenter.BuildProjection(peer);
+            BackendBindingLabel = projection.BackendLabel;
+            BackendAuthStatusCaption = projection.AuthCaption;
+            IsBackendDisconnected = projection.IsDisconnected;
+            BackendCapabilityCaption = projection.CapabilityCaption;
+            BackendSettingsCaption = projection.SettingsCaption;
+            BackendMutationErrorCaption = projection.MutationErrorCaption ?? string.Empty;
+            CanBindNativeHarness = projection.CanBindNativeHarness;
+            CanUnbindBackend = projection.CanUnbind;
+            AcpRuntimeCaption = projection.AcpRuntimeCaption ?? string.Empty;
+            CanProbeAcp = projection.CanProbeAcp;
+            CanLogoutAcp = projection.CanLogout;
+            return;
+        }
+
+        var snapshot = _backendSelectionService!.GetSnapshot(peer);
         BackendBindingLabel = snapshot.BackendLabel;
         BackendAuthStatusCaption = FormatAuthStateCaption(snapshot.AuthenticationState);
         IsBackendDisconnected = snapshot.IsDisconnected;
+        BackendCapabilityCaption = snapshot.StatusCaption;
+        BackendSettingsCaption = AgentBackendBindingWorkflowProjection.NativeSettingsCaption;
+        BackendMutationErrorCaption = string.Empty;
+        CanBindNativeHarness = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.NativeHarness;
+        CanUnbindBackend = snapshot.IsBound;
+        AcpRuntimeCaption = string.Empty;
+        CanProbeAcp = false;
+        CanLogoutAcp = false;
     }
 
     private static string FormatAuthStateCaption(AgentAuthenticationConnectionState authState) =>
@@ -1317,6 +1497,15 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         foreach (var panel in _panelHost.Panels.ToArray())
         {
             panel.PropertyChanged -= OnAgentPanelPropertyChanged;
+        }
+
+        if (_backendBindingPresenter is not null)
+        {
+            _backendBindingPresenter.BindingChanged -= OnBackendBindingChanged;
+        }
+        else if (_backendSelectionService is not null)
+        {
+            _backendSelectionService.BindingChanged -= OnBackendBindingChanged;
         }
 
         _directBusySubscription.Dispose();

@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -9,23 +8,109 @@ using Zaide.UI.DesignSystem;
 namespace Zaide.Features.Agents.Presentation;
 
 /// <summary>
-/// Minimal backend binding status panel for direct agent conversations.
+/// Interactive Townhall backend binding panel for direct agent conversations.
+/// Keyboard-focusable bind/unbind controls with automation names.
 /// </summary>
 public sealed class AgentBackendBindingPanel : Panel
 {
     private readonly TextBlock _backendLabel;
     private readonly TextBlock _authStatusCaption;
+    private readonly TextBlock _capabilityCaption;
+    private readonly TextBlock _settingsCaption;
+    private readonly TextBlock _mutationErrorCaption;
+    private readonly TextBlock _acpRuntimeCaption;
+    private readonly Button _bindNativeButton;
+    private readonly Button _unbindButton;
+    private readonly Button _probeAcpButton;
+    private readonly Button _logoutButton;
+    private readonly StackPanel _actionsRow;
+    private readonly StackPanel _acpRow;
+
+    public event EventHandler? BindNativeHarnessRequested;
+
+    public event EventHandler? UnbindRequested;
+
+    public event EventHandler? ProbeAcpRequested;
+
+    public event EventHandler? LogoutRequested;
 
     public AgentBackendBindingPanel()
     {
         _backendLabel = TextStyles.Caption("Unbound");
         _backendLabel.VerticalAlignment = VerticalAlignment.Center;
+        AutomationProperties.SetName(_backendLabel, "Agent backend binding label");
 
         _authStatusCaption = TextStyles.Caption(string.Empty);
         _authStatusCaption.Foreground = Brushes.Gray;
         _authStatusCaption.VerticalAlignment = VerticalAlignment.Center;
+        AutomationProperties.SetName(_authStatusCaption, "Agent backend authentication status");
 
-        var row = new StackPanel
+        _capabilityCaption = TextStyles.Caption(string.Empty);
+        _capabilityCaption.Foreground = Brushes.Gray;
+        _capabilityCaption.VerticalAlignment = VerticalAlignment.Center;
+        AutomationProperties.SetName(_capabilityCaption, "Agent backend capability status");
+
+        _settingsCaption = TextStyles.Caption(string.Empty);
+        _settingsCaption.Foreground = Brushes.Gray;
+        _settingsCaption.VerticalAlignment = VerticalAlignment.Center;
+        AutomationProperties.SetName(_settingsCaption, "Agent backend settings guidance");
+
+        _mutationErrorCaption = TextStyles.Caption(string.Empty);
+        _mutationErrorCaption.Foreground = Brushes.IndianRed;
+        _mutationErrorCaption.VerticalAlignment = VerticalAlignment.Center;
+        _mutationErrorCaption.IsVisible = false;
+        AutomationProperties.SetName(_mutationErrorCaption, "Agent backend binding error");
+
+        _acpRuntimeCaption = TextStyles.Caption(string.Empty);
+        _acpRuntimeCaption.Foreground = Brushes.Gray;
+        _acpRuntimeCaption.VerticalAlignment = VerticalAlignment.Center;
+        _acpRuntimeCaption.IsVisible = false;
+        AutomationProperties.SetName(_acpRuntimeCaption, "ACP runtime identity");
+
+        _bindNativeButton = CreateActionButton(
+            "Bind Native Harness",
+            "Bind Native Harness backend");
+        _bindNativeButton.Click += (_, _) => BindNativeHarnessRequested?.Invoke(this, EventArgs.Empty);
+
+        _unbindButton = CreateActionButton(
+            "Unbind",
+            "Unbind agent backend");
+        _unbindButton.Click += (_, _) => UnbindRequested?.Invoke(this, EventArgs.Empty);
+
+        _probeAcpButton = CreateActionButton(
+            "Probe ACP",
+            "Probe ACP runtime configuration");
+        _probeAcpButton.Click += (_, _) => ProbeAcpRequested?.Invoke(this, EventArgs.Empty);
+        _probeAcpButton.IsVisible = false;
+
+        _logoutButton = CreateActionButton(
+            "Logout ACP",
+            "Logout ACP authentication");
+        _logoutButton.Click += (_, _) => LogoutRequested?.Invoke(this, EventArgs.Empty);
+        _logoutButton.IsVisible = false;
+
+        _actionsRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingSm,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                _bindNativeButton,
+                _unbindButton,
+                _probeAcpButton,
+                _logoutButton,
+            },
+        };
+
+        _acpRow = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = LayoutTokens.SpacingXs,
+            Children = { _acpRuntimeCaption },
+        };
+
+        var statusRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
@@ -38,13 +123,29 @@ public sealed class AgentBackendBindingPanel : Panel
             },
         };
 
+        var body = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = LayoutTokens.SpacingXs,
+            Children =
+            {
+                statusRow,
+                _capabilityCaption,
+                _settingsCaption,
+                _acpRow,
+                _actionsRow,
+                _mutationErrorCaption,
+            },
+        };
+
         var container = new Border
         {
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
-            Child = row,
+            Child = body,
         };
 
-        AutomationProperties.SetName(container, "Agent backend binding status");
+        AutomationProperties.SetName(container, "Agent backend binding panel");
+        Focusable = true;
         Children.Add(container);
     }
 
@@ -54,14 +155,90 @@ public sealed class AgentBackendBindingPanel : Panel
         set => IsVisible = value;
     }
 
+    /// <summary>
+    /// Compatibility projection used by status-only callers.
+    /// </summary>
     public void SetBindingProjection(
         string backendLabel,
         string authStatusCaption,
         bool isDisconnected)
     {
+        SetWorkflowProjection(
+            backendLabel,
+            authStatusCaption,
+            isDisconnected,
+            capabilityCaption: string.Empty,
+            settingsCaption: string.Empty,
+            mutationErrorCaption: null,
+            canBindNativeHarness: false,
+            canUnbind: false,
+            acpRuntimeCaption: null,
+            canProbeAcp: false,
+            canLogout: false);
+    }
+
+    public void SetWorkflowProjection(
+        string backendLabel,
+        string authStatusCaption,
+        bool isDisconnected,
+        string capabilityCaption,
+        string settingsCaption,
+        string? mutationErrorCaption,
+        bool canBindNativeHarness,
+        bool canUnbind,
+        string? acpRuntimeCaption = null,
+        bool canProbeAcp = false,
+        bool canLogout = false)
+    {
         _backendLabel.Text = backendLabel;
         _authStatusCaption.Text = authStatusCaption;
         _authStatusCaption.IsVisible = !string.IsNullOrEmpty(authStatusCaption);
         _authStatusCaption.Foreground = isDisconnected ? Brushes.IndianRed : Brushes.Gray;
+
+        _capabilityCaption.Text = capabilityCaption;
+        _capabilityCaption.IsVisible = !string.IsNullOrEmpty(capabilityCaption);
+
+        _settingsCaption.Text = settingsCaption;
+        _settingsCaption.IsVisible = !string.IsNullOrEmpty(settingsCaption);
+
+        _mutationErrorCaption.Text = mutationErrorCaption ?? string.Empty;
+        _mutationErrorCaption.IsVisible = !string.IsNullOrEmpty(mutationErrorCaption);
+
+        _bindNativeButton.IsEnabled = canBindNativeHarness;
+        _bindNativeButton.IsVisible = true;
+        _unbindButton.IsEnabled = canUnbind;
+        _unbindButton.IsVisible = true;
+
+        _acpRuntimeCaption.Text = acpRuntimeCaption ?? string.Empty;
+        _acpRuntimeCaption.IsVisible = !string.IsNullOrEmpty(acpRuntimeCaption);
+        _probeAcpButton.IsVisible = canProbeAcp;
+        _probeAcpButton.IsEnabled = canProbeAcp;
+        _logoutButton.IsVisible = canLogout;
+        _logoutButton.IsEnabled = canLogout;
+    }
+
+    /// <summary>
+    /// Test/automation hooks for focusable action controls.
+    /// </summary>
+    public Button BindNativeHarnessButton => _bindNativeButton;
+
+    public Button UnbindButton => _unbindButton;
+
+    public Button ProbeAcpButton => _probeAcpButton;
+
+    public Button LogoutButton => _logoutButton;
+
+    private static Button CreateActionButton(string content, string automationName)
+    {
+        var button = new Button
+        {
+            Content = TextStyles.Caption(content),
+            VerticalAlignment = VerticalAlignment.Center,
+            Focusable = true,
+            IsTabStop = true,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXs),
+        };
+        AutomationProperties.SetName(button, automationName);
+        return button;
     }
 }

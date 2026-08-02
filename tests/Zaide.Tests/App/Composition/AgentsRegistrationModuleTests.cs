@@ -482,7 +482,7 @@ public sealed class AgentsRegistrationModuleTests
             Regex.Matches(
                 moduleSource,
                 @"AddSingleton<IAgentActorBackendSelectionService,\s*AgentActorBackendSelectionService>\(\)"));
-        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<AgentBackendBindingPresenter>\(\)"));
+        Assert.Single(Regex.Matches(moduleSource, @"AddSingleton<AgentBackendBindingPresenter>\s*\("));
         Assert.Single(
             Regex.Matches(
                 moduleSource,

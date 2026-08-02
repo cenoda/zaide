@@ -348,18 +348,62 @@ public class TownhallView : Panel, IDisposable
                     _contextPolicySelector.SetSelectorEnabled(inputEnabled);
                 }));
 
+        void ApplyBackendBindingProjection()
+        {
+            if (_viewModel is null)
+            {
+                return;
+            }
+
+            _backendBindingPanel.IsPanelVisible = _viewModel.IsBackendBindingStatusVisible;
+            _backendBindingPanel.SetWorkflowProjection(
+                _viewModel.BackendBindingLabel,
+                _viewModel.BackendAuthStatusCaption,
+                _viewModel.IsBackendDisconnected,
+                _viewModel.BackendCapabilityCaption,
+                _viewModel.BackendSettingsCaption,
+                string.IsNullOrEmpty(_viewModel.BackendMutationErrorCaption)
+                    ? null
+                    : _viewModel.BackendMutationErrorCaption,
+                _viewModel.CanBindNativeHarness,
+                _viewModel.CanUnbindBackend,
+                string.IsNullOrEmpty(_viewModel.AcpRuntimeCaption)
+                    ? null
+                    : _viewModel.AcpRuntimeCaption,
+                _viewModel.CanProbeAcp,
+                _viewModel.CanLogoutAcp);
+        }
+
         _disposables.Add(
             _viewModel.WhenAnyValue(
                     x => x.IsBackendBindingStatusVisible,
                     x => x.BackendBindingLabel,
                     x => x.BackendAuthStatusCaption,
                     x => x.IsBackendDisconnected)
-                .Subscribe(tuple =>
-                {
-                    var (visible, backendLabel, authCaption, isDisconnected) = tuple;
-                    _backendBindingPanel.IsPanelVisible = visible;
-                    _backendBindingPanel.SetBindingProjection(backendLabel, authCaption, isDisconnected);
-                }));
+                .Subscribe(_ => ApplyBackendBindingProjection()));
+        _disposables.Add(
+            _viewModel.WhenAnyValue(
+                    x => x.BackendCapabilityCaption,
+                    x => x.BackendSettingsCaption,
+                    x => x.BackendMutationErrorCaption,
+                    x => x.CanBindNativeHarness)
+                .Subscribe(_ => ApplyBackendBindingProjection()));
+        _disposables.Add(
+            _viewModel.WhenAnyValue(
+                    x => x.CanUnbindBackend,
+                    x => x.AcpRuntimeCaption,
+                    x => x.CanProbeAcp,
+                    x => x.CanLogoutAcp)
+                .Subscribe(_ => ApplyBackendBindingProjection()));
+
+        _backendBindingPanel.BindNativeHarnessRequested += (_, _) =>
+        {
+            _viewModel?.BindNativeHarnessCommand.Execute().Subscribe();
+        };
+        _backendBindingPanel.UnbindRequested += (_, _) =>
+        {
+            _viewModel?.UnbindBackendCommand.Execute().Subscribe();
+        };
 
         _contextPolicySelector.PolicySelectionChanged += (_, index) =>
         {

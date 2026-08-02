@@ -39,7 +39,8 @@ internal static class TownhallServiceCollectionExtensions
                 (IConversationWorkspacePersistenceBridge)get(typeof(IConversationWorkspacePersistenceBridge))!,
                 (ConversationPersistenceService)get(typeof(ConversationPersistenceService))!,
                 (IAgentRouter?)get(typeof(IAgentRouter)),
-                (IAgentActorBackendSelectionService?)get(typeof(IAgentActorBackendSelectionService)));
+                (IAgentActorBackendSelectionService?)get(typeof(IAgentActorBackendSelectionService)),
+                (AgentBackendBindingPresenter?)get(typeof(AgentBackendBindingPresenter)));
         });
 
         return services;
