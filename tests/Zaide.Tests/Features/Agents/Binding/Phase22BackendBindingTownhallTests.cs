@@ -35,10 +35,12 @@ public sealed class Phase22BackendBindingTownhallTests
         Assert.Equal("Native Harness", harness.ViewModel.BackendBindingLabel);
         Assert.True(harness.ViewModel.CanUnbindBackend);
         Assert.False(harness.ViewModel.CanBindNativeHarness);
+        Assert.False(harness.ViewModel.ShowAcpConfig);
         Assert.Contains("Settings", harness.ViewModel.BackendSettingsCaption, StringComparison.Ordinal);
 
         harness.ViewModel.UnbindBackendCommand.Execute().Subscribe();
         Assert.True(harness.ViewModel.CanBindNativeHarness);
+        Assert.True(harness.ViewModel.ShowAcpConfig);
 
         harness.ViewModel.AcpExecutableDraft = "/usr/bin/fake-agent";
         harness.ViewModel.AcpArgumentsDraft = "healthy";
@@ -105,10 +107,53 @@ public sealed class Phase22BackendBindingTownhallTests
             canProbeAcp: false,
             canAuthenticateAcp: false,
             canLogout: false,
-            canBindAcp: true);
+            canBindAcp: true,
+            showAcpConfig: false);
 
         Assert.False(panel.BindNativeHarnessButton.IsEnabled);
         Assert.False(panel.UnbindButton.IsEnabled);
+        Assert.False(panel.IsAcpConfigRowVisible);
+    }
+
+    [Fact]
+    public void NativeBound_Projection_HidesAcpConfigRow()
+    {
+        using var harness = TownhallHarness.Create();
+        var actorId = ActorId.TownhallAgent;
+
+        Assert.True(harness.Presenter.TryBindNativeHarness(actorId).IsSuccess);
+        var projection = harness.Presenter.BuildProjection(actorId);
+        Assert.False(projection.ShowAcpConfig);
+        Assert.Equal(AgentBackendIds.NativeHarness, projection.BackendId);
+
+        var panel = new AgentBackendBindingPanel();
+        panel.SetWorkflowProjection(
+            backendLabel: projection.BackendLabel,
+            authStatusCaption: projection.AuthCaption,
+            isDisconnected: projection.IsDisconnected,
+            capabilityCaption: projection.CapabilityCaption,
+            settingsCaption: projection.SettingsCaption,
+            mutationErrorCaption: projection.MutationErrorCaption,
+            canBindNativeHarness: projection.CanBindNativeHarness,
+            canUnbind: projection.CanUnbind,
+            canProbeAcp: projection.CanProbeAcp,
+            canAuthenticateAcp: projection.CanAuthenticate,
+            canLogout: projection.CanLogout,
+            canBindAcp: true,
+            showAcpConfig: projection.ShowAcpConfig);
+
+        Assert.False(panel.IsAcpConfigRowVisible);
+
+        // Unbound and ACP-bound still show config.
+        Assert.True(harness.Presenter.TryUnbind(actorId).IsSuccess);
+        Assert.True(harness.Presenter.BuildProjection(actorId).ShowAcpConfig);
+
+        Assert.True(harness.Presenter.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+        Assert.True(harness.Presenter.BuildProjection(actorId).ShowAcpConfig);
     }
 
     [Fact]

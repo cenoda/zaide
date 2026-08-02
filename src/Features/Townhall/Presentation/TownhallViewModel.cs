@@ -62,6 +62,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private bool _canAuthenticateAcp;
     private bool _canLogoutAcp;
     private bool _canBindAcp;
+    private bool _showAcpConfig;
     private string _acpExecutableDraft = string.Empty;
     private string _acpArgumentsDraft = string.Empty;
     private string _acpExpectedNameDraft = string.Empty;
@@ -357,6 +358,16 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     {
         get => _canBindAcp;
         private set => this.RaiseAndSetIfChanged(ref _canBindAcp, value);
+    }
+
+    /// <summary>
+    /// ACP config inputs (executable/args/expected identity). Visible for unbound
+    /// configure and ACP reconfigure; hidden when Native Harness is active.
+    /// </summary>
+    public bool ShowAcpConfig
+    {
+        get => _showAcpConfig;
+        private set => this.RaiseAndSetIfChanged(ref _showAcpConfig, value);
     }
 
     public string AcpExecutableDraft
@@ -1396,6 +1407,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanAuthenticateAcp = false;
             CanLogoutAcp = false;
             CanBindAcp = false;
+            ShowAcpConfig = false;
             return;
         }
 
@@ -1417,6 +1429,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanAuthenticateAcp = false;
             CanLogoutAcp = false;
             CanBindAcp = false;
+            ShowAcpConfig = false;
             return;
         }
 
@@ -1438,6 +1451,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanAuthenticateAcp = projection.CanAuthenticate;
             CanLogoutAcp = projection.CanLogout;
             CanBindAcp = !projection.IsBound || projection.BackendId != AgentBackendIds.Acp;
+            ShowAcpConfig = projection.ShowAcpConfig;
             if (projection.IsBound && projection.BackendId == AgentBackendIds.Acp)
             {
                 if (!string.IsNullOrEmpty(projection.AcpExecutablePath))
@@ -1485,6 +1499,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         CanAuthenticateAcp = false;
         CanLogoutAcp = false;
         CanBindAcp = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.Acp;
+        ShowAcpConfig = !snapshot.IsBound || snapshot.BackendId == AgentBackendIds.Acp;
     }
 
     private static string FormatAuthStateCaption(AgentAuthenticationConnectionState authState) =>

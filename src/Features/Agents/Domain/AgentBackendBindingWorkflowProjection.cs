@@ -37,7 +37,8 @@ internal sealed class AgentBackendBindingWorkflowProjection
         bool canProbeAcp = false,
         bool canAuthenticate = false,
         bool canLogout = false,
-        string? acpRuntimeCaption = null)
+        string? acpRuntimeCaption = null,
+        bool showAcpConfig = false)
     {
         ActorId = actorId;
         IsBound = isBound;
@@ -66,6 +67,7 @@ internal sealed class AgentBackendBindingWorkflowProjection
         CanAuthenticate = canAuthenticate;
         CanLogout = canLogout;
         AcpRuntimeCaption = acpRuntimeCaption;
+        ShowAcpConfig = showAcpConfig;
     }
 
     public ActorId ActorId { get; }
@@ -119,6 +121,12 @@ internal sealed class AgentBackendBindingWorkflowProjection
     public bool CanLogout { get; }
 
     public string? AcpRuntimeCaption { get; }
+
+    /// <summary>
+    /// True when ACP config inputs should be visible (unbound configure path or
+    /// ACP-bound reconfigure). False when Native Harness is the active binding.
+    /// </summary>
+    public bool ShowAcpConfig { get; }
 
     public static string NativeSettingsCaption { get; } =
         "Configure base URL, model, and API key in Settings. Secrets are never entered in this panel.";

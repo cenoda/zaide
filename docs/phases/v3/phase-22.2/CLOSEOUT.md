@@ -36,6 +36,12 @@ reachable; terminal package outcomes remain later phases.
 
 Runner retained at `/tmp/zaide-a3-backend-binding/` for this closeout cycle.
 
+## Post-closeout polish
+
+Post-M4 audit polish (docs M1 status, logout capability signal, authenticate
+no local success stub, hide ACP config when Native is active) landed after
+package closeout; package 2 status is unchanged.
+
 ## Explicitly not done
 
 - Phase 22.3, 22.4, 22.5, V4, G5

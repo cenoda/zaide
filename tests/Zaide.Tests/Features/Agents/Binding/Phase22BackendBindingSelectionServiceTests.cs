@@ -63,7 +63,7 @@ public sealed class Phase22BackendBindingSelectionServiceTests
     [Fact]
     public async Task Update_ClearsAdvertisedAuthRuntimeCache()
     {
-        using var harness = SelectionHarness.Create();
+        using var harness = SelectionHarness.Create(withOnboardingStub: true);
         var actorId = ActorId.TownhallAgent;
         var runtime = new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>());
 
@@ -94,6 +94,25 @@ public sealed class Phase22BackendBindingSelectionServiceTests
         var snapshot = harness.Selection.GetSnapshot(actorId);
         Assert.Equal(AgentAuthenticationConnectionState.Disconnected, snapshot.AuthenticationState);
         Assert.DoesNotContain("Auth: oauth", snapshot.StatusCaption, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RequestAuthenticate_WithoutOnboarding_FailsClosed()
+    {
+        using var harness = SelectionHarness.Create(withOnboardingStub: false);
+        var actorId = ActorId.TownhallAgent;
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "1.0.0").IsSuccess);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Selection.RequestAuthenticateAsync(actorId, "oauth", CancellationToken.None));
+        Assert.Contains("onboarding connection service", ex.Message, StringComparison.OrdinalIgnoreCase);
+
+        var snapshot = harness.Selection.GetSnapshot(actorId);
+        Assert.NotEqual(AgentAuthenticationConnectionState.Authenticated, snapshot.AuthenticationState);
     }
 
     [Fact]
@@ -165,6 +184,45 @@ public sealed class Phase22BackendBindingSelectionServiceTests
         public bool HasActiveRun(ActorId actorId) => IsBusy;
     }
 
+    /// <summary>
+    /// Test double for selection-service authenticate tests. Marks runtime auth
+    /// via the store without a real ACP client.
+    /// </summary>
+    private sealed class StubOnboardingConnectionService : IAcpOnboardingConnectionService
+    {
+        private readonly IAgentActorBackendBindingStore _store;
+
+        public StubOnboardingConnectionService(IAgentActorBackendBindingStore store) =>
+            _store = store;
+
+        public Task<AcpOnboardingProbeResult> ProbeAsync(
+            ActorId actorId,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(AcpOnboardingProbeResult.Failed(actorId, "probe not used in selection stub"));
+
+        public Task<AcpOnboardingAuthResult> AuthenticateAsync(
+            ActorId actorId,
+            string methodId,
+            CancellationToken cancellationToken)
+        {
+            _store.SetRuntimeAuthentication(
+                actorId,
+                methodId,
+                AgentAuthenticationConnectionState.Authenticated);
+            return Task.FromResult(AcpOnboardingAuthResult.Succeeded(actorId, methodId));
+        }
+
+        public Task<AcpOnboardingLogoutResult> LogoutAsync(
+            ActorId actorId,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(AcpOnboardingLogoutResult.Failed(actorId, "logout not used in selection stub"));
+
+        public bool IsLogoutSupported(ActorId actorId) => false;
+
+        public IReadOnlyList<string> GetNegotiatedAuthMethodIds(ActorId actorId) =>
+            Array.Empty<string>();
+    }
+
     private sealed class SelectionHarness : IDisposable
     {
         private readonly string _directory;
@@ -183,7 +241,9 @@ public sealed class Phase22BackendBindingSelectionServiceTests
 
         public AgentActorBackendSelectionService Selection { get; }
 
-        public static SelectionHarness Create(IAgentActorActiveRunQuery? activeRunQuery = null)
+        public static SelectionHarness Create(
+            IAgentActorActiveRunQuery? activeRunQuery = null,
+            bool withOnboardingStub = false)
         {
             var directory = Path.Combine(
                 Path.GetTempPath(),
@@ -194,7 +254,18 @@ public sealed class Phase22BackendBindingSelectionServiceTests
                 Path.Combine(directory, "agent-backend-bindings.json.tmp"),
                 Path.Combine(directory, "agent-backend-bindings.json.lastknowngood"),
                 activeRunQuery);
-            var selection = new AgentActorBackendSelectionService(store);
+
+            AgentActorBackendSelectionService selection;
+            if (withOnboardingStub)
+            {
+                var onboarding = new StubOnboardingConnectionService(store);
+                selection = new AgentActorBackendSelectionService(store, () => onboarding);
+            }
+            else
+            {
+                selection = new AgentActorBackendSelectionService(store);
+            }
+
             return new SelectionHarness(directory, store, selection);
         }
 

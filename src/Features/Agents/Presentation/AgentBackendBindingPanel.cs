@@ -218,7 +218,8 @@ public sealed class AgentBackendBindingPanel : Panel
             canProbeAcp: false,
             canAuthenticateAcp: false,
             canLogout: false,
-            canBindAcp: false);
+            canBindAcp: false,
+            showAcpConfig: false);
     }
 
     public void SetWorkflowProjection(
@@ -234,7 +235,8 @@ public sealed class AgentBackendBindingPanel : Panel
         bool canProbeAcp = false,
         bool canAuthenticateAcp = false,
         bool canLogout = false,
-        bool canBindAcp = true)
+        bool canBindAcp = true,
+        bool showAcpConfig = true)
     {
         _backendLabel.Text = backendLabel;
         _authStatusCaption.Text = authStatusCaption;
@@ -259,7 +261,7 @@ public sealed class AgentBackendBindingPanel : Panel
 
         _acpRuntimeCaption.Text = acpRuntimeCaption ?? string.Empty;
         _acpRuntimeCaption.IsVisible = !string.IsNullOrEmpty(acpRuntimeCaption);
-        _acpConfigRow.IsVisible = true;
+        _acpConfigRow.IsVisible = showAcpConfig;
         _probeAcpButton.IsVisible = canProbeAcp;
         _probeAcpButton.IsEnabled = canProbeAcp;
         _authenticateAcpButton.IsVisible = canAuthenticateAcp;
@@ -267,6 +269,11 @@ public sealed class AgentBackendBindingPanel : Panel
         _logoutButton.IsVisible = canLogout;
         _logoutButton.IsEnabled = canLogout;
     }
+
+    /// <summary>
+    /// Test/automation hook for ACP config-row visibility.
+    /// </summary>
+    public bool IsAcpConfigRowVisible => _acpConfigRow.IsVisible;
 
     public string AcpExecutablePath
     {

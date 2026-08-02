@@ -373,7 +373,8 @@ public class TownhallView : Panel, IDisposable
                 _viewModel.CanProbeAcp,
                 _viewModel.CanAuthenticateAcp,
                 _viewModel.CanLogoutAcp,
-                _viewModel.CanBindAcp);
+                _viewModel.CanBindAcp,
+                _viewModel.ShowAcpConfig);
 
             // Push draft fields into the panel when the VM is the source of truth
             // (bound ACP identity). User edits flow back via request handlers.
@@ -422,7 +423,8 @@ public class TownhallView : Panel, IDisposable
         _disposables.Add(
             _viewModel.WhenAnyValue(
                     x => x.CanAuthenticateAcp,
-                    x => x.CanBindAcp)
+                    x => x.CanBindAcp,
+                    x => x.ShowAcpConfig)
                 .Subscribe(_ => ApplyBackendBindingProjection()));
 
         _backendBindingPanel.BindNativeHarnessRequested += (_, _) =>

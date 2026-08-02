@@ -75,11 +75,13 @@ status-only, and local `RequestAuthenticateAsync` does not call ACP
   auth state). Runtime auth remains in-memory only via
   `SetRuntimeAuthentication`.
 - [x] Focused M1 tests and composition/identity preservation gates.
-- [ ] Human M1 audit / acceptance (separate from this implementation commit).
+- [x] Human M1 audit / acceptance (PASS; nits fixed in M2).
 
-M1 is application + persistence + selection/store contract work only. It does
-**not** ship a user-facing Townhall configure workflow (M2/M3). Package 2 /
-`A1-AC-02` WORKS is **not** claimed.
+M1 delivered the durable schema-v1 store and selection/store contracts. The
+user-facing Townhall configure workflows shipped in M2/M3. Package 2 positive
+`A1-AC-02` **WORKS** (both backends) is claimed only via retained re-smoke
+evidence under [evidence/](./evidence/) and [CLOSEOUT.md](./CLOSEOUT.md) —
+not from this M1 block alone.
 
 ## Scope
 
@@ -108,7 +110,7 @@ capability differences.
 | Milestone | Outcome | Verification gate |
 |-----------|---------|-------------------|
 | M0 | Live reachability, ownership, persistence, secret, identity, backend-specific, and rollback contracts are verified; plan accepted | Read-only checklist + human acceptance |
-| M1 | A schema-v1 durable backend-neutral store with revisions, atomic bind/update/unbind, recovery, and reactive state supports truthful mutation outcomes | Focused binding store/service and persistence tests |
+| M1 | A schema-v1 durable backend-neutral store with revisions, atomic bind/update/unbind, recovery, and reactive state supports truthful mutation outcomes | Focused binding store/service and persistence tests — **done** |
 | M2 | Native Harness workflow is user-reachable and reports configured/available/usable state truthfully | Focused Native Harness UI/composition tests — **done** |
 | M3 | ACP workflow is user-reachable, including runtime identity probe, real `authenticate` bridge, capability-gated logout, and explicit failure behavior | Focused ACP UI/auth/composition tests — **done** |
 | M4 | Restart/revalidation, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial gates, isolated binding smoke — **done** |

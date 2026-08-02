@@ -116,6 +116,14 @@ dependent and must not start from this gate as "already done."
   with honest 22.3/22.4 residual ownership.
 - Closeout: [CLOSEOUT.md](./CLOSEOUT.md).
 
+## Post-closeout audit fixes
+
+- [x] F1–F4 post-M4 non-blocking audit findings addressed (docs drift, logout
+  capability gate via `agentCapabilities.auth.logout` with auth-methods
+  fallback, authenticate fails closed without onboarding bridge, ACP config
+  row hidden when Native Harness is active). Package 2 remains complete.
+- Next critical work remains **Phase 22.3** when separately authorized.
+
 ## Remaining (not Phase 22.2)
 
 - Phase 22.3: send/routing outcome polish, tools/permissions positive paths.

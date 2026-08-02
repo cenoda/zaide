@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Application;
@@ -168,9 +169,12 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
 
-            // Logout is capability-gated: only when the agent advertises auth methods
-            // (auth is part of the negotiated surface). Empty auth methods => no logout UI.
-            var logoutSupported = methodIds.Length > 0;
+            // Prefer explicit agentCapabilities.auth.logout when present on initialize;
+            // otherwise fall back to non-empty negotiated auth methods. Logout UI also
+            // requires a live post-probe connection (see IsLogoutSupported).
+            var logoutSupported = ResolveLogoutSupported(
+                negotiated.AgentCapabilities,
+                methodIds);
 
             if (_selectionService is AgentActorBackendSelectionService concrete)
             {
@@ -470,6 +474,52 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         }
 
         return redacted;
+    }
+
+    /// <summary>
+    /// ACP schema: <c>agentCapabilities.auth.logout</c> as an object (including
+    /// <c>{}</c>) advertises logout; null means not supported. When the property
+    /// is absent, fall back to non-empty negotiated auth methods.
+    /// </summary>
+    private static bool ResolveLogoutSupported(
+        AcpAgentCapabilities agentCapabilities,
+        IReadOnlyList<string> methodIds)
+    {
+        var explicitLogout = TryResolveExplicitLogoutAdvertisement(agentCapabilities);
+        if (explicitLogout.HasValue)
+        {
+            return explicitLogout.Value;
+        }
+
+        return methodIds.Count > 0;
+    }
+
+    private static bool? TryResolveExplicitLogoutAdvertisement(AcpAgentCapabilities agentCapabilities)
+    {
+        if (agentCapabilities.Auth is not { } auth
+            || auth.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return null;
+        }
+
+        if (auth.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (!auth.TryGetProperty("logout", out var logout))
+        {
+            // auth object present but logout omitted — no explicit signal.
+            return null;
+        }
+
+        if (logout.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return false;
+        }
+
+        // Schema: supplying {} (or an object) means the agent supports logout.
+        return logout.ValueKind == JsonValueKind.Object;
     }
 
     private sealed class RuntimeConnection

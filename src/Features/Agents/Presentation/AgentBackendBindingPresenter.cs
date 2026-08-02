@@ -92,6 +92,9 @@ internal sealed class AgentBackendBindingPresenter
         var canBindNative = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.NativeHarness;
         var canUnbind = snapshot.IsBound;
         var isAcpBound = snapshot.IsBound && snapshot.BackendId == AgentBackendIds.Acp;
+        // Show ACP config when unbound (bind path) or ACP-bound (reconfigure).
+        // Hide when Native Harness is the active binding to avoid clutter.
+        var showAcpConfig = !snapshot.IsBound || isAcpBound;
         var logoutSupported = isAcpBound
             && _onboarding?.IsLogoutSupported(actorId) == true
             && snapshot.AuthenticationState == AgentAuthenticationConnectionState.Authenticated;
@@ -126,7 +129,8 @@ internal sealed class AgentBackendBindingPresenter
                 && snapshot.AdvertisedAuthMethodIds.Count > 0
                 && snapshot.AuthenticationState != AgentAuthenticationConnectionState.Authenticated,
             canLogout: logoutSupported,
-            acpRuntimeCaption: acpRuntimeCaption);
+            acpRuntimeCaption: acpRuntimeCaption,
+            showAcpConfig: showAcpConfig);
     }
 
     /// <summary>

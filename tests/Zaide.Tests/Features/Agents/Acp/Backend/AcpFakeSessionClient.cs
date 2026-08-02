@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Contracts;
@@ -140,6 +141,12 @@ internal sealed class AcpFakeSessionScript
 
     public IReadOnlyList<AcpAuthMethod> AuthMethods { get; init; } = Array.Empty<AcpAuthMethod>();
 
+    /// <summary>
+    /// Optional <c>agentCapabilities.auth</c> wire fragment. When set, enables
+    /// explicit logout advertisement tests via <c>auth.logout</c>.
+    /// </summary>
+    public JsonElement? AgentAuthCapabilities { get; init; }
+
     public bool AuthenticateShouldFail { get; init; }
 
     public bool LogoutShouldFail { get; init; }
@@ -160,6 +167,7 @@ internal sealed class AcpFakeSessionScript
                 {
                     EmbeddedContext = false,
                 },
+                Auth = AgentAuthCapabilities,
             },
             AuthMethods,
             new AcpImplementationInfo

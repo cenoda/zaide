@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -109,6 +110,85 @@ public sealed class Phase22AcpAuthenticationBridgeTests
         Assert.Contains("not advertised", logout.Message!, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Logout_EmptyAuthMethods_NotSupported_EvenAfterProbe()
+    {
+        using var harness = BridgeHarness.Create(authMethods: Array.Empty<AcpAuthMethod>());
+        var actorId = ActorId.TownhallAgent;
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        var probe = await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
+        Assert.True(probe.IsSuccess, probe.Message);
+        Assert.Empty(probe.AuthMethodIds);
+        Assert.False(probe.LogoutSupported);
+        Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
+    [Fact]
+    public async Task Logout_AuthMethodsPresent_AfterSuccessfulProbe_CanBeOffered()
+    {
+        using var harness = BridgeHarness.Create();
+        var actorId = ActorId.TownhallAgent;
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
+
+        var probe = await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
+        Assert.True(probe.IsSuccess, probe.Message);
+        Assert.NotEmpty(probe.AuthMethodIds);
+        Assert.True(probe.LogoutSupported);
+        Assert.True(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
+    [Fact]
+    public async Task Logout_ExplicitAuthLogoutNull_OverridesAuthMethodFallback()
+    {
+        var authCaps = JsonDocument.Parse("""{"logout":null}""").RootElement.Clone();
+        using var harness = BridgeHarness.Create(
+            authMethods: new[] { new AcpAuthMethod { Id = "oauth", Name = "OAuth" } },
+            agentAuthCapabilities: authCaps);
+        var actorId = ActorId.TownhallAgent;
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        var probe = await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
+        Assert.True(probe.IsSuccess, probe.Message);
+        Assert.Contains("oauth", probe.AuthMethodIds);
+        Assert.False(probe.LogoutSupported);
+        Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
+    [Fact]
+    public async Task Logout_ExplicitAuthLogoutObject_AdvertisesSupport()
+    {
+        var authCaps = JsonDocument.Parse("""{"logout":{}}""").RootElement.Clone();
+        using var harness = BridgeHarness.Create(
+            authMethods: Array.Empty<AcpAuthMethod>(),
+            agentAuthCapabilities: authCaps);
+        var actorId = ActorId.TownhallAgent;
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        var probe = await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
+        Assert.True(probe.IsSuccess, probe.Message);
+        Assert.True(probe.LogoutSupported);
+        Assert.True(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
     private sealed class FixedWorkspaceAuthority : IWorkspaceActionAuthority
     {
         private readonly string _root;
@@ -168,7 +248,8 @@ public sealed class Phase22AcpAuthenticationBridgeTests
 
         public static BridgeHarness Create(
             bool authenticateShouldFail = false,
-            IReadOnlyList<AcpAuthMethod>? authMethods = null)
+            IReadOnlyList<AcpAuthMethod>? authMethods = null,
+            JsonElement? agentAuthCapabilities = null)
         {
             var directory = Path.Combine(
                 Path.GetTempPath(),
@@ -205,6 +286,7 @@ public sealed class Phase22AcpAuthenticationBridgeTests
                         AgentName = "acp-fake-agent",
                         AgentVersion = "phase-20-m3",
                         AuthMethods = methods,
+                        AgentAuthCapabilities = agentAuthCapabilities,
                         AuthenticateShouldFail = authenticateShouldFail,
                     });
                     return Task.FromResult<IAcpSessionClient>(clientHolder.LastClient);

@@ -277,26 +277,23 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             throw new InvalidOperationException("Authentication method is not advertised by the agent.");
         }
 
-        // Production path: real ACP authenticate bridge (onboarding connection service).
+        // Authenticate always requires the onboarding connection bridge. Production
+        // DI registers it; unit tests must inject a double rather than relying on a
+        // local rewrite that could silently claim protocol success.
         var onboarding = _onboardingResolver?.Invoke();
-        if (onboarding is not null)
+        if (onboarding is null)
         {
-            var result = await onboarding.AuthenticateAsync(actorId, methodId, cancellationToken)
-                .ConfigureAwait(false);
-            if (!result.IsSuccess)
-            {
-                throw new InvalidOperationException(
-                    result.Message ?? "ACP authenticate failed.");
-            }
-
-            return;
+            throw new InvalidOperationException(
+                "ACP authenticate requires the onboarding connection service.");
         }
 
-        // Unit-test harness path without onboarding: local runtime rewrite only.
-        _bindingStore.SetRuntimeAuthentication(
-            actorId,
-            methodId,
-            AgentAuthenticationConnectionState.Authenticated);
+        var result = await onboarding.AuthenticateAsync(actorId, methodId, cancellationToken)
+            .ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            throw new InvalidOperationException(
+                result.Message ?? "ACP authenticate failed.");
+        }
     }
 
     private void ClearAdvertisedAuthMethods(ActorId actorId)
