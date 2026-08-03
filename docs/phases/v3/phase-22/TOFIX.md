@@ -3,8 +3,9 @@
 ## Status
 
 **Phase 22 critical path in progress.** 22.1 complete. 22.2 complete with
-package-2 PASS restored. 22.3 and 22.4 still require separate authorization.
-G5 and V4 remain blocked.
+package-2 PASS restored against the live ACP baseline (`dfe2bf14`; intervening
+`AcpStdioProcessHost` lifecycle delta reviewed with no product defect). 22.3
+and 22.4 still require separate authorization. G5 and V4 remain blocked.
 
 ## Work Board
 
@@ -15,7 +16,8 @@ G5 and V4 remain blocked.
 - [x] Record G1–G5 and the A3 disposable-profile re-smoke contract.
 - [x] Complete Phase 22.1 (package 1) implementation and re-smoke.
 - [x] Complete Phase 22.2 (package 2) implementation, corrective closeout,
-  ACP `A1-AC-02` evidence refresh, and independent package re-audit.
+  ACP `A1-AC-02` live-baseline evidence refresh, and independent package
+  re-audit (including post-`d4a0f34d` lifecycle provenance restore).
 - [ ] Accept each remaining sub-phase M0 independently after live-seam
   verification (22.3, 22.4; 22.5 optional).
 - [ ] Grant implementation approval independently per accepted sub-phase.

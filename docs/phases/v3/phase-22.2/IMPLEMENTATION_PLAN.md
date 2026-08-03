@@ -2,16 +2,18 @@
 
 ## Status and Authorization
 
-**Phase 22.2 complete; package-2 PASS restored.** M0–M4 delivered durable store,
-Native Townhall workflow, M3 ACP probe/authenticate/logout bridge, and M4
-restart/A3 re-smoke closeout. A post-closeout full package-2 audit identified a
-blocking runtime-invalidation defect; corrective implementation through HEAD
-`d4a0f34d` closed it and residual epoch/cache TOCTOU gaps. Targeted ACP
-`A1-AC-02` evidence was refreshed (16/16 **WORKS** at `d4a0f34d`) and an
-independent package-2 re-audit passed. See [CLOSEOUT.md](./CLOSEOUT.md).
+**Phase 22.2 complete; package-2 PASS restored against the live ACP baseline.**
+M0–M4 delivered durable store, Native Townhall workflow, M3 ACP
+probe/authenticate/logout bridge, and M4 restart/A3 re-smoke closeout. A
+post-closeout full package-2 audit identified a blocking runtime-invalidation
+defect; corrective implementation through HEAD `d4a0f34d` closed it and residual
+epoch/cache TOCTOU gaps (historical package PASS head). Intervening
+`AcpStdioProcessHost` lifecycle hardening (`9c4bb94f`) was independently reviewed
+with no product defect; targeted ACP `A1-AC-02` evidence was re-smoked against
+live HEAD `dfe2bf14` (16/16 **WORKS**). See [CLOSEOUT.md](./CLOSEOUT.md).
 
-Phase 22.3–22.5, G5, and V4 remain unauthorized from this package and still
-require separate human decisions.
+Phase 22 critical path remains in progress. Phase 22.3–22.5, G5, and V4 remain
+unauthorized from this package and still require separate human decisions.
 
 ## A4 Ownership and Dependency
 

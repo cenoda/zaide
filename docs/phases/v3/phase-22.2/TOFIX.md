@@ -2,19 +2,24 @@
 
 ## Status
 
-**Phase 22.2 complete; package-2 PASS restored.** M0–M4 delivered the durable
-schema-v1 store, Native Harness and ACP Townhall workflows, restart gates, and
-out-of-tree A3 re-smoke. A subsequent full package-2 audit found a blocking ACP
-runtime-invalidation defect. Corrective implementation closed that defect and
-the residual epoch/cache TOCTOU gaps. Targeted ACP `A1-AC-02` evidence was
-refreshed against HEAD `d4a0f34d` and an independent package-2 re-audit passed.
+**Phase 22.2 complete; package-2 PASS restored against the live ACP baseline.**
+M0–M4 delivered the durable schema-v1 store, Native Harness and ACP Townhall
+workflows, restart gates, and out-of-tree A3 re-smoke. A subsequent full
+package-2 audit found a blocking ACP runtime-invalidation defect. Corrective
+implementation closed that defect and residual epoch/cache TOCTOU gaps.
+Historical package-2 evidence previously cited HEAD `d4a0f34d`; intervening
+commit `9c4bb94f` then hardened `AcpStdioProcessHost` process-exit cancellation
+before `dfe2bf14`. Independent lifecycle review of that delta found no product
+defect. Targeted ACP `A1-AC-02` evidence was re-smoked against live HEAD
+`dfe2bf14` and package-2 PASS is restored on that baseline.
 
 ### Phase and package status
 
 | Item | Status |
 |------|--------|
 | 22.1 Language intelligence / LSP | **Complete** (separate package-1 closeout) |
-| 22.2 User backend-binding workflow | **Package PASS restored** |
+| 22.2 User backend-binding workflow | **Package PASS restored** against live ACP baseline `dfe2bf14` |
+| Phase 22 critical path | **In progress** |
 | 22.3 Agent-path enablement | **Pending** — separate authorization required |
 | 22.4 Trace / memory / usage surfaces | **Pending** — separate authorization required |
 | G5 full affected re-smoke | **Blocked** — packages 3–7 and 22.3/22.4 still open |
@@ -24,9 +29,10 @@ refreshed against HEAD `d4a0f34d` and an independent package-2 re-audit passed.
 
 | Gate | Result |
 |------|--------|
-| Corrective commits through `d4a0f34d` (read-only review) | PASS — binding epoch, fingerprint, onboarding connection, advertised-method cache, authenticate/logout, disposal race |
+| Corrective commits through `d4a0f34d` (historical read-only review) | PASS — binding epoch, fingerprint, onboarding connection, advertised-method cache, authenticate/logout, disposal race |
+| Intervening ACP host lifecycle delta `d4a0f34d`…`9c4bb94f` (independent review) | PASS — process-exit cancellation, sticky terminal states, exit-over-timeout classification, dispose races; no product defect |
 | Retained A3 runner rebuild (producer unchanged) | PASS |
-| ACP `A1-AC-02` re-smoke (disposable HOME/XDG, production DI, Townhall controls, repo ACP fake) | **16/16 pass**, classification **WORKS**, RepoHead `d4a0f34d` |
+| ACP `A1-AC-02` re-smoke (disposable HOME/XDG, production DI, Townhall controls, repo ACP fake) | **16/16 pass**, classification **WORKS**, RepoHead `dfe2bf14` |
 | `dotnet build Zaide.slnx --no-incremental` | 0 warnings, 0 errors |
 | Phase22 binding filter | **71/71** passed |
 | Full suite fast (`dotnet test Zaide.slnx --no-build`) | **3849/3849** passed |
@@ -188,12 +194,17 @@ refreshed against HEAD `d4a0f34d` and an independent package-2 re-audit passed.
   architecture production source-file baselines updated to **866** total /
   **821** Features.
 - [x] Targeted ACP `A1-AC-02` evidence refresh against HEAD `d4a0f34d` and
-  independent package-2 re-audit. Package PASS restored. Evidence:
+  independent package-2 re-audit (historical PASS at that head).
+- [x] Live-baseline provenance restore: independent review of intervening
+  `AcpStdioProcessHost` lifecycle changes through `9c4bb94f`, retained A3
+  producer rebuild (unchanged), ACP `A1-AC-02` re-smoke against live HEAD
+  `dfe2bf14` — **16/16 WORKS**. Evidence:
   [evidence/A1-AC-02-acp.json](./evidence/A1-AC-02-acp.json).
 
 ## Independent package-2 re-audit (PASS)
 
-Read-only review of corrective commits `e8ccd1c0`…`d4a0f34d` against live code:
+Historical read-only review of corrective commits `e8ccd1c0`…`d4a0f34d` against
+live code at that head:
 
 1. **Binding epoch** — durable bind/update/unbind bumps a monotonic per-actor
    epoch; probe/auth publication validates the capture-time pair.
@@ -214,8 +225,25 @@ Read-only review of corrective commits `e8ccd1c0`…`d4a0f34d` against live code
 No corrective-only finding set remains open for package 2. Dependent A3 rows
 stay **WORKS_WITH_FRICTION** under 22.3/22.4 ownership and are not upgraded here.
 
+### Live-baseline provenance restore (2026-08-03)
+
+Independent review of production ACP host changes from `d4a0f34d` through
+`9c4bb94f` concentrated on process-exit cancellation linked into op timeouts,
+sticky `ProcessExited`/`Disposed` lifecycle ordering, initialize/operation
+failure classification that prefers process-exit over timeout, and dispose/
+event-handler races on `_processExitCts`. Interaction with
+`AcpOnboardingConnectionService` probe/auth paths remains fail-closed earlier
+on child exit. No product defect was found. ACP `A1-AC-02` was re-smoked against
+live HEAD `dfe2bf14abec719bf3774aa2538d4ee911f4f7d0` with production
+`Program.ConfigureServices`, shipped Townhall binding controls, disposable
+HOME/XDG/workspace roots, and the repository ACP fake agent: **16/16**,
+classification **WORKS**, producer source unchanged.
+
 ## Remaining (not Phase 22.2)
 
-- Phase 22.3: send/routing outcome polish, tools/permissions positive paths.
-- Phase 22.4: context/trace/memory/usage surfaces.
-- Phase 22.5 / V4 / G5: not authorized from this package.
+- Phase 22.3: send/routing outcome polish, tools/permissions positive paths
+  (pending separate authorization).
+- Phase 22.4: context/trace/memory/usage surfaces (pending separate
+  authorization).
+- Phase 22.5 / V4 / G5: not authorized from this package; G5 and V4 remain
+  blocked.

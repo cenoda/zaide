@@ -9,7 +9,7 @@ global across versions so historical references stay unambiguous.
 |---------|-------|--------|
 | [`v1/`](v1/) | Original roadmap, Phase 0 through Phase 7.4 | Complete |
 | [`v2/`](v2/) | IDE Core Upgrade, Phase 8 through Phase 13 | **Complete** (2026-07-16) — Phase 8–12 feature phases closed; Phase 13 Release Hardening closed with explicit limitations ([M5 evidence](v2/phase-13/M5_RELEASE_CLOSEOUT_EVIDENCE.md)) |
-| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 through Phase 22 | Phase 14–21 implementation sequence **technically closed** (2026-07-29); [Phase 22](v3/phase-22/IMPLEMENTATION_PLAN.md) is post-closeout corrective planning only, with implementation and product readiness not authorized |
+| [`v3/`](v3/) | AI-Native Orchestration, Phase 14 through Phase 22 | Phase 14–21 implementation sequence **technically closed** (2026-07-29); [Phase 22](v3/phase-22/IMPLEMENTATION_PLAN.md) critical path **in progress** (22.1 complete; 22.2 package-2 PASS restored against live ACP baseline; 22.3/22.4 pending separate authorization; G5 and V4 blocked; product readiness not accepted) |
 
 Roadmap V2 is complete. Its Phase 8–13 plans remain the historical
 implementation record under [`v2/`](v2/). The
@@ -18,7 +18,7 @@ now owns Phase 22 as a V3 post-closeout product-reality corrective program.
 Product readiness is not accepted. V4 or successor-roadmap planning remains
 blocked until A4 corrective packages 1–7 complete and the full affected A3
 matrix passes re-smoke; that gate permits reconsideration, not automatic
-planning. Phase 22 implementation is not authorized by its planning documents.
+planning. Phase 22 critical path is in progress under separately authorized sub-phases (22.1 complete; 22.2 package-2 PASS restored against the live ACP baseline); remaining sub-phases and G5 still require separate authorization and are not auto-started by planning documents.
 Refactors 6.1–6.3, 7, and 8 are complete and closed. Phase 14 lives at
 [`v3/phase-14/IMPLEMENTATION_PLAN.md`](v3/phase-14/IMPLEMENTATION_PLAN.md)
 with closeout evidence in
@@ -50,14 +50,15 @@ publication record `6b197a8b`); **M3 backend contract is complete and published*
 (`2d90604991dd9b87cb6e22a2c8c9a7b771504de6`, publication-record correction
 `04831f1c`); **M4 action mediation is complete and published** (`63880c53c2317a4e4d85ade2088c96764c510b6f`); **M5 identity binding and production composition is complete and published** (`84469cea40c554a9c306fff056985a5abec0dec4`, publication-record correction `64e672fe75e3b263282dbd6a295663fab574cfd8`); **M6 adversarial closeout is complete and published** (`test(phase-20): close adversarial ACP verification`). **Phase 20 M0–M6 accepted** (`docs(phase-20): accept final closeout`). External candidate smoke remains not executed (separate authorization not provided). Phase 21
 M0–M7 are complete, published, and accepted; **M6 memory influence and integrated management is complete and published** (`928a17c801f664bd43896d10cff2cde2ed968934`, publication-record correction `85af80d3f89fa25288f5282654da6267bdba9e3a`); **M7 adversarial and release closeout is complete and published** (`4ec4f31febfb963e5373d72b749519c788d319cf`, publication-record correction `e0ca36b3f70e2319d317d70874f10c3006ac582a`; final closeout `docs(phase-21): accept final closeout`). External candidate/provider smoke remains not executed (separate authorization not provided). Phase 22 planning is indexed at
+External candidate/provider smoke remains not executed (separate authorization not provided). Phase 22 is indexed at
 [`v3/phase-22/IMPLEMENTATION_PLAN.md`](v3/phase-22/IMPLEMENTATION_PLAN.md), with
-sub-phase plans for [22.1](v3/phase-22.1/IMPLEMENTATION_PLAN.md),
-[22.2](v3/phase-22.2/IMPLEMENTATION_PLAN.md),
+sub-phase plans for [22.1](v3/phase-22.1/IMPLEMENTATION_PLAN.md) (**complete**),
+[22.2](v3/phase-22.2/IMPLEMENTATION_PLAN.md) (**package-2 PASS restored** against
+the live ACP baseline),
 [22.3](v3/phase-22.3/IMPLEMENTATION_PLAN.md),
 [22.4](v3/phase-22.4/IMPLEMENTATION_PLAN.md), and optional
-[22.5](v3/phase-22.5/IMPLEMENTATION_PLAN.md). All remain planning-only and
-unimplemented pending separate M0 acceptance and explicit implementation
-approval.
+[22.5](v3/phase-22.5/IMPLEMENTATION_PLAN.md). 22.3–22.5 remain pending separate
+M0 acceptance and explicit implementation approval; G5 and V4 remain blocked.
 See
 [`v3/phase-19/TOFIX.md`](v3/phase-19/TOFIX.md),
 [`v3/phase-20/TOFIX.md`](v3/phase-20/TOFIX.md),

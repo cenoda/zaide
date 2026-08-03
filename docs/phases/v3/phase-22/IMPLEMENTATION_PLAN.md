@@ -3,10 +3,12 @@
 ## Status and Authorization
 
 Phase 22 implementation is **in progress**. Sub-phase 22.1 is complete. Sub-phase
-22.2 is complete with package-2 PASS restored after corrective ACP runtime-
-invalidation work, targeted `A1-AC-02` evidence refresh at HEAD `d4a0f34d`, and
-independent re-audit. 22.3 and 22.4 remain pending separate authorization. No
-sub-phase authorizes 22.5, G5, or V4 from this document alone.
+22.2 is complete with package-2 PASS restored against the live ACP baseline after
+corrective ACP runtime-invalidation work, independent review of intervening
+`AcpStdioProcessHost` lifecycle hardening through `9c4bb94f`, targeted `A1-AC-02`
+evidence re-smoke at live HEAD `dfe2bf14` (16/16 **WORKS**), and independent
+re-audit. 22.3 and 22.4 remain pending separate authorization. No sub-phase
+authorizes 22.5, G5, or V4 from this document alone.
 
 Phase 22 is part of Roadmap V3 as a post-closeout corrective program. The
 Phase 21 technical closeout remains a historical fact. It is not product-
