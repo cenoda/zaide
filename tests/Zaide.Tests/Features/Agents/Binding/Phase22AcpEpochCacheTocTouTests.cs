@@ -27,14 +27,19 @@ public sealed class Phase22AcpEpochCacheTocTouTests
     [Fact]
     public async Task UnbindRebindSameFingerprintDuringProbe_DoesNotAttachPreMutationClient()
     {
-        var publicationStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var releasePublication = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Pause inside InitializeAsync — after atomic capture/launch, before
+        // post-initialize fingerprint validation — so an exact unbind/rebind
+        // during initialize is observed by the probe-start snapshot. A
+        // post-initialize recapture implementation would incorrectly accept
+        // the replacement binding and attach the pre-mutation client.
+        var initializeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseInitialize = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         using var harness = EpochTocHarness.Create(
-            probePublicationDelayAsync: async ct =>
+            initializeDelayAsync: async ct =>
             {
-                publicationStarted.TrySetResult();
-                await releasePublication.Task.WaitAsync(ct).ConfigureAwait(false);
+                initializeStarted.TrySetResult();
+                await releaseInitialize.Task.WaitAsync(ct).ConfigureAwait(false);
             });
         var actorId = ActorId.TownhallAgent;
 
@@ -50,12 +55,10 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             expectedVersion).IsSuccess);
 
         var probeTask = harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
-        await publicationStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await initializeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        // Exact unbind/rebind with the same durable fields and the same
-        // reset revision. The epoch must advance (unbind clears it; rebind
-        // re-allocates it), and the in-flight probe must invalidate the
-        // pre-mutation client.
+        // Client has been launched and is paused inside InitializeAsync.
+        // Exact unbind/rebind with identical durable fields and reset revision 1.
         Assert.True(harness.Selection.TryUnbind(actorId, expectedRevision: 1).IsSuccess);
         var rebind = harness.Selection.TryBindAcpRuntime(
             actorId,
@@ -64,7 +67,7 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             expectedVersion);
         Assert.True(rebind.IsSuccess);
 
-        releasePublication.TrySetResult();
+        releaseInitialize.TrySetResult();
         var probe = await probeTask;
         Assert.False(probe.IsSuccess);
         Assert.Contains("changed", probe.Message!, StringComparison.OrdinalIgnoreCase);
@@ -161,7 +164,25 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             oldMethods);
         Assert.Equal(oldMethods, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // Update the binding to revision 2 with a different executable.
+        // Pause stale publication after it validates the old fingerprint/epoch
+        // and before the cache write. While paused: mutate, complete binding-
+        // change invalidation, publish replacement methods, then release.
+        var staleValidated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseStaleWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Selection.AdvertisedMethodRecordBetweenValidateAndWriteForTest = () =>
+        {
+            staleValidated.TrySetResult();
+            releaseStaleWrite.Task.GetAwaiter().GetResult();
+        };
+
+        var stalePublishTask = Task.Run(() =>
+            harness.Selection.RecordAdvertisedAuthMethodsIfFingerprintMatches(
+                actorId,
+                oldFingerprint,
+                oldEpoch,
+                new[] { "stale-method" }));
+        await staleValidated.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
         Assert.True(harness.Selection.TryUpdateAcpRuntime(
             actorId,
             new AcpRuntimeIdentity("/usr/bin/fake-agent-b", Array.Empty<string>()),
@@ -170,9 +191,10 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             expectedRevision: 1).IsSuccess);
         Assert.Empty(harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // Publish a valid cache for the new binding.
         Assert.True(harness.Store.TryCaptureAcpBindingFingerprint(actorId, out var newFingerprint, out var newEpoch));
         string[] newMethods = new[] { "new-method" };
+        // Replacement publication must not use the race seam.
+        harness.Selection.AdvertisedMethodRecordBetweenValidateAndWriteForTest = null;
         harness.Selection.RecordAdvertisedAuthMethodsIfFingerprintMatches(
             actorId,
             newFingerprint,
@@ -180,15 +202,10 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             newMethods);
         Assert.Equal(newMethods, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // Now have the stale probe attempt to overwrite the newer entry
-        // using the old fingerprint+epoch. The validation must fail and
-        // the newer entry must remain intact.
-        harness.Selection.RecordAdvertisedAuthMethodsIfFingerprintMatches(
-            actorId,
-            oldFingerprint,
-            oldEpoch,
-            new[] { "stale-method" });
+        releaseStaleWrite.TrySetResult();
+        await stalePublishTask.WaitAsync(TimeSpan.FromSeconds(5));
 
+        // Stale publication must not overwrite or suppress the replacement cache.
         Assert.Equal(newMethods, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
     }
 
@@ -207,8 +224,31 @@ public sealed class Phase22AcpEpochCacheTocTouTests
         // Establish a valid cache entry on the original binding.
         Assert.True((await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None)).IsSuccess);
         Assert.True(harness.Store.TryCaptureAcpBindingFingerprint(actorId, out var oldFingerprint, out var oldEpoch));
+        harness.Selection.RecordAdvertisedAuthMethodsIfFingerprintMatches(
+            actorId,
+            oldFingerprint,
+            oldEpoch,
+            new[] { "old-method" });
+        Assert.Equal(new[] { "old-method" }, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // Update the binding to a new executable (revision 2).
+        // Pause stale cleanup after it identifies/validates the old entry and
+        // before removal. While paused: mutate/rebind, publish replacement
+        // cache, then release.
+        var staleMatched = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseStaleRemove = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Selection.AdvertisedMethodClearBetweenMatchAndRemoveForTest = () =>
+        {
+            staleMatched.TrySetResult();
+            releaseStaleRemove.Task.GetAwaiter().GetResult();
+        };
+
+        var staleClearTask = Task.Run(() =>
+            harness.Selection.ClearAdvertisedAuthMethodsIfFingerprintMatches(
+                actorId,
+                oldFingerprint,
+                oldEpoch));
+        await staleMatched.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
         Assert.True(harness.Selection.TryUpdateAcpRuntime(
             actorId,
             new AcpRuntimeIdentity("/usr/bin/fake-agent-b", Array.Empty<string>()),
@@ -216,7 +256,6 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             "phase-22.2-epoch-toc",
             expectedRevision: 1).IsSuccess);
 
-        // Publish a valid cache for the new binding.
         Assert.True(harness.Store.TryCaptureAcpBindingFingerprint(actorId, out var newFingerprint, out var newEpoch));
         harness.Selection.RecordAdvertisedAuthMethodsIfFingerprintMatches(
             actorId,
@@ -225,15 +264,14 @@ public sealed class Phase22AcpEpochCacheTocTouTests
             new[] { "new-method" });
         Assert.Equal(new[] { "new-method" }, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // A stale clear (using the old fingerprint+epoch) must not remove
-        // the newer entry.
-        harness.Selection.ClearAdvertisedAuthMethodsIfFingerprintMatches(
-            actorId,
-            oldFingerprint,
-            oldEpoch);
+        releaseStaleRemove.TrySetResult();
+        await staleClearTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Stale cleanup must not remove the replacement cache.
         Assert.Equal(new[] { "new-method" }, harness.Selection.GetAdvertisedAuthMethodIds(actorId));
 
-        // A matching clear removes the entry.
+        // A matching clear still removes the current entry.
+        harness.Selection.AdvertisedMethodClearBetweenMatchAndRemoveForTest = null;
         harness.Selection.ClearAdvertisedAuthMethodsIfFingerprintMatches(
             actorId,
             newFingerprint,
@@ -345,6 +383,7 @@ public sealed class Phase22AcpEpochCacheTocTouTests
         public List<AcpFakeSessionClient> AllClients { get; }
 
         public static EpochTocHarness Create(
+            Func<CancellationToken, Task>? initializeDelayAsync = null,
             Func<CancellationToken, Task>? probePublicationDelayAsync = null,
             Func<CancellationToken, Task>? invalidMethodDelayAsync = null)
         {
@@ -381,7 +420,10 @@ public sealed class Phase22AcpEpochCacheTocTouTests
                         AgentName = "acp-fake-agent",
                         AgentVersion = "phase-22.2-epoch-toc",
                         AuthMethods = methods,
-                    });
+                    })
+                    {
+                        InitializeDelayAsync = initializeDelayAsync,
+                    };
                     allClients.Add(client);
                     return Task.FromResult<IAcpSessionClient>(client);
                 });

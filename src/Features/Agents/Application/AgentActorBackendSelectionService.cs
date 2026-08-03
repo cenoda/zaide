@@ -30,6 +30,24 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
     /// </summary>
     internal Func<CancellationToken, Task>? InvalidMethodPublicationDelayForTestAsync;
 
+    /// <summary>
+    /// Test seam: invoked after the caller's fingerprint/epoch has been
+    /// validated for advertised-method publication, but before the cache write.
+    /// The selection lock is released for the duration of the hook so concurrent
+    /// mutation and replacement publication can interleave deterministically.
+    /// Production leaves this null and keeps validate+write atomic.
+    /// </summary>
+    internal Action? AdvertisedMethodRecordBetweenValidateAndWriteForTest;
+
+    /// <summary>
+    /// Test seam: invoked after a matching advertised-method cache entry has
+    /// been identified for conditional clear, but before removal. The selection
+    /// lock is released for the duration of the hook so concurrent rebind and
+    /// replacement publication can interleave deterministically. Production
+    /// leaves this null and keeps identify+remove atomic.
+    /// </summary>
+    internal Action? AdvertisedMethodClearBetweenMatchAndRemoveForTest;
+
     public AgentActorBackendSelectionService(IAgentActorBackendBindingStore bindingStore)
         : this(bindingStore, onboardingResolver: null)
     {
@@ -326,6 +344,29 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
                 return;
             }
 
+            // Deterministic race seam: drop the selection lock so concurrent
+            // mutation / replacement publication can interleave after this
+            // validation and before the cache write, then re-validate before
+            // publishing. Production (null hook) keeps validate+write atomic
+            // under a single lock acquisition.
+            if (AdvertisedMethodRecordBetweenValidateAndWriteForTest is not null)
+            {
+                Monitor.Exit(_sync);
+                try
+                {
+                    AdvertisedMethodRecordBetweenValidateAndWriteForTest();
+                }
+                finally
+                {
+                    Monitor.Enter(_sync);
+                }
+
+                if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
+                {
+                    return;
+                }
+            }
+
             _advertisedAuthMethods[actorId] = new AdvertisedAuthMethodCache(
                 fingerprint,
                 epoch,
@@ -357,6 +398,15 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
                 out var advertisedFingerprint,
                 out var advertisedEpoch,
                 out var advertised))
+        {
+            throw new InvalidOperationException(
+                "ACP authentication is unavailable because no methods were advertised.");
+        }
+
+        // Fail closed on a zero-length advertised list before the invalid-method
+        // branch: do not call onboarding authenticate and do not rewrite runtime
+        // authentication to Failed or Authenticated.
+        if (advertised.Count == 0)
         {
             throw new InvalidOperationException(
                 "ACP authentication is unavailable because no methods were advertised.");
@@ -440,6 +490,31 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             if (existing.Epoch != epoch || !existing.Fingerprint.Equals(fingerprint))
             {
                 return;
+            }
+
+            // Deterministic race seam: drop the selection lock so concurrent
+            // rebind / replacement publication can interleave after the match
+            // is identified and before removal, then re-check the stored entry
+            // before clearing. Production (null hook) keeps match+remove
+            // atomic under a single lock acquisition.
+            if (AdvertisedMethodClearBetweenMatchAndRemoveForTest is not null)
+            {
+                Monitor.Exit(_sync);
+                try
+                {
+                    AdvertisedMethodClearBetweenMatchAndRemoveForTest();
+                }
+                finally
+                {
+                    Monitor.Enter(_sync);
+                }
+
+                if (!_advertisedAuthMethods.TryGetValue(actorId, out existing)
+                    || existing.Epoch != epoch
+                    || !existing.Fingerprint.Equals(fingerprint))
+                {
+                    return;
+                }
             }
 
             _advertisedAuthMethods.Remove(actorId);

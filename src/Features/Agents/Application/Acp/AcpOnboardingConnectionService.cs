@@ -103,21 +103,10 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         ObjectDisposedException.ThrowIf(_disposed, this);
         await AwaitTrackedDisposalsAsync().ConfigureAwait(false);
 
-        if (!_bindingStore.TryGetBinding(actorId, out var binding)
-            || binding.BackendId != AgentBackendIds.Acp
-            || binding.AcpRuntime is null)
-        {
-            return AcpOnboardingProbeResult.Failed(
-                actorId,
-                "ACP probe requires a durable ACP binding.");
-        }
-
-        // Atomically capture the probe-start fingerprint and epoch before
-        // launching the client. The pair is locked for the lifetime of the
-        // probe: any later bind/update/unbind that bumps the epoch or rewrites
-        // fingerprint fields must invalidate this in-flight probe, including
-        // exact unbind/rebind cycles that reset the revision to 1 with the same
-        // durable fields.
+        // Single-lock probe-start snapshot: fingerprint, epoch, executable,
+        // arguments, and expected name/version. Launch, validation, runtime
+        // mutation, advertised-method publication, and connection attachment
+        // all use this pair only — never a later independently read binding.
         if (!_bindingStore.TryCaptureAcpBindingFingerprint(
                 actorId,
                 out var identityAtProbe,
@@ -127,6 +116,13 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 actorId,
                 "ACP probe requires a durable ACP binding.");
         }
+
+        // Derive launch runtime exclusively from the captured fingerprint so
+        // executable path and arguments cannot drift from the probe-start
+        // identity under concurrent bind/update/unbind.
+        var runtime = new AcpRuntimeIdentity(
+            identityAtProbe.ExecutablePath,
+            identityAtProbe.Arguments);
 
         if (!AcpWorkspaceWorkingDirectory.TryResolve(_workspaceAuthority, out var workspaceRoot))
         {
@@ -140,7 +136,6 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "No valid workspace is available for ACP configuration.");
         }
 
-        var runtime = binding.AcpRuntime;
         // Production process launch requires the executable on disk. Test client
         // factories may bind synthetic paths without creating a real binary.
         if (_clientFactory is null && !File.Exists(runtime.ExecutablePath))

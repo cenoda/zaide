@@ -9,12 +9,26 @@ tests address that defect; targeted ACP `A1-AC-02` evidence refresh and
 independent package re-audit remain pending before package-level PASS is
 restored.
 
-A follow-up corrective pass also closes the remaining ACP epoch/cache TOCTOU
-gaps: probe-start fingerprint+epoch preservation across exact unbind/rebind,
-conditional invalid-method failure, advertised-method cache lost-update
-races, conditional cache invalidation, and genuine fingerprint snapshots.
-The package-level `A1-AC-02` evidence refresh and independent re-audit
-remain pending.
+A follow-up corrective pass closed remaining ACP epoch/cache TOCTOU gaps, then
+a second corrective-only pass finished the residual defects: one atomic
+probe-start snapshot for launch (derive runtime exclusively from the captured
+fingerprint; no independently read binding on the launch path), empty
+advertised-method fail-closed before the invalid-method branch, deterministic
+concurrency tests (initialize pause; record/clear race seams), and architecture
+source-file baselines 866/821.
+
+### Corrective verification (green)
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx` | 0 warnings, 0 errors |
+| Phase22 binding filter (serial) | **71/71** passed |
+| Full suite fast (`dotnet test Zaide.slnx --no-build`) | **3849/3849** passed |
+| Full suite serial (`slow.runsettings`) | **3849/3849** passed |
+| `git diff --check` | clean |
+
+Package-level PASS is **not** restored. Evidence refresh, independent
+re-audit, push, and Phase 22.3+ remain pending.
 
 22.3 and 22.4 remain dependent and must not start from this gate as "already
 done."
@@ -48,6 +62,9 @@ done."
   advertised-method cache lost-update races, conditional cache
   invalidation, genuine fingerprint snapshots); focused regression tests
   (`Phase22AcpEpochCacheTocTouTests`).
+- [x] Corrective-only: atomic probe-start snapshot for launch; empty-method
+  fail-closed before invalid-method mutation; deterministic initialize/
+  record/clear race tests; architecture source-file baselines 866/821.
 - [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
   re-audit (package PASS not restored).
 - Next critical work remains **Phase 22.3** when separately authorized.
@@ -163,8 +180,16 @@ done."
   fingerprint+epoch; defensive argument snapshots in `AcpRuntimeIdentity`
   and `AcpRuntimeBindingFingerprint`); focused regression tests
   (`Phase22AcpEpochCacheTocTouTests`).
+- [x] Corrective-only residual finish: single atomic probe-start snapshot
+  (launch runtime derived only from captured fingerprint; no independent
+  `TryGetBinding` on the launch path); empty advertised-method list rejected
+  before the invalid-method Failed mutation; deterministic concurrency tests
+  via `InitializeDelayAsync` and selection-lock race seams for record/clear;
+  architecture production source-file baselines updated to **866** total /
+  **821** Features. Verification green: build clean; Phase22 filter 71/71;
+  full suite 3849/3849 (fast and serial).
 - [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
-  re-audit (package PASS not restored).
+  re-audit (package PASS not restored). Push and Phase 22.3+ remain pending.
 - Next critical work remains **Phase 22.3** when separately authorized.
 
 ## Remaining (not Phase 22.2)
