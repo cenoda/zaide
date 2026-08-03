@@ -14,6 +14,7 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
     private readonly IAcpChildProcess _process;
     private readonly AcpProtocolSession _session;
     private readonly AcpBoundedStderrReader _stderrReader = new();
+    private readonly CancellationTokenSource _processExitCts = new();
     private readonly object _stateGate = new();
     private AcpProcessLifecycleState _state = AcpProcessLifecycleState.Starting;
     private bool _disposed;
@@ -23,6 +24,12 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
         _process = process ?? throw new ArgumentNullException(nameof(process));
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _process.Exited += OnProcessExited;
+        // Process may exit before EnableRaisingEvents delivers Exited (or already
+        // exited before the handler was attached). Observe that immediately.
+        if (_process.HasExited)
+        {
+            OnProcessExited(_process, EventArgs.Empty);
+        }
     }
 
     public int? ProcessId => _process.ProcessId;
@@ -149,7 +156,10 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
 
         using var timeoutCts = new CancellationTokenSource();
         timeoutCts.CancelAfter(timeout);
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            timeoutCts.Token,
+            _processExitCts.Token);
 
         try
         {
@@ -161,15 +171,17 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
                 AcpProcessLifecycleFailureKind.Cancellation,
                 "ACP operation was cancelled.");
         }
+        catch (OperationCanceledException) when (IsProcessExitObserved())
+        {
+            // Prefer process-exit over timeout/other linked cancellation so an
+            // exited child fails closed immediately instead of waiting the full
+            // operation budget (e.g. InitializeTimeout).
+            throw CreateLifecycleException(
+                AcpProcessLifecycleFailureKind.ProcessExit,
+                "ACP child process exited before the operation completed.");
+        }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
-            if (_process.HasExited)
-            {
-                throw CreateLifecycleException(
-                    AcpProcessLifecycleFailureKind.ProcessExit,
-                    "ACP child process exited before the operation completed.");
-            }
-
             throw CreateLifecycleException(
                 AcpProcessLifecycleFailureKind.Timeout,
                 "ACP operation timed out.");
@@ -186,6 +198,19 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
                 AcpProcessLifecycleFailureKind.ProtocolFailure,
                 "ACP protocol operation failed.",
                 ex);
+        }
+    }
+
+    private bool IsProcessExitObserved()
+    {
+        if (_process.HasExited || _processExitCts.IsCancellationRequested)
+        {
+            return true;
+        }
+
+        lock (_stateGate)
+        {
+            return _state is AcpProcessLifecycleState.ProcessExited;
         }
     }
 
@@ -207,12 +232,34 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
     private void OnProcessExited(object? sender, EventArgs e)
     {
         SetState(AcpProcessLifecycleState.ProcessExited);
+        try
+        {
+            _processExitCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Dispose already tore down the exit signal; ignore.
+        }
     }
 
     private void SetState(AcpProcessLifecycleState state)
     {
         lock (_stateGate)
         {
+            // Terminal states must not regress: a child that exits during
+            // StartAsync can race the Running transition, and Dispose always
+            // ends in Disposed.
+            if (_state is AcpProcessLifecycleState.Disposed)
+            {
+                return;
+            }
+
+            if (_state is AcpProcessLifecycleState.ProcessExited
+                && state is not AcpProcessLifecycleState.Disposed)
+            {
+                return;
+            }
+
             _state = state;
         }
     }
@@ -240,8 +287,17 @@ internal sealed class AcpStdioProcessHost : IAsyncDisposable
         SetState(AcpProcessLifecycleState.Disposed);
 
         _process.Exited -= OnProcessExited;
+        try
+        {
+            _processExitCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
         await _stderrReader.DisposeAsync().ConfigureAwait(false);
         await _session.DisposeAsync().ConfigureAwait(false);
         await _process.DisposeAsync().ConfigureAwait(false);
+        _processExitCts.Dispose();
     }
 }

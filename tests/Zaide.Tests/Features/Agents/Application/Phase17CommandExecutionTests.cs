@@ -360,13 +360,16 @@ public sealed class Phase17CommandExecutionTests : IDisposable
     [Fact]
     public async Task Broker_ConcurrentCommandRequests_RejectSecond()
     {
-        var executable = CreateExecutable("slow.sh", "sleep 2");
+        var executable = CreateExecutable("ok.sh", "printf 'ok\\n'");
         var holdEntered = new ManualResetEventSlim(false);
+        var releaseHold = new ManualResetEventSlim(false);
         var broker = CreateBroker();
         broker.TestProcessingHold = () =>
         {
             holdEntered.Set();
-            Thread.Sleep(TimeSpan.FromSeconds(2));
+            // Stay in the processing gate until the second request is asserted;
+            // avoid fixed multi-second sleeps that dominate suite wall time.
+            Assert.True(releaseHold.Wait(TimeSpan.FromSeconds(5)));
         };
         var payload = new AgentExecuteCommandActionPayload(
             executable,
@@ -376,6 +379,7 @@ public sealed class Phase17CommandExecutionTests : IDisposable
         var firstTask = Task.Run(() => broker.RequestAsync(payload, null, CancellationToken.None).AsTask());
         Assert.True(holdEntered.Wait(TimeSpan.FromSeconds(5)));
         var second = await broker.RequestAsync(payload, "second", CancellationToken.None);
+        releaseHold.Set();
         var first = await firstTask;
 
         Assert.Equal(AgentActionResultKind.Denied, second.ResultKind);

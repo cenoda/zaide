@@ -60,7 +60,9 @@ public sealed class Phase16SandboxExecutorTests
             var result = await Phase16BubblewrapLauncher.LaunchAsync(new Phase16SandboxLaunchRequest
             {
                 ExecutablePath = "/bin/sleep",
-                Arguments = ["30"],
+                // Long enough that the 500ms wall timeout fires first; short enough
+                // that a failed tree-kill cannot pin the suite for tens of seconds.
+                Arguments = ["8"],
                 AllowedEnvironment = new Dictionary<string, string>(StringComparer.Ordinal),
                 WorkingDirectory = workspace,
                 WritableRootPaths = [workspace],
@@ -97,11 +99,15 @@ public sealed class Phase16SandboxExecutorTests
                 new Phase16SandboxLaunchRequest
                 {
                     ExecutablePath = "/bin/sleep",
-                    Arguments = ["30"],
+                    // Long enough to prove cancel fires first; short enough that a
+                    // failed kill path cannot dominate serial suite wall time.
+                    Arguments = ["5"],
                     AllowedEnvironment = new Dictionary<string, string>(StringComparer.Ordinal),
                     WorkingDirectory = workspace,
                     WritableRootPaths = [workspace],
                     TrialMarker = marker,
+                    // Safety net if cancellation signal races process start.
+                    WallTimeout = TimeSpan.FromSeconds(2),
                     CancellationToken = cts.Token,
                 },
                 cts.Token);

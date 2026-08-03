@@ -402,9 +402,11 @@ public sealed class Phase18DisclosureEventTests
     [Fact]
     public async Task ContextDisclosed_NoEventForRejectedRun()
     {
-        // Arrange - create a backend with delayed completion to allow rejection scenario
+        // Arrange - gate the first run so the second can be rejected while in-flight,
+        // without a multi-second fixed delay that dominates suite wall time.
         var backend = new FakeAgentBackend(AgentBackendIds.LegacyOpenAiCompatible);
-        backend.SetDelayedCompletion(TimeSpan.FromSeconds(1), "delayed response");
+        var firstGate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        backend.SetGatedCompletion(firstGate, "delayed response");
         var eventStream = new AgentEventStream();
 
         var sessionService = new AgentSessionService(
@@ -421,7 +423,7 @@ public sealed class Phase18DisclosureEventTests
         firstCapture.Subscribe(eventStream.Events);
         secondCapture.Subscribe(eventStream.Events);
 
-        // Act - start first run, then immediately try second run which should be rejected
+        // Act - start first run, wait until backend execution starts, then reject second.
         var firstSendTask = sessionService.SendAsync(
             conversationId,
             ActorId.HumanUser,
@@ -431,8 +433,7 @@ public sealed class Phase18DisclosureEventTests
             "first message",
             CancellationToken.None);
 
-        // Wait a bit for the first run to be admitted
-        await Task.Delay(50);
+        await backend.ExecutionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         var secondSendTask = sessionService.SendAsync(
             conversationId,
@@ -442,6 +443,8 @@ public sealed class Phase18DisclosureEventTests
             secondMessageEntryId,
             "second message",
             CancellationToken.None);
+
+        firstGate.SetResult("delayed response");
 
         // Wait for both to complete
         var firstResult = await firstSendTask;

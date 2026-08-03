@@ -55,7 +55,10 @@ public sealed class Phase20TransportLifecycleTests
             launcher,
             default);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        // Bound the wait tightly: malformed stdout must not hang unbounded.
+        // 500ms is enough for initialize write + non-response, without adding
+        // multi-second noise to the full suite.
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
         var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => host.InitializeAsync(cts.Token));
 

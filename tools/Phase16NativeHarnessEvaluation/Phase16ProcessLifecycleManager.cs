@@ -7,6 +7,13 @@ public static class Phase16ProcessLifecycleManager
 {
     private static readonly TimeSpan GracePeriod = TimeSpan.FromMilliseconds(250);
 
+    /// <summary>
+    /// Upper bound after a forced tree kill. Without this, a sandbox child that
+    /// ignores SIGKILL delivery races (or a hung bwrap) can pin the testhost for
+    /// the full remaining sleep duration (historically 30s in cancellation proofs).
+    /// </summary>
+    private static readonly TimeSpan ForcedExitWaitTimeout = TimeSpan.FromSeconds(2);
+
     public static async Task<Phase16SandboxLaunchResult> RunAsync(
         ProcessStartInfo startInfo,
         Phase16SandboxLaunchRequest request,
@@ -55,19 +62,36 @@ public static class Phase16ProcessLifecycleManager
         var cancelled = false;
         try
         {
-            await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
-            AddLifecycleEvent($"process_exited exit_code={process.ExitCode}");
-        }
-        catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
-        {
-            cancelled = cancellationToken.IsCancellationRequested;
-            timedOut = !cancelled && request.WallTimeout is not null;
-            if (!cancelled)
+            // Prefer WhenAny over WaitForExitAsync(token) alone: under load, some
+            // hosts have delayed token delivery to Process.WaitForExitAsync, which
+            // previously let cancel/wall proofs run out the full sleep duration.
+            var exitTask = process.WaitForExitAsync();
+            var cancelTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCts.Token);
+            var completed = await Task.WhenAny(exitTask, cancelTask).ConfigureAwait(false);
+            if (completed == exitTask)
             {
-                AddLifecycleEvent("wall_timeout_reached");
+                await exitTask.ConfigureAwait(false);
+                AddLifecycleEvent($"process_exited exit_code={process.ExitCode}");
             }
+            else
+            {
+                // Observe cancel/timeout path (cancelTask faulted with OCE).
+                try
+                {
+                    await cancelTask.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
+                {
+                    cancelled = cancellationToken.IsCancellationRequested;
+                    timedOut = !cancelled && request.WallTimeout is not null;
+                    if (!cancelled)
+                    {
+                        AddLifecycleEvent("wall_timeout_reached");
+                    }
 
-            await TerminateProcessTreeAsync(process, AddLifecycleEvent).ConfigureAwait(false);
+                    await TerminateProcessTreeAsync(process, AddLifecycleEvent).ConfigureAwait(false);
+                }
+            }
         }
         finally
         {
@@ -155,7 +179,16 @@ public static class Phase16ProcessLifecycleManager
             process.Kill(entireProcessTree: true);
             addLifecycleEvent("forced_tree_kill");
 
-            await process.WaitForExitAsync().ConfigureAwait(false);
+            try
+            {
+                using var forcedWaitCts = new CancellationTokenSource(ForcedExitWaitTimeout);
+                await process.WaitForExitAsync(forcedWaitCts.Token).ConfigureAwait(false);
+                addLifecycleEvent("forced_termination_observed");
+            }
+            catch (OperationCanceledException)
+            {
+                addLifecycleEvent("forced_wait_timeout");
+            }
         }
     }
 

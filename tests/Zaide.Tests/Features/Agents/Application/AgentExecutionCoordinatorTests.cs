@@ -332,8 +332,9 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
     public async Task SendAsync_OneInFlight_SamePanel_SecondIsNoOp()
     {
         var (host, panel, store) = CreateHostWithPanel();
-        // Use a slow handler that blocks to ensure concurrent call is dropped
-        var handler = new BlockingHandler(TimeSpan.FromMilliseconds(500));
+        // Gate the first request open until the concurrent no-op is issued.
+        var hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new BlockingHandler(hold.Task);
         var httpClient = new HttpClient(handler);
         var (settings, secrets) = CreateSettingsAndSecrets(new AgentExecutionOptions
         {
@@ -344,10 +345,18 @@ public sealed class AgentExecutionCoordinatorTests : IDisposable
         var service = new AgentExecutionService(httpClient, settings, secrets);
         var coordinator = AgentExecutionTestSupport.CreateCoordinator(host, service, store);
 
-        // Start first send (will block for 500ms)
+        // Start first send (blocked on hold), then drop the concurrent send.
         var task1 = coordinator.SendAsync(panel.PanelId, "Hello");
-        // Start second send immediately (should be dropped by one-in-flight)
+        var busyDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (!panel.IsBusy && DateTime.UtcNow < busyDeadline)
+        {
+            await Task.Yield();
+        }
+
+        Assert.True(panel.IsBusy, "first send never became in-flight");
+        // Start second send while first is still held (should be dropped by one-in-flight)
         var task2 = coordinator.SendAsync(panel.PanelId, "World");
+        hold.SetResult();
 
         await Task.WhenAll(task1, task2);
 
@@ -743,12 +752,34 @@ internal sealed class FaultHandler : HttpMessageHandler
 /// </summary>
 internal sealed class BlockingHandler : HttpMessageHandler
 {
-    private readonly TimeSpan _delay;
-    public BlockingHandler(TimeSpan delay) { _delay = delay; }
+    private readonly TimeSpan? _delay;
+    private readonly Task? _hold;
+
+    public BlockingHandler(TimeSpan delay)
+    {
+        _delay = delay;
+    }
+
+    /// <summary>
+    /// Blocks until <paramref name="hold"/> completes instead of sleeping a fixed delay.
+    /// Prefer this when the test only needs an in-flight window, not wall-clock duration.
+    /// </summary>
+    public BlockingHandler(Task hold)
+    {
+        _hold = hold ?? throw new ArgumentNullException(nameof(hold));
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
-        await Task.Delay(_delay, ct);
+        if (_hold is not null)
+        {
+            await _hold.WaitAsync(ct).ConfigureAwait(false);
+        }
+        else if (_delay is { } delay)
+        {
+            await Task.Delay(delay, ct).ConfigureAwait(false);
+        }
+
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(JsonSerializer.Serialize(new

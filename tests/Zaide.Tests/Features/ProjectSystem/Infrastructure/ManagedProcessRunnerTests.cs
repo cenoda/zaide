@@ -129,7 +129,7 @@ public sealed class ManagedProcessRunnerTests
         var first = runner.RunAsync(
             new ManagedProcessStartRequest(
                 "/bin/sleep",
-                "5",
+                "120",
                 Environment.CurrentDirectory,
                 Generation: 6));
 
@@ -143,6 +143,8 @@ public sealed class ManagedProcessRunnerTests
                     Environment.CurrentDirectory,
                     Generation: 7)));
 
+        // Kill the long-lived first process instead of waiting out its sleep.
+        runner.Dispose();
         await first;
     }
 

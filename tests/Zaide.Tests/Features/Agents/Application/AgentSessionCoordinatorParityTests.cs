@@ -582,7 +582,10 @@ public sealed class AgentSessionCoordinatorParityTests
         var sendA = Task.Run(async () => await coordinator.SendAsync(panelA.PanelId, "alpha"));
         await aCallbackEntered.Task;
 
-        backend.SetDelayedCompletion(TimeSpan.FromSeconds(5), "beta");
+        // Gate B instead of a multi-second delay so the busy-drain assertion
+        // is deterministic without inflating suite wall time.
+        var gateB = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        backend.SetGatedCompletion(gateB, "beta");
         var sendB = Task.Run(async () => await coordinator.SendAsync(panelB.PanelId, "beta"));
         await WaitForRunningAsync(session, panelB.ConversationId);
 
@@ -595,6 +598,7 @@ public sealed class AgentSessionCoordinatorParityTests
 
         releaseA.SetResult();
         gateA.SetResult("alpha");
+        gateB.SetResult("beta");
 
         await Task.WhenAll(sendA, sendB);
 

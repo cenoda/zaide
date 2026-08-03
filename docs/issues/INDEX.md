@@ -13,6 +13,7 @@
 | 009 | Production DI test contaminates persisted conversation drafts | BUG | high | open |
 | 010 | C# editor scroll jank from IndentGuideRenderer paint cost | BUG | high | closed |
 | 011 | C# editor slow-motion when code font is not monospaced | BUG | high | closed |
+| 012 | Full test suite wall time dominated by fixed timeouts and missed process-exit cancel | BUG | high | closed |
 
 ---
 
