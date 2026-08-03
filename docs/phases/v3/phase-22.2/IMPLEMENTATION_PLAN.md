@@ -189,7 +189,7 @@ Re-smoke follows the umbrella
   [CLOSEOUT.md](./CLOSEOUT.md).
 - [x] 22.2 completion is explicitly recorded before 22.3 or 22.4 begins.
   Package-2 PASS restored after corrective re-audit. A1-AC-02 WORKS both
-  backends (ACP evidence refreshed at `d4a0f34d`); dependent rows remain
+  backends (ACP evidence refreshed at live HEAD `dfe2bf14`); dependent rows remain
   WORKS_WITH_FRICTION for 22.3/22.4-owned residuals. G5 and V4 remain blocked.
 
 ## Rollback Note
