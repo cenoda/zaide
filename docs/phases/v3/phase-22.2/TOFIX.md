@@ -2,11 +2,15 @@
 
 ## Status
 
-**Phase 22.2 complete for A4 package 2 scope.** M0–M4 delivered: durable
-schema-v1 store, Native and ACP Townhall workflows, real ACP authenticate
-bridge, capability-gated logout, restart/revalidation, accessibility gates,
-and out-of-tree A3 re-smoke with retained evidence. 22.3 and 22.4 remain
-dependent and must not start from this gate as "already done."
+**Phase 22.2 M0–M4 delivered.** A subsequent full package-2 audit found a
+blocking ACP runtime-invalidation defect (cached onboarding connections
+surviving bind/update/unbind). Corrective implementation and focused regression
+tests address that defect; targeted ACP `A1-AC-02` evidence refresh and
+independent package re-audit remain pending before package-level PASS is
+restored.
+
+22.3 and 22.4 remain dependent and must not start from this gate as "already
+done."
 
 ## Work Board
 
@@ -121,7 +125,13 @@ dependent and must not start from this gate as "already done."
 - [x] F1–F4 post-M4 non-blocking audit findings addressed (docs drift, logout
   capability gate via `agentCapabilities.auth.logout` with auth-methods
   fallback, authenticate fails closed without onboarding bridge, ACP config
-  row hidden when Native Harness is active). Package 2 remains complete.
+  row hidden when Native Harness is active).
+- [x] Corrective: ACP onboarding connection invalidation on durable
+  bind/update/unbind; binding-revision/identity validation before
+  authenticate/logout; fail-closed empty advertised-method authenticate;
+  focused regression tests (`Phase22AcpRuntimeInvalidationTests`).
+- [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
+  re-audit (package PASS not restored).
 - Next critical work remains **Phase 22.3** when separately authorized.
 
 ## Remaining (not Phase 22.2)

@@ -107,6 +107,8 @@ public sealed class Phase22BackendBindingSelectionServiceTests
             "acp-fake-agent",
             "1.0.0").IsSuccess);
 
+        harness.Selection.RecordAdvertisedAuthMethods(actorId, new[] { "oauth" });
+
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             harness.Selection.RequestAuthenticateAsync(actorId, "oauth", CancellationToken.None));
         Assert.Contains("onboarding connection service", ex.Message, StringComparison.OrdinalIgnoreCase);

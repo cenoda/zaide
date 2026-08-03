@@ -79,12 +79,17 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         return Task.CompletedTask;
     }
 
-    public Task AuthenticateAsync(string methodId, CancellationToken cancellationToken)
+    public async Task AuthenticateAsync(string methodId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(methodId))
         {
             throw new ArgumentException("Auth method id is required.", nameof(methodId));
+        }
+
+        if (AuthenticateDelayAsync is not null)
+        {
+            await AuthenticateDelayAsync(cancellationToken).ConfigureAwait(false);
         }
 
         AuthenticateCallCount++;
@@ -93,8 +98,6 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         {
             throw new AcpProtocolException("ACP authenticate failed: simulated failure.");
         }
-
-        return Task.CompletedTask;
     }
 
     public Task LogoutAsync(CancellationToken cancellationToken)
@@ -115,6 +118,13 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
 
     public int LogoutCallCount { get; private set; }
 
+    public int DisposeCallCount { get; private set; }
+
+    /// <summary>
+    /// Optional delay invoked before the simulated authenticate completes.
+    /// </summary>
+    public Func<CancellationToken, Task>? AuthenticateDelayAsync { get; init; }
+
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities)
@@ -124,7 +134,11 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
             ?? throw new ArgumentNullException(nameof(advertisedCapabilities));
     }
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        DisposeCallCount++;
+        return ValueTask.CompletedTask;
+    }
 }
 
 internal sealed class AcpFakeSessionScript

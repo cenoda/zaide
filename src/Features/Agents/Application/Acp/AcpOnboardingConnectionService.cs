@@ -28,6 +28,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
     private readonly IAgentActorActiveRunQuery? _activeRunQuery;
     private readonly Func<AcpRuntimeIdentity, string, CancellationToken, Task<IAcpSessionClient>>? _clientFactory;
     private readonly Dictionary<ActorId, RuntimeConnection> _connections = new();
+    private readonly List<IAcpSessionClient> _pendingDisposals = new();
     private readonly object _sync = new();
     private bool _disposed;
 
@@ -85,6 +86,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         {
             throw new ArgumentException("Process launcher or client factory is required.");
         }
+
+        _bindingStore.BindingChanged += OnBindingChanged;
     }
 
     public async Task<AcpOnboardingProbeResult> ProbeAsync(
@@ -92,6 +95,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
 
         if (!_bindingStore.TryGetBinding(actorId, out var binding)
             || binding.BackendId != AgentBackendIds.Acp
@@ -189,13 +193,15 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 selectedAuthMethodId: null,
                 authState);
 
+            var bindingIdentity = ConnectionBindingIdentity.FromBinding(binding);
             lock (_sync)
             {
                 _connections[actorId] = new RuntimeConnection(
                     client,
                     methodIds,
                     logoutSupported,
-                    workspaceRoot);
+                    workspaceRoot,
+                    bindingIdentity);
             }
 
             client = null; // ownership transferred to cache
@@ -210,7 +216,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         {
             if (client is not null)
             {
-                await client.DisposeAsync().ConfigureAwait(false);
+                await DisposeClientSafelyAsync(client).ConfigureAwait(false);
             }
 
             var redacted = Redact(ex.Message);
@@ -225,6 +231,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
 
         if (string.IsNullOrWhiteSpace(methodId))
         {
@@ -241,36 +248,10 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 methodId);
         }
 
-        if (!_bindingStore.TryGetBinding(actorId, out var binding)
-            || binding.BackendId != AgentBackendIds.Acp)
-        {
-            return AcpOnboardingAuthResult.Failed(
-                actorId,
-                "ACP authentication requires an explicit ACP binding.",
-                methodId);
-        }
-
         RuntimeConnection? connection;
         lock (_sync)
         {
             _connections.TryGetValue(actorId, out connection);
-        }
-
-        if (connection is null)
-        {
-            var probe = await ProbeAsync(actorId, cancellationToken).ConfigureAwait(false);
-            if (!probe.IsSuccess)
-            {
-                return AcpOnboardingAuthResult.Failed(
-                    actorId,
-                    probe.Message ?? "ACP configuration probe failed before authenticate.",
-                    methodId);
-            }
-
-            lock (_sync)
-            {
-                _connections.TryGetValue(actorId, out connection);
-            }
         }
 
         if (connection is null)
@@ -281,8 +262,26 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 methodId);
         }
 
-        if (connection.AuthMethodIds.Count > 0
-            && !connection.AuthMethodIds.Any(m => string.Equals(m, methodId, StringComparison.Ordinal)))
+        if (!_bindingStore.TryGetBinding(actorId, out var binding)
+            || binding.BackendId != AgentBackendIds.Acp
+            || !connection.BindingIdentity.Matches(binding))
+        {
+            await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
+            return AcpOnboardingAuthResult.Failed(
+                actorId,
+                "ACP binding no longer matches the cached runtime connection.",
+                methodId);
+        }
+
+        if (connection.AuthMethodIds.Count == 0)
+        {
+            return AcpOnboardingAuthResult.Failed(
+                actorId,
+                "ACP authentication is unavailable because no methods were advertised.",
+                methodId);
+        }
+
+        if (!connection.AuthMethodIds.Any(m => string.Equals(m, methodId, StringComparison.Ordinal)))
         {
             _bindingStore.SetRuntimeAuthentication(
                 actorId,
@@ -294,11 +293,23 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 methodId);
         }
 
+        var identityAtStart = connection.BindingIdentity;
+
         try
         {
             // Real protocol authenticate — not a local-only rewrite.
             await connection.Client.AuthenticateAsync(methodId, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (!_bindingStore.TryGetBinding(actorId, out binding)
+                || !identityAtStart.Matches(binding))
+            {
+                await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
+                return AcpOnboardingAuthResult.Failed(
+                    actorId,
+                    "ACP binding changed during authenticate.",
+                    methodId);
+            }
 
             _bindingStore.SetRuntimeAuthentication(
                 actorId,
@@ -322,6 +333,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
 
         if (_activeRunQuery?.HasActiveRun(actorId) == true)
         {
@@ -350,6 +362,16 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "ACP runtime connection is unavailable for logout.");
         }
 
+        if (!_bindingStore.TryGetBinding(actorId, out var binding)
+            || binding.BackendId != AgentBackendIds.Acp
+            || !connection.BindingIdentity.Matches(binding))
+        {
+            await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
+            return AcpOnboardingLogoutResult.Failed(
+                actorId,
+                "ACP binding no longer matches the cached runtime connection.");
+        }
+
         try
         {
             await connection.Client.LogoutAsync(cancellationToken).ConfigureAwait(false);
@@ -358,12 +380,12 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         {
             // Still clear local runtime state; durable binding remains.
             ClearRuntime(actorId);
-            await DisposeConnectionAsync(actorId).ConfigureAwait(false);
+            await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
             return AcpOnboardingLogoutResult.Failed(actorId, Redact(ex.Message));
         }
 
         ClearRuntime(actorId);
-        await DisposeConnectionAsync(actorId).ConfigureAwait(false);
+        await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
         return AcpOnboardingLogoutResult.Succeeded(actorId);
     }
 
@@ -386,6 +408,12 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         }
     }
 
+    /// <summary>
+    /// Test seam: drains the pending disposal queue without performing onboarding work.
+    /// </summary>
+    internal Task FlushPendingDisposalsForTestAsync() =>
+        FlushPendingDisposalsAsync();
+
     public void Dispose()
     {
         DisposeAsync().AsTask().GetAwaiter().GetResult();
@@ -399,6 +427,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         }
 
         _disposed = true;
+        _bindingStore.BindingChanged -= OnBindingChanged;
+
         ActorId[] actors;
         lock (_sync)
         {
@@ -408,6 +438,55 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         foreach (var actorId in actors)
         {
             await DisposeConnectionAsync(actorId).ConfigureAwait(false);
+        }
+
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
+    }
+
+    private void OnBindingChanged(AgentActorBackendBindingChangedEvent change)
+    {
+        if (change.Kind is AgentActorBackendBindingMutationKind.Bind
+            or AgentActorBackendBindingMutationKind.Update
+            or AgentActorBackendBindingMutationKind.Unbind)
+        {
+            DetachConnection(change.ActorId);
+        }
+    }
+
+    private void DetachConnection(ActorId actorId)
+    {
+        lock (_sync)
+        {
+            if (_connections.Remove(actorId, out var connection))
+            {
+                _pendingDisposals.Add(connection.Client);
+            }
+        }
+    }
+
+    private async Task InvalidateConnectionAsync(ActorId actorId)
+    {
+        DetachConnection(actorId);
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
+    }
+
+    private async Task FlushPendingDisposalsAsync()
+    {
+        while (true)
+        {
+            IAcpSessionClient? client;
+            lock (_sync)
+            {
+                if (_pendingDisposals.Count == 0)
+                {
+                    return;
+                }
+
+                client = _pendingDisposals[0];
+                _pendingDisposals.RemoveAt(0);
+            }
+
+            await DisposeClientSafelyAsync(client).ConfigureAwait(false);
         }
     }
 
@@ -446,16 +525,20 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
     private async Task DisposeConnectionAsync(ActorId actorId)
     {
-        RuntimeConnection? connection;
-        lock (_sync)
-        {
-            if (!_connections.Remove(actorId, out connection))
-            {
-                return;
-            }
-        }
+        DetachConnection(actorId);
+        await FlushPendingDisposalsAsync().ConfigureAwait(false);
+    }
 
-        await connection.Client.DisposeAsync().ConfigureAwait(false);
+    private static async Task DisposeClientSafelyAsync(IAcpSessionClient client)
+    {
+        try
+        {
+            await client.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _ = ex;
+        }
     }
 
     private static string Redact(string message)
@@ -522,18 +605,67 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         return logout.ValueKind == JsonValueKind.Object;
     }
 
+    private sealed class ConnectionBindingIdentity
+    {
+        public ConnectionBindingIdentity(
+            long revision,
+            AcpRuntimeIdentity runtimeIdentity,
+            string expectedAgentName,
+            string expectedAgentVersion)
+        {
+            Revision = revision;
+            ExecutablePath = runtimeIdentity.ExecutablePath;
+            Arguments = runtimeIdentity.Arguments;
+            ExpectedAgentName = expectedAgentName;
+            ExpectedAgentVersion = expectedAgentVersion;
+        }
+
+        public long Revision { get; }
+
+        public string ExecutablePath { get; }
+
+        public IReadOnlyList<string> Arguments { get; }
+
+        public string ExpectedAgentName { get; }
+
+        public string ExpectedAgentVersion { get; }
+
+        public bool Matches(AgentActorBackendBinding binding)
+        {
+            if (binding.BackendId != AgentBackendIds.Acp || binding.AcpRuntime is null)
+            {
+                return false;
+            }
+
+            return binding.Revision == Revision
+                   && string.Equals(binding.ExpectedAgentName, ExpectedAgentName, StringComparison.Ordinal)
+                   && string.Equals(binding.ExpectedAgentVersion, ExpectedAgentVersion, StringComparison.Ordinal)
+                   && string.Equals(binding.AcpRuntime.ExecutablePath, ExecutablePath, StringComparison.Ordinal)
+                   && binding.AcpRuntime.MatchesArguments(Arguments);
+        }
+
+        public static ConnectionBindingIdentity FromBinding(AgentActorBackendBinding binding) =>
+            new(
+                binding.Revision,
+                binding.AcpRuntime!,
+                binding.ExpectedAgentName!,
+                binding.ExpectedAgentVersion!);
+    }
+
     private sealed class RuntimeConnection
     {
         public RuntimeConnection(
             IAcpSessionClient client,
             IReadOnlyList<string> authMethodIds,
             bool logoutSupported,
-            string workspaceRoot)
+            string workspaceRoot,
+            ConnectionBindingIdentity bindingIdentity)
         {
             Client = client;
             AuthMethodIds = authMethodIds;
             LogoutSupported = logoutSupported;
             WorkspaceRoot = workspaceRoot;
+            BindingIdentity = bindingIdentity;
         }
 
         public IAcpSessionClient Client { get; }
@@ -543,5 +675,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         public bool LogoutSupported { get; }
 
         public string WorkspaceRoot { get; }
+
+        public ConnectionBindingIdentity BindingIdentity { get; }
     }
 }

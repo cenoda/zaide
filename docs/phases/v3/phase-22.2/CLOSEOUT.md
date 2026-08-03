@@ -2,9 +2,16 @@
 
 ## Status
 
-**Phase 22.2 package 2 complete** for the owned scope: durable schema-v1 store
+**Phase 22.2 M0–M4 delivered** for the owned scope: durable schema-v1 store
 (M1), Native Harness Townhall workflow (M2), ACP probe/authenticate/logout
 bridge (M3), restart/regression gates and out-of-tree A3 re-smoke (M4).
+
+A subsequent full package-2 audit identified a blocking ACP runtime-invalidation
+defect. Corrective implementation invalidates cached onboarding connections on
+durable mutation, validates binding identity before authenticate/logout, and
+requires non-empty advertised auth methods. Package-level PASS is **not**
+restored until targeted ACP `A1-AC-02` evidence refresh and independent
+re-audit complete.
 
 Does **not** mark G5 or V4 ready. Does **not** claim Phase 22.3 tools/send or
 Phase 22.4 trace/memory/usage complete.
@@ -40,7 +47,12 @@ Runner retained at `/tmp/zaide-a3-backend-binding/` for this closeout cycle.
 
 Post-M4 audit polish (docs M1 status, logout capability signal, authenticate
 no local success stub, hide ACP config when Native is active) landed after
-package closeout; package 2 status is unchanged.
+package closeout.
+
+Post-closeout full package-2 audit found blocking ACP runtime invalidation;
+corrective implementation and focused tests address it. Prior `A1-AC-02` acp
+**WORKS** evidence remains retained but requires refresh after corrective
+verification.
 
 ## Explicitly not done
 

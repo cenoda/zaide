@@ -2,10 +2,16 @@
 
 ## Status and Authorization
 
-**Phase 22.2 complete for package 2.** M0–M4 delivered. Human G2 / M0
-acceptance is recorded. M1 durable store, M2 Native Townhall workflow, M3 ACP
-probe/authenticate/logout bridge, and M4 restart/A3 re-smoke closeout are
-shipped. See [CLOSEOUT.md](./CLOSEOUT.md).
+**Phase 22.2 implementation delivered (M0–M4).** A post-closeout full package-2
+audit identified a blocking runtime-invalidation defect; corrective
+implementation for that defect is in progress. Package-level PASS/complete
+language is **not** restored until targeted ACP `A1-AC-02` evidence refresh and
+an independent package re-audit complete.
+
+M0–M4 delivered durable store, Native Townhall workflow, M3 ACP
+probe/authenticate/logout bridge, and M4 restart/A3 re-smoke closeout. Human G2
+/ M0 acceptance is recorded. See [CLOSEOUT.md](./CLOSEOUT.md) for the prior
+closeout record and corrective status.
 
 Phase 22.3–22.5 and V4 remain unauthorized from this package.
 

@@ -266,8 +266,13 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         }
 
         var advertised = GetAdvertisedAuthMethodIds(actorId);
-        if (advertised.Count > 0
-            && !advertised.Any(method => string.Equals(method, methodId, StringComparison.Ordinal)))
+        if (advertised.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "ACP authentication is unavailable because no methods were advertised.");
+        }
+
+        if (!advertised.Any(method => string.Equals(method, methodId, StringComparison.Ordinal)))
         {
             // Runtime-only auth state rewrite; not a durable identity mutation.
             _bindingStore.SetRuntimeAuthentication(

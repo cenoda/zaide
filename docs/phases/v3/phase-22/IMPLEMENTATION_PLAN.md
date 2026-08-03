@@ -2,9 +2,13 @@
 
 ## Status and Authorization
 
-This document is a planning artifact only. Phase 22 implementation has not
-started, no sub-phase M0 has been accepted, and no implementation approval is
-granted by this plan.
+Phase 22 implementation is **in progress** through sub-phases 22.1 and 22.2.
+Human G2 / M0 acceptance is recorded for 22.2; M1–M4 implementation and a
+prior closeout cycle are delivered. A post-closeout package-2 audit identified a
+blocking ACP runtime-invalidation defect; corrective work is in progress and
+package-level PASS for 22.2 is not restored until targeted evidence refresh and
+re-audit complete. No sub-phase beyond the corrective 22.2 slice authorizes
+22.3, 22.4, 22.5, G5, or V4 from this document alone.
 
 Phase 22 is part of Roadmap V3 as a post-closeout corrective program. The
 Phase 21 technical closeout remains a historical fact. It is not product-
@@ -133,7 +137,10 @@ Before a sub-phase can request implementation approval, its M0 must:
 5. identify preservation tests and rollback boundaries;
 6. receive explicit human plan acceptance.
 
-No G2 acceptance is recorded in this planning session.
+No G2 acceptance is recorded in this planning session. **22.2 G2 / M0
+acceptance is recorded** in [phase-22.2 M0](./phase-22.2/M0_SEAM_VERIFICATION.md)
+and implementation M1–M4 plus corrective runtime-invalidation work are tracked in
+[phase-22.2 TOFIX](./phase-22.2/TOFIX.md).
 
 ### G3 — Implementation Approval per Sub-Phase
 
