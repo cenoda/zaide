@@ -2,12 +2,12 @@
 
 ## Status and Authorization
 
-**M0 live-seam verification complete; human M0 acceptance pending; M1 not authorized.**
+**M1 implemented and pushed pending independent audit; M2 not authorized.**
 
-Phase 22.2 is complete and its package-2 PASS restoration satisfies the
-ordering dependency for Phase 22.3. Dependency completion is not implementation
-authorization. Phase 22.3 remains unimplemented. M1–M5 require explicit human
-M0 acceptance followed by separate implementation approval.
+Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
+`c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
+implementation authorization was granted in the same session. M2–M5 require
+explicit separate implementation approval.
 
 The live findings, test inventory, future A3 procedure, and recommendation are
 recorded in [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md).
@@ -53,8 +53,9 @@ and ACP.
   run the focused filters.
 - [x] Define the future isolated A3 producer without executing it.
 - [x] Lock milestone, rollback, migration, and evidence boundaries.
-- [ ] Receive explicit human M0 acceptance.
-- [ ] Receive separate Phase 22.3 implementation approval.
+- [x] Receive explicit human M0 acceptance.
+- [x] Receive separate Phase 22.3 M1 implementation approval.
+- [ ] Receive separate Phase 22.3 M2–M5 implementation approval.
 
 ## Scope
 
@@ -103,7 +104,7 @@ final authorization, execution, audit, and reconciliation path.
 | Milestone | Outcome | Required new tests | Verification gate |
 |-----------|---------|--------------------|-------------------|
 | M0 | Live dependency, send/routing, projection, termination, broker, continuity, test, harness, migration, and rollback seams verified | Documentation only | Existing focused filters + build/full-suite gates; human acceptance |
-| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | Send/routing/projection focused filter |
+| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | Send/routing/projection focused filter — **implemented; 24/24 M1 tests, 71/71 M0 filter, 3873/3873 full suite** |
 | M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter |
 | M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter |
 | M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + force-quit A3 scenarios |
@@ -121,7 +122,7 @@ The filters below were confirmed against `--list-tests` and passed during M0.
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --list-tests
 
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
-  --filter 'FullyQualifiedName~AgentRouterTests|FullyQualifiedName~AgentExecutionCoordinatorTests|FullyQualifiedName~AgentConversationEventProjectionTests|FullyQualifiedName~AgentSessionServiceTests|FullyQualifiedName~TownhallDirectSendTests|FullyQualifiedName~Phase19TownhallProjectionTests'
+  --filter 'FullyQualifiedName~AgentRouterTests|FullyQualifiedName~AgentExecutionCoordinatorTests|FullyQualifiedName~AgentConversationEventProjectionTests|FullyQualifiedName~AgentSessionServiceTests|FullyQualifiedName~TownhallDirectSendTests|FullyQualifiedName~Phase19TownhallProjectionTests|FullyQualifiedName~Phase22AgentOutcomeProjectionTests|FullyQualifiedName~Phase22TownhallRoutingOutcomeTests'
 
 dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build \
   --filter 'FullyQualifiedName~Phase21RestartTests|FullyQualifiedName~Phase21RecoveryTests|FullyQualifiedName~Phase21TerminationTests'
@@ -187,9 +188,9 @@ for the scenario and evidence contract.
 
 ## Exit Conditions
 
-- [ ] Human M0 acceptance and separate implementation approval are recorded.
-- [ ] Direct/channel routing and failure outcomes are visible, actionable,
-  ordered, and attributed without a second conversation writer.
+- [x] Human M0 acceptance and separate M1 implementation approval are recorded.
+- [x] Direct/channel routing and failure outcomes are visible, actionable,
+  ordered, and attributed without a second conversation writer (M1 scope).
 - [ ] Explicit termination is reachable and never overclaims provider state.
 - [ ] Mediated action, permission, audit attribution, conflict, reconciliation,
   stale-base, and final-consumption invariants pass; rollback absence remains

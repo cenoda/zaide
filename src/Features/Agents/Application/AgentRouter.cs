@@ -39,41 +39,93 @@ public sealed class AgentRouter : IAgentRouter
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
     }
 
-    public async Task<RouteResult> RouteAndExecuteAsync(
+    public Task<RouteResult> RouteAndExecuteAsync(
         string sourcePanelId,
         string rawInput,
         CancellationToken ct = default)
     {
         var sourcePanel = _panelHost.Panels.FirstOrDefault(p => p.PanelId == sourcePanelId);
+        if (sourcePanel is null)
+        {
+            return Task.FromResult(CreateRoutingFailureRouteResult(null, null, "Unknown source panel"));
+        }
 
+        return RouteAndExecuteCoreAsync(
+            sourcePanel.ConversationId,
+            sourcePanel,
+            sourcePanelId,
+            rawInput,
+            ct);
+    }
+
+    public Task<RouteResult> RouteAndExecuteFromConversationAsync(
+        ConversationId sourceConversationId,
+        string rawInput,
+        CancellationToken ct = default)
+    {
+        if (sourceConversationId == default)
+        {
+            return Task.FromResult(CreateRoutingFailureRouteResult(null, null, "Unknown source conversation"));
+        }
+
+        if (!_conversationStore.TryGet(sourceConversationId, out var sourceConversation))
+        {
+            return Task.FromResult(CreateRoutingFailureRouteResult(null, null, "Unknown source conversation"));
+        }
+
+        AgentPanelState? sourcePanel = null;
+        if (sourceConversation.Kind == ConversationKind.Direct)
+        {
+            var peerActorId = ResolveDirectPeerActorId(sourceConversation);
+            sourcePanel = _panelHost.GetOrCreatePanelForActor(peerActorId);
+        }
+
+        var sourceKey = sourcePanel?.PanelId ?? sourceConversationId.Value;
+        return RouteAndExecuteCoreAsync(
+            sourceConversationId,
+            sourcePanel,
+            sourceKey,
+            rawInput,
+            ct);
+    }
+
+    private async Task<RouteResult> RouteAndExecuteCoreAsync(
+        ConversationId sourceConversationId,
+        AgentPanelState? sourcePanel,
+        string sourceKey,
+        string rawInput,
+        CancellationToken ct)
+    {
         IReadOnlyList<string> rosterNames = _actorCatalog.ListAgents()
             .Select(static a => a.DisplayName)
             .ToList();
 
-        var parseResult = _parser.Parse(sourcePanelId, rawInput, rosterNames);
+        var parseResult = _parser.Parse(sourceKey, rawInput, rosterNames);
 
         if (!parseResult.Success || parseResult.Intent is null)
         {
             return CreateRoutingFailureRouteResult(
                 sourcePanel,
+                sourceConversationId,
                 parseResult.FailureReason ?? "Routing failed");
         }
 
         var intent = parseResult.Intent;
-        if (sourcePanel is null || sourcePanel.PanelId != intent.SourcePanelId)
+        if (sourcePanel is not null && sourcePanel.PanelId != intent.SourcePanelId)
         {
-            return CreateRoutingFailureRouteResult(sourcePanel, "Unknown source panel");
+            return CreateRoutingFailureRouteResult(sourcePanel, sourceConversationId, "Unknown source panel");
         }
 
         if (!TryResolveTargetActor(intent, sourcePanel, out var targetActorId, out var resolveFailure))
         {
             return CreateRoutingFailureRouteResult(
                 sourcePanel,
+                sourceConversationId,
                 resolveFailure ?? "Unknown target");
         }
 
         var targetPanel = intent.IsDirectSend
-            ? sourcePanel
+            ? sourcePanel ?? _panelHost.GetOrCreatePanelForActor(targetActorId)
             : _panelHost.GetOrCreatePanelForActor(targetActorId);
 
         var request = new RouteRequest(
@@ -89,17 +141,109 @@ public sealed class AgentRouter : IAgentRouter
             request.ContentAfterStrip,
             ct);
 
+        if (!intent.IsDirectSend && executionResult is not null)
+        {
+            ProjectSourceRouteStatus(
+                sourceConversationId,
+                sourcePanel,
+                request,
+                executionResult);
+        }
+
         return new RouteResult(true, request, null, executionResult);
+    }
+
+    private void ProjectSourceRouteStatus(
+        ConversationId sourceConversationId,
+        AgentPanelState? sourcePanel,
+        RouteRequest request,
+        AgentExecutionCoordinatorResult executionResult)
+    {
+        if (!_conversationStore.TryGet(sourceConversationId, out _))
+        {
+            return;
+        }
+
+        var outcome = ResolveRouteOutcomeLabel(executionResult);
+        var targetDisplayName = ResolveActorDisplayName(request.TargetActorId);
+        var author = ResolveSourceRouteAuthor(sourceConversationId, sourcePanel);
+
+        AgentConversationEventProjection.ProjectRouteStatus(
+            _conversationStore,
+            sourceConversationId,
+            author,
+            executionResult.Run.Id,
+            request.TargetActorId,
+            request.ConversationId,
+            targetDisplayName,
+            outcome);
+    }
+
+    private static string ResolveRouteOutcomeLabel(AgentExecutionCoordinatorResult executionResult) =>
+        executionResult.Run.Outcome switch
+        {
+            ExecutionRunOutcome.Success => "Completed",
+            ExecutionRunOutcome.Rejected => "Rejected",
+            ExecutionRunOutcome.Cancelled => "Cancelled",
+            ExecutionRunOutcome.RoutingFailure => "RoutingFailed",
+            ExecutionRunOutcome.ExecutionFailure => "Failed",
+            _ => "Failed",
+        };
+
+    private ActorId ResolveSourceRouteAuthor(ConversationId sourceConversationId, AgentPanelState? sourcePanel)
+    {
+        if (sourcePanel is not null)
+        {
+            return sourcePanel.ActorId;
+        }
+
+        if (_conversationStore.TryGet(sourceConversationId, out var conversation)
+            && conversation.Kind == ConversationKind.Channel)
+        {
+            return _actorCatalog.CanonicalHuman.Id;
+        }
+
+        return _actorCatalog.CanonicalTownhallAgent.Id;
+    }
+
+    private string ResolveActorDisplayName(ActorId actorId)
+    {
+        if (_actorCatalog.TryGet(actorId, out var actor) && !string.IsNullOrWhiteSpace(actor.DisplayName))
+        {
+            return actor.DisplayName;
+        }
+
+        return actorId.Value;
+    }
+
+    private ActorId ResolveDirectPeerActorId(Conversation conversation)
+    {
+        var humanId = _actorCatalog.CanonicalHuman.Id;
+        var peer = conversation.Participants.All.FirstOrDefault(participant => participant != humanId);
+        if (peer == default)
+        {
+            throw new InvalidOperationException(
+                $"Direct conversation '{conversation.Id.Value}' has no non-human participant.");
+        }
+
+        return peer;
     }
 
     private bool TryResolveTargetActor(
         ParsedRouteIntent intent,
-        AgentPanelState sourcePanel,
+        AgentPanelState? sourcePanel,
         out ActorId targetActorId,
         out string? failureReason)
     {
         if (intent.IsDirectSend)
         {
+            if (sourcePanel is null)
+            {
+                targetActorId = default;
+                failureReason = "Unknown source panel";
+                return false;
+            }
+
             targetActorId = sourcePanel.ActorId;
             failureReason = null;
             return true;
@@ -138,37 +282,48 @@ public sealed class AgentRouter : IAgentRouter
 
     private RouteResult CreateRoutingFailureRouteResult(
         AgentPanelState? sourcePanel,
+        ConversationId? sourceConversationId,
         string failureReason)
     {
-        var executionResult = TryCreateAndRecordRoutingFailure(sourcePanel, failureReason);
+        var executionResult = TryCreateAndRecordRoutingFailure(
+            sourcePanel,
+            sourceConversationId,
+            failureReason);
         return new RouteResult(false, null, failureReason, executionResult);
     }
 
     private AgentExecutionCoordinatorResult? TryCreateAndRecordRoutingFailure(
         AgentPanelState? sourcePanel,
+        ConversationId? sourceConversationId,
         string failureReason)
     {
-        if (sourcePanel is null)
+        ConversationId? conversationId = sourceConversationId ?? sourcePanel?.ConversationId;
+        if (conversationId is not { } resolvedConversationId)
+        {
             return null;
+        }
+
+        var author = sourcePanel?.ActorId
+            ?? (_conversationStore.TryGet(resolvedConversationId, out var conversation)
+                && conversation.Kind == ConversationKind.Channel
+                ? _actorCatalog.CanonicalHuman.Id
+                : _actorCatalog.CanonicalTownhallAgent.Id);
 
         var runId = ExecutionRunId.New();
         var run = new ExecutionRun(
             runId,
-            sourcePanel.ConversationId,
+            resolvedConversationId,
             ActorId.HumanUser,
-            sourcePanel.ActorId,
-            sourcePanel.PanelId,
+            author,
+            sourcePanel?.PanelId ?? resolvedConversationId.Value,
             ExecutionRunOutcome.RoutingFailure);
 
-        // Record failure on the owning conversation when the store holds it
-        // (shared production wiring). Skip silently when a test double uses a
-        // detached store — still return a structured routing-failure result.
-        if (_conversationStore.TryGet(sourcePanel.ConversationId, out _))
+        if (_conversationStore.TryGet(resolvedConversationId, out _))
         {
             AgentConversationEventProjection.ProjectRoutingFailure(
                 _conversationStore,
-                sourcePanel.ConversationId,
-                sourcePanel.ActorId,
+                resolvedConversationId,
+                author,
                 runId,
                 failureReason);
         }

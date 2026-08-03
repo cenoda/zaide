@@ -13,6 +13,8 @@ internal static class TownhallEntryProjection
 {
     private const string ActionActivityPrefix = "zaide-action|v1|";
     private const string BackendActivityPrefix = "zaide-backend-activity|v1|";
+    private const string RouteStatusPrefix = "zaide-route|v1|";
+    private const string CancellationIntentPrefix = "zaide-cancellation-intent|v1|";
     public static TownhallMessageKind ToTownhallMessageKind(ConversationEntryKind kind) =>
         kind switch
         {
@@ -58,7 +60,10 @@ internal static class TownhallEntryProjection
             : entry.Kind == ConversationEntryKind.SystemNotification
               && TryParseBackendActivityContent(entry.Content, out _)
                 ? TownhallMessageKind.AgentAction
-                : ToTownhallMessageKind(entry.Kind);
+                : entry.Kind == ConversationEntryKind.SystemNotification
+                  && TryParseRouteStatusContent(entry.Content, out _)
+                    ? TownhallMessageKind.System
+                    : ToTownhallMessageKind(entry.Kind);
 
         return new TownhallMessage
         {
@@ -90,6 +95,18 @@ internal static class TownhallEntryProjection
             && TryParseBackendActivityContent(entry.Content, out var backendActivity))
         {
             return FormatBackendActivityDisplayContent(backendActivity);
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && TryParseRouteStatusContent(entry.Content, out var routeStatus))
+        {
+            return FormatRouteStatusDisplayContent(routeStatus);
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && entry.Content.StartsWith(CancellationIntentPrefix, StringComparison.Ordinal))
+        {
+            return "Cancellation requested.";
         }
 
         return entry.Kind switch
@@ -146,6 +163,69 @@ internal static class TownhallEntryProjection
         }
 
         return value;
+    }
+
+    internal static bool TryParseRouteStatusContent(
+        string content,
+        out RouteStatusProjection projection)
+    {
+        projection = default!;
+        if (string.IsNullOrEmpty(content)
+            || !content.StartsWith(RouteStatusPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var parts = content.Split('|');
+        if (parts.Length < 6
+            || !string.Equals(parts[0], "zaide-route", StringComparison.Ordinal)
+            || !string.Equals(parts[1], "v1", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        projection = new RouteStatusProjection(
+            parts[2],
+            parts[3],
+            parts[4],
+            string.Join('|', parts, 5, parts.Length - 5));
+
+        return true;
+    }
+
+    private static string FormatRouteStatusDisplayContent(RouteStatusProjection routeStatus)
+    {
+        return routeStatus.Outcome switch
+        {
+            "Completed" => $"Routed to {routeStatus.TargetDisplayName} — completed.",
+            "Rejected" => $"Routed to {routeStatus.TargetDisplayName} — rejected.",
+            "Cancelled" => $"Routed to {routeStatus.TargetDisplayName} — cancelled.",
+            "Failed" => $"Routed to {routeStatus.TargetDisplayName} — failed.",
+            _ => $"Routed to {routeStatus.TargetDisplayName}.",
+        };
+    }
+
+    internal readonly struct RouteStatusProjection
+    {
+        public RouteStatusProjection(
+            string outcome,
+            string targetActorId,
+            string targetConversationId,
+            string targetDisplayName)
+        {
+            Outcome = outcome;
+            TargetActorId = targetActorId;
+            TargetConversationId = targetConversationId;
+            TargetDisplayName = targetDisplayName;
+        }
+
+        public string Outcome { get; }
+
+        public string TargetActorId { get; }
+
+        public string TargetConversationId { get; }
+
+        public string TargetDisplayName { get; }
     }
 
     internal static bool TryParseActionActivityContent(

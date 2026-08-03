@@ -249,8 +249,11 @@ public sealed class AgentPanelOutputParityTests : IDisposable
         await first;
 
         Assert.True(store.TryGet(panel.ConversationId, out var conversation));
-        Assert.Equal(2, conversation!.Entries.Count);
-        Assert.Equal(2, panel.OutputHistory.Count);
+        Assert.Equal(3, conversation!.Entries.Count);
+        Assert.Single(conversation.Entries, e => e.Kind == ConversationEntryKind.UserChat);
+        Assert.Single(conversation.Entries, e => e.Kind == ConversationEntryKind.ExecutionFailure);
+        Assert.Single(conversation.Entries, e => e.Kind == ConversationEntryKind.AssistantResponse);
+        Assert.Equal(3, panel.OutputHistory.Count);
     }
 
     [Fact]

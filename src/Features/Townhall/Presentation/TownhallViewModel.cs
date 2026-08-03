@@ -725,6 +725,19 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         if (_state.ActiveChannelId is not null)
         {
+            if (_agentRouter is not null
+                && _state.ActiveConversationId is { } channelConversationId
+                && _conversationStore.TryGet(channelConversationId, out var channelConversation)
+                && channelConversation.Kind == ConversationKind.Channel
+                && ContainsCatalogMention(draft))
+            {
+                var routeResult = await _agentRouter.RouteAndExecuteFromConversationAsync(
+                    channelConversationId,
+                    draft);
+                TryClearDraftAfterRoute(routeResult, channelConversationId);
+                return;
+            }
+
             LogActivity(
                 entryKind: ConversationEntryKind.UserChat,
                 content: draft,
@@ -759,18 +772,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         if (_agentRouter is not null)
         {
             var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, draft);
-            if (routeResult.Success
-                || routeResult.ExecutionResult is not null
-                || !string.IsNullOrEmpty(routeResult.FailureReason))
-            {
-                // Admitted execution or recorded routing failure both clear the input.
-                // Empty/no-op rejects leave the draft for re-send.
-                if (routeResult.Success || routeResult.ExecutionResult is not null)
-                {
-                    ClearActiveConversationDraft();
-                }
-            }
-
+            TryClearDraftAfterRoute(routeResult, activeConversationId);
             return;
         }
 
@@ -832,6 +834,63 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         }
 
         UpdateActiveConversationDisplayContext();
+    }
+
+    private void TryClearDraftAfterRoute(RouteResult routeResult, ConversationId sourceConversationId)
+    {
+        if (ShouldClearDraftAfterRoute(routeResult, sourceConversationId))
+        {
+            ClearActiveConversationDraft();
+        }
+    }
+
+    private bool ShouldClearDraftAfterRoute(RouteResult routeResult, ConversationId sourceConversationId)
+    {
+        if (routeResult.ExecutionResult is not { } executionResult)
+        {
+            return false;
+        }
+
+        if (routeResult.Request is { IsDirectSend: true })
+        {
+            return HasCorrelatedVisibleOutcome(sourceConversationId, executionResult.Run.Id);
+        }
+
+        if (routeResult.Success)
+        {
+            return HasCorrelatedVisibleOutcome(sourceConversationId, executionResult.Run.Id);
+        }
+
+        return HasCorrelatedVisibleOutcome(sourceConversationId, executionResult.Run.Id);
+    }
+
+    private bool HasCorrelatedVisibleOutcome(ConversationId conversationId, ExecutionRunId runId)
+    {
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            return false;
+        }
+
+        var correlation = ConversationEntryCorrelationId.FromValue(runId.Value);
+        return conversation.Entries.Any(e => e.CorrelationId == correlation
+            && (e.Kind == ConversationEntryKind.RoutingFailure
+                || e.Kind == ConversationEntryKind.ExecutionFailure
+                || e.Kind == ConversationEntryKind.UserChat
+                || (e.Kind == ConversationEntryKind.SystemNotification
+                    && e.Content.StartsWith("zaide-route|v1|", StringComparison.Ordinal))));
+    }
+
+    private static bool ContainsCatalogMention(string draft)
+    {
+        foreach (var token in draft.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (token.StartsWith('@'))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ClearActiveConversationDraft()
@@ -1135,6 +1194,14 @@ public class TownhallViewModel : ReactiveObject, IDisposable
                 {
                     Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
                 }
+            }
+            else if (conversation.Kind == ConversationKind.Channel
+                     && isActive
+                     && conversation.Id.TryGetChannelId(out var channelId)
+                     && _state.ChannelMessages.TryGetValue(channelId, out var channelMessages)
+                     && entry.Kind != ConversationEntryKind.UserChat)
+            {
+                channelMessages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
             }
         }
         catch

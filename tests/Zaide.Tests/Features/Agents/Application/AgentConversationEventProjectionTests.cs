@@ -292,7 +292,7 @@ public sealed class AgentConversationEventProjectionTests
     }
 
     [Fact]
-    public void Rejection_DoesNotCreateUserOrFailureEntryInConversation()
+    public void Rejection_ProjectsSingleCorrelatedExecutionFailureWithoutUserEntry()
     {
         var store = ConversationsTestSupport.CreateStore();
         var stream = new AgentEventStream();
@@ -305,9 +305,19 @@ public sealed class AgentConversationEventProjectionTests
         var runId = ExecutionRunId.New();
 
         stream.Publish(CreateRunRejectedEvent(sessionId, runId, conversation.Id, sequence: 1));
-        stream.Publish(CreateFailureReportedEvent(sessionId, runId, conversation.Id, AgentFailureKind.Execution, "An active run is already in progress", sequence: 2));
+        stream.Publish(CreateFailureReportedEvent(
+            sessionId,
+            runId,
+            conversation.Id,
+            AgentFailureKind.Execution,
+            "An active run is already in progress",
+            sequence: 2));
 
-        Assert.Empty(conversation.Entries);
+        Assert.Single(conversation.Entries);
+        var failure = conversation.Entries[0];
+        Assert.Equal(ConversationEntryKind.ExecutionFailure, failure.Kind);
+        Assert.Equal("An active run is already in progress", failure.Content);
+        Assert.Equal(runId.Value, failure.CorrelationId!.Value.Value);
     }
 
     [Fact]

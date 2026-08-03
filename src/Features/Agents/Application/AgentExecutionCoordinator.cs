@@ -113,13 +113,25 @@ public sealed class AgentExecutionCoordinator : IAgentExecutionCoordinator
         }
         catch (InvalidOperationException ex)
         {
+            var rejectedRunId = ExecutionRunId.New();
             var rejectedRun = new ExecutionRun(
-                ExecutionRunId.New(),
+                rejectedRunId,
                 conversationId,
                 ActorId.HumanUser,
                 panel.ActorId,
                 panel.PanelId,
                 ExecutionRunOutcome.Rejected);
+
+            if (_conversationStore.TryGet(conversationId, out _))
+            {
+                AgentConversationEventProjection.ProjectAdmissionRejection(
+                    _conversationStore,
+                    conversationId,
+                    panel.ActorId,
+                    rejectedRunId,
+                    ex.Message);
+            }
+
             return AgentExecutionCoordinatorResult.Rejected(rejectedRun, ex.Message);
         }
 

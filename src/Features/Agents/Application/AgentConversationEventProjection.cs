@@ -15,6 +15,9 @@ namespace Zaide.Features.Agents.Application;
 /// </summary>
 internal sealed class AgentConversationEventProjection : IDisposable
 {
+    internal const string RouteStatusContentPrefix = "zaide-route|v1|";
+    internal const string CancellationIntentContentPrefix = "zaide-cancellation-intent|v1|";
+
     private readonly IConversationStore _conversationStore;
     private readonly IActorCatalog? _actorCatalog;
     private readonly IDisposable? _subscription;
@@ -23,6 +26,8 @@ internal sealed class AgentConversationEventProjection : IDisposable
     private readonly HashSet<ConversationEntryId> _projectedMessageEntryIds = new();
     private readonly HashSet<ExecutionRunId> _admittedRunIds = new();
     private readonly HashSet<ExecutionRunId> _projectedTerminalRunIds = new();
+    private readonly HashSet<ExecutionRunId> _projectedRejectionRunIds = new();
+    private readonly HashSet<ExecutionRunId> _projectedCancellationIntentRunIds = new();
     private readonly HashSet<AgentActionId> _projectedActionSummaryIds = new();
     private readonly HashSet<string> _projectedBackendActivityKeys = new();
 
@@ -92,6 +97,145 @@ internal sealed class AgentConversationEventProjection : IDisposable
         return entry;
     }
 
+    public static ConversationEntry ProjectAdmissionRejection(
+        IConversationStore conversationStore,
+        ConversationId conversationId,
+        ActorId author,
+        ExecutionRunId runId,
+        string failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(conversationStore);
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        if (author == default)
+        {
+            throw new ArgumentException("Author is required.", nameof(author));
+        }
+
+        if (runId == default)
+        {
+            throw new ArgumentException("Run id is required.", nameof(runId));
+        }
+
+        if (string.IsNullOrWhiteSpace(failureReason))
+        {
+            throw new ArgumentException("Failure reason is required.", nameof(failureReason));
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(runId);
+        if (conversationStore.TryGet(conversationId, out var conversation)
+            && conversation.Entries.Any(e => e.CorrelationId == runCorrelation
+                                             && e.Kind == ConversationEntryKind.ExecutionFailure))
+        {
+            return conversation.Entries.First(e => e.CorrelationId == runCorrelation
+                                                   && e.Kind == ConversationEntryKind.ExecutionFailure);
+        }
+
+        var entry = ConversationEntry.ExecutionFailure(
+            ConversationEntryId.New(),
+            author,
+            DateTimeOffset.UtcNow,
+            failureReason,
+            runCorrelation);
+
+        conversationStore.AppendEntry(conversationId, entry);
+        return entry;
+    }
+
+    public static ConversationEntry ProjectRouteStatus(
+        IConversationStore conversationStore,
+        ConversationId sourceConversationId,
+        ActorId author,
+        ExecutionRunId runId,
+        ActorId targetActorId,
+        ConversationId targetConversationId,
+        string targetDisplayName,
+        string outcome)
+    {
+        ArgumentNullException.ThrowIfNull(conversationStore);
+        if (sourceConversationId == default)
+        {
+            throw new ArgumentException("Source conversation id is required.", nameof(sourceConversationId));
+        }
+
+        if (author == default)
+        {
+            throw new ArgumentException("Author is required.", nameof(author));
+        }
+
+        if (runId == default)
+        {
+            throw new ArgumentException("Run id is required.", nameof(runId));
+        }
+
+        if (targetActorId == default)
+        {
+            throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
+        }
+
+        if (targetConversationId == default)
+        {
+            throw new ArgumentException("Target conversation id is required.", nameof(targetConversationId));
+        }
+
+        if (string.IsNullOrWhiteSpace(targetDisplayName))
+        {
+            throw new ArgumentException("Target display name is required.", nameof(targetDisplayName));
+        }
+
+        if (string.IsNullOrWhiteSpace(outcome))
+        {
+            throw new ArgumentException("Route outcome is required.", nameof(outcome));
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(runId);
+        var content = FormatRouteStatusContent(
+            outcome,
+            targetActorId,
+            targetConversationId,
+            targetDisplayName);
+
+        if (conversationStore.TryGet(sourceConversationId, out var conversation)
+            && conversation.Entries.Any(e => e.CorrelationId == runCorrelation
+                                             && e.Kind == ConversationEntryKind.SystemNotification
+                                             && e.Content == content))
+        {
+            return conversation.Entries.First(e => e.CorrelationId == runCorrelation
+                                                 && e.Kind == ConversationEntryKind.SystemNotification
+                                                 && e.Content == content);
+        }
+
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            author,
+            DateTimeOffset.UtcNow,
+            content,
+            runCorrelation);
+
+        conversationStore.AppendEntry(sourceConversationId, entry);
+        return entry;
+    }
+
+    internal static string FormatRouteStatusContent(
+        string outcome,
+        ActorId targetActorId,
+        ConversationId targetConversationId,
+        string targetDisplayName) =>
+        string.Join(
+            '|',
+            "zaide-route",
+            "v1",
+            outcome,
+            targetActorId.Value,
+            targetConversationId.Value,
+            targetDisplayName);
+
+    internal static string FormatCancellationIntentContent() =>
+        string.Join('|', "zaide-cancellation-intent", "v1", "Cancellation requested.");
+
     public void Dispose()
     {
         _subscription?.Dispose();
@@ -129,7 +273,11 @@ internal sealed class AgentConversationEventProjection : IDisposable
                     break;
 
                 case AgentEventKind.RunRejected:
-                    // Rejections are not admitted runs and produce no conversation entry.
+                    // Admission rejection reason is projected from FailureReported.
+                    break;
+
+                case AgentEventKind.RunCancellationRequested:
+                    ProjectRunCancellationRequested(agentEvent);
                     break;
 
                 case AgentEventKind.ActionResultReported:
@@ -141,6 +289,40 @@ internal sealed class AgentConversationEventProjection : IDisposable
                     break;
             }
         }
+    }
+
+    private void ProjectRunCancellationRequested(AgentEvent agentEvent)
+    {
+        if (!_admittedRunIds.Contains(agentEvent.RunId)
+            || _projectedCancellationIntentRunIds.Contains(agentEvent.RunId))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        if (conversation.Entries.Any(e => e.CorrelationId == runCorrelation
+                                         && e.Kind == ConversationEntryKind.SystemNotification
+                                         && e.Content.StartsWith(CancellationIntentContentPrefix, StringComparison.Ordinal)))
+        {
+            _projectedCancellationIntentRunIds.Add(agentEvent.RunId);
+            return;
+        }
+
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            FormatCancellationIntentContent(),
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedCancellationIntentRunIds.Add(agentEvent.RunId);
     }
 
     private void ProjectActionResultReported(AgentEvent agentEvent)
@@ -323,8 +505,13 @@ internal sealed class AgentConversationEventProjection : IDisposable
             return;
         }
 
-        if (_projectedMessageEntryIds.Contains(payload.MessageEntryId)
-            || _projectedTerminalRunIds.Contains(agentEvent.RunId))
+        if (_projectedMessageEntryIds.Contains(payload.MessageEntryId))
+        {
+            return;
+        }
+
+        if (_projectedTerminalRunIds.Contains(agentEvent.RunId)
+            && !_projectedCancellationIntentRunIds.Contains(agentEvent.RunId))
         {
             return;
         }
@@ -363,13 +550,69 @@ internal sealed class AgentConversationEventProjection : IDisposable
             return;
         }
 
-        ProjectTerminalFailureEntry(agentEvent, payload.Reason);
+        if (_admittedRunIds.Contains(agentEvent.RunId))
+        {
+            ProjectTerminalFailureEntry(agentEvent, payload.Reason);
+            return;
+        }
+
+        ProjectRejectionFailureEntry(agentEvent, payload.Reason);
     }
 
     private void ProjectRunTerminalFailure(AgentEvent agentEvent)
     {
+        if (HasAssistantResponseForRun(agentEvent.ConversationId, agentEvent.RunId))
+        {
+            _projectedTerminalRunIds.Add(agentEvent.RunId);
+            return;
+        }
+
         var reason = ResolveFallbackFailureReason(agentEvent);
         ProjectTerminalFailureEntry(agentEvent, reason);
+    }
+
+    private bool HasAssistantResponseForRun(ConversationId conversationId, ExecutionRunId runId)
+    {
+        if (!_conversationStore.TryGet(conversationId, out var conversation))
+        {
+            return false;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(runId);
+        return conversation.Entries.Any(e => e.CorrelationId == runCorrelation
+                                           && e.Kind == ConversationEntryKind.AssistantResponse);
+    }
+
+    private void ProjectRejectionFailureEntry(AgentEvent agentEvent, string reason)
+    {
+        if (_projectedRejectionRunIds.Contains(agentEvent.RunId))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        if (conversation.Entries.Any(e => e.CorrelationId == runCorrelation
+                                         && e.Kind == ConversationEntryKind.ExecutionFailure))
+        {
+            _projectedRejectionRunIds.Add(agentEvent.RunId);
+            return;
+        }
+
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var entry = ConversationEntry.ExecutionFailure(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            reason,
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedRejectionRunIds.Add(agentEvent.RunId);
     }
 
     private void ProjectTerminalFailureEntry(AgentEvent agentEvent, string reason)
@@ -380,12 +623,17 @@ internal sealed class AgentConversationEventProjection : IDisposable
             && (_conversationStore.TryGet(agentEvent.ConversationId, out var existingConv)
                 && !existingConv.Entries.Any(e => e.CorrelationId == runCorrelation)))
         {
-            // Rejections or non-admitted runs do not append conversation entries.
             return;
         }
 
         if (_projectedTerminalRunIds.Contains(agentEvent.RunId))
         {
+            return;
+        }
+
+        if (HasAssistantResponseForRun(agentEvent.ConversationId, agentEvent.RunId))
+        {
+            _projectedTerminalRunIds.Add(agentEvent.RunId);
             return;
         }
 
