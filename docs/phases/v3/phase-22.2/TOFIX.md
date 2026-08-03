@@ -2,36 +2,36 @@
 
 ## Status
 
-**Phase 22.2 M0–M4 delivered.** A subsequent full package-2 audit found a
-blocking ACP runtime-invalidation defect (cached onboarding connections
-surviving bind/update/unbind). Corrective implementation and focused regression
-tests address that defect; targeted ACP `A1-AC-02` evidence refresh and
-independent package re-audit remain pending before package-level PASS is
-restored.
+**Phase 22.2 complete; package-2 PASS restored.** M0–M4 delivered the durable
+schema-v1 store, Native Harness and ACP Townhall workflows, restart gates, and
+out-of-tree A3 re-smoke. A subsequent full package-2 audit found a blocking ACP
+runtime-invalidation defect. Corrective implementation closed that defect and
+the residual epoch/cache TOCTOU gaps. Targeted ACP `A1-AC-02` evidence was
+refreshed against HEAD `d4a0f34d` and an independent package-2 re-audit passed.
 
-A follow-up corrective pass closed remaining ACP epoch/cache TOCTOU gaps, then
-a second corrective-only pass finished the residual defects: one atomic
-probe-start snapshot for launch (derive runtime exclusively from the captured
-fingerprint; no independently read binding on the launch path), empty
-advertised-method fail-closed before the invalid-method branch, deterministic
-concurrency tests (initialize pause; record/clear race seams), and architecture
-source-file baselines 866/821.
+### Phase and package status
 
-### Corrective verification (green)
+| Item | Status |
+|------|--------|
+| 22.1 Language intelligence / LSP | **Complete** (separate package-1 closeout) |
+| 22.2 User backend-binding workflow | **Package PASS restored** |
+| 22.3 Agent-path enablement | **Pending** — separate authorization required |
+| 22.4 Trace / memory / usage surfaces | **Pending** — separate authorization required |
+| G5 full affected re-smoke | **Blocked** — packages 3–7 and 22.3/22.4 still open |
+| V4 / successor-roadmap planning | **Blocked** — G5 not passed; separate human decision required |
+
+### Evidence refresh and re-audit (green)
 
 | Gate | Result |
 |------|--------|
-| `dotnet build Zaide.slnx` | 0 warnings, 0 errors |
-| Phase22 binding filter (serial) | **71/71** passed |
+| Corrective commits through `d4a0f34d` (read-only review) | PASS — binding epoch, fingerprint, onboarding connection, advertised-method cache, authenticate/logout, disposal race |
+| Retained A3 runner rebuild (producer unchanged) | PASS |
+| ACP `A1-AC-02` re-smoke (disposable HOME/XDG, production DI, Townhall controls, repo ACP fake) | **16/16 pass**, classification **WORKS**, RepoHead `d4a0f34d` |
+| `dotnet build Zaide.slnx --no-incremental` | 0 warnings, 0 errors |
+| Phase22 binding filter | **71/71** passed |
 | Full suite fast (`dotnet test Zaide.slnx --no-build`) | **3849/3849** passed |
-| Full suite serial (`slow.runsettings`) | **3849/3849** passed |
+| Serial fallback (`slow.runsettings`) | Not required (fast suite green) |
 | `git diff --check` | clean |
-
-Package-level PASS is **not** restored. Evidence refresh, independent
-re-audit, push, and Phase 22.3+ remain pending.
-
-22.3 and 22.4 remain dependent and must not start from this gate as "already
-done."
 
 ## Work Board
 
@@ -65,8 +65,8 @@ done."
 - [x] Corrective-only: atomic probe-start snapshot for launch; empty-method
   fail-closed before invalid-method mutation; deterministic initialize/
   record/clear race tests; architecture source-file baselines 866/821.
-- [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
-  re-audit (package PASS not restored).
+- [x] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
+  re-audit — **package PASS restored**.
 - Next critical work remains **Phase 22.3** when separately authorized.
 
 ## Remaining (not Phase 22.2)
@@ -186,11 +186,33 @@ done."
   before the invalid-method Failed mutation; deterministic concurrency tests
   via `InitializeDelayAsync` and selection-lock race seams for record/clear;
   architecture production source-file baselines updated to **866** total /
-  **821** Features. Verification green: build clean; Phase22 filter 71/71;
-  full suite 3849/3849 (fast and serial).
-- [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
-  re-audit (package PASS not restored). Push and Phase 22.3+ remain pending.
-- Next critical work remains **Phase 22.3** when separately authorized.
+  **821** Features.
+- [x] Targeted ACP `A1-AC-02` evidence refresh against HEAD `d4a0f34d` and
+  independent package-2 re-audit. Package PASS restored. Evidence:
+  [evidence/A1-AC-02-acp.json](./evidence/A1-AC-02-acp.json).
+
+## Independent package-2 re-audit (PASS)
+
+Read-only review of corrective commits `e8ccd1c0`…`d4a0f34d` against live code:
+
+1. **Binding epoch** — durable bind/update/unbind bumps a monotonic per-actor
+   epoch; probe/auth publication validates the capture-time pair.
+2. **Fingerprint** — `AcpRuntimeBindingFingerprint` is a genuine snapshot
+   (defensive argument copy, content equality); launch runtime is derived only
+   from the probe-start fingerprint.
+3. **Onboarding connection** — `OnBindingChanged` detaches cached clients on
+   bind/update/unbind; authenticate/logout revalidate fingerprint+epoch before
+   protocol use.
+4. **Advertised-method cache** — validate-and-publish under selection lock
+   (selection → store lock order); empty lists fail closed before invalid-method
+   mutation; conditional clear compares stored fingerprint+epoch.
+5. **Authenticate / logout** — real `IAcpSessionClient` protocol path; failure
+   and binding-changed paths never rewrite replacement runtime state.
+6. **Disposal race** — detach starts tracked disposal immediately; probe and
+   auth await tracked disposals before reusing actor connections.
+
+No corrective-only finding set remains open for package 2. Dependent A3 rows
+stay **WORKS_WITH_FRICTION** under 22.3/22.4 ownership and are not upgraded here.
 
 ## Remaining (not Phase 22.2)
 

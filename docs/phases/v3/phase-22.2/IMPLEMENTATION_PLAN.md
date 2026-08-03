@@ -2,18 +2,16 @@
 
 ## Status and Authorization
 
-**Phase 22.2 implementation delivered (M0–M4).** A post-closeout full package-2
-audit identified a blocking runtime-invalidation defect; corrective
-implementation for that defect is in progress. Package-level PASS/complete
-language is **not** restored until targeted ACP `A1-AC-02` evidence refresh and
-an independent package re-audit complete.
+**Phase 22.2 complete; package-2 PASS restored.** M0–M4 delivered durable store,
+Native Townhall workflow, M3 ACP probe/authenticate/logout bridge, and M4
+restart/A3 re-smoke closeout. A post-closeout full package-2 audit identified a
+blocking runtime-invalidation defect; corrective implementation through HEAD
+`d4a0f34d` closed it and residual epoch/cache TOCTOU gaps. Targeted ACP
+`A1-AC-02` evidence was refreshed (16/16 **WORKS** at `d4a0f34d`) and an
+independent package-2 re-audit passed. See [CLOSEOUT.md](./CLOSEOUT.md).
 
-M0–M4 delivered durable store, Native Townhall workflow, M3 ACP
-probe/authenticate/logout bridge, and M4 restart/A3 re-smoke closeout. Human G2
-/ M0 acceptance is recorded. See [CLOSEOUT.md](./CLOSEOUT.md) for the prior
-closeout record and corrective status.
-
-Phase 22.3–22.5 and V4 remain unauthorized from this package.
+Phase 22.3–22.5, G5, and V4 remain unauthorized from this package and still
+require separate human decisions.
 
 ## A4 Ownership and Dependency
 
@@ -188,8 +186,9 @@ Re-smoke follows the umbrella
 - [x] The affected local A3 re-smoke is recorded under `evidence/` and
   [CLOSEOUT.md](./CLOSEOUT.md).
 - [x] 22.2 completion is explicitly recorded before 22.3 or 22.4 begins.
-  A1-AC-02 WORKS both backends; dependent rows remain WORKS_WITH_FRICTION for
-  22.3/22.4-owned residuals.
+  Package-2 PASS restored after corrective re-audit. A1-AC-02 WORKS both
+  backends (ACP evidence refreshed at `d4a0f34d`); dependent rows remain
+  WORKS_WITH_FRICTION for 22.3/22.4-owned residuals. G5 and V4 remain blocked.
 
 ## Rollback Note
 

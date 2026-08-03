@@ -2,13 +2,11 @@
 
 ## Status and Authorization
 
-Phase 22 implementation is **in progress** through sub-phases 22.1 and 22.2.
-Human G2 / M0 acceptance is recorded for 22.2; M1–M4 implementation and a
-prior closeout cycle are delivered. A post-closeout package-2 audit identified a
-blocking ACP runtime-invalidation defect; corrective work is in progress and
-package-level PASS for 22.2 is not restored until targeted evidence refresh and
-re-audit complete. No sub-phase beyond the corrective 22.2 slice authorizes
-22.3, 22.4, 22.5, G5, or V4 from this document alone.
+Phase 22 implementation is **in progress**. Sub-phase 22.1 is complete. Sub-phase
+22.2 is complete with package-2 PASS restored after corrective ACP runtime-
+invalidation work, targeted `A1-AC-02` evidence refresh at HEAD `d4a0f34d`, and
+independent re-audit. 22.3 and 22.4 remain pending separate authorization. No
+sub-phase authorizes 22.5, G5, or V4 from this document alone.
 
 Phase 22 is part of Roadmap V3 as a post-closeout corrective program. The
 Phase 21 technical closeout remains a historical fact. It is not product-
@@ -137,10 +135,13 @@ Before a sub-phase can request implementation approval, its M0 must:
 5. identify preservation tests and rollback boundaries;
 6. receive explicit human plan acceptance.
 
-No G2 acceptance is recorded in this planning session. **22.2 G2 / M0
-acceptance is recorded** in [phase-22.2 M0](./phase-22.2/M0_SEAM_VERIFICATION.md)
-and implementation M1–M4 plus corrective runtime-invalidation work are tracked in
-[phase-22.2 TOFIX](./phase-22.2/TOFIX.md).
+No G2 acceptance is recorded in this planning session for 22.3+. **22.1 is
+complete.** **22.2 G2 / M0 acceptance is recorded** in
+[phase-22.2 M0](../phase-22.2/M0_SEAM_VERIFICATION.md); M1–M4 implementation,
+corrective runtime-invalidation work, refreshed ACP `A1-AC-02` evidence, and
+package-2 PASS restoration are tracked in
+[phase-22.2 TOFIX](../phase-22.2/TOFIX.md) and
+[phase-22.2 CLOSEOUT](../phase-22.2/CLOSEOUT.md).
 
 ### G3 — Implementation Approval per Sub-Phase
 
