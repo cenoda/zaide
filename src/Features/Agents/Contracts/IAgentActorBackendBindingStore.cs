@@ -38,6 +38,35 @@ internal interface IAgentActorBackendBindingStore
         string? selectedAuthMethodId,
         AgentAuthenticationConnectionState authenticationState);
 
+    /// <summary>
+    /// Monotonic per-actor epoch advanced on every successful durable bind,
+    /// update, or unbind. Used to guard runtime publication races.
+    /// </summary>
+    long GetBindingEpoch(ActorId actorId);
+
+    bool TryCaptureAcpBindingFingerprint(
+        ActorId actorId,
+        out AcpRuntimeBindingFingerprint fingerprint,
+        out long epoch);
+
+    bool TryValidateAcpBindingFingerprint(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch);
+
+    bool TrySetRuntimeAuthenticationIfFingerprintMatches(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
+        string? selectedAuthMethodId,
+        AgentAuthenticationConnectionState authenticationState);
+
+    bool TryCommitAcpProbeRuntimeState(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
+        AgentAuthenticationConnectionState authenticationState);
+
     AgentActorBackendBindingMutationResult TryBind(AgentActorBackendBinding binding);
 
     AgentActorBackendBindingMutationResult TryUpdate(

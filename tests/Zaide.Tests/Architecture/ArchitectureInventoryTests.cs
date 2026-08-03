@@ -143,7 +143,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M1: +1 internal AcpSchemaProfile.
         // Phase 22.2 M1: +9 internal durable binding mutation/load/document types.
         // Phase 22.2 M2: +1 internal AgentBackendBindingWorkflowProjection.
-        Assert.Equal((156, 7, 149), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 22.2 corrective: +1 internal AcpRuntimeBindingFingerprint.
+        Assert.Equal((157, 7, 150), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 21 M1: +13 internal durable-record envelope/domain types.
         Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 21 M2: +10 internal trace evidence domain types.

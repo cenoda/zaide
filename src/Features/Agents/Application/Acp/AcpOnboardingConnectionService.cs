@@ -32,6 +32,12 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
     private readonly object _sync = new();
     private bool _disposed;
 
+    /// <summary>Test seam: delay between probe identity validation and publication.</summary>
+    internal Func<CancellationToken, Task>? ProbePublicationDelayForTestAsync;
+
+    /// <summary>Test seam: delay between protocol authenticate and runtime publication.</summary>
+    internal Func<CancellationToken, Task>? AuthenticatePublicationDelayForTestAsync;
+
     public AcpOnboardingConnectionService(
         IAgentActorBackendBindingStore bindingStore,
         IAgentActorBackendSelectionService selectionService,
@@ -106,11 +112,16 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "ACP probe requires a durable ACP binding.");
         }
 
-        var identityAtProbe = ConnectionBindingIdentity.FromBinding(binding);
+        var identityAtProbe = AcpRuntimeBindingFingerprint.FromBinding(binding);
+        var epochAtProbe = _bindingStore.GetBindingEpoch(actorId);
 
         if (!AcpWorkspaceWorkingDirectory.TryResolve(_workspaceAuthority, out var workspaceRoot))
         {
-            MarkStaleIfMatches(actorId, identityAtProbe, "No valid workspace is available for ACP configuration.");
+            MarkStaleIfFingerprintMatches(
+                actorId,
+                identityAtProbe,
+                epochAtProbe,
+                "No valid workspace is available for ACP configuration.");
             return AcpOnboardingProbeResult.Failed(
                 actorId,
                 "No valid workspace is available for ACP configuration.");
@@ -121,7 +132,11 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         // factories may bind synthetic paths without creating a real binary.
         if (_clientFactory is null && !File.Exists(runtime.ExecutablePath))
         {
-            MarkStaleIfMatches(actorId, identityAtProbe, "ACP executable was not found.");
+            MarkStaleIfFingerprintMatches(
+                actorId,
+                identityAtProbe,
+                epochAtProbe,
+                "ACP executable was not found.");
             return AcpOnboardingProbeResult.Failed(
                 actorId,
                 $"ACP executable was not found at '{runtime.ExecutablePath}'.");
@@ -157,19 +172,47 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
             var negotiated = await client.InitializeAsync(cancellationToken).ConfigureAwait(false);
             var observedName = negotiated.AgentInfo?.Name ?? string.Empty;
             var observedVersion = negotiated.AgentInfo?.Version ?? string.Empty;
-            if (!string.Equals(binding.ExpectedAgentName, observedName, StringComparison.Ordinal)
-                || !string.Equals(binding.ExpectedAgentVersion, observedVersion, StringComparison.Ordinal))
+            if (!_bindingStore.TryCaptureAcpBindingFingerprint(actorId, out var fingerprint, out var bindingEpoch))
             {
                 await DisposeClientSafelyAsync(client).ConfigureAwait(false);
                 client = null;
-                MarkStaleIfMatches(actorId, identityAtProbe, "ACP agent identity mismatch.");
+                return AcpOnboardingProbeResult.Failed(
+                    actorId,
+                    "ACP binding changed during configuration probe.");
+            }
+
+            if (fingerprint.Revision != identityAtProbe.Revision
+                || !string.Equals(fingerprint.ExecutablePath, identityAtProbe.ExecutablePath, StringComparison.Ordinal)
+                || !fingerprint.Arguments.SequenceEqual(identityAtProbe.Arguments, StringComparer.Ordinal))
+            {
+                await DisposeClientSafelyAsync(client).ConfigureAwait(false);
+                client = null;
+                return AcpOnboardingProbeResult.Failed(
+                    actorId,
+                    "ACP binding changed during configuration probe.");
+            }
+
+            if (!string.Equals(fingerprint.ExpectedAgentName, observedName, StringComparison.Ordinal)
+                || !string.Equals(fingerprint.ExpectedAgentVersion, observedVersion, StringComparison.Ordinal))
+            {
+                await DisposeClientSafelyAsync(client).ConfigureAwait(false);
+                client = null;
+                MarkStaleIfFingerprintMatches(
+                    actorId,
+                    fingerprint,
+                    bindingEpoch,
+                    "ACP agent identity mismatch.");
                 return AcpOnboardingProbeResult.Failed(
                     actorId,
                     "ACP agent identity mismatch for the durable binding.");
             }
 
-            if (!_bindingStore.TryGetBinding(actorId, out binding)
-                || !identityAtProbe.Matches(binding))
+            if (ProbePublicationDelayForTestAsync is not null)
+            {
+                await ProbePublicationDelayForTestAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, bindingEpoch))
             {
                 await DisposeClientSafelyAsync(client).ConfigureAwait(false);
                 client = null;
@@ -192,28 +235,25 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 negotiated.AgentCapabilities,
                 methodIds);
 
-            if (_selectionService is AgentActorBackendSelectionService concrete)
-            {
-                concrete.RecordAdvertisedAuthMethods(actorId, methodIds);
-            }
-
             var authState = methodIds.Length == 0
                 ? AgentAuthenticationConnectionState.NotRequired
                 : AgentAuthenticationConnectionState.PendingUserAction;
-            _bindingStore.SetRuntimeAuthentication(
-                actorId,
-                selectedAuthMethodId: null,
-                authState);
 
-            var bindingIdentity = ConnectionBindingIdentity.FromBinding(binding);
-            lock (_sync)
-            {
-                _connections[actorId] = new RuntimeConnection(
+            if (!TryPublishProbeOutcome(
+                    actorId,
+                    fingerprint,
+                    bindingEpoch,
                     client,
                     methodIds,
                     logoutSupported,
                     workspaceRoot,
-                    bindingIdentity);
+                    authState))
+            {
+                await DisposeClientSafelyAsync(client).ConfigureAwait(false);
+                client = null;
+                return AcpOnboardingProbeResult.Failed(
+                    actorId,
+                    "ACP binding changed during configuration probe.");
             }
 
             client = null; // ownership transferred to cache
@@ -232,7 +272,11 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
             }
 
             var redacted = Redact(ex.Message);
-            MarkStaleIfMatches(actorId, identityAtProbe, redacted);
+            MarkStaleIfFingerprintMatches(
+                actorId,
+                identityAtProbe,
+                epochAtProbe,
+                redacted);
             return AcpOnboardingProbeResult.Failed(actorId, redacted);
         }
     }
@@ -276,7 +320,11 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
         if (!_bindingStore.TryGetBinding(actorId, out var binding)
             || binding.BackendId != AgentBackendIds.Acp
-            || !connection.BindingIdentity.Matches(binding))
+            || !connection.Fingerprint.Matches(binding)
+            || !_bindingStore.TryValidateAcpBindingFingerprint(
+                actorId,
+                connection.Fingerprint,
+                connection.BindingEpoch))
         {
             await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
             return AcpOnboardingAuthResult.Failed(
@@ -295,9 +343,10 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
         if (!connection.AuthMethodIds.Any(m => string.Equals(m, methodId, StringComparison.Ordinal)))
         {
-            SetRuntimeAuthenticationIfMatches(
+            _bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
                 actorId,
-                connection.BindingIdentity,
+                connection.Fingerprint,
+                connection.BindingEpoch,
                 methodId,
                 AgentAuthenticationConnectionState.Failed);
             return AcpOnboardingAuthResult.Failed(
@@ -306,7 +355,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 methodId);
         }
 
-        var identityAtStart = connection.BindingIdentity;
+        var fingerprintAtStart = connection.Fingerprint;
+        var epochAtStart = connection.BindingEpoch;
 
         try
         {
@@ -314,8 +364,18 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
             await connection.Client.AuthenticateAsync(methodId, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (!_bindingStore.TryGetBinding(actorId, out binding)
-                || !identityAtStart.Matches(binding))
+            if (AuthenticatePublicationDelayForTestAsync is not null)
+            {
+                await AuthenticatePublicationDelayForTestAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (!_bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
+                    actorId,
+                    fingerprintAtStart,
+                    epochAtStart,
+                    methodId,
+                    AgentAuthenticationConnectionState.Authenticated))
             {
                 await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
                 return AcpOnboardingAuthResult.Failed(
@@ -324,18 +384,15 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                     methodId);
             }
 
-            _bindingStore.SetRuntimeAuthentication(
-                actorId,
-                methodId,
-                AgentAuthenticationConnectionState.Authenticated);
             return AcpOnboardingAuthResult.Succeeded(actorId, methodId);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             var redacted = Redact(ex.Message);
-            SetRuntimeAuthenticationIfMatches(
+            _bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
                 actorId,
-                identityAtStart,
+                fingerprintAtStart,
+                epochAtStart,
                 methodId,
                 AgentAuthenticationConnectionState.Failed);
             await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
@@ -379,7 +436,11 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
         if (!_bindingStore.TryGetBinding(actorId, out var binding)
             || binding.BackendId != AgentBackendIds.Acp
-            || !connection.BindingIdentity.Matches(binding))
+            || !connection.Fingerprint.Matches(binding)
+            || !_bindingStore.TryValidateAcpBindingFingerprint(
+                actorId,
+                connection.Fingerprint,
+                connection.BindingEpoch))
         {
             await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
             return AcpOnboardingLogoutResult.Failed(
@@ -387,7 +448,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "ACP binding no longer matches the cached runtime connection.");
         }
 
-        var identityAtStart = connection.BindingIdentity;
+        var fingerprintAtStart = connection.Fingerprint;
+        var epochAtStart = connection.BindingEpoch;
 
         try
         {
@@ -395,13 +457,12 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            ClearRuntimeIfMatches(actorId, identityAtStart);
+            ClearRuntimeIfFingerprintMatches(actorId, fingerprintAtStart, epochAtStart);
             await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
             return AcpOnboardingLogoutResult.Failed(actorId, Redact(ex.Message));
         }
 
-        if (!_bindingStore.TryGetBinding(actorId, out binding)
-            || !identityAtStart.Matches(binding))
+        if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprintAtStart, epochAtStart))
         {
             await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
             return AcpOnboardingLogoutResult.Failed(
@@ -409,7 +470,7 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "ACP binding changed during logout.");
         }
 
-        ClearRuntimeIfMatches(actorId, identityAtStart);
+        ClearRuntimeIfFingerprintMatches(actorId, fingerprintAtStart, epochAtStart);
         await InvalidateConnectionAsync(actorId).ConfigureAwait(false);
         return AcpOnboardingLogoutResult.Succeeded(actorId);
     }
@@ -535,58 +596,87 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         }
     }
 
-    private void MarkStaleIfMatches(
+    private bool TryPublishProbeOutcome(
         ActorId actorId,
-        ConnectionBindingIdentity identity,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long bindingEpoch,
+        IAcpSessionClient client,
+        IReadOnlyList<string> methodIds,
+        bool logoutSupported,
+        string workspaceRoot,
+        AgentAuthenticationConnectionState authState)
+    {
+        if (!_bindingStore.TryCommitAcpProbeRuntimeState(
+                actorId,
+                fingerprint,
+                bindingEpoch,
+                authState))
+        {
+            return false;
+        }
+
+        if (_selectionService is AgentActorBackendSelectionService concrete)
+        {
+            concrete.RecordAdvertisedAuthMethodsIfFingerprintMatches(
+                actorId,
+                fingerprint,
+                bindingEpoch,
+                methodIds);
+        }
+
+        lock (_sync)
+        {
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, bindingEpoch))
+            {
+                return false;
+            }
+
+            _connections[actorId] = new RuntimeConnection(
+                client,
+                methodIds,
+                logoutSupported,
+                workspaceRoot,
+                fingerprint,
+                bindingEpoch);
+            return true;
+        }
+    }
+
+    private void MarkStaleIfFingerprintMatches(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
         string reason)
     {
         _ = reason;
-        if (_bindingStore.TryGetBinding(actorId, out var binding)
-            && identity.Matches(binding))
-        {
-            _bindingStore.SetRuntimeAuthentication(
-                actorId,
-                selectedAuthMethodId: null,
-                AgentAuthenticationConnectionState.Failed);
-        }
+        _bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
+            actorId,
+            fingerprint,
+            epoch,
+            selectedAuthMethodId: null,
+            AgentAuthenticationConnectionState.Failed);
 
-        if (_selectionService is AgentActorBackendSelectionService concrete
-            && _bindingStore.TryGetBinding(actorId, out binding)
-            && identity.Matches(binding))
+        if (_selectionService is AgentActorBackendSelectionService concrete)
         {
-            concrete.RecordAdvertisedAuthMethods(actorId, Array.Empty<string>());
+            concrete.ClearAdvertisedAuthMethodsIfFingerprintMatches(actorId, fingerprint, epoch);
         }
     }
 
-    private void SetRuntimeAuthenticationIfMatches(
+    private void ClearRuntimeIfFingerprintMatches(
         ActorId actorId,
-        ConnectionBindingIdentity identity,
-        string methodId,
-        AgentAuthenticationConnectionState state)
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch)
     {
-        if (_bindingStore.TryGetBinding(actorId, out var binding)
-            && identity.Matches(binding))
-        {
-            _bindingStore.SetRuntimeAuthentication(actorId, methodId, state);
-        }
-    }
+        _bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
+            actorId,
+            fingerprint,
+            epoch,
+            selectedAuthMethodId: null,
+            AgentAuthenticationConnectionState.Disconnected);
 
-    private void ClearRuntimeIfMatches(ActorId actorId, ConnectionBindingIdentity identity)
-    {
-        if (_bindingStore.TryGetBinding(actorId, out var binding)
-            && identity.Matches(binding))
+        if (_selectionService is AgentActorBackendSelectionService concrete)
         {
-            _bindingStore.SetRuntimeAuthentication(
-                actorId,
-                selectedAuthMethodId: null,
-                AgentAuthenticationConnectionState.Disconnected);
-        }
-
-        if (_selectionService is AgentActorBackendSelectionService concrete
-            && _bindingStore.TryGetBinding(actorId, out binding)
-            && identity.Matches(binding))
-        {
-            concrete.RecordAdvertisedAuthMethods(actorId, Array.Empty<string>());
+            concrete.ClearAdvertisedAuthMethodsIfFingerprintMatches(actorId, fingerprint, epoch);
         }
     }
 
@@ -672,53 +762,6 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
         return logout.ValueKind == JsonValueKind.Object;
     }
 
-    private sealed class ConnectionBindingIdentity
-    {
-        public ConnectionBindingIdentity(
-            long revision,
-            AcpRuntimeIdentity runtimeIdentity,
-            string expectedAgentName,
-            string expectedAgentVersion)
-        {
-            Revision = revision;
-            ExecutablePath = runtimeIdentity.ExecutablePath;
-            Arguments = runtimeIdentity.Arguments;
-            ExpectedAgentName = expectedAgentName;
-            ExpectedAgentVersion = expectedAgentVersion;
-        }
-
-        public long Revision { get; }
-
-        public string ExecutablePath { get; }
-
-        public IReadOnlyList<string> Arguments { get; }
-
-        public string ExpectedAgentName { get; }
-
-        public string ExpectedAgentVersion { get; }
-
-        public bool Matches(AgentActorBackendBinding binding)
-        {
-            if (binding.BackendId != AgentBackendIds.Acp || binding.AcpRuntime is null)
-            {
-                return false;
-            }
-
-            return binding.Revision == Revision
-                   && string.Equals(binding.ExpectedAgentName, ExpectedAgentName, StringComparison.Ordinal)
-                   && string.Equals(binding.ExpectedAgentVersion, ExpectedAgentVersion, StringComparison.Ordinal)
-                   && string.Equals(binding.AcpRuntime.ExecutablePath, ExecutablePath, StringComparison.Ordinal)
-                   && binding.AcpRuntime.MatchesArguments(Arguments);
-        }
-
-        public static ConnectionBindingIdentity FromBinding(AgentActorBackendBinding binding) =>
-            new(
-                binding.Revision,
-                binding.AcpRuntime!,
-                binding.ExpectedAgentName!,
-                binding.ExpectedAgentVersion!);
-    }
-
     private sealed class RuntimeConnection
     {
         public RuntimeConnection(
@@ -726,13 +769,15 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
             IReadOnlyList<string> authMethodIds,
             bool logoutSupported,
             string workspaceRoot,
-            ConnectionBindingIdentity bindingIdentity)
+            AcpRuntimeBindingFingerprint fingerprint,
+            long bindingEpoch)
         {
             Client = client;
             AuthMethodIds = authMethodIds;
             LogoutSupported = logoutSupported;
             WorkspaceRoot = workspaceRoot;
-            BindingIdentity = bindingIdentity;
+            Fingerprint = fingerprint;
+            BindingEpoch = bindingEpoch;
         }
 
         public IAcpSessionClient Client { get; }
@@ -743,6 +788,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
         public string WorkspaceRoot { get; }
 
-        public ConnectionBindingIdentity BindingIdentity { get; }
+        public AcpRuntimeBindingFingerprint Fingerprint { get; }
+
+        public long BindingEpoch { get; }
     }
 }

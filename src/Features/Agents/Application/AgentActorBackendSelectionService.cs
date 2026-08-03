@@ -18,7 +18,7 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
 {
     private readonly IAgentActorBackendBindingStore _bindingStore;
     private readonly Func<IAcpOnboardingConnectionService?>? _onboardingResolver;
-    private readonly Dictionary<ActorId, IReadOnlyList<string>> _advertisedAuthMethods = new();
+    private readonly Dictionary<ActorId, AdvertisedAuthMethodCache> _advertisedAuthMethods = new();
     private readonly object _sync = new();
     private readonly List<Action<AgentActorBackendBindingChangedEvent>> _changeHandlers = new();
 
@@ -235,17 +235,58 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
     {
         lock (_sync)
         {
-            return _advertisedAuthMethods.TryGetValue(actorId, out var methods)
-                ? methods
-                : Array.Empty<string>();
+            if (!_advertisedAuthMethods.TryGetValue(actorId, out var cache))
+            {
+                return Array.Empty<string>();
+            }
+
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(
+                    actorId,
+                    cache.Fingerprint,
+                    cache.Epoch))
+            {
+                return Array.Empty<string>();
+            }
+
+            return cache.MethodIds;
         }
     }
 
     internal void RecordAdvertisedAuthMethods(ActorId actorId, IReadOnlyList<string> methodIds)
     {
+        if (!_bindingStore.TryCaptureAcpBindingFingerprint(actorId, out var fingerprint, out var epoch))
+        {
+            lock (_sync)
+            {
+                _advertisedAuthMethods.Remove(actorId);
+            }
+
+            return;
+        }
+
+        RecordAdvertisedAuthMethodsIfFingerprintMatches(actorId, fingerprint, epoch, methodIds);
+    }
+
+    internal void RecordAdvertisedAuthMethodsIfFingerprintMatches(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
+        IReadOnlyList<string> methodIds)
+    {
+        ArgumentNullException.ThrowIfNull(fingerprint);
+        ArgumentNullException.ThrowIfNull(methodIds);
+
+        if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
+        {
+            return;
+        }
+
         lock (_sync)
         {
-            _advertisedAuthMethods[actorId] = methodIds;
+            _advertisedAuthMethods[actorId] = new AdvertisedAuthMethodCache(
+                fingerprint,
+                epoch,
+                methodIds);
         }
     }
 
@@ -309,6 +350,19 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         }
     }
 
+    internal void ClearAdvertisedAuthMethodsIfFingerprintMatches(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch)
+    {
+        if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
+        {
+            return;
+        }
+
+        ClearAdvertisedAuthMethods(actorId);
+    }
+
     private void OnStoreBindingChanged(AgentActorBackendBindingChangedEvent change)
     {
         // Any successful durable mutation invalidates cached advertised methods
@@ -370,5 +424,24 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
                 $"{caption} · Auth: select method",
             _ => $"{caption} · Auth: disconnected",
         };
+    }
+
+    private sealed class AdvertisedAuthMethodCache
+    {
+        public AdvertisedAuthMethodCache(
+            AcpRuntimeBindingFingerprint fingerprint,
+            long epoch,
+            IReadOnlyList<string> methodIds)
+        {
+            Fingerprint = fingerprint;
+            Epoch = epoch;
+            MethodIds = methodIds;
+        }
+
+        public AcpRuntimeBindingFingerprint Fingerprint { get; }
+
+        public long Epoch { get; }
+
+        public IReadOnlyList<string> MethodIds { get; }
     }
 }

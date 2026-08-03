@@ -17,6 +17,7 @@ namespace Zaide.Features.Agents.Application;
 internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingStore
 {
     private readonly Dictionary<ActorId, AgentActorBackendBinding> _bindings = new();
+    private readonly Dictionary<ActorId, long> _bindingEpochs = new();
     private readonly object _sync = new();
     private readonly string? _primaryPath;
     private readonly string? _tempPath;
@@ -193,6 +194,7 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
             }
 
             _bindings[candidate.ActorId] = candidate;
+            BumpBindingEpochLocked(candidate.ActorId);
             change = new AgentActorBackendBindingChangedEvent(
                 candidate.ActorId,
                 previous is null
@@ -225,6 +227,96 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
             _bindings[actorId] = existing.WithAuthentication(
                 selectedAuthMethodId,
                 authenticationState);
+        }
+    }
+
+    public long GetBindingEpoch(ActorId actorId)
+    {
+        lock (_sync)
+        {
+            return _bindingEpochs.GetValueOrDefault(actorId, 0L);
+        }
+    }
+
+    public bool TryCaptureAcpBindingFingerprint(
+        ActorId actorId,
+        out AcpRuntimeBindingFingerprint fingerprint,
+        out long epoch)
+    {
+        lock (_sync)
+        {
+            if (!_bindings.TryGetValue(actorId, out var binding)
+                || binding.BackendId != AgentBackendIds.Acp
+                || binding.AcpRuntime is null)
+            {
+                fingerprint = null!;
+                epoch = 0;
+                return false;
+            }
+
+            fingerprint = AcpRuntimeBindingFingerprint.FromBinding(binding);
+            epoch = _bindingEpochs.GetValueOrDefault(actorId, 0L);
+            return true;
+        }
+    }
+
+    public bool TryValidateAcpBindingFingerprint(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch)
+    {
+        ArgumentNullException.ThrowIfNull(fingerprint);
+
+        lock (_sync)
+        {
+            return ValidateAcpBindingFingerprintLocked(actorId, fingerprint, epoch);
+        }
+    }
+
+    public bool TrySetRuntimeAuthenticationIfFingerprintMatches(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
+        string? selectedAuthMethodId,
+        AgentAuthenticationConnectionState authenticationState)
+    {
+        ArgumentNullException.ThrowIfNull(fingerprint);
+
+        lock (_sync)
+        {
+            if (!ValidateAcpBindingFingerprintLocked(actorId, fingerprint, epoch))
+            {
+                return false;
+            }
+
+            var existing = _bindings[actorId];
+            _bindings[actorId] = existing.WithAuthentication(
+                selectedAuthMethodId,
+                authenticationState);
+            return true;
+        }
+    }
+
+    public bool TryCommitAcpProbeRuntimeState(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch,
+        AgentAuthenticationConnectionState authenticationState)
+    {
+        ArgumentNullException.ThrowIfNull(fingerprint);
+
+        lock (_sync)
+        {
+            if (!ValidateAcpBindingFingerprintLocked(actorId, fingerprint, epoch))
+            {
+                return false;
+            }
+
+            var existing = _bindings[actorId];
+            _bindings[actorId] = existing.WithAuthentication(
+                selectedAuthMethodId: null,
+                authenticationState);
+            return true;
         }
     }
 
@@ -280,6 +372,7 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
                 }
 
                 _bindings[candidate.ActorId] = candidate;
+                BumpBindingEpochLocked(candidate.ActorId);
                 change = new AgentActorBackendBindingChangedEvent(
                     candidate.ActorId,
                     AgentActorBackendBindingMutationKind.Bind,
@@ -383,6 +476,7 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
                 }
 
                 _bindings[actorId] = candidate;
+                BumpBindingEpochLocked(actorId);
                 change = new AgentActorBackendBindingChangedEvent(
                     actorId,
                     AgentActorBackendBindingMutationKind.Update,
@@ -462,6 +556,7 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
             }
 
             _bindings.Remove(actorId);
+            BumpBindingEpochLocked(actorId);
             change = new AgentActorBackendBindingChangedEvent(
                 actorId,
                 AgentActorBackendBindingMutationKind.Unbind,
@@ -707,5 +802,28 @@ internal sealed class AgentActorBackendBindingStore : IAgentActorBackendBindingS
         {
             handler(change);
         }
+    }
+
+    private void BumpBindingEpochLocked(ActorId actorId)
+    {
+        _bindingEpochs[actorId] = _bindingEpochs.TryGetValue(actorId, out var current) ? current + 1 : 1L;
+    }
+
+    private bool ValidateAcpBindingFingerprintLocked(
+        ActorId actorId,
+        AcpRuntimeBindingFingerprint fingerprint,
+        long epoch)
+    {
+        if (_bindingEpochs.GetValueOrDefault(actorId, 0L) != epoch)
+        {
+            return false;
+        }
+
+        if (!_bindings.TryGetValue(actorId, out var binding))
+        {
+            return false;
+        }
+
+        return fingerprint.Matches(binding);
     }
 }
