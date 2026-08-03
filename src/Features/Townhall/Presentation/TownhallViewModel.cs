@@ -717,8 +717,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
     private async Task SendMessageAsync()
     {
-        var draft = DraftText?.Trim();
-        if (string.IsNullOrEmpty(draft))
+        // Capture the exact raw source draft before any await. Routing uses the
+        // trimmed payload; draft clearing compares ordinal-exactly against the raw
+        // snapshot so whitespace-only newer edits are preserved.
+        var rawDraftSnapshot = DraftText ?? string.Empty;
+        var submittedPayload = rawDraftSnapshot.Trim();
+        if (string.IsNullOrEmpty(submittedPayload))
         {
             return;
         }
@@ -729,21 +733,20 @@ public class TownhallViewModel : ReactiveObject, IDisposable
                 && _state.ActiveConversationId is { } channelConversationId
                 && _conversationStore.TryGet(channelConversationId, out var channelConversation)
                 && channelConversation.Kind == ConversationKind.Channel
-                && ContainsCatalogMention(draft))
+                && ContainsCatalogMention(submittedPayload))
             {
                 // Capture source ownership before await; navigation must not clear another draft.
                 var sourceConversationId = channelConversationId;
-                var submittedDraft = draft;
                 var routeResult = await _agentRouter.RouteAndExecuteFromConversationAsync(
                     sourceConversationId,
-                    submittedDraft);
-                TryClearDraftAfterRoute(routeResult, sourceConversationId, submittedDraft);
+                    submittedPayload);
+                TryClearDraftAfterRoute(routeResult, sourceConversationId, rawDraftSnapshot);
                 return;
             }
 
             LogActivity(
                 entryKind: ConversationEntryKind.UserChat,
-                content: draft,
+                content: submittedPayload,
                 author: _actorCatalog.CanonicalHuman.Id,
                 senderId: _actorCatalog.CanonicalHuman.ProjectedLegacyId,
                 senderName: _actorCatalog.CanonicalHuman.DisplayName);
@@ -776,13 +779,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         {
             // Capture source ownership before await; navigation must not clear another draft.
             var sourceConversationId = activeConversationId;
-            var submittedDraft = draft;
-            var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, submittedDraft);
-            TryClearDraftAfterRoute(routeResult, sourceConversationId, submittedDraft);
+            var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, submittedPayload);
+            TryClearDraftAfterRoute(routeResult, sourceConversationId, rawDraftSnapshot);
             return;
         }
 
-        var result = await _executionCoordinator.SendAsync(panel.PanelId, draft);
+        var result = await _executionCoordinator.SendAsync(panel.PanelId, submittedPayload);
         if (result is not null)
         {
             ClearActiveConversationDraft();
@@ -845,31 +847,33 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private void TryClearDraftAfterRoute(
         RouteResult routeResult,
         ConversationId sourceConversationId,
-        string submittedDraft)
+        string rawDraftSnapshot)
     {
         if (!ShouldClearDraftAfterRoute(routeResult, sourceConversationId))
         {
             return;
         }
 
-        ClearSourceConversationDraftIfUnchanged(sourceConversationId, submittedDraft);
+        ClearSourceConversationDraftIfUnchanged(sourceConversationId, rawDraftSnapshot);
     }
 
     /// <summary>
-    /// Clears only the captured source conversation's draft when it still represents
-    /// the submitted text. Never rewrites the currently active conversation merely
-    /// because it became active while another routed send was in flight.
+    /// Clears only the captured source conversation's draft when its current value is
+    /// ordinal-exactly equal to the raw pre-await snapshot. Never trims for the
+    /// comparison: whitespace-only newer edits survive. Never rewrites the currently
+    /// active conversation merely because it became active while another routed send
+    /// was in flight.
     /// </summary>
     private void ClearSourceConversationDraftIfUnchanged(
         ConversationId sourceConversationId,
-        string submittedDraft)
+        string rawDraftSnapshot)
     {
         var sourceIsActive = _state.ActiveConversationId == sourceConversationId;
         var currentSourceDraft = sourceIsActive
             ? DraftText
             : _conversationUiState.GetDraft(sourceConversationId);
 
-        if (!DraftRepresentsSubmitted(currentSourceDraft, submittedDraft))
+        if (!string.Equals(currentSourceDraft, rawDraftSnapshot, StringComparison.Ordinal))
         {
             return;
         }
@@ -881,21 +885,6 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         }
 
         NotifyPresentationPersisted();
-    }
-
-    private static bool DraftRepresentsSubmitted(string? currentDraft, string submittedDraft)
-    {
-        if (string.Equals(currentDraft, submittedDraft, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        // Send captures a trimmed draft; the displayed/stored draft may still be the
-        // pre-trim text the user typed. Treat that as the same submitted content.
-        return string.Equals(
-            currentDraft?.Trim(),
-            submittedDraft,
-            StringComparison.Ordinal);
     }
 
     private bool ShouldClearDraftAfterRoute(RouteResult routeResult, ConversationId sourceConversationId)

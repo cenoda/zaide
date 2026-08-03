@@ -467,4 +467,96 @@ public sealed class Phase22TownhallRoutingOutcomeTests
         vm.SelectChannelCommand.Execute(channelAId).Subscribe();
         Assert.Single(vm.Messages, m => m.Content == "plain once");
     }
+
+    [Fact]
+    public async Task UnchangedRawDraft_ClearsAfterCorrelatedVisibleOutcome()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (vm, store, _, _, _, backend, _, draftState) = CreateRoutedSurface(
+            b => b.SetGatedCompletion(gate, "clear-unchanged reply"));
+
+        vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+        var sourceConversationId = vm.ActiveConversationId!.Value;
+
+        // Raw snapshot includes trailing whitespace; payload is trimmed for routing.
+        const string rawDraft = "@Beta clear-unchanged  ";
+        vm.DraftText = rawDraft;
+        var sendTask = vm.SendMessageCommand.Execute().ToTask();
+        await WaitForExecutionStartedAsync(backend);
+
+        // Draft left exactly as captured (ordinal-equal to raw snapshot).
+        Assert.Equal(rawDraft, vm.DraftText);
+
+        gate.SetResult("clear-unchanged reply");
+        await sendTask;
+
+        Assert.Equal(string.Empty, vm.DraftText);
+        Assert.Equal(string.Empty, draftState.GetDraft(sourceConversationId));
+        Assert.True(store.TryGet(sourceConversationId, out var sourceAfter));
+        Assert.Single(sourceAfter!.Entries, IsRouteStatus);
+    }
+
+    [Fact]
+    public async Task ChannelRoute_TrimEquivalentButRawDifferentNewerDraft_Survives()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (vm, store, _, _, _, backend, _, draftState) = CreateRoutedSurface(
+            b => b.SetGatedCompletion(gate, "trim-equiv channel reply"));
+
+        var channelAId = vm.ActiveChannelId!;
+        Assert.True(store.TryGetChannelConversation(channelAId, out var channelAConversation));
+        var channelAConversationId = channelAConversation!.Id;
+
+        // Capture raw includes trailing spaces; submitted payload is trimmed.
+        const string rawDraft = "@Beta trim-equiv channel  ";
+        const string newerTrimEquivalent = "@Beta trim-equiv channel";
+        Assert.Equal(newerTrimEquivalent, rawDraft.Trim());
+        Assert.NotEqual(rawDraft, newerTrimEquivalent);
+
+        vm.DraftText = rawDraft;
+        var sendTask = vm.SendMessageCommand.Execute().ToTask();
+        await WaitForExecutionStartedAsync(backend);
+
+        // Newer edit is trim-equivalent but ordinal-different from the raw snapshot.
+        vm.DraftText = newerTrimEquivalent;
+
+        gate.SetResult("trim-equiv channel reply");
+        await sendTask;
+
+        Assert.Equal(newerTrimEquivalent, vm.DraftText);
+        Assert.Equal(newerTrimEquivalent, draftState.GetDraft(channelAConversationId));
+        Assert.True(store.TryGet(channelAConversationId, out var sourceAfter));
+        Assert.Single(sourceAfter!.Entries, IsRouteStatus);
+    }
+
+    [Fact]
+    public async Task DirectRoute_TrimEquivalentButRawDifferentNewerDraft_Survives()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (vm, store, _, _, _, backend, _, draftState) = CreateRoutedSurface(
+            b => b.SetGatedCompletion(gate, "trim-equiv direct reply"));
+
+        vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+        var sourceConversationId = vm.ActiveConversationId!.Value;
+
+        const string rawDraft = "@Beta trim-equiv direct  ";
+        // Leading-space-only change: still trim-equivalent to the submitted payload.
+        const string newerTrimEquivalent = " @Beta trim-equiv direct";
+        Assert.Equal(rawDraft.Trim(), newerTrimEquivalent.Trim());
+        Assert.NotEqual(rawDraft, newerTrimEquivalent);
+
+        vm.DraftText = rawDraft;
+        var sendTask = vm.SendMessageCommand.Execute().ToTask();
+        await WaitForExecutionStartedAsync(backend);
+
+        vm.DraftText = newerTrimEquivalent;
+
+        gate.SetResult("trim-equiv direct reply");
+        await sendTask;
+
+        Assert.Equal(newerTrimEquivalent, vm.DraftText);
+        Assert.Equal(newerTrimEquivalent, draftState.GetDraft(sourceConversationId));
+        Assert.True(store.TryGet(sourceConversationId, out var sourceAfter));
+        Assert.Single(sourceAfter!.Entries, IsRouteStatus);
+    }
 }

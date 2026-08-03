@@ -2,14 +2,15 @@
 
 ## Status
 
-**M1 corrective implementation pushed pending independent re-audit; M2 not authorized.**
+**M1 residual draft-snapshot correction pushed pending independent re-audit; M2 not authorized.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
 session. Independent M1 audit returned **NO-GO** (F1 wrong-conversation draft
 loss; F2 inactive-channel route-status missing from cached presentation).
-Corrective-only work closed F1/F2; M1 is **not accepted**. M2–M5, G5, A3
-execution, and V4 have not started.
+Corrective work closed F1/F2, then a residual F1 follow-on: trim-equivalent but
+raw-different newer drafts were still cleared. That residual is closed; M1 is
+**not accepted**. M2–M5, G5, A3 execution, and V4 have not started.
 
 ## Work Board
 
@@ -157,6 +158,51 @@ Boundaries preserved: no `EndAsync` UI; no `SessionEnding`/`SessionEnded`; no
 Phase 17/21 changes; no Native Harness/ACP coupling; no schema/dependency/
 package changes. M2 not authorized. M1 not accepted.
 
+## M1 Residual — Exact Raw Draft Snapshot Clear (2026-08-03)
+
+Baseline under correction: `759abf11782e15e560594e6f0f8629d4d90434d8`.
+
+### Residual defect
+
+After F1/F2, clear still compared the current draft against a **trimmed**
+submitted payload and treated `current.Trim() == submitted` as equal. A newer
+edit that differed only by leading/trailing whitespace (trim-equivalent, raw-
+different) was incorrectly cleared.
+
+### Correction
+
+- Capture `rawDraftSnapshot = DraftText` exactly as entered before any await.
+- Route `submittedPayload = rawDraftSnapshot.Trim()`.
+- Clear the source draft only when its current value is ordinal-exactly equal
+  to `rawDraftSnapshot` (no trim on either side of the comparison).
+- Apply the same rule to channel and direct routing.
+- Preserve every newer edit, including whitespace-only changes.
+
+### Residual tests
+
+Added to `Phase22TownhallRoutingOutcomeTests` (gated `TaskCompletionSource`;
+no timing sleeps):
+
+- `UnchangedRawDraft_ClearsAfterCorrelatedVisibleOutcome`
+- `ChannelRoute_TrimEquivalentButRawDifferentNewerDraft_Survives`
+- `DirectRoute_TrimEquivalentButRawDifferentNewerDraft_Survives`
+
+M1 class totals: `Phase22AgentOutcomeProjectionTests` 11;
+`Phase22TownhallRoutingOutcomeTests` 21 (was 18); combined **32**.
+
+### Residual verification results
+
+| Command | Result |
+|---------|--------|
+| M1 explicit filter | PASS 32/32 |
+| M0+M1 send/routing/projection filter | PASS 103/103 |
+| Townhall draft/navigation focused filter | PASS 76/76 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3881/3881 |
+| `git diff --check` | PASS |
+
+M1 remains unaccepted until independent re-audit. M2 not authorized.
+
 ## Remaining Open Product Gaps (post-M1)
 
 - `IAgentSessionService.EndAsync` has no production caller. Registered
@@ -176,5 +222,6 @@ package changes. M2 not authorized. M1 not accepted.
 
 ## Next Task
 
-Independent human M1 re-audit of the corrective pass. Do not begin M2 until
-explicit M2 implementation authorization is recorded after M1 acceptance.
+Independent human M1 re-audit of the residual draft-snapshot correction. Do not
+begin M2 until explicit M2 implementation authorization is recorded after M1
+acceptance.

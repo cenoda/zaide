@@ -2,15 +2,18 @@
 
 ## Status and Authorization
 
-**M1 corrective implementation pushed pending independent re-audit; M2 not authorized.**
+**M1 residual draft-snapshot correction pushed pending independent re-audit; M2 not authorized.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
 `c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
 implementation authorization was granted in the same session. Independent M1
 audit at `01a1f221a8a96c91be14f078321658e9d5582b50` returned **NO-GO** for two
-navigation/race defects (F1, F2). Corrective-only authorization closed those
-defects; M1 is **not accepted**. M2–M5 require explicit separate implementation
-approval.
+navigation/race defects (F1, F2). Corrective work at
+`759abf11782e15e560594e6f0f8629d4d90434d8` closed F1/F2. A residual F1 follow-on
+remained: routed draft clear compared against a trimmed payload and still
+cleared trim-equivalent but raw-different newer edits. That residual is closed
+by exact raw-snapshot capture and ordinal-only clear; M1 is **not accepted**.
+M2–M5 require explicit separate implementation approval.
 
 The live findings, test inventory, future A3 procedure, and recommendation are
 recorded in [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md).
@@ -107,7 +110,7 @@ final authorization, execution, audit, and reconciliation path.
 | Milestone | Outcome | Required new tests | Verification gate |
 |-----------|---------|--------------------|-------------------|
 | M0 | Live dependency, send/routing, projection, termination, broker, continuity, test, harness, migration, and rollback seams verified | Documentation only | Existing focused filters + build/full-suite gates; human acceptance |
-| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | Send/routing/projection focused filter — **corrective implementation pushed pending re-audit; 29/29 M1 tests, 100/100 M0+M1 filter, 3878/3878 full suite** |
+| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | Send/routing/projection focused filter — **residual draft-snapshot correction pushed pending re-audit; 32/32 M1 tests, 103/103 M0+M1 filter, 3881/3881 full suite** |
 | M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter |
 | M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter |
 | M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + force-quit A3 scenarios |
