@@ -90,7 +90,7 @@ at **exactly 30.004s** (default ACP `InitializeTimeout`).
 | Fast | ~17s | Passed 3849/3849 |
 | Serial | ~39–42s | Passed 3849/3849 |
 
-- **Commit:** `5d4e53233025987af85866cbb03194ac633b5924`
+- **Commit:** `9c4bb94fb9d79694a0fba19263dc28eeca822ca7`
 - **Closed date:** 2026-08-03
 
 ## Not changed
