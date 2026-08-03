@@ -731,10 +731,13 @@ public class TownhallViewModel : ReactiveObject, IDisposable
                 && channelConversation.Kind == ConversationKind.Channel
                 && ContainsCatalogMention(draft))
             {
+                // Capture source ownership before await; navigation must not clear another draft.
+                var sourceConversationId = channelConversationId;
+                var submittedDraft = draft;
                 var routeResult = await _agentRouter.RouteAndExecuteFromConversationAsync(
-                    channelConversationId,
-                    draft);
-                TryClearDraftAfterRoute(routeResult, channelConversationId);
+                    sourceConversationId,
+                    submittedDraft);
+                TryClearDraftAfterRoute(routeResult, sourceConversationId, submittedDraft);
                 return;
             }
 
@@ -771,8 +774,11 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         // without requiring an open target panel tab.
         if (_agentRouter is not null)
         {
-            var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, draft);
-            TryClearDraftAfterRoute(routeResult, activeConversationId);
+            // Capture source ownership before await; navigation must not clear another draft.
+            var sourceConversationId = activeConversationId;
+            var submittedDraft = draft;
+            var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, submittedDraft);
+            TryClearDraftAfterRoute(routeResult, sourceConversationId, submittedDraft);
             return;
         }
 
@@ -836,12 +842,60 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         UpdateActiveConversationDisplayContext();
     }
 
-    private void TryClearDraftAfterRoute(RouteResult routeResult, ConversationId sourceConversationId)
+    private void TryClearDraftAfterRoute(
+        RouteResult routeResult,
+        ConversationId sourceConversationId,
+        string submittedDraft)
     {
-        if (ShouldClearDraftAfterRoute(routeResult, sourceConversationId))
+        if (!ShouldClearDraftAfterRoute(routeResult, sourceConversationId))
         {
-            ClearActiveConversationDraft();
+            return;
         }
+
+        ClearSourceConversationDraftIfUnchanged(sourceConversationId, submittedDraft);
+    }
+
+    /// <summary>
+    /// Clears only the captured source conversation's draft when it still represents
+    /// the submitted text. Never rewrites the currently active conversation merely
+    /// because it became active while another routed send was in flight.
+    /// </summary>
+    private void ClearSourceConversationDraftIfUnchanged(
+        ConversationId sourceConversationId,
+        string submittedDraft)
+    {
+        var sourceIsActive = _state.ActiveConversationId == sourceConversationId;
+        var currentSourceDraft = sourceIsActive
+            ? DraftText
+            : _conversationUiState.GetDraft(sourceConversationId);
+
+        if (!DraftRepresentsSubmitted(currentSourceDraft, submittedDraft))
+        {
+            return;
+        }
+
+        _conversationUiState.ClearDraft(sourceConversationId);
+        if (sourceIsActive)
+        {
+            DraftText = string.Empty;
+        }
+
+        NotifyPresentationPersisted();
+    }
+
+    private static bool DraftRepresentsSubmitted(string? currentDraft, string submittedDraft)
+    {
+        if (string.Equals(currentDraft, submittedDraft, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // Send captures a trimmed draft; the displayed/stored draft may still be the
+        // pre-trim text the user typed. Treat that as the same submitted content.
+        return string.Equals(
+            currentDraft?.Trim(),
+            submittedDraft,
+            StringComparison.Ordinal);
     }
 
     private bool ShouldClearDraftAfterRoute(RouteResult routeResult, ConversationId sourceConversationId)
@@ -1196,12 +1250,11 @@ public class TownhallViewModel : ReactiveObject, IDisposable
                 }
             }
             else if (conversation.Kind == ConversationKind.Channel
-                     && isActive
-                     && conversation.Id.TryGetChannelId(out var channelId)
-                     && _state.ChannelMessages.TryGetValue(channelId, out var channelMessages)
-                     && entry.Kind != ConversationEntryKind.UserChat)
+                     && conversation.Id.TryGetChannelId(out var channelId))
             {
-                channelMessages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
+                // Channel presentation is conversation-owned: inactive routes must still
+                // update the cached collection so returning later shows the entry once.
+                EnsureChannelMessageProjected(channelId, entry);
             }
         }
         catch
@@ -1253,7 +1306,6 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             _state.ChannelMessages[channelId] = new ObservableCollection<TownhallMessage>();
         }
 
-        var messagesList = _state.ChannelMessages[channelId];
         var timestamp = DateTimeOffset.UtcNow;
         var typedEntry = TownhallEntryProjection.CreateTypedEntry(
             entryKind,
@@ -1261,15 +1313,25 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             timestamp,
             content);
 
+        // Presentation is owned by OnConversationEntryAppended (conversation-owned
+        // cache update with authoritative entry-id dedupe). Do not mirror-add here.
         _conversationStore.AppendEntry(conversation.Id, typedEntry);
+    }
 
-        var entry = TownhallEntryProjection.ToTownhallMessage(
-            typedEntry,
-            _actorCatalog,
-            senderId,
-            senderName);
+    private void EnsureChannelMessageProjected(string channelId, ConversationEntry entry)
+    {
+        if (!_state.ChannelMessages.TryGetValue(channelId, out var channelMessages))
+        {
+            channelMessages = new ObservableCollection<TownhallMessage>();
+            _state.ChannelMessages[channelId] = channelMessages;
+        }
 
-        messagesList.Add(entry);
+        if (channelMessages.Any(m => m.Id == entry.Id.Value))
+        {
+            return;
+        }
+
+        channelMessages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
     }
 
     /// <summary>

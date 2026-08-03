@@ -2,11 +2,14 @@
 
 ## Status
 
-**M1 implemented and pushed pending independent audit; M2 not authorized.**
+**M1 corrective implementation pushed pending independent re-audit; M2 not authorized.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
-session. M2–M5, G5, and V4 have not started.
+session. Independent M1 audit returned **NO-GO** (F1 wrong-conversation draft
+loss; F2 inactive-channel route-status missing from cached presentation).
+Corrective-only work closed F1/F2; M1 is **not accepted**. M2–M5, G5, A3
+execution, and V4 have not started.
 
 ## Work Board
 
@@ -79,6 +82,81 @@ Baseline: `c2904fb100d538b0bd080eab3002cfc3994b6889`.
 Native Harness and ACP remain independent sibling backends. Phase 17 broker
 ordering and `TryConsume()` final authorization were not changed.
 
+## M1 Independent Audit NO-GO and Corrective Pass (2026-08-03)
+
+Baseline under audit: `01a1f221a8a96c91be14f078321658e9d5582b50`.
+
+### Audit verdict
+
+Independent M1 audit: **NO-GO**. Two defects required corrective-only work.
+M1 remains unaccepted until independent re-audit.
+
+### F1 — Wrong-conversation draft loss
+
+**Root cause:** `TryClearDraftAfterRoute` evaluated the correlated outcome on the
+captured source conversation, then called `ClearActiveConversationDraft()`. If
+the user navigated while routing was in flight, completion cleared the newly
+active conversation’s draft and could leave the source draft stale.
+
+**Correction:** Capture source `ConversationId` and the exact submitted draft
+before awaiting routing. Clear only the captured source conversation’s stored
+draft when it still represents the submitted text. Update `DraftText` only when
+the source is still active. Preserve newer drafts edited during the in-flight
+operation. Apply the same ownership rule to channel and direct routed sends.
+
+### F2 — Inactive-channel route status missing from cached presentation
+
+**Root cause:** `OnConversationEntryAppended` updated `_state.ChannelMessages`
+only when the channel was active. A route status arriving after navigation was
+durable in `IConversationStore` and could set unread, but was absent from the
+cached collection used when the user returned.
+
+**Correction:** Every channel entry that belongs in Townhall presentation updates
+that channel’s cached collection whether active or inactive, guarded by
+authoritative entry ID. `AppendMirroredActivity` no longer double-adds; store
+append owns presentation via `OnConversationEntryAppended`. Active last-read and
+inactive unread behavior are preserved. Private target prompt/response content
+is not mirrored into the source channel.
+
+### Corrective production changes
+
+- `TownhallViewModel.SendMessageAsync` / `TryClearDraftAfterRoute` /
+  `ClearSourceConversationDraftIfUnchanged` — source-owned draft clear.
+- `TownhallViewModel.OnConversationEntryAppended` /
+  `EnsureChannelMessageProjected` — conversation-owned channel presentation.
+- `AppendMirroredActivity` — store append only; presentation via entry-appended
+  path with entry-id dedupe.
+
+### Corrective tests
+
+Added to `Phase22TownhallRoutingOutcomeTests` (gated `TaskCompletionSource`
+fake-backend control; no timing sleeps):
+
+- `ChannelRoute_InFlightNavigation_PreservesOtherChannelDraft_AndProjectsRouteStatusExactlyOnce`
+- `DirectRoute_InFlightNavigation_PreservesOtherConversationDraft`
+- `ChannelRoute_ReturnAndEditSourceDraftDuringFlight_PreservesNewerDraft`
+- `MissingCorrelatedVisibleOutcome_DoesNotClearSourceDraft`
+- `ChannelSwitchAndPlainChat_ProjectCachedEntriesExactlyOnce`
+
+M1 class totals: `Phase22AgentOutcomeProjectionTests` 11;
+`Phase22TownhallRoutingOutcomeTests` 18 (was 13); combined **29**.
+
+### Corrective verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M1 classes | Discovered 29 tests |
+| M1 explicit filter | PASS 29/29 |
+| M0+M1 send/routing/projection filter | PASS 100/100 |
+| Townhall/draft/unread/navigation/composition/architecture filter | PASS 143/143 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3878/3878 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no `EndAsync` UI; no `SessionEnding`/`SessionEnded`; no
+Phase 17/21 changes; no Native Harness/ACP coupling; no schema/dependency/
+package changes. M2 not authorized. M1 not accepted.
+
 ## Remaining Open Product Gaps (post-M1)
 
 - `IAgentSessionService.EndAsync` has no production caller. Registered
@@ -98,5 +176,5 @@ ordering and `TryConsume()` final authorization were not changed.
 
 ## Next Task
 
-Independent human M1 audit. Do not begin M2 until explicit M2 implementation
-authorization is recorded.
+Independent human M1 re-audit of the corrective pass. Do not begin M2 until
+explicit M2 implementation authorization is recorded after M1 acceptance.
