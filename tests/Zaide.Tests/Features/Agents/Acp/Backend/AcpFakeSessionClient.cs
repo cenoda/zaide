@@ -31,11 +31,21 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
 
     public string? ActiveSessionId => _activeSessionId;
 
-    public Task<AcpNegotiatedCapabilities> InitializeAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Optional delay invoked before initialize completes.
+    /// </summary>
+    public Func<CancellationToken, Task>? InitializeDelayAsync { get; init; }
+
+    public async Task<AcpNegotiatedCapabilities> InitializeAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (InitializeDelayAsync is not null)
+        {
+            await InitializeDelayAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         _negotiated = _script.CreateNegotiatedCapabilities();
-        return Task.FromResult(_negotiated);
+        return _negotiated;
     }
 
     public Task<string> CreateSessionAsync(string absoluteWorkingDirectory, CancellationToken cancellationToken)
@@ -100,16 +110,19 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         }
     }
 
-    public Task LogoutAsync(CancellationToken cancellationToken)
+    public async Task LogoutAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (LogoutDelayAsync is not null)
+        {
+            await LogoutDelayAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         LogoutCallCount++;
         if (_script.LogoutShouldFail)
         {
             throw new AcpProtocolException("ACP logout failed: simulated failure.");
         }
-
-        return Task.CompletedTask;
     }
 
     public int AuthenticateCallCount { get; private set; }
@@ -125,6 +138,16 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
     /// </summary>
     public Func<CancellationToken, Task>? AuthenticateDelayAsync { get; init; }
 
+    /// <summary>
+    /// Optional delay invoked before dispose completes.
+    /// </summary>
+    public Func<Task>? DisposeDelayAsync { get; init; }
+
+    /// <summary>
+    /// Optional delay invoked before the simulated logout completes.
+    /// </summary>
+    public Func<CancellationToken, Task>? LogoutDelayAsync { get; init; }
+
     public void ConfigureActionBridge(
         AcpInboundClientRequestHandler? inboundHandler,
         AcpClientCapabilities advertisedCapabilities)
@@ -134,10 +157,14 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
             ?? throw new ArgumentNullException(nameof(advertisedCapabilities));
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        if (DisposeDelayAsync is not null)
+        {
+            await DisposeDelayAsync().ConfigureAwait(false);
+        }
+
         DisposeCallCount++;
-        return ValueTask.CompletedTask;
     }
 }
 

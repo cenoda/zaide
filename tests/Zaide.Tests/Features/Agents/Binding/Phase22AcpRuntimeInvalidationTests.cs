@@ -46,7 +46,7 @@ public sealed class Phase22AcpRuntimeInvalidationTests
         Assert.True(unbind.IsSuccess);
         Assert.False(harness.Store.HasBinding(actorId));
 
-        await harness.FlushDisposalsForTestAsync(actorId);
+        await WaitUntilAsync(() => probedClient.DisposeCallCount == 1, TimeSpan.FromSeconds(2));
 
         Assert.Equal(1, probedClient.DisposeCallCount);
         Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
@@ -59,6 +59,34 @@ public sealed class Phase22AcpRuntimeInvalidationTests
         var logout = await harness.Onboarding.LogoutAsync(actorId, CancellationToken.None);
         Assert.False(logout.IsSuccess);
         Assert.Equal(0, probedClient.AuthenticateCallCount);
+    }
+
+    [Fact]
+    public async Task Unbind_StartsDisposalWithoutFollowUpOnboardingCall()
+    {
+        var disposeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var harness = InvalidationHarness.Create(
+            disposeDelayAsync: async () =>
+            {
+                disposeStarted.TrySetResult();
+                await Task.Delay(50).ConfigureAwait(false);
+            });
+        var actorId = ActorId.TownhallAgent;
+
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        Assert.True((await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None)).IsSuccess);
+        var client = harness.AllClients[^1];
+
+        Assert.True(harness.Selection.TryUnbind(actorId, expectedRevision: 1).IsSuccess);
+        await disposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await WaitUntilAsync(() => client.DisposeCallCount == 1, TimeSpan.FromSeconds(2));
+
+        Assert.Equal(1, client.DisposeCallCount);
     }
 
     [Fact]
@@ -87,7 +115,7 @@ public sealed class Phase22AcpRuntimeInvalidationTests
             expectedRevision: 1);
         Assert.True(update.IsSuccess);
 
-        await harness.FlushDisposalsForTestAsync(actorId);
+        await WaitUntilAsync(() => clientA.DisposeCallCount == 1, TimeSpan.FromSeconds(2));
 
         Assert.Equal(1, clientA.DisposeCallCount);
         Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
@@ -120,7 +148,7 @@ public sealed class Phase22AcpRuntimeInvalidationTests
             "phase-20-m4",
             expectedRevision: 1);
         Assert.True(update.IsSuccess);
-        await harness.FlushDisposalsForTestAsync(actorId);
+        await WaitUntilAsync(() => clientA.DisposeCallCount == 1, TimeSpan.FromSeconds(2));
 
         var auth = await harness.Onboarding.AuthenticateAsync(actorId, "oauth", CancellationToken.None);
         Assert.False(auth.IsSuccess);
@@ -175,6 +203,136 @@ public sealed class Phase22AcpRuntimeInvalidationTests
     }
 
     [Fact]
+    public async Task BindingChangesDuringProbe_DoesNotPublishStaleMethods()
+    {
+        var initializeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseInitialize = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var harness = InvalidationHarness.Create(
+            initializeDelayAsync: async ct =>
+            {
+                initializeStarted.TrySetResult();
+                await releaseInitialize.Task.WaitAsync(ct).ConfigureAwait(false);
+            });
+        var actorId = ActorId.TownhallAgent;
+
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-a", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        var probeTask = harness.Onboarding.ProbeAsync(actorId, CancellationToken.None);
+        await initializeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var update = harness.Selection.TryUpdateAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-b", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m4",
+            expectedRevision: 1);
+        Assert.True(update.IsSuccess);
+
+        releaseInitialize.TrySetResult();
+        var probe = await probeTask;
+        Assert.False(probe.IsSuccess);
+        Assert.Contains("changed", probe.Message!, StringComparison.OrdinalIgnoreCase);
+
+        Assert.True(harness.Store.TryGetBinding(actorId, out var binding));
+        Assert.Equal(AgentAuthenticationConnectionState.Disconnected, binding.AuthenticationState);
+        Assert.Empty(harness.Selection.GetAdvertisedAuthMethodIds(actorId));
+        Assert.False(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
+    [Fact]
+    public async Task AuthenticateFailure_ConcurrentMutation_DoesNotMarkReplacementFailed()
+    {
+        var authenticateStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseAuthenticate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var harness = InvalidationHarness.Create(
+            authenticateShouldFail: true,
+            authenticateDelayAsync: async ct =>
+            {
+                authenticateStarted.TrySetResult();
+                await releaseAuthenticate.Task.WaitAsync(ct).ConfigureAwait(false);
+            });
+        var actorId = ActorId.TownhallAgent;
+
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-a", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        Assert.True((await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None)).IsSuccess);
+
+        var authenticateTask = harness.Onboarding.AuthenticateAsync(actorId, "oauth", CancellationToken.None);
+        await authenticateStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var update = harness.Selection.TryUpdateAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-b", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m4",
+            expectedRevision: 1);
+        Assert.True(update.IsSuccess);
+
+        releaseAuthenticate.TrySetResult();
+        var auth = await authenticateTask;
+        Assert.False(auth.IsSuccess);
+
+        Assert.True(harness.Store.TryGetBinding(actorId, out var binding));
+        Assert.Equal(AgentAuthenticationConnectionState.Disconnected, binding.AuthenticationState);
+        Assert.NotEqual(AgentAuthenticationConnectionState.Failed, binding.AuthenticationState);
+    }
+
+    [Fact]
+    public async Task Logout_ConcurrentMutation_DoesNotClearReplacementRuntime()
+    {
+        var logoutStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseLogout = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var harness = InvalidationHarness.Create(
+            logoutDelayAsync: async ct =>
+            {
+                logoutStarted.TrySetResult();
+                await releaseLogout.Task.WaitAsync(ct).ConfigureAwait(false);
+            });
+        var actorId = ActorId.TownhallAgent;
+
+        Assert.True(harness.Selection.TryBindAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-a", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m3").IsSuccess);
+
+        Assert.True((await harness.Onboarding.ProbeAsync(actorId, CancellationToken.None)).IsSuccess);
+        Assert.True((await harness.Onboarding.AuthenticateAsync(actorId, "oauth", CancellationToken.None)).IsSuccess);
+
+        var logoutTask = harness.Onboarding.LogoutAsync(actorId, CancellationToken.None);
+        await logoutStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var update = harness.Selection.TryUpdateAcpRuntime(
+            actorId,
+            new AcpRuntimeIdentity("/usr/bin/fake-agent-b", Array.Empty<string>()),
+            "acp-fake-agent",
+            "phase-20-m4",
+            expectedRevision: 1);
+        Assert.True(update.IsSuccess);
+
+        releaseLogout.TrySetResult();
+        var logout = await logoutTask;
+        Assert.False(logout.IsSuccess);
+        Assert.Contains("changed", logout.Message!, StringComparison.OrdinalIgnoreCase);
+
+        Assert.True(harness.Store.TryGetBinding(actorId, out var binding));
+        Assert.Equal(AgentAuthenticationConnectionState.Disconnected, binding.AuthenticationState);
+        Assert.NotEqual(AgentAuthenticationConnectionState.Failed, binding.AuthenticationState);
+        Assert.Null(binding.SelectedAuthMethodId);
+    }
+
+    [Fact]
     public async Task EmptyAdvertisedMethods_AuthenticateFailsClosed()
     {
         using var harness = InvalidationHarness.Create(authMethods: Array.Empty<AcpAuthMethod>());
@@ -223,7 +381,6 @@ public sealed class Phase22AcpRuntimeInvalidationTests
         var busyUnbind = harness.Selection.TryUnbind(actorId, expectedRevision: 1);
         Assert.Equal(AgentActorBackendBindingMutationStatus.Busy, busyUnbind.Status);
 
-        await harness.FlushDisposalsForTestAsync(actorId);
         Assert.Equal(0, client.DisposeCallCount);
         Assert.True(harness.Onboarding.IsLogoutSupported(actorId));
         Assert.NotEmpty(harness.Onboarding.GetNegotiatedAuthMethodIds(actorId));
@@ -237,6 +394,17 @@ public sealed class Phase22AcpRuntimeInvalidationTests
         Assert.Equal(AgentActorBackendBindingMutationStatus.Conflict, conflict.Status);
         Assert.Equal(0, client.DisposeCallCount);
         Assert.True(harness.Onboarding.IsLogoutSupported(actorId));
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10).ConfigureAwait(false);
+        }
+
+        Assert.True(condition(), "Timed out waiting for expected condition.");
     }
 
     private sealed class FixedWorkspaceAuthority : IWorkspaceActionAuthority
@@ -302,7 +470,11 @@ public sealed class Phase22AcpRuntimeInvalidationTests
         public static InvalidationHarness Create(
             IReadOnlyList<AcpAuthMethod>? authMethods = null,
             IAgentActorActiveRunQuery? activeRunQuery = null,
-            Func<CancellationToken, Task>? authenticateDelayAsync = null)
+            Func<CancellationToken, Task>? authenticateDelayAsync = null,
+            Func<CancellationToken, Task>? initializeDelayAsync = null,
+            Func<CancellationToken, Task>? logoutDelayAsync = null,
+            Func<Task>? disposeDelayAsync = null,
+            bool authenticateShouldFail = false)
         {
             var directory = Path.Combine(
                 Path.GetTempPath(),
@@ -338,10 +510,13 @@ public sealed class Phase22AcpRuntimeInvalidationTests
                         AgentName = "acp-fake-agent",
                         AgentVersion = "phase-20-m3",
                         AuthMethods = methods,
-                        AuthenticateShouldFail = false,
+                        AuthenticateShouldFail = authenticateShouldFail,
                     })
                     {
                         AuthenticateDelayAsync = authenticateDelayAsync,
+                        InitializeDelayAsync = initializeDelayAsync,
+                        DisposeDelayAsync = disposeDelayAsync,
+                        LogoutDelayAsync = logoutDelayAsync,
                     };
                     allClients.Add(client);
                     return Task.FromResult<IAcpSessionClient>(client);
@@ -349,9 +524,6 @@ public sealed class Phase22AcpRuntimeInvalidationTests
 
             return new InvalidationHarness(directory, store, selection, onboarding, allClients);
         }
-
-        public Task FlushDisposalsForTestAsync(ActorId actorId) =>
-            Onboarding.FlushPendingDisposalsForTestAsync();
 
         public void Dispose()
         {
