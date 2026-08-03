@@ -112,8 +112,21 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 "ACP probe requires a durable ACP binding.");
         }
 
-        var identityAtProbe = AcpRuntimeBindingFingerprint.FromBinding(binding);
-        var epochAtProbe = _bindingStore.GetBindingEpoch(actorId);
+        // Atomically capture the probe-start fingerprint and epoch before
+        // launching the client. The pair is locked for the lifetime of the
+        // probe: any later bind/update/unbind that bumps the epoch or rewrites
+        // fingerprint fields must invalidate this in-flight probe, including
+        // exact unbind/rebind cycles that reset the revision to 1 with the same
+        // durable fields.
+        if (!_bindingStore.TryCaptureAcpBindingFingerprint(
+                actorId,
+                out var identityAtProbe,
+                out var epochAtProbe))
+        {
+            return AcpOnboardingProbeResult.Failed(
+                actorId,
+                "ACP probe requires a durable ACP binding.");
+        }
 
         if (!AcpWorkspaceWorkingDirectory.TryResolve(_workspaceAuthority, out var workspaceRoot))
         {
@@ -172,7 +185,16 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
             var negotiated = await client.InitializeAsync(cancellationToken).ConfigureAwait(false);
             var observedName = negotiated.AgentInfo?.Name ?? string.Empty;
             var observedVersion = negotiated.AgentInfo?.Version ?? string.Empty;
-            if (!_bindingStore.TryCaptureAcpBindingFingerprint(actorId, out var fingerprint, out var bindingEpoch))
+
+            // Validate the *original* probe-start pair — never re-capture the
+            // current fingerprint or epoch. A concurrent bind/update/unbind
+            // (including exact unbind/rebind) bumps the epoch, and the
+            // subsequent probe must be invalidated even if the new binding's
+            // durable fields happen to match the originals byte-for-byte.
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(
+                    actorId,
+                    identityAtProbe,
+                    epochAtProbe))
             {
                 await DisposeClientSafelyAsync(client).ConfigureAwait(false);
                 client = null;
@@ -181,26 +203,17 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                     "ACP binding changed during configuration probe.");
             }
 
-            if (fingerprint.Revision != identityAtProbe.Revision
-                || !string.Equals(fingerprint.ExecutablePath, identityAtProbe.ExecutablePath, StringComparison.Ordinal)
-                || !fingerprint.Arguments.SequenceEqual(identityAtProbe.Arguments, StringComparer.Ordinal))
-            {
-                await DisposeClientSafelyAsync(client).ConfigureAwait(false);
-                client = null;
-                return AcpOnboardingProbeResult.Failed(
-                    actorId,
-                    "ACP binding changed during configuration probe.");
-            }
-
-            if (!string.Equals(fingerprint.ExpectedAgentName, observedName, StringComparison.Ordinal)
-                || !string.Equals(fingerprint.ExpectedAgentVersion, observedVersion, StringComparison.Ordinal))
+            // Compare observed name/version against the original fingerprint,
+            // not against a re-captured current binding.
+            if (!string.Equals(identityAtProbe.ExpectedAgentName, observedName, StringComparison.Ordinal)
+                || !string.Equals(identityAtProbe.ExpectedAgentVersion, observedVersion, StringComparison.Ordinal))
             {
                 await DisposeClientSafelyAsync(client).ConfigureAwait(false);
                 client = null;
                 MarkStaleIfFingerprintMatches(
                     actorId,
-                    fingerprint,
-                    bindingEpoch,
+                    identityAtProbe,
+                    epochAtProbe,
                     "ACP agent identity mismatch.");
                 return AcpOnboardingProbeResult.Failed(
                     actorId,
@@ -212,7 +225,10 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
                 await ProbePublicationDelayForTestAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, bindingEpoch))
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(
+                    actorId,
+                    identityAtProbe,
+                    epochAtProbe))
             {
                 await DisposeClientSafelyAsync(client).ConfigureAwait(false);
                 client = null;
@@ -241,8 +257,8 @@ internal sealed class AcpOnboardingConnectionService : IAcpOnboardingConnectionS
 
             if (!TryPublishProbeOutcome(
                     actorId,
-                    fingerprint,
-                    bindingEpoch,
+                    identityAtProbe,
+                    epochAtProbe,
                     client,
                     methodIds,
                     logoutSupported,

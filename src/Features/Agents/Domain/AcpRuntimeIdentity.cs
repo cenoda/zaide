@@ -27,7 +27,11 @@ internal sealed class AcpRuntimeIdentity
         }
 
         ExecutablePath = System.IO.Path.GetFullPath(executablePath);
-        Arguments = arguments ?? Array.Empty<string>();
+        // Defensive snapshot: the caller may continue to mutate the source
+        // collection after construction. Without this copy, identity and
+        // fingerprint equality drift independently of any revision/epoch
+        // mutation, which breaks durable/in-flight identity comparisons.
+        Arguments = (arguments ?? Array.Empty<string>()).ToArray();
         RegistryId = NormalizeOptional(registryId);
         DistributionProvenance = NormalizeOptional(distributionProvenance);
     }

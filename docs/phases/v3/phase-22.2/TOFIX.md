@@ -9,6 +9,13 @@ tests address that defect; targeted ACP `A1-AC-02` evidence refresh and
 independent package re-audit remain pending before package-level PASS is
 restored.
 
+A follow-up corrective pass also closes the remaining ACP epoch/cache TOCTOU
+gaps: probe-start fingerprint+epoch preservation across exact unbind/rebind,
+conditional invalid-method failure, advertised-method cache lost-update
+races, conditional cache invalidation, and genuine fingerprint snapshots.
+The package-level `A1-AC-02` evidence refresh and independent re-audit
+remain pending.
+
 22.3 and 22.4 remain dependent and must not start from this gate as "already
 done."
 
@@ -32,6 +39,24 @@ done."
 - [x] Implement M2 Native Harness Townhall workflow.
 - [x] Implement M3 ACP workflow + authenticate bridge + logout.
 - [x] Implement M4 restart/regression/A3 re-smoke + closeout.
+- [x] Corrective: ACP onboarding connection invalidation on durable
+  bind/update/unbind; binding-revision/identity validation before
+  authenticate/logout; fail-closed empty advertised-method authenticate;
+  focused regression tests (`Phase22AcpRuntimeInvalidationTests`).
+- [x] Corrective: close remaining epoch/cache TOCTOU gaps (probe-start
+  fingerprint+epoch preservation, conditional invalid-method mutation,
+  advertised-method cache lost-update races, conditional cache
+  invalidation, genuine fingerprint snapshots); focused regression tests
+  (`Phase22AcpEpochCacheTocTouTests`).
+- [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
+  re-audit (package PASS not restored).
+- Next critical work remains **Phase 22.3** when separately authorized.
+
+## Remaining (not Phase 22.2)
+
+- Phase 22.3: send/routing outcome polish, tools/permissions positive paths.
+- Phase 22.4: context/trace/memory/usage surfaces.
+- Phase 22.5 / V4 / G5: not authorized from this package.
 
 ## M0 Findings
 
@@ -130,6 +155,14 @@ done."
   bind/update/unbind; binding-revision/identity validation before
   authenticate/logout; fail-closed empty advertised-method authenticate;
   focused regression tests (`Phase22AcpRuntimeInvalidationTests`).
+- [x] Corrective: remaining ACP epoch/cache TOCTOU gaps closed
+  (probe-start fingerprint+epoch preservation across exact unbind/rebind;
+  conditional invalid-method mutation via `TrySetRuntimeAuthenticationIfFingerprintMatches`;
+  advertised-method cache atomic validate-and-publish under selection lock;
+  conditional cache invalidation that compares against the stored
+  fingerprint+epoch; defensive argument snapshots in `AcpRuntimeIdentity`
+  and `AcpRuntimeBindingFingerprint`); focused regression tests
+  (`Phase22AcpEpochCacheTocTouTests`).
 - [ ] Targeted ACP `A1-AC-02` evidence refresh and independent package-2
   re-audit (package PASS not restored).
 - Next critical work remains **Phase 22.3** when separately authorized.

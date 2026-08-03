@@ -22,6 +22,14 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
     private readonly object _sync = new();
     private readonly List<Action<AgentActorBackendBindingChangedEvent>> _changeHandlers = new();
 
+    /// <summary>
+    /// Test seam: invoked after the advertised-method cache entry is captured
+    /// and the requested method is determined to be invalid, but before the
+    /// conditional runtime-auth mutation. Used to deterministically exercise
+    /// the invalid-method path under concurrent binding mutation.
+    /// </summary>
+    internal Func<CancellationToken, Task>? InvalidMethodPublicationDelayForTestAsync;
+
     public AgentActorBackendSelectionService(IAgentActorBackendBindingStore bindingStore)
         : this(bindingStore, onboardingResolver: null)
     {
@@ -252,6 +260,35 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         }
     }
 
+    /// <summary>
+    /// Capture the advertised-method cache entry together with its fingerprint
+    /// and epoch. The capture is atomic with the cache read so a concurrent
+    /// bind/update/unbind cannot rewrite the entry between the capture and
+    /// the caller using the pair.
+    /// </summary>
+    internal bool TryCaptureAdvertisedAuthMethodCache(
+        ActorId actorId,
+        out AcpRuntimeBindingFingerprint fingerprint,
+        out long epoch,
+        out IReadOnlyList<string> methodIds)
+    {
+        lock (_sync)
+        {
+            if (!_advertisedAuthMethods.TryGetValue(actorId, out var cache))
+            {
+                fingerprint = null!;
+                epoch = 0;
+                methodIds = Array.Empty<string>();
+                return false;
+            }
+
+            fingerprint = cache.Fingerprint;
+            epoch = cache.Epoch;
+            methodIds = cache.MethodIds;
+            return true;
+        }
+    }
+
     internal void RecordAdvertisedAuthMethods(ActorId actorId, IReadOnlyList<string> methodIds)
     {
         if (!_bindingStore.TryCaptureAcpBindingFingerprint(actorId, out var fingerprint, out var epoch))
@@ -276,13 +313,19 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         ArgumentNullException.ThrowIfNull(fingerprint);
         ArgumentNullException.ThrowIfNull(methodIds);
 
-        if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
-        {
-            return;
-        }
-
+        // Atomic validate-and-publish under the selection lock. Holding the
+        // selection lock while calling into the store's single-lock validate
+        // API produces a deadlock-safe acquisition order: selection -> store.
+        // The store never acquires the selection lock; its BindingChanged
+        // notification is published after the store lock is released, so no
+        // inverse order is ever introduced.
         lock (_sync)
         {
+            if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
+            {
+                return;
+            }
+
             _advertisedAuthMethods[actorId] = new AdvertisedAuthMethodCache(
                 fingerprint,
                 epoch,
@@ -306,8 +349,14 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
             throw new InvalidOperationException("ACP authentication requires an explicit ACP binding.");
         }
 
-        var advertised = GetAdvertisedAuthMethodIds(actorId);
-        if (advertised.Count == 0)
+        // Capture the advertised-method cache entry atomically with the
+        // fingerprint/epoch it was published for. The pair is required for
+        // the conditional runtime-auth mutation below.
+        if (!TryCaptureAdvertisedAuthMethodCache(
+                actorId,
+                out var advertisedFingerprint,
+                out var advertisedEpoch,
+                out var advertised))
         {
             throw new InvalidOperationException(
                 "ACP authentication is unavailable because no methods were advertised.");
@@ -315,11 +364,30 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
 
         if (!advertised.Any(method => string.Equals(method, methodId, StringComparison.Ordinal)))
         {
-            // Runtime-only auth state rewrite; not a durable identity mutation.
-            _bindingStore.SetRuntimeAuthentication(
-                actorId,
-                methodId,
-                AgentAuthenticationConnectionState.Failed);
+            if (InvalidMethodPublicationDelayForTestAsync is not null)
+            {
+                await InvalidMethodPublicationDelayForTestAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            // Conditional runtime-only mutation: the caller's identity (the
+            // fingerprint/epoch the advertised methods were published for)
+            // must still match the current binding. A binding change between
+            // the cache capture and this call — including exact
+            // unbind/rebind cycles that reset the revision with the same
+            // durable fields — must not rewrite the replacement binding's
+            // runtime authentication state.
+            if (!_bindingStore.TrySetRuntimeAuthenticationIfFingerprintMatches(
+                    actorId,
+                    advertisedFingerprint,
+                    advertisedEpoch,
+                    methodId,
+                    AgentAuthenticationConnectionState.Failed))
+            {
+                throw new InvalidOperationException(
+                    "ACP authentication rejected: the binding changed while the requested method was being validated.");
+            }
+
             throw new InvalidOperationException("Authentication method is not advertised by the agent.");
         }
 
@@ -355,12 +423,27 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         AcpRuntimeBindingFingerprint fingerprint,
         long epoch)
     {
-        if (!_bindingStore.TryValidateAcpBindingFingerprint(actorId, fingerprint, epoch))
+        // Remove only the cache entry whose stored fingerprint+epoch match
+        // the caller. A stale cleanup from an old (unbound/rebound)
+        // fingerprint+epoch must never erase a newer binding's advertised
+        // methods. Returning empty for a stale cache is necessary but
+        // insufficient: stale work must not overwrite or erase a newer valid
+        // cache entry, so the compare-and-remove is performed under the
+        // selection lock and against the stored entry's own pair.
+        lock (_sync)
         {
-            return;
-        }
+            if (!_advertisedAuthMethods.TryGetValue(actorId, out var existing))
+            {
+                return;
+            }
 
-        ClearAdvertisedAuthMethods(actorId);
+            if (existing.Epoch != epoch || !existing.Fingerprint.Equals(fingerprint))
+            {
+                return;
+            }
+
+            _advertisedAuthMethods.Remove(actorId);
+        }
     }
 
     private void OnStoreBindingChanged(AgentActorBackendBindingChangedEvent change)
@@ -435,7 +518,10 @@ internal sealed class AgentActorBackendSelectionService : IAgentActorBackendSele
         {
             Fingerprint = fingerprint;
             Epoch = epoch;
-            MethodIds = methodIds;
+            // Defensive snapshot: a caller may still be holding the source
+            // collection. Without the copy, a later mutation could rewrite
+            // the cache's contents without a fresh publication.
+            MethodIds = methodIds.ToArray();
         }
 
         public AcpRuntimeBindingFingerprint Fingerprint { get; }
