@@ -17,6 +17,10 @@ internal sealed class AgentConversationEventProjection : IDisposable
 {
     internal const string RouteStatusContentPrefix = "zaide-route|v1|";
     internal const string CancellationIntentContentPrefix = "zaide-cancellation-intent|v1|";
+    internal const string SessionEndingContentPrefix = "zaide-session-ending|v1|";
+    internal const string SessionEndedContentPrefix = "zaide-session-ended|v1|";
+    internal const string TerminationIndeterminateContentPrefix = "zaide-termination-indeterminate|v1|";
+    internal const string LateCompletionLabelPrefix = "zaide-late-completion|v1|";
 
     private readonly IConversationStore _conversationStore;
     private readonly IActorCatalog? _actorCatalog;
@@ -28,6 +32,8 @@ internal sealed class AgentConversationEventProjection : IDisposable
     private readonly HashSet<ExecutionRunId> _projectedTerminalRunIds = new();
     private readonly HashSet<ExecutionRunId> _projectedRejectionRunIds = new();
     private readonly HashSet<ExecutionRunId> _projectedCancellationIntentRunIds = new();
+    private readonly HashSet<AgentSessionId> _projectedSessionEndingIds = new();
+    private readonly HashSet<AgentSessionId> _projectedSessionEndedIds = new();
     private readonly HashSet<AgentActionId> _projectedActionSummaryIds = new();
     private readonly HashSet<string> _projectedBackendActivityKeys = new();
 
@@ -236,6 +242,78 @@ internal sealed class AgentConversationEventProjection : IDisposable
     internal static string FormatCancellationIntentContent() =>
         string.Join('|', "zaide-cancellation-intent", "v1", "Cancellation requested.");
 
+    internal static string FormatSessionEndingContent() =>
+        string.Join('|', "zaide-session-ending", "v1", "Session ending.");
+
+    internal static string FormatSessionEndedContent() =>
+        string.Join(
+            '|',
+            "zaide-session-ended",
+            "v1",
+            "Session ended. Live ownership removed. Provider termination is not claimed.");
+
+    internal static string FormatTerminationIndeterminateContent(string reason) =>
+        string.Join(
+            '|',
+            "zaide-termination-indeterminate",
+            "v1",
+            string.IsNullOrWhiteSpace(reason)
+                ? "Backend acknowledgement timed out. Retry is available. Provider termination is not claimed."
+                : reason.Replace('|', '/'));
+
+    internal static string FormatLateCompletionContent(string assistantText) =>
+        string.Join(
+            '|',
+            "zaide-late-completion",
+            "v1",
+            string.IsNullOrWhiteSpace(assistantText) ? "(empty)" : assistantText.Replace('|', '/'));
+
+    /// <summary>
+    /// Projects a user-visible indeterminate termination result into the owning conversation.
+    /// Exactly once per correlated termination attempt key when possible.
+    /// </summary>
+    public static ConversationEntry ProjectTerminationIndeterminate(
+        IConversationStore conversationStore,
+        ConversationId conversationId,
+        ActorId authorActorId,
+        string reason,
+        ConversationEntryCorrelationId? correlationId = null)
+    {
+        ArgumentNullException.ThrowIfNull(conversationStore);
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        if (authorActorId == default)
+        {
+            throw new ArgumentException("Author actor id is required.", nameof(authorActorId));
+        }
+
+        var content = FormatTerminationIndeterminateContent(reason);
+        if (conversationStore.TryGet(conversationId, out var conversation)
+            && conversation.Entries.Any(e =>
+                e.Kind == ConversationEntryKind.SystemNotification
+                && e.Content.StartsWith(TerminationIndeterminateContentPrefix, StringComparison.Ordinal)
+                && (correlationId is null || e.CorrelationId == correlationId)))
+        {
+            return conversation.Entries.First(e =>
+                e.Kind == ConversationEntryKind.SystemNotification
+                && e.Content.StartsWith(TerminationIndeterminateContentPrefix, StringComparison.Ordinal)
+                && (correlationId is null || e.CorrelationId == correlationId));
+        }
+
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            DateTimeOffset.UtcNow,
+            content,
+            correlationId);
+
+        conversationStore.AppendEntry(conversationId, entry);
+        return entry;
+    }
+
     public void Dispose()
     {
         _subscription?.Dispose();
@@ -278,6 +356,14 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
                 case AgentEventKind.RunCancellationRequested:
                     ProjectRunCancellationRequested(agentEvent);
+                    break;
+
+                case AgentEventKind.SessionEnding:
+                    ProjectSessionEnding(agentEvent);
+                    break;
+
+                case AgentEventKind.SessionEnded:
+                    ProjectSessionEnded(agentEvent);
                     break;
 
                 case AgentEventKind.ActionResultReported:
@@ -323,6 +409,74 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
         _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
         _projectedCancellationIntentRunIds.Add(agentEvent.RunId);
+    }
+
+    private void ProjectSessionEnding(AgentEvent agentEvent)
+    {
+        if (_projectedSessionEndingIds.Contains(agentEvent.SessionId))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        if (conversation.Entries.Any(e =>
+                e.CorrelationId == runCorrelation
+                && e.Kind == ConversationEntryKind.SystemNotification
+                && e.Content.StartsWith(SessionEndingContentPrefix, StringComparison.Ordinal)))
+        {
+            _projectedSessionEndingIds.Add(agentEvent.SessionId);
+            return;
+        }
+
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            FormatSessionEndingContent(),
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedSessionEndingIds.Add(agentEvent.SessionId);
+    }
+
+    private void ProjectSessionEnded(AgentEvent agentEvent)
+    {
+        if (_projectedSessionEndedIds.Contains(agentEvent.SessionId))
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(agentEvent.ConversationId, out var conversation))
+        {
+            return;
+        }
+
+        var runCorrelation = ExecutionRunCorrelation.ToEntryCorrelation(agentEvent.RunId);
+        if (conversation.Entries.Any(e =>
+                e.CorrelationId == runCorrelation
+                && e.Kind == ConversationEntryKind.SystemNotification
+                && e.Content.StartsWith(SessionEndedContentPrefix, StringComparison.Ordinal)))
+        {
+            _projectedSessionEndedIds.Add(agentEvent.SessionId);
+            return;
+        }
+
+        var authorActorId = ResolveAgentAuthor(conversation);
+        var entry = ConversationEntry.SystemNotification(
+            ConversationEntryId.New(),
+            authorActorId,
+            agentEvent.OccurredAtUtc,
+            FormatSessionEndedContent(),
+            runCorrelation);
+
+        _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
+        _projectedSessionEndedIds.Add(agentEvent.SessionId);
     }
 
     private void ProjectActionResultReported(AgentEvent agentEvent)
@@ -531,6 +685,12 @@ internal sealed class AgentConversationEventProjection : IDisposable
         }
 
         var authorActorId = ResolveAgentAuthor(conversation);
+        var isLateAfterCancellation =
+            _projectedCancellationIntentRunIds.Contains(agentEvent.RunId);
+
+        // Late completion after cancellation intent is retained as assistant content
+        // and labelled with a separate system notification; never silently overwrites
+        // the prior cancellation-intent entry.
         var entry = ConversationEntry.AssistantResponse(
             payload.MessageEntryId,
             authorActorId,
@@ -541,6 +701,17 @@ internal sealed class AgentConversationEventProjection : IDisposable
         _conversationStore.AppendEntry(agentEvent.ConversationId, entry);
         _projectedMessageEntryIds.Add(payload.MessageEntryId);
         _projectedTerminalRunIds.Add(agentEvent.RunId);
+
+        if (isLateAfterCancellation)
+        {
+            var labelEntry = ConversationEntry.SystemNotification(
+                ConversationEntryId.New(),
+                authorActorId,
+                agentEvent.OccurredAtUtc,
+                FormatLateCompletionContent(payload.Text),
+                runCorrelation);
+            _conversationStore.AppendEntry(agentEvent.ConversationId, labelEntry);
+        }
     }
 
     private void ProjectFailureReported(AgentEvent agentEvent)

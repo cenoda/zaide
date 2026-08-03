@@ -47,7 +47,8 @@ internal static class ConversationsTestSupport
         TownhallConversationPersistenceBridge? persistenceBridge = null,
         Zaide.Features.Conversations.Infrastructure.ConversationPersistenceService? persistenceService = null,
         IAgentRouter? agentRouter = null,
-        IConversationDraftState? draftState = null)
+        IConversationDraftState? draftState = null,
+        IAgentSessionService? sessionService = null)
     {
         var resolvedCatalog = catalog ?? CreateCatalog();
         var resolvedStore = store ?? CreateStore();
@@ -63,7 +64,8 @@ internal static class ConversationsTestSupport
             resolvedUiState,
             persistenceBridge,
             persistenceService,
-            agentRouter);
+            agentRouter,
+            sessionService: sessionService);
     }
 
     private sealed class NoOpAgentContextSessionPolicyService : IAgentContextSessionPolicyService

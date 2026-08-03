@@ -144,7 +144,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 M1: +9 internal durable binding mutation/load/document types.
         // Phase 22.2 M2: +1 internal AgentBackendBindingWorkflowProjection.
         // Phase 22.2 corrective: +1 internal AcpRuntimeBindingFingerprint.
-        Assert.Equal((157, 7, 150), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 22.3 M2: +2 internal AgentSessionEndStatus / AgentSessionEndResult.
+        Assert.Equal((159, 7, 152), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 21 M1: +13 internal durable-record envelope/domain types.
         Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 21 M2: +10 internal trace evidence domain types.
@@ -296,7 +297,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 M2: +1 AgentBackendBindingWorkflowProjection production file.
         // Phase 22.2 M3: +7 ACP onboarding/logout/provider-configured production files.
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
-        Assert.Equal(866, inventory.SourceFiles.Count);
+        // Phase 22.3 M2: +1 AgentSessionEndResult production file.
+        Assert.Equal(867, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -336,7 +338,8 @@ public sealed class ArchitectureInventoryTests
         // ISSUE-010: +1 IndentGuideLevelCache production file.
         // ISSUE-011: +1 CodeFontResolver production file.
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
-        Assert.Equal(821, byFolder["Features"]);
+        // Phase 22.3 M2: +1 AgentSessionEndResult production file.
+        Assert.Equal(822, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

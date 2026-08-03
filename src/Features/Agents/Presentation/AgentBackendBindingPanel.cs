@@ -26,6 +26,7 @@ public sealed class AgentBackendBindingPanel : Panel
     private readonly Button _bindNativeButton;
     private readonly Button _bindAcpButton;
     private readonly Button _unbindButton;
+    private readonly Button _endSessionButton;
     private readonly Button _probeAcpButton;
     private readonly Button _authenticateAcpButton;
     private readonly Button _logoutButton;
@@ -38,6 +39,8 @@ public sealed class AgentBackendBindingPanel : Panel
     public event EventHandler? BindAcpRequested;
 
     public event EventHandler? UnbindRequested;
+
+    public event EventHandler? EndSessionRequested;
 
     public event EventHandler? ProbeAcpRequested;
 
@@ -98,6 +101,11 @@ public sealed class AgentBackendBindingPanel : Panel
             "Unbind agent backend");
         _unbindButton.Click += (_, _) => UnbindRequested?.Invoke(this, EventArgs.Empty);
 
+        _endSessionButton = CreateActionButton(
+            "End session",
+            "End agent session");
+        _endSessionButton.Click += (_, _) => EndSessionRequested?.Invoke(this, EventArgs.Empty);
+
         _probeAcpButton = CreateActionButton(
             "Probe ACP",
             "Probe ACP runtime configuration");
@@ -126,6 +134,7 @@ public sealed class AgentBackendBindingPanel : Panel
                 _bindNativeButton,
                 _bindAcpButton,
                 _unbindButton,
+                _endSessionButton,
                 _probeAcpButton,
                 _authenticateAcpButton,
                 _logoutButton,
@@ -214,6 +223,7 @@ public sealed class AgentBackendBindingPanel : Panel
             mutationErrorCaption: null,
             canBindNativeHarness: false,
             canUnbind: false,
+            canEndSession: false,
             acpRuntimeCaption: null,
             canProbeAcp: false,
             canAuthenticateAcp: false,
@@ -231,6 +241,7 @@ public sealed class AgentBackendBindingPanel : Panel
         string? mutationErrorCaption,
         bool canBindNativeHarness,
         bool canUnbind,
+        bool canEndSession = false,
         string? acpRuntimeCaption = null,
         bool canProbeAcp = false,
         bool canAuthenticateAcp = false,
@@ -258,6 +269,8 @@ public sealed class AgentBackendBindingPanel : Panel
         _bindAcpButton.IsVisible = true;
         _unbindButton.IsEnabled = canUnbind;
         _unbindButton.IsVisible = true;
+        _endSessionButton.IsEnabled = canEndSession;
+        _endSessionButton.IsVisible = canEndSession;
 
         _acpRuntimeCaption.Text = acpRuntimeCaption ?? string.Empty;
         _acpRuntimeCaption.IsVisible = !string.IsNullOrEmpty(acpRuntimeCaption);
@@ -307,6 +320,8 @@ public sealed class AgentBackendBindingPanel : Panel
     public Button BindAcpButton => _bindAcpButton;
 
     public Button UnbindButton => _unbindButton;
+
+    public Button EndSessionButton => _endSessionButton;
 
     public Button ProbeAcpButton => _probeAcpButton;
 

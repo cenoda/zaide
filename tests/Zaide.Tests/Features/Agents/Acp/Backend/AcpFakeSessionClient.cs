@@ -36,6 +36,11 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
     /// </summary>
     public Func<CancellationToken, Task>? InitializeDelayAsync { get; init; }
 
+    /// <summary>
+    /// Optional hold invoked inside PromptAsync (e.g. wait until cancelled).
+    /// </summary>
+    public Func<CancellationToken, Task>? PromptHoldAsync { get; init; }
+
     public async Task<AcpNegotiatedCapabilities> InitializeAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -56,7 +61,7 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
         return Task.FromResult(_script.SessionId);
     }
 
-    public Task<AcpPromptTurnResult> PromptAsync(
+    public async Task<AcpPromptTurnResult> PromptAsync(
         string sessionId,
         IReadOnlyList<AcpContentBlock> prompt,
         CancellationToken cancellationToken)
@@ -76,15 +81,30 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
                 throw new AcpProtocolException("ACP inbound handler is not configured.");
             }
 
-            var response = _inboundHandler(inbound.Request, cancellationToken).GetAwaiter().GetResult();
+            var response = await _inboundHandler(inbound.Request, cancellationToken).ConfigureAwait(false);
             inbound.ResponseCallback?.Invoke(response);
         }
 
-        return Task.FromResult(_script.CreatePromptTurnResult());
+        if (PromptHoldAsync is not null)
+        {
+            await PromptHoldAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return _script.CreatePromptTurnResult();
     }
+
+    public int CancelPromptCallCount { get; private set; }
+
+    public string? LastCancelSessionId { get; private set; }
+
+    public bool? LastCancelTokenWasCancellationRequested { get; private set; }
 
     public Task CancelPromptAsync(string sessionId, CancellationToken cancellationToken)
     {
+        CancelPromptCallCount++;
+        LastCancelSessionId = sessionId;
+        LastCancelTokenWasCancellationRequested = cancellationToken.IsCancellationRequested;
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }

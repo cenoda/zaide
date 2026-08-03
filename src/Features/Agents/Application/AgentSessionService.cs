@@ -271,7 +271,14 @@ internal sealed class AgentSessionService
         return Task.CompletedTask;
     }
 
-    public async Task EndAsync(
+    /// <summary>
+    /// Default bounded wait for backend observer acknowledgement during explicit end.
+    /// Timeout leaves the session in <see cref="AgentSessionStatus.Ending"/> with a
+    /// retryable indeterminate result; it does not claim the backend stopped.
+    /// </summary>
+    internal static TimeSpan EndAcknowledgementTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+    public async Task<AgentSessionEndResult> EndAsync(
         ConversationId conversationId,
         CancellationToken cancellationToken = default)
     {
@@ -287,13 +294,13 @@ internal sealed class AgentSessionService
         {
             if (!_sessions.TryGetValue(conversationId, out session))
             {
-                return;
+                return AgentSessionEndResult.NoLiveSession();
             }
 
             if (session.SessionState.Status == AgentSessionStatus.Ended)
             {
                 _sessions.Remove(conversationId);
-                return;
+                return AgentSessionEndResult.Ended();
             }
 
             activeRun = session.ActiveRun;
@@ -308,6 +315,7 @@ internal sealed class AgentSessionService
                     AgentSessionStatus.Ending);
             }
 
+            // Revoke broker before cancellation so pending permissions lose authority.
             if (activeRun is not null
                 && !activeRun.StateMachine.IsTerminal
                 && activeRun.StateMachine.Status != AgentRunStatus.CancellationRequested)
@@ -321,17 +329,30 @@ internal sealed class AgentSessionService
                 RevokeRunBrokerLocked(activeRun);
                 activeRun.ExecutionCancellation.Cancel();
             }
+            else if (activeRun is not null && !activeRun.StateMachine.IsTerminal)
+            {
+                // Cancellation already requested (e.g. prior CancelAsync); still revoke.
+                RevokeRunBrokerLocked(activeRun);
+            }
         }
 
+        var waitedWithTimeout = false;
         if (activeRun?.ExecutionTask is { } executionTask)
         {
             try
             {
-                await executionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                using var boundCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                boundCts.CancelAfter(EndAcknowledgementTimeout);
+                await executionTask.WaitAsync(boundCts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
+            }
+            catch (OperationCanceledException)
+            {
+                // Bounded acknowledgement wait elapsed; do not force-terminalize yet.
+                waitedWithTimeout = true;
             }
             catch
             {
@@ -343,11 +364,25 @@ internal sealed class AgentSessionService
         {
             if (!_sessions.TryGetValue(conversationId, out session))
             {
-                return;
+                return AgentSessionEndResult.Ended();
+            }
+
+            if (waitedWithTimeout
+                && activeRun is not null
+                && session.ActiveRun?.RunId == activeRun.RunId
+                && !activeRun.StateMachine.IsTerminal)
+            {
+                // Leave session Ending with live ownership so retry is possible.
+                // Do not claim provider stop, deletion, or remote process state.
+                return AgentSessionEndResult.AcknowledgementIndeterminate(
+                    "Backend acknowledgement timed out. Local cancellation was requested; "
+                    + "live session ownership remains. Retry is available. "
+                    + "Provider termination is not claimed.");
             }
 
             FinalizeEndedSessionLocked(session, activeRun?.RunId);
             _sessions.Remove(conversationId);
+            return AgentSessionEndResult.Ended();
         }
     }
 

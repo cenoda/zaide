@@ -282,12 +282,18 @@ public sealed class Phase22AgentOutcomeProjectionTests
             AgentEventKind.RunCompleted,
             sequence: 4));
 
-        Assert.Equal(3, conversation.Entries.Count);
+        Assert.Equal(4, conversation.Entries.Count);
         Assert.Equal(ConversationEntryKind.UserChat, conversation.Entries[0].Kind);
         Assert.Equal(ConversationEntryKind.SystemNotification, conversation.Entries[1].Kind);
         Assert.Contains("Cancellation requested", conversation.Entries[1].Content, StringComparison.Ordinal);
         Assert.Equal(ConversationEntryKind.AssistantResponse, conversation.Entries[2].Kind);
         Assert.Equal("late winner", conversation.Entries[2].Content);
+        Assert.Equal(ConversationEntryKind.SystemNotification, conversation.Entries[3].Kind);
+        Assert.StartsWith(
+            AgentConversationEventProjection.LateCompletionLabelPrefix,
+            conversation.Entries[3].Content,
+            StringComparison.Ordinal);
+        Assert.Contains("late winner", conversation.Entries[3].Content, StringComparison.Ordinal);
         Assert.DoesNotContain(
             conversation.Entries,
             e => e.Kind == ConversationEntryKind.ExecutionFailure);

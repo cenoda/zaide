@@ -147,12 +147,20 @@ internal sealed class AcpAgentSessionAdapter
             {
                 try
                 {
-                    await client.CancelPromptAsync(activeSessionId, cancellationToken)
+                    // Use an independent bounded token: the run token is already cancelled
+                    // and cannot carry a cancel-prompt request/acknowledgement.
+                    using var cancelCts = new CancellationTokenSource(
+                        AcpProcessLifecycleLimits.CancelPromptTimeout);
+                    await client.CancelPromptAsync(activeSessionId, cancelCts.Token)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
-                    // Caller cancellation wins.
+                    // Bounded cancel acknowledgement timed out; still report local cancellation.
+                }
+                catch (Exception)
+                {
+                    // Local cancellation stands; no provider-delete claim is made.
                 }
             }
 

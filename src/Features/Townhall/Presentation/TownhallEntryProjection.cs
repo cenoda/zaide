@@ -15,6 +15,10 @@ internal static class TownhallEntryProjection
     private const string BackendActivityPrefix = "zaide-backend-activity|v1|";
     private const string RouteStatusPrefix = "zaide-route|v1|";
     private const string CancellationIntentPrefix = "zaide-cancellation-intent|v1|";
+    private const string SessionEndingPrefix = "zaide-session-ending|v1|";
+    private const string SessionEndedPrefix = "zaide-session-ended|v1|";
+    private const string TerminationIndeterminatePrefix = "zaide-termination-indeterminate|v1|";
+    private const string LateCompletionPrefix = "zaide-late-completion|v1|";
     public static TownhallMessageKind ToTownhallMessageKind(ConversationEntryKind kind) =>
         kind switch
         {
@@ -107,6 +111,34 @@ internal static class TownhallEntryProjection
             && entry.Content.StartsWith(CancellationIntentPrefix, StringComparison.Ordinal))
         {
             return "Cancellation requested.";
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && entry.Content.StartsWith(SessionEndingPrefix, StringComparison.Ordinal))
+        {
+            return "Session ending.";
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && entry.Content.StartsWith(SessionEndedPrefix, StringComparison.Ordinal))
+        {
+            return "Session ended. Live ownership removed. Provider termination is not claimed.";
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && entry.Content.StartsWith(TerminationIndeterminatePrefix, StringComparison.Ordinal))
+        {
+            return FormatPrefixedDisplayTail(
+                entry.Content,
+                TerminationIndeterminatePrefix,
+                "Backend acknowledgement timed out. Retry is available. Provider termination is not claimed.");
+        }
+
+        if (entry.Kind == ConversationEntryKind.SystemNotification
+            && entry.Content.StartsWith(LateCompletionPrefix, StringComparison.Ordinal))
+        {
+            var lateText = FormatPrefixedDisplayTail(entry.Content, LateCompletionPrefix, "(empty)");
+            return $"Late completion after cancellation: {lateText}";
         }
 
         return entry.Kind switch
@@ -341,6 +373,20 @@ internal static class TownhallEntryProjection
             _ =>
                 $"Agent action: {activity.Headline} — {summary} ({activity.ResultKind}) [{evidenceLabel}]{boundedSuffix}",
         };
+    }
+
+    private static string FormatPrefixedDisplayTail(
+        string content,
+        string prefix,
+        string fallback)
+    {
+        if (content.Length <= prefix.Length)
+        {
+            return fallback;
+        }
+
+        var tail = content[prefix.Length..];
+        return string.IsNullOrWhiteSpace(tail) ? fallback : tail;
     }
 
     private static string FormatEvidenceLevelLabel(string evidenceLevel) =>

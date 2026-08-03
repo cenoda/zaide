@@ -367,6 +367,7 @@ public class TownhallView : Panel, IDisposable
                     : _viewModel.BackendMutationErrorCaption,
                 _viewModel.CanBindNativeHarness,
                 _viewModel.CanUnbindBackend,
+                _viewModel.CanEndSession,
                 string.IsNullOrEmpty(_viewModel.AcpRuntimeCaption)
                     ? null
                     : _viewModel.AcpRuntimeCaption,
@@ -416,6 +417,7 @@ public class TownhallView : Panel, IDisposable
         _disposables.Add(
             _viewModel.WhenAnyValue(
                     x => x.CanUnbindBackend,
+                    x => x.CanEndSession,
                     x => x.AcpRuntimeCaption,
                     x => x.CanProbeAcp,
                     x => x.CanLogoutAcp)
@@ -447,6 +449,10 @@ public class TownhallView : Panel, IDisposable
         _backendBindingPanel.UnbindRequested += (_, _) =>
         {
             _viewModel?.UnbindBackendCommand.Execute().Subscribe();
+        };
+        _backendBindingPanel.EndSessionRequested += (_, _) =>
+        {
+            _viewModel?.EndSessionCommand.Execute().Subscribe();
         };
         _backendBindingPanel.ProbeAcpRequested += (_, _) =>
         {

@@ -283,8 +283,8 @@ public sealed class Phase17AdversarialCloseoutTests : IDisposable
         var inventory = new ArchitectureInventoryReader().Read();
 
         Assert.Equal(ArchitectureInventoryReader.M0TotalTopLevelTypes, inventory.TotalTopLevelTypeCount);
-        Assert.Equal(866, inventory.SourceFiles.Count);
-        Assert.Equal(821, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(867, inventory.SourceFiles.Count);
+        Assert.Equal(822, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }

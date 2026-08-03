@@ -69,6 +69,18 @@ internal sealed class FakeAgentBackend : IAgentBackend
         _plans.Enqueue(FakeBackendPlan.GatedCompletion(gate, assistantText));
     }
 
+    /// <summary>
+    /// Completes only when the gate is set, ignoring run cancellation so tests can
+    /// exercise bounded EndAsync acknowledgement timeout and late completion.
+    /// </summary>
+    public void SetGatedCompletionIgnoringCancellation(
+        TaskCompletionSource<string> gate,
+        string assistantText)
+    {
+        _plans.Clear();
+        _plans.Enqueue(FakeBackendPlan.GatedCompletionIgnoringCancellation(gate, assistantText));
+    }
+
     public void SetFailure(AgentFailureKind failureKind, string reason)
     {
         _plans.Clear();
@@ -108,7 +120,9 @@ internal sealed class FakeAgentBackend : IAgentBackend
 
         if (plan.Gate is { } gate)
         {
-            var assistantText = await gate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            var assistantText = plan.IgnoreCancellation
+                ? await gate.Task.ConfigureAwait(false)
+                : await gate.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             yield return new AgentBackendEvent(
                 AgentBackendEventKind.MessageCompleted,
                 DateTimeOffset.UtcNow,
@@ -165,6 +179,11 @@ internal sealed class FakeAgentBackend : IAgentBackend
 
         public static FakeBackendPlan GatedCompletion(TaskCompletionSource<string> gate, string text) =>
             new(null, text, null, null, null, false, gate);
+
+        public static FakeBackendPlan GatedCompletionIgnoringCancellation(
+            TaskCompletionSource<string> gate,
+            string text) =>
+            new(null, text, null, null, null, true, gate);
 
         public static FakeBackendPlan Failure(AgentFailureKind kind, string reason) =>
             new(null, null, kind, reason, null, false, null);

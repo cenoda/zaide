@@ -8,6 +8,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
+using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
@@ -37,6 +38,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IAgentActorBackendSelectionService? _backendSelectionService;
     private readonly AgentBackendBindingPresenter? _backendBindingPresenter;
     private readonly IAgentRouter? _agentRouter;
+    private readonly IAgentSessionService? _sessionService;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
@@ -57,6 +59,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private string _backendMutationErrorCaption = string.Empty;
     private bool _canBindNativeHarness;
     private bool _canUnbindBackend;
+    private bool _canEndSession;
     private string _acpRuntimeCaption = string.Empty;
     private bool _canProbeAcp;
     private bool _canAuthenticateAcp;
@@ -330,6 +333,16 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _canUnbindBackend, value);
     }
 
+    /// <summary>
+    /// True when the active selection is a direct conversation that can request
+    /// explicit live-session termination via <see cref="EndSessionCommand"/>.
+    /// </summary>
+    public bool CanEndSession
+    {
+        get => _canEndSession;
+        private set => this.RaiseAndSetIfChanged(ref _canEndSession, value);
+    }
+
     public string AcpRuntimeCaption
     {
         get => _acpRuntimeCaption;
@@ -421,6 +434,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> UnbindBackendCommand { get; }
 
     /// <summary>
+    /// Explicit live-session termination for the active direct conversation.
+    /// Backed by <see cref="IAgentSessionService.EndAsync"/>; not channel-scoped.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> EndSessionCommand { get; }
+
+    /// <summary>
     /// Binds the active direct agent to ACP using the draft runtime identity fields.
     /// </summary>
     public ReactiveCommand<Unit, Unit> BindAcpCommand { get; }
@@ -501,7 +520,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         ConversationPersistenceService? persistenceService,
         IAgentRouter? agentRouter = null,
         IAgentActorBackendSelectionService? backendSelectionService = null,
-        AgentBackendBindingPresenter? backendBindingPresenter = null)
+        AgentBackendBindingPresenter? backendBindingPresenter = null,
+        IAgentSessionService? sessionService = null)
     {
         _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -514,6 +534,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         _backendSelectionService = backendSelectionService;
         _backendBindingPresenter = backendBindingPresenter;
         _agentRouter = agentRouter;
+        _sessionService = sessionService;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
 
@@ -598,11 +619,13 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         ClearContextPolicyOverrideCommand = ReactiveCommand.Create(ClearActiveContextPolicyOverride);
         BindNativeHarnessCommand = ReactiveCommand.Create(ExecuteBindNativeHarness);
         UnbindBackendCommand = ReactiveCommand.Create(ExecuteUnbindBackend);
+        EndSessionCommand = ReactiveCommand.CreateFromTask(ExecuteEndSessionAsync);
         BindAcpCommand = ReactiveCommand.Create(ExecuteBindAcp);
         ProbeAcpCommand = ReactiveCommand.CreateFromTask(ExecuteProbeAcpAsync);
         AuthenticateAcpCommand = ReactiveCommand.CreateFromTask(ExecuteAuthenticateAcpAsync);
         LogoutAcpCommand = ReactiveCommand.CreateFromTask(ExecuteLogoutAcpAsync);
         UpdateDirectSendBusyTracking();
+        RefreshCanEndSession();
     }
 
     private void ExecuteBindNativeHarness()
@@ -639,6 +662,54 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         // Fallback without presenter: revision-aware unbind is unavailable.
         RefreshActiveBackendBindingProjection();
+    }
+
+    private async Task ExecuteEndSessionAsync()
+    {
+        // Capture ownership before await; navigation must not redirect end effects.
+        if (_state.ActiveConversationId is not { } sourceConversationId)
+        {
+            return;
+        }
+
+        if (!_conversationStore.TryGet(sourceConversationId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            return;
+        }
+
+        if (_sessionService is null)
+        {
+            return;
+        }
+
+        var result = await _sessionService.EndAsync(sourceConversationId).ConfigureAwait(true);
+        if (result.Status == AgentSessionEndStatus.AcknowledgementIndeterminate)
+        {
+            var author = ResolveDirectPeerActorId(conversation);
+            AgentConversationEventProjection.ProjectTerminationIndeterminate(
+                _conversationStore,
+                sourceConversationId,
+                author,
+                result.Reason ?? "Backend acknowledgement timed out. Retry is available.");
+        }
+
+        RefreshCanEndSession();
+    }
+
+    private void RefreshCanEndSession()
+    {
+        if (_sessionService is null
+            || _state.ActiveConversationId is not { } activeId
+            || !_conversationStore.TryGet(activeId, out var conversation)
+            || conversation.Kind != ConversationKind.Direct)
+        {
+            CanEndSession = false;
+            return;
+        }
+
+        // Reachable for any active direct conversation; EndAsync no-ops when no live session.
+        CanEndSession = true;
     }
 
     private void ExecuteBindAcp()
@@ -1501,6 +1572,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         RefreshActiveContextPolicyProjection();
         RefreshActiveBackendBindingProjection();
+        RefreshCanEndSession();
     }
 
     private void RefreshActiveBackendBindingProjection()

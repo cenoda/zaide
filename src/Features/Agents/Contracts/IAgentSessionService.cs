@@ -29,7 +29,13 @@ internal interface IAgentSessionService
         ConversationId conversationId,
         CancellationToken cancellationToken = default);
 
-    Task EndAsync(
+    /// <summary>
+    /// Explicitly ends live session ownership for <paramref name="conversationId"/>.
+    /// Emits termination intent, waits a bounded time for local/backend acknowledgement,
+    /// and on success removes ownership so a later send creates a fresh session.
+    /// Never claims provider deletion or remote process termination without evidence.
+    /// </summary>
+    Task<AgentSessionEndResult> EndAsync(
         ConversationId conversationId,
         CancellationToken cancellationToken = default);
 

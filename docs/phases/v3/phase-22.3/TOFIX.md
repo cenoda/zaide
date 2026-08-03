@@ -2,15 +2,17 @@
 
 ## Status
 
-**M1 residual draft-snapshot correction pushed pending independent re-audit; M2 not authorized.**
+**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 implementation
+shipped pending independent audit; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
 session. Independent M1 audit returned **NO-GO** (F1 wrong-conversation draft
 loss; F2 inactive-channel route-status missing from cached presentation).
 Corrective work closed F1/F2, then a residual F1 follow-on: trim-equivalent but
-raw-different newer drafts were still cleared. That residual is closed; M1 is
-**not accepted**. M2–M5, G5, A3 execution, and V4 have not started.
+raw-different newer drafts were still cleared. That residual closed at
+`1a5ff04`; human accepted M1 and authorized **M2 only**. M3–M5, G5, A3
+execution, and V4 have not started.
 
 ## Work Board
 
@@ -35,7 +37,7 @@ raw-different newer drafts were still cleared. That residual is closed; M1 is
 - [x] Human M0 acceptance.
 - [x] Separate Phase 22.3 M1 implementation approval.
 - [x] M1 send/routing and outcome visibility.
-- [ ] M2 explicit live-session termination.
+- [x] M2 explicit live-session termination (implementation; not accepted).
 - [ ] M3 safe mediated action path and actor attribution.
 - [ ] M4 workspace-owned interrupted-run projection and explicit re-send.
 - [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
@@ -201,27 +203,67 @@ M1 class totals: `Phase22AgentOutcomeProjectionTests` 11;
 | `dotnet test Zaide.slnx --no-build` | PASS 3881/3881 |
 | `git diff --check` | PASS |
 
-M1 remains unaccepted until independent re-audit. M2 not authorized.
+M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`.
 
-## Remaining Open Product Gaps (post-M1)
+## M2 Implementation (2026-08-03) — pending independent audit
 
-- `IAgentSessionService.EndAsync` has no production caller. Registered
-  continuity/management ViewModels are not a user entry point.
-- ACP cancellation currently attempts `CancelPromptAsync` with the already-
-  cancelled run token; no backend acknowledgement can be claimed.
+Baseline: `1a5ff04a3035df73331e3ea67eeba233491621c1`.
+
+### Production changes
+
+- `IAgentSessionService.EndAsync` returns `AgentSessionEndResult` with statuses
+  `NoLiveSession` / `Ended` / `AcknowledgementIndeterminate`.
+- `AgentSessionService.EndAsync` bounds acknowledgement wait
+  (`EndAcknowledgementTimeout`), revokes the run broker before cancellation,
+  removes live ownership only on success, and leaves `Ending` ownership on
+  timeout with a retryable indeterminate reason (never claims provider stop).
+- `AgentConversationEventProjection` remains the sole agent-event writer;
+  projects ordered `SessionEnding` / `SessionEnded`, cancellation-intent
+  dedupe, late-completion retention with label, and static
+  `ProjectTerminationIndeterminate`.
+- ACP `CancelPromptAsync` uses an independent bounded token
+  (`AcpProcessLifecycleLimits.CancelPromptTimeout`), not the cancelled run token.
+- Townhall ships direct-conversation `EndSessionCommand` + binding-panel
+  "End session" control; captures `ConversationId` before await so navigation
+  does not redirect end effects; channel conversations cannot end sessions.
+- `TownhallEntryProjection` formats session-ending/ended, indeterminate, and
+  late-completion display strings without overclaiming provider deletion.
+
+### New tests
+
+- `Phase22ExplicitSessionTerminationTests` — 10 tests (TCS gates; no sleeps).
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M2 class | Discovered 10 tests |
+| M2 explicit filter | PASS 10/10 |
+| Session/continuity/termination focused filter | PASS 44/44 |
+| M0+M1 send/routing/projection filter | PASS 103/103 |
+| Townhall/composition/architecture preservation | PASS |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3891/3891 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: Native Harness / ACP independent; Phase 17 `TryConsume()`
+unchanged; Phase 21 continuity `Terminate` remains distinct from live
+`EndAsync`; no M3–M5 / G5 / A3 / V4 / packages / schema. **M2 not accepted.**
+
+## Remaining Open Product Gaps (post-M2 implementation)
+
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
-  live `EndAsync` or a provider deletion/termination API.
+  live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
 - Phase 17 early denials can return before event/audit projection; action fact
-  and audit payloads lack initiating/target actor IDs.
+  and audit payloads lack initiating/target actor IDs (M3).
 - Phase 17 has no product multi-file transaction, change set, or rollback
   operation.
 - Phase 21 durable roots are process-CWD-derived in the live session/startup
   owners. Both sibling backends currently disallow resume; explicit re-send is
-  required.
-- `SessionEnding` / `SessionEnded` remain unprojected until M2.
+  required (M4).
 
 ## Next Task
 
-Independent human M1 re-audit of the residual draft-snapshot correction. Do not
-begin M2 until explicit M2 implementation authorization is recorded after M1
+Independent human M2 audit of explicit live-session termination. Do not begin
+M3 until explicit M3 implementation authorization is recorded after M2
 acceptance.

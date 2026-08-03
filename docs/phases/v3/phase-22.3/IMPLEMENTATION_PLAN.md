@@ -2,7 +2,8 @@
 
 ## Status and Authorization
 
-**M1 residual draft-snapshot correction pushed pending independent re-audit; M2 not authorized.**
+**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 implementation
+shipped pending independent audit; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
 `c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
@@ -10,10 +11,9 @@ implementation authorization was granted in the same session. Independent M1
 audit at `01a1f221a8a96c91be14f078321658e9d5582b50` returned **NO-GO** for two
 navigation/race defects (F1, F2). Corrective work at
 `759abf11782e15e560594e6f0f8629d4d90434d8` closed F1/F2. A residual F1 follow-on
-remained: routed draft clear compared against a trimmed payload and still
-cleared trim-equivalent but raw-different newer edits. That residual is closed
-by exact raw-snapshot capture and ordinal-only clear; M1 is **not accepted**.
-M2–M5 require explicit separate implementation approval.
+(trim-equivalent raw draft clear) closed at
+`1a5ff04a3035df73331e3ea67eeba233491621c1`. Human accepted M1 and authorized M2
+only at that baseline. M3–M5 still require separate implementation approval.
 
 The live findings, test inventory, future A3 procedure, and recommendation are
 recorded in [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md).
@@ -61,7 +61,8 @@ and ACP.
 - [x] Lock milestone, rollback, migration, and evidence boundaries.
 - [x] Receive explicit human M0 acceptance.
 - [x] Receive separate Phase 22.3 M1 implementation approval.
-- [ ] Receive separate Phase 22.3 M2–M5 implementation approval.
+- [x] Receive separate Phase 22.3 M2 implementation approval.
+- [ ] Receive separate Phase 22.3 M3–M5 implementation approval.
 
 ## Scope
 
@@ -110,8 +111,8 @@ final authorization, execution, audit, and reconciliation path.
 | Milestone | Outcome | Required new tests | Verification gate |
 |-----------|---------|--------------------|-------------------|
 | M0 | Live dependency, send/routing, projection, termination, broker, continuity, test, harness, migration, and rollback seams verified | Documentation only | Existing focused filters + build/full-suite gates; human acceptance |
-| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | Send/routing/projection focused filter — **residual draft-snapshot correction pushed pending re-audit; 32/32 M1 tests, 103/103 M0+M1 filter, 3881/3881 full suite** |
-| M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter |
+| M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | **Accepted** at `1a5ff04`; 32/32 M1 tests, 103/103 M0+M1 filter |
+| M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter — **implemented pending independent audit; not accepted** |
 | M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter |
 | M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + force-quit A3 scenarios |
 | M5 | All owned rows have current isolated Native Harness and ACP evidence and all regression gates pass | No substitute unit test; A3 producer required | Full 22.3 A3 matrix + build + fast suite |
@@ -197,7 +198,8 @@ for the scenario and evidence contract.
 - [x] Human M0 acceptance and separate M1 implementation approval are recorded.
 - [x] Direct/channel routing and failure outcomes are visible, actionable,
   ordered, and attributed without a second conversation writer (M1 scope).
-- [ ] Explicit termination is reachable and never overclaims provider state.
+- [x] Explicit termination is reachable and never overclaims provider state
+  (M2 implementation; independent acceptance audit pending).
 - [ ] Mediated action, permission, audit attribution, conflict, reconciliation,
   stale-base, and final-consumption invariants pass; rollback absence remains
   explicit.
