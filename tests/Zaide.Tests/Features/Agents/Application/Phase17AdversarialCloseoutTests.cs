@@ -283,9 +283,9 @@ public sealed class Phase17AdversarialCloseoutTests : IDisposable
         var inventory = new ArchitectureInventoryReader().Read();
 
         Assert.Equal(ArchitectureInventoryReader.M0TotalTopLevelTypes, inventory.TotalTopLevelTypeCount);
-        // Phase 22.4 M1+M2: +4 authorized transparency surface production source files.
-        Assert.Equal(880, inventory.SourceFiles.Count);
-        Assert.Equal(834, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 22.4 M1–M3: +7 authorized transparency surface production source files.
+        Assert.Equal(883, inventory.SourceFiles.Count);
+        Assert.Equal(837, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }

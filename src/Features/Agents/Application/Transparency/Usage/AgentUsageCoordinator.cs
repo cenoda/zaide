@@ -43,15 +43,18 @@ internal sealed class AgentUsageCoordinator
         return _sink.TrySubmit(request);
     }
 
+    public AgentDurableWorkspaceStorageKey ResolveWorkspaceKey(string? workspaceRoot) =>
+        _workspaceKeyResolver.Resolve(workspaceRoot);
+
     public AgentUsageInspectionSummary GetSummary(string? workspaceRoot) =>
-        _inspector.GetSummary(_workspaceKeyResolver.Resolve(workspaceRoot));
+        _inspector.GetSummary(ResolveWorkspaceKey(workspaceRoot));
 
     public IReadOnlyList<AgentUsageRecord> GetRecords(
         string? workspaceRoot,
         long afterOrderingSequence,
         int maxRecords) =>
         _inspector.GetRecords(
-            _workspaceKeyResolver.Resolve(workspaceRoot),
+            ResolveWorkspaceKey(workspaceRoot),
             afterOrderingSequence,
             maxRecords);
 }

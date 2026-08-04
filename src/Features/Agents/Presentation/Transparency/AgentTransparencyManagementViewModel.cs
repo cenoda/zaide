@@ -8,6 +8,7 @@ using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
 
@@ -38,8 +39,10 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     private readonly AgentMemoryAvailabilityProjection _memoryAvailabilityProjection;
     private bool _isTracePanelOpen;
     private bool _isMemoryPanelOpen;
+    private bool _isUsagePanelOpen;
     private string _traceStatusCaption = AgentTraceAvailabilityState.Initial.FormatStatusCaption();
     private string _memoryStatusCaption = "Durable memory closed.";
+    private string _usageStatusCaption = "Usage evidence closed.";
 
     public AgentTransparencyManagementViewModel(
         AgentTraceInspectionViewModel traceInspection,
@@ -77,6 +80,11 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         CloseMemoryCommand = ReactiveCommand.Create(CloseMemorySurface);
         RefreshMemoryCommand = ReactiveCommand.CreateFromTask(RefreshMemorySurfaceAsync);
         RetryMemoryCommand = ReactiveCommand.CreateFromTask(RetryMemorySurfaceAsync);
+        OpenUsageCommand = ReactiveCommand.CreateFromTask(OpenUsageSurfaceAsync);
+        CloseUsageCommand = ReactiveCommand.Create(CloseUsageSurface);
+        RefreshUsageCommand = ReactiveCommand.CreateFromTask(RefreshUsageSurfaceAsync);
+        RetryUsageCommand = ReactiveCommand.CreateFromTask(RetryUsageSurfaceAsync);
+        ToggleUsageCaptureCommand = ReactiveCommand.Create(ToggleUsageCapture);
     }
 
     public string AccessibilityName => AutomationName;
@@ -97,6 +105,16 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> RetryMemoryCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> OpenUsageCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> CloseUsageCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> RefreshUsageCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> RetryUsageCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ToggleUsageCaptureCommand { get; }
+
     public bool IsTracePanelOpen
     {
         get => _isTracePanelOpen;
@@ -107,6 +125,12 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     {
         get => _isMemoryPanelOpen;
         private set => this.RaiseAndSetIfChanged(ref _isMemoryPanelOpen, value);
+    }
+
+    public bool IsUsagePanelOpen
+    {
+        get => _isUsagePanelOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isUsagePanelOpen, value);
     }
 
     public string TraceStatusCaption
@@ -121,6 +145,12 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _memoryStatusCaption, value);
     }
 
+    public string UsageStatusCaption
+    {
+        get => _usageStatusCaption;
+        private set => this.RaiseAndSetIfChanged(ref _usageStatusCaption, value);
+    }
+
     public AgentTraceAvailabilityProjection TraceAvailability => _traceAvailabilityProjection;
 
     public AgentUsageAvailabilityProjection UsageAvailability => _usageAvailabilityProjection;
@@ -131,6 +161,8 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     public AgentMemoryAvailabilityProjection MemoryAvailability => _memoryAvailabilityProjection;
 
     public AgentMemoryInspectionViewModel MemoryInspection => _memoryInspection;
+
+    public AgentUsageInspectionViewModel UsageInspection => _usageInspection;
 
     public Task<AgentTransparencyExportPackage> ExportAllAsync(string? workspaceRoot = null)
     {
@@ -163,6 +195,32 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     {
         _traceInspection.Refresh();
         TraceStatusCaption = _traceInspection.AvailabilityCaption;
+    }
+
+    public Task<AgentUsageInspectionSummary> LoadUsageSummaryAsync() =>
+        _usageInspection.LoadSummaryAsync();
+
+    public Task<IReadOnlyList<AgentUsageRecord>> LoadUsageRecordsAsync(
+        long afterOrderingSequence,
+        int requestedPageSize) =>
+        _usageInspection.LoadRecordsAsync(
+            afterOrderingSequence,
+            ClampPageSize(requestedPageSize));
+
+    public Task RefreshUsageSurfaceAsync()
+    {
+        return ReloadUsageAndPublishAsync(() => _usageInspection.ReloadAsync());
+    }
+
+    public Task RetryUsageSurfaceAsync()
+    {
+        return ReloadUsageAndPublishAsync(() => _usageInspection.RetryAsync());
+    }
+
+    public void SelectUsageRecord(long? orderingSequence)
+    {
+        _usageInspection.SelectRecord(orderingSequence);
+        PublishUsagePresentation();
     }
 
     /// <summary>
@@ -278,5 +336,44 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         }
 
         RefreshTracePresentation();
+    }
+
+    private async Task OpenUsageSurfaceAsync()
+    {
+        IsUsagePanelOpen = true;
+        await RefreshUsageSurfaceAsync().ConfigureAwait(false);
+    }
+
+    private void CloseUsageSurface()
+    {
+        IsUsagePanelOpen = false;
+        UsageStatusCaption = "Usage evidence closed.";
+    }
+
+    private async Task ReloadUsageAndPublishAsync(Func<Task> reload)
+    {
+        await reload().ConfigureAwait(false);
+        PublishUsagePresentation();
+    }
+
+    private void PublishUsagePresentation()
+    {
+        _usageInspection.Refresh();
+        UsageStatusCaption = _usageInspection.StatusCaption;
+        this.RaisePropertyChanged(nameof(UsageInspection));
+    }
+
+    private void ToggleUsageCapture()
+    {
+        if (_usageInspection.Availability.CaptureEnabled)
+        {
+            _usageInspection.DisableCapture();
+        }
+        else
+        {
+            _usageInspection.EnableCapture();
+        }
+
+        PublishUsagePresentation();
     }
 }

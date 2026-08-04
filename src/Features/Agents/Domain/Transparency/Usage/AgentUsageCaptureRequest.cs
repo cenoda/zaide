@@ -23,7 +23,8 @@ internal sealed class AgentUsageCaptureRequest
         decimal? uncertainty = null,
         string? evidenceSourceDescription = null,
         string? idempotencyKey = null,
-        DateTimeOffset? capturedAtUtc = null)
+        DateTimeOffset? capturedAtUtc = null,
+        AgentUsageAggregationSemantics aggregationSemantics = AgentUsageAggregationSemantics.Unknown)
     {
         if (workspaceKey.Value.Length == 0)
         {
@@ -43,6 +44,14 @@ internal sealed class AgentUsageCaptureRequest
         if (!Enum.IsDefined(origin))
         {
             throw new ArgumentOutOfRangeException(nameof(origin), origin, "Value origin is invalid.");
+        }
+
+        if (!Enum.IsDefined(aggregationSemantics))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(aggregationSemantics),
+                aggregationSemantics,
+                "Aggregation semantics are invalid.");
         }
 
         if (string.IsNullOrWhiteSpace(metricName))
@@ -78,6 +87,7 @@ internal sealed class AgentUsageCaptureRequest
         EvidenceSourceDescription = evidenceSourceDescription;
         IdempotencyKey = idempotencyKey;
         CapturedAtUtc = capturedAtUtc ?? DateTimeOffset.UtcNow;
+        AggregationSemantics = aggregationSemantics;
     }
 
     public AgentDurableWorkspaceStorageKey WorkspaceKey { get; }
@@ -117,4 +127,6 @@ internal sealed class AgentUsageCaptureRequest
     public string? IdempotencyKey { get; }
 
     public DateTimeOffset CapturedAtUtc { get; }
+
+    public AgentUsageAggregationSemantics AggregationSemantics { get; }
 }

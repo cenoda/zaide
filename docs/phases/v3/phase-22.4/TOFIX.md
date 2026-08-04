@@ -2,9 +2,9 @@
 
 ## Status
 
-**M0, M1, and M2 are complete; M3–M4 remain unauthorized.** A4 package
-4 is assigned here. Phase 22.2 is complete with package-2 PASS restored, so
-the ordering dependency is satisfied.
+**M0–M3 are complete; M4 remains unauthorized.** A4 package 4 is assigned
+here. Phase 22.2 is complete with package-2 PASS restored, so the ordering
+dependency is satisfied.
 
 ## Work Board
 
@@ -22,7 +22,7 @@ the ordering dependency is satisfied.
   application-lifetime capture control, opened-workspace inspection, command
   reachability, and independent Native Harness / ACP evidence hooks.
 - [x] Implement M2 — scoped memory lifecycle surface only.
-- [ ] Implement M3 — usage/cost surface only (requires separate authorization).
+- [x] Implement M3 — usage/cost surface only.
 - [ ] Implement M4 — integrated reachability, accessibility, backup safety,
   regression, and isolated `A1-TC-02` / `A1-TC-03` / `A1-TC-08` re-smoke.
 - [ ] Re-smoke `A1-TC-02`, `A1-TC-03`, and `A1-TC-08`.
@@ -54,13 +54,13 @@ the ordering dependency is satisfied.
 
 ## Blockers
 
-- M3–M4 remain unauthorized. Do not auto-start them from this board.
+- M4 remains unauthorized. Do not auto-start it from this board.
 - G5 remains blocked until accepted M1–M4 implementation and the owned
   affected-row re-smoke complete.
 
 ## Next Task
 
-Wait for separate M3-only implementation authorization. Do not begin M3–M4,
+Wait for separate M4-only implementation authorization. Do not begin M4,
 Phase 22.5, G5, or V4 from this board.
 
 ## M1 Trace Surface (2026-08-04) — accepted
@@ -119,4 +119,43 @@ and A3 producer closeout remain out of scope (M3/M4).
 
 M2-only implementation was authorized under the standing GO. Do not start M3,
 M4, Phase 22.5, G5, or V4 without separate authorization. No product-readiness
+claim.
+
+## M3 Usage/Cost Surface (2026-08-04) — complete; await M4 authorization
+
+M3 adds the user-reachable Usage entry in Townhall and the `agent.usage.open`
+command (category `Agent`, no default gesture). The surface inspects usage and
+cost evidence for the opened workspace through `AgentUsageCoordinator` /
+`IAgentUsageInspector` only:
+
+- origin, units, scope, backend/model attribution, pricing/currency/uncertainty
+- additive `AgentUsageAggregationSemantics` (`Unknown` / `Delta` /
+  `Cumulative` / `PointInTime`); existing records decode as `Unknown` without
+  partition migration
+- verified cost totals sum only `Delta` cost records and the latest
+  `Cumulative` snapshot per backend/session/currency; `Unknown` is listed but
+  excluded from a verified aggregate (never shown as zero or invoice fact)
+- presentation states `Loading` / `Ready` / `Empty` / `Unavailable` / `Failed`
+  with bounded retry; failed and unavailable never masquerade as empty
+- explicit application-lifetime capture enable/disable; capture remains
+  disabled after restart
+- Native Harness producer: Zaide-measured request count/latency plus explicit
+  unavailable token/cost markers
+- ACP producer: public `usage_update` `used`/`size` as point-in-time Reported
+  evidence and optional cumulative session cost; no price catalog or inference
+- workspace from `IWorkspaceActionAuthority` — never `ws:unbound` on the user path
+
+Backup/Restore/Migrate UI, accessibility package re-smoke, and A3 producer
+closeout remain out of scope (M4).
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-incremental` | PASS — 0 warnings, 0 errors |
+| M3 usage filter | PASS — 53/53 (includes discovered `Phase22UsageSurfaceTests` and `Phase22UsageProducerTests`) |
+| Architecture / DI inventory ratchets | PASS |
+| `dotnet test Zaide.slnx --no-build` (serial fallback) | PASS — 3987/3987 |
+| `git diff --check` | PASS |
+
+M3-only implementation was authorized under separate human GO. Do not start M4,
+Phase 22.5, G5, or V4 without separate authorization. No product-readiness
 claim.

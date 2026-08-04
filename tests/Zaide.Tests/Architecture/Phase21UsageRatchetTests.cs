@@ -143,4 +143,17 @@ public sealed class Phase21UsageRatchetTests
         Assert.Contains("Disputed", originNames);
         Assert.Equal(7, origins.Length);
     }
+
+    [Fact]
+    public void UsageAggregationSemantics_IncludesLockedValues()
+    {
+        var values = Enum.GetValues<AgentUsageAggregationSemantics>();
+        var names = values.Select(v => v.ToString()).ToArray();
+
+        Assert.Contains("Unknown", names);
+        Assert.Contains("Delta", names);
+        Assert.Contains("Cumulative", names);
+        Assert.Contains("PointInTime", names);
+        Assert.Equal(4, values.Length);
+    }
 }

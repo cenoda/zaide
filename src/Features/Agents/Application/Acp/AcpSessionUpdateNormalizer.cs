@@ -46,7 +46,8 @@ internal static class AcpSessionUpdateNormalizer
             case AcpSessionUpdateKind.UsageUpdate:
                 payload = new AgentBackendActivityReportedPayload(
                     AcpBackendActivityKind.UsageUpdate,
-                    "ACP usage update reported by backend.");
+                    "ACP usage update reported by backend.",
+                    usageUpdateJson: update.Raw?.GetRawText());
                 return true;
 
             case AcpSessionUpdateKind.AvailableCommandsUpdate:

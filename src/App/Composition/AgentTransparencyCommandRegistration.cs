@@ -29,5 +29,12 @@ internal static class AgentTransparencyCommandRegistration
             "Agent",
             Array.Empty<string>(),
             transparencyManagement.OpenMemoryCommand));
+
+        registry.Register(new CommandDescriptor(
+            "agent.usage.open",
+            "Open Agent Usage",
+            "Agent",
+            Array.Empty<string>(),
+            transparencyManagement.OpenUsageCommand));
     }
 }

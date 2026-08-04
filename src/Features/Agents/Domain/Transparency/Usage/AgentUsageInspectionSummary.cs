@@ -14,7 +14,8 @@ internal sealed class AgentUsageInspectionSummary
         DateTimeOffset? newestCapturedAtUtc,
         IReadOnlyDictionary<AgentUsageValueOrigin, int> countsByOrigin,
         IReadOnlyDictionary<string, int> countsByBackend,
-        bool isEmpty)
+        bool isEmpty,
+        bool hasVerifiedTotalCost = false)
     {
         if (totalRecords < 0)
         {
@@ -33,6 +34,7 @@ internal sealed class AgentUsageInspectionSummary
         CountsByOrigin = countsByOrigin;
         CountsByBackend = countsByBackend;
         IsEmpty = isEmpty;
+        HasVerifiedTotalCost = hasVerifiedTotalCost;
     }
 
     public AgentDurableWorkspaceStorageKey WorkspaceKey { get; }
@@ -42,6 +44,13 @@ internal sealed class AgentUsageInspectionSummary
     public decimal TotalCostValue { get; }
 
     public string? TotalCostCurrency { get; }
+
+    /// <summary>
+    /// True when <see cref="TotalCostValue"/> is a verified aggregate of Delta
+    /// and latest Cumulative cost records. Missing, Unknown, or mixed-currency
+    /// evidence must not be treated as verified zero.
+    /// </summary>
+    public bool HasVerifiedTotalCost { get; }
 
     public DateTimeOffset? OldestCapturedAtUtc { get; }
 
@@ -63,5 +72,6 @@ internal sealed class AgentUsageInspectionSummary
             newestCapturedAtUtc: null,
             countsByOrigin: new Dictionary<AgentUsageValueOrigin, int>(),
             countsByBackend: new Dictionary<string, int>(StringComparer.Ordinal),
-            isEmpty: true);
+            isEmpty: true,
+            hasVerifiedTotalCost: false);
 }

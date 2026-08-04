@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Presentation.Transparency;
 
@@ -16,7 +18,16 @@ internal sealed class AgentUsageAvailabilityProjection : IDisposable
 
     public AgentUsageAvailabilityProjection(
         AgentUsageCoordinator coordinator,
-        Func<string?>? workspaceRootProvider = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null)
+        : this(
+            coordinator,
+            AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority))
+    {
+    }
+
+    public AgentUsageAvailabilityProjection(
+        AgentUsageCoordinator coordinator,
+        Func<string?>? workspaceRootProvider)
     {
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
         _workspaceRootProvider = workspaceRootProvider ?? (() => null);
@@ -66,7 +77,8 @@ internal sealed class AgentUsageAvailabilityProjection : IDisposable
             totalCostValue: summary.TotalCostValue,
             totalCostCurrency: summary.TotalCostCurrency,
             lastCapturedAtUtc: summary.NewestCapturedAtUtc,
-            countsByOrigin: summary.CountsByOrigin);
+            countsByOrigin: summary.CountsByOrigin,
+            hasVerifiedTotalCost: summary.HasVerifiedTotalCost);
 
         var changed = force;
         lock (_stateGate)
@@ -110,6 +122,7 @@ internal sealed class AgentUsageAvailabilityProjection : IDisposable
         if (left.TotalRecords != right.TotalRecords) return false;
         if (left.TotalCostValue != right.TotalCostValue) return false;
         if (left.TotalCostCurrency != right.TotalCostCurrency) return false;
+        if (left.HasVerifiedTotalCost != right.HasVerifiedTotalCost) return false;
         if (left.LastCapturedAtUtc != right.LastCapturedAtUtc) return false;
         if (left.CountsByOrigin.Count != right.CountsByOrigin.Count) return false;
         foreach (var pair in left.CountsByOrigin)

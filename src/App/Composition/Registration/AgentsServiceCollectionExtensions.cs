@@ -115,6 +115,9 @@ internal static class AgentsServiceCollectionExtensions
             var traceSource = ((IEnumerable<IAgentTraceBackendEvidenceSource>)get(
                     typeof(IEnumerable<IAgentTraceBackendEvidenceSource>))!)
                 .Single(source => source.BackendId == AgentBackendIds.NativeHarnessValue);
+            var usageSource = ((IEnumerable<IAgentUsageBackendEvidenceSource>)get(
+                    typeof(IEnumerable<IAgentUsageBackendEvidenceSource>))!)
+                .Single(source => source.BackendId == AgentBackendIds.NativeHarnessValue);
             return new NativeHarnessAgentBackend(
                 (INativeHarnessProviderOptionsSource)get(typeof(INativeHarnessProviderOptionsSource))!,
                 (INativeHarnessProviderTransport)get(typeof(INativeHarnessProviderTransport))!,
@@ -122,7 +125,8 @@ internal static class AgentsServiceCollectionExtensions
                 (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)),
                 traceSource,
                 (AgentDurableWorkspaceStorageKeyResolver)get(
-                    typeof(AgentDurableWorkspaceStorageKeyResolver))!);
+                    typeof(AgentDurableWorkspaceStorageKeyResolver))!,
+                usageSource);
         });
         services.AddSingleton<AcpActionCapableAgentBackend>(sp =>
         {
@@ -131,6 +135,9 @@ internal static class AgentsServiceCollectionExtensions
             var traceSource = ((IEnumerable<IAgentTraceBackendEvidenceSource>)get(
                     typeof(IEnumerable<IAgentTraceBackendEvidenceSource>))!)
                 .Single(source => source.BackendId == AgentBackendIds.AcpValue);
+            var usageSource = ((IEnumerable<IAgentUsageBackendEvidenceSource>)get(
+                    typeof(IEnumerable<IAgentUsageBackendEvidenceSource>))!)
+                .Single(source => source.BackendId == AgentBackendIds.AcpValue);
             return new AcpActionCapableAgentBackend(
                 (IAcpSessionClientFactory)get(typeof(IAcpSessionClientFactory))!,
                 AcpWorkspaceWorkingDirectory.CreateProvider(workspaceAuthority),
@@ -138,7 +145,8 @@ internal static class AgentsServiceCollectionExtensions
                 workspaceAuthority,
                 traceSource,
                 (AgentDurableWorkspaceStorageKeyResolver)get(
-                    typeof(AgentDurableWorkspaceStorageKeyResolver))!);
+                    typeof(AgentDurableWorkspaceStorageKeyResolver))!,
+                usageSource);
         });
         services.AddSingleton<IAgentBackend>(sp =>
         {

@@ -152,7 +152,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M2: +10 internal trace evidence domain types.
         Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Domain.Transparency.Trace"]);
         // Phase 21 M3: +9 internal usage/cost evidence domain types.
-        Assert.Equal((9, 0, 9), byNamespace["Zaide.Features.Agents.Domain.Transparency.Usage"]);
+        // Phase 22.4 M3: +1 internal AgentUsageAggregationSemantics.
+        Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Domain.Transparency.Usage"]);
         // Phase 21 M4: +15 internal session continuity domain types.
         Assert.Equal((17, 0, 17), byNamespace["Zaide.Features.Agents.Domain.Continuity"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
@@ -225,12 +226,14 @@ public sealed class ArchitectureInventoryTests
         // Phase 20 M5: +1 public AgentBackendBindingPanel and +1 internal AgentBackendBindingPresenter.
         // Phase 22.4 M1: +1 internal AgentTracePanel.
         // Phase 22.4 M2: +1 internal AgentMemoryPanel.
-        Assert.Equal((8, 3, 5), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 22.4 M3: +1 internal AgentUsagePanel.
+        Assert.Equal((9, 3, 6), byNamespace["Zaide.Features.Agents.Presentation"]);
         // Phase 21 M2: +3 internal trace availability/inspection presentation types.
         // Phase 21 M3: +3 internal usage/cost availability/inspection presentation types.
         // Phase 21 M4: +3 internal session continuity availability/inspection presentation types.
         // Phase 21 M6: +1 internal transparency management view model.
-        Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Presentation.Transparency"]);
+        // Phase 22.4 M3: +1 internal AgentUsageSurfaceState.
+        Assert.Equal((11, 0, 11), byNamespace["Zaide.Features.Agents.Presentation.Transparency"]);
         Assert.False(byNamespace.ContainsKey("Zaide.Styles"));
     }
 
@@ -308,7 +311,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.3 M4 corrective: +1 authorized invocation counter source file (876).
         // Phase 22.4 M1: +2 AgentTracePanel and AgentTransparencyCommandRegistration (878).
         // Phase 22.4 M2: +2 AgentMemoryPanel and AgentMemorySurfaceState source files (880).
-        Assert.Equal(880, inventory.SourceFiles.Count);
+        // Phase 22.4 M3: +3 AgentUsagePanel, AgentUsageSurfaceState, AgentUsageAggregationSemantics (883).
+        Assert.Equal(883, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -354,7 +358,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
         // Phase 22.4 M1: +1 AgentTracePanel (832).
         // Phase 22.4 M2: +2 memory surface source files (834).
-        Assert.Equal(834, byFolder["Features"]);
+        // Phase 22.4 M3: +3 usage surface source files (837).
+        Assert.Equal(837, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

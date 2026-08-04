@@ -115,12 +115,15 @@ public sealed class Phase21UsageBackendAdapterTests : IDisposable
     [Fact]
     public void NativeHarnessSource_RejectsUnsupportedKind()
     {
+        // InvoicedCost is admitted by the ledger but not claimed by the
+        // native-harness evidence surface (no invoice path).
         var request = Phase21UsageTestSupport.CreateRequest(
             _workspaceKey,
             AgentBackendIds.NativeHarnessValue,
-            AgentUsageKind.Other,
-            AgentUsageValueOrigin.Reported,
-            "unknown", "count", 0,
+            AgentUsageKind.InvoicedCost,
+            AgentUsageValueOrigin.Invoiced,
+            "invoice", "USD", 1.0m,
+            currency: "USD",
             idempotencyKey: "nh-reject");
 
         var result = _nativeHarnessSource.Submit(request);

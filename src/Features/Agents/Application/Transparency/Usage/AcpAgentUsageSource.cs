@@ -25,6 +25,8 @@ internal sealed class AcpAgentUsageSource : IAgentUsageBackendEvidenceSource
         AgentUsageKind.TotalCost => true,
         AgentUsageKind.RequestCount => true,
         AgentUsageKind.LatencyMs => true,
+        // Context-window size and other public usage_update metrics.
+        AgentUsageKind.Other => true,
         _ => false,
     };
 

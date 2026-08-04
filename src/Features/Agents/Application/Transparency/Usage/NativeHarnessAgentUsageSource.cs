@@ -25,6 +25,7 @@ internal sealed class NativeHarnessAgentUsageSource : IAgentUsageBackendEvidence
         AgentUsageKind.TotalCost => true,
         AgentUsageKind.RequestCount => true,
         AgentUsageKind.LatencyMs => true,
+        AgentUsageKind.Other => true,
         _ => false,
     };
 

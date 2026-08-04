@@ -122,7 +122,8 @@ public sealed class Phase21CostEvidenceTests : IDisposable
             AgentUsageValueOrigin.Estimated,
             "cost", "USD", 0.01m,
             currency: "USD",
-            idempotencyKey: "summary-cost-1"));
+            idempotencyKey: "summary-cost-1",
+            aggregationSemantics: AgentUsageAggregationSemantics.Delta));
         _sink.TrySubmit(Phase21UsageTestSupport.CreateRequest(
             _workspaceKey,
             Phase21UsageTestSupport.NativeHarnessBackendId,
@@ -130,10 +131,59 @@ public sealed class Phase21CostEvidenceTests : IDisposable
             AgentUsageValueOrigin.Estimated,
             "cost", "USD", 0.02m,
             currency: "USD",
-            idempotencyKey: "summary-cost-2"));
+            idempotencyKey: "summary-cost-2",
+            aggregationSemantics: AgentUsageAggregationSemantics.Delta));
 
         var summary = _inspector.GetSummary(_workspaceKey);
+        Assert.True(summary.HasVerifiedTotalCost);
         Assert.Equal(0.03m, summary.TotalCostValue);
+        Assert.Equal("USD", summary.TotalCostCurrency);
+    }
+
+    [Fact]
+    public void Summary_ExcludesUnknownAggregationFromVerifiedCostTotal()
+    {
+        _sink.TrySubmit(Phase21UsageTestSupport.CreateRequest(
+            _workspaceKey,
+            Phase21UsageTestSupport.NativeHarnessBackendId,
+            AgentUsageKind.EstimatedCost,
+            AgentUsageValueOrigin.Estimated,
+            "cost", "USD", 0.01m,
+            currency: "USD",
+            idempotencyKey: "summary-unknown-1"));
+
+        var summary = _inspector.GetSummary(_workspaceKey);
+        Assert.Equal(1, summary.TotalRecords);
+        Assert.False(summary.HasVerifiedTotalCost);
+        Assert.Equal(0m, summary.TotalCostValue);
+        Assert.Null(summary.TotalCostCurrency);
+    }
+
+    [Fact]
+    public void Summary_UsesLatestCumulativeCostPerSession()
+    {
+        _sink.TrySubmit(Phase21UsageTestSupport.CreateRequest(
+            _workspaceKey,
+            Phase21UsageTestSupport.AcpBackendId,
+            AgentUsageKind.TotalCost,
+            AgentUsageValueOrigin.Reported,
+            "session_cost", "USD", 0.10m,
+            currency: "USD",
+            idempotencyKey: "cum-1",
+            aggregationSemantics: AgentUsageAggregationSemantics.Cumulative));
+        _sink.TrySubmit(Phase21UsageTestSupport.CreateRequest(
+            _workspaceKey,
+            Phase21UsageTestSupport.AcpBackendId,
+            AgentUsageKind.TotalCost,
+            AgentUsageValueOrigin.Reported,
+            "session_cost", "USD", 0.25m,
+            currency: "USD",
+            idempotencyKey: "cum-2",
+            aggregationSemantics: AgentUsageAggregationSemantics.Cumulative));
+
+        var summary = _inspector.GetSummary(_workspaceKey);
+        Assert.True(summary.HasVerifiedTotalCost);
+        Assert.Equal(0.25m, summary.TotalCostValue);
         Assert.Equal("USD", summary.TotalCostCurrency);
     }
 

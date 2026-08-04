@@ -221,7 +221,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
         // Phase 22.4 M1: +1 AgentTracePanel (832).
         // Phase 22.4 M2: +2 memory surface source files (834).
-        Assert.Equal(834, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 22.4 M3: +3 usage surface source files (837).
+        Assert.Equal(837, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -25,7 +25,8 @@ internal sealed class AgentUsageRecord
         string? evidenceSourceDescription = null,
         DateTimeOffset capturedAtUtc = default,
         DateTimeOffset recordedAtUtc = default,
-        string? correctionReason = null)
+        string? correctionReason = null,
+        AgentUsageAggregationSemantics aggregationSemantics = AgentUsageAggregationSemantics.Unknown)
     {
         if (string.IsNullOrWhiteSpace(recordId))
         {
@@ -56,6 +57,14 @@ internal sealed class AgentUsageRecord
                 nameof(origin),
                 origin,
                 "Value origin is invalid.");
+        }
+
+        if (!Enum.IsDefined(aggregationSemantics))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(aggregationSemantics),
+                aggregationSemantics,
+                "Aggregation semantics are invalid.");
         }
 
         if (string.IsNullOrWhiteSpace(metricName))
@@ -89,6 +98,7 @@ internal sealed class AgentUsageRecord
         CapturedAtUtc = capturedAtUtc;
         RecordedAtUtc = recordedAtUtc;
         CorrectionReason = correctionReason;
+        AggregationSemantics = aggregationSemantics;
     }
 
     public string RecordId { get; }
@@ -132,4 +142,6 @@ internal sealed class AgentUsageRecord
     public DateTimeOffset RecordedAtUtc { get; }
 
     public string? CorrectionReason { get; }
+
+    public AgentUsageAggregationSemantics AggregationSemantics { get; }
 }

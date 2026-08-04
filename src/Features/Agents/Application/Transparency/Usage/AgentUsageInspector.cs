@@ -35,10 +35,15 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
 
         var countsByOrigin = new Dictionary<AgentUsageValueOrigin, int>();
         var countsByBackend = new Dictionary<string, int>(StringComparer.Ordinal);
-        decimal totalCostValue = 0;
-        string? totalCostCurrency = null;
         DateTimeOffset? oldest = null;
         DateTimeOffset? newest = null;
+
+        // Latest cumulative cost snapshot per backend/session/currency.
+        var latestCumulativeCost = new Dictionary<string, AgentUsageRecord>(StringComparer.Ordinal);
+        decimal deltaCostTotal = 0;
+        string? verifiedCurrency = null;
+        var hasVerifiedContribution = false;
+        var mixedCurrency = false;
 
         foreach (var record in records)
         {
@@ -56,13 +61,42 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
 
             countsByBackend[record.BackendId] = backendCount + 1;
 
-            if (record.Kind is AgentUsageKind.EstimatedCost
-                or AgentUsageKind.InvoicedCost
-                or AgentUsageKind.TotalCost
-                && record.Origin != AgentUsageValueOrigin.Unavailable)
+            if (IsCostKind(record.Kind) && record.Origin != AgentUsageValueOrigin.Unavailable)
             {
-                totalCostValue += record.Value;
-                totalCostCurrency ??= record.Currency;
+                switch (record.AggregationSemantics)
+                {
+                    case AgentUsageAggregationSemantics.Delta:
+                        if (!TryAcceptCurrency(record.Currency, ref verifiedCurrency, ref mixedCurrency))
+                        {
+                            break;
+                        }
+
+                        deltaCostTotal += record.Value;
+                        hasVerifiedContribution = true;
+                        break;
+
+                    case AgentUsageAggregationSemantics.Cumulative:
+                        if (!TryAcceptCurrency(record.Currency, ref verifiedCurrency, ref mixedCurrency))
+                        {
+                            break;
+                        }
+
+                        var key = BuildCumulativeKey(record);
+                        if (!latestCumulativeCost.TryGetValue(key, out var existing)
+                            || record.OrderingSequence > existing.OrderingSequence)
+                        {
+                            latestCumulativeCost[key] = record;
+                        }
+
+                        hasVerifiedContribution = true;
+                        break;
+
+                    case AgentUsageAggregationSemantics.Unknown:
+                    case AgentUsageAggregationSemantics.PointInTime:
+                    default:
+                        // Listed in records but excluded from a verified cost aggregate.
+                        break;
+                }
             }
 
             if (oldest is null || record.CapturedAtUtc < oldest)
@@ -76,16 +110,28 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
             }
         }
 
+        decimal cumulativeCostTotal = 0;
+        foreach (var latest in latestCumulativeCost.Values)
+        {
+            cumulativeCostTotal += latest.Value;
+        }
+
+        var hasVerifiedTotalCost = hasVerifiedContribution && !mixedCurrency;
+        var totalCostValue = hasVerifiedTotalCost
+            ? deltaCostTotal + cumulativeCostTotal
+            : 0m;
+
         return new AgentUsageInspectionSummary(
             workspaceKey,
             totalRecords: records.Count,
             totalCostValue: totalCostValue,
-            totalCostCurrency: totalCostCurrency,
+            totalCostCurrency: hasVerifiedTotalCost ? verifiedCurrency : null,
             oldestCapturedAtUtc: oldest,
             newestCapturedAtUtc: newest,
             countsByOrigin: countsByOrigin,
             countsByBackend: countsByBackend,
-            isEmpty: false);
+            isEmpty: false,
+            hasVerifiedTotalCost: hasVerifiedTotalCost);
     }
 
     public IReadOnlyList<AgentUsageRecord> GetRecords(
@@ -141,6 +187,43 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
         return collected;
     }
 
+    private static bool IsCostKind(AgentUsageKind kind) =>
+        kind is AgentUsageKind.EstimatedCost
+            or AgentUsageKind.InvoicedCost
+            or AgentUsageKind.TotalCost;
+
+    private static string BuildCumulativeKey(AgentUsageRecord record)
+    {
+        var session = record.Scope.SessionId ?? string.Empty;
+        var currency = record.Currency ?? string.Empty;
+        return record.BackendId + "|" + session + "|" + currency;
+    }
+
+    private static bool TryAcceptCurrency(
+        string? currency,
+        ref string? verifiedCurrency,
+        ref bool mixedCurrency)
+    {
+        if (mixedCurrency)
+        {
+            return false;
+        }
+
+        if (verifiedCurrency is null)
+        {
+            verifiedCurrency = currency;
+            return true;
+        }
+
+        if (string.Equals(verifiedCurrency, currency, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        mixedCurrency = true;
+        return false;
+    }
+
     private static bool TryDecode(
         AgentDurableRecordEnvelope envelope,
         out AgentUsageRecord record)
@@ -155,6 +238,11 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
             {
                 return false;
             }
+
+            // Additive field: missing payload property deserializes as default Unknown.
+            var aggregation = Enum.IsDefined(payload.AggregationSemantics)
+                ? payload.AggregationSemantics
+                : AgentUsageAggregationSemantics.Unknown;
 
             record = new AgentUsageRecord(
                 envelope.RecordId.Value,
@@ -180,7 +268,8 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
                 uncertainty: payload.Uncertainty,
                 evidenceSourceDescription: payload.EvidenceSourceDescription,
                 capturedAtUtc: payload.CapturedAtUtc,
-                recordedAtUtc: envelope.RecordedAtUtc);
+                recordedAtUtc: envelope.RecordedAtUtc,
+                aggregationSemantics: aggregation);
 
             return true;
         }
@@ -223,5 +312,7 @@ internal sealed class AgentUsageInspector : IAgentUsageInspector
         public string? EvidenceSourceDescription { get; set; }
 
         public DateTimeOffset CapturedAtUtc { get; set; }
+
+        public AgentUsageAggregationSemantics AggregationSemantics { get; set; }
     }
 }

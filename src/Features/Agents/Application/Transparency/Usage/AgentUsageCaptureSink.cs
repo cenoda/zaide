@@ -94,6 +94,7 @@ internal sealed class AgentUsageCaptureSink : IAgentUsageCaptureSink
             Uncertainty = request.Uncertainty,
             EvidenceSourceDescription = request.EvidenceSourceDescription,
             CapturedAtUtc = request.CapturedAtUtc,
+            AggregationSemantics = request.AggregationSemantics,
         };
 
         var payloadJson = JsonSerializer.Serialize(envelope, PayloadOptions);
@@ -182,5 +183,7 @@ internal sealed class AgentUsageCaptureSink : IAgentUsageCaptureSink
         public string? EvidenceSourceDescription { get; set; }
 
         public DateTimeOffset CapturedAtUtc { get; set; }
+
+        public AgentUsageAggregationSemantics AggregationSemantics { get; set; }
     }
 }

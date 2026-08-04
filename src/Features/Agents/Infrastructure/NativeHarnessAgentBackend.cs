@@ -6,9 +6,11 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Contracts.Transparency.Trace;
+using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Infrastructure;
@@ -24,7 +26,8 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
     private readonly INativeHarnessProviderOptionsSource _optionsSource;
     private readonly IWorkspaceActionAuthority? _workspaceAuthority;
     private readonly IAgentTraceBackendEvidenceSource? _traceSource;
-    private readonly AgentDurableWorkspaceStorageKeyResolver? _traceWorkspaceKeyResolver;
+    private readonly IAgentUsageBackendEvidenceSource? _usageSource;
+    private readonly AgentDurableWorkspaceStorageKeyResolver? _workspaceKeyResolver;
     private readonly object _capabilitySync = new();
     private AgentCapabilitySnapshot _capabilitySnapshot;
     private bool _capabilityInitialized;
@@ -44,14 +47,16 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         INativeHarnessPriorConversationReader priorConversationReader,
         IWorkspaceActionAuthority? workspaceAuthority = null,
         IAgentTraceBackendEvidenceSource? traceSource = null,
-        AgentDurableWorkspaceStorageKeyResolver? traceWorkspaceKeyResolver = null)
+        AgentDurableWorkspaceStorageKeyResolver? workspaceKeyResolver = null,
+        IAgentUsageBackendEvidenceSource? usageSource = null)
         : this(
             new NativeHarnessProviderOptionsSource(executionService),
             transport,
             priorConversationReader,
             workspaceAuthority,
             traceSource,
-            traceWorkspaceKeyResolver)
+            workspaceKeyResolver,
+            usageSource)
     {
     }
 
@@ -61,7 +66,8 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         INativeHarnessPriorConversationReader priorConversationReader,
         IWorkspaceActionAuthority? workspaceAuthority = null,
         IAgentTraceBackendEvidenceSource? traceSource = null,
-        AgentDurableWorkspaceStorageKeyResolver? traceWorkspaceKeyResolver = null)
+        AgentDurableWorkspaceStorageKeyResolver? workspaceKeyResolver = null,
+        IAgentUsageBackendEvidenceSource? usageSource = null)
     {
         _optionsSource = optionsSource
             ?? throw new ArgumentNullException(nameof(optionsSource));
@@ -69,7 +75,10 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         _traceSource = traceSource?.BackendId == AgentBackendIds.NativeHarnessValue
             ? traceSource
             : null;
-        _traceWorkspaceKeyResolver = traceWorkspaceKeyResolver;
+        _usageSource = usageSource?.BackendId == AgentBackendIds.NativeHarnessValue
+            ? usageSource
+            : null;
+        _workspaceKeyResolver = workspaceKeyResolver;
         _loopRunner = new NativeHarnessLoopRunner(
             optionsSource,
             transport ?? throw new ArgumentNullException(nameof(transport)),
@@ -114,6 +123,7 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
 
         NativeHarnessRunOutcome? outcome = null;
         AgentBackendEvent? faultEvent = null;
+        var startedAtUtc = DateTimeOffset.UtcNow;
         TryCaptureTrace(context, AgentTraceKind.Request, "request", context.Request.MessageText);
         try
         {
@@ -131,6 +141,11 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
                 AgentFailureKind.Indeterminate,
                 $"Harness execution failed: {ex.GetType().Name}");
         }
+
+        var latencyMs = (decimal)Math.Max(
+            0,
+            (DateTimeOffset.UtcNow - startedAtUtc).TotalMilliseconds);
+        TryCaptureMeasuredUsage(context, latencyMs);
 
         if (faultEvent is not null)
         {
@@ -304,7 +319,7 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         string publicText)
     {
         if (_traceSource is null
-            || _traceWorkspaceKeyResolver is null
+            || _workspaceKeyResolver is null
             || _workspaceAuthority?.TryCaptureCurrentScope(out var workspaceScope) != true)
         {
             return;
@@ -312,7 +327,7 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
 
         var capturedAtUtc = DateTimeOffset.UtcNow;
         _ = _traceSource.Submit(new AgentTraceCaptureRequest(
-            _traceWorkspaceKeyResolver.Resolve(workspaceScope.RootPath),
+            _workspaceKeyResolver.Resolve(workspaceScope.RootPath),
             AgentBackendIds.NativeHarnessValue,
             kind,
             AgentTraceEvidenceLevel.BackendExecutedAndReported,
@@ -329,6 +344,102 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
                 AgentBackendIds.NativeHarnessValue),
             idempotencyKey: $"trace:native:{context.Request.RunId}:{kindLabel}",
             capturedAtUtc: capturedAtUtc));
+    }
+
+    /// <summary>
+    /// Publishes only Zaide-measured request count/latency and explicit
+    /// unavailable token/cost markers. Provider responses do not expose tokens
+    /// or prices; never invent them.
+    /// </summary>
+    private void TryCaptureMeasuredUsage(AgentBackendExecutionContext context, decimal latencyMs)
+    {
+        if (_usageSource is null
+            || _workspaceKeyResolver is null
+            || _workspaceAuthority?.TryCaptureCurrentScope(out var workspaceScope) != true)
+        {
+            return;
+        }
+
+        var workspaceKey = _workspaceKeyResolver.Resolve(workspaceScope.RootPath);
+        var scope = new AgentUsageRecordScope(
+            context.Request.ConversationId.ToString(),
+            context.Request.SessionId.ToString(),
+            context.Request.RunId.ToString(),
+            AgentBackendIds.NativeHarnessValue);
+        string? model = null;
+        try
+        {
+            model = _optionsSource.ResolveOptions()?.Model;
+        }
+        catch
+        {
+            model = null;
+        }
+
+        var capturedAtUtc = DateTimeOffset.UtcNow;
+        var runId = context.Request.RunId.ToString();
+
+        _ = _usageSource.Submit(new AgentUsageCaptureRequest(
+            workspaceKey,
+            AgentBackendIds.NativeHarnessValue,
+            AgentUsageKind.RequestCount,
+            AgentUsageValueOrigin.Measured,
+            "requests",
+            "count",
+            value: 1,
+            scope,
+            model: model,
+            evidenceSourceDescription: "Zaide-measured native-harness request count (delta).",
+            idempotencyKey: $"usage:native:{runId}:request-count",
+            capturedAtUtc: capturedAtUtc,
+            aggregationSemantics: AgentUsageAggregationSemantics.Delta));
+
+        _ = _usageSource.Submit(new AgentUsageCaptureRequest(
+            workspaceKey,
+            AgentBackendIds.NativeHarnessValue,
+            AgentUsageKind.LatencyMs,
+            AgentUsageValueOrigin.Measured,
+            "latency",
+            "ms",
+            value: latencyMs,
+            scope,
+            model: model,
+            evidenceSourceDescription: "Zaide-measured native-harness wall-clock latency (point-in-time).",
+            idempotencyKey: $"usage:native:{runId}:latency",
+            capturedAtUtc: capturedAtUtc,
+            aggregationSemantics: AgentUsageAggregationSemantics.PointInTime));
+
+        _ = _usageSource.Submit(new AgentUsageCaptureRequest(
+            workspaceKey,
+            AgentBackendIds.NativeHarnessValue,
+            AgentUsageKind.TotalTokens,
+            AgentUsageValueOrigin.Unavailable,
+            "tokens",
+            "count",
+            value: 0,
+            scope,
+            model: model,
+            evidenceSourceDescription:
+                "Native harness provider response does not expose token counts.",
+            idempotencyKey: $"usage:native:{runId}:tokens-unavailable",
+            capturedAtUtc: capturedAtUtc,
+            aggregationSemantics: AgentUsageAggregationSemantics.PointInTime));
+
+        _ = _usageSource.Submit(new AgentUsageCaptureRequest(
+            workspaceKey,
+            AgentBackendIds.NativeHarnessValue,
+            AgentUsageKind.TotalCost,
+            AgentUsageValueOrigin.Unavailable,
+            "cost",
+            "currency",
+            value: 0,
+            scope,
+            model: model,
+            evidenceSourceDescription:
+                "Native harness provider response does not expose cost; pricing is unavailable.",
+            idempotencyKey: $"usage:native:{runId}:cost-unavailable",
+            capturedAtUtc: capturedAtUtc,
+            aggregationSemantics: AgentUsageAggregationSemantics.PointInTime));
     }
 
     private sealed class NullNativeHarnessProviderOptionsSource : INativeHarnessProviderOptionsSource

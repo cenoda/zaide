@@ -68,7 +68,8 @@ internal static class Phase21UsageTestSupport
         string? pricingSourceId = null,
         int? pricingSourceVersion = null,
         string? pricingFormula = null,
-        string? idempotencyKey = null) =>
+        string? idempotencyKey = null,
+        AgentUsageAggregationSemantics aggregationSemantics = AgentUsageAggregationSemantics.Unknown) =>
         new(
             workspaceKey,
             backendId,
@@ -87,7 +88,8 @@ internal static class Phase21UsageTestSupport
             pricingSourceVersion: pricingSourceVersion,
             pricingFormula: pricingFormula,
             currency: currency,
-            idempotencyKey: idempotencyKey);
+            idempotencyKey: idempotencyKey,
+            aggregationSemantics: aggregationSemantics);
 
     public static IReadOnlyList<AgentDurableRecordEnvelope> ReplayUsageRecords(
         AgentDurableRecordFileStore store,

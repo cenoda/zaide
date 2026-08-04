@@ -12,7 +12,8 @@ internal sealed class AgentUsageAvailabilityState
         decimal totalCostValue,
         string? totalCostCurrency,
         DateTimeOffset? lastCapturedAtUtc,
-        IReadOnlyDictionary<AgentUsageValueOrigin, int> countsByOrigin)
+        IReadOnlyDictionary<AgentUsageValueOrigin, int> countsByOrigin,
+        bool hasVerifiedTotalCost = false)
     {
         CaptureEnabled = captureEnabled;
         TotalRecords = totalRecords;
@@ -20,6 +21,7 @@ internal sealed class AgentUsageAvailabilityState
         TotalCostCurrency = totalCostCurrency;
         LastCapturedAtUtc = lastCapturedAtUtc;
         CountsByOrigin = countsByOrigin;
+        HasVerifiedTotalCost = hasVerifiedTotalCost;
     }
 
     public bool CaptureEnabled { get; }
@@ -29,6 +31,8 @@ internal sealed class AgentUsageAvailabilityState
     public decimal TotalCostValue { get; }
 
     public string? TotalCostCurrency { get; }
+
+    public bool HasVerifiedTotalCost { get; }
 
     public DateTimeOffset? LastCapturedAtUtc { get; }
 
@@ -41,8 +45,8 @@ internal sealed class AgentUsageAvailabilityState
             return "Usage capture disabled.";
         }
 
-        var costPart = TotalCostCurrency is not null
-            ? $"{TotalCostValue:F4} {TotalCostCurrency}"
+        var costPart = HasVerifiedTotalCost && TotalCostCurrency is not null
+            ? $"{TotalCostValue:F4} {TotalCostCurrency} (not an invoice)"
             : "cost unavailable";
         return $"Usage capture enabled: {TotalRecords} record(s), {costPart}.";
     }
@@ -53,5 +57,6 @@ internal sealed class AgentUsageAvailabilityState
         totalCostValue: 0,
         totalCostCurrency: null,
         lastCapturedAtUtc: null,
-        countsByOrigin: new Dictionary<AgentUsageValueOrigin, int>());
+        countsByOrigin: new Dictionary<AgentUsageValueOrigin, int>(),
+        hasVerifiedTotalCost: false);
 }

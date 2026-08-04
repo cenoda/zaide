@@ -35,12 +35,14 @@ public class TownhallView : Panel, IDisposable
     private readonly AgentBackendBindingPanel _backendBindingPanel;
     private readonly AgentTracePanel _tracePanel;
     private readonly AgentMemoryPanel _memoryPanel;
+    private readonly AgentUsagePanel _usagePanel;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
     private readonly ToggleButton _filterActivityButton;
     private readonly Button _traceButton;
     private readonly Button _memoryButton;
+    private readonly Button _usageButton;
     private CompositeDisposable? _disposables;
 
     /// <summary>
@@ -80,6 +82,10 @@ public class TownhallView : Panel, IDisposable
         {
             Background = PaletteTokens.SurfacePanelBrush,
         };
+        _usagePanel = new AgentUsagePanel
+        {
+            Background = PaletteTokens.SurfacePanelBrush,
+        };
         _inputArea = new TownhallInputArea
         {
             Background = PaletteTokens.SurfacePanelBrush,
@@ -94,6 +100,8 @@ public class TownhallView : Panel, IDisposable
         Avalonia.Automation.AutomationProperties.SetName(_traceButton, "Open agent trace evidence");
         _memoryButton = new Button { Content = TextStyles.Caption("Memory") };
         Avalonia.Automation.AutomationProperties.SetName(_memoryButton, "Open agent durable memory");
+        _usageButton = new Button { Content = TextStyles.Caption("Usage") };
+        Avalonia.Automation.AutomationProperties.SetName(_usageButton, "Open agent usage and cost evidence");
 
         var sidebar = BuildSidebar();
         var filterGroup = BuildFilterGroup();
@@ -169,6 +177,7 @@ public class TownhallView : Panel, IDisposable
                 _filterActivityButton,
                 _traceButton,
                 _memoryButton,
+                _usageButton,
             }
         };
     }
@@ -196,6 +205,7 @@ public class TownhallView : Panel, IDisposable
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
@@ -204,6 +214,7 @@ public class TownhallView : Panel, IDisposable
                 _chatPanel,
                 _tracePanel,
                 _memoryPanel,
+                _usagePanel,
                 _backendBindingPanel,
                 _contextPolicySelector,
                 inputSeparator,
@@ -214,10 +225,11 @@ public class TownhallView : Panel, IDisposable
         Grid.SetRow(_chatPanel, 1);
         Grid.SetRow(_tracePanel, 2);
         Grid.SetRow(_memoryPanel, 3);
-        Grid.SetRow(_backendBindingPanel, 4);
-        Grid.SetRow(_contextPolicySelector, 5);
-        Grid.SetRow(inputSeparator, 6);
-        Grid.SetRow(_inputArea, 7);
+        Grid.SetRow(_usagePanel, 4);
+        Grid.SetRow(_backendBindingPanel, 5);
+        Grid.SetRow(_contextPolicySelector, 6);
+        Grid.SetRow(inputSeparator, 7);
+        Grid.SetRow(_inputArea, 8);
 
         return chatArea;
     }
@@ -302,10 +314,13 @@ public class TownhallView : Panel, IDisposable
 
         _tracePanel.SetViewModel(_viewModel.TransparencyManagement);
         _memoryPanel.SetViewModel(_viewModel.TransparencyManagement);
+        _usagePanel.SetViewModel(_viewModel.TransparencyManagement);
         _traceButton.Click += OnTraceButtonClick;
         _memoryButton.Click += OnMemoryButtonClick;
+        _usageButton.Click += OnUsageButtonClick;
         _disposables.Add(Disposable.Create(() => _traceButton.Click -= OnTraceButtonClick));
         _disposables.Add(Disposable.Create(() => _memoryButton.Click -= OnMemoryButtonClick));
+        _disposables.Add(Disposable.Create(() => _usageButton.Click -= OnUsageButtonClick));
 
         // Populate people panel
         _peoplePanel.SetAgents(_viewModel.Agents);
@@ -565,6 +580,7 @@ public class TownhallView : Panel, IDisposable
         _disposables = null;
         _tracePanel.Dispose();
         _memoryPanel.Dispose();
+        _usagePanel.Dispose();
     }
 
     private void OnTraceButtonClick(object? sender, RoutedEventArgs eventArgs) =>
@@ -572,4 +588,7 @@ public class TownhallView : Panel, IDisposable
 
     private void OnMemoryButtonClick(object? sender, RoutedEventArgs eventArgs) =>
         _viewModel?.TransparencyManagement?.OpenMemoryCommand.Execute().Subscribe();
+
+    private void OnUsageButtonClick(object? sender, RoutedEventArgs eventArgs) =>
+        _viewModel?.TransparencyManagement?.OpenUsageCommand.Execute().Subscribe();
 }

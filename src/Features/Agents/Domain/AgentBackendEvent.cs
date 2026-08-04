@@ -46,7 +46,8 @@ internal sealed class AgentBackendActivityReportedPayload : AgentBackendEventPay
     public AgentBackendActivityReportedPayload(
         AcpBackendActivityKind activityKind,
         string summary,
-        string? acpCorrelationId = null)
+        string? acpCorrelationId = null,
+        string? usageUpdateJson = null)
     {
         if (!Enum.IsDefined(activityKind))
         {
@@ -64,6 +65,7 @@ internal sealed class AgentBackendActivityReportedPayload : AgentBackendEventPay
         ActivityKind = activityKind;
         Summary = summary;
         AcpCorrelationId = acpCorrelationId;
+        UsageUpdateJson = usageUpdateJson;
     }
 
     public AcpBackendActivityKind ActivityKind { get; }
@@ -71,6 +73,11 @@ internal sealed class AgentBackendActivityReportedPayload : AgentBackendEventPay
     public string Summary { get; }
 
     public string? AcpCorrelationId { get; }
+
+    /// <summary>
+    /// Stable public ACP <c>usage_update</c> envelope JSON when present.
+    /// </summary>
+    public string? UsageUpdateJson { get; }
 }
 
 /// <summary>
