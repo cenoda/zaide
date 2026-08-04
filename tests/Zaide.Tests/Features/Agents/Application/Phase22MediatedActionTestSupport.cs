@@ -48,6 +48,8 @@ internal sealed class Phase22MediatedActionHarness : IDisposable
         EventStream = new AgentEventStream();
         CapturedEvents = new List<AgentEvent>();
         EventStream.Events.Subscribe(CapturedEvents.Add);
+        RunSlot = new AgentActionRunSlotTracker();
+        CorrelationRegistry = new AgentActionCorrelationRegistry();
 
         var publisher = new RunScopedAgentActionEventPublisher(
             SessionId,
@@ -79,8 +81,8 @@ internal sealed class Phase22MediatedActionHarness : IDisposable
             fileMutator ?? new WorkspaceFileMutator(),
             new DefaultAgentCommandResolver(),
             new WorkspaceCommandExecutor(),
-            new AgentActionRunSlotTracker(),
-            new AgentActionCorrelationRegistry(),
+            RunSlot,
+            CorrelationRegistry,
             reviewService ?? new AllowingPermissionReviewService(),
             documentReconciler ?? NullAgentDocumentReconciler.Instance,
             publisher);
@@ -109,6 +111,10 @@ internal sealed class Phase22MediatedActionHarness : IDisposable
     public AgentEventStream EventStream { get; }
 
     public List<AgentEvent> CapturedEvents { get; }
+
+    public AgentActionRunSlotTracker RunSlot { get; }
+
+    public AgentActionCorrelationRegistry CorrelationRegistry { get; }
 
     public ContractAgentActionBroker Broker { get; }
 

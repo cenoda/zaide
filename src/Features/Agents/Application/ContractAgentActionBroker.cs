@@ -38,7 +38,55 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     private volatile bool _revoked;
     private AgentEventId? _lastActionEventId;
 
+    /// <summary>
+    /// Test-only: holds the admitted lifecycle path after run-slot reservation.
+    /// Null in production.
+    /// </summary>
     internal Action? TestProcessingHold { get; set; }
+
+    /// <summary>
+    /// Test-only: invoked after the outer <c>TryRejectMismatchedFingerprint</c>
+    /// and <c>TryGetTerminalResult</c> checks return false, immediately before
+    /// the outer <c>TryWaitForInFlightReplay</c>. Null in production.
+    /// </summary>
+    /// <remarks>
+    /// Callbacks must not re-enter the broker. Registry mutations are safe here
+    /// because this point is outside the correlation-registry wait lock.
+    /// </remarks>
+    internal Action? TestBeforeOuterInFlightWait { get; set; }
+
+    /// <summary>
+    /// Test-only: invoked after the outer correlation section completes without
+    /// returning, immediately before acquiring the admission gate. Null in production.
+    /// </summary>
+    internal Action? TestBeforeAdmissionGate { get; set; }
+
+    /// <summary>
+    /// Test-only: invoked when run-slot reservation failed, immediately before
+    /// the reserved-path <c>TryWaitForInFlightReplay</c>. Null in production.
+    /// </summary>
+    internal Action? TestBeforeReservedInFlightWait { get; set; }
+
+    /// <summary>
+    /// Test-only observability for which correlation-mismatch publish site last
+    /// executed. Nested so it does not affect top-level architecture inventory.
+    /// Does not alter production control flow.
+    /// </summary>
+    internal enum CorrelationMismatchSite
+    {
+        None = 0,
+        Initial,
+        InFlightWait,
+        AdmissionGate,
+        ReservedInFlightWait,
+    }
+
+    /// <summary>
+    /// Test-only observability: which correlation-mismatch publish site last
+    /// executed on this broker. Always <see cref="CorrelationMismatchSite.None"/>
+    /// until a mismatch denial is produced. Does not alter production control flow.
+    /// </summary>
+    internal CorrelationMismatchSite TestLastCorrelationMismatchSite { get; private set; }
 
     /// <summary>
     /// Creates a run-scoped broker that captures the current workspace scope via
@@ -222,7 +270,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     request.Fingerprint,
                     out _))
             {
-                return CreateAndPublishCorrelationKeyMismatch(request);
+                return CreateAndPublishCorrelationKeyMismatch(
+                    request,
+                    CorrelationMismatchSite.Initial);
             }
 
             if (_correlationRegistry.TryGetTerminalResult(
@@ -234,6 +284,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 return CreateDuplicateReplayResult(replay!);
             }
 
+            // Test seam: outer reject/terminal checks passed; inject before wait.
+            TestBeforeOuterInFlightWait?.Invoke();
+
             if (_correlationRegistry.TryWaitForInFlightReplay(
                     parsedCorrelationKey.Value,
                     request.Fingerprint,
@@ -244,7 +297,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 if (inFlightReplay!.ResultKind == AgentActionResultKind.Denied
                     && inFlightReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return CreateAndPublishCorrelationKeyMismatch(request);
+                    return CreateAndPublishCorrelationKeyMismatch(
+                        request,
+                        CorrelationMismatchSite.InFlightWait);
                 }
 
                 return CreateDuplicateReplayResult(inFlightReplay);
@@ -272,6 +327,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     request);
             }
         }
+
+        // Test seam: outer correlation section completed without return.
+        TestBeforeAdmissionGate?.Invoke();
 
         var reserved = false;
         AgentActionResult? admissionGateMismatch = null;
@@ -315,6 +373,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
         if (admissionGateMismatch is not null)
         {
+            TestLastCorrelationMismatchSite = CorrelationMismatchSite.AdmissionGate;
             PublishEarlyDeniedResult(request, admissionGateMismatch);
             return admissionGateMismatch;
         }
@@ -326,6 +385,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
         if (!reserved)
         {
+            // Test seam: reservation failed; inject before reserved wait.
+            TestBeforeReservedInFlightWait?.Invoke();
+
             if (parsedCorrelationKey is not null
                 && _correlationRegistry.TryWaitForInFlightReplay(
                     parsedCorrelationKey.Value,
@@ -337,7 +399,9 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 if (reservedReplay!.ResultKind == AgentActionResultKind.Denied
                     && reservedReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return CreateAndPublishCorrelationKeyMismatch(request);
+                    return CreateAndPublishCorrelationKeyMismatch(
+                        request,
+                        CorrelationMismatchSite.ReservedInFlightWait);
                 }
 
                 return CreateDuplicateReplayResult(reservedReplay);
@@ -1146,8 +1210,11 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
     /// correlation-key mismatch denial. Does not record the denial as a
     /// correlation-registry terminal (true DuplicateReplay paths are separate).
     /// </summary>
-    private AgentActionResult CreateAndPublishCorrelationKeyMismatch(AgentActionRequest request)
+    private AgentActionResult CreateAndPublishCorrelationKeyMismatch(
+        AgentActionRequest request,
+        CorrelationMismatchSite site)
     {
+        TestLastCorrelationMismatchSite = site;
         var result = CreateCorrelationKeyMismatchResult(request);
         PublishEarlyDeniedResult(request, result);
         return result;

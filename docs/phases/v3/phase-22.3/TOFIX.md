@@ -559,6 +559,77 @@ and ACP remain independent siblings; `AgentConversationEventProjection` remains
 the sole normalized conversation writer. **M3 not accepted — stop for
 independent re-audit.**
 
+## M3 Corrective — deterministic branch proof (2026-08-04)
+
+Baseline: `a897ec36fb6649544958bc52bd014463802d90a9`.
+M3 remains **NO-GO** / not accepted. M4 not started.
+
+### Residual (proof only — not a production behavior failure)
+
+The production early-denial and optional-workspace corrections at `a897ec36`
+remain sound. The residual was that several tests claimed to cover the four
+distinct correlation-mismatch branches but did not deterministically reach them:
+
+1. Admission-gate test exercised sequential initial mismatch instead of the
+   admission-gate TOCTOU branch.
+2. Reserved/in-flight test presented a different fingerprint that the outer
+   `TryRejectMismatchedFingerprint` normally catches before the reserved wait.
+3. In-flight-wait test had the same outer-check problem unless the registry
+   changed after that check.
+4. Registry-revocation test used `Task.Delay(150)` to infer wait-state entry.
+
+### Correction (test seams + deterministic gates)
+
+Smallest internal test-only seams (null in production; no control-flow change
+when unset):
+
+- `ContractAgentActionBroker.TestBeforeOuterInFlightWait`
+- `ContractAgentActionBroker.TestBeforeAdmissionGate`
+- `ContractAgentActionBroker.TestBeforeReservedInFlightWait`
+- `ContractAgentActionBroker.TestLastCorrelationMismatchSite` + nested
+  `CorrelationMismatchSite` observability (not a new top-level type)
+- `AgentActionCorrelationRegistry.TestOnInFlightWaitEntered` (signal only;
+  must not re-enter the registry while the gate lock is held)
+
+`Phase22MediatedActionHarness` exposes `RunSlot` and `CorrelationRegistry` for
+deterministic pre-seeding / injection.
+
+Exact branch tests (ManualResetEventSlim enter/release; no sleeps):
+
+| Test | Branch proven |
+|------|----------------|
+| `CorrelationMismatch_InitialSite_…` | Mismatch registered before first outer check |
+| `CorrelationMismatch_InFlightSite_…` | Outer checks pass; foreign fingerprint injected before outer wait |
+| `CorrelationMismatch_AdmissionGateSite_…` | Outer checks pass; foreign terminal injected before admission gate |
+| `CorrelationMismatch_ReservedInFlightSite_…` | Slot held without subject key; foreign fingerprint injected before reserved wait |
+| `RegistryRevocationAfterComposition_…` | Explicit wait-entered signal, then revoke |
+
+Each branch asserts: `Denied`/`CorrelationKeyMismatch` (or `BrokerRevoked`),
+exactly one correlated event + audit, shared ActionId/AttemptId,
+`ZaideMediated`, exact workspace attribution, no mutation, no run-slot leak;
+site observability matches the intended branch.
+
+Existing M3 coverage retained: NoWorkspace null/null, captured workspace,
+DuplicateReplay non-republication, actor attribution, Native Harness/ACP paths,
+pre-consume `Published`, post-consume `Consumed`, `TryConsume` finality.
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M3 classes | Discovered 38 tests |
+| M3 explicit filter | PASS 38/38 |
+| Branch-race filter ×20 | PASS 5/5 each (20 iterations) |
+| Phase 17/20 + M3 filter | PASS 156/156 |
+| M0+M1+M2 send/routing/termination filter | PASS 140/140 |
+| Townhall/composition/architecture preservation | PASS (focused) |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3944/3944 |
+| `git diff --check` | PASS |
+
+**M3 not accepted — stop for independent re-audit.** Do not start M4–M5 / G5 /
+A3 / Phase 22.4/22.5 / V4.
+
 ## Remaining Open Product Gaps (post-M3 implementation)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
@@ -571,7 +642,7 @@ independent re-audit.**
 
 ## Next Task
 
-Independent human **M3 re-audit** of safe mediated action paths and actor
-attribution after the F1/F2 early-denial corrective. Do not begin M4–M5, G5,
-A3, Phase 22.4/22.5, or V4 until explicit M4 implementation authorization is
-recorded after M3 acceptance.
+Independent human **M3 re-audit** of safe mediated action paths, actor
+attribution, and deterministic early-denial branch proof. Do not begin M4–M5,
+G5, A3, Phase 22.4/22.5, or V4 until explicit M4 implementation authorization
+is recorded after M3 acceptance.

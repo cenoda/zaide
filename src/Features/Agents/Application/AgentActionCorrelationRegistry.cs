@@ -22,6 +22,13 @@ internal sealed class AgentActionCorrelationRegistry
     private static readonly TimeSpan WaitPollInterval = TimeSpan.FromMilliseconds(100);
 
     /// <summary>
+    /// Test-only: invoked while a matching-fingerprint in-flight wait is about
+    /// to block on the registry gate. Callbacks must only signal events and must
+    /// not re-enter the registry (the gate lock is held). Null in production.
+    /// </summary>
+    internal Action? TestOnInFlightWaitEntered { get; set; }
+
+    /// <summary>
     /// Signals all waiting threads that the registry has been revoked and
     /// they should stop waiting.
     /// </summary>
@@ -154,6 +161,10 @@ internal sealed class AgentActionCorrelationRegistry
                     replay = null;
                     return false;
                 }
+
+                // Signal that a true matching-fingerprint wait is about to block.
+                // Callback must not re-enter the registry (gate lock is held).
+                TestOnInFlightWaitEntered?.Invoke();
 
                 // Bounded wait: sleeps at most WaitPollInterval, then
                 // re-evaluates the loop condition. This replaces the

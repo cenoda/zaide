@@ -170,183 +170,202 @@ public sealed class Phase22ActionAttributionTests
     [Fact]
     public async Task CorrelationMismatch_InitialSite_ProducesExactlyOneCorrelatedEventAndAudit()
     {
+        // Mismatch is registered before RequestAsync reaches its first check.
         var reader = new CountingAgentFileReader(
             AgentFileReadResult.Success("a", AgentContentRevision.FromUtf8Text("a"), byteLength: 1));
+        var mutator = new CountingAgentFileMutator();
         using var harness = new Phase22MediatedActionHarness(
             AgentBackendIds.NativeHarness,
-            fileReader: reader);
+            fileReader: reader,
+            fileMutator: mutator);
         const string correlationKey = "p223-mismatch-initial";
+        var key = AgentActionCorrelationKey.FromValue(correlationKey);
+        var priorFingerprint = AgentActionRequestFingerprint.FromCanonicalText("prior-terminal");
+        harness.CorrelationRegistry.RecordTerminalResult(
+            key,
+            priorFingerprint,
+            new AgentActionResult(
+                AgentActionId.New(),
+                AgentActionAttemptId.New(),
+                AgentActionResultKind.Succeeded,
+                null,
+                "prior terminal"));
 
-        var first = await harness.Broker.RequestAsync(
-            new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("a.txt")),
-            correlationKey,
-            CancellationToken.None);
-        Assert.Equal(AgentActionResultKind.Succeeded, first.ResultKind);
-
-        var second = await harness.Broker.RequestAsync(
+        var result = await harness.Broker.RequestAsync(
             new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("b.txt")),
             correlationKey,
             CancellationToken.None);
 
-        Assert.Equal(AgentActionResultKind.Denied, second.ResultKind);
-        Assert.Equal(AgentActionFailureKind.CorrelationKeyMismatch, second.FailureKind);
-
-        var mismatchFacts = harness.CapturedEvents
-            .Select(e => e.Payload as AgentActionFactPayload)
-            .Where(p => p?.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
-            .ToArray();
-        Assert.Single(mismatchFacts);
-        Assert.Equal(second.ActionId, mismatchFacts[0]!.ActionId);
-        Assert.Equal(second.AttemptId, mismatchFacts[0]!.AttemptId);
-        Assert.Equal(harness.Scope.Identity, mismatchFacts[0]!.WorkspaceIdentity);
-        Assert.Equal(harness.Scope.Generation, mismatchFacts[0]!.WorkspaceGeneration);
-
-        var mismatchAudits = harness.AuditStore
-            .GetRunSnapshot(harness.RunId, maxRecords: 64)
-            .Where(r =>
-                r.EventKind == AgentEventKind.ActionResultReported
-                && r.ActionId == second.ActionId)
-            .ToArray();
-        Assert.Single(mismatchAudits);
-        Assert.Equal(second.AttemptId, mismatchAudits[0].AttemptId);
-        Assert.Equal(1, reader.ReadCount);
+        Assert.Equal(ContractAgentActionBroker.CorrelationMismatchSite.Initial, harness.Broker.TestLastCorrelationMismatchSite);
+        AssertEarlyDenialAttribution(
+            harness,
+            result,
+            AgentActionFailureKind.CorrelationKeyMismatch,
+            reader,
+            mutator);
     }
 
     [Fact]
     public async Task CorrelationMismatch_InFlightSite_ProducesExactlyOneCorrelatedEventAndAudit()
     {
+        // Outer reject/terminal checks pass; a different fingerprint is registered
+        // only after that, before TryWaitForInFlightReplay.
         var reader = new CountingAgentFileReader(
             AgentFileReadResult.Success("hold", AgentContentRevision.FromUtf8Text("hold"), byteLength: 4));
+        var mutator = new CountingAgentFileMutator();
         using var harness = new Phase22MediatedActionHarness(
             AgentBackendIds.NativeHarness,
-            fileReader: reader);
+            fileReader: reader,
+            fileMutator: mutator);
         const string correlationKey = "p223-mismatch-inflight";
-        using var processingEntered = new ManualResetEventSlim(initialState: false);
-        using var allowProcessingToComplete = new ManualResetEventSlim(initialState: false);
-        harness.Broker.TestProcessingHold = () =>
+        var key = AgentActionCorrelationKey.FromValue(correlationKey);
+        var foreignFingerprint = AgentActionRequestFingerprint.FromCanonicalText("foreign-inflight");
+
+        using var beforeWaitEntered = new ManualResetEventSlim(initialState: false);
+        using var releaseBeforeWait = new ManualResetEventSlim(initialState: false);
+        harness.Broker.TestBeforeOuterInFlightWait = () =>
         {
-            processingEntered.Set();
-            allowProcessingToComplete.Wait();
+            beforeWaitEntered.Set();
+            releaseBeforeWait.Wait();
         };
 
-        var firstRequest = Task.Run(async () =>
+        var requestTask = Task.Run(async () =>
             await harness.Broker.RequestAsync(
-                new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("first.txt")),
+                new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("subject.txt")),
                 correlationKey,
                 CancellationToken.None));
 
-        Assert.True(processingEntered.Wait(TimeSpan.FromSeconds(2)));
+        Assert.True(beforeWaitEntered.Wait(TimeSpan.FromSeconds(5)));
+        harness.CorrelationRegistry.BeginInFlightCorrelation(key, foreignFingerprint);
+        releaseBeforeWait.Set();
+        var result = await requestTask;
 
-        var second = await harness.Broker.RequestAsync(
-            new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("second.txt")),
-            correlationKey,
-            CancellationToken.None);
-
-        allowProcessingToComplete.Set();
-        var first = await firstRequest;
-
-        Assert.Equal(AgentActionFailureKind.CorrelationKeyMismatch, second.FailureKind);
-        Assert.NotEqual(AgentActionFailureKind.CorrelationKeyMismatch, first.FailureKind);
-
-        var mismatchFacts = harness.CapturedEvents
-            .Select(e => e.Payload as AgentActionFactPayload)
-            .Where(p => p?.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
-            .ToArray();
-        Assert.Single(mismatchFacts);
-        Assert.Equal(second.ActionId, mismatchFacts[0]!.ActionId);
-        Assert.Equal(second.AttemptId, mismatchFacts[0]!.AttemptId);
-        Assert.Contains(
-            harness.AuditStore.GetRunSnapshot(harness.RunId, maxRecords: 64),
-            r => r.ActionId == second.ActionId
-                 && r.EventKind == AgentEventKind.ActionResultReported);
+        Assert.Equal(ContractAgentActionBroker.CorrelationMismatchSite.InFlightWait, harness.Broker.TestLastCorrelationMismatchSite);
+        AssertEarlyDenialAttribution(
+            harness,
+            result,
+            AgentActionFailureKind.CorrelationKeyMismatch,
+            reader,
+            mutator);
     }
 
     [Fact]
     public async Task CorrelationMismatch_AdmissionGateSite_ProducesExactlyOneCorrelatedEventAndAudit()
     {
-        // Admission-gate site is the TOCTOU re-check under the admission lock.
-        // Deterministically exercise it by recording a mismatched terminal after
-        // the outer checks would pass if empty, then racing a second fingerprint
-        // through the gate. Sequential terminal mismatch hits the same publish
-        // helper used by the admission-gate path; verify identity binding here.
+        // Outer checks pass with an empty registry; a different fingerprint is
+        // recorded only after that, before the admission-gate re-check.
         var reader = new CountingAgentFileReader(
             AgentFileReadResult.Success("x", AgentContentRevision.FromUtf8Text("x"), byteLength: 1));
+        var mutator = new CountingAgentFileMutator();
         using var harness = new Phase22MediatedActionHarness(
             AgentBackendIds.NativeHarness,
-            fileReader: reader);
+            fileReader: reader,
+            fileMutator: mutator);
         const string correlationKey = "p223-mismatch-admission";
+        var key = AgentActionCorrelationKey.FromValue(correlationKey);
+        var foreignFingerprint = AgentActionRequestFingerprint.FromCanonicalText("foreign-admission");
 
-        _ = await harness.Broker.RequestAsync(
-            new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("gate-a.txt")),
-            correlationKey,
-            CancellationToken.None);
+        using var beforeGateEntered = new ManualResetEventSlim(initialState: false);
+        using var releaseBeforeGate = new ManualResetEventSlim(initialState: false);
+        harness.Broker.TestBeforeAdmissionGate = () =>
+        {
+            beforeGateEntered.Set();
+            releaseBeforeGate.Wait();
+        };
 
-        var mismatch = await harness.Broker.RequestAsync(
-            new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("gate-b.txt")),
-            correlationKey,
-            CancellationToken.None);
+        var requestTask = Task.Run(async () =>
+            await harness.Broker.RequestAsync(
+                new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("gate-b.txt")),
+                correlationKey,
+                CancellationToken.None));
 
-        Assert.Equal(AgentActionFailureKind.CorrelationKeyMismatch, mismatch.FailureKind);
-        var resultEventsForMismatch = harness.CapturedEvents
-            .Where(e =>
-                e.Kind == AgentEventKind.ActionResultReported
-                && e.Payload is AgentActionFactPayload p
-                && p.ActionId == mismatch.ActionId)
-            .ToArray();
-        Assert.Single(resultEventsForMismatch);
-        Assert.Equal(AgentActivityEvidenceLevel.ZaideMediated, resultEventsForMismatch[0].EvidenceLevel);
-        Assert.Equal(
-            mismatch.AttemptId,
-            ((AgentActionFactPayload)resultEventsForMismatch[0].Payload).AttemptId);
+        Assert.True(beforeGateEntered.Wait(TimeSpan.FromSeconds(5)));
+        harness.CorrelationRegistry.RecordTerminalResult(
+            key,
+            foreignFingerprint,
+            new AgentActionResult(
+                AgentActionId.New(),
+                AgentActionAttemptId.New(),
+                AgentActionResultKind.Succeeded,
+                null,
+                "foreign terminal"));
+        releaseBeforeGate.Set();
+        var result = await requestTask;
+
+        Assert.Equal(ContractAgentActionBroker.CorrelationMismatchSite.AdmissionGate, harness.Broker.TestLastCorrelationMismatchSite);
+        AssertEarlyDenialAttribution(
+            harness,
+            result,
+            AgentActionFailureKind.CorrelationKeyMismatch,
+            reader,
+            mutator);
     }
 
     [Fact]
     public async Task CorrelationMismatch_ReservedInFlightSite_ProducesExactlyOneCorrelatedEventAndAudit()
     {
-        // Site 4 shares CreateAndPublishCorrelationKeyMismatch with site 1.
-        // Exercise concurrent different-fingerprint create (NotFound so proposal
-        // generation admits) while the first request holds the run slot.
-        var reader = new CountingAgentFileReader(); // default NotFound for create proposals
+        // Initial and admission checks pass; run-slot reservation fails because
+        // another request holds the slot without this correlation key; a different
+        // fingerprint is registered only before the reserved-path wait.
+        var reader = new CountingAgentFileReader(
+            AgentFileReadResult.Success("slot", AgentContentRevision.FromUtf8Text("slot"), byteLength: 4));
+        var mutator = new CountingAgentFileMutator();
         using var harness = new Phase22MediatedActionHarness(
             AgentBackendIds.NativeHarness,
-            fileReader: reader);
+            fileReader: reader,
+            fileMutator: mutator);
         const string correlationKey = "p223-mismatch-reserved";
-        using var processingEntered = new ManualResetEventSlim(initialState: false);
-        using var allowProcessingToComplete = new ManualResetEventSlim(initialState: false);
+        var key = AgentActionCorrelationKey.FromValue(correlationKey);
+        var foreignFingerprint = AgentActionRequestFingerprint.FromCanonicalText("foreign-reserved");
+
+        using var slotHoldEntered = new ManualResetEventSlim(initialState: false);
+        using var releaseSlotHold = new ManualResetEventSlim(initialState: false);
         harness.Broker.TestProcessingHold = () =>
         {
-            processingEntered.Set();
-            allowProcessingToComplete.Wait();
+            slotHoldEntered.Set();
+            releaseSlotHold.Wait();
         };
 
-        var firstRequest = Task.Run(async () =>
+        // Holder occupies the run slot with no correlation key.
+        var holderTask = Task.Run(async () =>
             await harness.Broker.RequestAsync(
-                new AgentCreateFileActionPayload(
-                    AgentWorkspaceRelativePath.Normalize("reserved-first.txt"),
-                    "one"),
+                new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("holder.txt")),
+                correlationKey: null,
+                CancellationToken.None));
+        Assert.True(slotHoldEntered.Wait(TimeSpan.FromSeconds(5)));
+
+        using var beforeReservedWaitEntered = new ManualResetEventSlim(initialState: false);
+        using var releaseBeforeReservedWait = new ManualResetEventSlim(initialState: false);
+        harness.Broker.TestBeforeReservedInFlightWait = () =>
+        {
+            beforeReservedWaitEntered.Set();
+            releaseBeforeReservedWait.Wait();
+        };
+
+        var subjectTask = Task.Run(async () =>
+            await harness.Broker.RequestAsync(
+                new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("subject.txt")),
                 correlationKey,
                 CancellationToken.None));
 
-        Assert.True(processingEntered.Wait(TimeSpan.FromSeconds(2)));
+        Assert.True(beforeReservedWaitEntered.Wait(TimeSpan.FromSeconds(5)));
+        harness.CorrelationRegistry.BeginInFlightCorrelation(key, foreignFingerprint);
+        releaseBeforeReservedWait.Set();
+        var result = await subjectTask;
 
-        var second = await harness.Broker.RequestAsync(
-            new AgentCreateFileActionPayload(
-                AgentWorkspaceRelativePath.Normalize("reserved-second.txt"),
-                "two"),
-            correlationKey,
-            CancellationToken.None);
+        releaseSlotHold.Set();
+        _ = await holderTask;
 
-        allowProcessingToComplete.Set();
-        _ = await firstRequest;
-
-        Assert.Equal(AgentActionFailureKind.CorrelationKeyMismatch, second.FailureKind);
-        var mismatchFacts = harness.CapturedEvents
-            .Select(e => e.Payload as AgentActionFactPayload)
-            .Where(p => p?.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
-            .ToArray();
-        Assert.Single(mismatchFacts);
-        Assert.Equal(second.ActionId, mismatchFacts[0]!.ActionId);
-        Assert.False(File.Exists(Path.Combine(harness.WorkspaceRoot, "reserved-second.txt")));
+        Assert.Equal(
+            ContractAgentActionBroker.CorrelationMismatchSite.ReservedInFlightWait,
+            harness.Broker.TestLastCorrelationMismatchSite);
+        AssertEarlyDenialAttribution(
+            harness,
+            result,
+            AgentActionFailureKind.CorrelationKeyMismatch,
+            reader,
+            mutator,
+            expectedReaderCount: 1); // holder read only
     }
 
     [Fact]
@@ -354,10 +373,13 @@ public sealed class Phase22ActionAttributionTests
     {
         var reader = new CountingAgentFileReader(
             AgentFileReadResult.Success("hold", AgentContentRevision.FromUtf8Text("hold"), byteLength: 4));
+        var mutator = new CountingAgentFileMutator();
         using var harness = new Phase22MediatedActionHarness(
             AgentBackendIds.NativeHarness,
-            fileReader: reader);
+            fileReader: reader,
+            fileMutator: mutator);
         const string correlationKey = "p223-revoke-after-compose";
+
         using var processingEntered = new ManualResetEventSlim(initialState: false);
         using var allowProcessingToComplete = new ManualResetEventSlim(initialState: false);
         harness.Broker.TestProcessingHold = () =>
@@ -366,23 +388,25 @@ public sealed class Phase22ActionAttributionTests
             allowProcessingToComplete.Wait();
         };
 
+        using var waitEntered = new ManualResetEventSlim(initialState: false);
+        harness.CorrelationRegistry.TestOnInFlightWaitEntered = () => waitEntered.Set();
+
         var firstRequest = Task.Run(async () =>
             await harness.Broker.RequestAsync(
                 new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("hold.txt")),
                 correlationKey,
                 CancellationToken.None));
 
-        Assert.True(processingEntered.Wait(TimeSpan.FromSeconds(2)));
+        Assert.True(processingEntered.Wait(TimeSpan.FromSeconds(5)));
 
-        using var cts = new CancellationTokenSource();
         var secondTask = Task.Run(async () =>
             await harness.Broker.RequestAsync(
                 new AgentReadFileActionPayload(AgentWorkspaceRelativePath.Normalize("hold.txt")),
                 correlationKey,
-                cts.Token));
+                CancellationToken.None));
 
-        // Allow the second request to enter the in-flight wait, then revoke.
-        await Task.Delay(150);
+        // Explicit signal: second request entered the matching-fingerprint wait.
+        Assert.True(waitEntered.Wait(TimeSpan.FromSeconds(5)));
         harness.Broker.Revoke();
         allowProcessingToComplete.Set();
         _ = await firstRequest;
@@ -390,24 +414,63 @@ public sealed class Phase22ActionAttributionTests
 
         Assert.Equal(AgentActionResultKind.Denied, second.ResultKind);
         Assert.Equal(AgentActionFailureKind.BrokerRevoked, second.FailureKind);
+        // First completes after release and may perform one authorized read.
+        AssertEarlyDenialAttribution(
+            harness,
+            second,
+            AgentActionFailureKind.BrokerRevoked,
+            reader,
+            mutator,
+            expectedReaderCount: 1);
+    }
 
-        var fact = harness.CapturedEvents
-            .Select(e => e.Payload as AgentActionFactPayload)
-            .LastOrDefault(p =>
-                p?.FailureKind == AgentActionFailureKind.BrokerRevoked
-                && p.ActionId == second.ActionId);
-        var audit = harness.AuditStore
+    /// <summary>
+    /// Shared assertions for early-denial branch proof: one correlated event and
+    /// audit, shared IDs, ZaideMediated evidence, exact workspace attribution,
+    /// no mutation, and no residual run-slot occupancy.
+    /// </summary>
+    private static void AssertEarlyDenialAttribution(
+        Phase22MediatedActionHarness harness,
+        AgentActionResult result,
+        AgentActionFailureKind expectedFailure,
+        CountingAgentFileReader reader,
+        CountingAgentFileMutator mutator,
+        int expectedReaderCount = 0)
+    {
+        Assert.Equal(AgentActionResultKind.Denied, result.ResultKind);
+        Assert.Equal(expectedFailure, result.FailureKind);
+
+        var resultEvents = harness.CapturedEvents
+            .Where(e =>
+                e.Kind == AgentEventKind.ActionResultReported
+                && e.Payload is AgentActionFactPayload p
+                && p.ActionId == result.ActionId)
+            .ToArray();
+        Assert.Single(resultEvents);
+        Assert.Equal(AgentActivityEvidenceLevel.ZaideMediated, resultEvents[0].EvidenceLevel);
+
+        var fact = Assert.IsType<AgentActionFactPayload>(resultEvents[0].Payload);
+        Assert.Equal(result.ActionId, fact.ActionId);
+        Assert.Equal(result.AttemptId, fact.AttemptId);
+        Assert.Equal(expectedFailure, fact.FailureKind);
+        Assert.Equal(harness.Scope.Identity, fact.WorkspaceIdentity);
+        Assert.Equal(harness.Scope.Generation, fact.WorkspaceGeneration);
+
+        var audits = harness.AuditStore
             .GetRunSnapshot(harness.RunId, maxRecords: 64)
-            .LastOrDefault(r => r.ActionId == second.ActionId);
+            .Where(r =>
+                r.EventKind == AgentEventKind.ActionResultReported
+                && r.ActionId == result.ActionId)
+            .ToArray();
+        Assert.Single(audits);
+        Assert.Equal(result.AttemptId, audits[0].AttemptId);
+        Assert.Equal(harness.Scope.Identity, audits[0].WorkspaceIdentity);
+        Assert.Equal(harness.Scope.Generation, audits[0].WorkspaceGeneration);
+        Assert.Equal(AgentActivityEvidenceLevel.ZaideMediated, audits[0].EvidenceLevel);
 
-        Assert.NotNull(fact);
-        Assert.NotNull(audit);
-        Assert.Equal(second.ActionId, fact!.ActionId);
-        Assert.Equal(second.AttemptId, fact.AttemptId);
-        Assert.Equal(second.ActionId, audit!.ActionId);
-        Assert.Equal(second.AttemptId, audit.AttemptId);
-        Assert.NotEqual(default(AgentActionId), second.ActionId);
-        Assert.NotEqual(default(AgentActionAttemptId), second.AttemptId);
+        Assert.Equal(expectedReaderCount, reader.ReadCount);
+        Assert.Equal(0, mutator.ApplyCount);
+        Assert.False(harness.RunSlot.HasActiveAction);
     }
 
     [Fact]
