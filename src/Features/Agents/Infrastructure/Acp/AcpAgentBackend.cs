@@ -13,7 +13,7 @@ namespace Zaide.Features.Agents.Infrastructure.Acp;
 /// <summary>
 /// Phase 20 ACP backend adapter over the Phase 15 session boundary.
 /// </summary>
-internal sealed class AcpAgentBackend : IAgentBackend
+internal sealed class AcpAgentBackend : IAgentBackend, IAgentCancellationAcknowledgementBackend
 {
     internal const string BackendVersionValue = "zaide-acp/1";
 
@@ -85,4 +85,9 @@ internal sealed class AcpAgentBackend : IAgentBackend
             yield return backendEvent;
         }
     }
+
+    public Task<AgentCancellationAcknowledgementResult> AcknowledgeCancellationAsync(
+        AgentSessionId sessionId,
+        CancellationToken cancellationToken = default) =>
+        _sessionAdapter.AcknowledgeCancellationAsync(sessionId, cancellationToken);
 }

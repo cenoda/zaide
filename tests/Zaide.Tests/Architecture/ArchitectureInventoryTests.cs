@@ -145,7 +145,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 M2: +1 internal AgentBackendBindingWorkflowProjection.
         // Phase 22.2 corrective: +1 internal AcpRuntimeBindingFingerprint.
         // Phase 22.3 M2: +2 internal AgentSessionEndStatus / AgentSessionEndResult.
-        Assert.Equal((159, 7, 152), byNamespace["Zaide.Features.Agents.Domain"]);
+        // Phase 22.3 M2 residual: +2 AgentCancellationAcknowledgementStatus / Result.
+        Assert.Equal((161, 7, 154), byNamespace["Zaide.Features.Agents.Domain"]);
         // Phase 21 M1: +13 internal durable-record envelope/domain types.
         Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Domain.Transparency"]);
         // Phase 21 M2: +10 internal trace evidence domain types.
@@ -164,7 +165,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +2 internal provider transport/options contracts.
         // Phase 20 M5: +3 internal actor/backend binding contracts.
         // Phase 22.2 M1: +1 internal IAgentActorActiveRunQuery busy-gate contract.
-        Assert.Equal((33, 6, 27), byNamespace["Zaide.Features.Agents.Contracts"]);
+        // Phase 22.3 M2 residual: +1 IAgentCancellationAcknowledgementBackend contract.
+        Assert.Equal((34, 6, 28), byNamespace["Zaide.Features.Agents.Contracts"]);
         // Phase 21 M1: +2 internal durable-record store contracts.
         // Phase 21 M6: +1 internal transparency lifecycle coordinator contract.
         Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Agents.Contracts.Transparency"]);
@@ -298,7 +300,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 M3: +7 ACP onboarding/logout/provider-configured production files.
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
-        Assert.Equal(867, inventory.SourceFiles.Count);
+        // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
+        Assert.Equal(869, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -339,7 +342,8 @@ public sealed class ArchitectureInventoryTests
         // ISSUE-011: +1 CodeFontResolver production file.
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
-        Assert.Equal(822, byFolder["Features"]);
+        // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
+        Assert.Equal(824, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

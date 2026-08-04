@@ -216,7 +216,8 @@ public sealed class ArchitectureVisibilityTests
         // ISSUE-011: +1 CodeFontResolver production file.
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
-        Assert.Equal(822, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
+        Assert.Equal(824, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

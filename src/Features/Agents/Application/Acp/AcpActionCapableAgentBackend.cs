@@ -12,7 +12,8 @@ namespace Zaide.Features.Agents.Application.Acp;
 /// <summary>
 /// ACP backend that advertises broker-mediated client filesystem capabilities.
 /// </summary>
-internal sealed class AcpActionCapableAgentBackend : IAgentBackend, IAgentActionRequestCapableBackend
+internal sealed class AcpActionCapableAgentBackend
+    : IAgentBackend, IAgentActionRequestCapableBackend, IAgentCancellationAcknowledgementBackend
 {
     private readonly AcpAgentSessionAdapter _sessionAdapter;
     private readonly object _capabilitySync = new();
@@ -78,4 +79,9 @@ internal sealed class AcpActionCapableAgentBackend : IAgentBackend, IAgentAction
             yield return backendEvent;
         }
     }
+
+    public Task<AgentCancellationAcknowledgementResult> AcknowledgeCancellationAsync(
+        AgentSessionId sessionId,
+        CancellationToken cancellationToken = default) =>
+        _sessionAdapter.AcknowledgeCancellationAsync(sessionId, cancellationToken);
 }

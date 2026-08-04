@@ -3,7 +3,7 @@
 ## Status
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 remains NO-GO
-pending independent re-audit after F1–F3 corrective work; not accepted.**
+pending independent re-audit after residual ACP retry corrective; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -14,7 +14,8 @@ raw-different newer drafts were still cleared. That residual closed at
 `1a5ff04`; human accepted M1 and authorized **M2 only**. M2 implementation
 shipped at `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`; independent M2 audit
 returned **NO-GO** (F1 CanEndSession; F2 ACP cancel-ack; F3 attempt correlation).
-M3–M5, G5, A3 execution, and V4 have not started.
+F1–F3 corrective at `983487e0`. Residual: ACP indeterminate retry falsely
+finalized without re-ack. M3–M5, G5, A3 execution, and V4 have not started.
 
 ## Work Board
 
@@ -314,10 +315,70 @@ Class total: **18** tests (was 10).
 
 Boundaries preserved: no M3–M5 / G5 / A3 / V4; no Phase 17 `TryConsume()`
 changes; no Phase 21 continuity behavior changes; no backend wrapping/fallback;
-no packages/schema/unrelated cleanup. **M2 not accepted — stop for independent
-re-audit.**
+no packages/schema/unrelated cleanup. **M2 not accepted.**
 
-## Remaining Open Product Gaps (post-M2 corrective)
+## M2 Residual — ACP Indeterminate Retry Must Re-Ack (2026-08-04)
+
+Baseline under correction: `983487e0c322401809b8f3d171584a9c10a77ea0`.
+
+### Residual defect
+
+After ACP `CancelPromptAsync` timed out or failed, the first `EndAsync` correctly
+returned `AcknowledgementIndeterminate` and retained `Ending` ownership. The run
+was terminal `Indeterminate`. A second `EndAsync` reset uncertainty bookkeeping,
+did not re-issue backend cancel-ack, then called `FinalizeEndedSessionLocked`,
+emitted `SessionEnded`, and removed ownership without a new acknowledgement.
+
+### Correction
+
+- Durable `AwaitingCancellationAcknowledgement` on the live session until a
+  successful re-ack or ownership removal. A terminal Indeterminate run alone is
+  never treated as acknowledged.
+- Smallest typed seam: `IAgentCancellationAcknowledgementBackend` +
+  `AgentCancellationAcknowledgementResult` status/result. ACP implements it;
+  Native Harness does not.
+- ACP retains the session client when cancel-ack is uncertain so retry can
+  re-issue `CancelPromptAsync` on a fresh independent bounded token.
+- Retry success → `SessionEnded` + ownership removal. Retry timeout/failure →
+  another `AcknowledgementIndeterminate` with a distinct attempt correlation,
+  retained `Ending`, End Session still available, no provider claims.
+- `AgentConversationEventProjection` remains the sole writer.
+
+### Residual tests (TCS/gates; no sleeps)
+
+- ACP first timeout → retry success: `CancelPromptAsync` twice; second uses a
+  fresh non-cancelled token; `SessionEnded` only after second ack; ownership
+  removed.
+- ACP first failure → retry success with the same truth boundary.
+- ACP timeout → timeout: two distinct indeterminate correlations; ownership
+  remains `Ending`; no `SessionEnded`.
+- ACP failure → failure with the same retained boundary.
+- Retry does not finalize merely because the original run is terminal
+  Indeterminate.
+- Townhall `CanEndSession` stays true through ACP indeterminate and clears only
+  after successful re-ack.
+- Existing F1–F3 and captured-navigation tests preserved.
+
+Class total: **24** tests (was 18).
+
+### Residual verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` / M2 explicit filter | PASS 24/24 |
+| Session/continuity/termination focused filter | PASS 58/58 |
+| M0+M1 send/routing/projection filter | PASS 103/103 |
+| Townhall/composition/architecture preservation | PASS |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3905/3905 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: Native Harness / ACP independent siblings; no cross-backend
+fallback, provider deletion, session resume, or M3 behavior; no Phase 17
+`TryConsume()` or Phase 21 continuity changes. **M2 not accepted — stop for
+independent re-audit.**
+
+## Remaining Open Product Gaps (post-M2 residual)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
   live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
@@ -331,6 +392,6 @@ re-audit.**
 
 ## Next Task
 
-Independent human M2 re-audit of explicit live-session termination after F1–F3
-corrective work. Do not begin M3 until explicit M3 implementation authorization
-is recorded after M2 acceptance.
+Independent human M2 re-audit of explicit live-session termination after the
+ACP retry residual. Do not begin M3 until explicit M3 implementation
+authorization is recorded after M2 acceptance.

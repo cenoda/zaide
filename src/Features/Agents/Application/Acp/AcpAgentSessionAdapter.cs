@@ -12,6 +12,9 @@ namespace Zaide.Features.Agents.Application.Acp;
 
 /// <summary>
 /// Owns ACP initialize/session/prompt lifecycle for one admitted Zaide run.
+/// Retains the session client when cancel acknowledgement is uncertain so a
+/// later explicit-end retry can re-issue <c>session/cancel</c> without wrapping
+/// or falling back to another backend.
 /// </summary>
 internal sealed class AcpAgentSessionAdapter
 {
@@ -19,6 +22,8 @@ internal sealed class AcpAgentSessionAdapter
     private readonly Func<string> _workingDirectoryProvider;
     private readonly IAgentActorBackendBindingStore? _bindingStore;
     private readonly Dictionary<AgentSessionId, AcpAgentSessionBinding> _bindings = new();
+    private readonly Dictionary<AgentSessionId, PendingCancellationAcknowledgement> _pendingCancelAcks = new();
+    private readonly object _pendingCancelSync = new();
 
     public AcpAgentSessionAdapter(
         IAcpSessionClientFactory clientFactory,
@@ -30,6 +35,66 @@ internal sealed class AcpAgentSessionAdapter
         _workingDirectoryProvider = workingDirectoryProvider
             ?? throw new ArgumentNullException(nameof(workingDirectoryProvider));
         _bindingStore = bindingStore;
+    }
+
+    /// <summary>
+    /// Re-issues a bounded cancel acknowledgement for a session whose prior
+    /// cancel-ack timed out or failed. Uses a fresh independent token budget.
+    /// </summary>
+    public async Task<AgentCancellationAcknowledgementResult> AcknowledgeCancellationAsync(
+        AgentSessionId sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        if (sessionId == default)
+        {
+            throw new ArgumentException("Session id is required.", nameof(sessionId));
+        }
+
+        PendingCancellationAcknowledgement? pending;
+        lock (_pendingCancelSync)
+        {
+            if (!_pendingCancelAcks.TryGetValue(sessionId, out pending))
+            {
+                return AgentCancellationAcknowledgementResult.Unavailable(
+                    "No pending ACP cancel acknowledgement target. "
+                    + "Provider termination is not claimed.");
+            }
+        }
+
+        try
+        {
+            // Independent bounded budget for this retry attempt — never reuse a
+            // previously cancelled run token.
+            using var cancelCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (AcpProcessLifecycleLimits.CancelPromptTimeout > TimeSpan.Zero)
+            {
+                cancelCts.CancelAfter(AcpProcessLifecycleLimits.CancelPromptTimeout);
+            }
+
+            await pending.Client.CancelPromptAsync(pending.AcpSessionId, cancelCts.Token)
+                .ConfigureAwait(false);
+
+            await ReleasePendingCancellationAsync(sessionId).ConfigureAwait(false);
+            return AgentCancellationAcknowledgementResult.Succeeded();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            return AgentCancellationAcknowledgementResult.TimedOut(
+                "ACP cancel acknowledgement timed out. Local cancellation was requested; "
+                + "live session ownership remains. Retry is available. "
+                + "Provider termination is not claimed.");
+        }
+        catch (Exception)
+        {
+            return AgentCancellationAcknowledgementResult.Failed(
+                "ACP cancel acknowledgement failed. Local cancellation was requested; "
+                + "live session ownership remains. Retry is available. "
+                + "Provider termination is not claimed.");
+        }
     }
 
     public async IAsyncEnumerable<AgentBackendEvent> ExecuteAsync(
@@ -58,6 +123,8 @@ internal sealed class AcpAgentSessionAdapter
         List<AgentBackendEvent>? events = null;
         AgentBackendEvent? faultEvent = null;
         IAcpSessionClient? client = null;
+        var retainClientForCancelRetry = false;
+        var zaideSessionId = context.Request.SessionId;
 
         try
         {
@@ -160,6 +227,9 @@ internal sealed class AcpAgentSessionAdapter
                 catch (OperationCanceledException)
                 {
                     // Bounded cancel acknowledgement timed out — not ordinary cancellation.
+                    // Retain the live client so EndAsync retry can re-issue cancel-ack.
+                    RetainPendingCancellation(zaideSessionId, client, activeSessionId);
+                    retainClientForCancelRetry = true;
                     faultEvent = CreateFailure(
                         AgentFailureKind.Indeterminate,
                         "ACP cancel acknowledgement timed out. Local cancellation was requested; "
@@ -170,6 +240,8 @@ internal sealed class AcpAgentSessionAdapter
                 catch (Exception)
                 {
                     // Cancel acknowledgement failed — not ordinary cancellation.
+                    RetainPendingCancellation(zaideSessionId, client, activeSessionId);
+                    retainClientForCancelRetry = true;
                     faultEvent = CreateFailure(
                         AgentFailureKind.Indeterminate,
                         "ACP cancel acknowledgement failed. Local cancellation was requested; "
@@ -198,7 +270,8 @@ internal sealed class AcpAgentSessionAdapter
         }
         finally
         {
-            if (client is not null)
+            // When cancel-ack is uncertain, keep the client for retry re-issue.
+            if (client is not null && !retainClientForCancelRetry)
             {
                 await client.DisposeAsync().ConfigureAwait(false);
             }
@@ -322,10 +395,60 @@ internal sealed class AcpAgentSessionAdapter
                 reason,
                 cancellationAcknowledgementUncertain));
 
+    private void RetainPendingCancellation(
+        AgentSessionId sessionId,
+        IAcpSessionClient client,
+        string acpSessionId)
+    {
+        lock (_pendingCancelSync)
+        {
+            if (_pendingCancelAcks.TryGetValue(sessionId, out var existing)
+                && !ReferenceEquals(existing.Client, client))
+            {
+                // Best-effort dispose of a superseded retained client.
+                _ = existing.Client.DisposeAsync().AsTask();
+            }
+
+            _pendingCancelAcks[sessionId] = new PendingCancellationAcknowledgement(client, acpSessionId);
+        }
+    }
+
+    private async Task ReleasePendingCancellationAsync(AgentSessionId sessionId)
+    {
+        PendingCancellationAcknowledgement? pending;
+        lock (_pendingCancelSync)
+        {
+            if (!_pendingCancelAcks.Remove(sessionId, out pending))
+            {
+                return;
+            }
+        }
+
+        await pending.Client.DisposeAsync().ConfigureAwait(false);
+    }
+
     private static void ConfigureClientForBridge(IAcpSessionClient client, AcpClientActionBridge bridge)
     {
         var capabilities = AcpClientCapabilityProfiles.CreateWithFilesystemBridge();
         var fallbackRouter = new AcpInboundClientRequestRouter(capabilities);
         client.ConfigureActionBridge(bridge.CreateInboundHandler(fallbackRouter), capabilities);
+    }
+
+    private sealed class PendingCancellationAcknowledgement
+    {
+        public PendingCancellationAcknowledgement(IAcpSessionClient client, string acpSessionId)
+        {
+            Client = client ?? throw new ArgumentNullException(nameof(client));
+            if (string.IsNullOrWhiteSpace(acpSessionId))
+            {
+                throw new ArgumentException("ACP session id is required.", nameof(acpSessionId));
+            }
+
+            AcpSessionId = acpSessionId;
+        }
+
+        public IAcpSessionClient Client { get; }
+
+        public string AcpSessionId { get; }
     }
 }

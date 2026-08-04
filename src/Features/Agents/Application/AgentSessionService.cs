@@ -295,6 +295,8 @@ internal sealed class AgentSessionService
         AgentSessionId attemptSessionId;
         ExecutionRunId? attemptRunId;
         ConversationEntryCorrelationId attemptCorrelation;
+        var awaitingAckAtStart = false;
+        AgentBackendId backendId;
 
         lock (_sessionsSync)
         {
@@ -313,6 +315,8 @@ internal sealed class AgentSessionService
             activeRun = session.ActiveRun;
             attemptSessionId = session.SessionId;
             attemptRunId = activeRun?.RunId ?? session.LastAdmittedRunId;
+            backendId = session.BackendId;
+            awaitingAckAtStart = session.AwaitingCancellationAcknowledgement;
             // One opaque attempt key per EndAsync invocation; used only for projection
             // dedupe — never surface raw correlation tokens in user-facing text.
             attemptCorrelation = ConversationEntryCorrelationId.FromValue(
@@ -323,8 +327,8 @@ internal sealed class AgentSessionService
                     attemptRunId?.Value ?? "none",
                     Guid.NewGuid().ToString("N")));
             session.CurrentTerminationAttemptCorrelation = attemptCorrelation;
-            session.PendingCancellationAcknowledgementUncertain = false;
-            session.PendingCancellationAcknowledgementUncertainReason = null;
+            // Do not clear AwaitingCancellationAcknowledgement here — a prior uncertain
+            // cancel-ack remains outstanding until a successful re-ack or ownership end.
 
             if (session.SessionState.Status != AgentSessionStatus.Ending)
             {
@@ -337,6 +341,7 @@ internal sealed class AgentSessionService
             }
 
             // Revoke broker before cancellation so pending permissions lose authority.
+            // An already-terminal Indeterminate run is never treated as acknowledged.
             if (activeRun is not null
                 && !activeRun.StateMachine.IsTerminal
                 && activeRun.StateMachine.Status != AgentRunStatus.CancellationRequested)
@@ -381,17 +386,15 @@ internal sealed class AgentSessionService
             }
         }
 
+        var needsCancellationAcknowledgementRetry = false;
+        string? firstUncertainReason = null;
+
         lock (_sessionsSync)
         {
             if (!_sessions.TryGetValue(conversationId, out session))
             {
                 return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
             }
-
-            var uncertainAck = session.PendingCancellationAcknowledgementUncertain;
-            var uncertainReason = session.PendingCancellationAcknowledgementUncertainReason;
-            session.PendingCancellationAcknowledgementUncertain = false;
-            session.PendingCancellationAcknowledgementUncertainReason = null;
 
             if (waitedWithTimeout
                 && activeRun is not null
@@ -409,15 +412,17 @@ internal sealed class AgentSessionService
                     attemptCorrelation);
             }
 
-            if (uncertainAck)
+            // First observation of uncertain cancel-ack from this attempt's observer:
+            // cancel was already attempted inside the backend; return retryable
+            // indeterminate without treating the terminal Indeterminate run as acked.
+            if (session.AwaitingCancellationAcknowledgement && !awaitingAckAtStart)
             {
-                // Backend observer completed without confirmed cancel acknowledgement.
-                // Retain Ending ownership; no SessionEnded; retryable.
-                var reason = string.IsNullOrWhiteSpace(uncertainReason)
+                firstUncertainReason = session.LastCancellationAcknowledgementUncertainReason;
+                var reason = string.IsNullOrWhiteSpace(firstUncertainReason)
                     ? "Cancel acknowledgement was indeterminate. Local cancellation was requested; "
                       + "live session ownership remains. Retry is available. "
                       + "Provider termination is not claimed."
-                    : uncertainReason;
+                    : firstUncertainReason;
                 return AgentSessionEndResult.AcknowledgementIndeterminate(
                     reason,
                     attemptSessionId,
@@ -425,9 +430,102 @@ internal sealed class AgentSessionService
                     attemptCorrelation);
             }
 
-            FinalizeEndedSessionLocked(session, activeRun?.RunId ?? attemptRunId);
-            _sessions.Remove(conversationId);
+            if (session.AwaitingCancellationAcknowledgement)
+            {
+                // Prior uncertain cancel-ack remains outstanding. A terminal Indeterminate
+                // run alone is never sufficient to finalize — re-ack is required.
+                needsCancellationAcknowledgementRetry = true;
+            }
+            else
+            {
+                FinalizeEndedSessionLocked(session, activeRun?.RunId ?? attemptRunId);
+                _sessions.Remove(conversationId);
+                return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
+            }
+        }
+
+        if (!needsCancellationAcknowledgementRetry)
+        {
+            // Defensive: lock path above always returns when retry is not needed.
             return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
+        }
+
+        if (!_backends.TryGetValue(backendId, out var backend)
+            || backend is not IAgentCancellationAcknowledgementBackend ackBackend)
+        {
+            // Backend cannot reissue cancel-ack; retain Ending ownership.
+            return AgentSessionEndResult.AcknowledgementIndeterminate(
+                "Cancel acknowledgement remains indeterminate and this backend cannot reissue "
+                + "acknowledgement. Live session ownership remains. Retry is available. "
+                + "Provider termination is not claimed.",
+                attemptSessionId,
+                attemptRunId,
+                attemptCorrelation);
+        }
+
+        // Real, independently bounded re-acknowledgement attempt for this retry.
+        AgentCancellationAcknowledgementResult ackResult;
+        try
+        {
+            using var ackCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            ackCts.CancelAfter(EndAcknowledgementTimeout);
+            ackResult = await ackBackend
+                .AcknowledgeCancellationAsync(attemptSessionId, ackCts.Token)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            ackResult = AgentCancellationAcknowledgementResult.TimedOut(
+                "Cancel acknowledgement retry timed out. Local cancellation was requested; "
+                + "live session ownership remains. Retry is available. "
+                + "Provider termination is not claimed.");
+        }
+        catch (Exception ex)
+        {
+            var reason = string.IsNullOrWhiteSpace(ex.Message) ? ex.GetType().Name : ex.Message;
+            ackResult = AgentCancellationAcknowledgementResult.Failed(
+                "Cancel acknowledgement retry failed: " + reason
+                + " Live session ownership remains. Retry is available. "
+                + "Provider termination is not claimed.");
+        }
+
+        lock (_sessionsSync)
+        {
+            if (!_sessions.TryGetValue(conversationId, out session))
+            {
+                return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
+            }
+
+            if (ackResult.Status == AgentCancellationAcknowledgementStatus.Succeeded)
+            {
+                session.AwaitingCancellationAcknowledgement = false;
+                session.LastCancellationAcknowledgementUncertainReason = null;
+                FinalizeEndedSessionLocked(session, activeRun?.RunId ?? attemptRunId);
+                _sessions.Remove(conversationId);
+                return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
+            }
+
+            // Retry timed out/failed/unavailable: retain Ending; distinct attempt correlation.
+            session.AwaitingCancellationAcknowledgement = true;
+            if (!string.IsNullOrWhiteSpace(ackResult.Reason))
+            {
+                session.LastCancellationAcknowledgementUncertainReason = ackResult.Reason;
+            }
+
+            var retryReason = string.IsNullOrWhiteSpace(ackResult.Reason)
+                ? "Cancel acknowledgement was indeterminate. Local cancellation was requested; "
+                  + "live session ownership remains. Retry is available. "
+                  + "Provider termination is not claimed."
+                : ackResult.Reason;
+            return AgentSessionEndResult.AcknowledgementIndeterminate(
+                retryReason,
+                attemptSessionId,
+                attemptRunId,
+                attemptCorrelation);
         }
     }
 
@@ -957,10 +1055,11 @@ internal sealed class AgentSessionService
 
                 if (failurePayload.CancellationAcknowledgementUncertain)
                 {
-                    // Observer finished without confirmed cancel ack. Mark for EndAsync
-                    // so ownership stays Ending and no SessionEnded is projected yet.
-                    session.PendingCancellationAcknowledgementUncertain = true;
-                    session.PendingCancellationAcknowledgementUncertainReason = failurePayload.Reason;
+                    // Observer finished without confirmed cancel ack. Durable until a
+                    // successful re-ack or ownership removal — never treat terminal
+                    // Indeterminate alone as acknowledgement.
+                    session.AwaitingCancellationAcknowledgement = true;
+                    session.LastCancellationAcknowledgementUncertainReason = failurePayload.Reason;
                 }
 
                 var terminalStatus = MapFailureKindToTerminalStatus(failurePayload.FailureKind);
@@ -1369,12 +1468,13 @@ internal sealed class AgentSessionService
         public long NextSequence { get; set; } = 1;
 
         /// <summary>
-        /// Set when a backend reports cancel acknowledgement timeout/failure during end.
-        /// Consumed by <see cref="EndAsync"/> so ownership is retained without SessionEnded.
+        /// Durable flag: cancel was requested but backend cancel-ack was uncertain.
+        /// Cleared only after a successful re-ack or ownership removal. A terminal
+        /// Indeterminate run alone must never clear this.
         /// </summary>
-        public bool PendingCancellationAcknowledgementUncertain { get; set; }
+        public bool AwaitingCancellationAcknowledgement { get; set; }
 
-        public string? PendingCancellationAcknowledgementUncertainReason { get; set; }
+        public string? LastCancellationAcknowledgementUncertainReason { get; set; }
 
         /// <summary>
         /// Opaque correlation for the in-flight explicit termination attempt.

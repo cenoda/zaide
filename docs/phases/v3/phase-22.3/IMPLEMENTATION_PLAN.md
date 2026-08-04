@@ -16,8 +16,10 @@ navigation/race defects (F1, F2). Corrective work at
 only at that baseline. M2 implementation shipped at
 `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`; independent M2 audit returned
 **NO-GO** (F1 End Session availability; F2 ACP cancel-ack truth; F3 attempt
-correlation). Corrective work closes F1–F3 only. M3–M5 still require separate
-implementation approval after M2 acceptance.
+correlation). F1–F3 corrective shipped at
+`983487e0c322401809b8f3d171584a9c10a77ea0`. Residual: ACP indeterminate retry
+falsely finalized without re-ack. M3–M5 still require separate implementation
+approval after M2 acceptance.
 
 The live findings, test inventory, future A3 procedure, and recommendation are
 recorded in [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md).
@@ -116,7 +118,7 @@ final authorization, execution, audit, and reconciliation path.
 |-----------|---------|--------------------|-------------------|
 | M0 | Live dependency, send/routing, projection, termination, broker, continuity, test, harness, migration, and rollback seams verified | Documentation only | Existing focused filters + build/full-suite gates; human acceptance |
 | M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | **Accepted** at `1a5ff04`; 32/32 M1 tests, 103/103 M0+M1 filter |
-| M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal; CanEndSession only when live ownership exists; ACP cancel-ack timeout/failure is AcknowledgementIndeterminate with retained Ending ownership; per-attempt correlation dedupes indeterminate projection | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter — **NO-GO corrective shipped pending independent re-audit; not accepted** |
+| M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal; CanEndSession only when live ownership exists; ACP cancel-ack timeout/failure is AcknowledgementIndeterminate with retained Ending ownership; per-attempt correlation dedupes indeterminate projection; ACP retry re-issues bounded cancel-ack and never finalizes merely because the original run is terminal Indeterminate | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter — **NO-GO residual retry corrective pending independent re-audit; not accepted** |
 | M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter |
 | M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + force-quit A3 scenarios |
 | M5 | All owned rows have current isolated Native Harness and ACP evidence and all regression gates pass | No substitute unit test; A3 producer required | Full 22.3 A3 matrix + build + fast suite |
