@@ -147,24 +147,41 @@ internal sealed class AcpAgentSessionAdapter
             {
                 try
                 {
-                    // Use an independent bounded token: the run token is already cancelled
-                    // and cannot carry a cancel-prompt request/acknowledgement.
+                    // Independent bounded token: the run token is already cancelled and
+                    // cannot carry a cancel-prompt request/acknowledgement. This budget is
+                    // separate from EndAsync's outer acknowledgement wait; the observer
+                    // completes only after this path resolves so the two budgets do not race.
                     using var cancelCts = new CancellationTokenSource(
                         AcpProcessLifecycleLimits.CancelPromptTimeout);
                     await client.CancelPromptAsync(activeSessionId, cancelCts.Token)
                         .ConfigureAwait(false);
+                    faultEvent = CreateFailure(AgentFailureKind.Cancellation, "Run was cancelled.");
                 }
                 catch (OperationCanceledException)
                 {
-                    // Bounded cancel acknowledgement timed out; still report local cancellation.
+                    // Bounded cancel acknowledgement timed out — not ordinary cancellation.
+                    faultEvent = CreateFailure(
+                        AgentFailureKind.Indeterminate,
+                        "ACP cancel acknowledgement timed out. Local cancellation was requested; "
+                        + "live session ownership remains. Retry is available. "
+                        + "Provider termination is not claimed.",
+                        cancellationAcknowledgementUncertain: true);
                 }
                 catch (Exception)
                 {
-                    // Local cancellation stands; no provider-delete claim is made.
+                    // Cancel acknowledgement failed — not ordinary cancellation.
+                    faultEvent = CreateFailure(
+                        AgentFailureKind.Indeterminate,
+                        "ACP cancel acknowledgement failed. Local cancellation was requested; "
+                        + "live session ownership remains. Retry is available. "
+                        + "Provider termination is not claimed.",
+                        cancellationAcknowledgementUncertain: true);
                 }
             }
-
-            faultEvent = CreateFailure(AgentFailureKind.Cancellation, "Run was cancelled.");
+            else
+            {
+                faultEvent = CreateFailure(AgentFailureKind.Cancellation, "Run was cancelled.");
+            }
         }
         catch (AcpProcessLifecycleException ex)
         {
@@ -293,11 +310,17 @@ internal sealed class AcpAgentSessionAdapter
             _ => AgentFailureKind.Indeterminate,
         };
 
-    private static AgentBackendEvent CreateFailure(AgentFailureKind failureKind, string reason) =>
+    private static AgentBackendEvent CreateFailure(
+        AgentFailureKind failureKind,
+        string reason,
+        bool cancellationAcknowledgementUncertain = false) =>
         new(
             AgentBackendEventKind.FailureObserved,
             DateTimeOffset.UtcNow,
-            new AgentBackendFailurePayload(failureKind, reason));
+            new AgentBackendFailurePayload(
+                failureKind,
+                reason,
+                cancellationAcknowledgementUncertain));
 
     private static void ConfigureClientForBridge(IAcpSessionClient client, AcpClientActionBridge bridge)
     {

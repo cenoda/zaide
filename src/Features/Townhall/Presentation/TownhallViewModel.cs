@@ -42,6 +42,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
+    private readonly IDisposable? _sessionEventsSubscription;
     private bool _disposed;
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
@@ -547,6 +548,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             _backendSelectionService.BindingChanged += OnBackendBindingChanged;
         }
 
+        if (_sessionService is not null)
+        {
+            // Refresh End Session availability on lifecycle transitions (admit, end, ready).
+            _sessionEventsSubscription = _sessionService.Events.Subscribe(_ => RefreshCanEndSession());
+        }
+
         _conversationStore.EntryAppended += OnConversationEntryAppended;
         _panelHost.Panels.CollectionChanged += OnAgentPanelsCollectionChanged;
         foreach (var panel in _panelHost.Panels)
@@ -687,11 +694,18 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         if (result.Status == AgentSessionEndStatus.AcknowledgementIndeterminate)
         {
             var author = ResolveDirectPeerActorId(conversation);
+            // Attempt correlation is required for live indeterminate attempts so repeated
+            // projection of the same attempt is exactly once and distinct attempts differ.
+            var correlation = result.AttemptCorrelation
+                ?? throw new InvalidOperationException(
+                    "Indeterminate termination result is missing attempt correlation.");
             AgentConversationEventProjection.ProjectTerminationIndeterminate(
                 _conversationStore,
                 sourceConversationId,
                 author,
-                result.Reason ?? "Backend acknowledgement timed out. Retry is available.");
+                result.Reason
+                ?? "Backend acknowledgement timed out. Retry is available. Provider termination is not claimed.",
+                correlation);
         }
 
         RefreshCanEndSession();
@@ -708,8 +722,11 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        // Reachable for any active direct conversation; EndAsync no-ops when no live session.
-        CanEndSession = true;
+        // True only when this direct conversation owns a live session that can be ended.
+        // Channels, direct without ownership, and successfully ended sessions are false.
+        // Ending (including after indeterminate ack) remains true so the user can retry.
+        var snapshot = _sessionService.TryGetSessionSnapshot(activeId);
+        CanEndSession = snapshot is not null && snapshot.Status != AgentSessionStatus.Ended;
     }
 
     private void ExecuteBindAcp()
@@ -812,6 +829,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
                     sourceConversationId,
                     submittedPayload);
                 TryClearDraftAfterRoute(routeResult, sourceConversationId, rawDraftSnapshot);
+                RefreshCanEndSession();
                 return;
             }
 
@@ -852,6 +870,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             var sourceConversationId = activeConversationId;
             var routeResult = await _agentRouter.RouteAndExecuteAsync(panel.PanelId, submittedPayload);
             TryClearDraftAfterRoute(routeResult, sourceConversationId, rawDraftSnapshot);
+            RefreshCanEndSession();
             return;
         }
 
@@ -860,6 +879,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         {
             ClearActiveConversationDraft();
         }
+
+        RefreshCanEndSession();
     }
 
     private void SelectConversation(ConversationId conversationId, bool markRead = true)
@@ -1890,6 +1911,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             _backendSelectionService.BindingChanged -= OnBackendBindingChanged;
         }
 
+        _sessionEventsSubscription?.Dispose();
         _directBusySubscription.Dispose();
     }
 

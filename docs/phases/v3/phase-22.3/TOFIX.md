@@ -2,8 +2,8 @@
 
 ## Status
 
-**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 implementation
-shipped pending independent audit; not accepted.**
+**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 remains NO-GO
+pending independent re-audit after F1–F3 corrective work; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -11,8 +11,10 @@ session. Independent M1 audit returned **NO-GO** (F1 wrong-conversation draft
 loss; F2 inactive-channel route-status missing from cached presentation).
 Corrective work closed F1/F2, then a residual F1 follow-on: trim-equivalent but
 raw-different newer drafts were still cleared. That residual closed at
-`1a5ff04`; human accepted M1 and authorized **M2 only**. M3–M5, G5, A3
-execution, and V4 have not started.
+`1a5ff04`; human accepted M1 and authorized **M2 only**. M2 implementation
+shipped at `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`; independent M2 audit
+returned **NO-GO** (F1 CanEndSession; F2 ACP cancel-ack; F3 attempt correlation).
+M3–M5, G5, A3 execution, and V4 have not started.
 
 ## Work Board
 
@@ -37,7 +39,7 @@ execution, and V4 have not started.
 - [x] Human M0 acceptance.
 - [x] Separate Phase 22.3 M1 implementation approval.
 - [x] M1 send/routing and outcome visibility.
-- [x] M2 explicit live-session termination (implementation; not accepted).
+- [x] M2 explicit live-session termination (implementation; NO-GO; corrective F1–F3).
 - [ ] M3 safe mediated action path and actor attribution.
 - [ ] M4 workspace-owned interrupted-run projection and explicit re-send.
 - [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
@@ -205,11 +207,12 @@ M1 class totals: `Phase22AgentOutcomeProjectionTests` 11;
 
 M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`.
 
-## M2 Implementation (2026-08-03) — pending independent audit
+## M2 Implementation (2026-08-03) — independent audit NO-GO
 
 Baseline: `1a5ff04a3035df73331e3ea67eeba233491621c1`.
+Shipped at: `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`.
 
-### Production changes
+### Production changes (initial M2)
 
 - `IAgentSessionService.EndAsync` returns `AgentSessionEndResult` with statuses
   `NoLiveSession` / `Ended` / `AcknowledgementIndeterminate`.
@@ -229,11 +232,7 @@ Baseline: `1a5ff04a3035df73331e3ea67eeba233491621c1`.
 - `TownhallEntryProjection` formats session-ending/ended, indeterminate, and
   late-completion display strings without overclaiming provider deletion.
 
-### New tests
-
-- `Phase22ExplicitSessionTerminationTests` — 10 tests (TCS gates; no sleeps).
-
-### Verification results
+### Initial verification results
 
 | Command | Result |
 |---------|--------|
@@ -246,11 +245,79 @@ Baseline: `1a5ff04a3035df73331e3ea67eeba233491621c1`.
 | `dotnet test Zaide.slnx --no-build` | PASS 3891/3891 |
 | `git diff --check` | PASS |
 
-Boundaries preserved: Native Harness / ACP independent; Phase 17 `TryConsume()`
-unchanged; Phase 21 continuity `Terminate` remains distinct from live
-`EndAsync`; no M3–M5 / G5 / A3 / V4 / packages / schema. **M2 not accepted.**
+**Independent M2 audit: NO-GO** (F1/F2/F3). M2 not accepted.
 
-## Remaining Open Product Gaps (post-M2 implementation)
+## M2 Corrective Pass — F1/F2/F3 (2026-08-04)
+
+Baseline under correction: `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`.
+
+### Audit findings
+
+| ID | Defect |
+|----|--------|
+| F1 | `CanEndSession` was true for every direct conversation, including those with no live session ownership. |
+| F2 | ACP cancel-ack timeout/failure was swallowed as ordinary `Cancellation`, allowing `SessionEnded` / ownership removal without confirmed cancel acknowledgement. |
+| F3 | Indeterminate termination lacked per-attempt correlation, so repeated/same-conversation attempts could not be projected exactly once per attempt. |
+
+### Corrective production changes
+
+- **F1:** `RefreshCanEndSession` is true only for an active direct conversation
+  with a live `IAgentSessionService` snapshot whose status is not `Ended`.
+  False for channels, direct without ownership, and successfully ended
+  sessions; remains true for `Ending` (retry after indeterminate). Refreshed
+  from session lifecycle events, sends, navigation, and end outcomes.
+  `ConversationId` still captured before await.
+- **F2:** ACP `CancelPromptAsync` stays on an independent bounded token. Cancel
+  success reports `Cancellation`; timeout/failure report
+  `Indeterminate` with `CancellationAcknowledgementUncertain` and propagate
+  through the session end path to `AcknowledgementIndeterminate`, retained
+  `Ending` ownership, retryable visible outcome, and **no** `SessionEnded` /
+  provider-stop claims. Outer `EndAcknowledgementTimeout` default is 15s so it
+  outlasts the independent cancel budget rather than racing it. Native Harness
+  and ACP remain independent siblings.
+- **F3:** `AgentSessionEndResult` carries session/run/attempt correlation.
+  Live indeterminate attempts pass non-null correlation into
+  `ProjectTerminationIndeterminate`. Same attempt projects exactly once;
+  distinct sessions/attempts each get their own entry. Raw correlation ids are
+  not user-facing. `AgentConversationEventProjection` remains the sole writer.
+
+### Corrective tests
+
+`Phase22ExplicitSessionTerminationTests` expanded (TCS/deterministic gates; no
+timing sleeps for ACP cancel-ack paths):
+
+1. Direct without live ownership hides/disables End Session
+2. Admitted live session enables it
+3. Successful termination disables it
+4. Indeterminate Ending ownership keeps it retryable
+5. ACP cancel success uses a non-cancelled independent token
+6. ACP cancel timeout → `AcknowledgementIndeterminate`, retain ownership, no `SessionEnded`
+7. ACP cancel failure preserves the same truthful indeterminate boundary
+8. Repeated projection for one attempt is deduplicated
+9. Two distinct sessions/attempts each receive their own indeterminate entry
+10. Navigation during termination still affects only the captured conversation
+
+Class total: **18** tests (was 10).
+
+### Corrective verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M2 class | Discovered 18 tests |
+| M2 explicit filter | PASS 18/18 |
+| Session/continuity/termination focused filter | PASS 52/52 |
+| M0+M1 send/routing/projection filter | PASS 103/103 |
+| Townhall/composition/architecture preservation | PASS 195/195 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3899/3899 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no M3–M5 / G5 / A3 / V4; no Phase 17 `TryConsume()`
+changes; no Phase 21 continuity behavior changes; no backend wrapping/fallback;
+no packages/schema/unrelated cleanup. **M2 not accepted — stop for independent
+re-audit.**
+
+## Remaining Open Product Gaps (post-M2 corrective)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
   live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
@@ -264,6 +331,6 @@ unchanged; Phase 21 continuity `Terminate` remains distinct from live
 
 ## Next Task
 
-Independent human M2 audit of explicit live-session termination. Do not begin
-M3 until explicit M3 implementation authorization is recorded after M2
-acceptance.
+Independent human M2 re-audit of explicit live-session termination after F1–F3
+corrective work. Do not begin M3 until explicit M3 implementation authorization
+is recorded after M2 acceptance.

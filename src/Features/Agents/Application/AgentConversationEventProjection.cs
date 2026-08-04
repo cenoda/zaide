@@ -270,7 +270,8 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
     /// <summary>
     /// Projects a user-visible indeterminate termination result into the owning conversation.
-    /// Exactly once per correlated termination attempt key when possible.
+    /// Exactly once per correlated termination attempt. Distinct attempts/sessions each get
+    /// their own entry. Raw correlation identifiers must not appear in <paramref name="reason"/>.
     /// </summary>
     public static ConversationEntry ProjectTerminationIndeterminate(
         IConversationStore conversationStore,
@@ -291,16 +292,37 @@ internal sealed class AgentConversationEventProjection : IDisposable
         }
 
         var content = FormatTerminationIndeterminateContent(reason);
-        if (conversationStore.TryGet(conversationId, out var conversation)
-            && conversation.Entries.Any(e =>
-                e.Kind == ConversationEntryKind.SystemNotification
-                && e.Content.StartsWith(TerminationIndeterminateContentPrefix, StringComparison.Ordinal)
-                && (correlationId is null || e.CorrelationId == correlationId)))
+        if (conversationStore.TryGet(conversationId, out var conversation))
         {
-            return conversation.Entries.First(e =>
-                e.Kind == ConversationEntryKind.SystemNotification
-                && e.Content.StartsWith(TerminationIndeterminateContentPrefix, StringComparison.Ordinal)
-                && (correlationId is null || e.CorrelationId == correlationId));
+            ConversationEntry? existing = null;
+            foreach (var entryCandidate in conversation.Entries)
+            {
+                if (entryCandidate.Kind != ConversationEntryKind.SystemNotification
+                    || !entryCandidate.Content.StartsWith(
+                        TerminationIndeterminateContentPrefix,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (correlationId is { } required
+                    && entryCandidate.CorrelationId == required)
+                {
+                    existing = entryCandidate;
+                    break;
+                }
+
+                if (correlationId is null && entryCandidate.CorrelationId is null)
+                {
+                    existing = entryCandidate;
+                    break;
+                }
+            }
+
+            if (existing is not null)
+            {
+                return existing;
+            }
         }
 
         var entry = ConversationEntry.SystemNotification(

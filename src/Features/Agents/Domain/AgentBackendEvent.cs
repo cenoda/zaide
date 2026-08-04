@@ -91,7 +91,10 @@ internal sealed class AgentBackendCapabilityChangedPayload : AgentBackendEventPa
 /// </summary>
 internal sealed class AgentBackendFailurePayload : AgentBackendEventPayload
 {
-    public AgentBackendFailurePayload(AgentFailureKind failureKind, string reason)
+    public AgentBackendFailurePayload(
+        AgentFailureKind failureKind,
+        string reason,
+        bool cancellationAcknowledgementUncertain = false)
     {
         if (!Enum.IsDefined(failureKind))
         {
@@ -105,11 +108,19 @@ internal sealed class AgentBackendFailurePayload : AgentBackendEventPayload
 
         FailureKind = failureKind;
         Reason = reason;
+        CancellationAcknowledgementUncertain = cancellationAcknowledgementUncertain;
     }
 
     public AgentFailureKind FailureKind { get; }
 
     public string Reason { get; }
+
+    /// <summary>
+    /// When true, cancel was requested but backend cancel acknowledgement timed out
+    /// or failed; the observer completed without a confirmed cancel acknowledgement.
+    /// End ownership must retain <c>Ending</c> with a retryable indeterminate result.
+    /// </summary>
+    public bool CancellationAcknowledgementUncertain { get; }
 }
 
 /// <summary>

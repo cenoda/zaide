@@ -119,6 +119,21 @@ public sealed class Phase22ExplicitSessionTerminationTests
         throw new TimeoutException("Live session did not become active.");
     }
 
+    private static async Task WaitForCanEndSessionAsync(TownhallViewModel vm, bool expected)
+    {
+        for (var attempt = 0; attempt < 200; attempt++)
+        {
+            if (vm.CanEndSession == expected)
+            {
+                return;
+            }
+
+            await Task.Yield();
+        }
+
+        throw new TimeoutException($"CanEndSession did not become {expected}.");
+    }
+
     private static IEnumerable<ConversationEntry> SystemEntries(
         Conversation conversation,
         string prefix) =>
@@ -127,13 +142,13 @@ public sealed class Phase22ExplicitSessionTerminationTests
             && e.Content.StartsWith(prefix, StringComparison.Ordinal));
 
     [Fact]
-    public void Townhall_EndSessionCommandAndControl_AreReachableForDirectConversation()
+    public void DirectConversation_WithoutLiveOwnership_HidesEndSession()
     {
         var (vm, _, _, _, _, _, _) = CreateSurface();
         vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
 
         Assert.NotNull(vm.EndSessionCommand);
-        Assert.True(vm.CanEndSession);
+        Assert.False(vm.CanEndSession);
 
         var panel = new AgentBackendBindingPanel();
         panel.SetWorkflowProjection(
@@ -145,13 +160,10 @@ public sealed class Phase22ExplicitSessionTerminationTests
             mutationErrorCaption: null,
             canBindNativeHarness: false,
             canUnbind: true,
-            canEndSession: true);
+            canEndSession: false);
 
-        Assert.True(panel.EndSessionButton.IsVisible);
-        Assert.True(panel.EndSessionButton.IsEnabled);
-        Assert.Equal(
-            "End agent session",
-            Avalonia.Automation.AutomationProperties.GetName(panel.EndSessionButton));
+        Assert.False(panel.EndSessionButton.IsVisible);
+        Assert.False(panel.EndSessionButton.IsEnabled);
     }
 
     [Fact]
@@ -162,6 +174,97 @@ public sealed class Phase22ExplicitSessionTerminationTests
         vm.SelectChannelCommand.Execute(channel.Id).Subscribe();
 
         Assert.False(vm.CanEndSession);
+    }
+
+    [Fact]
+    public async Task AdmittedLiveSession_EnablesEndSession()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (vm, _, _, _, _, backend, session) = CreateSurface(b =>
+            b.SetGatedCompletion(gate, "live"));
+
+        vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+        Assert.False(vm.CanEndSession);
+
+        var conversationId = vm.ActiveConversationId!.Value;
+        vm.DraftText = "admit";
+        _ = vm.SendMessageCommand.Execute().ToTask();
+        await WaitForExecutionStartedAsync(backend);
+        await WaitForLiveSessionAsync(session, conversationId);
+        await WaitForCanEndSessionAsync(vm, expected: true);
+
+        Assert.True(vm.CanEndSession);
+        Assert.NotNull(session.TryGetSessionSnapshot(conversationId));
+
+        gate.TrySetResult("live");
+    }
+
+    [Fact]
+    public async Task SuccessfulTermination_DisablesEndSession()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (vm, _, _, _, _, backend, session) = CreateSurface(b =>
+            b.SetGatedCompletion(gate, "done"));
+
+        vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+        var conversationId = vm.ActiveConversationId!.Value;
+        vm.DraftText = "end me";
+        var sendTask = vm.SendMessageCommand.Execute().ToTask();
+        await WaitForExecutionStartedAsync(backend);
+        await WaitForLiveSessionAsync(session, conversationId);
+        await WaitForCanEndSessionAsync(vm, expected: true);
+
+        await vm.EndSessionCommand.Execute().ToTask();
+        try
+        {
+            await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch
+        {
+        }
+
+        Assert.Null(session.TryGetSessionSnapshot(conversationId));
+        await WaitForCanEndSessionAsync(vm, expected: false);
+        Assert.False(vm.CanEndSession);
+    }
+
+    [Fact]
+    public async Task IndeterminateEndingOwnership_KeepsEndSessionRetryable()
+    {
+        var gate = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var previousTimeout = AgentSessionService.EndAcknowledgementTimeout;
+        AgentSessionService.EndAcknowledgementTimeout = TimeSpan.FromMilliseconds(50);
+        try
+        {
+            var (vm, store, _, _, _, backend, session) = CreateSurface(b =>
+                b.SetGatedCompletionIgnoringCancellation(gate, "eventually"));
+
+            vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+            var conversationId = vm.ActiveConversationId!.Value;
+            vm.DraftText = "hold";
+            _ = vm.SendMessageCommand.Execute().ToTask();
+            await WaitForExecutionStartedAsync(backend);
+            await WaitForLiveSessionAsync(session, conversationId);
+
+            await vm.EndSessionCommand.Execute().ToTask();
+
+            Assert.NotNull(session.TryGetSessionSnapshot(conversationId));
+            Assert.Equal(
+                AgentSessionStatus.Ending,
+                session.TryGetSessionSnapshot(conversationId)!.Status);
+            await WaitForCanEndSessionAsync(vm, expected: true);
+            Assert.True(vm.CanEndSession);
+            Assert.True(store.TryGet(conversationId, out var conversation));
+            Assert.Single(
+                SystemEntries(
+                    conversation!,
+                    AgentConversationEventProjection.TerminationIndeterminateContentPrefix));
+        }
+        finally
+        {
+            AgentSessionService.EndAcknowledgementTimeout = previousTimeout;
+            gate.TrySetResult("cleanup");
+        }
     }
 
     [Fact]
@@ -209,6 +312,16 @@ public sealed class Phase22ExplicitSessionTerminationTests
         Assert.DoesNotContain(
             after.Entries,
             e => e.Content.Contains("deleted", StringComparison.OrdinalIgnoreCase));
+        // Navigation target must not receive source termination projection.
+        Assert.True(store.TryGet(vm.ActiveConversationId!.Value, out var navigated));
+        Assert.DoesNotContain(
+            navigated!.Entries,
+            e => e.Content.StartsWith(
+                AgentConversationEventProjection.SessionEndedContentPrefix,
+                StringComparison.Ordinal)
+                 || e.Content.StartsWith(
+                     AgentConversationEventProjection.TerminationIndeterminateContentPrefix,
+                     StringComparison.Ordinal));
     }
 
     [Fact]
@@ -301,9 +414,10 @@ public sealed class Phase22ExplicitSessionTerminationTests
                 indeterminate[0].Content,
                 StringComparison.Ordinal);
             Assert.DoesNotContain(
-                indeterminate[0].Content,
                 "deleted",
+                indeterminate[0].Content,
                 StringComparison.OrdinalIgnoreCase);
+            Assert.NotNull(indeterminate[0].CorrelationId);
 
             // Retry after backend finally completes.
             gate.TrySetResult("eventually");
@@ -407,9 +521,11 @@ public sealed class Phase22ExplicitSessionTerminationTests
     }
 
     [Fact]
-    public async Task AcpCancellation_UsesIndependentBoundedToken_NotAlreadyCancelledRunToken()
+    public async Task AcpCancellation_Success_UsesNonCancelledIndependentToken()
     {
         var holdEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelTokenObserved = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
         var client = new AcpFakeSessionClient(new AcpFakeSessionScript())
         {
             PromptHoldAsync = async ct =>
@@ -418,6 +534,12 @@ public sealed class Phase22ExplicitSessionTerminationTests
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
                 await tcs.Task.ConfigureAwait(false);
+            },
+            CancelPromptAsyncOverride = (_, cancelToken) =>
+            {
+                cancelTokenObserved.TrySetResult(cancelToken.IsCancellationRequested);
+                cancelToken.ThrowIfCancellationRequested();
+                return Task.CompletedTask;
             },
         };
 
@@ -450,13 +572,293 @@ public sealed class Phase22ExplicitSessionTerminationTests
         await executeTask.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.Equal(1, client.CancelPromptCallCount);
+        Assert.False(await cancelTokenObserved.Task.WaitAsync(TimeSpan.FromSeconds(1)));
         Assert.False(client.LastCancelTokenWasCancellationRequested);
         Assert.Equal(client.ActiveSessionId, client.LastCancelSessionId);
         Assert.Contains(
             events,
             e => e.Kind == AgentBackendEventKind.FailureObserved
                  && e.Payload is AgentBackendFailurePayload failure
-                 && failure.FailureKind == AgentFailureKind.Cancellation);
+                 && failure.FailureKind == AgentFailureKind.Cancellation
+                 && !failure.CancellationAcknowledgementUncertain);
+    }
+
+    [Fact]
+    public async Task AcpCancelTimeout_ProducesAcknowledgementIndeterminate_RetainsOwnership_NoSessionEnded()
+    {
+        var holdEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var previousEndTimeout = AgentSessionService.EndAcknowledgementTimeout;
+        // Outer budget only guards hung observers; cancel-ack outcome is delivered
+        // deterministically via OCE from the independent cancel path (no wall-clock race).
+        AgentSessionService.EndAcknowledgementTimeout = TimeSpan.FromSeconds(5);
+        try
+        {
+            var client = new AcpFakeSessionClient(new AcpFakeSessionScript())
+            {
+                PromptHoldAsync = async ct =>
+                {
+                    holdEntered.TrySetResult();
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    await using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+                    await tcs.Task.ConfigureAwait(false);
+                },
+                CancelPromptAsyncOverride = (_, cancelToken) =>
+                {
+                    cancelEntered.TrySetResult();
+                    // Deterministic cancel-ack timeout: independent token path reports OCE
+                    // without sleeping. Assert token is not the already-cancelled run token.
+                    Assert.False(cancelToken.IsCancellationRequested);
+                    return Task.FromException(new OperationCanceledException(cancelToken));
+                },
+            };
+
+            var backend = new AcpAgentBackend(
+                new DelegatingAcpSessionClientFactory(_ => Task.FromResult<IAcpSessionClient>(client)),
+                () => "/tmp/zaide-acp-m2-timeout");
+            var sessionService = new AgentSessionService(new[] { backend }, new AgentEventStream());
+            var store = ConversationsTestSupport.CreateStore();
+            var catalog = ConversationsTestSupport.CreateCatalog();
+            using var projection = new AgentConversationEventProjection(
+                sessionService.Events,
+                store,
+                catalog);
+
+            var agentActor = ActorId.PanelSeed("alpha");
+            var conversation = store.GetOrCreateDirectConversation(ActorId.HumanUser, agentActor);
+            var sendTask = sessionService.SendAsync(
+                conversation.Id,
+                ActorId.HumanUser,
+                agentActor,
+                backend.BackendId,
+                ConversationEntryId.New(),
+                "acp hold");
+
+            await holdEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            for (var attempt = 0; attempt < 200; attempt++)
+            {
+                if (sessionService.TryGetSessionSnapshot(conversation.Id) is not null
+                    && sessionService.TryGetActiveRunSnapshot(conversation.Id) is { } run
+                    && run.Status is AgentRunStatus.Running or AgentRunStatus.Accepted)
+                {
+                    break;
+                }
+
+                await Task.Yield();
+            }
+
+            var endResult = await sessionService.EndAsync(conversation.Id);
+            await cancelEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            try
+            {
+                await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+            }
+
+            Assert.Equal(AgentSessionEndStatus.AcknowledgementIndeterminate, endResult.Status);
+            Assert.NotNull(endResult.AttemptCorrelation);
+            Assert.NotNull(endResult.SessionId);
+            Assert.NotNull(sessionService.TryGetSessionSnapshot(conversation.Id));
+            Assert.Equal(
+                AgentSessionStatus.Ending,
+                sessionService.TryGetSessionSnapshot(conversation.Id)!.Status);
+            Assert.DoesNotContain(
+                conversation.Entries,
+                e => e.Content.StartsWith(
+                    AgentConversationEventProjection.SessionEndedContentPrefix,
+                    StringComparison.Ordinal));
+            Assert.Contains(
+                "timed out",
+                endResult.Reason ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "deleted",
+                endResult.Reason ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                endResult.AttemptCorrelation!.Value.Value,
+                endResult.Reason ?? string.Empty,
+                StringComparison.Ordinal);
+
+            // Project via sole writer with attempt correlation.
+            AgentConversationEventProjection.ProjectTerminationIndeterminate(
+                store,
+                conversation.Id,
+                agentActor,
+                endResult.Reason!,
+                endResult.AttemptCorrelation);
+            Assert.Single(
+                SystemEntries(
+                    conversation,
+                    AgentConversationEventProjection.TerminationIndeterminateContentPrefix));
+        }
+        finally
+        {
+            AgentSessionService.EndAcknowledgementTimeout = previousEndTimeout;
+        }
+    }
+
+    [Fact]
+    public async Task AcpCancelFailure_PreservesTruthfulIndeterminateBoundary()
+    {
+        var holdEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var previousEndTimeout = AgentSessionService.EndAcknowledgementTimeout;
+        AgentSessionService.EndAcknowledgementTimeout = TimeSpan.FromSeconds(5);
+        try
+        {
+            var client = new AcpFakeSessionClient(new AcpFakeSessionScript())
+            {
+                PromptHoldAsync = async ct =>
+                {
+                    holdEntered.TrySetResult();
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    await using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+                    await tcs.Task.ConfigureAwait(false);
+                },
+                CancelPromptAsyncOverride = (_, _) =>
+                    Task.FromException(new AcpProtocolException("simulated cancel failure")),
+            };
+
+            var backend = new AcpAgentBackend(
+                new DelegatingAcpSessionClientFactory(_ => Task.FromResult<IAcpSessionClient>(client)),
+                () => "/tmp/zaide-acp-m2-fail");
+            var sessionService = new AgentSessionService(new[] { backend }, new AgentEventStream());
+            var store = ConversationsTestSupport.CreateStore();
+            var catalog = ConversationsTestSupport.CreateCatalog();
+            using var projection = new AgentConversationEventProjection(
+                sessionService.Events,
+                store,
+                catalog);
+
+            var agentActor = ActorId.PanelSeed("alpha");
+            var conversation = store.GetOrCreateDirectConversation(ActorId.HumanUser, agentActor);
+            var sendTask = sessionService.SendAsync(
+                conversation.Id,
+                ActorId.HumanUser,
+                agentActor,
+                backend.BackendId,
+                ConversationEntryId.New(),
+                "acp hold fail");
+
+            await holdEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            for (var attempt = 0; attempt < 200; attempt++)
+            {
+                if (sessionService.TryGetActiveRunSnapshot(conversation.Id) is { } run
+                    && run.Status is AgentRunStatus.Running or AgentRunStatus.Accepted)
+                {
+                    break;
+                }
+
+                await Task.Yield();
+            }
+
+            var endResult = await sessionService.EndAsync(conversation.Id);
+            try
+            {
+                await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+            }
+
+            Assert.Equal(AgentSessionEndStatus.AcknowledgementIndeterminate, endResult.Status);
+            Assert.NotNull(endResult.AttemptCorrelation);
+            Assert.NotNull(sessionService.TryGetSessionSnapshot(conversation.Id));
+            Assert.Equal(
+                AgentSessionStatus.Ending,
+                sessionService.TryGetSessionSnapshot(conversation.Id)!.Status);
+            Assert.Contains(
+                "failed",
+                endResult.Reason ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                conversation.Entries,
+                e => e.Content.StartsWith(
+                    AgentConversationEventProjection.SessionEndedContentPrefix,
+                    StringComparison.Ordinal));
+            Assert.DoesNotContain(
+                "provider stopped",
+                endResult.Reason ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "deleted",
+                endResult.Reason ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            AgentSessionService.EndAcknowledgementTimeout = previousEndTimeout;
+        }
+    }
+
+    [Fact]
+    public void Projection_RepeatedIndeterminateForSameAttempt_IsDeduplicated()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var conversation = store.GetOrCreateDirectConversation(
+            ActorId.HumanUser,
+            ActorId.PanelSeed("alpha"));
+        var correlation = ConversationEntryCorrelationId.FromValue("term-attempt|sess-a|run-a|attempt-1");
+        var reason =
+            "Backend acknowledgement timed out. Retry is available. Provider termination is not claimed.";
+
+        var first = AgentConversationEventProjection.ProjectTerminationIndeterminate(
+            store,
+            conversation.Id,
+            ActorId.PanelSeed("alpha"),
+            reason,
+            correlation);
+        var second = AgentConversationEventProjection.ProjectTerminationIndeterminate(
+            store,
+            conversation.Id,
+            ActorId.PanelSeed("alpha"),
+            reason,
+            correlation);
+
+        Assert.Equal(first.Id, second.Id);
+        Assert.Single(
+            SystemEntries(
+                conversation,
+                AgentConversationEventProjection.TerminationIndeterminateContentPrefix));
+        Assert.Equal(correlation, first.CorrelationId);
+        Assert.DoesNotContain(correlation.Value, first.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Projection_DistinctSessionsOrAttempts_EachReceiveOwnIndeterminateEntry()
+    {
+        var store = ConversationsTestSupport.CreateStore();
+        var conversation = store.GetOrCreateDirectConversation(
+            ActorId.HumanUser,
+            ActorId.PanelSeed("alpha"));
+        var reason =
+            "Cancel acknowledgement was indeterminate. Retry is available. Provider termination is not claimed.";
+        var attemptA = ConversationEntryCorrelationId.FromValue("term-attempt|session-1|run-1|a");
+        var attemptB = ConversationEntryCorrelationId.FromValue("term-attempt|session-2|run-2|b");
+
+        var first = AgentConversationEventProjection.ProjectTerminationIndeterminate(
+            store,
+            conversation.Id,
+            ActorId.PanelSeed("alpha"),
+            reason,
+            attemptA);
+        var second = AgentConversationEventProjection.ProjectTerminationIndeterminate(
+            store,
+            conversation.Id,
+            ActorId.PanelSeed("alpha"),
+            reason,
+            attemptB);
+
+        Assert.NotEqual(first.Id, second.Id);
+        Assert.Equal(2, SystemEntries(
+            conversation,
+            AgentConversationEventProjection.TerminationIndeterminateContentPrefix).Count());
+        Assert.Equal(attemptA, first.CorrelationId);
+        Assert.Equal(attemptB, second.CorrelationId);
+        Assert.DoesNotContain(attemptA.Value, first.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain(attemptB.Value, second.Content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -565,5 +967,33 @@ public sealed class Phase22ExplicitSessionTerminationTests
             "Late completion after cancellation:",
             TownhallEntryProjection.ToTownhallDisplayContent(late),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Townhall_EndSessionCommand_IsReachable_AndPanelControlSurfacesWhenEnabled()
+    {
+        var (vm, _, _, _, _, _, _) = CreateSurface();
+        vm.OpenDirectConversationCommand.Execute(ActorId.PanelSeed("alpha")).Subscribe();
+
+        Assert.NotNull(vm.EndSessionCommand);
+        Assert.False(vm.CanEndSession);
+
+        var panel = new AgentBackendBindingPanel();
+        panel.SetWorkflowProjection(
+            "Native Harness",
+            "bound",
+            isDisconnected: false,
+            capabilityCaption: string.Empty,
+            settingsCaption: string.Empty,
+            mutationErrorCaption: null,
+            canBindNativeHarness: false,
+            canUnbind: true,
+            canEndSession: true);
+
+        Assert.True(panel.EndSessionButton.IsVisible);
+        Assert.True(panel.EndSessionButton.IsEnabled);
+        Assert.Equal(
+            "End agent session",
+            Avalonia.Automation.AutomationProperties.GetName(panel.EndSessionButton));
     }
 }

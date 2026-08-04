@@ -275,8 +275,11 @@ internal sealed class AgentSessionService
     /// Default bounded wait for backend observer acknowledgement during explicit end.
     /// Timeout leaves the session in <see cref="AgentSessionStatus.Ending"/> with a
     /// retryable indeterminate result; it does not claim the backend stopped.
+    /// Sized above independent sibling cancel-ack budgets (for example ACP
+    /// <c>CancelPromptTimeout</c>) so the outer wait observes their outcome rather
+    /// than racing the same wall clock.
     /// </summary>
-    internal static TimeSpan EndAcknowledgementTimeout { get; set; } = TimeSpan.FromSeconds(5);
+    internal static TimeSpan EndAcknowledgementTimeout { get; set; } = TimeSpan.FromSeconds(15);
 
     public async Task<AgentSessionEndResult> EndAsync(
         ConversationId conversationId,
@@ -289,6 +292,9 @@ internal sealed class AgentSessionService
 
         LiveSession? session;
         LiveRun? activeRun;
+        AgentSessionId attemptSessionId;
+        ExecutionRunId? attemptRunId;
+        ConversationEntryCorrelationId attemptCorrelation;
 
         lock (_sessionsSync)
         {
@@ -299,11 +305,26 @@ internal sealed class AgentSessionService
 
             if (session.SessionState.Status == AgentSessionStatus.Ended)
             {
+                var endedSessionId = session.SessionId;
                 _sessions.Remove(conversationId);
-                return AgentSessionEndResult.Ended();
+                return AgentSessionEndResult.Ended(endedSessionId);
             }
 
             activeRun = session.ActiveRun;
+            attemptSessionId = session.SessionId;
+            attemptRunId = activeRun?.RunId ?? session.LastAdmittedRunId;
+            // One opaque attempt key per EndAsync invocation; used only for projection
+            // dedupe — never surface raw correlation tokens in user-facing text.
+            attemptCorrelation = ConversationEntryCorrelationId.FromValue(
+                string.Join(
+                    '|',
+                    "term-attempt",
+                    attemptSessionId.Value,
+                    attemptRunId?.Value ?? "none",
+                    Guid.NewGuid().ToString("N")));
+            session.CurrentTerminationAttemptCorrelation = attemptCorrelation;
+            session.PendingCancellationAcknowledgementUncertain = false;
+            session.PendingCancellationAcknowledgementUncertainReason = null;
 
             if (session.SessionState.Status != AgentSessionStatus.Ending)
             {
@@ -364,8 +385,13 @@ internal sealed class AgentSessionService
         {
             if (!_sessions.TryGetValue(conversationId, out session))
             {
-                return AgentSessionEndResult.Ended();
+                return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
             }
+
+            var uncertainAck = session.PendingCancellationAcknowledgementUncertain;
+            var uncertainReason = session.PendingCancellationAcknowledgementUncertainReason;
+            session.PendingCancellationAcknowledgementUncertain = false;
+            session.PendingCancellationAcknowledgementUncertainReason = null;
 
             if (waitedWithTimeout
                 && activeRun is not null
@@ -377,12 +403,31 @@ internal sealed class AgentSessionService
                 return AgentSessionEndResult.AcknowledgementIndeterminate(
                     "Backend acknowledgement timed out. Local cancellation was requested; "
                     + "live session ownership remains. Retry is available. "
-                    + "Provider termination is not claimed.");
+                    + "Provider termination is not claimed.",
+                    attemptSessionId,
+                    attemptRunId,
+                    attemptCorrelation);
             }
 
-            FinalizeEndedSessionLocked(session, activeRun?.RunId);
+            if (uncertainAck)
+            {
+                // Backend observer completed without confirmed cancel acknowledgement.
+                // Retain Ending ownership; no SessionEnded; retryable.
+                var reason = string.IsNullOrWhiteSpace(uncertainReason)
+                    ? "Cancel acknowledgement was indeterminate. Local cancellation was requested; "
+                      + "live session ownership remains. Retry is available. "
+                      + "Provider termination is not claimed."
+                    : uncertainReason;
+                return AgentSessionEndResult.AcknowledgementIndeterminate(
+                    reason,
+                    attemptSessionId,
+                    attemptRunId,
+                    attemptCorrelation);
+            }
+
+            FinalizeEndedSessionLocked(session, activeRun?.RunId ?? attemptRunId);
             _sessions.Remove(conversationId);
-            return AgentSessionEndResult.Ended();
+            return AgentSessionEndResult.Ended(attemptSessionId, attemptRunId);
         }
     }
 
@@ -910,6 +955,14 @@ internal sealed class AgentSessionService
                     throw new InvalidOperationException("Backend failure payload is missing.");
                 }
 
+                if (failurePayload.CancellationAcknowledgementUncertain)
+                {
+                    // Observer finished without confirmed cancel ack. Mark for EndAsync
+                    // so ownership stays Ending and no SessionEnded is projected yet.
+                    session.PendingCancellationAcknowledgementUncertain = true;
+                    session.PendingCancellationAcknowledgementUncertainReason = failurePayload.Reason;
+                }
+
                 var terminalStatus = MapFailureKindToTerminalStatus(failurePayload.FailureKind);
                 EmitFailureLocked(
                     session,
@@ -1314,6 +1367,19 @@ internal sealed class AgentSessionService
         public ExecutionRunId? LastAdmittedRunId { get; set; }
 
         public long NextSequence { get; set; } = 1;
+
+        /// <summary>
+        /// Set when a backend reports cancel acknowledgement timeout/failure during end.
+        /// Consumed by <see cref="EndAsync"/> so ownership is retained without SessionEnded.
+        /// </summary>
+        public bool PendingCancellationAcknowledgementUncertain { get; set; }
+
+        public string? PendingCancellationAcknowledgementUncertainReason { get; set; }
+
+        /// <summary>
+        /// Opaque correlation for the in-flight explicit termination attempt.
+        /// </summary>
+        public ConversationEntryCorrelationId? CurrentTerminationAttemptCorrelation { get; set; }
     }
 
     private sealed class LiveRun

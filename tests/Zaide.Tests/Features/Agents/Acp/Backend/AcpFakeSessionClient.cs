@@ -100,11 +100,22 @@ internal sealed class AcpFakeSessionClient : IAcpSessionClient
 
     public bool? LastCancelTokenWasCancellationRequested { get; private set; }
 
+    /// <summary>
+    /// Optional cancel behaviour. When set, invoked instead of the default no-op success.
+    /// Used for deterministic cancel-ack timeout/failure tests (TaskCompletionSource gates).
+    /// </summary>
+    public Func<string, CancellationToken, Task>? CancelPromptAsyncOverride { get; set; }
+
     public Task CancelPromptAsync(string sessionId, CancellationToken cancellationToken)
     {
         CancelPromptCallCount++;
         LastCancelSessionId = sessionId;
         LastCancelTokenWasCancellationRequested = cancellationToken.IsCancellationRequested;
+        if (CancelPromptAsyncOverride is not null)
+        {
+            return CancelPromptAsyncOverride(sessionId, cancellationToken);
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }
