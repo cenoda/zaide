@@ -496,6 +496,69 @@ Boundaries preserved: no M4–M5 / G5 / A3 / V4; no new action kinds; no backend
 wrapping/fallback/cross-retry; `AgentConversationEventProjection` remains sole
 writer; M1/M2 routing/draft/termination contracts unchanged. **M3 not accepted.**
 
+## M3 Corrective (2026-08-04) — independent re-audit pending
+
+Baseline: `d531057e168e491fd389e880c4c4eb8fb37da450`.
+M3 remains **NO-GO** / not accepted. M4 not started.
+
+### Defects corrected
+
+**F1 — Complete every early-denial event/audit path**
+
+- Correlation-mismatch returns from `ContractAgentActionBroker` that previously
+  returned registry-fabricated denials without publishing now produce exactly
+  one bounded `ActionResultReported` event and matching audit record:
+  - initial correlation fingerprint mismatch;
+  - in-flight correlation mismatch while waiting;
+  - admission-gate correlation mismatch (TOCTOU re-check);
+  - reserved/in-flight replay correlation mismatch.
+- Event, audit, and returned result share the composed request's `ActionId` and
+  `AttemptId` (no synthetic registry IDs when a request exists).
+- Correlation-registry revocation after request composition preserves the
+  composed request's action/attempt IDs (no longer uses the payload-only path).
+- True `DuplicateReplay` still returns the prior terminal without republishing.
+- Cancellation remains `Cancelled` (not relabelled as denial). Causation
+  sequencing and `AgentActivityEvidenceLevel.ZaideMediated` are preserved.
+- Correlation rejection, fail-closed behavior, and run-slot exclusion unchanged.
+
+**F2 — Do not fabricate workspace identity for NoWorkspace**
+
+- `AgentActionFactPayload` and `AgentActionAuditRecord` workspace fields are
+  optional (`WorkspaceIdentity?` / `WorkspaceGeneration?`).
+- NoWorkspace (and any path with no captured scope) records explicit absence
+  (`null`/`null`); never `WorkspaceIdentity.New()` or `WorkspaceGeneration.Initial`.
+- Captured-workspace denials retain the exact captured identity and generation.
+- Bounded summaries, redaction, retention, and schema truth preserved.
+
+### Tests added (Phase22ActionAttributionTests)
+
+- Correlation mismatch sites → exactly one correlated event + audit
+- Registry revocation after composition preserves request ActionId/AttemptId
+- True duplicate replay does not create a duplicate terminal audit/event
+- NoWorkspace event/audit explicitly contain no workspace attribution
+- Captured-workspace denials retain exact scope identity and generation
+- Early denial paths do not touch filesystem / permission / workspace mutation
+- Existing M3 pre-consume `Published` / post-consume `Consumed` / `TryConsume`
+  finality coverage retained in `Phase22MediatedActionPathTests`
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M3 classes | Discovered 38 tests |
+| M3 explicit filter | PASS 38/38 |
+| Phase 17 broker/permission/mutation + Phase 20 bridge filter | PASS 156/156 |
+| M0+M1+M2 send/routing/termination filter | PASS 140/140 |
+| Townhall/composition/architecture preservation | PASS (focused) |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3944/3944 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no M4–M5 / G5 / A3 / Phase 22.4/22.5 / V4; Native Harness
+and ACP remain independent siblings; `AgentConversationEventProjection` remains
+the sole normalized conversation writer. **M3 not accepted — stop for
+independent re-audit.**
+
 ## Remaining Open Product Gaps (post-M3 implementation)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
@@ -508,6 +571,7 @@ writer; M1/M2 routing/draft/termination contracts unchanged. **M3 not accepted.*
 
 ## Next Task
 
-Independent human M3 audit of safe mediated action paths and actor attribution.
-Do not begin M4–M5 until explicit M4 implementation authorization is recorded
-after M3 acceptance.
+Independent human **M3 re-audit** of safe mediated action paths and actor
+attribution after the F1/F2 early-denial corrective. Do not begin M4–M5, G5,
+A3, Phase 22.4/22.5, or V4 until explicit M4 implementation authorization is
+recorded after M3 acceptance.

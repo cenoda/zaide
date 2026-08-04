@@ -7,6 +7,11 @@ namespace Zaide.Features.Agents.Domain;
 /// <summary>
 /// One bounded in-memory audit fact for the current application lifetime.
 /// </summary>
+/// <remarks>
+/// Workspace attribution is optional: when no workspace scope was captured,
+/// both workspace fields are null. When a workspace was captured, both fields
+/// carry the exact captured identity and generation.
+/// </remarks>
 internal sealed class AgentActionAuditRecord
 {
     public AgentActionAuditRecord(
@@ -24,8 +29,8 @@ internal sealed class AgentActionAuditRecord
         AgentActionId actionId,
         AgentActionAttemptId attemptId,
         AgentActionKind actionKind,
-        WorkspaceIdentity workspaceIdentity,
-        WorkspaceGeneration workspaceGeneration,
+        WorkspaceIdentity? workspaceIdentity,
+        WorkspaceGeneration? workspaceGeneration,
         AgentActionAuditSummary summary,
         AgentEventId? causationEventId = null)
     {
@@ -84,14 +89,20 @@ internal sealed class AgentActionAuditRecord
             throw new ArgumentException("Attempt id is required.", nameof(attemptId));
         }
 
-        if (workspaceIdentity == default)
+        if (workspaceIdentity is null != workspaceGeneration is null)
         {
-            throw new ArgumentException("Workspace identity is required.", nameof(workspaceIdentity));
+            throw new ArgumentException(
+                "Workspace identity and generation must both be present or both absent.");
         }
 
-        if (workspaceGeneration == default)
+        if (workspaceIdentity is { } identity && identity == default)
         {
-            throw new ArgumentException("Workspace generation is required.", nameof(workspaceGeneration));
+            throw new ArgumentException("Workspace identity is invalid.", nameof(workspaceIdentity));
+        }
+
+        if (workspaceGeneration is { } generation && generation == default)
+        {
+            throw new ArgumentException("Workspace generation is invalid.", nameof(workspaceGeneration));
         }
 
         ArgumentNullException.ThrowIfNull(summary);
@@ -144,9 +155,15 @@ internal sealed class AgentActionAuditRecord
 
     public AgentActionKind ActionKind { get; }
 
-    public WorkspaceIdentity WorkspaceIdentity { get; }
+    /// <summary>
+    /// Captured workspace identity, or <c>null</c> when no workspace scope was captured.
+    /// </summary>
+    public WorkspaceIdentity? WorkspaceIdentity { get; }
 
-    public WorkspaceGeneration WorkspaceGeneration { get; }
+    /// <summary>
+    /// Captured workspace generation, or <c>null</c> when no workspace scope was captured.
+    /// </summary>
+    public WorkspaceGeneration? WorkspaceGeneration { get; }
 
     public AgentActionAuditSummary Summary { get; }
 

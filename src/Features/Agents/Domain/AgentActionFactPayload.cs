@@ -8,6 +8,12 @@ namespace Zaide.Features.Agents.Domain;
 /// Typed payload for Phase 17 action and permission facts emitted through the
 /// Phase 15 event stream.
 /// </summary>
+/// <remarks>
+/// Workspace attribution is optional: when no workspace scope was captured
+/// (for example <see cref="AgentActionFailureKind.NoWorkspace"/> early denials),
+/// both workspace fields are null. When a workspace was captured, both fields
+/// carry the exact captured identity and generation — never a fabricated value.
+/// </remarks>
 internal sealed class AgentActionFactPayload : AgentEventPayload
 {
     public AgentActionFactPayload(
@@ -16,8 +22,8 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
         AgentActionKind actionKind,
         ActorId initiatingActorId,
         ActorId targetActorId,
-        WorkspaceIdentity workspaceIdentity,
-        WorkspaceGeneration workspaceGeneration,
+        WorkspaceIdentity? workspaceIdentity,
+        WorkspaceGeneration? workspaceGeneration,
         AgentActionAuditSummary summary,
         AgentActionPermissionClassification? classification = null,
         AgentPermissionDecisionStatus? decisionStatus = null,
@@ -51,14 +57,20 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
             throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
         }
 
-        if (workspaceIdentity == default)
+        if (workspaceIdentity is null != workspaceGeneration is null)
         {
-            throw new ArgumentException("Workspace identity is required.", nameof(workspaceIdentity));
+            throw new ArgumentException(
+                "Workspace identity and generation must both be present or both absent.");
         }
 
-        if (workspaceGeneration == default)
+        if (workspaceIdentity is { } identity && identity == default)
         {
-            throw new ArgumentException("Workspace generation is required.", nameof(workspaceGeneration));
+            throw new ArgumentException("Workspace identity is invalid.", nameof(workspaceIdentity));
+        }
+
+        if (workspaceGeneration is { } generation && generation == default)
+        {
+            throw new ArgumentException("Workspace generation is invalid.", nameof(workspaceGeneration));
         }
 
         ArgumentNullException.ThrowIfNull(summary);
@@ -89,9 +101,15 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
 
     public ActorId TargetActorId { get; }
 
-    public WorkspaceIdentity WorkspaceIdentity { get; }
+    /// <summary>
+    /// Captured workspace identity, or <c>null</c> when no workspace scope was captured.
+    /// </summary>
+    public WorkspaceIdentity? WorkspaceIdentity { get; }
 
-    public WorkspaceGeneration WorkspaceGeneration { get; }
+    /// <summary>
+    /// Captured workspace generation, or <c>null</c> when no workspace scope was captured.
+    /// </summary>
+    public WorkspaceGeneration? WorkspaceGeneration { get; }
 
     public AgentActionAuditSummary Summary { get; }
 

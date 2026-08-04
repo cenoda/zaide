@@ -216,12 +216,13 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         AgentActionResult? terminalResult = null;
         if (parsedCorrelationKey is not null)
         {
+            // Site 1: initial correlation fingerprint mismatch (terminal or in-flight).
             if (_correlationRegistry.TryRejectMismatchedFingerprint(
                     parsedCorrelationKey.Value,
                     request.Fingerprint,
-                    out var mismatch))
+                    out _))
             {
-                return mismatch!;
+                return CreateAndPublishCorrelationKeyMismatch(request);
             }
 
             if (_correlationRegistry.TryGetTerminalResult(
@@ -229,16 +230,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     request.Fingerprint,
                     out var replay))
             {
-                return new AgentActionResult(
-                    replay!.ActionId,
-                    replay.AttemptId,
-                    AgentActionResultKind.DuplicateReplay,
-                    null,
-                    replay.Summary,
-                    content: replay.Content,
-                    revision: replay.Revision,
-                    byteLength: replay.ByteLength,
-                    commandExecution: replay.CommandExecution);
+                // True duplicate replay: return the prior terminal without republishing.
+                return CreateDuplicateReplayResult(replay!);
             }
 
             if (_correlationRegistry.TryWaitForInFlightReplay(
@@ -247,25 +240,18 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     cancellationToken,
                     out var inFlightReplay))
             {
+                // Site 2: in-flight correlation mismatch observed while waiting.
                 if (inFlightReplay!.ResultKind == AgentActionResultKind.Denied
                     && inFlightReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return inFlightReplay;
+                    return CreateAndPublishCorrelationKeyMismatch(request);
                 }
 
-                return new AgentActionResult(
-                    inFlightReplay.ActionId,
-                    inFlightReplay.AttemptId,
-                    AgentActionResultKind.DuplicateReplay,
-                    null,
-                    inFlightReplay.Summary,
-                    content: inFlightReplay.Content,
-                    revision: inFlightReplay.Revision,
-                    byteLength: inFlightReplay.ByteLength,
-                    commandExecution: inFlightReplay.CommandExecution);
+                return CreateDuplicateReplayResult(inFlightReplay);
             }
 
             // Cancellation or revocation occurred during wait.
+            // Cancellation remains Cancelled (not relabelled as denial).
             if (cancellationToken.IsCancellationRequested)
             {
                 return new AgentActionResult(
@@ -278,51 +264,64 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
 
             if (_correlationRegistry.IsRevoked)
             {
+                // Request is already composed — preserve its ActionId/AttemptId.
                 return CreateDeniedResult(
                     payload,
                     AgentActionFailureKind.BrokerRevoked,
-                    "Correlation registry was revoked while waiting for in-flight action.");
+                    "Correlation registry was revoked while waiting for in-flight action.",
+                    request);
             }
         }
 
         var reserved = false;
+        AgentActionResult? admissionGateMismatch = null;
+        AgentActionResult? admissionGateReplay = null;
         lock (_admissionGate)
         {
             if (parsedCorrelationKey is not null)
             {
+                // Site 3: admission-gate correlation mismatch (TOCTOU re-check).
                 if (_correlationRegistry.TryRejectMismatchedFingerprint(
                         parsedCorrelationKey.Value,
                         request.Fingerprint,
-                        out var mismatch))
+                        out _))
                 {
-                    return mismatch!;
+                    admissionGateMismatch = CreateCorrelationKeyMismatchResult(request);
                 }
-
-                if (_correlationRegistry.TryGetTerminalResult(
-                        parsedCorrelationKey.Value,
-                        request.Fingerprint,
-                        out var replay))
+                else if (_correlationRegistry.TryGetTerminalResult(
+                             parsedCorrelationKey.Value,
+                             request.Fingerprint,
+                             out var replay))
                 {
-                    return new AgentActionResult(
-                        replay!.ActionId,
-                        replay.AttemptId,
-                        AgentActionResultKind.DuplicateReplay,
-                        null,
-                        replay.Summary,
-                        content: replay.Content,
-                        revision: replay.Revision,
-                        byteLength: replay.ByteLength,
-                        commandExecution: replay.CommandExecution);
+                    // True duplicate replay under the admission gate: no republish.
+                    admissionGateReplay = CreateDuplicateReplayResult(replay!);
+                }
+                else
+                {
+                    reserved = _runSlot.TryReserve(request.ActionId);
+                    if (reserved)
+                    {
+                        _correlationRegistry.BeginInFlightCorrelation(
+                            parsedCorrelationKey.Value,
+                            request.Fingerprint);
+                    }
                 }
             }
-
-            reserved = _runSlot.TryReserve(request.ActionId);
-            if (reserved && parsedCorrelationKey is not null)
+            else
             {
-                _correlationRegistry.BeginInFlightCorrelation(
-                    parsedCorrelationKey.Value,
-                    request.Fingerprint);
+                reserved = _runSlot.TryReserve(request.ActionId);
             }
+        }
+
+        if (admissionGateMismatch is not null)
+        {
+            PublishEarlyDeniedResult(request, admissionGateMismatch);
+            return admissionGateMismatch;
+        }
+
+        if (admissionGateReplay is not null)
+        {
+            return admissionGateReplay;
         }
 
         if (!reserved)
@@ -334,22 +333,14 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     cancellationToken,
                     out var reservedReplay))
             {
+                // Site 4: reserved/in-flight replay correlation mismatch.
                 if (reservedReplay!.ResultKind == AgentActionResultKind.Denied
                     && reservedReplay.FailureKind == AgentActionFailureKind.CorrelationKeyMismatch)
                 {
-                    return reservedReplay;
+                    return CreateAndPublishCorrelationKeyMismatch(request);
                 }
 
-                return new AgentActionResult(
-                    reservedReplay.ActionId,
-                    reservedReplay.AttemptId,
-                    AgentActionResultKind.DuplicateReplay,
-                    null,
-                    reservedReplay.Summary,
-                    content: reservedReplay.Content,
-                    revision: reservedReplay.Revision,
-                    byteLength: reservedReplay.ByteLength,
-                    commandExecution: reservedReplay.CommandExecution);
+                return CreateDuplicateReplayResult(reservedReplay);
             }
 
             if (cancellationToken.IsCancellationRequested)
@@ -1138,9 +1129,49 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         return result;
     }
 
+    /// <summary>
+    /// Builds a newly produced correlation-key mismatch denial bound to the
+    /// composed request's ActionId/AttemptId (never synthetic registry IDs).
+    /// </summary>
+    private static AgentActionResult CreateCorrelationKeyMismatchResult(AgentActionRequest request) =>
+        new(
+            request.ActionId,
+            request.AttemptId,
+            AgentActionResultKind.Denied,
+            AgentActionFailureKind.CorrelationKeyMismatch,
+            "Correlation key was reused with a different request fingerprint.");
+
+    /// <summary>
+    /// Publishes exactly one bounded ActionResultReported for a newly produced
+    /// correlation-key mismatch denial. Does not record the denial as a
+    /// correlation-registry terminal (true DuplicateReplay paths are separate).
+    /// </summary>
+    private AgentActionResult CreateAndPublishCorrelationKeyMismatch(AgentActionRequest request)
+    {
+        var result = CreateCorrelationKeyMismatchResult(request);
+        PublishEarlyDeniedResult(request, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Returns a true DuplicateReplay of a prior terminal without republishing
+    /// an ActionResultReported event or audit record.
+    /// </summary>
+    private static AgentActionResult CreateDuplicateReplayResult(AgentActionResult priorTerminal) =>
+        new(
+            priorTerminal.ActionId,
+            priorTerminal.AttemptId,
+            AgentActionResultKind.DuplicateReplay,
+            null,
+            priorTerminal.Summary,
+            content: priorTerminal.Content,
+            revision: priorTerminal.Revision,
+            byteLength: priorTerminal.ByteLength,
+            commandExecution: priorTerminal.CommandExecution);
+
     private void PublishEarlyDeniedResult(AgentActionRequest request, AgentActionResult result)
     {
-        if (_eventPublisher is null || _workspaceScope is null)
+        if (_eventPublisher is null)
         {
             return;
         }
@@ -1166,8 +1197,10 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             return;
         }
 
-        var workspaceIdentity = _workspaceScope?.Identity ?? WorkspaceIdentity.New();
-        var workspaceGeneration = _workspaceScope?.Generation ?? WorkspaceGeneration.Initial;
+        // Truthful workspace attribution: when no scope was captured, leave both
+        // fields absent. Never fabricate WorkspaceIdentity.New() or claim Initial.
+        WorkspaceIdentity? workspaceIdentity = _workspaceScope?.Identity;
+        WorkspaceGeneration? workspaceGeneration = _workspaceScope?.Generation;
         var summary = AgentActionAuditSummary.FromParts(
             $"result {result.ResultKind}",
             result.Summary);
