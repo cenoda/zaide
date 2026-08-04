@@ -245,6 +245,7 @@ internal static class AgentsServiceCollectionExtensions
         });
 
         // Phase 21 M5: durable scoped memory records (store only; no retrieval/injection).
+        // Phase 22.4 M2: opened-workspace projection and lifecycle surface reachability.
         services.AddSingleton<AgentMemoryStoreWriter>();
         services.AddSingleton<AgentMemoryInspector>();
         services.AddSingleton<IAgentMemoryInspector, AgentMemoryInspector>();

@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Presentation.Memory;
 
@@ -16,7 +18,16 @@ internal sealed class AgentMemoryAvailabilityProjection : IDisposable
 
     public AgentMemoryAvailabilityProjection(
         AgentMemoryCoordinator coordinator,
-        Func<string?>? workspaceRootProvider = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null)
+        : this(
+            coordinator,
+            AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority))
+    {
+    }
+
+    public AgentMemoryAvailabilityProjection(
+        AgentMemoryCoordinator coordinator,
+        Func<string?>? workspaceRootProvider)
     {
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
         _workspaceRootProvider = workspaceRootProvider ?? (() => null);
@@ -52,7 +63,13 @@ internal sealed class AgentMemoryAvailabilityProjection : IDisposable
         AgentMemoryInspectionSummary summary;
         try
         {
-            var workspaceKey = _coordinator.ResolveWorkspaceKey(_workspaceRootProvider());
+            var workspaceRoot = _workspaceRootProvider();
+            if (string.IsNullOrWhiteSpace(workspaceRoot))
+            {
+                return;
+            }
+
+            var workspaceKey = _coordinator.ResolveWorkspaceKey(workspaceRoot);
             summary = _coordinator.Inspector.GetSummary(workspaceKey);
         }
         catch

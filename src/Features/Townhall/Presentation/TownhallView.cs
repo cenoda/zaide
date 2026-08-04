@@ -34,11 +34,13 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallContextPolicySelector _contextPolicySelector;
     private readonly AgentBackendBindingPanel _backendBindingPanel;
     private readonly AgentTracePanel _tracePanel;
+    private readonly AgentMemoryPanel _memoryPanel;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
     private readonly ToggleButton _filterActivityButton;
     private readonly Button _traceButton;
+    private readonly Button _memoryButton;
     private CompositeDisposable? _disposables;
 
     /// <summary>
@@ -74,6 +76,10 @@ public class TownhallView : Panel, IDisposable
         {
             Background = PaletteTokens.SurfacePanelBrush,
         };
+        _memoryPanel = new AgentMemoryPanel
+        {
+            Background = PaletteTokens.SurfacePanelBrush,
+        };
         _inputArea = new TownhallInputArea
         {
             Background = PaletteTokens.SurfacePanelBrush,
@@ -86,6 +92,8 @@ public class TownhallView : Panel, IDisposable
         _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
         _traceButton = new Button { Content = TextStyles.Caption("Trace") };
         Avalonia.Automation.AutomationProperties.SetName(_traceButton, "Open agent trace evidence");
+        _memoryButton = new Button { Content = TextStyles.Caption("Memory") };
+        Avalonia.Automation.AutomationProperties.SetName(_memoryButton, "Open agent durable memory");
 
         var sidebar = BuildSidebar();
         var filterGroup = BuildFilterGroup();
@@ -145,7 +153,7 @@ public class TownhallView : Panel, IDisposable
     }
 
     /// <summary>
-    /// Builds the filter toggle group and the Townhall trace entry point.
+    /// Builds the filter toggle group and the Townhall transparency entry points.
     /// </summary>
     private StackPanel BuildFilterGroup()
     {
@@ -154,12 +162,19 @@ public class TownhallView : Panel, IDisposable
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
-            Children = { _filterAllButton, _filterChatButton, _filterActivityButton, _traceButton }
+            Children =
+            {
+                _filterAllButton,
+                _filterChatButton,
+                _filterActivityButton,
+                _traceButton,
+                _memoryButton,
+            }
         };
     }
 
     /// <summary>
-    /// Builds the right chat area: filter group | chat panel | trace and workflow panels | input area.
+    /// Builds the right chat area: filter group | chat panel | transparency and workflow panels | input area.
     /// </summary>
     private Grid BuildChatArea(StackPanel filterGroup)
     {
@@ -180,6 +195,7 @@ public class TownhallView : Panel, IDisposable
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
@@ -187,6 +203,7 @@ public class TownhallView : Panel, IDisposable
                 filterGroup,
                 _chatPanel,
                 _tracePanel,
+                _memoryPanel,
                 _backendBindingPanel,
                 _contextPolicySelector,
                 inputSeparator,
@@ -196,10 +213,11 @@ public class TownhallView : Panel, IDisposable
         Grid.SetRow(filterGroup, 0);
         Grid.SetRow(_chatPanel, 1);
         Grid.SetRow(_tracePanel, 2);
-        Grid.SetRow(_backendBindingPanel, 3);
-        Grid.SetRow(_contextPolicySelector, 4);
-        Grid.SetRow(inputSeparator, 5);
-        Grid.SetRow(_inputArea, 6);
+        Grid.SetRow(_memoryPanel, 3);
+        Grid.SetRow(_backendBindingPanel, 4);
+        Grid.SetRow(_contextPolicySelector, 5);
+        Grid.SetRow(inputSeparator, 6);
+        Grid.SetRow(_inputArea, 7);
 
         return chatArea;
     }
@@ -283,8 +301,11 @@ public class TownhallView : Panel, IDisposable
         if (_viewModel is null) return;
 
         _tracePanel.SetViewModel(_viewModel.TransparencyManagement);
+        _memoryPanel.SetViewModel(_viewModel.TransparencyManagement);
         _traceButton.Click += OnTraceButtonClick;
+        _memoryButton.Click += OnMemoryButtonClick;
         _disposables.Add(Disposable.Create(() => _traceButton.Click -= OnTraceButtonClick));
+        _disposables.Add(Disposable.Create(() => _memoryButton.Click -= OnMemoryButtonClick));
 
         // Populate people panel
         _peoplePanel.SetAgents(_viewModel.Agents);
@@ -329,6 +350,7 @@ public class TownhallView : Panel, IDisposable
                     _navigationPanel.SetChannels(_viewModel.Channels);
                     _navigationPanel.SetDirectItems(_viewModel.DirectNavItems);
                     SyncNavigationSelection();
+                    _viewModel.PublishMemoryTownhallContext();
                 }));
 
         _disposables.Add(
@@ -542,8 +564,12 @@ public class TownhallView : Panel, IDisposable
         _disposables?.Dispose();
         _disposables = null;
         _tracePanel.Dispose();
+        _memoryPanel.Dispose();
     }
 
     private void OnTraceButtonClick(object? sender, RoutedEventArgs eventArgs) =>
         _viewModel?.TransparencyManagement?.OpenTraceCommand.Execute().Subscribe();
+
+    private void OnMemoryButtonClick(object? sender, RoutedEventArgs eventArgs) =>
+        _viewModel?.TransparencyManagement?.OpenMemoryCommand.Execute().Subscribe();
 }

@@ -12,6 +12,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
@@ -104,6 +105,49 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
     internal AgentTransparencyManagementViewModel? TransparencyManagement =>
         _transparencyManagement;
+
+    /// <summary>
+    /// Publishes the active Townhall direct-conversation context into the memory
+    /// lifecycle surface. Switching conversation clears selection and reloads
+    /// when the panel is open.
+    /// </summary>
+    internal void PublishMemoryTownhallContext()
+    {
+        if (_transparencyManagement is null)
+        {
+            return;
+        }
+
+        ConversationId? conversationId = _state.ActiveConversationId;
+        ActorId? agentActorId = null;
+        string? sessionId = null;
+
+        if (conversationId is { } activeId
+            && _conversationStore.TryGet(activeId, out var conversation)
+            && conversation.Kind == ConversationKind.Direct)
+        {
+            var peer = conversation.Participants.All.FirstOrDefault(p => p != _actorCatalog.CanonicalHuman.Id);
+            if (peer != default)
+            {
+                agentActorId = peer;
+            }
+
+            var snapshot = _sessionService?.TryGetSessionSnapshot(activeId);
+            if (snapshot is not null && snapshot.Status != AgentSessionStatus.Ended)
+            {
+                sessionId = snapshot.SessionId.Value;
+            }
+        }
+
+        // Project/Shared identity is derived from the opened workspace inside
+        // the memory inspection owner; Townhall does not invent a project id.
+        _ = _transparencyManagement.BindMemoryTownhallContextAsync(
+            new AgentMemoryInspectionViewModel.TownhallContext(
+                conversationId,
+                agentActorId,
+                sessionId,
+                projectId: null));
+    }
 
     private ObservableCollection<TownhallMessage> _messages = new();
 
@@ -576,6 +620,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         // Initialize explicit session seed state
         InitializeSessionState();
+        PublishMemoryTownhallContext();
 
         // Setup reactive properties based on state
         Channels = _state.Channels;

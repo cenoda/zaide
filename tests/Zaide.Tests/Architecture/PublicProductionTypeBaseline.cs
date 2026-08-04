@@ -44,14 +44,14 @@ public static class PublicProductionTypeBaseline
     public const string RelativeBaselinePath =
         "tests/Zaide.Tests/Architecture/PublicProductionTypeBaseline.txt";
 
-    /// <summary>Total non-nested, non-compiler-generated production types (Phase 22.3 M4 corrective +2 invocation counter types; Phase 22.3 M2 residual +3 cancel-ack seam types; Phase 22.3 M2 +2 AgentSessionEndStatus/Result; Phase 22.2 corrective +1 ACP runtime binding fingerprint; Phase 22.2 M2 +1 workflow projection; Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
-    public const int TotalTopLevelTypes = 1003;
+    /// <summary>Total non-nested, non-compiler-generated production types (Phase 22.4 M2 +2 AgentMemoryPanel/AgentMemorySurfaceState; Phase 22.3 M4 corrective +2 invocation counter types; Phase 22.3 M2 residual +3 cancel-ack seam types; Phase 22.3 M2 +2 AgentSessionEndStatus/Result; Phase 22.2 corrective +1 ACP runtime binding fingerprint; Phase 22.2 M2 +1 workflow projection; Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 794).</summary>
+    public const int TotalTopLevelTypes = 1005;
 
     /// <summary>Public top-level production type ceiling and baseline count (Phase 20 M5 +1 AgentBackendBindingPanel).</summary>
     public const int PublicTopLevelTypes = 352;
 
-    /// <summary>Internal top-level production type count (Phase 22.3 M4 corrective +2 invocation counter types; Phase 22.3 M2 residual +3 cancel-ack seam types; Phase 22.3 M2 +2 AgentSessionEndStatus/Result; Phase 22.2 corrective +1 ACP runtime binding fingerprint; Phase 22.2 M3 +6 ACP onboarding/logout types; Phase 22.2 M2 +1 workflow projection; Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
-    public const int InternalTopLevelTypes = 651;
+    /// <summary>Internal top-level production type count (Phase 22.4 M2 +2 AgentMemoryPanel/AgentMemorySurfaceState; Phase 22.3 M4 corrective +2 invocation counter types; Phase 22.3 M2 residual +3 cancel-ack seam types; Phase 22.3 M2 +2 AgentSessionEndStatus/Result; Phase 22.2 corrective +1 ACP runtime binding fingerprint; Phase 22.2 M3 +6 ACP onboarding/logout types; Phase 22.2 M2 +1 workflow projection; Phase 22.2 M1 +13 durable binding store types; ISSUE-011 +1 CodeFontResolver; ISSUE-010 +1 IndentGuideLevelCache; Phase 21 M6 +18 memory influence/lifecycle types; Phase 21 M5 +35 durable memory types; Phase 21 M4 +34 session continuity types; Phase 21 M3 +21 usage/cost evidence types; Phase 21 M2 +34 trace evidence types; Phase 21 M1 +26 durable-record/storage types; Phase 20 M5 baseline 443).</summary>
+    public const int InternalTopLevelTypes = 653;
 
     /// <summary>
     /// Loads the approved public full names from the repository text artifact.

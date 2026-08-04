@@ -224,7 +224,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         // Phase 20 M5: +1 public AgentBackendBindingPanel and +1 internal AgentBackendBindingPresenter.
         // Phase 22.4 M1: +1 internal AgentTracePanel.
-        Assert.Equal((7, 3, 4), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 22.4 M2: +1 internal AgentMemoryPanel.
+        Assert.Equal((8, 3, 5), byNamespace["Zaide.Features.Agents.Presentation"]);
         // Phase 21 M2: +3 internal trace availability/inspection presentation types.
         // Phase 21 M3: +3 internal usage/cost availability/inspection presentation types.
         // Phase 21 M4: +3 internal session continuity availability/inspection presentation types.
@@ -305,14 +306,17 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
         // Phase 22.3 M4 corrective: +1 authorized invocation counter source file (876).
-        Assert.Equal(876, inventory.SourceFiles.Count);
+        // Phase 22.4 M1: +2 AgentTracePanel and AgentTransparencyCommandRegistration (878).
+        // Phase 22.4 M2: +2 AgentMemoryPanel and AgentMemorySurfaceState source files (880).
+        Assert.Equal(880, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
         Assert.False(byFolder.ContainsKey("ViewModels"));
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
-        Assert.Equal(41, byFolder["App"]);
+        // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
+        Assert.Equal(42, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.
@@ -348,7 +352,9 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
         // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
-        Assert.Equal(831, byFolder["Features"]);
+        // Phase 22.4 M1: +1 AgentTracePanel (832).
+        // Phase 22.4 M2: +2 memory surface source files (834).
+        Assert.Equal(834, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

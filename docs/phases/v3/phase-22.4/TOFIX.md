@@ -2,9 +2,9 @@
 
 ## Status
 
-**M0 and M1 are complete; M2-only implementation is authorized.** A4 package
+**M0, M1, and M2 are complete; M3–M4 remain unauthorized.** A4 package
 4 is assigned here. Phase 22.2 is complete with package-2 PASS restored, so
-the ordering dependency is satisfied. M3–M4 remain unauthorized.
+the ordering dependency is satisfied.
 
 ## Work Board
 
@@ -21,7 +21,10 @@ the ordering dependency is satisfied. M3–M4 remain unauthorized.
 - [x] Implement and accept M1 — Townhall trace surface, explicit
   application-lifetime capture control, opened-workspace inspection, command
   reachability, and independent Native Harness / ACP evidence hooks.
-- [ ] Implement M2 — scoped memory lifecycle surface only.
+- [x] Implement M2 — scoped memory lifecycle surface only.
+- [ ] Implement M3 — usage/cost surface only (requires separate authorization).
+- [ ] Implement M4 — integrated reachability, accessibility, backup safety,
+  regression, and isolated `A1-TC-02` / `A1-TC-03` / `A1-TC-08` re-smoke.
 - [ ] Re-smoke `A1-TC-02`, `A1-TC-03`, and `A1-TC-08`.
 
 ## Verified M0 findings
@@ -51,14 +54,14 @@ the ordering dependency is satisfied. M3–M4 remain unauthorized.
 
 ## Blockers
 
-- M2 implementation is authorized; M3–M4 remain unauthorized.
+- M3–M4 remain unauthorized. Do not auto-start them from this board.
 - G5 remains blocked until accepted M1–M4 implementation and the owned
   affected-row re-smoke complete.
 
 ## Next Task
 
-Implement M2 — scoped memory lifecycle surface only — within the accepted M0
-boundary. Do not begin M3–M4, Phase 22.5, G5, or V4 from this board.
+Wait for separate M3-only implementation authorization. Do not begin M3–M4,
+Phase 22.5, G5, or V4 from this board.
 
 ## M1 Trace Surface (2026-08-04) — accepted
 
@@ -85,3 +88,35 @@ retaining the coordinator's registered-source admission check.
 M1 is accepted under the user's standing GO direction (2026-08-04). M2-only
 implementation is authorized. No runtime smoke, A3 execution, G5, or V4 work
 was performed.
+
+## M2 Memory Surface (2026-08-04) — complete; await M3 authorization
+
+M2 adds the user-reachable Memory entry in Townhall and the `agent.memory.open`
+command (category `Agent`, no default gesture). The surface lists, selects, and
+mutates scoped durable memory for the opened workspace through
+`AgentMemoryCoordinator` only:
+
+- create / correct / disable / supersede / delete (tombstone)
+- provenance (`AgentMemorySourceKind.User`), conflict, status, and scope labels
+- influence evidence kept attribution-only and never editable as lifecycle records
+- presentation states `Loading` / `Ready` / `Empty` / `Unavailable` / `Failed`
+  with bounded retry; failed and unavailable never masquerade as empty
+- workspace from `IWorkspaceActionAuthority`; author from
+  `IActorCatalog.CanonicalHuman`; Session/Agent/Conversation from selected
+  Townhall direct-conversation context; Project/Shared from opened workspace
+  identity; missing required scope context disables create with a visible reason
+
+Backup/Restore/Migrate UI, usage/cost surface, accessibility package re-smoke,
+and A3 producer closeout remain out of scope (M3/M4).
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-incremental` | PASS — 0 warnings, 0 errors |
+| M2 memory filter | PASS — 46/46 (includes discovered `Phase22MemorySurfaceTests`) |
+| Architecture / DI inventory ratchets | PASS |
+| `dotnet test Zaide.slnx --no-build` (serial fallback) | PASS — 3973/3973 |
+| `git diff --check` | PASS |
+
+M2-only implementation was authorized under the standing GO. Do not start M3,
+M4, Phase 22.5, G5, or V4 without separate authorization. No product-readiness
+claim.

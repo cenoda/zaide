@@ -6,6 +6,7 @@ using ReactiveUI;
 using Zaide.Features.Agents.Application.Memory;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
@@ -36,7 +37,9 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     private readonly AgentSessionContinuityAvailabilityProjection _continuityAvailabilityProjection;
     private readonly AgentMemoryAvailabilityProjection _memoryAvailabilityProjection;
     private bool _isTracePanelOpen;
+    private bool _isMemoryPanelOpen;
     private string _traceStatusCaption = AgentTraceAvailabilityState.Initial.FormatStatusCaption();
+    private string _memoryStatusCaption = "Durable memory closed.";
 
     public AgentTransparencyManagementViewModel(
         AgentTraceInspectionViewModel traceInspection,
@@ -70,6 +73,10 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         OpenTraceCommand = ReactiveCommand.Create(OpenTraceSurface);
         CloseTraceCommand = ReactiveCommand.Create(CloseTraceSurface);
         ToggleTraceCaptureCommand = ReactiveCommand.Create(ToggleTraceCapture);
+        OpenMemoryCommand = ReactiveCommand.CreateFromTask(OpenMemorySurfaceAsync);
+        CloseMemoryCommand = ReactiveCommand.Create(CloseMemorySurface);
+        RefreshMemoryCommand = ReactiveCommand.CreateFromTask(RefreshMemorySurfaceAsync);
+        RetryMemoryCommand = ReactiveCommand.CreateFromTask(RetryMemorySurfaceAsync);
     }
 
     public string AccessibilityName => AutomationName;
@@ -82,16 +89,36 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> ToggleTraceCaptureCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> OpenMemoryCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> CloseMemoryCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> RefreshMemoryCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> RetryMemoryCommand { get; }
+
     public bool IsTracePanelOpen
     {
         get => _isTracePanelOpen;
         private set => this.RaiseAndSetIfChanged(ref _isTracePanelOpen, value);
     }
 
+    public bool IsMemoryPanelOpen
+    {
+        get => _isMemoryPanelOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isMemoryPanelOpen, value);
+    }
+
     public string TraceStatusCaption
     {
         get => _traceStatusCaption;
         private set => this.RaiseAndSetIfChanged(ref _traceStatusCaption, value);
+    }
+
+    public string MemoryStatusCaption
+    {
+        get => _memoryStatusCaption;
+        private set => this.RaiseAndSetIfChanged(ref _memoryStatusCaption, value);
     }
 
     public AgentTraceAvailabilityProjection TraceAvailability => _traceAvailabilityProjection;
@@ -102,6 +129,8 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         _continuityAvailabilityProjection;
 
     public AgentMemoryAvailabilityProjection MemoryAvailability => _memoryAvailabilityProjection;
+
+    public AgentMemoryInspectionViewModel MemoryInspection => _memoryInspection;
 
     public Task<AgentTransparencyExportPackage> ExportAllAsync(string? workspaceRoot = null)
     {
@@ -134,6 +163,99 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     {
         _traceInspection.Refresh();
         TraceStatusCaption = _traceInspection.AvailabilityCaption;
+    }
+
+    /// <summary>
+    /// Townhall pushes selected direct-conversation context. Switching context
+    /// clears selection and reloads when the memory panel is open.
+    /// </summary>
+    public Task BindMemoryTownhallContextAsync(AgentMemoryInspectionViewModel.TownhallContext context)
+    {
+        _memoryInspection.BindTownhallContext(context);
+        PublishMemoryPresentation();
+        if (_isMemoryPanelOpen)
+        {
+            return RefreshMemorySurfaceAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RefreshMemorySurfaceAsync()
+    {
+        return ReloadMemoryAndPublishAsync(() => _memoryInspection.ReloadAsync());
+    }
+
+    public Task RetryMemorySurfaceAsync()
+    {
+        return ReloadMemoryAndPublishAsync(() => _memoryInspection.RetryAsync());
+    }
+
+    public AgentMemoryOperationResult CreateMemoryFromDraft()
+    {
+        // Inspection owner reloads after accepted mutations.
+        var result = _memoryInspection.CreateFromDraft();
+        PublishMemoryPresentation();
+        return result;
+    }
+
+    public AgentMemoryOperationResult CorrectSelectedMemory(string content)
+    {
+        var result = _memoryInspection.CorrectSelected(content);
+        PublishMemoryPresentation();
+        return result;
+    }
+
+    public AgentMemoryOperationResult DisableSelectedMemory()
+    {
+        var result = _memoryInspection.DisableSelected();
+        PublishMemoryPresentation();
+        return result;
+    }
+
+    public AgentMemoryOperationResult SupersedeSelectedMemory(string content)
+    {
+        var result = _memoryInspection.SupersedeSelected(content);
+        PublishMemoryPresentation();
+        return result;
+    }
+
+    public AgentMemoryOperationResult DeleteSelectedMemory()
+    {
+        var result = _memoryInspection.DeleteSelected();
+        PublishMemoryPresentation();
+        return result;
+    }
+
+    public void SelectMemoryRecord(AgentMemoryId? memoryId)
+    {
+        _memoryInspection.SelectRecord(memoryId);
+        PublishMemoryPresentation();
+    }
+
+    private async Task OpenMemorySurfaceAsync()
+    {
+        IsMemoryPanelOpen = true;
+        await RefreshMemorySurfaceAsync().ConfigureAwait(false);
+    }
+
+    private void CloseMemorySurface()
+    {
+        IsMemoryPanelOpen = false;
+        MemoryStatusCaption = "Durable memory closed.";
+    }
+
+    private async Task ReloadMemoryAndPublishAsync(Func<Task> reload)
+    {
+        await reload().ConfigureAwait(false);
+        PublishMemoryPresentation();
+    }
+
+    private void PublishMemoryPresentation()
+    {
+        _memoryInspection.Refresh();
+        MemoryStatusCaption = _memoryInspection.StatusCaption;
+        this.RaisePropertyChanged(nameof(MemoryInspection));
     }
 
     private void OpenTraceSurface()

@@ -190,7 +190,8 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 8 M3: +1 RightColumnHost production file (was 38 after M2).
         // Refactor 8 M4: +1 MainLayoutBuilder production file.
         // Refactor 8 M5: +2 SettingsPanelAttachHost, ShellOverlayFocusWiring production files.
-        Assert.Equal(41, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
+        Assert.Equal(42, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
@@ -218,7 +219,9 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
         // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
-        Assert.Equal(831, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 22.4 M1: +1 AgentTracePanel (832).
+        // Phase 22.4 M2: +2 memory surface source files (834).
+        Assert.Equal(834, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]
