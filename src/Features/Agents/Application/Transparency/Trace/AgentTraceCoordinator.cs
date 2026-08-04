@@ -46,6 +46,10 @@ internal sealed class AgentTraceCoordinator
         _sourceRegistry = sourceRegistry;
         _workspaceKeyResolver = workspaceKeyResolver;
         _registryFilter = new AgentTraceBackendEvidenceSourceRegistryFilter(sourceRegistry);
+        if (sourceRegistry is AgentTraceSourceRegistry registry)
+        {
+            registry.InitializeSources(new AgentTraceBackendEvidenceSourceWriter(this));
+        }
     }
 
     public AgentTraceCaptureSink Sink => _sink;

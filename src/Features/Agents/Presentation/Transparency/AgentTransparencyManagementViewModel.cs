@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Reactive;
 using System.Threading.Tasks;
+using ReactiveUI;
 using Zaide.Features.Agents.Application.Memory;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
 
@@ -11,7 +15,7 @@ namespace Zaide.Features.Agents.Presentation.Transparency;
 /// <summary>
 /// Integrated transparency and memory management surface for Townhall/Agents UI.
 /// </summary>
-internal sealed class AgentTransparencyManagementViewModel
+internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 {
     public const string AutomationName = "Agent transparency and memory management";
     public const string AutomationHelpText =
@@ -31,6 +35,8 @@ internal sealed class AgentTransparencyManagementViewModel
     private readonly AgentUsageAvailabilityProjection _usageAvailabilityProjection;
     private readonly AgentSessionContinuityAvailabilityProjection _continuityAvailabilityProjection;
     private readonly AgentMemoryAvailabilityProjection _memoryAvailabilityProjection;
+    private bool _isTracePanelOpen;
+    private string _traceStatusCaption = AgentTraceAvailabilityState.Initial.FormatStatusCaption();
 
     public AgentTransparencyManagementViewModel(
         AgentTraceInspectionViewModel traceInspection,
@@ -60,11 +66,33 @@ internal sealed class AgentTransparencyManagementViewModel
             ?? throw new ArgumentNullException(nameof(continuityAvailabilityProjection));
         _memoryAvailabilityProjection = memoryAvailabilityProjection
             ?? throw new ArgumentNullException(nameof(memoryAvailabilityProjection));
+
+        OpenTraceCommand = ReactiveCommand.Create(OpenTraceSurface);
+        CloseTraceCommand = ReactiveCommand.Create(CloseTraceSurface);
+        ToggleTraceCaptureCommand = ReactiveCommand.Create(ToggleTraceCapture);
     }
 
     public string AccessibilityName => AutomationName;
 
     public string AccessibilityHelpText => AutomationHelpText;
+
+    public ReactiveCommand<Unit, Unit> OpenTraceCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> CloseTraceCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ToggleTraceCaptureCommand { get; }
+
+    public bool IsTracePanelOpen
+    {
+        get => _isTracePanelOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isTracePanelOpen, value);
+    }
+
+    public string TraceStatusCaption
+    {
+        get => _traceStatusCaption;
+        private set => this.RaiseAndSetIfChanged(ref _traceStatusCaption, value);
+    }
 
     public AgentTraceAvailabilityProjection TraceAvailability => _traceAvailabilityProjection;
 
@@ -91,4 +119,42 @@ internal sealed class AgentTransparencyManagementViewModel
         requestedPageSize <= 0
             ? DefaultPageSize
             : Math.Min(requestedPageSize, MaxPageSize);
+
+    public Task<AgentTraceInspectionSummary> LoadTraceSummaryAsync() =>
+        _traceInspection.LoadSummaryAsync();
+
+    public Task<IReadOnlyList<AgentTraceRecord>> LoadTraceRecordsAsync(
+        long afterOrderingSequence,
+        int requestedPageSize) =>
+        _traceInspection.LoadRecordsAsync(
+            afterOrderingSequence,
+            ClampPageSize(requestedPageSize));
+
+    public void RefreshTracePresentation()
+    {
+        _traceInspection.Refresh();
+        TraceStatusCaption = _traceInspection.AvailabilityCaption;
+    }
+
+    private void OpenTraceSurface()
+    {
+        IsTracePanelOpen = true;
+        RefreshTracePresentation();
+    }
+
+    private void CloseTraceSurface() => IsTracePanelOpen = false;
+
+    private void ToggleTraceCapture()
+    {
+        if (_traceInspection.Availability.CaptureEnabled)
+        {
+            _traceInspection.DisableCapture();
+        }
+        else
+        {
+            _traceInspection.EnableCapture();
+        }
+
+        RefreshTracePresentation();
+    }
 }

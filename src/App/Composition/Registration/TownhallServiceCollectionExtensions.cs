@@ -2,6 +2,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Infrastructure;
@@ -41,7 +42,8 @@ internal static class TownhallServiceCollectionExtensions
                 (IAgentRouter?)get(typeof(IAgentRouter)),
                 (IAgentActorBackendSelectionService?)get(typeof(IAgentActorBackendSelectionService)),
                 (AgentBackendBindingPresenter?)get(typeof(AgentBackendBindingPresenter)),
-                (IAgentSessionService?)get(typeof(IAgentSessionService)));
+                (IAgentSessionService?)get(typeof(IAgentSessionService)),
+                (AgentTransparencyManagementViewModel?)get(typeof(AgentTransparencyManagementViewModel)));
         });
 
         return services;

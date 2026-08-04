@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Presentation.Transparency;
 
@@ -24,10 +26,11 @@ internal sealed class AgentTraceAvailabilityProjection : IDisposable
 
     public AgentTraceAvailabilityProjection(
         AgentTraceCoordinator coordinator,
-        Func<string?>? workspaceRootProvider = null)
+        IWorkspaceActionAuthority workspaceAuthority)
     {
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
-        _workspaceRootProvider = workspaceRootProvider ?? (() => null);
+        _workspaceRootProvider = AgentContinuityWorkspaceRootProvider
+            .CreateOpenedWorkspaceProvider(workspaceAuthority);
         _refreshTimer = new Timer(
             _ => Refresh(),
             state: null,

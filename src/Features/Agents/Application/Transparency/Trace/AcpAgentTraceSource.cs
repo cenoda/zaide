@@ -14,9 +14,14 @@ namespace Zaide.Features.Agents.Application.Transparency.Trace;
 /// serialized only as opaque base64 markers so the redaction processor
 /// defensively scans them; the raw frame is not duplicated as a secret.
 /// </summary>
-internal sealed class AcpAgentTraceSource : IAgentTraceBackendEvidenceSource
+internal sealed class AcpAgentTraceSource
+    : IAgentTraceBackendEvidenceSource, IAgentTraceBackendEvidenceSourceInitializable
 {
-    private readonly AgentTraceBackendEvidenceSourceWriter _writer;
+    private AgentTraceBackendEvidenceSourceWriter? _writer;
+
+    public AcpAgentTraceSource()
+    {
+    }
 
     public AcpAgentTraceSource(AgentTraceBackendEvidenceSourceWriter writer)
     {
@@ -48,8 +53,15 @@ internal sealed class AcpAgentTraceSource : IAgentTraceBackendEvidenceSource
                 reason: "acp-cannot-expose-kind");
         }
 
-        return _writer.Submit(request, evidenceLevel: AgentTraceEvidenceLevel.BackendExecutedAndReported);
+        return _writer?.Submit(request, evidenceLevel: AgentTraceEvidenceLevel.BackendExecutedAndReported)
+            ?? new AgentTraceCaptureResult(
+                AgentTraceCaptureStatus.Disabled,
+                captureState: AgentTraceCaptureState.Unavailable,
+                reason: "acp-trace-source-not-initialized");
     }
+
+    public void Initialize(AgentTraceBackendEvidenceSourceWriter writer) =>
+        _writer ??= writer ?? throw new ArgumentNullException(nameof(writer));
 
     /// <summary>
     /// Serializes one ACP protocol frame into a neutral trace evidence JSON.

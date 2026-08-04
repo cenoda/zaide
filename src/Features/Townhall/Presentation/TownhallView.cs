@@ -33,10 +33,12 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallContextPolicySelector _contextPolicySelector;
     private readonly AgentBackendBindingPanel _backendBindingPanel;
+    private readonly AgentTracePanel _tracePanel;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
     private readonly ToggleButton _filterActivityButton;
+    private readonly Button _traceButton;
     private CompositeDisposable? _disposables;
 
     /// <summary>
@@ -68,6 +70,10 @@ public class TownhallView : Panel, IDisposable
             Background = PaletteTokens.SurfacePanelBrush,
             IsVisible = false,
         };
+        _tracePanel = new AgentTracePanel
+        {
+            Background = PaletteTokens.SurfacePanelBrush,
+        };
         _inputArea = new TownhallInputArea
         {
             Background = PaletteTokens.SurfacePanelBrush,
@@ -78,6 +84,8 @@ public class TownhallView : Panel, IDisposable
         _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
         _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
         _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
+        _traceButton = new Button { Content = TextStyles.Caption("Trace") };
+        Avalonia.Automation.AutomationProperties.SetName(_traceButton, "Open agent trace evidence");
 
         var sidebar = BuildSidebar();
         var filterGroup = BuildFilterGroup();
@@ -137,7 +145,7 @@ public class TownhallView : Panel, IDisposable
     }
 
     /// <summary>
-    /// Builds the filter toggle group: All / Chat / Activity buttons.
+    /// Builds the filter toggle group and the Townhall trace entry point.
     /// </summary>
     private StackPanel BuildFilterGroup()
     {
@@ -146,12 +154,12 @@ public class TownhallView : Panel, IDisposable
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
-            Children = { _filterAllButton, _filterChatButton, _filterActivityButton }
+            Children = { _filterAllButton, _filterChatButton, _filterActivityButton, _traceButton }
         };
     }
 
     /// <summary>
-    /// Builds the right chat area: filter group | chat panel | separator | input area.
+    /// Builds the right chat area: filter group | chat panel | trace and workflow panels | input area.
     /// </summary>
     private Grid BuildChatArea(StackPanel filterGroup)
     {
@@ -171,12 +179,14 @@ public class TownhallView : Panel, IDisposable
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto }
             },
             Children =
             {
                 filterGroup,
                 _chatPanel,
+                _tracePanel,
                 _backendBindingPanel,
                 _contextPolicySelector,
                 inputSeparator,
@@ -185,10 +195,11 @@ public class TownhallView : Panel, IDisposable
         };
         Grid.SetRow(filterGroup, 0);
         Grid.SetRow(_chatPanel, 1);
-        Grid.SetRow(_backendBindingPanel, 2);
-        Grid.SetRow(_contextPolicySelector, 3);
-        Grid.SetRow(inputSeparator, 4);
-        Grid.SetRow(_inputArea, 5);
+        Grid.SetRow(_tracePanel, 2);
+        Grid.SetRow(_backendBindingPanel, 3);
+        Grid.SetRow(_contextPolicySelector, 4);
+        Grid.SetRow(inputSeparator, 5);
+        Grid.SetRow(_inputArea, 6);
 
         return chatArea;
     }
@@ -270,6 +281,10 @@ public class TownhallView : Panel, IDisposable
         _disposables = new CompositeDisposable();
 
         if (_viewModel is null) return;
+
+        _tracePanel.SetViewModel(_viewModel.TransparencyManagement);
+        _traceButton.Click += OnTraceButtonClick;
+        _disposables.Add(Disposable.Create(() => _traceButton.Click -= OnTraceButtonClick));
 
         // Populate people panel
         _peoplePanel.SetAgents(_viewModel.Agents);
@@ -526,5 +541,9 @@ public class TownhallView : Panel, IDisposable
     {
         _disposables?.Dispose();
         _disposables = null;
+        _tracePanel.Dispose();
     }
+
+    private void OnTraceButtonClick(object? sender, RoutedEventArgs eventArgs) =>
+        _viewModel?.TransparencyManagement?.OpenTraceCommand.Execute().Subscribe();
 }

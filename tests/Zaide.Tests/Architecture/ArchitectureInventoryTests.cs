@@ -40,8 +40,8 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byNamespace.ContainsKey("Zaide.Services"));
         Assert.False(byNamespace.ContainsKey("Zaide.ViewModels"));
         Assert.False(byNamespace.ContainsKey("Zaide.Views"));
-        // M8: +1 internal ApplicationShutdown (was 7 total / 5 public / 2 internal).
-        Assert.Equal((8, 5, 3), byNamespace["Zaide.App.Composition"]);
+        // Phase 22.4 M1: +1 internal AgentTransparencyCommandRegistration.
+        Assert.Equal((9, 5, 4), byNamespace["Zaide.App.Composition"]);
         Assert.Equal((12, 0, 12), byNamespace["Zaide.App.Composition.Registration"]);
         // M9c: +1 internal MainWindowActivationHost (was 18 total / 14 public / 4 internal).
         // Refactor 8 M2: +1 internal BottomPanelHost (was 19 total / 14 public / 5 internal).
@@ -194,7 +194,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
         // Phase 21 M2: +17 internal trace evidence capture/redaction/queue/inspector/source types.
-        Assert.Equal((17, 0, 17), byNamespace["Zaide.Features.Agents.Application.Transparency.Trace"]);
+        // Phase 22.4 M1: +1 internal trace-source initialization contract.
+        Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Application.Transparency.Trace"]);
         // Phase 21 M3: +6 internal usage/cost evidence coordinator/sink/inspector/adapter types.
         Assert.Equal((6, 0, 6), byNamespace["Zaide.Features.Agents.Application.Transparency.Usage"]);
         // Phase 21 M4: +10 internal session continuity coordinator/checkpoint/adapter types.
@@ -222,7 +223,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M8: retire AgentPanelHostView / AgentPanelView (2 public view types).
         // Phase 17 M3 corrective: +2 internal PermissionReviewDialog and PermissionReviewDialogPresenter.
         // Phase 20 M5: +1 public AgentBackendBindingPanel and +1 internal AgentBackendBindingPresenter.
-        Assert.Equal((6, 3, 3), byNamespace["Zaide.Features.Agents.Presentation"]);
+        // Phase 22.4 M1: +1 internal AgentTracePanel.
+        Assert.Equal((7, 3, 4), byNamespace["Zaide.Features.Agents.Presentation"]);
         // Phase 21 M2: +3 internal trace availability/inspection presentation types.
         // Phase 21 M3: +3 internal usage/cost availability/inspection presentation types.
         // Phase 21 M4: +3 internal session continuity availability/inspection presentation types.

@@ -17,6 +17,7 @@ internal sealed class AgentTraceSourceRegistry : IAgentTraceSourceRegistry
     private readonly Dictionary<string, IAgentTraceBackendEvidenceSource> _sources =
         new(StringComparer.Ordinal);
     private readonly object _gate = new();
+    private AgentTraceBackendEvidenceSourceWriter? _writer;
 
     public AgentTraceSourceRegistry()
     {
@@ -56,7 +57,25 @@ internal sealed class AgentTraceSourceRegistry : IAgentTraceSourceRegistry
 
         lock (_gate)
         {
+            if (_writer is not null && source is IAgentTraceBackendEvidenceSourceInitializable initializable)
+            {
+                initializable.Initialize(_writer);
+            }
+
             _sources[source.BackendId] = source;
+        }
+    }
+
+    internal void InitializeSources(AgentTraceBackendEvidenceSourceWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        lock (_gate)
+        {
+            _writer ??= writer;
+            foreach (var source in _sources.Values.OfType<IAgentTraceBackendEvidenceSourceInitializable>())
+            {
+                source.Initialize(_writer);
+            }
         }
     }
 

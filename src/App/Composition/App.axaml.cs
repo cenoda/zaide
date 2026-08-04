@@ -15,6 +15,7 @@ using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Transparency;
 
 namespace Zaide.App.Composition;
 public partial class App : Application
@@ -43,6 +44,9 @@ public partial class App : Application
             var searchVm = CompositionRoot.Services.GetRequiredService<EditorSearchViewModel>();
             var editorUiDispatcher = CompositionRoot.Services.GetRequiredService<IEditorUiDispatcher>();
             var languageInputVm = CompositionRoot.Services.GetRequiredService<EditorLanguageInputViewModel>();
+            var transparencyManagement = CompositionRoot.Services
+                .GetRequiredService<AgentTransparencyManagementViewModel>();
+            AgentTransparencyCommandRegistration.Register(registry, transparencyManagement);
 
             // Phase 12 M3a: eagerly resolve debug commands so F5 materializes before MainWindow opens.
             _ = CompositionRoot.Services.GetRequiredService<DebugSessionViewModel>();

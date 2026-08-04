@@ -14,9 +14,14 @@ namespace Zaide.Features.Agents.Application.Transparency.Trace;
 /// only the loop history turn index, kind, timestamp, and the public text
 /// surface already admitted to the conversation projection.
 /// </summary>
-internal sealed class NativeHarnessAgentTraceSource : IAgentTraceBackendEvidenceSource
+internal sealed class NativeHarnessAgentTraceSource
+    : IAgentTraceBackendEvidenceSource, IAgentTraceBackendEvidenceSourceInitializable
 {
-    private readonly AgentTraceBackendEvidenceSourceWriter _writer;
+    private AgentTraceBackendEvidenceSourceWriter? _writer;
+
+    public NativeHarnessAgentTraceSource()
+    {
+    }
 
     public NativeHarnessAgentTraceSource(AgentTraceBackendEvidenceSourceWriter writer)
     {
@@ -47,8 +52,15 @@ internal sealed class NativeHarnessAgentTraceSource : IAgentTraceBackendEvidence
             return Reject(request, "native-harness-cannot-expose-kind");
         }
 
-        return _writer.Submit(request, evidenceLevel: AgentTraceEvidenceLevel.BackendExecutedAndReported);
+        return _writer?.Submit(request, evidenceLevel: AgentTraceEvidenceLevel.BackendExecutedAndReported)
+            ?? new AgentTraceCaptureResult(
+                AgentTraceCaptureStatus.Disabled,
+                captureState: AgentTraceCaptureState.Unavailable,
+                reason: "native-harness-trace-source-not-initialized");
     }
+
+    public void Initialize(AgentTraceBackendEvidenceSourceWriter writer) =>
+        _writer ??= writer ?? throw new ArgumentNullException(nameof(writer));
 
     private static AgentTraceCaptureResult Reject(AgentTraceCaptureRequest request, string reason) =>
         new(

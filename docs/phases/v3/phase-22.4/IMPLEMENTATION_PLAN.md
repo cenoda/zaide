@@ -2,9 +2,9 @@
 
 ## Status and Authorization
 
-**M0 accepted; M1-only implementation authorized; not implemented.** This
+**M0 and M1 are complete; M2-only implementation is authorized.** This
 sub-phase depends on completed and re-smoked Phase 22.2. The verified M0 report
-is [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). M2–M4 require their
+is [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). M3–M4 require their
 own later authorization.
 
 ## A4 Ownership and Dependency
@@ -74,7 +74,7 @@ status semantics or backend-specific management silos.
 | Milestone | Outcome | Verification gate |
 |-----------|---------|-------------------|
 | M0 | Dependency, reachability, ownership, redaction, evidence, scope, accessibility, migration, and rollback seams are verified and accepted | [Read-only M0 report](./M0_SEAM_VERIFICATION.md) + recorded human acceptance |
-| M1 | User can inspect redacted trace records and explicit application-lifetime capture/retention/evidence states through Townhall; truthful Native/ACP evidence hooks remain independent | `Phase21Trace*`, `Phase21Redaction*`, `Phase22TraceSurfaceTests`, `Phase22TraceProducerTests`, trace/storage ratchets |
+| M1 | Complete — Townhall trace surface, opened-workspace inspection, explicit application-lifetime capture control, and independent Native/ACP evidence hooks | Build; `Phase21Trace*`, `Phase21Redaction*`, `Phase22TraceSurfaceTests`, `Phase22TraceProducerTests`, trace/storage ratchets; full fast suite |
 | M2 | User can inspect and manage scoped durable memory through existing lifecycle contracts with provenance and influence kept distinct | `Phase21Memory*`, `Phase22MemorySurfaceTests`, memory ratchet |
 | M3 | User can inspect usage and cost evidence with origin, units, attribution, pricing, aggregation semantics, and unavailable states preserved | `Phase21Usage*`, `Phase21Cost*`, `Phase22UsageSurfaceTests`, `Phase22UsageProducerTests`, usage ratchet |
 | M4 | Integrated Townhall commands/View, real accessibility and failure states, backup safety, regression, and affected A3 re-smoke gates pass | `Phase22Transparency*`, Phase 21 integration/export/backup, DI/architecture, full suite, isolated transparency smoke |

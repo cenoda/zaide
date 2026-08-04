@@ -12,6 +12,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Presentation;
+using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Conversations.Application;
@@ -41,6 +42,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IAgentSessionService? _sessionService;
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
+    private readonly AgentTransparencyManagementViewModel? _transparencyManagement;
     private readonly SerialDisposable _directBusySubscription = new();
     private readonly IDisposable? _sessionEventsSubscription;
     /// <summary>
@@ -99,6 +101,9 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     /// Gets the agent panel host panels for Phase 18 M4 context disclosure status binding.
     /// </summary>
     internal ObservableCollection<AgentPanelState> AgentPanels => _panelHost.Panels;
+
+    internal AgentTransparencyManagementViewModel? TransparencyManagement =>
+        _transparencyManagement;
 
     private ObservableCollection<TownhallMessage> _messages = new();
 
@@ -528,7 +533,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         IAgentRouter? agentRouter = null,
         IAgentActorBackendSelectionService? backendSelectionService = null,
         AgentBackendBindingPresenter? backendBindingPresenter = null,
-        IAgentSessionService? sessionService = null)
+        IAgentSessionService? sessionService = null,
+        AgentTransparencyManagementViewModel? transparencyManagement = null)
     {
         _ = persistenceService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -542,6 +548,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         _backendBindingPresenter = backendBindingPresenter;
         _agentRouter = agentRouter;
         _sessionService = sessionService;
+        _transparencyManagement = transparencyManagement;
         _conversationUiState = conversationUiState ?? throw new ArgumentNullException(nameof(conversationUiState));
         _persistenceBridge = persistenceBridge;
 

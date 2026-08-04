@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
@@ -16,6 +17,7 @@ using Zaide.Features.Agents.Contracts.Transparency.Memory;
 using Zaide.Features.Agents.Contracts.Transparency.Trace;
 using Zaide.Features.Agents.Contracts.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
@@ -110,20 +112,33 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<NativeHarnessAgentBackend>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;
+            var traceSource = ((IEnumerable<IAgentTraceBackendEvidenceSource>)get(
+                    typeof(IEnumerable<IAgentTraceBackendEvidenceSource>))!)
+                .Single(source => source.BackendId == AgentBackendIds.NativeHarnessValue);
             return new NativeHarnessAgentBackend(
                 (INativeHarnessProviderOptionsSource)get(typeof(INativeHarnessProviderOptionsSource))!,
                 (INativeHarnessProviderTransport)get(typeof(INativeHarnessProviderTransport))!,
                 (INativeHarnessPriorConversationReader)get(typeof(INativeHarnessPriorConversationReader))!,
-                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)));
+                (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority)),
+                traceSource,
+                (AgentDurableWorkspaceStorageKeyResolver)get(
+                    typeof(AgentDurableWorkspaceStorageKeyResolver))!);
         });
         services.AddSingleton<AcpActionCapableAgentBackend>(sp =>
         {
             var get = (Func<Type, object?>)sp.GetService;
             var workspaceAuthority = (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority));
+            var traceSource = ((IEnumerable<IAgentTraceBackendEvidenceSource>)get(
+                    typeof(IEnumerable<IAgentTraceBackendEvidenceSource>))!)
+                .Single(source => source.BackendId == AgentBackendIds.AcpValue);
             return new AcpActionCapableAgentBackend(
                 (IAcpSessionClientFactory)get(typeof(IAcpSessionClientFactory))!,
                 AcpWorkspaceWorkingDirectory.CreateProvider(workspaceAuthority),
-                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!);
+                (IAgentActorBackendBindingStore)get(typeof(IAgentActorBackendBindingStore))!,
+                workspaceAuthority,
+                traceSource,
+                (AgentDurableWorkspaceStorageKeyResolver)get(
+                    typeof(AgentDurableWorkspaceStorageKeyResolver))!);
         });
         services.AddSingleton<IAgentBackend>(sp =>
         {
@@ -180,8 +195,8 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentTraceInspector, AgentTraceInspector>();
         services.AddSingleton<AgentTraceCoordinator>();
         services.AddSingleton<AgentTraceBackendEvidenceSourceWriter>();
-        services.AddSingleton<IAgentTraceBackendEvidenceSource, NativeHarnessAgentTraceSource>();
-        services.AddSingleton<IAgentTraceBackendEvidenceSource, AcpAgentTraceSource>();
+        services.AddSingleton<IAgentTraceBackendEvidenceSource>(_ => new NativeHarnessAgentTraceSource());
+        services.AddSingleton<IAgentTraceBackendEvidenceSource>(_ => new AcpAgentTraceSource());
         services.AddSingleton<AgentTraceAvailabilityProjection>();
         services.AddSingleton<AgentTraceInspectionViewModel>();
 

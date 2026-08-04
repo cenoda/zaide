@@ -5,6 +5,11 @@ using Zaide.Features.Agents.Domain.Transparency.Trace;
 
 namespace Zaide.Features.Agents.Application.Transparency.Trace;
 
+internal interface IAgentTraceBackendEvidenceSourceInitializable
+{
+    void Initialize(AgentTraceBackendEvidenceSourceWriter writer);
+}
+
 /// <summary>
 /// Helper shared by every backend evidence source. Routes the source's
 /// neutral payload through the coordinator so backend adapters never touch

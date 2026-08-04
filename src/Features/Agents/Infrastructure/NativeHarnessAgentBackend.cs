@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Zaide.Features.Agents.Application;
+using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Transparency.Trace;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Infrastructure;
@@ -19,6 +23,8 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
     private readonly NativeHarnessLoopRunner _loopRunner;
     private readonly INativeHarnessProviderOptionsSource _optionsSource;
     private readonly IWorkspaceActionAuthority? _workspaceAuthority;
+    private readonly IAgentTraceBackendEvidenceSource? _traceSource;
+    private readonly AgentDurableWorkspaceStorageKeyResolver? _traceWorkspaceKeyResolver;
     private readonly object _capabilitySync = new();
     private AgentCapabilitySnapshot _capabilitySnapshot;
     private bool _capabilityInitialized;
@@ -36,12 +42,16 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         AgentExecutionService executionService,
         INativeHarnessProviderTransport transport,
         INativeHarnessPriorConversationReader priorConversationReader,
-        IWorkspaceActionAuthority? workspaceAuthority = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null,
+        IAgentTraceBackendEvidenceSource? traceSource = null,
+        AgentDurableWorkspaceStorageKeyResolver? traceWorkspaceKeyResolver = null)
         : this(
             new NativeHarnessProviderOptionsSource(executionService),
             transport,
             priorConversationReader,
-            workspaceAuthority)
+            workspaceAuthority,
+            traceSource,
+            traceWorkspaceKeyResolver)
     {
     }
 
@@ -49,11 +59,17 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
         INativeHarnessProviderOptionsSource optionsSource,
         INativeHarnessProviderTransport transport,
         INativeHarnessPriorConversationReader priorConversationReader,
-        IWorkspaceActionAuthority? workspaceAuthority = null)
+        IWorkspaceActionAuthority? workspaceAuthority = null,
+        IAgentTraceBackendEvidenceSource? traceSource = null,
+        AgentDurableWorkspaceStorageKeyResolver? traceWorkspaceKeyResolver = null)
     {
         _optionsSource = optionsSource
             ?? throw new ArgumentNullException(nameof(optionsSource));
         _workspaceAuthority = workspaceAuthority;
+        _traceSource = traceSource?.BackendId == AgentBackendIds.NativeHarnessValue
+            ? traceSource
+            : null;
+        _traceWorkspaceKeyResolver = traceWorkspaceKeyResolver;
         _loopRunner = new NativeHarnessLoopRunner(
             optionsSource,
             transport ?? throw new ArgumentNullException(nameof(transport)),
@@ -98,6 +114,7 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
 
         NativeHarnessRunOutcome? outcome = null;
         AgentBackendEvent? faultEvent = null;
+        TryCaptureTrace(context, AgentTraceKind.Request, "request", context.Request.MessageText);
         try
         {
             outcome = await _loopRunner.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
@@ -117,12 +134,14 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
 
         if (faultEvent is not null)
         {
+            TryCaptureTrace(context, AgentTraceKind.Error, "failure", ((AgentBackendFailurePayload)faultEvent.Payload).Reason);
             yield return faultEvent;
             yield break;
         }
 
         foreach (var backendEvent in MapOutcome(outcome!))
         {
+            TryCaptureTraceForEvent(context, backendEvent);
             yield return backendEvent;
         }
     }
@@ -262,6 +281,55 @@ internal sealed class NativeHarnessAgentBackend : IAgentActionRequestCapableBack
             AgentBackendEventKind.FailureObserved,
             DateTimeOffset.UtcNow,
             new AgentBackendFailurePayload(failureKind, reason));
+
+    private void TryCaptureTraceForEvent(
+        AgentBackendExecutionContext context,
+        AgentBackendEvent backendEvent)
+    {
+        switch (backendEvent.Payload)
+        {
+            case AgentBackendMessageCompletedPayload completed:
+                TryCaptureTrace(context, AgentTraceKind.Response, "response", completed.AssistantText);
+                break;
+            case AgentBackendFailurePayload failure:
+                TryCaptureTrace(context, AgentTraceKind.Error, "failure", failure.Reason);
+                break;
+        }
+    }
+
+    private void TryCaptureTrace(
+        AgentBackendExecutionContext context,
+        AgentTraceKind kind,
+        string kindLabel,
+        string publicText)
+    {
+        if (_traceSource is null
+            || _traceWorkspaceKeyResolver is null
+            || _workspaceAuthority?.TryCaptureCurrentScope(out var workspaceScope) != true)
+        {
+            return;
+        }
+
+        var capturedAtUtc = DateTimeOffset.UtcNow;
+        _ = _traceSource.Submit(new AgentTraceCaptureRequest(
+            _traceWorkspaceKeyResolver.Resolve(workspaceScope.RootPath),
+            AgentBackendIds.NativeHarnessValue,
+            kind,
+            AgentTraceEvidenceLevel.BackendExecutedAndReported,
+            NativeHarnessAgentTraceSource.SerializeLoopHistoryTurn(
+                AgentBackendIds.NativeHarnessValue,
+                kindLabel,
+                turnIndex: 0,
+                recordedAtUtc: capturedAtUtc,
+                publicText: publicText),
+            new AgentTraceRecordScope(
+                context.Request.ConversationId.ToString(),
+                context.Request.SessionId.ToString(),
+                context.Request.RunId.ToString(),
+                AgentBackendIds.NativeHarnessValue),
+            idempotencyKey: $"trace:native:{context.Request.RunId}:{kindLabel}",
+            capturedAtUtc: capturedAtUtc));
+    }
 
     private sealed class NullNativeHarnessProviderOptionsSource : INativeHarnessProviderOptionsSource
     {
