@@ -2,10 +2,10 @@
 
 ## Status and Authorization
 
-**M0 live-seam verification complete; not accepted; not implemented.** This
+**M0 accepted; M1-only implementation authorized; not implemented.** This
 sub-phase depends on completed and re-smoked Phase 22.2. The verified M0 report
-is [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). Implementation
-requires explicit human M0 acceptance and a separate implementation approval.
+is [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). M2–M4 require their
+own later authorization.
 
 ## A4 Ownership and Dependency
 
@@ -39,7 +39,8 @@ Baseline evidence:
   bypass the owning application coordinators.
 - [x] Replace command placeholders and lock rollback, backup, and migration
   handling in the M0 report.
-- [ ] Receive explicit human M0 acceptance.
+- [x] Record human M0 acceptance and separate M1-only implementation
+  authorization under the user's standing GO direction (2026-08-04).
 
 Candidate presentation and application types are planning pointers. M0 must
 prove actual user reachability rather than treating DI registration as a user
@@ -72,7 +73,7 @@ status semantics or backend-specific management silos.
 
 | Milestone | Outcome | Verification gate |
 |-----------|---------|-------------------|
-| M0 | Dependency, reachability, ownership, redaction, evidence, scope, accessibility, migration, and rollback seams are verified; human acceptance pending | [Read-only M0 report](./M0_SEAM_VERIFICATION.md) + human acceptance |
+| M0 | Dependency, reachability, ownership, redaction, evidence, scope, accessibility, migration, and rollback seams are verified and accepted | [Read-only M0 report](./M0_SEAM_VERIFICATION.md) + recorded human acceptance |
 | M1 | User can inspect redacted trace records and explicit application-lifetime capture/retention/evidence states through Townhall; truthful Native/ACP evidence hooks remain independent | `Phase21Trace*`, `Phase21Redaction*`, `Phase22TraceSurfaceTests`, `Phase22TraceProducerTests`, trace/storage ratchets |
 | M2 | User can inspect and manage scoped durable memory through existing lifecycle contracts with provenance and influence kept distinct | `Phase21Memory*`, `Phase22MemorySurfaceTests`, memory ratchet |
 | M3 | User can inspect usage and cost evidence with origin, units, attribution, pricing, aggregation semantics, and unavailable states preserved | `Phase21Usage*`, `Phase21Cost*`, `Phase22UsageSurfaceTests`, `Phase22UsageProducerTests`, usage ratchet |

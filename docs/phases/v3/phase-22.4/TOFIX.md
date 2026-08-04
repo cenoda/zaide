@@ -2,10 +2,9 @@
 
 ## Status
 
-**M0 live-seam verification complete; awaiting human acceptance; not
-implemented.** A4 package 4 is assigned here. Phase 22.2 is complete with
-package-2 PASS restored, so the ordering dependency is satisfied. M1–M4 remain
-unauthorized until human M0 acceptance and a separate implementation approval.
+**M0 accepted; M1-only implementation authorized; not implemented.** A4
+package 4 is assigned here. Phase 22.2 is complete with package-2 PASS
+restored, so the ordering dependency is satisfied. M2–M4 remain unauthorized.
 
 ## Work Board
 
@@ -17,8 +16,9 @@ unauthorized until human M0 acceptance and a separate implementation approval.
 - [x] Publish the verified seams, exact filters, isolated A3 procedure,
   rollback, backup, migration, and stop boundaries in
   [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md).
-- [ ] Record explicit M0 acceptance and separate implementation approval.
-- [ ] Implement only accepted surface milestones.
+- [x] Record human M0 acceptance and separate M1-only implementation
+  authorization under the user's standing GO direction (2026-08-04).
+- [ ] Implement M1 — trace surface only.
 - [ ] Re-smoke `A1-TC-02`, `A1-TC-03`, and `A1-TC-08`.
 
 ## Verified M0 findings
@@ -48,13 +48,11 @@ unauthorized until human M0 acceptance and a separate implementation approval.
 
 ## Blockers
 
-- Human M0 acceptance is not recorded.
-- Phase 22.4 implementation approval is not recorded.
+- M1 implementation is in progress; M2–M4 remain unauthorized.
 - G5 remains blocked until accepted M1–M4 implementation and the owned
   affected-row re-smoke complete.
 
 ## Next Task
 
-Human review of [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md) is the next
-task. If M0 is accepted, request a separate M1-only implementation approval.
-Do not begin M1, Phase 22.5, G5, or V4 from this board.
+Implement M1 — trace surface only — within the accepted M0 boundary. Do not
+begin M2–M4, Phase 22.5, G5, or V4 from this board.

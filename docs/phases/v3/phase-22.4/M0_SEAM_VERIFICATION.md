@@ -2,10 +2,10 @@
 
 ## Status and authorization
 
-**M0 documentation is complete at baseline
-`66cfb11443791cd4e3bb7cf9599cee29ef3ea79d` and awaits human acceptance.**
-No implementation approval is recorded. M1–M4, Phase 22.5, G5, and V4 remain
-unauthorized.
+**M0 documentation is accepted at baseline
+`66cfb11443791cd4e3bb7cf9599cee29ef3ea79d`.** Human acceptance and separate
+M1-only implementation authorization were granted under the user's standing
+GO direction on 2026-08-04. M2–M4, Phase 22.5, G5, and V4 remain unauthorized.
 
 This was a read-only production-seam audit. No production code or tests were
 changed, no build or test suite was run, and no runtime smoke was executed.
@@ -453,4 +453,5 @@ Stop and request a plan amendment if any milestone would:
   are locked for human review.
 - No runtime behavior or A3 classification was changed by this M0.
 
-**M0 is complete but awaits human acceptance; implementation remains unauthorized.**
+**M0 is accepted. M1-only implementation is authorized; M2–M4, Phase 22.5,
+G5, and V4 remain unauthorized.**
