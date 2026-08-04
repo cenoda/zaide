@@ -677,7 +677,7 @@ PASS under that script as non-evidence.
 ## M4 Corrective — F1/F2/F3 (from `9e97c700`) — independent re-audit pending
 
 Baseline under correction: `9e97c70071042409e60e53ef90327597387cc73b`.
-Shipped at: `1d769b3a` (pending push verification).
+Shipped at: `60d5e291f09d708ec6d4007758a1854ba752179a`.
 
 ### F1 — Restart classification (corrected)
 
