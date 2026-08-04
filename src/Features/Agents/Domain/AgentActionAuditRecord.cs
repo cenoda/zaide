@@ -16,6 +16,8 @@ internal sealed class AgentActionAuditRecord
         ExecutionRunId runId,
         ConversationId conversationId,
         AgentBackendId backendId,
+        ActorId initiatingActorId,
+        ActorId targetActorId,
         long sequence,
         DateTimeOffset occurredAtUtc,
         AgentActivityEvidenceLevel evidenceLevel,
@@ -50,6 +52,16 @@ internal sealed class AgentActionAuditRecord
         if (backendId == default)
         {
             throw new ArgumentException("Backend id is required.", nameof(backendId));
+        }
+
+        if (initiatingActorId == default)
+        {
+            throw new ArgumentException("Initiating actor id is required.", nameof(initiatingActorId));
+        }
+
+        if (targetActorId == default)
+        {
+            throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
         }
 
         if (sequence < 1)
@@ -90,6 +102,8 @@ internal sealed class AgentActionAuditRecord
         RunId = runId;
         ConversationId = conversationId;
         BackendId = backendId;
+        InitiatingActorId = initiatingActorId;
+        TargetActorId = targetActorId;
         Sequence = sequence;
         OccurredAtUtc = occurredAtUtc;
         EvidenceLevel = evidenceLevel;
@@ -113,6 +127,10 @@ internal sealed class AgentActionAuditRecord
     public ConversationId ConversationId { get; }
 
     public AgentBackendId BackendId { get; }
+
+    public ActorId InitiatingActorId { get; }
+
+    public ActorId TargetActorId { get; }
 
     public long Sequence { get; }
 

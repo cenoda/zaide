@@ -272,6 +272,8 @@ public sealed class Phase19TownhallProjectionTests : IDisposable
                 actionId,
                 AgentActionAttemptId.New(),
                 actionKind,
+                ActorId.HumanUser,
+                ActorId.TownhallAgent,
                 WorkspaceIdentity.New(),
                 WorkspaceGeneration.Initial,
                 summary,

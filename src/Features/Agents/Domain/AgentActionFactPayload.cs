@@ -1,4 +1,5 @@
 using System;
+using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Domain;
 
 namespace Zaide.Features.Agents.Domain;
@@ -13,6 +14,8 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
         AgentActionId actionId,
         AgentActionAttemptId attemptId,
         AgentActionKind actionKind,
+        ActorId initiatingActorId,
+        ActorId targetActorId,
         WorkspaceIdentity workspaceIdentity,
         WorkspaceGeneration workspaceGeneration,
         AgentActionAuditSummary summary,
@@ -38,6 +41,16 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
             throw new ArgumentOutOfRangeException(nameof(actionKind), actionKind, "Action kind is invalid.");
         }
 
+        if (initiatingActorId == default)
+        {
+            throw new ArgumentException("Initiating actor id is required.", nameof(initiatingActorId));
+        }
+
+        if (targetActorId == default)
+        {
+            throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
+        }
+
         if (workspaceIdentity == default)
         {
             throw new ArgumentException("Workspace identity is required.", nameof(workspaceIdentity));
@@ -53,6 +66,8 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
         ActionId = actionId;
         AttemptId = attemptId;
         ActionKind = actionKind;
+        InitiatingActorId = initiatingActorId;
+        TargetActorId = targetActorId;
         WorkspaceIdentity = workspaceIdentity;
         WorkspaceGeneration = workspaceGeneration;
         Summary = summary;
@@ -69,6 +84,10 @@ internal sealed class AgentActionFactPayload : AgentEventPayload
     public AgentActionAttemptId AttemptId { get; }
 
     public AgentActionKind ActionKind { get; }
+
+    public ActorId InitiatingActorId { get; }
+
+    public ActorId TargetActorId { get; }
 
     public WorkspaceIdentity WorkspaceIdentity { get; }
 

@@ -195,7 +195,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                 earlyDenial = CreateDeniedResult(
                     payload,
                     AgentActionFailureKind.InvalidRequest,
-                    proposalError ?? "File action proposal generation failed (fail closed).");
+                    proposalError ?? "File action proposal generation failed (fail closed).",
+                    request);
             }
         }
         catch (Exception exception)
@@ -361,12 +362,11 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
                     "Action request was cancelled while waiting for a run slot.");
             }
 
-            return new AgentActionResult(
-                request.ActionId,
-                request.AttemptId,
-                AgentActionResultKind.Denied,
+            return CreateDeniedResult(
+                payload,
                 AgentActionFailureKind.ConcurrentActionRejected,
-                "Only one non-terminal action is allowed per run.");
+                "Only one non-terminal action is allowed per run.",
+                request);
         }
 
         try
@@ -1109,18 +1109,83 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         _ => "Workspace file action"
     };
 
-    private static AgentActionResult CreateDeniedResult(
+    private AgentActionResult CreateDeniedResult(
         AgentActionPayload payload,
         AgentActionFailureKind failureKind,
-        string summary)
+        string summary,
+        AgentActionRequest? request = null)
     {
-        _ = payload;
-        return new AgentActionResult(
-            AgentActionId.New(),
-            AgentActionAttemptId.New(),
+        ArgumentNullException.ThrowIfNull(payload);
+
+        var actionId = request?.ActionId ?? AgentActionId.New();
+        var attemptId = request?.AttemptId ?? AgentActionAttemptId.New();
+        var result = new AgentActionResult(
+            actionId,
+            attemptId,
             AgentActionResultKind.Denied,
             failureKind,
             summary);
+
+        if (request is not null)
+        {
+            PublishEarlyDeniedResult(request, result);
+        }
+        else
+        {
+            PublishEarlyDeniedPayloadResult(payload, result);
+        }
+
+        return result;
+    }
+
+    private void PublishEarlyDeniedResult(AgentActionRequest request, AgentActionResult result)
+    {
+        if (_eventPublisher is null || _workspaceScope is null)
+        {
+            return;
+        }
+
+        var summary = AgentActionAuditSummary.FromParts(
+            $"result {result.ResultKind}",
+            result.Summary);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionResultReported,
+            CreateFactPayload(
+                request,
+                summary,
+                resultKind: result.ResultKind,
+                failureKind: result.FailureKind),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
+    }
+
+    private void PublishEarlyDeniedPayloadResult(AgentActionPayload payload, AgentActionResult result)
+    {
+        if (_eventPublisher is null)
+        {
+            return;
+        }
+
+        var workspaceIdentity = _workspaceScope?.Identity ?? WorkspaceIdentity.New();
+        var workspaceGeneration = _workspaceScope?.Generation ?? WorkspaceGeneration.Initial;
+        var summary = AgentActionAuditSummary.FromParts(
+            $"result {result.ResultKind}",
+            result.Summary);
+        _lastActionEventId = _eventPublisher.Publish(
+            AgentEventKind.ActionResultReported,
+            new AgentActionFactPayload(
+                result.ActionId,
+                result.AttemptId,
+                payload.Kind,
+                _initiatingActorId,
+                _targetActorId,
+                workspaceIdentity,
+                workspaceGeneration,
+                summary,
+                resultKind: result.ResultKind,
+                failureKind: result.FailureKind),
+            AgentActivityEvidenceLevel.ZaideMediated,
+            _lastActionEventId);
     }
 
     private void PublishRequested(AgentActionRequest request)
@@ -1263,6 +1328,8 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
             request.ActionId,
             request.AttemptId,
             request.Payload.Kind,
+            request.InitiatingActorId,
+            request.TargetActorId,
             request.WorkspaceIdentity,
             request.WorkspaceGeneration,
             summary,

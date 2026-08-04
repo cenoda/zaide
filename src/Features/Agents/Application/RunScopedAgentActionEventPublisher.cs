@@ -15,6 +15,8 @@ internal sealed class RunScopedAgentActionEventPublisher : IAgentActionEventPubl
     private readonly ExecutionRunId _runId;
     private readonly ConversationId _conversationId;
     private readonly AgentBackendId _backendId;
+    private readonly ActorId _initiatingActorId;
+    private readonly ActorId _targetActorId;
     private readonly AgentEventStream _eventStream;
     private readonly IAgentActionAuditStore _auditStore;
     private readonly Func<long> _nextSequence;
@@ -25,6 +27,8 @@ internal sealed class RunScopedAgentActionEventPublisher : IAgentActionEventPubl
         ExecutionRunId runId,
         ConversationId conversationId,
         AgentBackendId backendId,
+        ActorId initiatingActorId,
+        ActorId targetActorId,
         AgentEventStream eventStream,
         IAgentActionAuditStore auditStore,
         Func<long> nextSequence,
@@ -50,10 +54,22 @@ internal sealed class RunScopedAgentActionEventPublisher : IAgentActionEventPubl
             throw new ArgumentException("Backend id is required.", nameof(backendId));
         }
 
+        if (initiatingActorId == default)
+        {
+            throw new ArgumentException("Initiating actor id is required.", nameof(initiatingActorId));
+        }
+
+        if (targetActorId == default)
+        {
+            throw new ArgumentException("Target actor id is required.", nameof(targetActorId));
+        }
+
         _sessionId = sessionId;
         _runId = runId;
         _conversationId = conversationId;
         _backendId = backendId;
+        _initiatingActorId = initiatingActorId;
+        _targetActorId = targetActorId;
         _eventStream = eventStream ?? throw new ArgumentNullException(nameof(eventStream));
         _auditStore = auditStore ?? throw new ArgumentNullException(nameof(auditStore));
         _nextSequence = nextSequence ?? throw new ArgumentNullException(nameof(nextSequence));
@@ -102,6 +118,8 @@ internal sealed class RunScopedAgentActionEventPublisher : IAgentActionEventPubl
             agentEvent.RunId,
             agentEvent.ConversationId,
             agentEvent.BackendId,
+            _initiatingActorId,
+            _targetActorId,
             agentEvent.Sequence,
             agentEvent.OccurredAtUtc,
             agentEvent.EvidenceLevel,

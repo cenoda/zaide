@@ -2,9 +2,9 @@
 
 ## Status
 
-**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 remains NO-GO
-pending independent re-audit after parallel-suite lifetime stabilization; not
-accepted.**
+**M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
+`fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 implemented; independent audit
+pending; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -42,8 +42,8 @@ have not started.
 - [x] Human M0 acceptance.
 - [x] Separate Phase 22.3 M1 implementation approval.
 - [x] M1 send/routing and outcome visibility.
-- [x] M2 explicit live-session termination (implementation; NO-GO; corrective F1–F3).
-- [ ] M3 safe mediated action path and actor attribution.
+- [x] M2 explicit live-session termination (accepted at `fb6c8d71`).
+- [x] M3 safe mediated action path and actor attribution (implementation; audit pending).
 - [ ] M4 workspace-owned interrupted-run projection and explicit re-send.
 - [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
 
@@ -450,12 +450,56 @@ not accepted as the normal gate.
 
 **M2 not accepted — stop for independent re-audit.**
 
-## Remaining Open Product Gaps (post-M2 residual)
+## M2 Acceptance (2026-08-04)
+
+Independent human M2 acceptance recorded at
+`fb6c8d711f2088ae978ba0d9d01d1628f23a7692` after parallel-suite lifetime
+stabilization and ACP retry residual correction.
+
+## M3 Implementation (2026-08-04) — independent audit pending
+
+Baseline: `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`.
+
+### Production changes
+
+- `AgentActionFactPayload` and `AgentActionAuditRecord` now carry initiating and
+  target actor IDs alongside session/run/conversation/backend/action/workspace
+  attribution.
+- `RunScopedAgentActionEventPublisher` records actor IDs on every bounded audit
+  snapshot.
+- `ContractAgentActionBroker` publishes bounded `ActionResultReported` facts and
+  audit records for early denials (broker revoked, no workspace, proposal
+  failure, concurrent action rejection) without weakening fail-closed behavior.
+- `TryConsume()` final authorization, pre-consume stale `Published` decisions,
+  post-consume conflict `Consumed` decisions, atomic replace, and document
+  reconciliation behavior remain unchanged.
+
+### New tests
+
+- `Phase22MediatedActionPathTests` — 19 tests
+- `Phase22ActionAttributionTests` — 10 tests
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M3 classes | Discovered 29 tests |
+| M3 explicit filter | PASS 29/29 |
+| Phase 17 broker/permission/mutation filter | PASS 118/118 |
+| Phase 20 action-bridge filter | included in broker filter |
+| M0+M1+M2 send/routing/termination filter | PASS 140/140 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3935/3935 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no M4–M5 / G5 / A3 / V4; no new action kinds; no backend
+wrapping/fallback/cross-retry; `AgentConversationEventProjection` remains sole
+writer; M1/M2 routing/draft/termination contracts unchanged. **M3 not accepted.**
+
+## Remaining Open Product Gaps (post-M3 implementation)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
   live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
-- Phase 17 early denials can return before event/audit projection; action fact
-  and audit payloads lack initiating/target actor IDs (M3).
 - Phase 17 has no product multi-file transaction, change set, or rollback
   operation.
 - Phase 21 durable roots are process-CWD-derived in the live session/startup
@@ -464,6 +508,6 @@ not accepted as the normal gate.
 
 ## Next Task
 
-Independent human M2 re-audit of explicit live-session termination after the
-ACP retry residual and parallel-suite lifetime stabilization. Do not begin M3
-until explicit M3 implementation authorization is recorded after M2 acceptance.
+Independent human M3 audit of safe mediated action paths and actor attribution.
+Do not begin M4–M5 until explicit M4 implementation authorization is recorded
+after M3 acceptance.

@@ -1788,6 +1788,8 @@ internal sealed class AgentSessionService
             run.RunId,
             session.ConversationId,
             session.BackendId,
+            initiatorActorId,
+            targetActorId,
             _eventStream,
             _auditStore,
             () => session.NextSequence++,
