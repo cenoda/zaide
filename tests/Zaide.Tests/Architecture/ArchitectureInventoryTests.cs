@@ -301,7 +301,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
-        Assert.Equal(869, inventory.SourceFiles.Count);
+        // Phase 22.3 M4: +6 authorized continuity production source files (875).
+        Assert.Equal(875, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -343,7 +344,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
-        Assert.Equal(824, byFolder["Features"]);
+        // Phase 22.3 M4: +6 Features continuity production source files (830).
+        Assert.Equal(830, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

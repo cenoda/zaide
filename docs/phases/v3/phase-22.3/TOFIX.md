@@ -4,8 +4,8 @@
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
-`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 implemented; independent audit
-pending; not accepted.**
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 remains NO-GO / not accepted
+pending independent re-audit after F1–F3 corrective work.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -45,7 +45,7 @@ have not started.
 - [x] M1 send/routing and outcome visibility.
 - [x] M2 explicit live-session termination (accepted at `fb6c8d71`).
 - [x] M3 safe mediated action path and actor attribution (accepted at `2f41dcfc`).
-- [x] M4 workspace-owned interrupted-run projection and explicit re-send (implementation; audit pending).
+- [x] M4 workspace-owned interrupted-run projection and explicit re-send (corrective F1–F3; re-audit pending; not accepted).
 - [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
 
 ## M1 Implementation and Verification (2026-08-03)
@@ -637,57 +637,120 @@ Independent human M3 acceptance recorded at
 `2f41dcfc0c885b48b0a602625bd85f47cc78020d` after safe mediated action paths,
 actor attribution, and deterministic early-denial branch proof.
 
-## M4 Implementation (2026-08-04) — independent audit pending
+## M4 Implementation (2026-08-04) — independent audit NO-GO
 
 Baseline: `2f41dcfc0c885b48b0a602625bd85f47cc78020d`.
+Shipped at: `a0927246ab70c8cc4c5603747270e24b6071f5ac`.
 
-### Production changes
+### Production changes (initial M4)
 
 - `AgentContinuityWorkspaceRootProvider` resolves checkpoint ownership from
-  `IWorkspaceActionAuthority` (opened workspace root); legacy CWD provider
-  remains read-only for startup reconciliation only.
+  `IWorkspaceActionAuthority` (opened workspace root).
 - `AgentSessionContinuityReconcileOrigin` distinguishes `StartupLegacyCwd` from
   `WorkspaceOpen`; workspace-open reconciliation is idempotent per
   identity/generation via `AfterWorkspaceOpenReconcile`.
-- `AgentSessionContinuityLegacyCwdReader` reads legacy CWD-keyed partitions
-  without merge, migration, rewrite, or deletion.
-- `AgentSessionContinuityWorkspaceOpenReconciler` reconciles on workspace open;
-  `AgentSessionContinuityStartupReconciler` handles legacy startup path only.
+- `AgentSessionContinuityLegacyCwdReader` reads legacy CWD-keyed partitions.
+- `AgentSessionContinuityWorkspaceOpenReconciler` reconciles on workspace open.
 - `AgentSessionContinuityCoordinator` blocks `Resume` when
   `ResumeCurrentlyUsable = false` (both sibling backends).
 - `AgentSessionContinuityConversationProjector` projects interrupted runs through
   `AgentConversationEventProjection.ProjectInterruptedRun` only.
-- `AgentConversationEventProjection` adds interrupted-run content prefix and
-  display formatting; `TownhallEntryProjection` surfaces terminal actionable
-  text without resume claims.
 - `ApplicationShutdown` checkpoints under opened workspace root, not process CWD.
-- `App.axaml.cs` initializes workspace-open reconciler on startup.
 
-### New tests
+### New tests (initial)
 
-- `Phase22InterruptedRunProjectionTests` — 7 tests
-- `Phase22ContinuityWorkspaceOwnershipTests` — 7 tests
+- `Phase22InterruptedRunProjectionTests`
+- `Phase22ContinuityWorkspaceOwnershipTests`
 
-### Verification results
+### Invalid / corrected prior A3 claim
+
+The initial M4 report claimed
+`scripts/run-m4-force-quit-a3.sh` PASS for native-harness + ACP. **That claim is
+invalid.** The script only re-ran the same in-process unit test twice and
+changed the printed backend label. It did not pass `backend_id`, start a child
+scenario process, observe an admitted-running checkpoint, force-kill a process
+group, or restart from durable state. Treat any prior A1-TC-05 force-quit A3
+PASS under that script as non-evidence.
+
+**M4 remains NO-GO / not accepted.**
+
+## M4 Corrective — F1/F2/F3 (2026-08-04) — independent re-audit pending
+
+Baseline under correction: `a0927246ab70c8cc4c5603747270e24b6071f5ac`.
+
+### F1 — Real isolated force-quit producer
+
+- Out-of-tree producer at `/tmp/zaide-a3-agent-path/runner/` (assembly name
+  `Zaide.Tests` for `InternalsVisibleTo` only).
+- Composes through production `Program.ConfigureServices` and shipped Townhall
+  bind/send, continuity, and projection paths.
+- Isolated absolute HOME/XDG/workspace roots outside the repository; process CWD
+  kept distinct from the opened workspace root.
+- Parent controller starts each scenario child in its own process group,
+  validates PID/PGID/cmdline/profile/workspace/backend/scenario token, waits for
+  a machine-readable admitted/running durable-checkpoint barrier, force-kills
+  only that validated group (SIGKILL; timeout is failure cleanup only), verifies
+  death, restarts with the same profile/workspace, classifies before re-send,
+  asserts zero live backend session/invocation before re-send, explicit re-send
+  creates a new session/run, and cleans up scenario-owned process groups.
+- Native Harness uses a deterministic loopback provider; ACP uses the repository
+  fake-agent binary (`slow-request`); no wrapping, fallback, or cross-backend
+  retry.
+- `scripts/run-m4-force-quit-a3.sh` validates required evidence fields (not merely
+  grepping `Passed!`). M4-scoped A1-TC-05 only — not the full M5 matrix.
+
+### F2 — Startup legacy CWD compatibility is genuinely read-only
+
+- `AgentSessionContinuityStartupReconciler` inspects, classifies, and projects
+  only. It no longer calls coordinator `Reconcile` and never appends
+  `AfterStartupReconcile` (or any other) records into the legacy partition.
+- Coordinator `Reconcile` rejects `StartupLegacyCwd` origin so the writable path
+  cannot be used for startup legacy compatibility.
+- Workspace-open reconciliation remains the writable workspace-owned path.
+- Regression: complete legacy partition snapshot equality (record count, ordering
+  sequences, operation IDs, payloads, serialized hashes, file fingerprints)
+  before/after startup classification; projected entry labelled
+  legacy/read-only; workspace-owned records absent from legacy result and legacy
+  records absent from workspace-open reconciliation; no silent copy into the
+  workspace partition.
+
+### F3 — Architecture inventory ratchets
+
+- Updated authorized source-file baselines for the six M4 production files:
+  total 875, Features 830.
+- Touched `ArchitectureInventoryTests`, `ArchitectureVisibilityTests`,
+  `Phase17AdversarialCloseoutTests`, `Phase19AdversarialTests` only for exact
+  counts. Folder allowlists, visibility rules, and architectural assertions are
+  not weakened.
+
+### Tests
+
+- Kept `Phase22InterruptedRunProjectionTests` and
+  `Phase22ContinuityWorkspaceOwnershipTests`.
+- Renamed in-process classification test away from `ForceQuit` (unit-level only;
+  real force-quit is the out-of-tree producer).
+- Added deterministic legacy byte-for-byte read-only verification.
+
+### Verification results (corrective)
 
 | Command | Result |
 |---------|--------|
-| `--list-tests` M4 classes | Discovered 14 tests |
-| M4 explicit filter | PASS 14/14 |
-| Phase 21 restart/recovery/termination filter | PASS |
-| M0–M3 preservation filter | PASS 115/115 |
-| Townhall/composition/architecture preservation | PASS |
-| M4-scoped A3 force-quit (`scripts/run-m4-force-quit-a3.sh`) | PASS native-harness + acp |
+| `--list-tests` M4 classes | Discovered 15 tests |
+| M4 explicit filter | PASS 15/15 |
+| Phase 21 continuity/restart/recovery/termination filter | PASS |
+| M0–M3 preservation filters | PASS |
+| Architecture inventory/visibility/adversarial ratchets | PASS |
 | `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
-| `dotnet test Zaide.slnx --no-build` | PASS 3958/3958 |
+| `dotnet test Zaide.slnx --no-build` | (run in interactive terminal for final gate) |
+| Real M4 A3 producer native-harness + ACP | PASS; evidence fields validated |
+| Independent evidence inspection | PASS both backends |
 | `git diff --check` | PASS |
 
 Boundaries preserved: no M5 / G5 / full A3 matrix; no usable backend resume; no
-permission/proposal replay; legacy CWD records untouched; Native Harness and ACP
-remain independent siblings; M1–M3 routing/draft/termination/action attribution
-unchanged. **M4 not accepted — stop for independent audit.**
+permission/proposal replay; Native Harness and ACP remain independent siblings.
+**M4 not accepted — stop for independent re-audit.**
 
-## Remaining Open Product Gaps (post-M4 implementation)
+## Remaining Open Product Gaps (post-M4 corrective)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
   live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
@@ -698,7 +761,8 @@ unchanged. **M4 not accepted — stop for independent audit.**
 
 ## Next Task
 
-Independent human **M4 audit** of workspace-owned interrupted-run continuity,
-force-quit classification, terminal Townhall projection, and explicit re-send.
-Do not begin M5, G5, full A3 matrix, Phase 22.4/22.5, or V4 until explicit M5
-implementation authorization is recorded after M4 acceptance.
+Independent human **M4 re-audit** of workspace-owned interrupted-run continuity,
+real force-quit process-group evidence, terminal Townhall projection, legacy
+read-only equality, architecture ratchets, and explicit re-send. Do not begin
+M5, G5, full A3 matrix, Phase 22.4/22.5, or V4 until explicit M5 implementation
+authorization is recorded after M4 acceptance.

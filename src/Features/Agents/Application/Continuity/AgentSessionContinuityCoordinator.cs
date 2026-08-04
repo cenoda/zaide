@@ -51,6 +51,14 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Startup legacy compatibility is read-only and must not enter the
+        // writable reconcile path (no AfterStartupReconcile appends).
+        if (request.Origin == AgentSessionContinuityReconcileOrigin.StartupLegacyCwd)
+        {
+            throw new InvalidOperationException(
+                "Startup legacy CWD origin is read-only. Use AgentSessionContinuityStartupReconciler for inspect/classify/project only.");
+        }
+
         _storeEnsureLoaded(request.WorkspaceKey);
         var summary = _inspector.GetInterruptedSessions(request.WorkspaceKey, request.WorkspaceRoot);
         var reclassified = new List<AgentSessionContinuityInterruptedSession>();
@@ -61,12 +69,8 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
                 interrupted.LatestCheckpoint,
                 request.WorkspaceRoot);
 
-            var reconcilePhase = request.Origin == AgentSessionContinuityReconcileOrigin.StartupLegacyCwd
-                ? AgentSessionContinuityCheckpointPhase.AfterStartupReconcile
-                : AgentSessionContinuityCheckpointPhase.AfterWorkspaceOpenReconcile;
-
             var checkpoint = new AgentSessionContinuityCheckpoint(
-                reconcilePhase,
+                AgentSessionContinuityCheckpointPhase.AfterWorkspaceOpenReconcile,
                 interrupted.Scope,
                 classification,
                 interrupted.LatestCheckpoint.SessionStatus,

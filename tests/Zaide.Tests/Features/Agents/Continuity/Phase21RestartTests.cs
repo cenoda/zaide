@@ -3,6 +3,8 @@ using Xunit;
 using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency.Trace;
+using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
@@ -82,8 +84,15 @@ public sealed class Phase21RestartTests : IDisposable
         var conversationStore = ConversationsTestSupport.CreateStore();
         var catalog = ConversationsTestSupport.CreateCatalog();
         var projector = new AgentSessionContinuityConversationProjector(conversationStore, catalog);
+        var revalidator = new AgentSessionContinuityRevalidator(
+            bindingStore,
+            new IAgentBackendContinuityAdapter[]
+            {
+                new NativeHarnessAgentContinuityAdapter(),
+                new AcpAgentContinuityAdapter(),
+            });
         var startup = new AgentSessionContinuityStartupReconciler(
-            coordinator,
+            revalidator,
             resolver,
             legacyReader,
             projector,

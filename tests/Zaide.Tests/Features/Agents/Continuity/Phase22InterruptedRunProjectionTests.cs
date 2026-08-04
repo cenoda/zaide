@@ -29,8 +29,11 @@ public sealed class Phase22InterruptedRunProjectionTests : IDisposable
     }
 
     [Fact]
-    public void ForceQuitRestartClassification_ProjectsExactlyOnce()
+    public void RestartClassification_ProjectsExactlyOnce()
     {
+        // Unit-level classification/projection only. Real force-quit process-group
+        // evidence is owned by the out-of-tree M4 A3 producer under
+        // /tmp/zaide-a3-agent-path/runner/ (not this in-process fixture).
         _nativeHarness.RecordInterruptedCheckpointAtWorkspaceRoot();
 
         var restartedCoordinator = Phase21ContinuityTestSupport.CreateCoordinator(

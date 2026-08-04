@@ -7,6 +7,7 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts;
+using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
@@ -35,6 +36,7 @@ internal static class Phase22ContinuityTestSupport
                 Path.GetTempPath(),
                 "ZaidePhase223M4_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_rootDirectory);
+            StoreRootDirectory = _rootDirectory;
 
             WorkspaceRoot = workspaceRoot
                 ?? Path.Combine(_rootDirectory, "workspace");
@@ -76,8 +78,15 @@ internal static class Phase22ContinuityTestSupport
                 new AgentSessionContinuityInspector(Store),
                 new PathDerivedAgentDurableWorkspaceStorageKeyResolver(),
                 () => ProcessCwd);
+            Revalidator = new AgentSessionContinuityRevalidator(
+                BindingStore,
+                new IAgentBackendContinuityAdapter[]
+                {
+                    new NativeHarnessAgentContinuityAdapter(),
+                    new AcpAgentContinuityAdapter(),
+                });
             StartupReconciler = new AgentSessionContinuityStartupReconciler(
-                Coordinator,
+                Revalidator,
                 new PathDerivedAgentDurableWorkspaceStorageKeyResolver(),
                 LegacyCwdReader,
                 ConversationProjector,
@@ -93,6 +102,8 @@ internal static class Phase22ContinuityTestSupport
                 EventStream,
                 Coordinator);
         }
+
+        public string StoreRootDirectory { get; }
 
         public string WorkspaceRoot { get; }
 
@@ -131,6 +142,8 @@ internal static class Phase22ContinuityTestSupport
         public AgentSessionContinuityWorkspaceOpenReconciler WorkspaceOpenReconciler { get; }
 
         public AgentSessionContinuityLegacyCwdReader LegacyCwdReader { get; }
+
+        public AgentSessionContinuityRevalidator Revalidator { get; }
 
         public AgentSessionContinuityStartupReconciler StartupReconciler { get; }
 
