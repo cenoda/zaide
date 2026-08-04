@@ -5,9 +5,8 @@
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
 `2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 accepted at
-`686b145958766ea1cd218c0bc768b242fecdcbf6`. M5 implementation shipped
-pending independent re-audit; **not accepted**; Phase 22.3 closure is not
-claimed.**
+`686b145958766ea1cd218c0bc768b242fecdcbf6`. Human accepted M5 after the
+independent re-audit. Phase 22.3 closure is not claimed.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -48,7 +47,7 @@ have not started.
 - [x] M2 explicit live-session termination (accepted at `fb6c8d71`).
 - [x] M3 safe mediated action path and actor attribution (accepted at `2f41dcfc`).
 - [x] M4 workspace-owned interrupted-run projection and explicit re-send (corrective F1–F3; accepted at `686b1459`).
-- [x] M5 owned-row dual-backend A3 re-smoke and regression closeout (implementation shipped; re-audit pending; **not accepted**).
+- [x] M5 owned-row dual-backend A3 re-smoke and regression closeout (accepted after independent re-audit).
 
 ## M1 Implementation and Verification (2026-08-03)
 
@@ -888,3 +887,10 @@ backend wrapping/fallback/cross-retry; no permission replay; no silent
 resume; no schema/dependency/package change. `AgentConversationEventProjection`
 remains the sole normalized conversation writer. M5 **not accepted** —
 stop for independent re-audit.
+
+## M5 Acceptance (2026-08-04)
+
+Human acceptance is recorded after the independent M5 re-audit of
+`ef1200e3` and its docs-only corrective `eb36f0f2`. M5 is accepted. This
+does not claim Phase 22.3 closure and does not authorize G5, Phase 22.4,
+Phase 22.5, or V4.

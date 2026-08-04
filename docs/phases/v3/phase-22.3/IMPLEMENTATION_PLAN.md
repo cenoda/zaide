@@ -5,9 +5,8 @@
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
 `2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 accepted at
-`686b145958766ea1cd218c0bc768b242fecdcbf6`. M5 implementation shipped;
-independent re-audit pending; **not accepted**. Phase 22.3 closure is not
-claimed.**
+`686b145958766ea1cd218c0bc768b242fecdcbf6`. Human accepted M5 after the
+independent re-audit. Phase 22.3 closure is not claimed.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
 `c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
@@ -77,7 +76,7 @@ and ACP.
 - [x] Receive separate Phase 22.3 M3 implementation approval.
 - [x] Receive separate Phase 22.3 M4 implementation approval.
 - [x] Receive separate Phase 22.3 M5 implementation approval.
-- [ ] Receive separate Phase 22.3 M5 acceptance after independent re-audit.
+- [x] Receive separate Phase 22.3 M5 acceptance after independent re-audit.
 
 ## Scope
 
@@ -129,8 +128,8 @@ final authorization, execution, audit, and reconciliation path.
 | M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | **Accepted** at `1a5ff04`; 32/32 M1 tests, 103/103 M0+M1 filter |
 | M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal; CanEndSession only when live ownership exists; ACP cancel-ack timeout/failure is AcknowledgementIndeterminate with retained Ending ownership; per-attempt correlation dedupes indeterminate projection; ACP retry re-issues bounded cancel-ack and never finalizes merely because the original run is terminal Indeterminate; M2 tests dispose surfaces and await commands; DirectNavItems access is synchronized; EndAcknowledgementTimeout is instance-scoped | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter — **Accepted** at `fb6c8d71` |
 | M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams. Early correlation-mismatch denials publish exactly one correlated event/audit; NoWorkspace facts omit fabricated workspace identity. Branch proof uses explicit broker/registry test seams (no sleep-based races) | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter + M3 class filter — **Accepted** at `2f41dcfc` |
-| M4 | Workspace-owned checkpoints, real process-group force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay; startup legacy CWD path is inspect/classify/project only (byte-stable partition) | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + M4-scoped force-quit A3 (`scripts/run-m4-force-quit-a3.sh`) — **corrective from `9e97c700` shipped; A1-TC-05 evidence F1/F2/F3 defects corrected; unaccepted pending independent re-audit** |
-| M5 | All owned rows have current isolated Native Harness and ACP evidence and all regression gates pass | No substitute unit test; A3 producer required | Full 22.3 A3 matrix + build + fast suite |
+| M4 | Workspace-owned checkpoints, real process-group force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay; startup legacy CWD path is inspect/classify/project only (byte-stable partition) | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + M4-scoped force-quit A3 (`scripts/run-m4-force-quit-a3.sh`) — **accepted at `686b1459` after corrective A1-TC-05 evidence F1/F2/F3 fixes** |
+| M5 | All owned rows have current isolated Native Harness and ACP evidence and all regression gates pass | No substitute unit test; A3 producer required | Full 22.3 A3 matrix + build + fast suite — **accepted after independent re-audit** |
 
 Each M1–M4 outcome should be one reviewable commit unless implementation reveals
 an independently reversible boundary. Ordinary plan/TOFIX updates belong in the
@@ -221,10 +220,10 @@ for the scenario and evidence contract.
 - [x] Interrupted-run smoke proves workspace ownership, terminal projection,
   explicit re-send, and no silent resume or permission replay (M4 accepted at
   `686b1459`).
-- [ ] `A1-AS-02`, `A1-TH-05`, `A1-MR-03`, `A1-TP-01`…`A1-TP-03`,
+- [x] `A1-AS-02`, `A1-TH-05`, `A1-MR-03`, `A1-TP-01`…`A1-TP-03`,
   `A1-TC-05`, and `A1-TC-09` have current isolated evidence for Native Harness
-  and ACP, with limitations truthfully classified (M5 implementation shipped;
-  independent re-audit pending; **not accepted**).
+  and ACP, with limitations truthfully classified (M5 accepted after
+  independent re-audit).
 
 ## Rollback and Migration Boundaries
 
