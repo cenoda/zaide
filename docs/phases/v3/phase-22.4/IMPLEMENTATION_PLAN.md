@@ -2,9 +2,10 @@
 
 ## Status and Authorization
 
-**Planning only; not implemented.** This sub-phase depends on completed and
-re-smoked Phase 22.2. M0 is not accepted. Implementation requires explicit
-human M0 acceptance and a separate implementation approval.
+**M0 live-seam verification complete; not accepted; not implemented.** This
+sub-phase depends on completed and re-smoked Phase 22.2. The verified M0 report
+is [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). Implementation
+requires explicit human M0 acceptance and a separate implementation approval.
 
 ## A4 Ownership and Dependency
 
@@ -21,23 +22,24 @@ Baseline evidence:
 
 ## M0 — Live-Seam Verification and Plan Acceptance
 
-- [ ] Confirm Phase 22.2 is complete and that Native Harness and ACP producer
+- [x] Confirm Phase 22.2 is complete and that Native Harness and ACP producer
   availability is represented independently and truthfully.
-- [ ] Reconcile current trace, usage, continuity, and memory inspection view
+- [x] Reconcile current trace, usage, continuity, and memory inspection view
   models plus `AgentTransparencyManagementViewModel` with A3's finding that no
   user-reachable commands/Views existed.
-- [ ] Verify Townhall/shell entry points, command registration, production DI,
+- [x] Verify Townhall/shell entry points, command registration, production DI,
   accessibility, selection, empty, unavailable, failed, and loading states.
-- [ ] Verify trace inspection, pre-admission redaction, capture-state,
+- [x] Verify trace inspection, pre-admission redaction, capture-state,
   retention/export, and backend-evidence boundaries from Phase 21.
-- [ ] Verify usage/cost evidence origin, unit, attribution, pricing source,
+- [x] Verify usage/cost evidence origin, unit, attribution, pricing source,
   unavailable/estimated/disputed state, and no-default-zero rules.
-- [ ] Verify memory list/create/correct/disable/supersede/delete, scope,
+- [x] Verify memory list/create/correct/disable/supersede/delete, scope,
   provenance, conflict, export/backup, and retrieval/influence separation.
-- [ ] Confirm user surfaces never write directly to conversation history or
+- [x] Confirm user surfaces never write directly to conversation history or
   bypass the owning application coordinators.
-- [ ] Replace command placeholders, lock rollback and migration handling, and
-  receive explicit human M0 acceptance.
+- [x] Replace command placeholders and lock rollback, backup, and migration
+  handling in the M0 report.
+- [ ] Receive explicit human M0 acceptance.
 
 Candidate presentation and application types are planning pointers. M0 must
 prove actual user reachability rather than treating DI registration as a user
@@ -70,27 +72,32 @@ status semantics or backend-specific management silos.
 
 | Milestone | Outcome | Verification gate |
 |-----------|---------|-------------------|
-| M0 | Dependency, reachability, ownership, redaction, evidence, scope, accessibility, migration, and rollback seams are verified; plan accepted | Read-only checklist + human acceptance |
-| M1 | User can inspect redacted trace records and explicit capture/retention/evidence states | Focused trace application/presentation tests |
-| M2 | User can inspect and manage scoped durable memory through existing lifecycle contracts | Focused memory lifecycle/presentation tests |
-| M3 | User can inspect usage and cost evidence with origin, units, attribution, pricing, and unavailable states preserved | Focused usage/cost application/presentation tests |
-| M4 | Integrated reachability, accessibility, regression, and affected A3 re-smoke gates pass | Build, fast/serial suites, isolated transparency smoke |
+| M0 | Dependency, reachability, ownership, redaction, evidence, scope, accessibility, migration, and rollback seams are verified; human acceptance pending | [Read-only M0 report](./M0_SEAM_VERIFICATION.md) + human acceptance |
+| M1 | User can inspect redacted trace records and explicit application-lifetime capture/retention/evidence states through Townhall; truthful Native/ACP evidence hooks remain independent | `Phase21Trace*`, `Phase21Redaction*`, `Phase22TraceSurfaceTests`, `Phase22TraceProducerTests`, trace/storage ratchets |
+| M2 | User can inspect and manage scoped durable memory through existing lifecycle contracts with provenance and influence kept distinct | `Phase21Memory*`, `Phase22MemorySurfaceTests`, memory ratchet |
+| M3 | User can inspect usage and cost evidence with origin, units, attribution, pricing, aggregation semantics, and unavailable states preserved | `Phase21Usage*`, `Phase21Cost*`, `Phase22UsageSurfaceTests`, `Phase22UsageProducerTests`, usage ratchet |
+| M4 | Integrated Townhall commands/View, real accessibility and failure states, backup safety, regression, and affected A3 re-smoke gates pass | `Phase22Transparency*`, Phase 21 integration/export/backup, DI/architecture, full suite, isolated transparency smoke |
 
-## Verification Command Placeholders
+## Verification Commands
 
 ```bash
-dotnet build Zaide.slnx
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<Phase21 trace plus presentation filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<Phase21 memory plus presentation filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<Phase21 usage/cost plus presentation filter>"
-dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter "<Townhall/shell accessibility and architecture filter>"
+dotnet build Zaide.slnx --no-incremental
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter 'FullyQualifiedName~Phase21Trace|FullyQualifiedName~Phase21Redaction|FullyQualifiedName~Phase22TraceSurfaceTests|FullyQualifiedName~Phase22TraceProducerTests|FullyQualifiedName~Phase21TraceRatchetTests|FullyQualifiedName~Phase21StorageOwnershipRatchetTests'
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter 'FullyQualifiedName~Phase21MemoryStore|FullyQualifiedName~Phase21MemoryPolicy|FullyQualifiedName~Phase21MemoryLifecycle|FullyQualifiedName~Phase21MemoryRetrieval|FullyQualifiedName~Phase21MemoryInfluence|FullyQualifiedName~Phase22MemorySurfaceTests|FullyQualifiedName~Phase21MemoryRatchetTests'
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter 'FullyQualifiedName~Phase21Usage|FullyQualifiedName~Phase21Cost|FullyQualifiedName~Phase22UsageSurfaceTests|FullyQualifiedName~Phase22UsageProducerTests|FullyQualifiedName~Phase21UsageRatchetTests'
+dotnet test tests/Zaide.Tests/Zaide.Tests.csproj --no-build --filter 'FullyQualifiedName~Phase22TransparencyReachabilityTests|FullyQualifiedName~Phase22TransparencyAccessibilityTests|FullyQualifiedName~Phase22TransparencyFailureStateTests|FullyQualifiedName~Phase22TransparencyBackupTests|FullyQualifiedName~Phase21TransparencyIntegration|FullyQualifiedName~Phase21Export|FullyQualifiedName~Phase21Backup|FullyQualifiedName~AgentsRegistrationModuleTests|FullyQualifiedName~TownhallRegistrationModuleTests|FullyQualifiedName~Architecture'
 dotnet test Zaide.slnx --no-build
 dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings
-<out-of-tree A3 trace/memory/usage producer with disposable HOME/XDG/workspace>
+test -f tests/a3-transparency/runner/Zaide.Tests.csproj
+# Publish to /tmp/zaide-a3-transparency and run A1-TC-02,A1-TC-03,A1-TC-08
+# once per sibling backend exactly as locked in M0_SEAM_VERIFICATION.md.
 git diff --check
 ```
 
-M0 must replace placeholders and use the umbrella
+Every filtered command must discover its named future Phase 22.4 classes and
+at least one test. The exact producer command, evidence matrix, and safety
+requirements are locked in [M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md#locked-isolated-a3-re-smoke-procedure)
+and use the umbrella
 [re-smoke contract](../phase-22/IMPLEMENTATION_PLAN.md#re-smoke-contract).
 
 ## Exit Conditions
@@ -106,7 +113,10 @@ M0 must replace placeholders and use the umbrella
 
 ## Rollback Note
 
-Prefer one reversible commit per M1–M3 surface and a separate integration
-closeout. Rollback must preserve durable Phase 21 records and schema
-compatibility. If M0 admits schema or migration work, it must define exact
-backup, downgrade, quarantine, and restore procedures before implementation.
+Prefer one reversible commit per M1–M3 surface and a separate M4 integration
+closeout. No schema or data migration is authorized: rollback preserves all
+durable Phase 21 partitions and disables/drains the owning capture path before
+revert. The current clean-profile backup failure state must be corrected and
+tested in M4 before Backup is user-reachable; Restore and Migrate remain
+application-only. Any later schema or destructive lifecycle need is a stop
+condition requiring an amended backup/downgrade/quarantine/restore plan.
