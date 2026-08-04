@@ -215,17 +215,16 @@ for the scenario and evidence contract.
   ordered, and attributed without a second conversation writer (M1 scope).
 - [x] Explicit termination is reachable and never overclaims provider state
   (M2 accepted at `fb6c8d71`).
-- [ ] Mediated action, permission, audit attribution, conflict, reconciliation,
+- [x] Mediated action, permission, audit attribution, conflict, reconciliation,
   stale-base, and final-consumption invariants pass; rollback absence remains
-  explicit (M3 implemented; independent audit pending; not accepted).
-- [ ] Interrupted-run smoke proves workspace ownership, terminal projection,
-  explicit re-send, and no silent resume or permission replay (M4 corrective
-  from `9e97c700` shipped with invocation-counter evidence and strengthened A3
-  validation; prior cosmetic A3 claim invalidated; independent re-audit pending;
-  **not accepted**).
+  explicit (M3 accepted at `2f41dcfc`).
+- [x] Interrupted-run smoke proves workspace ownership, terminal projection,
+  explicit re-send, and no silent resume or permission replay (M4 accepted at
+  `686b1459`).
 - [ ] `A1-AS-02`, `A1-TH-05`, `A1-MR-03`, `A1-TP-01`…`A1-TP-03`,
   `A1-TC-05`, and `A1-TC-09` have current isolated evidence for Native Harness
-  and ACP, with limitations truthfully classified.
+  and ACP, with limitations truthfully classified (M5 implementation shipped;
+  independent re-audit pending; **not accepted**).
 
 ## Rollback and Migration Boundaries
 
