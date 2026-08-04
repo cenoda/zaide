@@ -3,7 +3,8 @@
 ## Status
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
-`fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 implemented; independent audit
+`fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 implemented; independent audit
 pending; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
@@ -43,8 +44,8 @@ have not started.
 - [x] Separate Phase 22.3 M1 implementation approval.
 - [x] M1 send/routing and outcome visibility.
 - [x] M2 explicit live-session termination (accepted at `fb6c8d71`).
-- [x] M3 safe mediated action path and actor attribution (implementation; audit pending).
-- [ ] M4 workspace-owned interrupted-run projection and explicit re-send.
+- [x] M3 safe mediated action path and actor attribution (accepted at `2f41dcfc`).
+- [x] M4 workspace-owned interrupted-run projection and explicit re-send (implementation; audit pending).
 - [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
 
 ## M1 Implementation and Verification (2026-08-03)
@@ -630,19 +631,74 @@ pre-consume `Published`, post-consume `Consumed`, `TryConsume` finality.
 **M3 not accepted — stop for independent re-audit.** Do not start M4–M5 / G5 /
 A3 / Phase 22.4/22.5 / V4.
 
-## Remaining Open Product Gaps (post-M3 implementation)
+## M3 Acceptance (2026-08-04)
+
+Independent human M3 acceptance recorded at
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d` after safe mediated action paths,
+actor attribution, and deterministic early-denial branch proof.
+
+## M4 Implementation (2026-08-04) — independent audit pending
+
+Baseline: `2f41dcfc0c885b48b0a602625bd85f47cc78020d`.
+
+### Production changes
+
+- `AgentContinuityWorkspaceRootProvider` resolves checkpoint ownership from
+  `IWorkspaceActionAuthority` (opened workspace root); legacy CWD provider
+  remains read-only for startup reconciliation only.
+- `AgentSessionContinuityReconcileOrigin` distinguishes `StartupLegacyCwd` from
+  `WorkspaceOpen`; workspace-open reconciliation is idempotent per
+  identity/generation via `AfterWorkspaceOpenReconcile`.
+- `AgentSessionContinuityLegacyCwdReader` reads legacy CWD-keyed partitions
+  without merge, migration, rewrite, or deletion.
+- `AgentSessionContinuityWorkspaceOpenReconciler` reconciles on workspace open;
+  `AgentSessionContinuityStartupReconciler` handles legacy startup path only.
+- `AgentSessionContinuityCoordinator` blocks `Resume` when
+  `ResumeCurrentlyUsable = false` (both sibling backends).
+- `AgentSessionContinuityConversationProjector` projects interrupted runs through
+  `AgentConversationEventProjection.ProjectInterruptedRun` only.
+- `AgentConversationEventProjection` adds interrupted-run content prefix and
+  display formatting; `TownhallEntryProjection` surfaces terminal actionable
+  text without resume claims.
+- `ApplicationShutdown` checkpoints under opened workspace root, not process CWD.
+- `App.axaml.cs` initializes workspace-open reconciler on startup.
+
+### New tests
+
+- `Phase22InterruptedRunProjectionTests` — 7 tests
+- `Phase22ContinuityWorkspaceOwnershipTests` — 7 tests
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M4 classes | Discovered 14 tests |
+| M4 explicit filter | PASS 14/14 |
+| Phase 21 restart/recovery/termination filter | PASS |
+| M0–M3 preservation filter | PASS 115/115 |
+| Townhall/composition/architecture preservation | PASS |
+| M4-scoped A3 force-quit (`scripts/run-m4-force-quit-a3.sh`) | PASS native-harness + acp |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3958/3958 |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no M5 / G5 / full A3 matrix; no usable backend resume; no
+permission/proposal replay; legacy CWD records untouched; Native Harness and ACP
+remain independent siblings; M1–M3 routing/draft/termination/action attribution
+unchanged. **M4 not accepted — stop for independent audit.**
+
+## Remaining Open Product Gaps (post-M4 implementation)
 
 - Continuity `Terminate` writes intent/acknowledgement evidence but does not call
   live `EndAsync` or a provider deletion/termination API (by design; Phase 21).
 - Phase 17 has no product multi-file transaction, change set, or rollback
   operation.
-- Phase 21 durable roots are process-CWD-derived in the live session/startup
-  owners. Both sibling backends currently disallow resume; explicit re-send is
-  required (M4).
+- Legacy CWD-keyed continuity partitions remain separate read-only records;
+  new checkpoints use the opened workspace root (M4).
 
 ## Next Task
 
-Independent human **M3 re-audit** of safe mediated action paths, actor
-attribution, and deterministic early-denial branch proof. Do not begin M4–M5,
-G5, A3, Phase 22.4/22.5, or V4 until explicit M4 implementation authorization
-is recorded after M3 acceptance.
+Independent human **M4 audit** of workspace-owned interrupted-run continuity,
+force-quit classification, terminal Townhall projection, and explicit re-send.
+Do not begin M5, G5, full A3 matrix, Phase 22.4/22.5, or V4 until explicit M5
+implementation authorization is recorded after M4 acceptance.

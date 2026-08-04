@@ -8,7 +8,8 @@ internal sealed class AgentSessionContinuityReconcileRequest
     public AgentSessionContinuityReconcileRequest(
         AgentDurableWorkspaceStorageKey workspaceKey,
         string workspaceRoot,
-        bool isStartup = false)
+        bool isStartup = false,
+        AgentSessionContinuityReconcileOrigin origin = AgentSessionContinuityReconcileOrigin.WorkspaceOpen)
     {
         if (string.IsNullOrWhiteSpace(workspaceRoot))
         {
@@ -18,6 +19,7 @@ internal sealed class AgentSessionContinuityReconcileRequest
         WorkspaceKey = workspaceKey;
         WorkspaceRoot = workspaceRoot;
         IsStartup = isStartup;
+        Origin = origin;
     }
 
     public AgentDurableWorkspaceStorageKey WorkspaceKey { get; }
@@ -25,4 +27,6 @@ internal sealed class AgentSessionContinuityReconcileRequest
     public string WorkspaceRoot { get; }
 
     public bool IsStartup { get; }
+
+    public AgentSessionContinuityReconcileOrigin Origin { get; }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Zaide.Features.Agents.Application;
@@ -198,15 +199,35 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<AgentSessionContinuityCheckpointWriter>();
         services.AddSingleton<AgentSessionContinuityInspector>();
         services.AddSingleton<IAgentSessionContinuityInspector, AgentSessionContinuityInspector>();
+        services.AddSingleton<AgentSessionContinuityLegacyCwdReader>();
         services.AddSingleton<AgentSessionContinuityRevalidator>();
         services.AddSingleton<IAgentBackendContinuityAdapter, NativeHarnessAgentContinuityAdapter>();
         services.AddSingleton<IAgentBackendContinuityAdapter, AcpAgentContinuityAdapter>();
         services.AddSingleton<IAgentSessionContinuityCoordinator, AgentSessionContinuityCoordinator>();
+        services.AddSingleton<AgentSessionContinuityConversationProjector>();
         services.AddSingleton<AgentSessionContinuityStartupReconciler>();
+        services.AddSingleton<AgentSessionContinuityWorkspaceOpenReconciler>();
         services.AddSingleton<AgentSessionContinuityEventSubscriber>();
         services.AddSingleton<AgentSessionContinuityAvailabilityProjection>();
         services.AddSingleton<AgentSessionContinuityInspectionViewModel>();
-        services.AddSingleton<IAgentSessionService, AgentSessionService>();
+        services.AddSingleton<IAgentSessionService>(sp =>
+        {
+            var get = (Func<Type, object?>)sp.GetService;
+            var workspaceAuthority = (IWorkspaceActionAuthority?)get(typeof(IWorkspaceActionAuthority));
+            return new AgentSessionService(
+                (IEnumerable<IAgentBackend>)get(typeof(IEnumerable<IAgentBackend>))!,
+                (AgentEventStream)get(typeof(AgentEventStream))!,
+                (IAgentActionBrokerFactory?)get(typeof(IAgentActionBrokerFactory)),
+                (IAgentActionAuditStore?)get(typeof(IAgentActionAuditStore)),
+                workspaceAuthority,
+                (AgentContextManifestBuilder?)get(typeof(AgentContextManifestBuilder)),
+                (IAgentContextSnapshotSources?)get(typeof(IAgentContextSnapshotSources)),
+                (IAgentSessionContinuityCoordinator?)get(typeof(IAgentSessionContinuityCoordinator)),
+                (AgentDurableWorkspaceStorageKeyResolver?)get(typeof(AgentDurableWorkspaceStorageKeyResolver)),
+                (IAgentMemoryRetrievalService?)get(typeof(IAgentMemoryRetrievalService)),
+                (IAgentMemoryInfluenceRecorder?)get(typeof(IAgentMemoryInfluenceRecorder)),
+                AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority));
+        });
 
         // Phase 21 M5: durable scoped memory records (store only; no retrieval/injection).
         services.AddSingleton<AgentMemoryStoreWriter>();

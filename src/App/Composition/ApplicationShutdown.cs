@@ -80,7 +80,12 @@ internal static class ApplicationShutdown
         var continuityCoordinator = services.GetService<IAgentSessionContinuityCoordinator>();
         if (continuityCoordinator is not null)
         {
-            continuityCoordinator.CheckpointActiveSessions(Environment.CurrentDirectory);
+            var workspaceAuthority = services.GetService<IWorkspaceActionAuthority>();
+            if (AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority)()
+                is { } workspaceRoot)
+            {
+                continuityCoordinator.CheckpointActiveSessions(workspaceRoot);
+            }
         }
 
         // Revoke pending action authority before process exit.

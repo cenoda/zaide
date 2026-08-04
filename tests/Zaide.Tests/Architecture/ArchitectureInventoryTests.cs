@@ -154,7 +154,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +9 internal usage/cost evidence domain types.
         Assert.Equal((9, 0, 9), byNamespace["Zaide.Features.Agents.Domain.Transparency.Usage"]);
         // Phase 21 M4: +15 internal session continuity domain types.
-        Assert.Equal((16, 0, 16), byNamespace["Zaide.Features.Agents.Domain.Continuity"]);
+        Assert.Equal((17, 0, 17), byNamespace["Zaide.Features.Agents.Domain.Continuity"]);
         // Phase 17 M1 corrective: +1 internal IAgentCommandResolver contract.
         // Phase 17 M2: +1 internal IAgentFileReader contract.
         // Phase 17 M3 corrective: +2 internal IAgentPermissionReviewService and IAgentPermissionDialogPresenter contracts.
@@ -188,7 +188,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +5 internal execution-loop production types.
         // Phase 20 M5: +2 internal actor/backend binding application services.
         // Phase 22.2 M1: +1 internal LazyAgentActorActiveRunQuery.
-        Assert.Equal((53, 7, 46), byNamespace["Zaide.Features.Agents.Application"]);
+        Assert.Equal((54, 7, 47), byNamespace["Zaide.Features.Agents.Application"]);
         // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
         // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
@@ -197,7 +197,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 21 M3: +6 internal usage/cost evidence coordinator/sink/inspector/adapter types.
         Assert.Equal((6, 0, 6), byNamespace["Zaide.Features.Agents.Application.Transparency.Usage"]);
         // Phase 21 M4: +10 internal session continuity coordinator/checkpoint/adapter types.
-        Assert.Equal((10, 0, 10), byNamespace["Zaide.Features.Agents.Application.Continuity"]);
+        Assert.Equal((14, 0, 14), byNamespace["Zaide.Features.Agents.Application.Continuity"]);
         // M11d: AgentExecutionService public→internal (1p/0i → 0p/1i).
         // Phase 15 M3a: +1 legacy HTTP compatibility backend adapter production file.
         // Phase 17 M1 corrective: +1 internal fail-closed DefaultAgentCommandResolver.

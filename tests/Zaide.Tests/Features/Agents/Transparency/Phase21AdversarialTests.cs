@@ -99,7 +99,7 @@ public sealed class Phase21AdversarialTests
             Row("M7-70 startup reconciler is idempotent", "Phase21RestartTests", "StartupReconciler_IsIdempotent"),
             Row("M7-71 disconnect and late completion remain representable", "Phase21RestartTests", "DisconnectAndLateCompletion_RemainRepresentableInCheckpoint"),
             Row("M7-72 backend capability matrix reports sibling backends independently", "Phase21RestartTests", "BackendCapabilityMatrix_ReportsSiblingBackendsIndependently"),
-            Row("M7-73 recovery classification resume explicit user action", "Phase21RecoveryTests", "Resume_ExplicitUserAction_RevalidatesIdentityAndRecordsCheckpoint"),
+            Row("M7-73 recovery classification resume explicit user action", "Phase21RecoveryTests", "Resume_WhenBackendResumeUnusable_ReturnsIndeterminateWithoutLiveSession"),
             Row("M7-74 recovery resume idempotent for same idempotency key", "Phase21RecoveryTests", "Resume_IsIdempotent_ForSameIdempotencyKey"),
             Row("M7-75 recovery rejects identity mismatch", "Phase21RecoveryTests", "Resume_RejectsIdentityMismatch"),
             Row("M7-76 recovery reconcile does not auto-resume side-effecting work", "Phase21RecoveryTests", "Reconcile_DoesNotAutoResumeSideEffectingWork"),

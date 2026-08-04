@@ -97,6 +97,9 @@ public partial class App : Application
                 .GetRequiredService<AgentSessionContinuityStartupReconciler>()
                 .ReconcileOnStartupIfNeeded();
             _ = CompositionRoot.Services.GetRequiredService<AgentSessionContinuityEventSubscriber>();
+            CompositionRoot.Services
+                .GetRequiredService<AgentSessionContinuityWorkspaceOpenReconciler>()
+                .ReconcileOnWorkspaceOpenIfNeeded();
 
             // Dispose the terminal host on exit so the active session's shell
             // process is killed and doesn't outlive the app.

@@ -76,7 +76,9 @@ internal static class AgentSessionContinuityCheckpointSerializer
         new()
         {
             SchemaVersion = checkpoint.SchemaVersion,
-            Operation = checkpoint.Phase == AgentSessionContinuityCheckpointPhase.AfterStartupReconcile
+            Operation = checkpoint.Phase
+                is AgentSessionContinuityCheckpointPhase.AfterStartupReconcile
+                or AgentSessionContinuityCheckpointPhase.AfterWorkspaceOpenReconcile
                 ? AgentSessionContinuityOperationKind.Reconcile
                 : AgentSessionContinuityOperationKind.Checkpoint,
             Phase = checkpoint.Phase,

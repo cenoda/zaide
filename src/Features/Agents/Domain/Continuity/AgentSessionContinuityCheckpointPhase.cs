@@ -11,4 +11,5 @@ internal enum AgentSessionContinuityCheckpointPhase
     AfterRunTerminal = 3,
     BeforeApplicationShutdown = 4,
     AfterStartupReconcile = 5,
+    AfterWorkspaceOpenReconcile = 6,
 }

@@ -3,8 +3,9 @@
 ## Status and Authorization
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
-`fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 remains unaccepted pending
-independent audit; not accepted.**
+`fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 implemented; independent audit
+pending; not accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
 `c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
@@ -72,7 +73,8 @@ and ACP.
 - [x] Receive separate Phase 22.3 M1 implementation approval.
 - [x] Receive separate Phase 22.3 M2 implementation approval.
 - [x] Receive separate Phase 22.3 M3 implementation approval.
-- [ ] Receive separate Phase 22.3 M4–M5 implementation approval.
+- [x] Receive separate Phase 22.3 M4 implementation approval.
+- [ ] Receive separate Phase 22.3 M5 implementation approval.
 
 ## Scope
 
@@ -123,8 +125,8 @@ final authorization, execution, audit, and reconciliation path.
 | M0 | Live dependency, send/routing, projection, termination, broker, continuity, test, harness, migration, and rollback seams verified | Documentation only | Existing focused filters + build/full-suite gates; human acceptance |
 | M1 | Direct and channel routing are catalog-typed; routed ownership is discoverable; pre-admission/session rejection and all terminal outcomes are actionable in the correct conversation; routed drafts and inactive channel presentation are conversation-owned across navigation; routed draft clear uses exact raw pre-await snapshot with ordinal-only equality (whitespace-only newer edits survive) | `Phase22AgentOutcomeProjectionTests`, `Phase22TownhallRoutingOutcomeTests` | **Accepted** at `1a5ff04`; 32/32 M1 tests, 103/103 M0+M1 filter |
 | M2 | Shipped Townhall termination records intent, bounded acknowledgement, terminal/late state, truthful backend state, and live ownership removal; CanEndSession only when live ownership exists; ACP cancel-ack timeout/failure is AcknowledgementIndeterminate with retained Ending ownership; per-attempt correlation dedupes indeterminate projection; ACP retry re-issues bounded cancel-ack and never finalizes merely because the original run is terminal Indeterminate; M2 tests dispose surfaces and await commands; DirectNavItems access is synchronized; EndAcknowledgementTimeout is instance-scoped | `Phase22ExplicitSessionTerminationTests` | Session/continuity/termination focused filter — **Accepted** at `fb6c8d71` |
-| M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams. Early correlation-mismatch denials publish exactly one correlated event/audit; NoWorkspace facts omit fabricated workspace identity. Branch proof uses explicit broker/registry test seams (no sleep-based races) | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter + M3 class filter — **implemented (incl. attribution + deterministic branch proof); unaccepted pending independent re-audit** |
-| M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + force-quit A3 scenarios |
+| M3 | Independently bound Native Harness and ACP can trigger deterministic safe mediated reads/writes through Phase 17 permission, mutation/conflict, audit/actor attribution, and reconciliation seams. Early correlation-mismatch denials publish exactly one correlated event/audit; NoWorkspace facts omit fabricated workspace identity. Branch proof uses explicit broker/registry test seams (no sleep-based races) | `Phase22MediatedActionPathTests`, `Phase22ActionAttributionTests` | Broker/permission/mutation focused filter + M3 class filter — **Accepted** at `2f41dcfc` |
+| M4 | Workspace-owned checkpoints, force-quit reconciliation, terminal Townhall projection, and explicit re-send work without silent resume or permission replay | `Phase22InterruptedRunProjectionTests`, `Phase22ContinuityWorkspaceOwnershipTests` | Continuity focused filter + M4-scoped force-quit A3 scenarios — **implemented; unaccepted pending independent audit** |
 | M5 | All owned rows have current isolated Native Harness and ACP evidence and all regression gates pass | No substitute unit test; A3 producer required | Full 22.3 A3 matrix + build + fast suite |
 
 Each M1–M4 outcome should be one reviewable commit unless implementation reveals

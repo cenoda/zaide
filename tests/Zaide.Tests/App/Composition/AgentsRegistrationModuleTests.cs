@@ -109,11 +109,14 @@ public sealed class AgentsRegistrationModuleTests
         typeof(AgentSessionContinuityCheckpointWriter).FullName!,
         typeof(AgentSessionContinuityInspector).FullName!,
         typeof(IAgentSessionContinuityInspector).FullName!,
+        typeof(AgentSessionContinuityLegacyCwdReader).FullName!,
         typeof(AgentSessionContinuityRevalidator).FullName!,
         typeof(IAgentBackendContinuityAdapter).FullName!,
         typeof(IAgentBackendContinuityAdapter).FullName!,
         typeof(IAgentSessionContinuityCoordinator).FullName!,
+        typeof(AgentSessionContinuityConversationProjector).FullName!,
         typeof(AgentSessionContinuityStartupReconciler).FullName!,
+        typeof(AgentSessionContinuityWorkspaceOpenReconciler).FullName!,
         typeof(AgentSessionContinuityEventSubscriber).FullName!,
         typeof(AgentSessionContinuityAvailabilityProjection).FullName!,
         typeof(AgentSessionContinuityInspectionViewModel).FullName!,
@@ -182,7 +185,7 @@ public sealed class AgentsRegistrationModuleTests
         // memory records, retrieval/influence, and the integrated lifecycle
         // coordinator. The total reflects every AddSingleton admitted by
         // M1–M6 in registration order.
-        Assert.Equal(84, services.Count);
+        Assert.Equal(87, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -209,7 +212,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(IAgentSessionService)
-                && d.ImplementationType == typeof(AgentSessionService));
+                && d.ImplementationFactory is not null);
         Assert.Contains(
             services,
             d => d.ServiceType == typeof(AgentConversationEventProjection)
@@ -442,7 +445,7 @@ public sealed class AgentsRegistrationModuleTests
         Assert.Single(
             Regex.Matches(
                 moduleSource,
-                @"AddSingleton<IAgentSessionService,\s*AgentSessionService>\(\)"));
+                @"AddSingleton<IAgentSessionService>\(sp\s*=>"));
         Assert.Single(
             Regex.Matches(
                 moduleSource,
@@ -532,7 +535,7 @@ public sealed class AgentsRegistrationModuleTests
         // Phase 21 M1–M6 expanded the Agents DI membership; the count now
         // reflects the durable record, trace/usage, continuity, memory, and
         // integrated-lifecycle registrations admitted through M6.
-        Assert.Equal(84, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(87, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
     [Fact]

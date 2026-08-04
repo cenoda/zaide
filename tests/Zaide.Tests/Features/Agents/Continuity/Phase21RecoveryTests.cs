@@ -23,7 +23,7 @@ public sealed class Phase21RecoveryTests : IDisposable
     public void Dispose() => Phase21ContinuityTestSupport.DeleteDirectory(_rootDirectory);
 
     [Fact]
-    public void Resume_ExplicitUserAction_RevalidatesIdentityAndRecordsCheckpoint()
+    public void Resume_WhenBackendResumeUnusable_ReturnsIndeterminateWithoutLiveSession()
     {
         var store = Phase21ContinuityTestSupport.CreateStore(_rootDirectory);
         var bindingStore = new AgentActorBackendBindingStore();
@@ -34,14 +34,13 @@ public sealed class Phase21RecoveryTests : IDisposable
         var conversationId = ConversationId.NewDirect();
         var sessionId = AgentSessionId.New();
         var coordinator = Phase21ContinuityTestSupport.CreateCoordinator(store, bindingStore);
-        var checkpoint = Phase21ContinuityTestSupport.CreateInterruptedCheckpoint(
+        coordinator.RecordCheckpoint(Phase21ContinuityTestSupport.CreateInterruptedCheckpoint(
             _workspaceKey,
             _workspaceRoot,
             conversationId,
             sessionId,
             actorId,
-            backendId);
-        coordinator.RecordCheckpoint(checkpoint);
+            backendId));
 
         var result = coordinator.Resume(new AgentSessionContinuityResumeRequest(
             _workspaceKey,
@@ -52,10 +51,9 @@ public sealed class Phase21RecoveryTests : IDisposable
             backendId,
             idempotencyKey: "resume-1"));
 
-        Assert.Equal(AgentSessionContinuityOperationStatus.Accepted, result.Status);
+        Assert.Equal(AgentSessionContinuityOperationStatus.Indeterminate, result.Status);
         Assert.Equal(AgentSessionContinuityOperationKind.Resume, result.Operation);
-        Assert.True(coordinator.TryGetResumedSessionId(conversationId, out var resumedId));
-        Assert.Equal(sessionId, resumedId);
+        Assert.False(coordinator.TryGetResumedSessionId(conversationId, out _));
     }
 
     [Fact]
@@ -90,8 +88,8 @@ public sealed class Phase21RecoveryTests : IDisposable
         var first = coordinator.Resume(request);
         var second = coordinator.Resume(request);
 
-        Assert.Equal(AgentSessionContinuityOperationStatus.Accepted, first.Status);
-        Assert.Equal(AgentSessionContinuityOperationStatus.DuplicateIgnored, second.Status);
+        Assert.Equal(AgentSessionContinuityOperationStatus.Indeterminate, first.Status);
+        Assert.Equal(AgentSessionContinuityOperationStatus.Indeterminate, second.Status);
     }
 
     [Fact]

@@ -7,6 +7,7 @@ using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Agents.Continuity;
 
@@ -74,9 +75,18 @@ public sealed class Phase21RestartTests : IDisposable
             AgentBackendIds.NativeHarness));
 
         var resolver = new PathDerivedAgentDurableWorkspaceStorageKeyResolver();
+        var legacyReader = new AgentSessionContinuityLegacyCwdReader(
+            new AgentSessionContinuityInspector(store),
+            resolver,
+            () => _workspaceRoot);
+        var conversationStore = ConversationsTestSupport.CreateStore();
+        var catalog = ConversationsTestSupport.CreateCatalog();
+        var projector = new AgentSessionContinuityConversationProjector(conversationStore, catalog);
         var startup = new AgentSessionContinuityStartupReconciler(
             coordinator,
             resolver,
+            legacyReader,
+            projector,
             () => _workspaceRoot);
 
         var first = startup.ReconcileOnStartupIfNeeded();

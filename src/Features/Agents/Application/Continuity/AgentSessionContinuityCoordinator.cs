@@ -61,8 +61,12 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
                 interrupted.LatestCheckpoint,
                 request.WorkspaceRoot);
 
+            var reconcilePhase = request.Origin == AgentSessionContinuityReconcileOrigin.StartupLegacyCwd
+                ? AgentSessionContinuityCheckpointPhase.AfterStartupReconcile
+                : AgentSessionContinuityCheckpointPhase.AfterWorkspaceOpenReconcile;
+
             var checkpoint = new AgentSessionContinuityCheckpoint(
-                AgentSessionContinuityCheckpointPhase.AfterStartupReconcile,
+                reconcilePhase,
                 interrupted.Scope,
                 classification,
                 interrupted.LatestCheckpoint.SessionStatus,
@@ -82,7 +86,11 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
             _checkpointWriter.TryWrite(
                 checkpoint,
                 AgentSessionContinuityOperationKind.Reconcile,
-                BuildOperationKey(AgentSessionContinuityOperationKind.Reconcile, request.WorkspaceKey.Value, interrupted.Scope.SessionId.Value));
+                BuildOperationKey(
+                    AgentSessionContinuityOperationKind.Reconcile,
+                    request.Origin,
+                    request.WorkspaceKey.Value,
+                    interrupted.Scope.SessionId.Value));
 
             reclassified.Add(new AgentSessionContinuityInterruptedSession(
                 interrupted.Scope,
@@ -174,6 +182,16 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
                 AgentSessionContinuityClassification.Indeterminate,
                 AgentSessionContinuityAcknowledgementState.None,
                 "Backend does not support continuity checkpoints.");
+        }
+
+        if (!capability.ResumeCurrentlyUsable)
+        {
+            return new AgentSessionContinuityOperationResult(
+                AgentSessionContinuityOperationStatus.Indeterminate,
+                AgentSessionContinuityOperationKind.Resume,
+                classification,
+                AgentSessionContinuityAcknowledgementState.None,
+                reason: "Backend resume is not currently usable. Explicit re-send is required.");
         }
 
         var probe = adapter.ProbeBackendSession(new AgentBackendContinuityProbeRequest(
@@ -400,9 +418,10 @@ internal sealed class AgentSessionContinuityCoordinator : IAgentSessionContinuit
 
     private static string BuildOperationKey(
         AgentSessionContinuityOperationKind operation,
+        AgentSessionContinuityReconcileOrigin origin,
         string workspaceKey,
         string sessionId) =>
-        $"continuity:{operation}:{workspaceKey}:{sessionId}";
+        $"continuity:{operation}:{origin}:{workspaceKey}:{sessionId}";
 
     private static AgentSessionContinuityOperationResult DuplicateResult(
         AgentSessionContinuityOperationKind operation,

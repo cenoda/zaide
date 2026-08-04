@@ -11,18 +11,26 @@ internal sealed class AgentSessionContinuityStartupReconciler
 {
     private readonly IAgentSessionContinuityCoordinator _coordinator;
     private readonly AgentDurableWorkspaceStorageKeyResolver _workspaceKeyResolver;
-    private readonly Func<string?> _workspaceRootProvider;
+    private readonly AgentSessionContinuityLegacyCwdReader _legacyCwdReader;
+    private readonly AgentSessionContinuityConversationProjector _conversationProjector;
+    private readonly Func<string?> _legacyCwdRootProvider;
     private int _startupReconciled;
 
     public AgentSessionContinuityStartupReconciler(
         IAgentSessionContinuityCoordinator coordinator,
         AgentDurableWorkspaceStorageKeyResolver workspaceKeyResolver,
-        Func<string?>? workspaceRootProvider = null)
+        AgentSessionContinuityLegacyCwdReader legacyCwdReader,
+        AgentSessionContinuityConversationProjector conversationProjector,
+        Func<string?>? legacyCwdRootProvider = null)
     {
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
         _workspaceKeyResolver = workspaceKeyResolver
             ?? throw new ArgumentNullException(nameof(workspaceKeyResolver));
-        _workspaceRootProvider = workspaceRootProvider ?? (() => Environment.CurrentDirectory);
+        _legacyCwdReader = legacyCwdReader ?? throw new ArgumentNullException(nameof(legacyCwdReader));
+        _conversationProjector = conversationProjector
+            ?? throw new ArgumentNullException(nameof(conversationProjector));
+        _legacyCwdRootProvider = legacyCwdRootProvider
+            ?? AgentContinuityWorkspaceRootProvider.CreateLegacyProcessCwdProvider();
     }
 
     public AgentSessionContinuityReconcileSummary ReconcileOnStartupIfNeeded()
@@ -36,8 +44,8 @@ internal sealed class AgentSessionContinuityStartupReconciler
                 Array.Empty<AgentSessionContinuityInterruptedSession>());
         }
 
-        var workspaceRoot = _workspaceRootProvider();
-        if (string.IsNullOrWhiteSpace(workspaceRoot))
+        var legacyRoot = _legacyCwdRootProvider();
+        if (string.IsNullOrWhiteSpace(legacyRoot))
         {
             return new AgentSessionContinuityReconcileSummary(
                 0,
@@ -46,10 +54,23 @@ internal sealed class AgentSessionContinuityStartupReconciler
                 Array.Empty<AgentSessionContinuityInterruptedSession>());
         }
 
-        var workspaceKey = _workspaceKeyResolver.Resolve(workspaceRoot);
-        return _coordinator.Reconcile(new AgentSessionContinuityReconcileRequest(
-            workspaceKey,
-            workspaceRoot,
-            isStartup: true));
+        var legacySummary = _legacyCwdReader.ReadLegacyCwdInterruptedSessions();
+        if (legacySummary.InterruptedSessions.Count == 0)
+        {
+            return legacySummary;
+        }
+
+        var legacyKey = _workspaceKeyResolver.Resolve(legacyRoot);
+        var summary = _coordinator.Reconcile(new AgentSessionContinuityReconcileRequest(
+            legacyKey,
+            legacyRoot,
+            isStartup: true,
+            origin: AgentSessionContinuityReconcileOrigin.StartupLegacyCwd));
+
+        _conversationProjector.ProjectReconcileSummary(
+            summary,
+            AgentSessionContinuityReconcileOrigin.StartupLegacyCwd);
+
+        return summary;
     }
 }

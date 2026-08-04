@@ -5,6 +5,7 @@ using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Contracts.Continuity;
 using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
+using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Presentation.Transparency;
 
@@ -21,12 +22,15 @@ internal sealed class AgentSessionContinuityAvailabilityProjection : IDisposable
     public AgentSessionContinuityAvailabilityProjection(
         IAgentSessionContinuityCoordinator coordinator,
         AgentDurableWorkspaceStorageKeyResolver workspaceKeyResolver,
+        IWorkspaceActionAuthority workspaceAuthority,
         Func<string?>? workspaceRootProvider = null)
     {
         _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
         _workspaceKeyResolver = workspaceKeyResolver
             ?? throw new ArgumentNullException(nameof(workspaceKeyResolver));
-        _workspaceRootProvider = workspaceRootProvider ?? (() => null);
+        _ = workspaceAuthority ?? throw new ArgumentNullException(nameof(workspaceAuthority));
+        _workspaceRootProvider = workspaceRootProvider
+            ?? AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority);
         _refreshTimer = new Timer(_ => Refresh(), state: null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
     }
 
@@ -63,7 +67,8 @@ internal sealed class AgentSessionContinuityAvailabilityProjection : IDisposable
             summary = _coordinator.Reconcile(new AgentSessionContinuityReconcileRequest(
                 workspaceKey,
                 workspaceRoot,
-                isStartup: false));
+                isStartup: false,
+                origin: AgentSessionContinuityReconcileOrigin.WorkspaceOpen));
         }
         catch
         {

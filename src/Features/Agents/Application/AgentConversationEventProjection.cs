@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
+using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 
@@ -21,6 +23,7 @@ internal sealed class AgentConversationEventProjection : IDisposable
     internal const string SessionEndedContentPrefix = "zaide-session-ended|v1|";
     internal const string TerminationIndeterminateContentPrefix = "zaide-termination-indeterminate|v1|";
     internal const string LateCompletionLabelPrefix = "zaide-late-completion|v1|";
+    internal const string InterruptedRunContentPrefix = "zaide-interrupted-run|v1|";
 
     private readonly IConversationStore _conversationStore;
     private readonly IActorCatalog? _actorCatalog;
@@ -334,6 +337,91 @@ internal sealed class AgentConversationEventProjection : IDisposable
 
         conversationStore.AppendEntry(conversationId, entry);
         return entry;
+    }
+
+    /// <summary>
+    /// Projects a classified interrupted session into the owning conversation.
+    /// Exactly once per reconcile origin/session/classification tuple. Does not
+    /// claim backend resume is usable.
+    /// </summary>
+    public static ConversationEntry ProjectInterruptedRun(
+        IConversationStore conversationStore,
+        ConversationId conversationId,
+        ActorId authorActorId,
+        AgentSessionId sessionId,
+        AgentSessionContinuityClassification classification,
+        AgentRunStatus? runStatus,
+        bool isLegacyCwdRecord,
+        AgentSessionContinuityReconcileOrigin origin)
+    {
+        ArgumentNullException.ThrowIfNull(conversationStore);
+        if (conversationId == default)
+        {
+            throw new ArgumentException("Conversation id is required.", nameof(conversationId));
+        }
+
+        if (authorActorId == default)
+        {
+            throw new ArgumentException("Author actor id is required.", nameof(authorActorId));
+        }
+
+        if (sessionId == default)
+        {
+            throw new ArgumentException("Session id is required.", nameof(sessionId));
+        }
+
+        var correlation = AgentSessionContinuityCorrelation.ToEntryCorrelation(sessionId, origin);
+        var content = FormatInterruptedRunContent(
+            classification,
+            runStatus,
+            isLegacyCwdRecord,
+            origin);
+
+        if (conversationStore.TryGet(conversationId, out var conversation)
+            && conversation.Entries.Any(e =>
+                e.CorrelationId == correlation
+                && e.Kind == ConversationEntryKind.ExecutionFailure
+                && e.Content == content))
+        {
+            return conversation.Entries.First(e =>
+                e.CorrelationId == correlation
+                && e.Kind == ConversationEntryKind.ExecutionFailure
+                && e.Content == content);
+        }
+
+        var entry = ConversationEntry.ExecutionFailure(
+            ConversationEntryId.New(),
+            authorActorId,
+            DateTimeOffset.UtcNow,
+            content,
+            correlation);
+
+        conversationStore.AppendEntry(conversationId, entry);
+        return entry;
+    }
+
+    internal static string FormatInterruptedRunContent(
+        AgentSessionContinuityClassification classification,
+        AgentRunStatus? runStatus,
+        bool isLegacyCwdRecord,
+        AgentSessionContinuityReconcileOrigin origin)
+    {
+        var compatibility = isLegacyCwdRecord ? "legacy-cwd" : "workspace-owned";
+        var resumeClaim = "Resume is not available. Send your message again to start a new run.";
+        var runLabel = runStatus?.ToString() ?? "Unknown";
+        var originLabel = origin == AgentSessionContinuityReconcileOrigin.StartupLegacyCwd
+            ? "application-start legacy reconciliation"
+            : "workspace-open reconciliation";
+
+        return string.Join(
+            '|',
+            "zaide-interrupted-run",
+            "v1",
+            classification.ToString(),
+            runLabel,
+            compatibility,
+            originLabel,
+            resumeClaim);
     }
 
     public void Dispose()

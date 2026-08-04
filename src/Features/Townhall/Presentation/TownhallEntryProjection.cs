@@ -19,6 +19,7 @@ internal static class TownhallEntryProjection
     private const string SessionEndedPrefix = "zaide-session-ended|v1|";
     private const string TerminationIndeterminatePrefix = "zaide-termination-indeterminate|v1|";
     private const string LateCompletionPrefix = "zaide-late-completion|v1|";
+    private const string InterruptedRunPrefix = "zaide-interrupted-run|v1|";
     public static TownhallMessageKind ToTownhallMessageKind(ConversationEntryKind kind) =>
         kind switch
         {
@@ -139,6 +140,12 @@ internal static class TownhallEntryProjection
         {
             var lateText = FormatPrefixedDisplayTail(entry.Content, LateCompletionPrefix, "(empty)");
             return $"Late completion after cancellation: {lateText}";
+        }
+
+        if (entry.Kind == ConversationEntryKind.ExecutionFailure
+            && entry.Content.StartsWith(InterruptedRunPrefix, StringComparison.Ordinal))
+        {
+            return FormatInterruptedRunDisplayContent(entry.Content);
         }
 
         return entry.Kind switch
@@ -387,6 +394,29 @@ internal static class TownhallEntryProjection
 
         var tail = content[prefix.Length..];
         return string.IsNullOrWhiteSpace(tail) ? fallback : tail;
+    }
+
+    private static string FormatInterruptedRunDisplayContent(string content)
+    {
+        var parts = content.Split('|');
+        if (parts.Length < 7
+            || !string.Equals(parts[0], "zaide-interrupted-run", StringComparison.Ordinal)
+            || !string.Equals(parts[1], "v1", StringComparison.Ordinal))
+        {
+            return "Previous agent run was interrupted. Send your message again to start a new run.";
+        }
+
+        var classification = parts[2];
+        var runStatus = parts[3];
+        var compatibility = parts[4];
+        var originLabel = parts[5];
+        var resumeClaim = string.Join('|', parts, 6, parts.Length - 6);
+        var legacySuffix = string.Equals(compatibility, "legacy-cwd", StringComparison.Ordinal)
+            ? " Legacy process-CWD record (read-only)."
+            : string.Empty;
+
+        return
+            $"Interrupted run ({classification}, {runStatus}) after {originLabel}.{legacySuffix} {resumeClaim}";
     }
 
     private static string FormatEvidenceLevelLabel(string evidenceLevel) =>
