@@ -2,10 +2,10 @@
 
 ## Status and Authorization
 
-**M0–M3 are complete; M4 remains unauthorized.** This sub-phase depends on
-completed and re-smoked Phase 22.2. The verified M0 report is
-[M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). M4 requires its own later
-authorization.
+**M0–M4 are complete.** This sub-phase depends on completed and re-smoked
+Phase 22.2. The verified M0 report is
+[M0_SEAM_VERIFICATION.md](./M0_SEAM_VERIFICATION.md). G5 and V4 remain
+unauthorized.
 
 ## A4 Ownership and Dependency
 
@@ -77,7 +77,7 @@ status semantics or backend-specific management silos.
 | M1 | Complete — Townhall trace surface, opened-workspace inspection, explicit application-lifetime capture control, and independent Native/ACP evidence hooks | Build; `Phase21Trace*`, `Phase21Redaction*`, `Phase22TraceSurfaceTests`, `Phase22TraceProducerTests`, trace/storage ratchets; full fast suite |
 | M2 | Complete — Townhall memory lifecycle surface, opened-workspace list/select/create/correct/disable/supersede/delete, provenance/conflict/influence separation, Loading/Ready/Empty/Unavailable/Failed | Build; `Phase21Memory*`, `Phase22MemorySurfaceTests`, memory ratchet; architecture inventory |
 | M3 | Complete — Townhall usage/cost surface, opened-workspace inspection, locked aggregation semantics, explicit capture control, independent Native/ACP truthful producer hooks | Build; `Phase21Usage*`, `Phase21Cost*`, `Phase22UsageSurfaceTests`, `Phase22UsageProducerTests`, usage ratchet; full fast suite |
-| M4 | Integrated Townhall commands/View, real accessibility and failure states, backup safety, regression, and affected A3 re-smoke gates pass | `Phase22Transparency*`, Phase 21 integration/export/backup, DI/architecture, full suite, isolated transparency smoke |
+| M4 | Complete — integrated Townhall commands/View, real accessibility and failure states, backup safety, regression, and dual-backend A3 re-smoke | `Phase22Transparency*`, Phase 21 integration/export/backup, DI/architecture, full suite, isolated transparency smoke |
 
 ## Verification Commands
 
@@ -103,14 +103,15 @@ and use the umbrella
 
 ## Exit Conditions
 
-- [ ] Phase 22.2 dependency and both approval gates are recorded.
-- [ ] Trace, memory, and usage/cost surfaces are user-reachable and
+- [x] Phase 22.2 dependency and both approval gates are recorded.
+- [x] Trace, memory, and usage/cost surfaces are user-reachable and
   accessibility-tested.
-- [ ] Phase 21 redaction, evidence, retention, scope, and ownership invariants
+- [x] Phase 21 redaction, evidence, retention, scope, and ownership invariants
   remain protected.
-- [ ] Focused, build, and suite gates pass.
-- [ ] `A1-TC-02`, `A1-TC-03`, and `A1-TC-08` have current isolated re-smoke
-  evidence.
+- [x] Focused, build, and suite gates pass.
+- [x] `A1-TC-02`, `A1-TC-03`, and `A1-TC-08` have current isolated re-smoke
+  evidence for both Native Harness and ACP under
+  [evidence/](./evidence/).
 
 ## Rollback Note
 

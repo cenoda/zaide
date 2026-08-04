@@ -157,6 +157,22 @@ while (true)
                 sessionUpdate = "agent_message_chunk",
                 content = new { type = "text", text = mode == "tool-activity" ? "tool activity complete" : "fake agent response" },
             }).ConfigureAwait(false);
+
+        // Phase 22.4 transparency re-smoke: emit a stable public usage_update
+        // envelope so ACP reported point-in-time tokens and cumulative cost are
+        // observable without inventing product-side pricing.
+        if (mode is "healthy" or "fast-prompt" or "tool-activity")
+        {
+            await WriteSessionUpdateAsync(
+                "fake-session-1",
+                new
+                {
+                    sessionUpdate = "usage_update",
+                    used = 128,
+                    size = 200000,
+                    cost = new { amount = 0.12, currency = "USD" },
+                }).ConfigureAwait(false);
+        }
     }
 
     if (root.TryGetProperty("id", out var idElement))

@@ -11,13 +11,19 @@ internal sealed class AgentTransparencyBackupPackage
         AgentTransparencyLifecycleStatus status,
         string? unavailableReason = null)
     {
-        if (string.IsNullOrWhiteSpace(backupDirectory))
+        // Accepted backups must point at a real directory. Failure statuses
+        // (missing/unavailable partitions) intentionally carry an empty path so
+        // clean-profile Backup can return a truthful package without throwing.
+        if (status == AgentTransparencyLifecycleStatus.Accepted
+            && string.IsNullOrWhiteSpace(backupDirectory))
         {
-            throw new ArgumentException("Backup directory is required.", nameof(backupDirectory));
+            throw new ArgumentException(
+                "Backup directory is required for an accepted backup.",
+                nameof(backupDirectory));
         }
 
         WorkspaceKey = workspaceKey;
-        BackupDirectory = backupDirectory;
+        BackupDirectory = backupDirectory ?? string.Empty;
         CreatedAtUtc = createdAtUtc;
         Status = status;
         UnavailableReason = unavailableReason;

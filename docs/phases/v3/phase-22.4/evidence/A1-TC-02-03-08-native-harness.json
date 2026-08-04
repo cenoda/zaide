@@ -1,0 +1,454 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "phase": "22.4-M4",
+  "scenarioId": "A1-TC-02,A1-TC-03,A1-TC-08",
+  "backendId": "native-harness",
+  "repoHead": "bb6fde099fb661c72869f61a04e78fb0c2167a6d",
+  "startedAtUtc": "2026-08-04T23:17:26.1290096+00:00",
+  "finishedAtUtc": "2026-08-04T23:17:30.7754703+00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repoHead": "bb6fde099fb661c72869f61a04e78fb0c2167a6d",
+    "harness": "a3-transparency",
+    "harnessVersion": "a3-transparency-m4-0.1"
+  },
+  "isolation": {
+    "profileRoot": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile",
+    "home": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile/home",
+    "xdgConfigHome": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile/config",
+    "xdgDataHome": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile/data",
+    "xdgStateHome": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile/state",
+    "xdgCacheHome": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile/cache",
+    "workspace": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/workspace"
+  },
+  "observed": {
+    "backend_id": "native-harness",
+    "scenario_matrix": [
+      "A1-TC-02",
+      "A1-TC-03",
+      "A1-TC-08"
+    ],
+    "profile_root": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile",
+    "workspace_root": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/workspace",
+    "command.registry_count": 41,
+    "command.ids": [
+      "explorer.toggleHiddenFiles",
+      "editor.foldToggle",
+      "editor.foldAll",
+      "editor.unfoldAll",
+      "tab.next",
+      "tab.previous",
+      "tab.close",
+      "tab.closeOthers",
+      "tab.closeAll",
+      "sourcecontrol.commit",
+      "sourcecontrol.refresh",
+      "project.build",
+      "project.run",
+      "project.test",
+      "project.cancel",
+      "debug.startOrContinue",
+      "debug.pause",
+      "debug.stop",
+      "debug.stepOver",
+      "debug.stepInto",
+      "debug.stepOut",
+      "debug.toggleBreakpoint",
+      "file.save",
+      "workspace.openFolder",
+      "workspace.closeFolder",
+      "view.toggleBottomPanel",
+      "palette.open",
+      "editor.find",
+      "editor.replace",
+      "editor.findNext",
+      "editor.findPrevious",
+      "editor.replaceNext",
+      "editor.replaceAll",
+      "editor.triggerSuggest",
+      "editor.goToDefinition",
+      "editor.documentSymbol",
+      "workbench.symbol",
+      "editor.formatDocument",
+      "agent.trace.open",
+      "agent.memory.open",
+      "agent.usage.open"
+    ],
+    "binding.backend_id": "backend:zaide-native-harness",
+    "binding.revision": "1",
+    "conversation.id": "direct:93652bcc466f4fd2ac4ab707d08f8ccc",
+    "session.id": "session:820194f5ab2c4afb9860d49e205d7c4c",
+    "run.id": "none",
+    "trace.record_count": 2,
+    "trace.capture_enabled": true,
+    "trace.selected.sequence": 1,
+    "trace.selected.kind": "Request",
+    "trace.selected.capture_state": "Redacted",
+    "trace.selected.evidence_level": "BackendExecutedAndReported",
+    "memory.initial_state": "Empty",
+    "memory.supersede.status": "Accepted",
+    "memory.records": 3,
+    "memory.influence_caption": "Influence evidence is attribution-only and is not editable lifecycle memory.",
+    "memory.scopes_seen": [
+      "Agent",
+      "ProjectShared"
+    ],
+    "usage.record_count": 4,
+    "usage.surface_state": "Ready",
+    "usage.capture_enabled": true,
+    "usage.selected.metric": "requests",
+    "usage.selected.origin": "Measured",
+    "usage.selected.unit": "count",
+    "usage.selected.aggregation": "Delta",
+    "cleanup.result": "ok:panels_disposed",
+    "assertion.pass_count": 55,
+    "assertion.total_count": 55,
+    "repo.head": "bb6fde099fb661c72869f61a04e78fb0c2167a6d",
+    "backend.id": "native-harness",
+    "workspace.root": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/workspace",
+    "profile.root": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile",
+    "command.ids.expected": [
+      "agent.trace.open",
+      "agent.memory.open",
+      "agent.usage.open"
+    ]
+  },
+  "assertions": [
+    {
+      "id": "backend.id.explicit",
+      "result": "pass",
+      "detail": "native-harness",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "scenario.matrix.exact",
+      "result": "pass",
+      "detail": "A1-TC-02,A1-TC-03,A1-TC-08",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "isolation.not_repo_workspace",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "isolation.disposable_profile",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-transparency-native-harness-Gr5Ka9QR/profile",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "di.townhall_transparency_owner",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "command.trace.registered",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "command.memory.registered",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "command.usage.registered",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "a11y.panels_focusable",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "a11y.trace.capture_name",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "a11y.memory.create_name",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "a11y.usage.capture_name",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.command.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.panel.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.capture.default_disabled",
+      "result": "pass",
+      "detail": "Trace capture disabled.",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.empty_or_disabled_before_run",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.capture.opt_in",
+      "result": "pass",
+      "detail": "Trace capture enabled: 0 record(s), 0 byte(s).",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.run.completed",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.records_present",
+      "result": "pass",
+      "detail": "count=2",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.selected",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.backend_id",
+      "result": "pass",
+      "detail": "backend:zaide-native-harness",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.capture_state",
+      "result": "pass",
+      "detail": "Redacted",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.evidence_level",
+      "result": "pass",
+      "detail": "BackendExecutedAndReported",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc02.trace.fixture_secret_absent",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.command.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.panel.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.initial_empty_or_ready",
+      "result": "pass",
+      "detail": "Empty",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.create",
+      "result": "pass",
+      "detail": "Accepted",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.ready",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.selected_after_create",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.provenance_user",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.scope_project",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.correct",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.disable",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.supersede_attempted",
+      "result": "pass",
+      "detail": "Accepted",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.create_for_delete",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.delete",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.conversation.present",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.conversation.still_present",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.conversation_unchanged",
+      "result": "pass",
+      "detail": "before=2 after=2",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.influence_attribution_only",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc03.memory.scopes_present",
+      "result": "pass",
+      "detail": "Agent,ProjectShared",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.command.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.panel.open",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.records_present",
+      "result": "pass",
+      "detail": "count=4",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.backend_attribution",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.native.request_count_measured",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.native.cost_unavailable",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.native.no_verified_invoice",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tc08.usage.selected",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "states.memory.defined",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "states.usage.defined",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "states.bounded_retry",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "paging.bounded",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "isolation.no_real_profile_clone",
+      "result": "pass",
+      "detail": "",
+      "evidenceClass": "product-runtime"
+    }
+  ],
+  "assertionPassCount": 55,
+  "assertionTotal": 55,
+  "failures": [],
+  "exitCode": 0,
+  "classificationHint": "WORKS"
+}

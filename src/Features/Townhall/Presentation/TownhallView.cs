@@ -59,6 +59,24 @@ public class TownhallView : Panel, IDisposable
     }
     private TownhallViewModel? _viewModel;
 
+    /// <summary>Townhall Trace entry button (Phase 22.4 transparency surface).</summary>
+    public Button TraceOpenButton => _traceButton;
+
+    /// <summary>Townhall Memory entry button (Phase 22.4 transparency surface).</summary>
+    public Button MemoryOpenButton => _memoryButton;
+
+    /// <summary>Townhall Usage entry button (Phase 22.4 transparency surface).</summary>
+    public Button UsageOpenButton => _usageButton;
+
+    /// <summary>Hosted Trace panel for accessibility and integration proofs.</summary>
+    internal AgentTracePanel TracePanel => _tracePanel;
+
+    /// <summary>Hosted Memory panel for accessibility and integration proofs.</summary>
+    internal AgentMemoryPanel MemoryPanel => _memoryPanel;
+
+    /// <summary>Hosted Usage panel for accessibility and integration proofs.</summary>
+    internal AgentUsagePanel UsagePanel => _usagePanel;
+
     public TownhallView()
     {
         _peoplePanel = new TownhallPeoplePanel { Background = PaletteTokens.SurfacePanelBrush };
@@ -96,12 +114,36 @@ public class TownhallView : Panel, IDisposable
         _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
         _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
         _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
-        _traceButton = new Button { Content = TextStyles.Caption("Trace") };
+        _traceButton = new Button
+        {
+            Content = TextStyles.Caption("Trace"),
+            Focusable = true,
+            IsTabStop = true,
+        };
         Avalonia.Automation.AutomationProperties.SetName(_traceButton, "Open agent trace evidence");
-        _memoryButton = new Button { Content = TextStyles.Caption("Memory") };
+        Avalonia.Automation.AutomationProperties.SetHelpText(
+            _traceButton,
+            "Opens the agent trace evidence panel for the opened workspace.");
+        _memoryButton = new Button
+        {
+            Content = TextStyles.Caption("Memory"),
+            Focusable = true,
+            IsTabStop = true,
+        };
         Avalonia.Automation.AutomationProperties.SetName(_memoryButton, "Open agent durable memory");
-        _usageButton = new Button { Content = TextStyles.Caption("Usage") };
+        Avalonia.Automation.AutomationProperties.SetHelpText(
+            _memoryButton,
+            "Opens the durable memory lifecycle panel for the opened workspace.");
+        _usageButton = new Button
+        {
+            Content = TextStyles.Caption("Usage"),
+            Focusable = true,
+            IsTabStop = true,
+        };
         Avalonia.Automation.AutomationProperties.SetName(_usageButton, "Open agent usage and cost evidence");
+        Avalonia.Automation.AutomationProperties.SetHelpText(
+            _usageButton,
+            "Opens the usage and cost evidence panel for the opened workspace.");
 
         var sidebar = BuildSidebar();
         var filterGroup = BuildFilterGroup();

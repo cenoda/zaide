@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Zaide.Tests</AssemblyName>
+    <RootNamespace>Zaide.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Out-of-tree A3 producer copies must disable root CPM and point at the live Zaide project. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <ZaideProjectPath Condition="'$(ZaideProjectPath)' == ''">$(MSBuildThisFileDirectory)../../../src/Zaide.csproj</ZaideProjectPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.0.5" />
+    <PackageReference Include="ReactiveUI.Avalonia" Version="12.0.3" />
+    <PackageReference Include="ReactiveUI.Avalonia.Microsoft.Extensions.DependencyInjection" Version="12.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(ZaideProjectPath)" />
+  </ItemGroup>
+</Project>

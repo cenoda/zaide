@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Zaide.Features.Agents.Application.Continuity;
 using Zaide.Features.Agents.Application.Transparency.Trace;
@@ -20,6 +21,10 @@ internal sealed class AgentTraceInspectionViewModel
     private readonly AgentTraceCoordinator _coordinator;
     private readonly AgentTraceAvailabilityProjection _availability;
     private readonly System.Func<string?> _workspaceRootProvider;
+    private readonly object _gate = new();
+    private long? _selectedOrderingSequence;
+    private IReadOnlyList<AgentTraceRecord> _records = Array.Empty<AgentTraceRecord>();
+    private AgentTraceInspectionSummary? _summary;
 
     public AgentTraceInspectionViewModel(
         AgentTraceCoordinator coordinator,
@@ -38,6 +43,52 @@ internal sealed class AgentTraceInspectionViewModel
 
     public bool BackpressureObserved => Availability.BackpressureObserved;
 
+    public AgentTraceInspectionSummary? Summary
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _summary;
+            }
+        }
+    }
+
+    public IReadOnlyList<AgentTraceRecord> Records
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _records;
+            }
+        }
+    }
+
+    public AgentTraceRecord? SelectedRecord
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_selectedOrderingSequence is not { } sequence)
+                {
+                    return null;
+                }
+
+                foreach (var record in _records)
+                {
+                    if (record.OrderingSequence == sequence)
+                    {
+                        return record;
+                    }
+                }
+
+                return null;
+            }
+        }
+    }
+
     public Task<AgentTraceInspectionSummary> LoadSummaryAsync() =>
         Task.FromResult(_coordinator.GetSummary(_workspaceRootProvider()));
 
@@ -48,6 +99,39 @@ internal sealed class AgentTraceInspectionViewModel
             _workspaceRootProvider(),
             afterOrderingSequence: afterOrderingSequence,
             maxRecords: maxRecords));
+
+    /// <summary>
+    /// Reloads the opened-workspace page into presentation state and clears a
+    /// stale selection when the sequence is no longer present.
+    /// </summary>
+    public void ReloadPresentation(int pageSize)
+    {
+        var summary = _coordinator.GetSummary(_workspaceRootProvider());
+        var records = _coordinator.GetRecords(
+            _workspaceRootProvider(),
+            afterOrderingSequence: 0,
+            maxRecords: pageSize);
+        lock (_gate)
+        {
+            _summary = summary;
+            _records = records;
+            if (_selectedOrderingSequence is { } selected
+                && records.All(record => record.OrderingSequence != selected))
+            {
+                _selectedOrderingSequence = null;
+            }
+        }
+
+        _availability.Refresh(force: true);
+    }
+
+    public void SelectRecord(long? orderingSequence)
+    {
+        lock (_gate)
+        {
+            _selectedOrderingSequence = orderingSequence;
+        }
+    }
 
     public void EnableCapture()
     {

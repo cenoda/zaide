@@ -2,9 +2,9 @@
 
 ## Status
 
-**M0–M3 are complete; M4 remains unauthorized.** A4 package 4 is assigned
-here. Phase 22.2 is complete with package-2 PASS restored, so the ordering
-dependency is satisfied.
+**M0–M4 are complete.** Phase 22.4 owns A4 package 4 and has finished the
+integrated transparency closeout with dual-backend A3 re-smoke. G5 and V4
+remain unauthorized. Do not start Phase 22.5 without separate authorization.
 
 ## Work Board
 
@@ -23,9 +23,9 @@ dependency is satisfied.
   reachability, and independent Native Harness / ACP evidence hooks.
 - [x] Implement M2 — scoped memory lifecycle surface only.
 - [x] Implement M3 — usage/cost surface only.
-- [ ] Implement M4 — integrated reachability, accessibility, backup safety,
+- [x] Implement M4 — integrated reachability, accessibility, backup safety,
   regression, and isolated `A1-TC-02` / `A1-TC-03` / `A1-TC-08` re-smoke.
-- [ ] Re-smoke `A1-TC-02`, `A1-TC-03`, and `A1-TC-08`.
+- [x] Re-smoke `A1-TC-02`, `A1-TC-03`, and `A1-TC-08`.
 
 ## Verified M0 findings
 
@@ -54,14 +54,15 @@ dependency is satisfied.
 
 ## Blockers
 
-- M4 remains unauthorized. Do not auto-start it from this board.
-- G5 remains blocked until accepted M1–M4 implementation and the owned
-  affected-row re-smoke complete.
+- G5 remains unauthorized until a separate human package closeout decides
+  the umbrella Phase 22 / A4 package readiness. Phase 22.4 alone does not
+  claim product readiness or G5 pass.
+- Phase 22.5, G5, and V4 remain unauthorized from this board.
 
 ## Next Task
 
-Wait for separate M4-only implementation authorization. Do not begin M4,
-Phase 22.5, G5, or V4 from this board.
+Phase 22.4 M4 is complete. Do not start Phase 22.5, G5 package closeout, or
+V4 without separate human authorization.
 
 ## M1 Trace Surface (2026-08-04) — accepted
 
@@ -159,3 +160,33 @@ closeout remain out of scope (M4).
 M3-only implementation was authorized under separate human GO. Do not start M4,
 Phase 22.5, G5, or V4 without separate authorization. No product-readiness
 claim.
+
+## M4 Integration Closeout (2026-08-05) — complete
+
+M4 closes the integrated Townhall transparency surface without adding product
+semantics beyond M1–M3:
+
+- integrated production reachability for Trace, Memory, and Usage together
+  (`agent.trace.open` / `agent.memory.open` / `agent.usage.open`, Townhall
+  named entry buttons, real Loading/Ready/Empty/Unavailable/Failed states)
+- real accessibility coverage against live panels: keyboard tab stops, named
+  controls, screen-reader value/help text, and bounded paging
+- lifecycle Backup failure-path fix: missing/unavailable partitions return a
+  truthful `NotFound`/`Rejected` package with an empty path instead of
+  throwing; Restore and Migrate remain non-user surfaces
+- regression gates for `Phase22Transparency*`, Phase 21 integration/export/
+  backup, DI/architecture, and full serial suite
+- isolated A3 re-smoke of `A1-TC-02`, `A1-TC-03`, and `A1-TC-08` once per
+  sibling backend via `tests/a3-transparency/runner/` published out of tree
+
+| Gate | Result |
+|------|--------|
+| `dotnet build Zaide.slnx --no-incremental` | PASS — 0 warnings, 0 errors |
+| M4 transparency/regression filter | PASS — 113/113 (named `Phase22Transparency*` classes discovered) |
+| `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` | PASS — 4000/4000 (serial fallback; accepted full-suite mode) |
+| Isolated A3 Native Harness (`A1-TC-02/03/08`) | PASS — 55/55 WORKS — [evidence/A1-TC-02-03-08-native-harness.json](./evidence/A1-TC-02-03-08-native-harness.json) |
+| Isolated A3 ACP (`A1-TC-02/03/08`) | PASS — 54/54 WORKS — [evidence/A1-TC-02-03-08-acp.json](./evidence/A1-TC-02-03-08-acp.json) |
+| `git diff --check` | PASS |
+
+M4-only implementation was authorized under separate human GO. No
+product-readiness claim. G5 and V4 remain unauthorized.

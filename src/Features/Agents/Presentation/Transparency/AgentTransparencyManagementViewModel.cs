@@ -193,8 +193,17 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     public void RefreshTracePresentation()
     {
-        _traceInspection.Refresh();
+        _traceInspection.ReloadPresentation(DefaultPageSize);
         TraceStatusCaption = _traceInspection.AvailabilityCaption;
+        this.RaisePropertyChanged(nameof(TraceInspection));
+    }
+
+    public AgentTraceInspectionViewModel TraceInspection => _traceInspection;
+
+    public void SelectTraceRecord(long? orderingSequence)
+    {
+        _traceInspection.SelectRecord(orderingSequence);
+        this.RaisePropertyChanged(nameof(TraceInspection));
     }
 
     public Task<AgentUsageInspectionSummary> LoadUsageSummaryAsync() =>
