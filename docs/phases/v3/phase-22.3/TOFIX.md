@@ -6,7 +6,7 @@
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
 `2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 accepted at
 `686b145958766ea1cd218c0bc768b242fecdcbf6`. Human accepted M5 after the
-independent re-audit. Phase 22.3 closure is not claimed.**
+independent re-audit. Phase 22.3 closure GO is recorded below.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -18,8 +18,9 @@ raw-different newer drafts were still cleared. That residual closed at
 shipped at `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`; independent M2 audit
 returned **NO-GO** (F1 CanEndSession; F2 ACP cancel-ack; F3 attempt correlation).
 F1–F3 corrective at `983487e0`. ACP retry residual at `a02f864a`. Parallel
-fast-suite crash residual under correction. M3–M5, G5, A3 execution, and V4
-have not started.
+fast-suite crash residual closed before M3 acceptance. M3 and M4 were accepted,
+and M5 was accepted after its independent re-audit at `87e455a1`. G5, Phase
+22.4, Phase 22.5, and V4 remain unstarted and unauthorized.
 
 ## Work Board
 
@@ -892,5 +893,24 @@ stop for independent re-audit.
 
 Human acceptance is recorded after the independent M5 re-audit of
 `ef1200e3` and its docs-only corrective `eb36f0f2`. M5 is accepted. This
-does not claim Phase 22.3 closure and does not authorize G5, Phase 22.4,
-Phase 22.5, or V4.
+does not authorize G5, Phase 22.4, Phase 22.5, or V4; the separately
+authorized closure audit is recorded below.
+
+## Phase 22.3 Closure Audit (2026-08-04) — GO
+
+Baseline: `87e455a143a59c192c9d800d11de765d421ab5d5` (M5 acceptance record).
+The audit verified that the accepted commit updates only the Phase 22.3 plan
+and work board, identifies the accepted M5 implementation and corrective
+baseline, and leaves every later authorization boundary explicit.
+
+| Command | Result |
+|---------|--------|
+| `scripts/run-m5-a3-matrix.sh` | PASS 16/16: every owned row for Native Harness and ACP |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3959/3959 |
+| `git diff --check` | PASS |
+
+**Closure GO:** Phase 22.3 is complete. This closeout covers only A4 packages
+3, 5, 6, and 7 and their owned isolated evidence. It does **not** claim or
+start G5, Phase 22.4, Phase 22.5, or V4; G5 remains blocked by the uncompleted
+package-4 / Phase 22.4 work and its required full affected-row re-smoke.

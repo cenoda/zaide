@@ -2,13 +2,14 @@
 
 ## Status and Authorization
 
-Phase 22 implementation is **in progress**. Sub-phase 22.1 is complete. Sub-phase
-22.2 is complete with package-2 PASS restored against the live ACP baseline after
-corrective ACP runtime-invalidation work, independent review of intervening
+Phase 22 implementation is **in progress**. Sub-phases 22.1, 22.2, and 22.3
+are complete. 22.2 restored package-2 PASS against the live ACP baseline after
+corrective ACP runtime-invalidation work, review of intervening
 `AcpStdioProcessHost` lifecycle hardening through `9c4bb94f`, targeted `A1-AC-02`
 evidence re-smoke at live HEAD `dfe2bf14` (16/16 **WORKS**), and independent
-re-audit. 22.3 and 22.4 remain pending separate authorization. No sub-phase
-authorizes 22.5, G5, or V4 from this document alone.
+re-audit. 22.3 closure GO was verified at `87e455a1` after accepted M5
+dual-backend evidence and regression gates. Phase 22.4 remains pending separate
+authorization. No sub-phase authorizes 22.5, G5, or V4 from this document alone.
 
 Phase 22 is part of Roadmap V3 as a post-closeout corrective program. The
 Phase 21 technical closeout remains a historical fact. It is not product-
@@ -137,13 +138,15 @@ Before a sub-phase can request implementation approval, its M0 must:
 5. identify preservation tests and rollback boundaries;
 6. receive explicit human plan acceptance.
 
-No G2 acceptance is recorded in this planning session for 22.3+. **22.1 is
-complete.** **22.2 G2 / M0 acceptance is recorded** in
+No G2 acceptance was recorded in the original planning session for 22.3+.
+**22.1 and 22.3 are complete.** **22.2 G2 / M0 acceptance is recorded** in
 [phase-22.2 M0](../phase-22.2/M0_SEAM_VERIFICATION.md); M1–M4 implementation,
 corrective runtime-invalidation work, refreshed ACP `A1-AC-02` evidence, and
 package-2 PASS restoration are tracked in
 [phase-22.2 TOFIX](../phase-22.2/TOFIX.md) and
-[phase-22.2 CLOSEOUT](../phase-22.2/CLOSEOUT.md).
+[phase-22.2 CLOSEOUT](../phase-22.2/CLOSEOUT.md). Phase 22.3 M0 through M5
+acceptance and closure GO are tracked in
+[phase-22.3 TOFIX](../phase-22.3/TOFIX.md).
 
 ### G3 — Implementation Approval per Sub-Phase
 
