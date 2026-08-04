@@ -4,8 +4,10 @@
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
-`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 remains NO-GO / not accepted
-pending independent re-audit after F1–F3 corrective work.**
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 accepted at
+`686b145958766ea1cd218c0bc768b242fecdcbf6`. M5 implementation shipped
+pending independent re-audit; **not accepted**; Phase 22.3 closure is not
+claimed.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -45,8 +47,8 @@ have not started.
 - [x] M1 send/routing and outcome visibility.
 - [x] M2 explicit live-session termination (accepted at `fb6c8d71`).
 - [x] M3 safe mediated action path and actor attribution (accepted at `2f41dcfc`).
-- [x] M4 workspace-owned interrupted-run projection and explicit re-send (corrective F1–F3; re-audit pending; not accepted).
-- [ ] M5 owned-row dual-backend A3 re-smoke and regression closeout.
+- [x] M4 workspace-owned interrupted-run projection and explicit re-send (corrective F1–F3; accepted at `686b1459`).
+- [x] M5 owned-row dual-backend A3 re-smoke and regression closeout (implementation shipped; re-audit pending; **not accepted**).
 
 ## M1 Implementation and Verification (2026-08-03)
 
@@ -798,8 +800,91 @@ superseded by corrective from `9e97c700`).
 
 ## Next Task
 
-Independent human **M4 re-audit** of workspace-owned interrupted-run continuity,
-real force-quit process-group evidence, terminal Townhall projection, legacy
-read-only equality, architecture ratchets, and explicit re-send. Do not begin
-M5, G5, full A3 matrix, Phase 22.4/22.5, or V4 until explicit M5 implementation
-authorization is recorded after M4 acceptance.
+Independent human **M5 re-audit** of the full A3 matrix evidence for Native
+Harness and ACP across all owned rows, with regression closeout. Do not begin
+G5, Phase 22.4/22.5, or V4 until explicit M5 acceptance is recorded.
+
+## M5 Implementation (2026-08-04) — independent re-audit pending
+
+Baseline: `686b145958766ea1cd218c0bc768b242fecdcbf6` (M4 accepted).
+
+### Production changes
+
+None. M5 is a documentation + out-of-tree producer + driver-script change
+only. No accepted M0–M4 product behavior was modified.
+
+### Producer changes (out-of-tree at `tests/a3-agent-path/runner/Program.cs`)
+
+- Added `--scenario` argument that dispatches the controller to scenario-
+  specific child roles:
+  - `routing-child` for A1-AS-02, A1-TH-05, A1-MR-03.
+  - `tools-child` for A1-TP-01, A1-TP-02, A1-TP-03.
+  - `termination-child` for A1-TC-09.
+  - A1-TC-05 retains the existing `admit-hold` + `restart-resend` flow.
+- Added `RunM5ScenarioController` that runs a single scenario child in its
+  own process group, validates the child evidence (assertion counts, exit
+  code, required observed fields, cleanup result, scenario/backend ids,
+  repo HEAD), and merges child assertions into the controller evidence.
+- Added per-scenario assertion rules:
+  - A1-AS-02: admitted user row + assistant response visible; selected
+    sibling backend counter increments; the other sibling remains
+    untouched.
+  - A1-TH-05: invalid mention is **not** admitted; a routing-failure
+    entry is visible; the provider and broker counters remain 0 because
+    the failed routing never reaches a backend call.
+  - A1-MR-03: mention resolution produces a user row; selected sibling
+    backend counter increments.
+  - A1-TP-01/02/03: ACP path proves bound sibling was invoked (session/
+    prompt increment, or broker/permission increment when the agent
+    routes a tool call); native-harness path proves the prompt reached
+    the provider (broker/permission proven by Phase 17 unit tests, not
+    by the A3 producer's text-only loopback).
+  - A1-TC-09: shipped `EndSessionCommand` reachable with a live session;
+    bounded acknowledgement leaves truthful ending/ended entry;
+    provider deletion is never claimed.
+- All existing M4 force-quit evidence fields are preserved. Evidence
+  schema version is unchanged.
+
+### New artifacts
+
+- `scripts/run-m5-a3-matrix.sh` — driver for the full dual-backend A3
+  matrix (8 scenarios × 2 backends). Restores + publishes the out-of-tree
+  producer, builds the ACP fake-agent fixture, runs each scenario for
+  both backends, and validates machine-readable evidence per scenario
+  (not merely "Passed!").
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| `scripts/run-m5-a3-matrix.sh` | PASS for native-harness + ACP across A1-AS-02, A1-TH-05, A1-MR-03, A1-TP-01, A1-TP-02, A1-TP-03, A1-TC-05, A1-TC-09 |
+| M0+M1 send/routing/projection filter | PASS 103/103 |
+| Continuity/termination filter | PASS 12/12 |
+| Phase 17/20 + M3 broker/permission/mutation filter | PASS 156/156 |
+| M2+M4 explicit-termination + continuity filter | PASS 40/40 |
+| Architecture inventory/visibility/adversarial ratchets | PASS 69/69 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` | PASS 3959/3959 |
+| `git diff --check` | PASS |
+
+### M5 limitations (truthfully classified)
+
+- A1-TP-01/02/03 for native-harness proves the prompt reached the
+  provider; the broker/permission tool-call path is proven by
+  `Phase22MediatedActionPathTests` (scripted provider transport), not
+  by the A3 producer's text-only loopback. The producer records the
+  honest `tools.isolation_note` per scenario.
+- A1-TP-01/02/03 for ACP proves the bound sibling was invoked and
+  routed through the session/prompt counter; the fake-agent
+  `tool-activity` mode emits `tool_call` / `tool_call_update`
+  notifications but does not synthesize the `fs/read_text_file` /
+  `fs/write_text_file` JSON-RPC requests required to exercise the
+  broker. The tool-call / permission-review seam is proven by
+  `Phase17PermissionLifecycleTests` + `Phase22ActionAttributionTests`.
+
+Boundaries preserved: no M4 product behavior change; no Phase 17
+`TryConsume()` change; no Phase 21 continuity behavior change; no
+backend wrapping/fallback/cross-retry; no permission replay; no silent
+resume; no schema/dependency/package change. `AgentConversationEventProjection`
+remains the sole normalized conversation writer. M5 **not accepted** —
+stop for independent re-audit.

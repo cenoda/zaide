@@ -4,10 +4,10 @@
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 accepted at
 `fb6c8d711f2088ae978ba0d9d01d1628f23a7692`. M3 accepted at
-`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 remains NO-GO / not accepted
-pending independent re-audit after F1–F3 corrective work (invalid prior A3
-force-quit claim corrected; legacy startup path made read-only; inventory
-ratchets updated).**
+`2f41dcfc0c885b48b0a602625bd85f47cc78020d`. M4 accepted at
+`686b145958766ea1cd218c0bc768b242fecdcbf6`. M5 implementation shipped;
+independent re-audit pending; **not accepted**. Phase 22.3 closure is not
+claimed.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit at
 `c2904fb100d538b0bd080eab3002cfc3994b6889`. Separate Phase 22.3 M1
@@ -76,7 +76,8 @@ and ACP.
 - [x] Receive separate Phase 22.3 M2 implementation approval.
 - [x] Receive separate Phase 22.3 M3 implementation approval.
 - [x] Receive separate Phase 22.3 M4 implementation approval.
-- [ ] Receive separate Phase 22.3 M5 implementation approval.
+- [x] Receive separate Phase 22.3 M5 implementation approval.
+- [ ] Receive separate Phase 22.3 M5 acceptance after independent re-audit.
 
 ## Scope
 
