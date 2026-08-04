@@ -61,6 +61,8 @@ internal sealed class NativeHarnessProviderClient : INativeHarnessProviderTransp
         };
         httpRequest.Headers.Add("Authorization", $"Bearer {options.ApiKey}");
 
+        AgentPathEvidenceInvocationCounters.RecordNativeHarnessProviderRequest();
+
         HttpResponseMessage response;
         try
         {

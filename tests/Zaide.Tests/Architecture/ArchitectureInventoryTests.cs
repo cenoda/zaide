@@ -188,7 +188,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 19 M3: +5 internal execution-loop production types.
         // Phase 20 M5: +2 internal actor/backend binding application services.
         // Phase 22.2 M1: +1 internal LazyAgentActorActiveRunQuery.
-        Assert.Equal((54, 7, 47), byNamespace["Zaide.Features.Agents.Application"]);
+        // Phase 22.3 M4 corrective: +2 internal invocation counter types.
+        Assert.Equal((56, 7, 49), byNamespace["Zaide.Features.Agents.Application"]);
         // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
         // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
         Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
@@ -301,8 +302,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
-        // Phase 22.3 M4: +6 authorized continuity production source files (875).
-        Assert.Equal(875, inventory.SourceFiles.Count);
+        // Phase 22.3 M4 corrective: +1 authorized invocation counter source file (876).
+        Assert.Equal(876, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -344,8 +345,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
-        // Phase 22.3 M4: +6 Features continuity production source files (830).
-        Assert.Equal(830, byFolder["Features"]);
+        // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
+        Assert.Equal(831, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

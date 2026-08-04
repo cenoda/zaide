@@ -4,6 +4,28 @@ using System.Text.Json;
 
 var mode = args.Length > 0 ? args[0] : "healthy";
 var initializeCount = 0;
+var sessionNewCount = 0;
+var sessionPromptCount = 0;
+var statsFile = Environment.GetEnvironmentVariable("ZAIDE_ACP_STATS_FILE");
+
+void WriteStats()
+{
+    if (string.IsNullOrWhiteSpace(statsFile))
+    {
+        return;
+    }
+
+    var payload = JsonSerializer.Serialize(new
+    {
+        initialize = initializeCount,
+        sessionNew = sessionNewCount,
+        sessionPrompt = sessionPromptCount,
+    });
+    Directory.CreateDirectory(Path.GetDirectoryName(statsFile)!);
+    File.WriteAllText(statsFile, payload);
+}
+
+WriteStats();
 
 if (mode == "spawn-child")
 {
@@ -73,12 +95,37 @@ while (true)
         continue;
     }
 
+    // Count at request receipt so M4 evidence counters align with protocol send boundaries.
+    if (method == "initialize")
+    {
+        initializeCount++;
+        WriteStats();
+    }
+
+    if (method == "session/new")
+    {
+        sessionNewCount++;
+        WriteStats();
+    }
+
+    if (method == "session/prompt")
+    {
+        sessionPromptCount++;
+        WriteStats();
+    }
+
     if (mode == "slow-init" && method == "initialize")
     {
         await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
     }
 
     if (mode == "slow-request")
+    {
+        await Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
+    }
+
+    // M4 force-quit evidence: keep prompt in-flight without exceeding InitializeTimeout (30s).
+    if (mode == "slow-prompt" && method == "session/prompt")
     {
         await Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
     }
@@ -114,11 +161,6 @@ while (true)
 
     if (root.TryGetProperty("id", out var idElement))
     {
-        if (method == "initialize")
-        {
-            initializeCount++;
-        }
-
         var response = BuildResponse(idElement, method, mode, initializeCount);
         var payload = JsonSerializer.Serialize(response);
         await Console.Out.WriteLineAsync(payload).ConfigureAwait(false);

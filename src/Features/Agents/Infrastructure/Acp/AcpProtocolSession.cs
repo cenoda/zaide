@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Domain;
 
 namespace Zaide.Features.Agents.Infrastructure.Acp;
@@ -90,6 +91,8 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
 
         AcpSessionValidation.RequireAbsoluteWorkingDirectory(absoluteWorkingDirectory);
 
+        AgentPathEvidenceInvocationCounters.RecordAcpSessionNewRequest();
+
         var response = await _connection.SendRequestAsync(
             AcpMethodNames.SessionNew,
             new AcpNewSessionParams
@@ -144,6 +147,8 @@ internal sealed class AcpProtocolSession : IAsyncDisposable
         }
 
         _connection.SetNotificationHandler(OnNotification);
+
+        AgentPathEvidenceInvocationCounters.RecordAcpSessionPromptRequest();
 
         var response = await _connection.SendRequestAsync(
             AcpMethodNames.SessionPrompt,

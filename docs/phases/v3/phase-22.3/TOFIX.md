@@ -674,9 +674,63 @@ PASS under that script as non-evidence.
 
 **M4 remains NO-GO / not accepted.**
 
-## M4 Corrective — F1/F2/F3 (2026-08-04) — independent re-audit pending
+## M4 Corrective — F1/F2/F3 (from `9e97c700`) — independent re-audit pending
 
-Baseline under correction: `a0927246ab70c8cc4c5603747270e24b6071f5ac`.
+Baseline under correction: `9e97c70071042409e60e53ef90327597387cc73b`.
+Shipped at: `1d769b3a` (pending push verification).
+
+### F1 — Restart classification (corrected)
+
+- Removed always-true classification fallback; requires interrupted session for
+  force-killed session/run.
+- Asserts exact classification per backend (Recoverable vs Indeterminate) with
+  `ResumeCurrentlyUsable=false`.
+- Evidence bound to pre-kill session/run, backend, workspace root/key, checkpoint.
+
+### F2 — Zero invocation before explicit resend (corrected)
+
+- `AgentPathEvidenceInvocationCounters` at Native Harness provider, ACP
+  protocol session/new/prompt, broker, and permission-review boundaries.
+- ACP fake-agent stats file (`ZAIDE_ACP_STATS_FILE`) for child-process proof.
+- Restart baselines captured before workspace-open reconciliation; pre-resend
+  deltas asserted exactly zero (not inferred from null live session alone).
+- Post-resend: selected sibling backend increments; other backend untouched.
+- Producer vendored at `tests/a3-agent-path/runner/`; script rsyncs to
+  `/tmp/zaide-a3-agent-path/runner/` for publish.
+- ACP fixture launch resolves `.dll` paths through `dotnet` (matches test fixture).
+- Fake-agent `slow-prompt` mode keeps prompt in-flight without exceeding the 30s
+  `InitializeTimeout` that invalidated prior `slow-request` evidence.
+
+### F3 — Evidence validation (corrected)
+
+- `scripts/run-m4-force-quit-a3.sh` validates classification, session/run
+  identities, zero pre-resend deltas, and post-resend selected-backend deltas.
+- Rejects missing, vacuous, or mismatched evidence fields; binds `repoHead` at
+  runtime.
+
+### Verification results (corrective from `9e97c700`)
+
+| Command | Result |
+|---------|--------|
+| `--list-tests` M4 classes | Discovered 15 tests |
+| M4 explicit filter | PASS 15/15 |
+| Phase 21 + M4 continuity filter | PASS 27/27 |
+| M0–M3 preservation filter | PASS 166/166 |
+| Architecture inventory/visibility/adversarial ratchets | PASS 69/69 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| `dotnet test Zaide.slnx --no-build` (parallel) | FAIL 3958/3959 — flaky `TerminalTabHost_DisposesInactivePanels…` under parallel load |
+| `dotnet test Zaide.slnx --no-build --settings tests/Zaide.Tests/slow.runsettings` (serial fallback) | PASS 3959/3959 |
+| `scripts/run-m4-force-quit-a3.sh` | PASS native-harness + ACP; evidence fields validated |
+| `git diff --check` | PASS |
+
+Boundaries preserved: no M5 / G5 / full A3 matrix; no usable backend resume; no
+permission/proposal replay; Native Harness and ACP remain independent siblings.
+**M4 not accepted — stop for independent re-audit.**
+
+## M4 Corrective — F1/F2/F3 (2026-08-04) — superseded baseline
+
+Baseline under correction: `a0927246ab70c8cc4c5603747270e24b6071f5ac` (prior pass;
+superseded by corrective from `9e97c700`).
 
 ### F1 — Real isolated force-quit producer
 
@@ -694,7 +748,7 @@ Baseline under correction: `a0927246ab70c8cc4c5603747270e24b6071f5ac`.
   asserts zero live backend session/invocation before re-send, explicit re-send
   creates a new session/run, and cleans up scenario-owned process groups.
 - Native Harness uses a deterministic loopback provider; ACP uses the repository
-  fake-agent binary (`slow-request`); no wrapping, fallback, or cross-backend
+  fake-agent binary (`slow-prompt`); no wrapping, fallback, or cross-backend
   retry.
 - `scripts/run-m4-force-quit-a3.sh` validates required evidence fields (not merely
   grepping `Passed!`). M4-scoped A1-TC-05 only — not the full M5 matrix.
@@ -731,24 +785,7 @@ Baseline under correction: `a0927246ab70c8cc4c5603747270e24b6071f5ac`.
   real force-quit is the out-of-tree producer).
 - Added deterministic legacy byte-for-byte read-only verification.
 
-### Verification results (corrective)
-
-| Command | Result |
-|---------|--------|
-| `--list-tests` M4 classes | Discovered 15 tests |
-| M4 explicit filter | PASS 15/15 |
-| Phase 21 continuity/restart/recovery/termination filter | PASS |
-| M0–M3 preservation filters | PASS |
-| Architecture inventory/visibility/adversarial ratchets | PASS |
-| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
-| `dotnet test Zaide.slnx --no-build` | (run in interactive terminal for final gate) |
-| Real M4 A3 producer native-harness + ACP | PASS; evidence fields validated |
-| Independent evidence inspection | PASS both backends |
-| `git diff --check` | PASS |
-
-Boundaries preserved: no M5 / G5 / full A3 matrix; no usable backend resume; no
-permission/proposal replay; Native Harness and ACP remain independent siblings.
-**M4 not accepted — stop for independent re-audit.**
+(Superseded verification table removed; see corrective-from-`9e97c700` section above.)
 
 ## Remaining Open Product Gaps (post-M4 corrective)
 

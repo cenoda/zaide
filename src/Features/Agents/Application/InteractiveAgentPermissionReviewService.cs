@@ -61,6 +61,7 @@ internal sealed class InteractiveAgentPermissionReviewService : IAgentPermission
         WorkspaceActionScope? workspaceScope,
         CancellationToken cancellationToken)
     {
+        AgentPathEvidenceInvocationCounters.RecordPermissionReviewRequest();
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(displaySummary);
 

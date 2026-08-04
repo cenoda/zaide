@@ -217,8 +217,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.2 corrective: +1 AcpRuntimeBindingFingerprint production file.
         // Phase 22.3 M2: +1 AgentSessionEndResult production file.
         // Phase 22.3 M2 residual: +2 cancel-ack seam production files.
-        // Phase 22.3 M4: +6 Features continuity production source files (830).
-        Assert.Equal(830, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 22.3 M4 corrective: +1 Features invocation counter source file (831).
+        Assert.Equal(831, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

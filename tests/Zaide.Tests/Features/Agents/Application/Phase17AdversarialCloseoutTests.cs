@@ -284,8 +284,8 @@ public sealed class Phase17AdversarialCloseoutTests : IDisposable
 
         Assert.Equal(ArchitectureInventoryReader.M0TotalTopLevelTypes, inventory.TotalTopLevelTypeCount);
         // Phase 22.3 M4: +6 authorized continuity production source files.
-        Assert.Equal(875, inventory.SourceFiles.Count);
-        Assert.Equal(830, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(876, inventory.SourceFiles.Count);
+        Assert.Equal(831, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }

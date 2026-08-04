@@ -180,6 +180,7 @@ internal sealed class ContractAgentActionBroker : IAgentActionBroker
         string? correlationKey,
         CancellationToken cancellationToken)
     {
+        AgentPathEvidenceInvocationCounters.RecordBrokerRequest();
         cancellationToken.ThrowIfCancellationRequested();
 
         if (_revoked)

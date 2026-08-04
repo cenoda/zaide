@@ -70,10 +70,22 @@ internal static class AcpProcessEnvironmentPolicy
         || key.Contains("PASSWORD", StringComparison.OrdinalIgnoreCase)
         || key.Contains("API_KEY", StringComparison.OrdinalIgnoreCase);
 
-    public static IReadOnlyDictionary<string, string> CreateAllowlistedEnvironment() =>
-        new Dictionary<string, string>(StringComparer.Ordinal)
+    public static IReadOnlyDictionary<string, string> CreateAllowlistedEnvironment()
+    {
+        var env = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["DOTNET_ENVIRONMENT"] = "Production",
             ["PATH"] = Environment.GetEnvironmentVariable("PATH") ?? string.Empty,
         };
+
+        // Isolated A3/M4 evidence only: allow fake-agent request counters when explicitly set
+        // on the parent process. Never allowlisted for production secrets.
+        var statsFile = Environment.GetEnvironmentVariable("ZAIDE_ACP_STATS_FILE");
+        if (!string.IsNullOrWhiteSpace(statsFile))
+        {
+            env["ZAIDE_ACP_STATS_FILE"] = statsFile;
+        }
+
+        return env;
+    }
 }
