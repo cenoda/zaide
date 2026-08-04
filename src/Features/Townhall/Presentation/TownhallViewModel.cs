@@ -43,6 +43,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly SerialDisposable _directBusySubscription = new();
     private readonly IDisposable? _sessionEventsSubscription;
+    /// <summary>
+    /// Guards <see cref="DirectNavItems"/> mutations and enumeration. Entry-appended
+    /// projection may run off the UI thread while navigation commands refresh the
+    /// collection; <see cref="ObservableCollection{T}"/> is not thread-safe.
+    /// </summary>
+    private readonly object _directNavSync = new();
     private bool _disposed;
     private string _draftText = string.Empty;
     private FilterMode _filterMode = FilterMode.All;
@@ -1087,10 +1093,13 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         if (conversation.Kind == ConversationKind.Direct)
         {
-            var item = DirectNavItems.FirstOrDefault(i => i.ConversationId == conversation.Id);
-            if (item is not null)
+            lock (_directNavSync)
             {
-                item.HasUnread = isUnread;
+                var item = DirectNavItems.FirstOrDefault(i => i.ConversationId == conversation.Id);
+                if (item is not null)
+                {
+                    item.HasUnread = isUnread;
+                }
             }
         }
     }
@@ -1237,10 +1246,13 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             .OrderBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        DirectNavItems.Clear();
-        foreach (var item in items)
+        lock (_directNavSync)
         {
-            DirectNavItems.Add(item);
+            DirectNavItems.Clear();
+            foreach (var item in items)
+            {
+                DirectNavItems.Add(item);
+            }
         }
     }
 
@@ -1287,12 +1299,15 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private void UpdateDirectNavSelection()
     {
         var selectedId = _state.ActiveConversationId;
-        foreach (var item in DirectNavItems)
+        lock (_directNavSync)
         {
-            item.IsSelected = selectedId.HasValue && item.ConversationId == selectedId.Value;
-            if (_conversationStore.TryGet(item.ConversationId, out var conversation))
+            foreach (var item in DirectNavItems)
             {
-                item.HasUnread = _conversationUiState.IsUnread(conversation);
+                item.IsSelected = selectedId.HasValue && item.ConversationId == selectedId.Value;
+                if (_conversationStore.TryGet(item.ConversationId, out var conversation))
+                {
+                    item.HasUnread = _conversationUiState.IsUnread(conversation);
+                }
             }
         }
     }
@@ -1325,8 +1340,10 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             {
                 RefreshDirectNavItems();
 
-                if (isActive)
+                if (isActive && _state.ActiveConversationId == conversationId)
                 {
+                    // Re-check activity after nav refresh: a concurrent switch must not
+                    // append into a replaced Messages collection mid-navigation.
                     Messages.Add(TownhallEntryProjection.ToTownhallMessage(entry, _actorCatalog));
                 }
             }
@@ -1878,10 +1895,13 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     {
         if (e.PropertyName == nameof(AgentPanelState.ContextDisclosureStatus) && sender is AgentPanelState panel)
         {
-            var navItem = DirectNavItems.FirstOrDefault(i => i.ConversationId == panel.ConversationId);
-            if (navItem != null)
+            lock (_directNavSync)
             {
-                navItem.ContextDisclosureStatus = panel.ContextDisclosureStatus;
+                var navItem = DirectNavItems.FirstOrDefault(i => i.ConversationId == panel.ConversationId);
+                if (navItem != null)
+                {
+                    navItem.ContextDisclosureStatus = panel.ContextDisclosureStatus;
+                }
             }
         }
     }

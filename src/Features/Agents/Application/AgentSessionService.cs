@@ -272,14 +272,16 @@ internal sealed class AgentSessionService
     }
 
     /// <summary>
-    /// Default bounded wait for backend observer acknowledgement during explicit end.
+    /// Bounded wait for backend observer acknowledgement during explicit end.
     /// Timeout leaves the session in <see cref="AgentSessionStatus.Ending"/> with a
     /// retryable indeterminate result; it does not claim the backend stopped.
     /// Sized above independent sibling cancel-ack budgets (for example ACP
     /// <c>CancelPromptTimeout</c>) so the outer wait observes their outcome rather
     /// than racing the same wall clock.
+    /// Instance-scoped so concurrent tests can bound one service without mutating
+    /// process-wide static state.
     /// </summary>
-    internal static TimeSpan EndAcknowledgementTimeout { get; set; } = TimeSpan.FromSeconds(15);
+    internal TimeSpan EndAcknowledgementTimeout { get; set; } = TimeSpan.FromSeconds(15);
 
     public async Task<AgentSessionEndResult> EndAsync(
         ConversationId conversationId,

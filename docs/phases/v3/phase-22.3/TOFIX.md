@@ -3,7 +3,8 @@
 ## Status
 
 **M1 accepted at `1a5ff04a3035df73331e3ea67eeba233491621c1`. M2 remains NO-GO
-pending independent re-audit after residual ACP retry corrective; not accepted.**
+pending independent re-audit after parallel-suite lifetime stabilization; not
+accepted.**
 
 Human M0 acceptance was recorded on 2026-08-03 after the independent GO audit.
 Separate Phase 22.3 M1 implementation authorization was granted in the same
@@ -14,8 +15,9 @@ raw-different newer drafts were still cleared. That residual closed at
 `1a5ff04`; human accepted M1 and authorized **M2 only**. M2 implementation
 shipped at `9c2163dc4431bfe29b1487e32f3c1881b5efff3a`; independent M2 audit
 returned **NO-GO** (F1 CanEndSession; F2 ACP cancel-ack; F3 attempt correlation).
-F1–F3 corrective at `983487e0`. Residual: ACP indeterminate retry falsely
-finalized without re-ack. M3–M5, G5, A3 execution, and V4 have not started.
+F1–F3 corrective at `983487e0`. ACP retry residual at `a02f864a`. Parallel
+fast-suite crash residual under correction. M3–M5, G5, A3 execution, and V4
+have not started.
 
 ## Work Board
 
@@ -375,8 +377,78 @@ Class total: **24** tests (was 18).
 
 Boundaries preserved: Native Harness / ACP independent siblings; no cross-backend
 fallback, provider deletion, session resume, or M3 behavior; no Phase 17
-`TryConsume()` or Phase 21 continuity changes. **M2 not accepted — stop for
-independent re-audit.**
+`TryConsume()` or Phase 21 continuity changes. **M2 not accepted.**
+
+## M2 Residual — Parallel Fast-Suite Lifetime Stability (2026-08-04)
+
+Baseline under correction: `a02f864a5b5aa0e5e0fb87f059b9f3839760f418`.
+
+### Independently observed failure truth
+
+Serial fallback: **PASS 3905/3905**.
+
+Parallel `dotnet test Zaide.slnx --no-build` aborted twice with:
+
+```
+ReactiveUI.UnhandledErrorException
+  inner NullReferenceException
+  TownhallViewModel.ApplyUnreadPresentation
+  TownhallViewModel.cs ~line 1090
+```
+
+Stack origin:
+`Phase22ExplicitSessionTerminationTests.EndSession_OperatesOnCapturedDirectConversation_NavigationDoesNotRedirect`
+at the second `OpenDirectConversationCommand` (navigation during in-flight end).
+
+Treated as M2 test-isolation / parallel reactive-lifetime defect with a real
+concurrent `DirectNavItems` access race until corrected; serial pass alone was
+not accepted as the normal gate.
+
+### Root causes addressed
+
+1. **Bare `Subscribe()`** on ReactiveCommands during navigation races surfaced
+   exceptions as process-wide ReactiveUI unhandled errors instead of awaited
+   task faults.
+2. **Undisposed** TownhallViewModel / projection / session services left
+   subscriptions live across teardown while gated send/end tasks were still
+   in flight.
+3. **Process-wide static** `AgentSessionService.EndAcknowledgementTimeout`
+   mutations could be observed by concurrent suites.
+4. **Production race:** `OnConversationEntryAppended` (off-thread agent
+   projection) refreshed/enumerated `DirectNavItems` concurrently with
+   navigation `RefreshDirectNavItems` / `ApplyUnreadPresentation`.
+   `ObservableCollection` is not thread-safe; concurrent access could NRE.
+
+### Correction
+
+- M2 harnesses dispose ViewModel, projection, and session; observe gated
+  send/end tasks before teardown.
+- All M2 command executions use awaited `ToTask()` (no bare `Subscribe()` for
+  navigation or open/select).
+- `EndAcknowledgementTimeout` is **instance-scoped** on
+  `AgentSessionService` (no process-wide mutation).
+- `TownhallViewModel` synchronizes `DirectNavItems` mutation/enumeration under
+  `_directNavSync`; active-message append re-checks active conversation after
+  nav refresh.
+- Regression:
+  `ConcurrentNavigationDuringTermination_DoesNotThrowReactiveUnhandled`.
+- Parallelism not disabled; worker count unchanged; serial remains fallback only.
+- Acknowledgement-bound retry contract preserved (durable awaiting flag, ACP
+  re-ack, success-only SessionEnded, distinct attempt correlations, sole writer).
+
+### Verification results
+
+| Command | Result |
+|---------|--------|
+| M2 filter ×10 | PASS 25/25 each |
+| Session/continuity/termination filter | PASS 59/59 |
+| M0+M1 filter | PASS 103/103 |
+| Townhall/composition/architecture | PASS 196/196 |
+| `dotnet build Zaide.slnx --no-incremental` | PASS; 0 warnings, 0 errors |
+| Parallel full suite ×3 | PASS **3906/3906** each |
+| `git diff --check` | PASS |
+
+**M2 not accepted — stop for independent re-audit.**
 
 ## Remaining Open Product Gaps (post-M2 residual)
 
@@ -393,5 +465,5 @@ independent re-audit.**
 ## Next Task
 
 Independent human M2 re-audit of explicit live-session termination after the
-ACP retry residual. Do not begin M3 until explicit M3 implementation
-authorization is recorded after M2 acceptance.
+ACP retry residual and parallel-suite lifetime stabilization. Do not begin M3
+until explicit M3 implementation authorization is recorded after M2 acceptance.
