@@ -49,6 +49,20 @@ public sealed class SettingsPanelViewTests
     }
 
     [Fact]
+    public void FormColumn_IsLeftAligned_NotRightPinned()
+    {
+        // Phase 23 F13: 520px settings form must not pin to the right edge.
+        using var settings = new TestSettingsService();
+        using var vm = new SettingsViewModel(settings, new TestSecretStore());
+        using var panel = new SettingsPanelView(vm);
+
+        var scrollViewer = GetAllDescendants(panel).OfType<ScrollViewer>().Single();
+        var formColumn = Assert.IsType<StackPanel>(scrollViewer.Content);
+        Assert.Equal(520, formColumn.Width);
+        Assert.Equal(HorizontalAlignment.Left, formColumn.HorizontalAlignment);
+    }
+
+    [Fact]
     public void LabelledSections_EditorTerminalLlm_ArePresent()
     {
         using var settings = new TestSettingsService();

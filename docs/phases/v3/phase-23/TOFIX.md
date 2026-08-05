@@ -571,7 +571,12 @@ when a screenshot under the workspace is selected
 
 ### F11 — Status bar segments look clickable but do nothing (only Settings works)
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-05) — **Option A (display-only):** removed no-op
+  `StatusSegmentCommand`; document/caret/language/project/branch (and language
+  intelligence) are plain layout segments (no `Button`, no Hand cursor, no
+  hover/press chrome). Settings remains the only interactive control
+  (`OpenSettingsCommand`, tooltip + automation name “Settings”). Covered by
+  `StatusBarTests`. Icon legibility (F10) unchanged.
 
 **Severity:** High (false affordance / dead controls)
 **Difficulty:** S
@@ -708,13 +713,16 @@ button.
 
 ### F13 — Settings panel content is right-aligned (odd; prefer left or center)
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-05) — form column `HorizontalAlignment.Right` → `Left`
+  (520px column; labels/fields stay start-aligned inside). DF-003 closed as
+  promoted here. Covered by
+  `SettingsPanelViewTests.FormColumn_IsLeftAligned_NotRightPinned`.
 
 **Severity:** Low–Medium (layout comfort; one-line fix surface)
 **Difficulty:** XS
 **Area:** Settings overlay / panel content alignment
 **Source:** user report 2026-08-05 + `temp-screenshots/settings-right-aligned.png`;
-pre-existing `docs/deferred/open/DF-003-settings-alignment.md`
+pre-existing `docs/deferred/closed/DF-003-settings-alignment.md`
 
 **User report:** Settings are right-aligned; that feels odd. Center or left
 alignment is more normal.
@@ -758,12 +766,11 @@ alignment is more normal.
 
 ## Next Task
 
-**Indexing complete including difficulty.** Implementation is **not** authorized
-by this document alone — human issues a fix prompt / wave.
+**Session 1 landed (2026-08-05):** F13 + F11 fixed (shell chrome polish).
 
-**Difficulty-first waves** (see table above):
+Remaining difficulty-first waves:
 
-1. **XS/S:** F13 → F11 → F2 → F4 → F6
+1. **XS/S remaining:** F2 → F4 → F6
 2. **M:** F1 → F12 → F9 → F10 → F3
 3. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 

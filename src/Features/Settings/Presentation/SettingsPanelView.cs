@@ -188,7 +188,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
                 Content = new StackPanel
                 {
                     Width = 520,
-                    HorizontalAlignment = HorizontalAlignment.Right,
+                    HorizontalAlignment = HorizontalAlignment.Left,
                     Spacing = LayoutTokens.SpacingMd,
                     Children =
                     {

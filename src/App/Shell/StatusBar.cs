@@ -1,9 +1,9 @@
 using System;
-using System.Windows.Input;
 using System.Reactive;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using ReactiveUI;
@@ -15,16 +15,16 @@ namespace Zaide.App.Shell;
 /// Status bar at the very bottom of the window.
 /// Shows app name, cursor position, language, project, branch, and AI model.
 /// Thin bar (~24px height), full width.
+/// Only Settings is interactive; other segments are display-only status (no button affordance).
 /// </summary>
 public class StatusBar : ReactiveUserControl<StatusBarViewModel>
 {
     internal static string? FormatConfiguredModel(string? model) =>
         string.IsNullOrWhiteSpace(model) ? null : $"configured: {model}";
-    private static readonly ICommand StatusSegmentCommand = ReactiveCommand.Create(() => { });
     private readonly TextBlock _caretText = TextStyles.Caption("");
     private readonly TextBlock _languageText = TextStyles.Caption("—");
     private readonly TextBlock _languageIntelligenceText = TextStyles.Caption("");
-    private readonly Button _languageIntelligenceButton;
+    private readonly Control _languageIntelligenceSegment;
     private readonly TextBlock _projectText = TextStyles.Caption("Zaide");
     private readonly TextBlock _branchText = TextStyles.Caption("");
     private readonly TextBlock _documentText = TextStyles.Caption("—");
@@ -53,16 +53,15 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         _settingsAppNameText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingXs, 0, 0, 0);
         ApplySettingsButtonVisualState(false);
 
-        // Configured model (far-right caption). Centered like button segments so it
-        // shares the same vertical midline as the rest of the 24px status bar.
+        // Configured model (far-right caption). Vertically centered with status segments.
         _modelText = TextStyles.Caption("");
         _modelText.HorizontalAlignment = HorizontalAlignment.Right;
         _modelText.VerticalAlignment = VerticalAlignment.Center;
         _modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
         _modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
-        // Left-aligned stack: app name caret language project branch
-        _settingsButton = BuildStatusSegmentButton(new StackPanel
+        // Settings is the only interactive segment (OpenSettingsCommand).
+        _settingsButton = BuildSettingsButton(new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
@@ -72,11 +71,11 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
 
         _languageIntelligenceText.Foreground =
             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
-        _languageIntelligenceButton = BuildStatusSegmentButton("Icon.Code", _languageIntelligenceText);
-        _languageIntelligenceButton.IsVisible = false;
+        _languageIntelligenceSegment = BuildStatusSegment("Icon.Code", _languageIntelligenceText);
+        _languageIntelligenceSegment.IsVisible = false;
 
-        // Transient "Opened: …" / save/search feedback. Same center rule as segment
-        // buttons: bare TextBlocks default to Stretch and paint text at the top.
+        // Transient "Opened: …" / save/search feedback. Bare TextBlocks default to
+        // Stretch and paint text at the top unless centered.
         _statusMessageText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
         _statusMessageText.VerticalAlignment = VerticalAlignment.Center;
         _statusMessageText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
@@ -92,12 +91,12 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             Children =
             {
                 _settingsButton,
-                BuildStatusSegmentButton("Icon.Text", _documentText),
-                BuildStatusSegmentButton("Icon.Selection", _caretText),
-                BuildStatusSegmentButton("Icon.Code", _languageText),
-                _languageIntelligenceButton,
-                BuildStatusSegmentButton("Icon.Project", _projectText),
-                BuildStatusSegmentButton("Icon.GitBranch", _branchText),
+                BuildStatusSegment("Icon.Text", _documentText),
+                BuildStatusSegment("Icon.Selection", _caretText),
+                BuildStatusSegment("Icon.Code", _languageText),
+                _languageIntelligenceSegment,
+                BuildStatusSegment("Icon.Project", _projectText),
+                BuildStatusSegment("Icon.GitBranch", _branchText),
                 _statusMessageText
             }
         };
@@ -133,7 +132,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                 .Subscribe(Observer.Create<string>(text =>
                 {
                     _languageIntelligenceText.Text = text;
-                    _languageIntelligenceButton.IsVisible = !string.IsNullOrEmpty(text);
+                    _languageIntelligenceSegment.IsVisible = !string.IsNullOrEmpty(text);
                 })));
             d.Add(ViewModel.WhenAnyValue(x => x.ProjectText).Subscribe(Observer.Create<string>(text => _projectText.Text = text)));
             d.Add(ViewModel.WhenAnyValue(x => x.BranchText).Subscribe(Observer.Create<string>(text => _branchText.Text = text)));
@@ -192,13 +191,19 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                 : Brushes.Transparent;
     }
 
-    private static Button BuildStatusSegmentButton(string iconKey, TextBlock text)
+    /// <summary>
+    /// Display-only status segment: icon + caption, no button chrome, cursor, or command.
+    /// </summary>
+    private static Control BuildStatusSegment(string iconKey, TextBlock text)
     {
-        return BuildStatusSegmentButton(new StackPanel
+        text.VerticalAlignment = VerticalAlignment.Center;
+        return new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
             VerticalAlignment = VerticalAlignment.Center,
+            // Keep readable status spacing without button padding/hover.
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             Children =
             {
                 IconFactory.Create(
@@ -207,41 +212,27 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                     12),
                 text
             }
-        });
+        };
     }
 
-    private static Button BuildStatusSegmentButton(Control content) =>
-        BuildStatusSegmentButton(content, StatusSegmentCommand);
-
-    private static Button BuildStatusSegmentButton(Control content, ICommand? command)
+    /// <summary>
+    /// Interactive Settings control only. Command is bound in <see cref="WhenActivated"/>.
+    /// </summary>
+    private static Button BuildSettingsButton(Control content)
     {
         var button = new Button
         {
             Content = content,
-            Command = command,
             VerticalAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             CornerRadius = LayoutTokens.RadiusSm,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+            Cursor = new Cursor(StandardCursorType.Hand)
         };
-
-        var hoverBrush = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
-        var pressedBrush = new SolidColorBrush(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF));
-
-        button.PointerEntered += (_, _) =>
-        {
-            if (!button.IsPressed)
-            {
-                button.Background = hoverBrush;
-            }
-        };
-        button.PointerExited += (_, _) => button.Background = Brushes.Transparent;
-        button.PointerPressed += (_, _) => button.Background = pressedBrush;
-        button.PointerReleased += (_, _) =>
-            button.Background = button.IsPointerOver ? hoverBrush : Brushes.Transparent;
-
+        // Accessible identity for the sole interactive status-bar control.
+        ToolTip.SetTip(button, "Settings");
+        Avalonia.Automation.AutomationProperties.SetName(button, "Settings");
         return button;
     }
 

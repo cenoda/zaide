@@ -1,7 +1,7 @@
 # DF-003: Revisit settings panel content alignment
 
 **Area:** UI
-**Status:** open
+**Status:** closed
 **Priority:** low
 **Discovered:** 2026-07-11
 **Related:** settings panel, layout alignment
@@ -23,10 +23,10 @@ has not yet been decided.
 
 ## Evidence
 
-- Test or smoke-check: Manual UI review
+- Test or smoke-check: Manual UI review; `SettingsPanelViewTests.FormColumn_IsLeftAligned_NotRightPinned`
 - Reproduction steps: Open the settings panel and inspect the content alignment
-- Output, screenshot, or log: None captured
-- Relevant code path: Settings panel layout
+- Output, screenshot, or log: `docs/phases/v3/phase-23/temp-screenshots/settings-right-aligned.png`
+- Relevant code path: `src/Features/Settings/Presentation/SettingsPanelView.cs` form column `HorizontalAlignment`
 
 ## Why deferred
 
@@ -35,8 +35,8 @@ usability pass rather than an isolated visual tweak.
 
 ## Investigation notes
 
-Unknown — not investigated yet. Compare left, centered, and right alignment in
-the context of labels, controls, window width, and long setting descriptions.
+Root cause was explicit: the fixed-width (520px) settings `StackPanel` used
+`HorizontalAlignment.Right`, pinning the form to the host’s right edge.
 
 ## Revisit trigger
 
@@ -44,6 +44,8 @@ Revisit during the next settings-panel visual or usability pass.
 
 ## Resolution
 
-- **Outcome:** open
-- **Fix/issue/phase:**
-- **Commit or date:**
+- **Outcome:** fixed
+- **Fix/issue/phase:** Promoted into Phase 23 **F13** — form column set to
+  `HorizontalAlignment.Left` (labels/fields remain start-aligned inside the
+  column; not right-aligned field text).
+- **Commit or date:** 2026-08-05

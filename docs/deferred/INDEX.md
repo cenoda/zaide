@@ -4,7 +4,7 @@
 |----|-------|------|----------|--------|
 | [DF-001](closed/DF-001-agent-surface-townhall-tab.md) | Unify the agent surface with Townhall conversations | UI | high | closed |
 | [DF-002](open/DF-002-korean-ibus-input.md) | Korean IBUS input behaves unexpectedly | UI | high | open |
-| [DF-003](open/DF-003-settings-alignment.md) | Revisit settings panel content alignment | UI | low | open |
+| [DF-003](closed/DF-003-settings-alignment.md) | Revisit settings panel content alignment | UI | low | closed |
 | [DF-004](closed/DF-004-settings-scrolling.md) | Add scrolling to the settings panel | UI | medium | closed |
 | [DF-005](open/DF-005-theme-refresh-cursor-like.md) | Refresh the application theme toward a modern, Cursor-like look | UI | medium | open |
 | [DF-006](open/DF-006-more-settings-options.md) | Add more options to the settings tab | settings | medium | open |
