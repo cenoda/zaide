@@ -33,9 +33,7 @@ public class TownhallView : Panel, IDisposable
     private readonly TownhallChatPanel _chatPanel;
     private readonly TownhallContextPolicySelector _contextPolicySelector;
     private readonly AgentBackendBindingPanel _backendBindingPanel;
-    private readonly AgentTracePanel _tracePanel;
-    private readonly AgentMemoryPanel _memoryPanel;
-    private readonly AgentUsagePanel _usagePanel;
+    private readonly AgentInspectHost _inspectHost;
     private readonly TownhallInputArea _inputArea;
     private readonly ToggleButton _filterAllButton;
     private readonly ToggleButton _filterChatButton;
@@ -68,14 +66,17 @@ public class TownhallView : Panel, IDisposable
     /// <summary>Townhall Usage entry button (Phase 22.4 transparency surface).</summary>
     public Button UsageOpenButton => _usageButton;
 
+    /// <summary>Dedicated inspect side sheet (Trace / Memory / Usage).</summary>
+    internal AgentInspectHost InspectHost => _inspectHost;
+
     /// <summary>Hosted Trace panel for accessibility and integration proofs.</summary>
-    internal AgentTracePanel TracePanel => _tracePanel;
+    internal AgentTracePanel TracePanel => _inspectHost.TracePanel;
 
     /// <summary>Hosted Memory panel for accessibility and integration proofs.</summary>
-    internal AgentMemoryPanel MemoryPanel => _memoryPanel;
+    internal AgentMemoryPanel MemoryPanel => _inspectHost.MemoryPanel;
 
     /// <summary>Hosted Usage panel for accessibility and integration proofs.</summary>
-    internal AgentUsagePanel UsagePanel => _usagePanel;
+    internal AgentUsagePanel UsagePanel => _inspectHost.UsagePanel;
 
     public TownhallView()
     {
@@ -92,18 +93,7 @@ public class TownhallView : Panel, IDisposable
             Background = PaletteTokens.SurfacePanelBrush,
             IsVisible = false,
         };
-        _tracePanel = new AgentTracePanel
-        {
-            Background = PaletteTokens.SurfacePanelBrush,
-        };
-        _memoryPanel = new AgentMemoryPanel
-        {
-            Background = PaletteTokens.SurfacePanelBrush,
-        };
-        _usagePanel = new AgentUsagePanel
-        {
-            Background = PaletteTokens.SurfacePanelBrush,
-        };
+        _inspectHost = new AgentInspectHost();
         _inputArea = new TownhallInputArea
         {
             Background = PaletteTokens.SurfacePanelBrush,
@@ -282,7 +272,9 @@ public class TownhallView : Panel, IDisposable
     }
 
     /// <summary>
-    /// Builds the right chat area: filter group | chat panel | transparency and workflow panels | input area.
+    /// Builds the right chat area: filter | (messages Star + inspect side sheet) |
+    /// session chrome | input. Trace/Memory/Usage live in <see cref="AgentInspectHost"/>
+    /// beside the message list so the chat Star band is never replaced by Auto-row stacks.
     /// </summary>
     private Grid BuildChatArea(StackPanel filterGroup)
     {
@@ -293,42 +285,50 @@ public class TownhallView : Panel, IDisposable
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
+        // Star band: message list (Star) | inspect side sheet (fixed width when open).
+        var messageWorkspace = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 160 },
+                new ColumnDefinition { Width = GridLength.Auto },
+            },
+            Children =
+            {
+                _chatPanel,
+                _inspectHost,
+            },
+        };
+        Grid.SetColumn(_inspectHost, 1);
+
         var chatArea = new Grid
         {
             RowDefinitions =
             {
                 new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                // Chat message band — always Star so inspect open flags cannot crush it.
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 120 },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = GridLength.Auto }
             },
             Children =
             {
                 filterGroup,
-                _chatPanel,
-                _tracePanel,
-                _memoryPanel,
-                _usagePanel,
+                messageWorkspace,
                 _backendBindingPanel,
                 _contextPolicySelector,
                 inputSeparator,
-                _inputArea
-            }
+                _inputArea,
+            },
         };
         Grid.SetRow(filterGroup, 0);
-        Grid.SetRow(_chatPanel, 1);
-        Grid.SetRow(_tracePanel, 2);
-        Grid.SetRow(_memoryPanel, 3);
-        Grid.SetRow(_usagePanel, 4);
-        Grid.SetRow(_backendBindingPanel, 5);
-        Grid.SetRow(_contextPolicySelector, 6);
-        Grid.SetRow(inputSeparator, 7);
-        Grid.SetRow(_inputArea, 8);
+        Grid.SetRow(messageWorkspace, 1);
+        Grid.SetRow(_backendBindingPanel, 2);
+        Grid.SetRow(_contextPolicySelector, 3);
+        Grid.SetRow(inputSeparator, 4);
+        Grid.SetRow(_inputArea, 5);
 
         return chatArea;
     }
@@ -411,9 +411,7 @@ public class TownhallView : Panel, IDisposable
 
         if (_viewModel is null) return;
 
-        _tracePanel.SetViewModel(_viewModel.TransparencyManagement);
-        _memoryPanel.SetViewModel(_viewModel.TransparencyManagement);
-        _usagePanel.SetViewModel(_viewModel.TransparencyManagement);
+        _inspectHost.SetViewModel(_viewModel.TransparencyManagement);
         _traceButton.Click += OnTraceButtonClick;
         _memoryButton.Click += OnMemoryButtonClick;
         _usageButton.Click += OnUsageButtonClick;
@@ -691,9 +689,7 @@ public class TownhallView : Panel, IDisposable
     {
         _disposables?.Dispose();
         _disposables = null;
-        _tracePanel.Dispose();
-        _memoryPanel.Dispose();
-        _usagePanel.Dispose();
+        _inspectHost.Dispose();
     }
 
     private void OnTraceButtonClick(object? sender, RoutedEventArgs eventArgs) =>

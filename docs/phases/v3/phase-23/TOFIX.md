@@ -18,7 +18,7 @@ intentional.
 **High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
 (production DI test wrote a test marker into user conversation drafts).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6) — M wave (F1, F12, F9, F10, F3) not started.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6). M wave: F1 fixed (dedicated inspect host); F12 → F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -130,7 +130,11 @@ or reselect the conversation after scrub if the app was already running.
 
 ### F1 — Opening Trace / Memory / Usage stacks all three and displaces chat
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — option **B** dedicated inspect side sheet
+      (`AgentInspectHost`) beside the chat message list inside the Star band;
+      Trace / Memory / Usage no longer Auto-row under chat. Open flags stay
+      independent (no exclusivity). Plan: [F1_HOST_PLAN.md](./F1_HOST_PLAN.md).
+      Covered by `Phase23InspectHostChatStarRowTests` + existing toggle tests.
 - [x] Session 2c slice (2026-08-05) — toolbar Trace / Memory / Usage openers
       now **toggle** (open when closed, close when open) via
       `ToggleTraceCommand` / `ToggleMemoryCommand` / `ToggleUsageCommand` on
@@ -844,9 +848,12 @@ scrubbed on this machine.
 **Session F6 landed (2026-08-05):** Content-row MinHeight floors Townhall/editor
 against bottom-panel splitter drag; XS/S wave complete.
 
+**Session F1 landed (2026-08-06):** Dedicated `AgentInspectHost` side sheet;
+chat Star band preserved; open-flag exclusivity unchanged. F3 not bundled.
+
 Remaining difficulty-first waves:
 
-1. **M:** F1 → F12 → F9 → F10 → F3
+1. **M:** F12 → F9 → F10 → F3
 2. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 
 One reviewable commit per coherent outcome. Do not batch F5 with polish.

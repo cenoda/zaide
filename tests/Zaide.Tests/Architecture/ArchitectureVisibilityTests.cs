@@ -222,7 +222,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.4 M1: +1 AgentTracePanel (832).
         // Phase 22.4 M2: +2 memory surface source files (834).
         // Phase 22.4 M3: +3 usage surface source files (837).
-        Assert.Equal(837, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Phase 23 F1: +1 AgentInspectHost (838).
+        Assert.Equal(838, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

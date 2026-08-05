@@ -526,8 +526,8 @@ public sealed class Phase19AdversarialTests : IDisposable
 
         Assert.Equal(ArchitectureInventoryReader.M0TotalTopLevelTypes, inventory.TotalTopLevelTypeCount);
         // Phase 22.4 M1–M3: +7 authorized transparency surface production source files.
-        Assert.Equal(883, inventory.SourceFiles.Count);
-        Assert.Equal(837, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        Assert.Equal(884, inventory.SourceFiles.Count);
+        Assert.Equal(838, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }
