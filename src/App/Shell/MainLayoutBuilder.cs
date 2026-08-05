@@ -47,11 +47,12 @@ internal sealed class MainLayoutBuilder
             },
             RowDefinitions =
             {
-                // 0: Content area
-                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                // 0: Content area (Townhall + editor). MinHeight floors the band so the
+                // bottom-panel GridSplitter cannot crush primary workspace to zero.
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 200 },
                 // 1: Bottom panel splitter
                 new RowDefinition { Height = new GridLength(0) },
-                // 2: Bottom panel
+                // 2: Bottom panel (pixel height when open; content MinHeight clamps drag)
                 new RowDefinition { Height = new GridLength(0) },
                 // 3: Status bar (24px, always visible)
                 new RowDefinition { Height = new GridLength(24, GridUnitType.Pixel) }

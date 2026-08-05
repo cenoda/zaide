@@ -18,6 +18,8 @@ intentional.
 **High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
 (production DI test wrote a test marker into user conversation drafts).
 
+**XS/S wave complete (F13, F11, F2, F4, F14, F6) — M wave (F1, F12, F9, F10, F3) not started.**
+
 ## Design direction (locked for Phase 23 indexing)
 
 **Most configuration belongs in the Settings window, not in Townhall
@@ -40,6 +42,8 @@ Townhall panel chrome.
 
 | Artifact | Notes |
 |----------|--------|
+| `temp-screenshots/Screenshot_20260805_171418.png` | Session capture (moved from repo root 2026-08-05) |
+| `temp-screenshots/Screenshot_20260805_171913.png` | Session capture (moved from repo root 2026-08-05) |
 | `temp-screenshots/townhall-trace-memory-usage-all-open.png` | `#townhall-main` selected; All filter; Trace + Memory + Usage panels all open; workspace `global.json` shared in channel; clean empty stores |
 | `temp-screenshots/townhall-chat-filter-all-panels-open-dm.png` | Chat filter selected; Zaide Agent DM; Trace + Memory + Usage still all open; backend unbound strip visible; reinforces F1 (filters ≠ panel exclusivity) |
 | `temp-screenshots/shell-bottom-panel-crushes-townhall.png` | Problems bottom panel open and expanded; Townhall column crushed to a thin top band; Channels/memory chrome clipped; large empty Problems body; editor shows “Open a file to begin” |
@@ -366,7 +370,10 @@ capture off” surface.
 
 ### F6 — Bottom panel can crush Townhall / editor content (needs confirmation)
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-05) — content row `MinHeight = 200` so the bottom-panel
+      GridSplitter cannot crush Townhall/editor to zero; open bottom panel keeps
+      `MinHeight = 80` (default open height still 250). Shell layout only
+      (`MainLayoutBuilder` + `BottomPanelHost`).
 
 **Severity:** Medium (High if it happens without intentional drag)
 **Difficulty:** S
@@ -834,11 +841,13 @@ toggle open/close (F1 discoverability slice); open flags stay independent.
 singleton test isolated from conversation-store mutation; polluted drafts
 scrubbed on this machine.
 
+**Session F6 landed (2026-08-05):** Content-row MinHeight floors Townhall/editor
+against bottom-panel splitter drag; XS/S wave complete.
+
 Remaining difficulty-first waves:
 
-1. **XS/S remaining:** F6
-2. **M:** F1 → F12 → F9 → F10 → F3
-3. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
+1. **M:** F1 → F12 → F9 → F10 → F3
+2. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 
 One reviewable commit per coherent outcome. Do not batch F5 with polish.
 

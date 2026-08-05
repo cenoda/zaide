@@ -180,9 +180,12 @@ internal sealed class BottomPanelHost
         _splitterRow.Height = visible
             ? new GridLength(4, GridUnitType.Pixel)
             : new GridLength(0);
+        // Default open height 250px. Content row MinHeight (MainLayoutBuilder) clamps
+        // GridSplitter drag so this panel cannot consume the Townhall/editor band.
         _panelRow.Height = visible
             ? new GridLength(250)
             : new GridLength(0);
+        _panelRow.MinHeight = visible ? 80 : 0;
         Splitter.IsVisible = visible;
         PanelBorder.IsVisible = visible;
 

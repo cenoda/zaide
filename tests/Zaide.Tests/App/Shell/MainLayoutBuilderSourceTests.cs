@@ -41,6 +41,8 @@ public sealed class MainLayoutBuilderSourceTests
         Assert.Contains("new GridLength(260), MinWidth = 180, MaxWidth = 320", source);
         Assert.Contains("new GridLength(2, GridUnitType.Star), MinWidth = 300", source);
         Assert.Contains("new GridLength(1.5, GridUnitType.Star), MinWidth = 240", source);
+        // F6: content band floor so bottom-panel splitter cannot crush Townhall/editor.
+        Assert.Contains("new GridLength(1, GridUnitType.Star), MinHeight = 200", source);
         Assert.Contains("new GridLength(24, GridUnitType.Pixel)", source);
         Assert.Contains("SurfaceBaseBrush", source);
     }
