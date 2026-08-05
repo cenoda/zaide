@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "phase": "22.3-M5",
+  "scenarioId": "A1-TP-02",
+  "backendId": "acp",
+  "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+  "startedAtUtc": "2026-08-05T00:00:40.1344344+00:00",
+  "finishedAtUtc": "2026-08-05T00:02:42.8137413+00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-agent-path",
+    "harnessVersion": "a3-agent-path-m5-0.1"
+  },
+  "isolation": {
+    "profileRoot": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile",
+    "home": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile/home",
+    "xdgConfigHome": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile/config",
+    "xdgDataHome": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile/data",
+    "xdgStateHome": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile/state",
+    "xdgCacheHome": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile/cache",
+    "workspace": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace"
+  },
+  "observed": {
+    "backend_id": "acp",
+    "scenario_id": "A1-TP-02",
+    "profile_root": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile",
+    "workspace_root": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace",
+    "child.pid": 19468,
+    "child.pgid": 19468,
+    "child.cmdline": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role tools-child --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TP-02-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --scenario-token m5-A1-TP-02-acp-674448f974b64612a01cbff567d2795d --state-dir /tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/state --scenario A1-TP-02 --acp-fixture /tmp/zaide-a3-agent-path/acp-fixture/AcpFakeAgent",
+    "scenario.token": "m5-A1-TP-02-acp-674448f974b64612a01cbff567d2795d",
+    "profile.root": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile",
+    "workspace.root": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace",
+    "scenario.id": "A1-TP-02",
+    "backend.id": "acp",
+    "child.binding.backend_id": "backend:acp",
+    "child.baseline.broker": "0",
+    "child.baseline.permission_review": "0",
+    "child.baseline.native_provider": "0",
+    "child.baseline.acp_session_new": "0",
+    "child.baseline.acp_session_prompt": "0",
+    "child.delta.broker": "0",
+    "child.delta.permission_review": "0",
+    "child.delta.native_provider": "0",
+    "child.delta.acp_session_new": "1",
+    "child.delta.acp_session_prompt": "1",
+    "child.entries.count": "5",
+    "child.session_id": "session:952aeb79e8d847d8aa7c967a6327d60a",
+    "child.assertion.pass_count": "3",
+    "child.assertion.total_count": "3",
+    "cleanup.result": "ok:scenario-process-groups-signaled",
+    "assertion.pass_count": 15,
+    "assertion.total_count": 15
+  },
+  "assertions": [
+    {
+      "id": "backend.id.explicit",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "scenario.id.explicit",
+      "result": "pass",
+      "detail": "A1-TP-02",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "producer.dll.exists",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pid.valid",
+      "result": "pass",
+      "detail": "19468",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pgid.leader",
+      "result": "pass",
+      "detail": "pid=19468 pgid=19468",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario_token",
+      "result": "pass",
+      "detail": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role tools-child --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TP-02-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --scenario-token m5-A1-TP-02-acp-674448f974b64612\u2026",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.profile",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/profile",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.workspace",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TP-02-LfRRE8n2/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.backend",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario",
+      "result": "pass",
+      "detail": "A1-TP-02",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.exit_code",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tools.user_admitted_present",
+      "result": "pass",
+      "detail": "Please write docs/tool-target.md via fs/write_text_file",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tools.acp_broker_or_review_touched",
+      "result": "pass",
+      "detail": "broker=0 review=0 acp_prompt=1",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "tools.tp02_broker_or_review_touched",
+      "result": "pass",
+      "detail": "broker=0 review=0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "cleanup.result",
+      "result": "pass",
+      "detail": "ok:scenario-process-groups-signaled",
+      "evidenceClass": "product-runtime"
+    }
+  ],
+  "assertionPassCount": 15,
+  "assertionTotal": 15,
+  "failures": [],
+  "exitCode": 0,
+  "classificationHint": "WORKS"
+}

@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "phase": "22.3-M5",
+  "scenarioId": "A1-TC-09",
+  "backendId": "acp",
+  "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+  "startedAtUtc": "2026-08-05T00:04:50.599638+00:00",
+  "finishedAtUtc": "2026-08-05T00:04:53.4437963+00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-agent-path",
+    "harnessVersion": "a3-agent-path-m5-0.1"
+  },
+  "isolation": {
+    "profileRoot": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile",
+    "home": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile/home",
+    "xdgConfigHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile/config",
+    "xdgDataHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile/data",
+    "xdgStateHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile/state",
+    "xdgCacheHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile/cache",
+    "workspace": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace"
+  },
+  "observed": {
+    "backend_id": "acp",
+    "scenario_id": "A1-TC-09",
+    "profile_root": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile",
+    "workspace_root": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace",
+    "child.pid": 25271,
+    "child.pgid": 25271,
+    "child.cmdline": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role termination-child --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-09-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --scenario-token m5-A1-TC-09-acp-090a726be8a846398f0c9ca1d10b207f --state-dir /tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/state --scenario A1-TC-09 --acp-fixture /tmp/zaide-a3-agent-path/acp-fixture/AcpFakeAgent",
+    "scenario.token": "m5-A1-TC-09-acp-090a726be8a846398f0c9ca1d10b207f",
+    "profile.root": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile",
+    "workspace.root": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace",
+    "scenario.id": "A1-TC-09",
+    "backend.id": "acp",
+    "child.conversation_id": "direct:4c8ea53d8a5f4c57979cb84f9745f8a0",
+    "child.live.session_id": "session:f63e639ffbd8411fa9cee27fecbb6d32",
+    "child.live.session_status": "Running",
+    "child.can_end_before": "True",
+    "child.entries.count": "5",
+    "child.end.session_status": "removed",
+    "child.assertion.pass_count": "4",
+    "child.assertion.total_count": "4",
+    "cleanup.result": "ok:scenario-process-groups-signaled",
+    "assertion.pass_count": 16,
+    "assertion.total_count": 16
+  },
+  "assertions": [
+    {
+      "id": "backend.id.explicit",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "scenario.id.explicit",
+      "result": "pass",
+      "detail": "A1-TC-09",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "producer.dll.exists",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pid.valid",
+      "result": "pass",
+      "detail": "25271",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pgid.leader",
+      "result": "pass",
+      "detail": "pid=25271 pgid=25271",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario_token",
+      "result": "pass",
+      "detail": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role termination-child --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-09-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --scenario-token m5-A1-TC-09-acp-090a726be8\u2026",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.profile",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/profile",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.workspace",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-09-LWidhxMN/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.backend",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario",
+      "result": "pass",
+      "detail": "A1-TC-09",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.exit_code",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.live_session_present",
+      "result": "pass",
+      "detail": "session:f63e639ffbd8411fa9cee27fecbb6d32",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.can_end_true_with_live_session",
+      "result": "pass",
+      "detail": "True",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.ending_or_ended_entry_present",
+      "result": "pass",
+      "detail": "no local-intent/terminal system entry after EndSessionCommand",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.no_provider_deletion_claim",
+      "result": "pass",
+      "detail": "termination entry overclaimed provider deletion",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "cleanup.result",
+      "result": "pass",
+      "detail": "ok:scenario-process-groups-signaled",
+      "evidenceClass": "product-runtime"
+    }
+  ],
+  "assertionPassCount": 16,
+  "assertionTotal": 16,
+  "failures": [],
+  "exitCode": 0,
+  "classificationHint": "WORKS"
+}

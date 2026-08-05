@@ -3,8 +3,10 @@
 ## Status
 
 **M0–M4 are complete.** Phase 22.4 owns A4 package 4 and has finished the
-integrated transparency closeout with dual-backend A3 re-smoke. G5 and V4
-remain unauthorized. Do not start Phase 22.5 without separate authorization.
+integrated transparency closeout with dual-backend A3 re-smoke. Umbrella G5
+re-smoke later recorded PASS against HEAD `4eb7e15e` (see
+[phase-22 G5_CLOSEOUT](../phase-22/G5_CLOSEOUT.md)). V4 remains unauthorized.
+Do not start Phase 22.5 without separate authorization.
 
 ## Work Board
 
@@ -54,15 +56,15 @@ remain unauthorized. Do not start Phase 22.5 without separate authorization.
 
 ## Blockers
 
-- G5 remains unauthorized until a separate human package closeout decides
-  the umbrella Phase 22 / A4 package readiness. Phase 22.4 alone does not
-  claim product readiness or G5 pass.
-- Phase 22.5, G5, and V4 remain unauthorized from this board.
+- V4 / successor-roadmap planning remains unauthorized until a separate human
+  decision is recorded after G5.
+- Phase 22.5 remains unauthorized from this board.
+- Product readiness is not claimed by Phase 22.4 or G5 alone.
 
 ## Next Task
 
-Phase 22.4 M4 is complete. Do not start Phase 22.5, G5 package closeout, or
-V4 without separate human authorization.
+Phase 22.4 M4 is complete and G5 has consumed package-4 evidence. Do not start
+Phase 22.5 or V4 without separate human authorization.
 
 ## M1 Trace Surface (2026-08-04) — accepted
 

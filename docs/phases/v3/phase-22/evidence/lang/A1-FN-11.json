@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "audit": "v1-v3-product-reality",
+  "phase": "A3",
+  "slice": "A3_LANGUAGE_INTELLIGENCE_POSITIVE",
+  "scenarioId": "A1-FN-11",
+  "a1RowIds": [
+    "A1-FN-11"
+  ],
+  "startedAtUtc": "2026-08-04T23:53:25.9431700\u002B00:00",
+  "finishedAtUtc": "2026-08-04T23:54:21.1814452\u002B00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repo_head": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-language-intelligence-positive",
+    "harness_version": "0.2"
+  },
+  "runnerCommand": "dotnet \u0022/tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll\u0022 --scenario A1-FN-11 --profile \u0022/tmp/zaide-a3-lang-profile-wIIYEWej\u0022 --evidence \u0022/tmp/zaide-a3-lang/evidence/A1-FN-11.json\u0022 --repo-head \u00224eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52\u0022 --workspace \u0022/tmp/zaide-a3-lang-profile-wIIYEWej/workspace\u0022",
+  "packageVersions": {
+    "Avalonia.Headless": "12.0.5",
+    "Avalonia (repo pin)": "12.0.5",
+    "Avalonia.Headless.XUnit": "not_referenced_not_required",
+    "csharp-ls": "0.25.0"
+  },
+  "isolation": {
+    "profile_root": "/tmp/zaide-a3-lang-profile-wIIYEWej",
+    "home": "/tmp/zaide-a3-lang-profile-wIIYEWej/home",
+    "xdg_config_home": "/tmp/zaide-a3-lang-profile-wIIYEWej/config",
+    "xdg_data_home": "/tmp/zaide-a3-lang-profile-wIIYEWej/data",
+    "xdg_state_home": "/tmp/zaide-a3-lang-profile-wIIYEWej/state",
+    "xdg_cache_home": "/tmp/zaide-a3-lang-profile-wIIYEWej/cache",
+    "workspace": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace",
+    "resolved_settings_dir": "/tmp/zaide-a3-lang-profile-wIIYEWej/config/zaide"
+  },
+  "csharpLs": {
+    "path": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "exists": true,
+    "path_env": "/home/cenoda/.dotnet/tools:/home/cenoda/.bun/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/opt/rocm/bin:/var/lib/snapd/snap/bin:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts"
+  },
+  "bootstrapResult": "framework_initialized",
+  "diResolved": true,
+  "mainWindowCreated": true,
+  "mainWindowType": "Zaide.App.Shell.MainWindow",
+  "commandSequence": [
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "workspace.openFolder",
+      "payload": {
+        "workspace": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace",
+        "root": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace",
+        "nodes": [
+          "Broken.cs",
+          "LanguageIntel.csproj",
+          "Second.cs",
+          "Unformatted.cs",
+          "Valid.cs"
+        ]
+      },
+      "timestampUtc": "2026-08-04T23:53:27.1484568\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "RequestOpenFileCommand",
+      "payload": {
+        "fileName": "Valid.cs",
+        "active": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace/Valid.cs",
+        "err": null,
+        "langEditor": "EditorView",
+        "langDoc": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace/Valid.cs"
+      },
+      "timestampUtc": "2026-08-04T23:53:30.4628734\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "editor.goToDefinition",
+      "payload": {
+        "exec": true,
+        "use": 419
+      },
+      "timestampUtc": "2026-08-04T23:53:30.4749882\u002B00:00"
+    }
+  ],
+  "events": [],
+  "observed": {
+    "settings_dir": "/tmp/zaide-a3-lang-profile-wIIYEWej/config/zaide",
+    "project.state": "SingleProject",
+    "session.state": "Ready",
+    "session.generation": 4,
+    "session.server_process_id": 8211,
+    "session.project_file": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace/LanguageIntel.csproj",
+    "session.workspace_folder": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace",
+    "session.startup_ms": 203.6969,
+    "session.resolved_binary": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "session.status_bar": "C# \u00B7 Ready",
+    "session.failure_kind": null,
+    "session.failure_message": null,
+    "caps.completion": true,
+    "caps.hover": true,
+    "caps.definition": true,
+    "caps.document_symbol": true,
+    "caps.workspace_symbol": true,
+    "caps.formatting": true,
+    "definition.state": "Idle",
+    "definition.locations": 0,
+    "definition.feedback": null,
+    "definition.active_line": 9,
+    "definition.before_line": 18,
+    "definition.unresolved.state": "Idle",
+    "definition.unresolved.feedback": "No definition found.",
+    "definition.unresolved.locations": 0,
+    "assertions.pass": 6,
+    "assertions.fail": 0
+  },
+  "assertions": [
+    {
+      "id": "isolation.settings_dir",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-wIIYEWej/config/zaide"
+    },
+    {
+      "id": "session.ready",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Ready gen=4 pid=8211 binary=/home/cenoda/.dotnet/tools/csharp-ls startup_ms=204"
+    },
+    {
+      "id": "session.binary_path",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "resolved=/home/cenoda/.dotnet/tools/csharp-ls; match=True"
+    },
+    {
+      "id": "tree.open.Valid.cs",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-wIIYEWej/workspace/Valid.cs"
+    },
+    {
+      "id": "fn11.navigate",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Ln 9 ~9"
+    },
+    {
+      "id": "fn11.unresolved_feedback",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "state=Idle fb=No definition found."
+    }
+  ],
+  "shutdownResult": "shutdown_completed",
+  "exitCode": 0,
+  "classification": "WORKS"
+}

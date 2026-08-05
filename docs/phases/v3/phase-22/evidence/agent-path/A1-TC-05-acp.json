@@ -1,0 +1,385 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "phase": "22.3-M5",
+  "scenarioId": "A1-TC-05",
+  "backendId": "acp",
+  "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+  "startedAtUtc": "2026-08-05T00:04:45.5829253+00:00",
+  "finishedAtUtc": "2026-08-05T00:04:50.5635479+00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-agent-path",
+    "harnessVersion": "a3-agent-path-m5-0.1"
+  },
+  "isolation": {
+    "profileRoot": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile",
+    "home": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile/home",
+    "xdgConfigHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile/config",
+    "xdgDataHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile/data",
+    "xdgStateHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile/state",
+    "xdgCacheHome": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile/cache",
+    "workspace": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace"
+  },
+  "observed": {
+    "backend_id": "acp",
+    "scenario_id": "A1-TC-05",
+    "profile_root": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile",
+    "workspace_root": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace",
+    "child.pid": 25179,
+    "child.pgid": 25179,
+    "child.cmdline": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role admit-hold --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-05-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --barrier /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/state/admitted-running.barrier.json --scenario-token m4-tc05-acp-14e3607506eb48b2a352f3b754ac6319 --state-dir /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/state --acp-fixture /tmp/zaide-a3-agent-path/acp-fixture/AcpFakeAgent",
+    "scenario.token": "m4-tc05-acp-14e3607506eb48b2a352f3b754ac6319",
+    "profile.root": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile",
+    "workspace.root": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace",
+    "checkpoint.session_id": "session:61fb358c3acf42419711af15afb4ee81",
+    "checkpoint.run_id": "run:c225088d16e8488a8449e40aa45f2809",
+    "checkpoint.phase": "beforeRunStart",
+    "checkpoint.classification": "recoverable",
+    "checkpoint.workspace_key": "ws:5a7fd525620bb1a2",
+    "barrier.written_at_utc": "2026-08-05T00:04:48.4364290\u002B00:00",
+    "kill.at_utc": "2026-08-05T00:04:48.5420074+00:00",
+    "kill.pgid": 25179,
+    "kill.signal": "SIGKILL",
+    "kill.observed_dead": true,
+    "provider.requests_before_restart": 0,
+    "restart.pid": 25222,
+    "restart.pgid": 25222,
+    "restart.exit_code": "0",
+    "restart.assertions": "[{\u0022id\u0022:\u0022restart.binding_rehydrated\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022binding present\u0022},{\u0022id\u0022:\u0022restart.backend_id_exact\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022backend:acp\u0022},{\u0022id\u0022:\u0022restart.prior_session_id_required\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022session:61fb358c3acf42419711af15afb4ee81\u0022},{\u0022id\u0022:\u0022restart.prior_run_id_required\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022run:c225088d16e8488a8449e40aa45f2809\u0022},{\u0022id\u0022:\u0022pre_resend.no_live_session\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022null\u0022},{\u0022id\u0022:\u0022restart.interrupted_session_for_force_kill\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022session:61fb358c3acf42419711af15afb4ee81\u0022},{\u0022id\u0022:\u0022restart.interrupted_run_id_matches_checkpoint\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022run:c225088d16e8488a8449e40aa45f2809 vs run:c225088d16e8488a8449e40aa45f2809\u0022},{\u0022id\u0022:\u0022restart.interrupted_backend_id\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022backend:acp\u0022},{\u0022id\u0022:\u0022restart.interrupted_workspace_root\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace\u0022},{\u0022id\u0022:\u0022restart.interrupted_workspace_key\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022ws:5a7fd525620bb1a2\u0022},{\u0022id\u0022:\u0022restart.classification_exact\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022expected=Indeterminate actual=Indeterminate\u0022},{\u0022id\u0022:\u0022restart.resume_currently_usable_false\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022backend:acp\u0022},{\u0022id\u0022:\u0022pre_resend.zero_native_provider\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022pre_resend.zero_acp_session_new\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022pre_resend.zero_acp_session_prompt\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022pre_resend.zero_broker\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022pre_resend.zero_permission_review\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022restart.interrupted_projection_labelled\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022zaide-interrupted-run|v1|Indeterminate|Accepted|workspace-owned|workspace-open reconciliation|Resume is not available. Send your message again to start a new run.\u0022},{\u0022id\u0022:\u0022restart.interrupted_projection_origin_labelled\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022zaide-interrupted-run|v1|Indeterminate|Accepted|workspace-owned|workspace-open reconciliation|Resume is not available. Send your message again to start a new run.\u0022},{\u0022id\u0022:\u0022resend.new_session_present\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022session:3e6c3cc36b1142138d4f66a29e459b87\u0022},{\u0022id\u0022:\u0022resend.new_session_id\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022session:61fb358c3acf42419711af15afb4ee81 -\\u003E session:3e6c3cc36b1142138d4f66a29e459b87\u0022},{\u0022id\u0022:\u0022resend.new_run_id\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022run:c225088d16e8488a8449e40aa45f2809 -\\u003E run:eacd5b897bcb4a3d953526980c5db3fa\u0022},{\u0022id\u0022:\u0022post_resend.acp_session_new_increment\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00221\u0022},{\u0022id\u0022:\u0022post_resend.acp_session_prompt_increment\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00221\u0022},{\u0022id\u0022:\u0022post_resend.acp_protocol_session_new_increment\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00221\u0022},{\u0022id\u0022:\u0022post_resend.acp_protocol_session_prompt_increment\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00221\u0022},{\u0022id\u0022:\u0022post_resend.native_provider_untouched\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022post_resend.no_broker_replay\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022post_resend.no_permission_replay\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u00220\u0022},{\u0022id\u0022:\u0022resend.not_via_resume\u0022,\u0022result\u0022:\u0022pass\u0022,\u0022detail\u0022:\u0022no resumed session id\u0022}]",
+    "restart.baseline.native_provider": "0",
+    "restart.baseline.acp_session_new": "0",
+    "restart.baseline.acp_session_prompt": "0",
+    "restart.baseline.broker": "0",
+    "restart.baseline.permission_review": "0",
+    "restart.baseline.acp_fake_session_new": "0",
+    "restart.baseline.acp_fake_session_prompt": "0",
+    "restart.recoverable": "0",
+    "restart.indeterminate": "1",
+    "restart.terminal": "0",
+    "restart.interrupted_count": "1",
+    "restart.classification": "Indeterminate",
+    "restart.session_id": "session:61fb358c3acf42419711af15afb4ee81",
+    "restart.run_id": "run:c225088d16e8488a8449e40aa45f2809",
+    "restart.backend_id": "backend:acp",
+    "restart.workspace_root": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace",
+    "restart.workspace_key": "ws:5a7fd525620bb1a2",
+    "restart.checkpoint_phase": "AfterWorkspaceOpenReconcile",
+    "restart.resume_currently_usable": "False",
+    "restart.pre_resend.native_provider": "0",
+    "restart.pre_resend.acp_session_new": "0",
+    "restart.pre_resend.acp_session_prompt": "0",
+    "restart.pre_resend.broker": "0",
+    "restart.pre_resend.permission_review": "0",
+    "restart.pre_resend.delta.native_provider": "0",
+    "restart.pre_resend.delta.acp_session_new": "0",
+    "restart.pre_resend.delta.acp_session_prompt": "0",
+    "restart.pre_resend.delta.broker": "0",
+    "restart.pre_resend.delta.permission_review": "0",
+    "restart.pre_resend.acp_fake_session_new": "0",
+    "restart.pre_resend.acp_fake_session_prompt": "0",
+    "restart.interrupted_projection_count": "1",
+    "restart.resend.session_id": "session:3e6c3cc36b1142138d4f66a29e459b87",
+    "restart.resend.run_id": "run:eacd5b897bcb4a3d953526980c5db3fa",
+    "restart.resend.session_status": "Running",
+    "restart.resend.run_status": "Running",
+    "restart.post_resend.native_provider": "0",
+    "restart.post_resend.acp_session_new": "1",
+    "restart.post_resend.acp_session_prompt": "1",
+    "restart.post_resend.broker": "0",
+    "restart.post_resend.permission_review": "0",
+    "restart.post_resend.delta.native_provider": "0",
+    "restart.post_resend.delta.acp_session_new": "1",
+    "restart.post_resend.delta.acp_session_prompt": "1",
+    "restart.post_resend.delta.broker": "0",
+    "restart.post_resend.delta.permission_review": "0",
+    "restart.post_resend.acp_fake_session_new": "1",
+    "restart.post_resend.acp_fake_session_prompt": "1",
+    "restart.post_resend.delta.acp_fake_session_new": "1",
+    "restart.post_resend.delta.acp_fake_session_prompt": "1",
+    "restart.assertion.pass_count": "30",
+    "restart.assertion.total_count": "30",
+    "restart.pre_resend.provider_count_baseline": "0",
+    "cleanup.result": "ok:scenario-process-groups-signaled",
+    "assertion.pass_count": 45,
+    "assertion.total_count": 45
+  },
+  "assertions": [
+    {
+      "id": "backend.id.explicit",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "producer.dll.exists",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pid.valid",
+      "result": "pass",
+      "detail": "25179",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pgid.leader",
+      "result": "pass",
+      "detail": "pid=25179 pgid=25179",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario_token",
+      "result": "pass",
+      "detail": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role admit-hold --backend acp --profile /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile --workspace /tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-05-acp.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --barrier /tmp/zaide-a3-agent-path-acp-A1-TC-05-il\u2026",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.profile",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/profile",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.workspace",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.backend",
+      "result": "pass",
+      "detail": "acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "barrier.present",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/state/admitted-running.barrier.json",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "barrier.backend_id",
+      "result": "pass",
+      "detail": "backend:acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "barrier.run_status_admitted",
+      "result": "pass",
+      "detail": "accepted",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.alive_before_force_kill",
+      "result": "pass",
+      "detail": "alive",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "kill.child_dead",
+      "result": "pass",
+      "detail": "pid=25179",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.exit_code",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.binding_rehydrated",
+      "result": "pass",
+      "detail": "binding present",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.backend_id_exact",
+      "result": "pass",
+      "detail": "backend:acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.prior_session_id_required",
+      "result": "pass",
+      "detail": "session:61fb358c3acf42419711af15afb4ee81",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.prior_run_id_required",
+      "result": "pass",
+      "detail": "run:c225088d16e8488a8449e40aa45f2809",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.no_live_session",
+      "result": "pass",
+      "detail": "null",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_session_for_force_kill",
+      "result": "pass",
+      "detail": "session:61fb358c3acf42419711af15afb4ee81",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_run_id_matches_checkpoint",
+      "result": "pass",
+      "detail": "run:c225088d16e8488a8449e40aa45f2809 vs run:c225088d16e8488a8449e40aa45f2809",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_backend_id",
+      "result": "pass",
+      "detail": "backend:acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_workspace_root",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-acp-A1-TC-05-ilTtUYQ9/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_workspace_key",
+      "result": "pass",
+      "detail": "ws:5a7fd525620bb1a2",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.classification_exact",
+      "result": "pass",
+      "detail": "expected=Indeterminate actual=Indeterminate",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.resume_currently_usable_false",
+      "result": "pass",
+      "detail": "backend:acp",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.zero_native_provider",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.zero_acp_session_new",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.zero_acp_session_prompt",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.zero_broker",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "pre_resend.zero_permission_review",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_projection_labelled",
+      "result": "pass",
+      "detail": "zaide-interrupted-run|v1|Indeterminate|Accepted|workspace-owned|workspace-open reconciliation|Resume is not available. Send your message again to start a new run.",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "restart.interrupted_projection_origin_labelled",
+      "result": "pass",
+      "detail": "zaide-interrupted-run|v1|Indeterminate|Accepted|workspace-owned|workspace-open reconciliation|Resume is not available. Send your message again to start a new run.",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "resend.new_session_present",
+      "result": "pass",
+      "detail": "session:3e6c3cc36b1142138d4f66a29e459b87",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "resend.new_session_id",
+      "result": "pass",
+      "detail": "session:61fb358c3acf42419711af15afb4ee81 -\u003E session:3e6c3cc36b1142138d4f66a29e459b87",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "resend.new_run_id",
+      "result": "pass",
+      "detail": "run:c225088d16e8488a8449e40aa45f2809 -\u003E run:eacd5b897bcb4a3d953526980c5db3fa",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.acp_session_new_increment",
+      "result": "pass",
+      "detail": "1",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.acp_session_prompt_increment",
+      "result": "pass",
+      "detail": "1",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.acp_protocol_session_new_increment",
+      "result": "pass",
+      "detail": "1",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.acp_protocol_session_prompt_increment",
+      "result": "pass",
+      "detail": "1",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.native_provider_untouched",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.no_broker_replay",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "post_resend.no_permission_replay",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "resend.not_via_resume",
+      "result": "pass",
+      "detail": "no resumed session id",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "cleanup.result",
+      "result": "pass",
+      "detail": "ok:scenario-process-groups-signaled",
+      "evidenceClass": "product-runtime"
+    }
+  ],
+  "assertionPassCount": 45,
+  "assertionTotal": 45,
+  "failures": [],
+  "exitCode": 0,
+  "classificationHint": "WORKS"
+}

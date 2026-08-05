@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "audit": "v1-v3-product-reality",
+  "phase": "A3",
+  "slice": "A3_LANGUAGE_INTELLIGENCE_POSITIVE",
+  "scenarioId": "A1-FN-10",
+  "a1RowIds": [
+    "A1-FN-10"
+  ],
+  "startedAtUtc": "2026-08-04T23:53:17.2657615\u002B00:00",
+  "finishedAtUtc": "2026-08-04T23:53:22.8250703\u002B00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repo_head": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-language-intelligence-positive",
+    "harness_version": "0.2"
+  },
+  "runnerCommand": "dotnet \u0022/tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll\u0022 --scenario A1-FN-10 --profile \u0022/tmp/zaide-a3-lang-profile-GMc8dj2X\u0022 --evidence \u0022/tmp/zaide-a3-lang/evidence/A1-FN-10.json\u0022 --repo-head \u00224eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52\u0022 --workspace \u0022/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace\u0022",
+  "packageVersions": {
+    "Avalonia.Headless": "12.0.5",
+    "Avalonia (repo pin)": "12.0.5",
+    "Avalonia.Headless.XUnit": "not_referenced_not_required",
+    "csharp-ls": "0.25.0"
+  },
+  "isolation": {
+    "profile_root": "/tmp/zaide-a3-lang-profile-GMc8dj2X",
+    "home": "/tmp/zaide-a3-lang-profile-GMc8dj2X/home",
+    "xdg_config_home": "/tmp/zaide-a3-lang-profile-GMc8dj2X/config",
+    "xdg_data_home": "/tmp/zaide-a3-lang-profile-GMc8dj2X/data",
+    "xdg_state_home": "/tmp/zaide-a3-lang-profile-GMc8dj2X/state",
+    "xdg_cache_home": "/tmp/zaide-a3-lang-profile-GMc8dj2X/cache",
+    "workspace": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace",
+    "resolved_settings_dir": "/tmp/zaide-a3-lang-profile-GMc8dj2X/config/zaide"
+  },
+  "csharpLs": {
+    "path": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "exists": true,
+    "path_env": "/home/cenoda/.dotnet/tools:/home/cenoda/.bun/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/opt/rocm/bin:/var/lib/snapd/snap/bin:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts"
+  },
+  "bootstrapResult": "framework_initialized",
+  "diResolved": true,
+  "mainWindowCreated": true,
+  "mainWindowType": "Zaide.App.Shell.MainWindow",
+  "commandSequence": [
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "workspace.openFolder",
+      "payload": {
+        "workspace": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace",
+        "root": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace",
+        "nodes": [
+          "Broken.cs",
+          "LanguageIntel.csproj",
+          "Second.cs",
+          "Unformatted.cs",
+          "Valid.cs"
+        ]
+      },
+      "timestampUtc": "2026-08-04T23:53:18.4712714\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "RequestOpenFileCommand",
+      "payload": {
+        "fileName": "Valid.cs",
+        "active": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace/Valid.cs",
+        "err": null,
+        "langEditor": "EditorView",
+        "langDoc": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace/Valid.cs"
+      },
+      "timestampUtc": "2026-08-04T23:53:21.7934923\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "OnCaretMoved",
+      "payload": {
+        "offset": 245,
+        "dwell_ms": 450
+      },
+      "timestampUtc": "2026-08-04T23:53:21.8016403\u002B00:00"
+    }
+  ],
+  "events": [],
+  "observed": {
+    "settings_dir": "/tmp/zaide-a3-lang-profile-GMc8dj2X/config/zaide",
+    "project.state": "SingleProject",
+    "session.state": "Ready",
+    "session.generation": 4,
+    "session.server_process_id": 8036,
+    "session.project_file": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace/LanguageIntel.csproj",
+    "session.workspace_folder": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace",
+    "session.startup_ms": 203.7379,
+    "session.resolved_binary": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "session.status_bar": "C# \u00B7 Ready",
+    "session.failure_kind": null,
+    "session.failure_message": null,
+    "caps.completion": true,
+    "caps.hover": true,
+    "caps.definition": true,
+    "caps.document_symbol": true,
+    "caps.workspace_symbol": true,
+    "caps.formatting": true,
+    "hover.state": "Ready",
+    "hover.is_visible": true,
+    "hover.content": "\u0060\u0060\u0060csharp\nstring ValidType.Greet(string name)\n\u0060\u0060\u0060\n\nGreets a person by name.",
+    "hover.trigger": "caret_dwell_not_pointer",
+    "hover.friction": "Production schedules hover on caret dwell (450ms), not pointer-hover.",
+    "assertions.pass": 6,
+    "assertions.fail": 0
+  },
+  "assertions": [
+    {
+      "id": "isolation.settings_dir",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-GMc8dj2X/config/zaide"
+    },
+    {
+      "id": "session.ready",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Ready gen=4 pid=8036 binary=/home/cenoda/.dotnet/tools/csharp-ls startup_ms=204"
+    },
+    {
+      "id": "session.binary_path",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "resolved=/home/cenoda/.dotnet/tools/csharp-ls; match=True"
+    },
+    {
+      "id": "tree.open.Valid.cs",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-GMc8dj2X/workspace/Valid.cs"
+    },
+    {
+      "id": "fn10.hover_content",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "\u0060\u0060\u0060csharp\nstring ValidType.Greet(string name)\n\u0060\u0060\u0060\n\nGreets a person by name."
+    },
+    {
+      "id": "fn10.caret_dwell_path",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "OnCaretMoved; pointer-hover not claimed"
+    }
+  ],
+  "shutdownResult": "shutdown_completed",
+  "exitCode": 0,
+  "classification": "WORKS_WITH_FRICTION"
+}

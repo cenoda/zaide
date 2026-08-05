@@ -2,14 +2,20 @@
 
 ## Status and Authorization
 
-Phase 22 implementation is **in progress**. Sub-phases 22.1, 22.2, and 22.3
-are complete. 22.2 restored package-2 PASS against the live ACP baseline after
-corrective ACP runtime-invalidation work, review of intervening
-`AcpStdioProcessHost` lifecycle hardening through `9c4bb94f`, targeted `A1-AC-02`
-evidence re-smoke at live HEAD `dfe2bf14` (16/16 **WORKS**), and independent
-re-audit. 22.3 closure GO was verified at `87e455a1` after accepted M5
-dual-backend evidence and regression gates. Phase 22.4 remains pending separate
-authorization. No sub-phase authorizes 22.5, G5, or V4 from this document alone.
+Phase 22 critical path is **complete through G5 PASS** (2026-08-05) at HEAD
+`4eb7e15e`. Sub-phases 22.1–22.4 delivered A4 packages 1–7. The full affected
+A3 re-smoke matrix was re-run with current evidence under
+[evidence/](./evidence/) and gate record [G5_CLOSEOUT.md](./G5_CLOSEOUT.md).
+
+22.2 restored package-2 PASS against the live ACP baseline after corrective ACP
+runtime-invalidation work, review of intervening `AcpStdioProcessHost`
+lifecycle hardening through `9c4bb94f`, targeted `A1-AC-02` evidence re-smoke at
+live HEAD `dfe2bf14` (16/16 **WORKS**), and independent re-audit. 22.3 closure
+GO was verified at `87e455a1`. 22.4 package-4 closeout is at `4eb7e15e`.
+
+Passing G5 permits only a later human decision about V4 or successor-roadmap
+planning. It does not start V4, authorize Phase 22.5, or claim product
+readiness. Phase 22.5 remains optional and outside G5.
 
 Phase 22 is part of Roadmap V3 as a post-closeout corrective program. The
 Phase 21 technical closeout remains a historical fact. It is not product-

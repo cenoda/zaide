@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "audit": "v1-v3-product-reality",
+  "phase": "A3",
+  "slice": "A3_LANGUAGE_INTELLIGENCE_POSITIVE",
+  "scenarioId": "A1-FN-13",
+  "a1RowIds": [
+    "A1-FN-13"
+  ],
+  "startedAtUtc": "2026-08-04T23:54:30.7485209\u002B00:00",
+  "finishedAtUtc": "2026-08-04T23:54:36.0742884\u002B00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repo_head": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-language-intelligence-positive",
+    "harness_version": "0.2"
+  },
+  "runnerCommand": "dotnet \u0022/tmp/zaide-a3-lang/out/Release/net10.0/Zaide.Tests.dll\u0022 --scenario A1-FN-13 --profile \u0022/tmp/zaide-a3-lang-profile-mQdYri1J\u0022 --evidence \u0022/tmp/zaide-a3-lang/evidence/A1-FN-13.json\u0022 --repo-head \u00224eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52\u0022 --workspace \u0022/tmp/zaide-a3-lang-profile-mQdYri1J/workspace\u0022",
+  "packageVersions": {
+    "Avalonia.Headless": "12.0.5",
+    "Avalonia (repo pin)": "12.0.5",
+    "Avalonia.Headless.XUnit": "not_referenced_not_required",
+    "csharp-ls": "0.25.0"
+  },
+  "isolation": {
+    "profile_root": "/tmp/zaide-a3-lang-profile-mQdYri1J",
+    "home": "/tmp/zaide-a3-lang-profile-mQdYri1J/home",
+    "xdg_config_home": "/tmp/zaide-a3-lang-profile-mQdYri1J/config",
+    "xdg_data_home": "/tmp/zaide-a3-lang-profile-mQdYri1J/data",
+    "xdg_state_home": "/tmp/zaide-a3-lang-profile-mQdYri1J/state",
+    "xdg_cache_home": "/tmp/zaide-a3-lang-profile-mQdYri1J/cache",
+    "workspace": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace",
+    "resolved_settings_dir": "/tmp/zaide-a3-lang-profile-mQdYri1J/config/zaide"
+  },
+  "csharpLs": {
+    "path": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "exists": true,
+    "path_env": "/home/cenoda/.dotnet/tools:/home/cenoda/.bun/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.grok/bin:/home/cenoda/.local/bin:/home/cenoda/.kimi-code/bin:/home/cenoda/.local/bin:/home/cenoda/.bun/bin:/home/cenoda/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/opt/rocm/bin:/var/lib/snapd/snap/bin:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.dotnet/tools:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts:/home/cenoda/.lmstudio/bin:/home/cenoda/.local/share/JetBrains/Toolbox/scripts"
+  },
+  "bootstrapResult": "framework_initialized",
+  "diResolved": true,
+  "mainWindowCreated": true,
+  "mainWindowType": "Zaide.App.Shell.MainWindow",
+  "commandSequence": [
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "workspace.openFolder",
+      "payload": {
+        "workspace": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace",
+        "root": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace",
+        "nodes": [
+          "Broken.cs",
+          "LanguageIntel.csproj",
+          "Second.cs",
+          "Unformatted.cs",
+          "Valid.cs"
+        ]
+      },
+      "timestampUtc": "2026-08-04T23:54:31.9066981\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "RequestOpenFileCommand",
+      "payload": {
+        "fileName": "Valid.cs",
+        "active": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace/Valid.cs",
+        "err": null,
+        "langEditor": "EditorView",
+        "langDoc": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace/Valid.cs"
+      },
+      "timestampUtc": "2026-08-04T23:54:35.2676266\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "workbench.symbol",
+      "payload": {
+        "exec": true
+      },
+      "timestampUtc": "2026-08-04T23:54:35.2779475\u002B00:00"
+    },
+    {
+      "i": 0,
+      "kind": "command",
+      "name": "SetWorkspaceSymbolQuery",
+      "payload": {
+        "query": "Greet"
+      },
+      "timestampUtc": "2026-08-04T23:54:35.2785025\u002B00:00"
+    }
+  ],
+  "events": [],
+  "observed": {
+    "settings_dir": "/tmp/zaide-a3-lang-profile-mQdYri1J/config/zaide",
+    "project.state": "SingleProject",
+    "session.state": "Ready",
+    "session.generation": 4,
+    "session.server_process_id": 8804,
+    "session.project_file": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace/LanguageIntel.csproj",
+    "session.workspace_folder": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace",
+    "session.startup_ms": 205.1549,
+    "session.resolved_binary": "/home/cenoda/.dotnet/tools/csharp-ls",
+    "session.status_bar": "C# \u00B7 Ready",
+    "session.failure_kind": null,
+    "session.failure_message": null,
+    "caps.completion": true,
+    "caps.hover": true,
+    "caps.definition": true,
+    "caps.document_symbol": true,
+    "caps.workspace_symbol": true,
+    "caps.formatting": true,
+    "ws_symbols.state": "Ready",
+    "ws_symbols.count": 3,
+    "ws_symbols.files": [
+      "Second.cs",
+      "Valid.cs"
+    ],
+    "ws_symbols.items": [
+      {
+        "name": "string SecondType.SecondGreet(string name)",
+        "kind": 6,
+        "file": "Second.cs"
+      },
+      {
+        "name": "string ValidType.Greet(string name)",
+        "kind": 6,
+        "file": "Valid.cs"
+      },
+      {
+        "name": "void ValidHelper.UseGreet()",
+        "kind": 6,
+        "file": "Valid.cs"
+      }
+    ],
+    "ws_symbols.second_count": 4,
+    "ws_symbols.second_files": [
+      "Second.cs"
+    ],
+    "ws_symbols.zero_state": "Empty",
+    "ws_symbols.zero_count": 0,
+    "ws_symbols.zero_feedback": "No workspace symbols match.",
+    "assertions.pass": 7,
+    "assertions.fail": 0
+  },
+  "assertions": [
+    {
+      "id": "isolation.settings_dir",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-mQdYri1J/config/zaide"
+    },
+    {
+      "id": "session.ready",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Ready gen=4 pid=8804 binary=/home/cenoda/.dotnet/tools/csharp-ls startup_ms=205"
+    },
+    {
+      "id": "session.binary_path",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "resolved=/home/cenoda/.dotnet/tools/csharp-ls; match=True"
+    },
+    {
+      "id": "tree.open.Valid.cs",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "/tmp/zaide-a3-lang-profile-mQdYri1J/workspace/Valid.cs"
+    },
+    {
+      "id": "ws_symbols.results",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "count=3 files=Second.cs,Valid.cs"
+    },
+    {
+      "id": "ws_symbols.span_project",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Greet=[Second.cs,Valid.cs] Second=[Second.cs]"
+    },
+    {
+      "id": "ws_symbols.zero",
+      "result": "pass",
+      "evidenceClass": "product-runtime",
+      "detail": "Empty count=0"
+    }
+  ],
+  "shutdownResult": "shutdown_completed",
+  "exitCode": 0,
+  "classification": "WORKS"
+}

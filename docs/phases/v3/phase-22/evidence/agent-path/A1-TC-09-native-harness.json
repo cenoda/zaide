@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "a3-evidence-1",
+  "phase": "22.3-M5",
+  "scenarioId": "A1-TC-09",
+  "backendId": "native-harness",
+  "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+  "startedAtUtc": "2026-08-04T23:58:26.039007+00:00",
+  "finishedAtUtc": "2026-08-04T23:58:28.8919947+00:00",
+  "host": {
+    "os": "linux",
+    "rid": "arch-x64",
+    "repoHead": "4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52",
+    "harness": "a3-agent-path",
+    "harnessVersion": "a3-agent-path-m5-0.1"
+  },
+  "isolation": {
+    "profileRoot": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile",
+    "home": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile/home",
+    "xdgConfigHome": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile/config",
+    "xdgDataHome": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile/data",
+    "xdgStateHome": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile/state",
+    "xdgCacheHome": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile/cache",
+    "workspace": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace"
+  },
+  "observed": {
+    "backend_id": "native-harness",
+    "scenario_id": "A1-TC-09",
+    "profile_root": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile",
+    "workspace_root": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace",
+    "provider.url": "http://127.0.0.1:40087/v1",
+    "child.pid": 12007,
+    "child.pgid": 12007,
+    "child.cmdline": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role termination-child --backend native-harness --profile /tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile --workspace /tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-09-native-harness.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52 --scenario-token m5-A1-TC-09-native-harness-9d39cd445bd14e9f8a3ac408e4818b0c --state-dir /tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/state --scenario A1-TC-09 --acp-fixture /tmp/zaide-a3-agent-path/acp-fixture/AcpFakeAgent --provider-url http://127.0.0.1:40087/v1",
+    "scenario.token": "m5-A1-TC-09-native-harness-9d39cd445bd14e9f8a3ac408e4818b0c",
+    "profile.root": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile",
+    "workspace.root": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace",
+    "scenario.id": "A1-TC-09",
+    "backend.id": "native-harness",
+    "child.conversation_id": "direct:544e8059f7d840fe976254b25d4126f4",
+    "child.live.session_id": "session:ea9cb32cba104b2c88f1d165fae0a371",
+    "child.live.session_status": "Running",
+    "child.can_end_before": "True",
+    "child.entries.count": "5",
+    "child.end.session_status": "removed",
+    "child.assertion.pass_count": "4",
+    "child.assertion.total_count": "4",
+    "cleanup.result": "ok:scenario-process-groups-signaled",
+    "assertion.pass_count": 16,
+    "assertion.total_count": 16
+  },
+  "assertions": [
+    {
+      "id": "backend.id.explicit",
+      "result": "pass",
+      "detail": "native-harness",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "scenario.id.explicit",
+      "result": "pass",
+      "detail": "A1-TC-09",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "producer.dll.exists",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pid.valid",
+      "result": "pass",
+      "detail": "12007",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.pgid.leader",
+      "result": "pass",
+      "detail": "pid=12007 pgid=12007",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario_token",
+      "result": "pass",
+      "detail": "dotnet /tmp/zaide-a3-agent-path/out/Release/net10.0/Zaide.Tests.dll --role termination-child --backend native-harness --profile /tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile --workspace /tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace --evidence /tmp/zaide-a3-agent-path/evidence/A1-TC-09-native-harness.json --repo-head 4eb7e15ed3e15c97fe481a1fb6a4889a0c60bb52\u2026",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.profile",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/profile",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.workspace",
+      "result": "pass",
+      "detail": "/tmp/zaide-a3-agent-path-native-harness-A1-TC-09-sYYtVh1y/workspace",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.backend",
+      "result": "pass",
+      "detail": "native-harness",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.cmdline.scenario",
+      "result": "pass",
+      "detail": "A1-TC-09",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "child.exit_code",
+      "result": "pass",
+      "detail": "0",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.live_session_present",
+      "result": "pass",
+      "detail": "session:ea9cb32cba104b2c88f1d165fae0a371",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.can_end_true_with_live_session",
+      "result": "pass",
+      "detail": "True",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.ending_or_ended_entry_present",
+      "result": "pass",
+      "detail": "no local-intent/terminal system entry after EndSessionCommand",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "termination.no_provider_deletion_claim",
+      "result": "pass",
+      "detail": "termination entry overclaimed provider deletion",
+      "evidenceClass": "product-runtime"
+    },
+    {
+      "id": "cleanup.result",
+      "result": "pass",
+      "detail": "ok:scenario-process-groups-signaled",
+      "evidenceClass": "product-runtime"
+    }
+  ],
+  "assertionPassCount": 16,
+  "assertionTotal": 16,
+  "failures": [],
+  "exitCode": 0,
+  "classificationHint": "WORKS"
+}
