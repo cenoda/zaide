@@ -115,6 +115,62 @@ public sealed class Phase23TransparencyCaptionProjectionTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task MemoryPanel_Unavailable_DoesNotDualWriteStatusIntoSummary()
+    {
+        var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
+        var authority = (FakeWorkspaceActionAuthority)_provider.GetRequiredService<IWorkspaceActionAuthority>();
+        management.OpenMemoryCommand.Execute().Subscribe();
+        authority.HasWorkspace = false;
+        await management.RefreshMemorySurfaceAsync();
+        Assert.Equal(AgentMemorySurfaceState.Unavailable, management.MemoryInspection.SurfaceState);
+
+        var memory = new AgentMemoryPanel();
+        try
+        {
+            memory.SetViewModel(management);
+
+            var statusText = memory.StatusCaptionControl.Text ?? string.Empty;
+            var summaryText = memory.SummaryCaptionControl.Text ?? string.Empty;
+            Assert.Contains("workspace", statusText, StringComparison.OrdinalIgnoreCase);
+            Assert.False(string.IsNullOrWhiteSpace(statusText));
+            Assert.True(string.IsNullOrEmpty(summaryText));
+            Assert.DoesNotContain(statusText, summaryText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            memory.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task UsagePanel_Unavailable_DoesNotDualWriteStatusIntoSummary()
+    {
+        var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
+        var authority = (FakeWorkspaceActionAuthority)_provider.GetRequiredService<IWorkspaceActionAuthority>();
+        management.OpenUsageCommand.Execute().Subscribe();
+        authority.HasWorkspace = false;
+        await management.RefreshUsageSurfaceAsync();
+        Assert.Equal(AgentUsageSurfaceState.Unavailable, management.UsageInspection.SurfaceState);
+
+        var usage = new AgentUsagePanel();
+        try
+        {
+            usage.SetViewModel(management);
+
+            var statusText = usage.StatusCaptionControl.Text ?? string.Empty;
+            var summaryText = usage.SummaryCaptionControl.Text ?? string.Empty;
+            Assert.Contains("workspace", statusText, StringComparison.OrdinalIgnoreCase);
+            Assert.False(string.IsNullOrWhiteSpace(statusText));
+            Assert.True(string.IsNullOrEmpty(summaryText));
+            Assert.DoesNotContain(statusText, summaryText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            usage.Dispose();
+        }
+    }
+
     public void Dispose()
     {
         _provider.Dispose();

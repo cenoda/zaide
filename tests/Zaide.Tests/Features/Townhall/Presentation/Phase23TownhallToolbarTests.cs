@@ -27,9 +27,13 @@ public sealed class Phase23TownhallToolbarTests
         Assert.Contains("Show all messages", townhallSource, StringComparison.Ordinal);
         Assert.Contains("Show chat messages only", townhallSource, StringComparison.Ordinal);
         Assert.Contains("Show activity messages only", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("PaletteTokens.SeparatorBrush", townhallSource, StringComparison.Ordinal);
         Assert.Contains("CreateMessageFilterToggle", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("CreateTransparencyOpenerButton", townhallSource, StringComparison.Ordinal);
         Assert.Contains("Open agent trace evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("RadiusFull", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("BorderThickness = new Thickness(1)", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Width = 2", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Spacing = LayoutTokens.SpacingMd", townhallSource, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()

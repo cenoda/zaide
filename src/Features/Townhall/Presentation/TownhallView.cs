@@ -114,35 +114,17 @@ public class TownhallView : Panel, IDisposable
         _filterAllButton = CreateMessageFilterToggle("All", "Show all messages", isChecked: true);
         _filterChatButton = CreateMessageFilterToggle("Chat", "Show chat messages only");
         _filterActivityButton = CreateMessageFilterToggle("Activity", "Show activity messages only");
-        _traceButton = new Button
-        {
-            Content = TextStyles.Caption("Trace"),
-            Focusable = true,
-            IsTabStop = true,
-        };
-        Avalonia.Automation.AutomationProperties.SetName(_traceButton, "Open agent trace evidence");
-        Avalonia.Automation.AutomationProperties.SetHelpText(
-            _traceButton,
+        _traceButton = CreateTransparencyOpenerButton(
+            "Trace",
+            "Open agent trace evidence",
             "Opens the agent trace evidence panel for the opened workspace.");
-        _memoryButton = new Button
-        {
-            Content = TextStyles.Caption("Memory"),
-            Focusable = true,
-            IsTabStop = true,
-        };
-        Avalonia.Automation.AutomationProperties.SetName(_memoryButton, "Open agent durable memory");
-        Avalonia.Automation.AutomationProperties.SetHelpText(
-            _memoryButton,
+        _memoryButton = CreateTransparencyOpenerButton(
+            "Memory",
+            "Open agent durable memory",
             "Opens the durable memory lifecycle panel for the opened workspace.");
-        _usageButton = new Button
-        {
-            Content = TextStyles.Caption("Usage"),
-            Focusable = true,
-            IsTabStop = true,
-        };
-        Avalonia.Automation.AutomationProperties.SetName(_usageButton, "Open agent usage and cost evidence");
-        Avalonia.Automation.AutomationProperties.SetHelpText(
-            _usageButton,
+        _usageButton = CreateTransparencyOpenerButton(
+            "Usage",
+            "Open agent usage and cost evidence",
             "Opens the usage and cost evidence panel for the opened workspace.");
 
         var sidebar = BuildSidebar();
@@ -212,6 +194,7 @@ public class TownhallView : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
+            Background = new SolidColorBrush(Color.FromArgb(0x22, 0x24, 0x33, 0x52)),
             Children =
             {
                 _filterAllButton,
@@ -223,17 +206,17 @@ public class TownhallView : Panel, IDisposable
 
         var groupSeparator = new Border
         {
-            Width = 1,
-            Height = 18,
-            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, 0),
-            Background = PaletteTokens.SeparatorBrush,
+            Width = 2,
+            Height = 22,
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, 0),
+            Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x8B, 0x95, 0xA5)),
             VerticalAlignment = VerticalAlignment.Center,
         };
 
         var evidenceOpeners = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = LayoutTokens.SpacingXs,
+            Spacing = LayoutTokens.SpacingSm,
             Children =
             {
                 _traceButton,
@@ -246,7 +229,7 @@ public class TownhallView : Panel, IDisposable
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = LayoutTokens.SpacingSm,
+            Spacing = LayoutTokens.SpacingMd,
             Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
             Children =
             {
@@ -268,8 +251,33 @@ public class TownhallView : Panel, IDisposable
             IsChecked = isChecked,
             Focusable = true,
             IsTabStop = true,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            CornerRadius = LayoutTokens.RadiusFull,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
         };
         Avalonia.Automation.AutomationProperties.SetName(button, automationName);
+        return button;
+    }
+
+    private static Button CreateTransparencyOpenerButton(
+        string label,
+        string automationName,
+        string helpText)
+    {
+        var button = new Button
+        {
+            Content = TextStyles.Caption(label),
+            Focusable = true,
+            IsTabStop = true,
+            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            CornerRadius = LayoutTokens.RadiusSm,
+            Background = Brushes.Transparent,
+            BorderBrush = PaletteTokens.TextSecondaryBrush,
+            BorderThickness = new Thickness(1),
+        };
+        Avalonia.Automation.AutomationProperties.SetName(button, automationName);
+        Avalonia.Automation.AutomationProperties.SetHelpText(button, helpText);
         return button;
     }
 

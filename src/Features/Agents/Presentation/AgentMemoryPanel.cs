@@ -368,8 +368,7 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
                 _recordsCaption.Text = "Loading…";
                 break;
             case AgentMemorySurfaceState.Unavailable:
-                _summaryCaption.Text = inspection.FailureReason
-                    ?? "Opened workspace is required.";
+                _summaryCaption.Text = string.Empty;
                 _recordsCaption.Text = "Unavailable.";
                 break;
             case AgentMemorySurfaceState.Failed:

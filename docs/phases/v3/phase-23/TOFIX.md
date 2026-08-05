@@ -132,6 +132,10 @@ readiness from this board alone.
   summary. Empty Memory clears summary; empty Usage and capture-disabled Trace keep
   policy help (`not zero` / `not empty fabrication`) once in summary only.
   Covered by `Phase23TransparencyCaptionProjectionTests`.
+- [x] Residual (2026-08-05 Session 2b) — Unavailable / workspace-required dual-write:
+  Memory and Usage `ApplyProjection` cleared summary for `Unavailable` (status keeps
+  the primary denial). Tests: `MemoryPanel_Unavailable_DoesNotDualWriteStatusIntoSummary`,
+  `UsagePanel_Unavailable_DoesNotDualWriteStatusIntoSummary`.
 
 **Severity:** Medium
 **Difficulty:** S
@@ -212,6 +216,9 @@ capture off” surface.
   toggles separately from Trace/Memory/Usage opener buttons, with a vertical separator
   and distinct automation group names; filter toggles keep exclusive semantics and
   named a11y labels. Covered by `Phase23TownhallToolbarTests`.
+- [x] Residual (2026-08-05 Session 2b) — visual punch-up: pill toggles on a raised filter
+  cluster, outlined opener buttons (`CreateTransparencyOpenerButton`), wider/contrasty
+  separator + larger inter-group gap so the strip no longer reads as one peer tab row.
 
 **Severity:** Low–Medium
 **Difficulty:** S
