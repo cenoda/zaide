@@ -155,6 +155,8 @@ internal sealed class AgentTracePanel : Panel, IDisposable
 
     public TextBlock StatusCaptionControl => _statusCaption;
 
+    public TextBlock SummaryCaptionControl => _summaryCaption;
+
     public TextBlock SelectionCaptionControl => _selectionCaption;
 
     public TextBlock PagingCaptionControl => _pagingCaption;
@@ -223,9 +225,10 @@ internal sealed class AgentTracePanel : Panel, IDisposable
 
         if (summary is null || summary.IsEmpty)
         {
+            // Status carries the primary empty/disabled fact; summary holds policy help only.
             _summaryCaption.Text = captureEnabled
-                ? "No trace evidence is available for the opened workspace."
-                : "Trace capture disabled — missing evidence is not empty fabrication.";
+                ? string.Empty
+                : "Missing evidence is not empty fabrication.";
             _recordsCaption.Text = "No records.";
         }
         else

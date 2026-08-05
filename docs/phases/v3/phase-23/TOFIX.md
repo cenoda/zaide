@@ -127,7 +127,11 @@ readiness from this board alone.
 
 ### F2 — Empty-state captions are duplicated inside each panel
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-05) — status is the primary empty/unavailable channel on Trace,
+  Memory, and Usage; panel `ApplyProjection` no longer rewrites the same fact into
+  summary. Empty Memory clears summary; empty Usage and capture-disabled Trace keep
+  policy help (`not zero` / `not empty fabrication`) once in summary only.
+  Covered by `Phase23TransparencyCaptionProjectionTests`.
 
 **Severity:** Medium
 **Difficulty:** S
@@ -204,7 +208,10 @@ capture off” surface.
 
 ### F4 — Toolbar confuses message filters with transparency openers
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-05) — `BuildFilterGroup` nests All/Chat/Activity message-filter
+  toggles separately from Trace/Memory/Usage opener buttons, with a vertical separator
+  and distinct automation group names; filter toggles keep exclusive semantics and
+  named a11y labels. Covered by `Phase23TownhallToolbarTests`.
 
 **Severity:** Low–Medium
 **Difficulty:** S
@@ -768,9 +775,12 @@ alignment is more normal.
 
 **Session 1 landed (2026-08-05):** F13 + F11 fixed (shell chrome polish).
 
+**Session 2 landed (2026-08-05):** F2 + F4 fixed (transparency caption dedupe;
+Townhall filter vs opener toolbar split).
+
 Remaining difficulty-first waves:
 
-1. **XS/S remaining:** F2 → F4 → F6
+1. **XS/S remaining:** F6
 2. **M:** F1 → F12 → F9 → F10 → F3
 3. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 

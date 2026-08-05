@@ -246,6 +246,10 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
 
     public Button CloseButton => _closeButton;
 
+    public TextBlock StatusCaptionControl => _statusCaption;
+
+    public TextBlock SummaryCaptionControl => _summaryCaption;
+
     public void Dispose()
     {
         if (_viewModel is not null)
@@ -375,13 +379,14 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
                 _recordsCaption.Text = "Failed — not empty.";
                 break;
             case AgentMemorySurfaceState.Empty:
-                _summaryCaption.Text = "No durable memory records for the opened workspace.";
+                // Status carries the primary empty fact from the inspection ViewModel.
+                _summaryCaption.Text = string.Empty;
                 _recordsCaption.Text = "No records.";
                 break;
             case AgentMemorySurfaceState.Ready:
                 var summary = inspection.Summary;
                 _summaryCaption.Text = summary is null
-                    ? inspection.StatusCaption
+                    ? string.Empty
                     : $"{summary.ActiveRecords} active / {summary.TotalRecords} total · conflicts {summary.ConflictRecords}";
                 _recordsCaption.Text = FormatRecords(inspection);
                 break;

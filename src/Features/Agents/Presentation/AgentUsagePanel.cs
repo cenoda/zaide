@@ -146,6 +146,10 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
 
     public Button CloseButton => _closeButton;
 
+    public TextBlock StatusCaptionControl => _statusCaption;
+
+    public TextBlock SummaryCaptionControl => _summaryCaption;
+
     public void Dispose()
     {
         if (_viewModel is not null)
@@ -231,8 +235,8 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
                 _recordsCaption.Text = "Failed — not empty.";
                 break;
             case AgentUsageSurfaceState.Empty:
-                _summaryCaption.Text =
-                    "No usage or cost evidence for the opened workspace. Missing evidence is not zero.";
+                // Status carries the primary empty fact; summary holds policy help only.
+                _summaryCaption.Text = "Missing evidence is not zero.";
                 _recordsCaption.Text = "No records.";
                 break;
             case AgentUsageSurfaceState.Ready:
@@ -298,7 +302,7 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         var summary = inspection.Summary;
         if (summary is null)
         {
-            return inspection.StatusCaption;
+            return string.Empty;
         }
 
         var costPart = summary.HasVerifiedTotalCost && summary.TotalCostCurrency is not null

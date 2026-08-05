@@ -111,9 +111,9 @@ public class TownhallView : Panel, IDisposable
         };
 
         // Filter toggle buttons: All / Chat / Activity
-        _filterAllButton = new ToggleButton { Content = TextStyles.Caption("All"), IsChecked = true };
-        _filterChatButton = new ToggleButton { Content = TextStyles.Caption("Chat") };
-        _filterActivityButton = new ToggleButton { Content = TextStyles.Caption("Activity") };
+        _filterAllButton = CreateMessageFilterToggle("All", "Show all messages", isChecked: true);
+        _filterChatButton = CreateMessageFilterToggle("Chat", "Show chat messages only");
+        _filterActivityButton = CreateMessageFilterToggle("Activity", "Show activity messages only");
         _traceButton = new Button
         {
             Content = TextStyles.Caption("Trace"),
@@ -203,25 +203,74 @@ public class TownhallView : Panel, IDisposable
     }
 
     /// <summary>
-    /// Builds the filter toggle group and the Townhall transparency entry points.
+    /// Builds the message-filter toggles and transparency panel openers as separate
+    /// control groups so feed filtering and evidence inspection are distinct gestures.
     /// </summary>
     private StackPanel BuildFilterGroup()
     {
-        return new StackPanel
+        var messageFilters = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
-            Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
             Children =
             {
                 _filterAllButton,
                 _filterChatButton,
                 _filterActivityButton,
+            },
+        };
+        Avalonia.Automation.AutomationProperties.SetName(messageFilters, "Message filter");
+
+        var groupSeparator = new Border
+        {
+            Width = 1,
+            Height = 18,
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, 0),
+            Background = PaletteTokens.SeparatorBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var evidenceOpeners = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingXs,
+            Children =
+            {
                 _traceButton,
                 _memoryButton,
                 _usageButton,
-            }
+            },
         };
+        Avalonia.Automation.AutomationProperties.SetName(evidenceOpeners, "Transparency evidence panels");
+
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = LayoutTokens.SpacingSm,
+            Margin = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingSm),
+            Children =
+            {
+                messageFilters,
+                groupSeparator,
+                evidenceOpeners,
+            },
+        };
+    }
+
+    private static ToggleButton CreateMessageFilterToggle(
+        string label,
+        string automationName,
+        bool isChecked = false)
+    {
+        var button = new ToggleButton
+        {
+            Content = TextStyles.Caption(label),
+            IsChecked = isChecked,
+            Focusable = true,
+            IsTabStop = true,
+        };
+        Avalonia.Automation.AutomationProperties.SetName(button, automationName);
+        return button;
     }
 
     /// <summary>
