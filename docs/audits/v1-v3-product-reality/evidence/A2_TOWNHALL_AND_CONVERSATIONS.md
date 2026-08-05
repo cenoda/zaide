@@ -561,7 +561,7 @@ user profile). Suggested constraints when A3 is later authorized:
    harness **only when** an absolute disposable `XDG_CONFIG_HOME` is established
    **before** provider creation. The contamination risk is production DI without
    a disposable config root, not production DI itself
-   ([ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+   ([ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
    explains why isolation must be established first). A production-DI harness is
    **not** a substitute for a user-observable product smoke. Never use the real
    profile or real conversation store.

@@ -78,6 +78,9 @@ public sealed class TownhallRegistrationModuleTests
     [Fact]
     public void ProgramConfigureServices_ResolvesTownhallServicesAsSingletons()
     {
+        // ISSUE-009: this composition uses production ConversationPersistenceService
+        // paths. Prove singleton identity only — never mutate DraftText or other
+        // presentation state that dispose would flush into the user store.
         using var provider = BuildProductionProvider();
 
         var state1 = provider.GetRequiredService<TownhallState>();
@@ -89,14 +92,33 @@ public sealed class TownhallRegistrationModuleTests
         Assert.Same(viewModel1, viewModel2);
 
         // TownhallViewModel resolves with the registered TownhallState dependency:
-        // Channels/Agents are the same collections exposed by the singleton state,
-        // and DraftText writes sync through to that shared state instance.
+        // Channels/Agents are the same collections exposed by the singleton state.
         Assert.Same(state1.Channels, viewModel1.Channels);
         Assert.Same(state1.Agents, viewModel1.Agents);
 
-        var marker = "m6g-townhall-di-singleton-sync";
-        viewModel1.DraftText = marker;
-        Assert.Equal(marker, state1.DraftText);
+        var persistence1 = provider.GetRequiredService<ConversationPersistenceService>();
+        var persistence2 = provider.GetRequiredService<ConversationPersistenceService>();
+        Assert.Same(persistence1, persistence2);
+    }
+
+    [Fact]
+    public void TownhallRegistrationModuleTests_Source_DoesNotContainProductionDraftContaminationMarker()
+    {
+        // Guard against reintroducing ISSUE-009: a literal draft marker written
+        // through a production-composed TownhallViewModel. Marker assembled at
+        // runtime so this guard does not reintroduce the forbidden literal.
+        var forbiddenMarker = string.Join("-", "m6g", "townhall", "di", "singleton", "sync");
+        var source = ReadRepoFile(
+            "tests/Zaide.Tests/App/Composition/TownhallRegistrationModuleTests.cs");
+
+        Assert.DoesNotContain(forbiddenMarker, source);
+
+        var methodMatch = Regex.Match(
+            source,
+            @"void ProgramConfigureServices_ResolvesTownhallServicesAsSingletons\(\)\s*\{(?<body>.*?)\n    \}",
+            RegexOptions.Singleline);
+        Assert.True(methodMatch.Success, "Could not locate production singleton resolve test body.");
+        Assert.DoesNotMatch(@"DraftText\s*=", methodMatch.Groups["body"].Value);
     }
 
     [Fact]

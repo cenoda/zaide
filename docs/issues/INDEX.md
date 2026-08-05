@@ -10,7 +10,7 @@
 | 006 | Editor crashes on selection change via GetOffset(line, column) | BUG | critical | closed |
 | 007 | Unsaved-changes dialog crashes with XAML InvalidCastException | BUG | critical | closed |
 | 008 | Agent response does not appear in the chat | BUG | high | open |
-| 009 | Production DI test contaminates persisted conversation drafts | BUG | high | open |
+| 009 | Production DI test contaminates persisted conversation drafts | BUG | high | closed |
 | 010 | C# editor scroll jank from IndentGuideRenderer paint cost | BUG | high | closed |
 | 011 | C# editor slow-motion when code font is not monospaced | BUG | high | closed |
 | 012 | Full test suite wall time dominated by fixed timeouts and missed process-exit cancel | BUG | high | closed |

@@ -56,7 +56,7 @@ build, test execution, production-code edits, commits, or pushes.
 - Phase 17: [IMPLEMENTATION_PLAN.md](../../../phases/v3/phase-17/IMPLEMENTATION_PLAN.md), [M9_CLOSEOUT_EVIDENCE.md](../../../phases/v3/phase-17/M9_CLOSEOUT_EVIDENCE.md), [M3](../../../phases/v3/phase-17/M3_PERMISSION_REVIEW_EVIDENCE.md), [M4](../../../phases/v3/phase-17/M4_PROPOSAL_PREVIEW_EVIDENCE.md), [M5](../../../phases/v3/phase-17/M5_WORKSPACE_MUTATION_EVIDENCE.md), [M6](../../../phases/v3/phase-17/M6_DOCUMENT_RECONCILIATION_EVIDENCE.md), [M7](../../../phases/v3/phase-17/M7_COMMAND_EXECUTION_EVIDENCE.md), [M8](../../../phases/v3/phase-17/M8_SESSION_EVENT_INTEGRATION_EVIDENCE.md)
 - Phase 19 / 20 plans for Native Harness and ACP tool/action consumption
 - Related deferred findings: [DF-008](../../../deferred/open/DF-008-multiple-agent-connections.md), [DF-009](../../../deferred/open/DF-009-real-acp-integrations.md)
-- Related issues: [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md), [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+- Related issues: [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md), [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
 
 ### 2.2 Production source (minimum named targets)
 
@@ -550,7 +550,7 @@ No issue/deferred files were edited. Relationships only:
 | [DF-008](../../../deferred/open/DF-008-multiple-agent-connections.md) | Confirmed blocker for default tool/permission journey entry (no bind UI) |
 | [DF-009](../../../deferred/open/DF-009-real-acp-integrations.md) | Confirmed; ACP stack exists but user bind + external smoke remain open |
 | [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md) | Unbound/rejection projection still masks many pre-admission failures; admitted action results are a different path |
-| [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md) | A3 disposable-profile isolation still required |
+| [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md) | A3 disposable-profile isolation still required |
 | Prior [A2_AGENT_SEND](./A2_AGENT_SEND.md) | Backend-binding findings reused; not re-litigated as a send-path verdict |
 
 ---

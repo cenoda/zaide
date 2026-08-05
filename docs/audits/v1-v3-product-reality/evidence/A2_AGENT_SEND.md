@@ -30,7 +30,7 @@
 
 - Primary verdict rows: `A1-AS-01`, `A1-AS-02`
 - Supporting partial coverage: `A1-TH-*` (Townhall projection), `A1-AC-*` (backend onboarding), `A1-XX-01`, `A1-XX-03` (as referenced by slice charter)
-- Issues: [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md), [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+- Issues: [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md), [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
 - Deferred: [DF-008](../../../deferred/open/DF-008-multiple-agent-connections.md), [DF-009](../../../deferred/open/DF-009-real-acp-integrations.md)
 - Production wiring trace seams 1–12 per slice charter ([GOAL_MATRIX.md §17.5](../GOAL_MATRIX.md#175-recommended-first-a2-wiring-audit-slice))
 
@@ -228,7 +228,7 @@ Aligns with [DF-008](../../../deferred/open/DF-008-multiple-agent-connections.md
 | Issue | Disposition | Evidence basis |
 |-------|-------------|----------------|
 | [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md) | **Partially confirmed** (source); runtime sole-cause not proven | Unbound default + silent rejection path traced (§6). ISSUE-008 correctly notes runtime confirmation still pending. Even with binding, external backend smoke was not executed in this audit. |
-| [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md) | **Confirmed** (source) | Test uses `Program.ConfigureServices` + production `ConversationPersistenceService` paths; sets `DraftText` marker; provider dispose flushes via `ConversationPersistenceService.Dispose` (L88–106). Marker string at [TownhallRegistrationModuleTests.cs](../../../../tests/Zaide.Tests/App/Composition/TownhallRegistrationModuleTests.cs) L97–99. |
+| [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md) | **Confirmed** (source) | Test uses `Program.ConfigureServices` + production `ConversationPersistenceService` paths; sets `DraftText` marker; provider dispose flushes via `ConversationPersistenceService.Dispose` (L88–106). Marker string at [TownhallRegistrationModuleTests.cs](../../../../tests/Zaide.Tests/App/Composition/TownhallRegistrationModuleTests.cs) L97–99. |
 
 ---
 
@@ -309,7 +309,7 @@ failure feedback) from **negative-path** scenarios (default unbound rejection) a
    not by swapping persistence implementations.
 
 4. **ISSUE-009 lesson** — tests that call `Program.ConfigureServices` without a disposable
-   `XDG_CONFIG_HOME` can contaminate the real user store ([ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)).
+   `XDG_CONFIG_HOME` can contaminate the real user store ([ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)).
    A3 must set the disposable root first; that constraint does not forbid full production
    DI.
 

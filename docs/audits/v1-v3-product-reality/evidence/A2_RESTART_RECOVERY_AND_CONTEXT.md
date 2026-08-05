@@ -414,7 +414,7 @@ No changes were made to issue or deferred-finding files.
 
 | Artifact | Relationship to this slice |
 |----------|----------------------------|
-| [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md) | Confirms production conversation path under real config dir; DI tests can mutate drafts that flush into production store — isolation concern for A3 disposable profiles |
+| [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md) | Confirms production conversation path under real config dir; DI tests can mutate drafts that flush into production store — isolation concern for A3 disposable profiles |
 | [ISSUE-008](../../../issues/open/ISSUE-008-agent-response-not-showing.md) | Unbound/rejection projection gap still blocks end-to-end observation of context attachment on the default cold path |
 | [DF-008](../../../deferred/open/DF-008-multiple-agent-connections.md) / [DF-009](../../../deferred/open/DF-009-real-acp-integrations.md) | Backend bind UI absence limits real admitted-run context and continuity checkpoint production |
 | Prior A2 send / transparency slices | Continuity ViewModels dead-seam; send path prerequisites reused without re-auditing full agent-send journey |

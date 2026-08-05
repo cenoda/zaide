@@ -43,7 +43,7 @@ or push.
 - Production path resolvers: [SettingsPathResolver.cs](../../../../src/Features/Settings/Infrastructure/SettingsPathResolver.cs),
   [ConversationStorePathResolver.cs](../../../../src/Features/Conversations/Infrastructure/ConversationStorePathResolver.cs),
   [AgentDurableRecordPathResolver.cs](../../../../src/Features/Agents/Infrastructure/Transparency/Storage/AgentDurableRecordPathResolver.cs)
-- ISSUE class: [ISSUE-009](../../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+- ISSUE class: [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
 
 ---
 

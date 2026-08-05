@@ -15,6 +15,9 @@ and product direction; **difficulty indexed** (XS→XL). **No implementation in
 this pass.** Empty-evidence semantics (missing ≠ zero / not fabricated) remain
 intentional.
 
+**High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
+(production DI test wrote a test marker into user conversation drafts).
+
 ## Design direction (locked for Phase 23 indexing)
 
 **Most configuration belongs in the Settings window, not in Townhall
@@ -64,6 +67,7 @@ Scale (effort for a careful implementer who already knows the repo):
 
 | ID | Title | Severity | **Difficulty** | Confidence in root cause | Suggested batch |
 |----|-------|----------|----------------|--------------------------|-----------------|
+| **F14** | Production DI test contaminates conversation drafts (ISSUE-009) | **High** | **XS–S** | High (marker + dispose flush) | Solo data-safety |
 | **F13** | Settings right-aligned | Low–Med | **XS** | High (`HorizontalAlignment.Right`) | Solo or with F5 later |
 | **F11** | Status bar dead segment buttons | High | **S** | High (explicit no-op `StatusSegmentCommand`) | Solo shell chrome |
 | **F2** | Duplicate empty-state captions | Med | **S** | High (status + summary both set) | With F3 |
@@ -80,14 +84,45 @@ Scale (effort for a careful implementer who already knows the repo):
 
 **Difficulty-first fix order (not severity-only):**
 
-1. **XS/S wave:** F13 → F11 → F2 → F4 → F6
-2. **M wave:** F1 → F12 → F9 → F10 → F3 (with F2 if not done)
-3. **L/XL wave:** F7 → F8 (if authorized) → **F5** (own plan; schema)
+1. **Data-safety first:** **F14 / ISSUE-009** (user store contamination)
+2. **XS/S wave:** F13 → F11 → F2 → F4 → F6
+3. **M wave:** F1 → F12 → F9 → F10 → F3 (with F2 if not done)
+4. **L/XL wave:** F7 → F8 (if authorized) → **F5** (own plan; schema)
 
 Do **not** start F5 in the same commit as XS/S polish. Do **not** claim product
 readiness from this board alone.
 
 ## Work Board
+
+### F14 — Production DI test contaminates persisted conversation drafts (ISSUE-009)
+
+- [x] Fixed (2026-08-05) — `ProgramConfigureServices_ResolvesTownhallServicesAsSingletons`
+      no longer assigns `DraftText` / marker `m6g-townhall-di-singleton-sync` on a
+      production-composed provider; singleton identity only (`Assert.Same`). Source
+      guard blocks reintroduction of the marker and of `DraftText` assignment in that
+      method. Local machine scrub: backup then delete draft keys whose value equals
+      the marker (conversations / last-read / active id untouched). See
+      [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md).
+
+**Severity:** High (user-data + false “default” composer text)  
+**Difficulty:** XS–S  
+**Area:** Test isolation + conversation persistence  
+**Source:** Live composer showed `m6g-townhall-di-singleton-sync` on channel-1 and
+Zaide Agent DM; confirmed in `~/.config/zaide/conversations/conversations.json`
+and `.lastknowngood`.
+
+**Observed behavior:** Running the Townhall production DI singleton test wrote a
+test marker into the user’s production conversation drafts via
+`ConversationPersistenceService` dispose flush.
+
+**Expected behavior:** Tests never read/write production conversation (or
+settings/secrets) paths when mutating presentation state. Composer shows only
+user drafts or normal product placeholders.
+
+**Notes:** Data scrub is machine-local and must not be committed. Restart Zaide
+or reselect the conversation after scrub if the app was already running.
+
+---
 
 ### F1 — Opening Trace / Memory / Usage stacks all three and displaces chat
 
@@ -794,6 +829,10 @@ Townhall filter vs opener toolbar split).
 
 **Session 2c landed (2026-08-05):** Trace / Memory / Usage toolbar openers
 toggle open/close (F1 discoverability slice); open flags stay independent.
+
+**Session ISSUE-009 / F14 landed (2026-08-05):** Production Townhall DI
+singleton test isolated from conversation-store mutation; polluted drafts
+scrubbed on this machine.
 
 Remaining difficulty-first waves:
 

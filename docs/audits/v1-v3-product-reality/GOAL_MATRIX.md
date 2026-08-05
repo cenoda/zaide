@@ -345,7 +345,7 @@ must.
    Coupled with the open issues
    [ISSUE-008](../../issues/open/ISSUE-008-agent-response-not-showing.md)
    and
-   [ISSUE-009](../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md),
+   [ISSUE-009](../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md),
    this is the highest-risk area for V1–V3 product reality.
 4. **A1-XX-04** — DAP environment validation is constrained. A2 must
    confirm whether the disposable environment can host NetCoreDbg, or
@@ -373,7 +373,7 @@ must.
    whether the production code projects the rejection into the
    conversation.
 9. **Conversation draft contamination (ISSUE-009).**
-   [ISSUE-009](../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+   [ISSUE-009](../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
    records that a production-composition singleton test mutates
    `TownhallViewModel.DraftText` and disposal flushes the marker into
    the production conversation snapshot. A2 must determine whether
@@ -399,7 +399,7 @@ feedback journey** ([§11](#11-agent-send--response--failure-feedback),
 
 - It is the smallest journey that already has two open issues
   ([ISSUE-008](../../issues/open/ISSUE-008-agent-response-not-showing.md),
-  [ISSUE-009](../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md))
+  [ISSUE-009](../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md))
   and two open deferred findings
   ([DF-008](../../deferred/open/DF-008-multiple-agent-connections.md),
   [DF-009](../../deferred/open/DF-009-real-acp-integrations.md))
@@ -411,7 +411,7 @@ feedback journey** ([§11](#11-agent-send--response--failure-feedback),
   `AgentRouter`, `AgentActorBackendBindingStore`, `ConversationStore`,
   `ConversationPersistenceService`, the Townhall projection path, and
   the production DI composition root that was identified in
-  [ISSUE-009](../../issues/open/ISSUE-009-production-di-test-contaminates-conversation-store.md)
+  [ISSUE-009](../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)
   as the test-isolation failure surface.
 - A2 can complete the slice in one bounded evidence file
   (`evidence/A2_AGENT_SEND.md`) without touching the IDE layer, the
