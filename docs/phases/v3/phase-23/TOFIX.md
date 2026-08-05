@@ -132,9 +132,12 @@ or reselect the conversation after scrub if the app was already running.
 
 - [x] Fixed (2026-08-06) — option **B** dedicated inspect side sheet
       (`AgentInspectHost`) beside the chat message list inside the Star band;
-      Trace / Memory / Usage no longer Auto-row under chat. Open flags stay
-      independent (no exclusivity). Plan: [F1_HOST_PLAN.md](./F1_HOST_PLAN.md).
-      Covered by `Phase23InspectHostChatStarRowTests` + existing toggle tests.
+      Trace / Memory / Usage no longer Auto-row under chat. Plan:
+      [F1_HOST_PLAN.md](./F1_HOST_PLAN.md). Covered by
+      `Phase23InspectHostChatStarRowTests` + toggle tests.
+- [x] Follow-up (2026-08-06) — inspect surfaces **mutually exclusive**: opening
+      one closes the others via `CloseSiblingInspectSurfaces` on open paths;
+      toggle-close and per-panel Close still affect only the active surface.
 - [x] Session 2c slice (2026-08-05) — toolbar Trace / Memory / Usage openers
       now **toggle** (open when closed, close when open) via
       `ToggleTraceCommand` / `ToggleMemoryCommand` / `ToggleUsageCommand` on

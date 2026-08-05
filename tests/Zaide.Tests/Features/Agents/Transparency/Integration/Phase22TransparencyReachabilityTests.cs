@@ -74,6 +74,7 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
 
         Assert.True(registry.Execute("agent.memory.open"));
         Assert.True(management.IsMemoryPanelOpen);
+        Assert.False(management.IsTracePanelOpen);
         await management.RefreshMemorySurfaceAsync();
         Assert.Equal(AgentMemorySurfaceState.Empty, management.MemoryInspection.SurfaceState);
         Assert.NotEqual(AgentMemorySurfaceState.Failed, management.MemoryInspection.SurfaceState);
@@ -81,14 +82,16 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
 
         Assert.True(registry.Execute("agent.usage.open"));
         Assert.True(management.IsUsagePanelOpen);
+        Assert.False(management.IsTracePanelOpen);
+        Assert.False(management.IsMemoryPanelOpen);
         await management.RefreshUsageSurfaceAsync();
         Assert.Equal(AgentUsageSurfaceState.Empty, management.UsageInspection.SurfaceState);
         Assert.NotEqual(AgentUsageSurfaceState.Failed, management.UsageInspection.SurfaceState);
         Assert.NotEqual(AgentUsageSurfaceState.Unavailable, management.UsageInspection.SurfaceState);
 
-        // All three remain open and independently addressable after integrated open.
-        Assert.True(management.IsTracePanelOpen);
-        Assert.True(management.IsMemoryPanelOpen);
+        // Mutual exclusivity: last open surface remains; siblings closed.
+        Assert.False(management.IsTracePanelOpen);
+        Assert.False(management.IsMemoryPanelOpen);
         Assert.True(management.IsUsagePanelOpen);
     }
 

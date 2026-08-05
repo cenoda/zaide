@@ -13,9 +13,8 @@ using Zaide.Tests.Features.Agents;
 namespace Zaide.Tests.Features.Agents.Transparency.Integration;
 
 /// <summary>
-/// Phase 23 Session 2c: toolbar Trace/Memory/Usage openers must behave like
-/// switches — open when closed, close when open — while per-panel Close keeps
-/// working and the three open flags stay independent (F1 still open).
+/// Phase 23: toolbar Trace/Memory/Usage openers toggle open/close; per-panel
+/// Close works; opening one inspect surface closes the others (mutual exclusivity).
 /// </summary>
 public sealed class Phase23ToggleTransparencyOpenersTests : IDisposable
 {
@@ -103,7 +102,7 @@ public sealed class Phase23ToggleTransparencyOpenersTests : IDisposable
     }
 
     [Fact]
-    public async Task ToggleOpeningOnePanel_DoesNotForceCloseTheOthers()
+    public async Task ToggleOpeningOnePanel_ClosesTheOthers()
     {
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
 
@@ -113,19 +112,34 @@ public sealed class Phase23ToggleTransparencyOpenersTests : IDisposable
         Assert.False(management.IsUsagePanelOpen);
 
         management.ToggleMemoryCommand.Execute().Subscribe();
-        Assert.True(management.IsTracePanelOpen);
+        await management.RefreshMemorySurfaceAsync();
+        Assert.False(management.IsTracePanelOpen);
         Assert.True(management.IsMemoryPanelOpen);
         Assert.False(management.IsUsagePanelOpen);
 
         management.ToggleUsageCommand.Execute().Subscribe();
-        Assert.True(management.IsTracePanelOpen);
-        Assert.True(management.IsMemoryPanelOpen);
-        Assert.True(management.IsUsagePanelOpen);
-
-        await management.RefreshMemorySurfaceAsync();
         await management.RefreshUsageSurfaceAsync();
+        Assert.False(management.IsTracePanelOpen);
+        Assert.False(management.IsMemoryPanelOpen);
+        Assert.True(management.IsUsagePanelOpen);
+    }
+
+    [Fact]
+    public void OpenCommand_AlsoEnforcesMutualExclusivity()
+    {
+        var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
+
+        management.OpenTraceCommand.Execute().Subscribe();
         Assert.True(management.IsTracePanelOpen);
+
+        management.OpenMemoryCommand.Execute().Subscribe();
+        Assert.False(management.IsTracePanelOpen);
         Assert.True(management.IsMemoryPanelOpen);
+        Assert.False(management.IsUsagePanelOpen);
+
+        management.OpenUsageCommand.Execute().Subscribe();
+        Assert.False(management.IsTracePanelOpen);
+        Assert.False(management.IsMemoryPanelOpen);
         Assert.True(management.IsUsagePanelOpen);
     }
 

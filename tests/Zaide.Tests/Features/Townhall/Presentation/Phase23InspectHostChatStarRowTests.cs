@@ -36,7 +36,7 @@ public sealed class Phase23InspectHostChatStarRowTests
     }
 
     [Fact]
-    public void AgentInspectHost_StacksOpenPanels_WithoutChangingOpenFlagExclusivity()
+    public void AgentInspectHost_VisibilityIsOrOfOpenFlags()
     {
         var hostSource = ReadRepoFile(
             "src/Features/Agents/Presentation/AgentInspectHost.cs");
@@ -46,24 +46,21 @@ public sealed class Phase23InspectHostChatStarRowTests
         Assert.Contains("IsUsagePanelOpen", hostSource, StringComparison.Ordinal);
         Assert.Contains("DefaultSheetWidth", hostSource, StringComparison.Ordinal);
         Assert.Contains("Agent inspect host", hostSource, StringComparison.Ordinal);
-        // Host visibility is OR of flags — no forced mutual exclusion.
-        Assert.Contains("IsTracePanelOpen", hostSource, StringComparison.Ordinal);
+        // Host stays visible for whichever single surface is open (OR of flags).
         Assert.Contains("|| _viewModel.IsMemoryPanelOpen", hostSource, StringComparison.Ordinal);
         Assert.Contains("|| _viewModel.IsUsagePanelOpen", hostSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsMemoryPanelOpen = false", hostSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsTracePanelOpen = false", hostSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsUsagePanelOpen = false", hostSource, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AgentTransparencyManagement_SourceKeepsIndependentOpenFlags()
+    public void AgentTransparencyManagement_OpenPathsEnforceMutualExclusivity()
     {
         var managementSource = ReadRepoFile(
             "src/Features/Agents/Presentation/Transparency/AgentTransparencyManagementViewModel.cs");
 
-        // Toggle/open paths must not close sibling surfaces (exclusivity remains forbidden).
-        Assert.DoesNotContain("IsMemoryPanelOpen = false;\n        IsUsagePanelOpen = false", managementSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsTracePanelOpen = false;\n        IsUsagePanelOpen = false", managementSource, StringComparison.Ordinal);
+        Assert.Contains("CloseSiblingInspectSurfaces", managementSource, StringComparison.Ordinal);
+        Assert.Contains("keepTrace: true", managementSource, StringComparison.Ordinal);
+        Assert.Contains("keepMemory: true", managementSource, StringComparison.Ordinal);
+        Assert.Contains("keepUsage: true", managementSource, StringComparison.Ordinal);
         Assert.Contains("ToggleTraceCommand", managementSource, StringComparison.Ordinal);
         Assert.Contains("ToggleMemoryCommand", managementSource, StringComparison.Ordinal);
         Assert.Contains("ToggleUsageCommand", managementSource, StringComparison.Ordinal);

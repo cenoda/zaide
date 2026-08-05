@@ -16,28 +16,27 @@ surface: filter strip and composer stay full-width; only the Star band splits in
 
 ## Concurrent open + stack rules
 
-- **Flags stay independent:** `IsTracePanelOpen` / `IsMemoryPanelOpen` /
-  `IsUsagePanelOpen` may all be true. Opening one does **not** close another.
-- **Host visibility:** sheet is visible iff **any** of the three flags is true.
-- **Inside the sheet:** open panels **stack** top → bottom (Trace, Memory, Usage)
-  in a scrollable column. Closed panels stay `IsVisible = false` and take no
-  space. No tab bar that implies exclusivity.
+- **Mutual exclusivity (product choice, 2026-08-06):** opening Trace, Memory, or
+  Usage **closes the other two**. At most one inspect surface is open.
+- **Host visibility:** sheet is visible iff **any** of the three flags is true
+  (in practice, at most one flag is true while the sheet is open).
+- **Inside the sheet:** the single open panel is shown; closed panels stay
+  `IsVisible = false`. Scrollable stack remains as a layout host (still fine if
+  exclusivity is later relaxed).
 - **Width:** fixed usable sheet width (~320px) when open; zero footprint when
   all closed so the message list reclaims the Star band.
 
 ## Open / close / toggle contract
 
-Unchanged semantics on `AgentTransparencyManagementViewModel`:
-
 | Action | Contract |
 |--------|----------|
-| Toolbar / command **Open** | Sets that surface’s flag true; loads/refreshes that surface. |
-| Toolbar **Toggle** | Open if closed, close if open (Phase 23 Session 2c). |
+| Toolbar / command **Open** | Closes siblings, sets this surface’s flag true, loads/refreshes. |
+| Toolbar **Toggle** | If open → close this only; if closed → open this (and close siblings). |
 | Panel **Close** | Clears only that surface’s flag. |
-| Multi-open | Allowed; host shows every open panel in the stack. |
+| Multi-open | **Not allowed** — exclusivity enforced on open paths only. |
 
-Presentation only moves **where** panels are parented. Do not force mutual
-exclusion, do not rename flags, do not alter command ids.
+Do not rename flags or command ids. Exclusivity lives in
+`AgentTransparencyManagementViewModel` open paths (`CloseSiblingInspectSurfaces`).
 
 ## F3 bundling?
 

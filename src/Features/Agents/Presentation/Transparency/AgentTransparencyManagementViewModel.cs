@@ -312,6 +312,8 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     private async Task OpenMemorySurfaceAsync()
     {
+        // Inspect surfaces are mutually exclusive: opening one closes the others.
+        CloseSiblingInspectSurfaces(keepMemory: true);
         IsMemoryPanelOpen = true;
         await RefreshMemorySurfaceAsync().ConfigureAwait(false);
     }
@@ -348,6 +350,8 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     private void OpenTraceSurface()
     {
+        // Inspect surfaces are mutually exclusive: opening one closes the others.
+        CloseSiblingInspectSurfaces(keepTrace: true);
         IsTracePanelOpen = true;
         RefreshTracePresentation();
     }
@@ -382,6 +386,8 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     private async Task OpenUsageSurfaceAsync()
     {
+        // Inspect surfaces are mutually exclusive: opening one closes the others.
+        CloseSiblingInspectSurfaces(keepUsage: true);
         IsUsagePanelOpen = true;
         await RefreshUsageSurfaceAsync().ConfigureAwait(false);
     }
@@ -401,6 +407,23 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         }
 
         return OpenUsageSurfaceAsync();
+    }
+
+    /// <summary>
+    /// Closes inspect surfaces other than the one being opened. Toggle-close of the
+    /// active surface does not call this; only open paths enforce exclusivity.
+    /// </summary>
+    private void CloseSiblingInspectSurfaces(
+        bool keepTrace = false,
+        bool keepMemory = false,
+        bool keepUsage = false)
+    {
+        if (!keepTrace && IsTracePanelOpen)
+            CloseTraceSurface();
+        if (!keepMemory && IsMemoryPanelOpen)
+            CloseMemorySurface();
+        if (!keepUsage && IsUsagePanelOpen)
+            CloseUsageSurface();
     }
 
     private async Task ReloadUsageAndPublishAsync(Func<Task> reload)
