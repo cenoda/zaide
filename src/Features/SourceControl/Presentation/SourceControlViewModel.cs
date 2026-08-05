@@ -187,6 +187,7 @@ public class SourceControlViewModel : ReactiveObject
     public ReactiveCommand<FileChange, Unit> StageFileCommand { get; }
     public ReactiveCommand<Unit, Unit> StageAllCommand { get; }
     public ReactiveCommand<FileChange, Unit> UnstageFileCommand { get; }
+    public ReactiveCommand<Unit, Unit> UnstageAllCommand { get; }
     public ReactiveCommand<Unit, Unit> CommitCommand { get; }
     public ReactiveCommand<Unit, Unit> PushCommand { get; }
     public ReactiveCommand<Unit, Unit> PrimaryActionCommand { get; }
@@ -264,6 +265,11 @@ public class SourceControlViewModel : ReactiveObject
                 StatusMessage = result.ErrorMessage;
             }
         });
+
+        // Disabled when there are no staged files. ReactiveCommand also
+        // disables while executing so a second click cannot re-enter.
+        var canUnstageAll = this.WhenAnyValue(x => x.StagedCount, count => count > 0);
+        UnstageAllCommand = ReactiveCommand.CreateFromTask(ExecuteUnstageAllAsync, canUnstageAll);
 
         CommitCommand = ReactiveCommand.CreateFromTask(ExecuteCommitAsync);
 
@@ -414,6 +420,34 @@ public class SourceControlViewModel : ReactiveObject
 
         // Always refresh from repo truth — partial stage may have succeeded
         // before a failure, and the UI must not assume every path staged.
+        RefreshCommand.Execute().Subscribe();
+
+        if (!result.IsSuccess)
+        {
+            StatusMessage = result.ErrorMessage;
+        }
+    }
+
+    private async Task ExecuteUnstageAllAsync()
+    {
+        var discovery = _gitRepositoryService.Discover(_workspace.WorkspacePath ?? string.Empty);
+        if (!discovery.IsRepository || discovery.RepositoryRoot is null)
+        {
+            StatusMessage = "No repository - open a folder inside a git repository";
+            return;
+        }
+
+        // Snapshot paths before the mutation so a concurrent refresh cannot
+        // shrink the collection mid-iteration.
+        var paths = StagedChanges.Select(c => c.FilePath).ToList();
+        if (paths.Count == 0)
+            return;
+
+        var repoRoot = discovery.RepositoryRoot;
+        var result = await Task.Run(() => _mutationService.UnstageAll(repoRoot, paths));
+
+        // Always refresh from repo truth — partial unstage may have succeeded
+        // before a failure, and the UI must not assume every path unstaged.
         RefreshCommand.Execute().Subscribe();
 
         if (!result.IsSuccess)

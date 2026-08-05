@@ -358,6 +358,149 @@ public class SourceControlViewModelTests
     }
 
     [Fact]
+    public void UnstageAllCommand_UnstagesAllStagedFilesAndRefreshes()
+    {
+        var stagedSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: true),
+            new FileChange("c.cs", GitChangeType.Modified, isStaged: false),
+        });
+        var afterUnstageSnapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: false),
+            new FileChange("c.cs", GitChangeType.Modified, isStaged: false),
+        });
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(stagedSnapshot)
+            .Returns(afterUnstageSnapshot);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.UnstageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
+            .Returns(StageResult.Success());
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
+
+        Assert.Equal(2, vm.StagedCount);
+        Assert.True(vm.UnstageAllCommand.CanExecute.FirstAsync().Wait());
+
+        vm.UnstageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.UnstageAll(
+            "/ws/.git/",
+            It.Is<IReadOnlyList<string>>(paths =>
+                paths.Count == 2 && paths.Contains("a.cs") && paths.Contains("b.cs"))),
+            Times.Once);
+        Assert.Empty(vm.StagedChanges);
+        Assert.Equal(3, vm.UnstagedCount);
+        Assert.Null(vm.StatusMessage);
+        Assert.False(vm.UnstageAllCommand.CanExecute.FirstAsync().Wait());
+    }
+
+    [Fact]
+    public void UnstageAllCommand_MutationFailure_SurfacesStatusMessageAndStillRefreshes()
+    {
+        var before = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: true),
+        });
+        // Partial success reflected by repo truth after failure.
+        var afterPartial = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: true),
+        });
+
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover("/ws")).Returns(RepositoryDiscoveryResult.Found("/ws", "/ws/.git/"));
+        git.SetupSequence(g => g.ReadStatus("/ws/.git/"))
+            .Returns(before)
+            .Returns(afterPartial);
+        var orchestrator = new SourceControlSnapshotOrchestrator(git.Object);
+
+        var mutation = new Mock<IGitMutationService>();
+        mutation.Setup(m => m.UnstageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()))
+            .Returns(StageResult.Failure("partial boom"));
+
+        var vm = new SourceControlViewModel(orchestrator, WorkspaceWithPath(), mutation.Object, git.Object);
+
+        vm.UnstageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.UnstageAll("/ws/.git/", It.IsAny<IReadOnlyList<string>>()), Times.Once);
+        git.Verify(g => g.ReadStatus("/ws/.git/"), Times.AtLeast(2));
+        Assert.Equal("partial boom", vm.StatusMessage);
+        Assert.Single(vm.StagedChanges);
+        Assert.Single(vm.UnstagedChanges);
+        Assert.Equal("b.cs", vm.StagedChanges[0].FilePath);
+    }
+
+    [Fact]
+    public void UnstageAllCommand_NoStagedChanges_CannotExecute()
+    {
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+        });
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
+
+        Assert.Equal(0, vm.StagedCount);
+        Assert.False(vm.UnstageAllCommand.CanExecute.FirstAsync().Wait());
+    }
+
+    [Fact]
+    public void UnstageAllCommand_NoRepository_SurfacesStatusMessageAndDoesNotCallMutation()
+    {
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: true),
+        });
+        var orchestratorMock = new Mock<ISourceControlSnapshotOrchestrator>();
+        orchestratorMock.Setup(o => o.Refresh(It.IsAny<string?>()))
+            .Returns(SnapshotRefreshResult.Success("/ws", snapshot));
+
+        var mutation = new Mock<IGitMutationService>();
+        var git = new Mock<IGitRepositoryService>();
+        git.Setup(g => g.Discover(It.IsAny<string>())).Returns(RepositoryDiscoveryResult.NotFound("/ws"));
+
+        var vm = new SourceControlViewModel(orchestratorMock.Object, WorkspaceWithPath(), mutation.Object, git.Object);
+
+        Assert.True(vm.UnstageAllCommand.CanExecute.FirstAsync().Wait());
+        vm.UnstageAllCommand.Execute(Unit.Default).Wait();
+
+        mutation.Verify(m => m.UnstageAll(It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()), Times.Never);
+        Assert.Equal("No repository - open a folder inside a git repository", vm.StatusMessage);
+    }
+
+    [Fact]
+    public void SelectFileCommand_ReplacesPriorSelection_SingleSelectedFileChange()
+    {
+        // Logical selection is exclusive: only one FileChange is selected at a time.
+        var snapshot = Snapshot(changes: new[]
+        {
+            new FileChange("a.cs", GitChangeType.Modified, isStaged: false),
+            new FileChange("b.cs", GitChangeType.Added, isStaged: true),
+        });
+        var vm = new SourceControlViewModel(CreateOrchestrator(snapshot), WorkspaceWithPath(), DefaultMutation(), DefaultGitRepo());
+
+        var unstaged = vm.UnstagedChanges[0];
+        var staged = vm.StagedChanges[0];
+
+        vm.SelectFileCommand.Execute(unstaged).Wait();
+        Assert.Same(unstaged, vm.SelectedFileChange);
+
+        vm.SelectFileCommand.Execute(staged).Wait();
+        Assert.Same(staged, vm.SelectedFileChange);
+        Assert.NotSame(unstaged, vm.SelectedFileChange);
+        Assert.Equal("b.cs", vm.SelectedFilePath);
+    }
+
+    [Fact]
     public void PrimaryAction_WithUncommittedChanges_IsCommit()
     {
         var snapshot = Snapshot(changes: new[]

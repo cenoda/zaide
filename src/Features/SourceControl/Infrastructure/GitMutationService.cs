@@ -69,6 +69,24 @@ internal sealed class GitMutationService : IGitMutationService
     }
 
     /// <inheritdoc/>
+    public StageResult UnstageAll(string repositoryRoot, IReadOnlyList<string> filePaths)
+    {
+        if (filePaths is null || filePaths.Count == 0)
+            return StageResult.Success();
+
+        try
+        {
+            using var repo = new Repository(repositoryRoot);
+            Commands.Unstage(repo, filePaths);
+            return StageResult.Success();
+        }
+        catch (System.Exception ex)
+        {
+            return StageResult.Failure(ex.Message);
+        }
+    }
+
+    /// <inheritdoc/>
     public AppPushResult Push(string repositoryRoot)
     {
         try

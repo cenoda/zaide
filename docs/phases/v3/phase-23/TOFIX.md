@@ -18,7 +18,7 @@ intentional.
 **High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
 (production DI test wrote a test marker into user conversation drafts).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6). M wave: F1 fixed (dedicated inspect host); F12 → F9 → F10 → F3 remaining.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -705,7 +705,10 @@ when a screenshot under the workspace is selected
 
 ### F12 — Source Control: weird multi-row selection + no Unstage All
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — exclusive SC list selection (no dual two-way
+      `SelectedFileChange` bind); `UnstageAll` API + command + header button
+      when `StagedCount > 0`. Covered by `Phase23SourceControlSelectionTests`,
+      `UnstageAllCommand_*`, `GitMutationServiceTests.UnstageAll_*`.
 
 **Severity:** Medium–High (broken selection UX + missing bulk action)
 **Difficulty:** M

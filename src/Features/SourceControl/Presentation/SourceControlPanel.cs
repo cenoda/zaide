@@ -33,6 +33,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private readonly TextBox _commitInput;
     private readonly Button _commitButton;
     private readonly Button _stageAllButton;
+    private readonly Button _unstageAllButton;
     private readonly TextBlock _commitErrorText;
     private readonly TextBlock _stagedHeader;
     private readonly TextBlock _unstagedHeader;
@@ -151,9 +152,37 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _unstagedList.Styles.Add(changeListItemStyle);
         _unstagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: false);
 
-        // --- Staged Section Header ---
+        // --- Staged Section Header (caption + Unstage All) ---
         _stagedHeader = TextStyles.Caption("Staged Changes");
-        _stagedHeader.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
+        _stagedHeader.VerticalAlignment = VerticalAlignment.Center;
+
+        _unstageAllButton = new Button
+        {
+            Content = "Unstage All",
+            FontSize = 11,
+            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
+            Background = Brushes.Transparent,
+            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
+            BorderThickness = LayoutTokens.NoneThickness,
+            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            // Bound to StagedCount > 0 on activation; hidden until then.
+            IsVisible = false
+        };
+
+        var stagedHeaderRow = new Grid
+        {
+            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Auto }
+            },
+            Children = { _stagedHeader, _unstageAllButton }
+        };
+        Grid.SetColumn(_stagedHeader, 0);
+        Grid.SetColumn(_unstageAllButton, 1);
 
         // --- Staged Changes List ---
         _stagedList = new ListBox
@@ -214,7 +243,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _statusMessage,
                     unstagedHeaderRow,
                     _unstagedList,
-                    _stagedHeader,
+                    stagedHeaderRow,
                     _stagedList,
                     _commitInput,
                     _commitButton,
@@ -268,27 +297,39 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 .Where(vm => vm is not null)
                 .Subscribe(vm => _stagedList.ItemsSource = vm!.StagedChanges));
 
-            // --- ListBox selection bindings ---
+            // --- ListBox selection (F12a) ---
+            // Do not two-way bind one SelectedFileChange to both ListBoxes: a
+            // staged object is never in the unstaged ItemsSource (and vice
+            // versa), so dual bind churns selection and can leave multi-row
+            // selected chrome. Project VM selection into the owning list only;
+            // user clicks set VM selection and clear the sibling list.
 
-            // Two-way bind ListBox SelectedItem ↔ ViewModel SelectedFileChange for
-            // visual selection sync in both directions.
-            d.Add(this.Bind(ViewModel, vm => vm.SelectedFileChange, v => v._unstagedList.SelectedItem));
-            d.Add(this.Bind(ViewModel, vm => vm.SelectedFileChange, v => v._stagedList.SelectedItem));
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedFileChange)
+                .Subscribe(ApplyExclusiveListSelection));
 
-            // User-initiated selection triggers diff loading via SelectFileCommand.
             d.Add(Observable.FromEventPattern<SelectionChangedEventArgs>(
                     h => _unstagedList.SelectionChanged += h,
                     h => _unstagedList.SelectionChanged -= h)
                 .Select(_ => _unstagedList.SelectedItem as FileChange)
                 .Where(f => f is not null)
-                .Subscribe(f => ViewModel?.SelectFileCommand.Execute(f!).Subscribe()));
+                .Subscribe(f =>
+                {
+                    if (_stagedList.SelectedItem is not null)
+                        _stagedList.SelectedItem = null;
+                    ViewModel?.SelectFileCommand.Execute(f!).Subscribe();
+                }));
 
             d.Add(Observable.FromEventPattern<SelectionChangedEventArgs>(
                     h => _stagedList.SelectionChanged += h,
                     h => _stagedList.SelectionChanged -= h)
                 .Select(_ => _stagedList.SelectedItem as FileChange)
                 .Where(f => f is not null)
-                .Subscribe(f => ViewModel?.SelectFileCommand.Execute(f!).Subscribe()));
+                .Subscribe(f =>
+                {
+                    if (_unstagedList.SelectedItem is not null)
+                        _unstagedList.SelectedItem = null;
+                    ViewModel?.SelectFileCommand.Execute(f!).Subscribe();
+                }));
 
             // Surface non-repo / error notice; hidden on success
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)
@@ -298,9 +339,9 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     _statusMessage.IsVisible = !string.IsNullOrEmpty(msg);
                 }));
 
-            // Update headers when counts change. Stage All is shown only when
-            // there are unstaged files; CanExecute separately disables it while
-            // a stage-all is in flight (prevents duplicate submissions).
+            // Update headers when counts change. Stage All / Unstage All are
+            // shown only when the matching list is non-empty; CanExecute
+            // separately disables them while a bulk op is in flight.
             d.Add(this.WhenAnyValue(x => x.ViewModel!.UnstagedCount)
                 .Subscribe(count =>
                 {
@@ -310,7 +351,10 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.StagedCount)
                 .Subscribe(count =>
-                    _stagedHeader.Text = $"Staged ({count})"));
+                {
+                    _stagedHeader.Text = $"Staged ({count})";
+                    _unstageAllButton.IsVisible = count > 0;
+                }));
 
             // Stage All: project click to Unit so InvokeCommand matches StageAllCommand.
             d.Add(Observable.FromEventPattern<RoutedEventArgs>(
@@ -320,6 +364,15 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 .InvokeCommand(ViewModel, vm => vm.StageAllCommand));
             d.Add(this.WhenAnyObservable(x => x.ViewModel!.StageAllCommand.CanExecute)
                 .Subscribe(can => _stageAllButton.IsEnabled = can));
+
+            // Unstage All: mirror Stage All wiring against UnstageAllCommand.
+            d.Add(Observable.FromEventPattern<RoutedEventArgs>(
+                    h => _unstageAllButton.Click += h,
+                    h => _unstageAllButton.Click -= h)
+                .Select(_ => Unit.Default)
+                .InvokeCommand(ViewModel, vm => vm.UnstageAllCommand));
+            d.Add(this.WhenAnyObservable(x => x.ViewModel!.UnstageAllCommand.CanExecute)
+                .Subscribe(can => _unstageAllButton.IsEnabled = can));
 
             // Commit message binding
             d.Add(this.Bind(ViewModel, vm => vm.CommitMessage, v => v._commitInput.Text));
@@ -363,6 +416,37 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     }
                 }));
         });
+    }
+
+    /// <summary>
+    /// Shows selection chrome only on the list that owns the selected change.
+    /// The sibling list is cleared so at most one ListBox has a SelectedItem.
+    /// </summary>
+    private void ApplyExclusiveListSelection(FileChange? file)
+    {
+        if (file is null)
+        {
+            if (_unstagedList.SelectedItem is not null)
+                _unstagedList.SelectedItem = null;
+            if (_stagedList.SelectedItem is not null)
+                _stagedList.SelectedItem = null;
+            return;
+        }
+
+        if (file.IsStaged)
+        {
+            if (!ReferenceEquals(_stagedList.SelectedItem, file))
+                _stagedList.SelectedItem = file;
+            if (_unstagedList.SelectedItem is not null)
+                _unstagedList.SelectedItem = null;
+        }
+        else
+        {
+            if (!ReferenceEquals(_unstagedList.SelectedItem, file))
+                _unstagedList.SelectedItem = file;
+            if (_stagedList.SelectedItem is not null)
+                _stagedList.SelectedItem = null;
+        }
     }
 
     private Style CreateChangeListItemStyle()

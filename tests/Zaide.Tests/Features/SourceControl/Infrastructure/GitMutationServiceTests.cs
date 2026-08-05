@@ -191,6 +191,54 @@ public class GitMutationServiceTests
     }
 
     [Fact]
+    public void UnstageAll_MultipleStagedFiles_RemovesAllFromIndex()
+    {
+        using var workspace = TestTempDirectory.Create("zaide-mutation-test-");
+        var dir = workspace.Path;
+        InitRepoWithCommit(dir, "tracked.txt", "v1\n");
+        File.WriteAllText(Path.Combine(dir, "tracked.txt"), "v2\n");
+        File.WriteAllText(Path.Combine(dir, "new-a.txt"), "a");
+        File.WriteAllText(Path.Combine(dir, "new-b.txt"), "b");
+        using (var repo = new Repository(dir))
+        {
+            Commands.Stage(repo, new[] { "tracked.txt", "new-a.txt", "new-b.txt" });
+        }
+
+        var result = _service.UnstageAll(dir, new[] { "tracked.txt", "new-a.txt", "new-b.txt" });
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.ErrorMessage);
+
+        using var repoAfter = new Repository(dir);
+        Assert.Equal(FileStatus.ModifiedInWorkdir, repoAfter.RetrieveStatus("tracked.txt"));
+        Assert.Equal(FileStatus.NewInWorkdir, repoAfter.RetrieveStatus("new-a.txt"));
+        Assert.Equal(FileStatus.NewInWorkdir, repoAfter.RetrieveStatus("new-b.txt"));
+    }
+
+    [Fact]
+    public void UnstageAll_EmptyList_IsNoOpSuccess()
+    {
+        using var workspace = TestTempDirectory.Create("zaide-mutation-test-");
+        var dir = workspace.Path;
+        InitRepoWithCommit(dir);
+
+        var result = _service.UnstageAll(dir, Array.Empty<string>());
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public void UnstageAll_NonExistentRepository_ReturnsFailure()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "zaide-mutation-nonexistent-" + Guid.NewGuid());
+
+        var result = _service.UnstageAll(dir, new[] { "file.txt" });
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.ErrorMessage);
+    }
+
+    [Fact]
     public void Commit_EmptyMessage_ReturnsFailureWithoutGitCall()
     {
         using var workspace = TestTempDirectory.Create("zaide-mutation-test-");

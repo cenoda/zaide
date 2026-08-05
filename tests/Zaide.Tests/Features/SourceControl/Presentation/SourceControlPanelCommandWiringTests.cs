@@ -143,4 +143,19 @@ public class SourceControlPanelCommandWiringTests
         Assert.Null(ex);
         Assert.False(vm.StageAllCommand.CanExecute.FirstAsync().Wait());
     }
+
+    [Fact]
+    public void UnstageAllButtonPipeline_WithUnitProjection_DoesNotThrowWhenCanExecuteFalse()
+    {
+        // With no staged changes UnstageAllCommand cannot execute; InvokeCommand
+        // must still accept the Unit-projected click stream without throwing.
+        var vm = CreateViewModel();
+        var clicks = new Subject<EventPattern<RoutedEventArgs>>();
+        using var sub = clicks.Select(_ => Unit.Default).InvokeCommand(vm, x => x.UnstageAllCommand);
+
+        var ex = Record.Exception(() => clicks.OnNext(Click()));
+
+        Assert.Null(ex);
+        Assert.False(vm.UnstageAllCommand.CanExecute.FirstAsync().Wait());
+    }
 }

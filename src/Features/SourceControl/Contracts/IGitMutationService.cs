@@ -35,6 +35,14 @@ public interface IGitMutationService
     StageResult Unstage(string repositoryRoot, string filePath);
 
     /// <summary>
+    /// Unstages every path in <paramref name="filePaths"/> (relative to
+    /// <paramref name="repositoryRoot"/>) in a single repository open. A true
+    /// no-op (returns success) when the list is empty. On failure some paths
+    /// may already be unstaged — callers must refresh from repository truth.
+    /// </summary>
+    StageResult UnstageAll(string repositoryRoot, IReadOnlyList<string> filePaths);
+
+    /// <summary>
     /// Creates a local commit in the repository at <paramref name="repositoryRoot"/>
     /// with the given <paramref name="message"/>. Validates the message is non-empty,
     /// that at least one change is staged, and that a git identity is configured
