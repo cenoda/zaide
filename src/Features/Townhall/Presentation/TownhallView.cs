@@ -116,16 +116,16 @@ public class TownhallView : Panel, IDisposable
         _filterActivityButton = CreateMessageFilterToggle("Activity", "Show activity messages only");
         _traceButton = CreateTransparencyOpenerButton(
             "Trace",
-            "Open agent trace evidence",
-            "Opens the agent trace evidence panel for the opened workspace.");
+            "Open or close agent trace evidence",
+            "Opens or closes the agent trace evidence panel for the opened workspace.");
         _memoryButton = CreateTransparencyOpenerButton(
             "Memory",
-            "Open agent durable memory",
-            "Opens the durable memory lifecycle panel for the opened workspace.");
+            "Open or close agent durable memory",
+            "Opens or closes the durable memory lifecycle panel for the opened workspace.");
         _usageButton = CreateTransparencyOpenerButton(
             "Usage",
-            "Open agent usage and cost evidence",
-            "Opens the usage and cost evidence panel for the opened workspace.");
+            "Open or close agent usage and cost evidence",
+            "Opens or closes the usage and cost evidence panel for the opened workspace.");
 
         var sidebar = BuildSidebar();
         var filterGroup = BuildFilterGroup();
@@ -421,6 +421,20 @@ public class TownhallView : Panel, IDisposable
         _disposables.Add(Disposable.Create(() => _memoryButton.Click -= OnMemoryButtonClick));
         _disposables.Add(Disposable.Create(() => _usageButton.Click -= OnUsageButtonClick));
 
+        var transparencyManagement = _viewModel.TransparencyManagement;
+        if (transparencyManagement is not null)
+        {
+            _disposables.Add(
+                transparencyManagement.WhenAnyValue(x => x.IsTracePanelOpen)
+                    .Subscribe(isOpen => ApplyTransparencyOpenerSelectedState(_traceButton, isOpen)));
+            _disposables.Add(
+                transparencyManagement.WhenAnyValue(x => x.IsMemoryPanelOpen)
+                    .Subscribe(isOpen => ApplyTransparencyOpenerSelectedState(_memoryButton, isOpen)));
+            _disposables.Add(
+                transparencyManagement.WhenAnyValue(x => x.IsUsagePanelOpen)
+                    .Subscribe(isOpen => ApplyTransparencyOpenerSelectedState(_usageButton, isOpen)));
+        }
+
         // Populate people panel
         _peoplePanel.SetAgents(_viewModel.Agents);
         _peoplePanel.SetOnOpenDirectMessage(agentActorId =>
@@ -683,11 +697,27 @@ public class TownhallView : Panel, IDisposable
     }
 
     private void OnTraceButtonClick(object? sender, RoutedEventArgs eventArgs) =>
-        _viewModel?.TransparencyManagement?.OpenTraceCommand.Execute().Subscribe();
+        _viewModel?.TransparencyManagement?.ToggleTraceCommand.Execute().Subscribe();
 
     private void OnMemoryButtonClick(object? sender, RoutedEventArgs eventArgs) =>
-        _viewModel?.TransparencyManagement?.OpenMemoryCommand.Execute().Subscribe();
+        _viewModel?.TransparencyManagement?.ToggleMemoryCommand.Execute().Subscribe();
 
     private void OnUsageButtonClick(object? sender, RoutedEventArgs eventArgs) =>
-        _viewModel?.TransparencyManagement?.OpenUsageCommand.Execute().Subscribe();
+        _viewModel?.TransparencyManagement?.ToggleUsageCommand.Execute().Subscribe();
+
+    /// <summary>
+    /// Paints a pressed/selected state on an evidence opener when its panel is
+    /// open so the toolbar reflects open surfaces. Pure presentation; does not
+    /// couple to the message-filter toggle group.
+    /// </summary>
+    private static void ApplyTransparencyOpenerSelectedState(Button button, bool isOpen)
+    {
+        var accent = PaletteTokens.PrimaryAccentColor;
+        button.Background = isOpen
+            ? new SolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B))
+            : Brushes.Transparent;
+        button.BorderBrush = isOpen
+            ? PaletteTokens.PrimaryAccentBrush
+            : PaletteTokens.TextSecondaryBrush;
+    }
 }

@@ -29,7 +29,9 @@ public sealed class Phase23TownhallToolbarTests
         Assert.Contains("Show activity messages only", townhallSource, StringComparison.Ordinal);
         Assert.Contains("CreateMessageFilterToggle", townhallSource, StringComparison.Ordinal);
         Assert.Contains("CreateTransparencyOpenerButton", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Open agent trace evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent trace evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent durable memory", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent usage and cost evidence", townhallSource, StringComparison.Ordinal);
         Assert.Contains("RadiusFull", townhallSource, StringComparison.Ordinal);
         Assert.Contains("BorderThickness = new Thickness(1)", townhallSource, StringComparison.Ordinal);
         Assert.Contains("Width = 2", townhallSource, StringComparison.Ordinal);

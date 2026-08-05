@@ -92,6 +92,13 @@ readiness from this board alone.
 ### F1 — Opening Trace / Memory / Usage stacks all three and displaces chat
 
 - [ ] Not fixed
+- [x] Session 2c slice (2026-08-05) — toolbar Trace / Memory / Usage openers
+      now **toggle** (open when closed, close when open) via
+      `ToggleTraceCommand` / `ToggleMemoryCommand` / `ToggleUsageCommand` on
+      `AgentTransparencyManagementViewModel`; per-panel Close still works; open
+      flags remain independent (no forced exclusivity). This is a
+      discoverability slice of F1, not the F1 layout fix. Covered by
+      `Phase23ToggleTransparencyOpenersTests`.
 
 **Severity:** High
 **Difficulty:** M
@@ -784,6 +791,9 @@ alignment is more normal.
 
 **Session 2 landed (2026-08-05):** F2 + F4 fixed (transparency caption dedupe;
 Townhall filter vs opener toolbar split).
+
+**Session 2c landed (2026-08-05):** Trace / Memory / Usage toolbar openers
+toggle open/close (F1 discoverability slice); open flags stay independent.
 
 Remaining difficulty-first waves:
 

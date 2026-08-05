@@ -97,13 +97,13 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
     {
         // Construct the same named entry controls Townhall hosts without requiring
         // a full Avalonia Application (TownhallView depends on Application.Current).
-        var trace = CreateEntryButton("Trace", "Open agent trace evidence");
-        var memory = CreateEntryButton("Memory", "Open agent durable memory");
-        var usage = CreateEntryButton("Usage", "Open agent usage and cost evidence");
+        var trace = CreateEntryButton("Trace", "Open or close agent trace evidence");
+        var memory = CreateEntryButton("Memory", "Open or close agent durable memory");
+        var usage = CreateEntryButton("Usage", "Open or close agent usage and cost evidence");
 
-        Assert.Equal("Open agent trace evidence", AutomationProperties.GetName(trace));
-        Assert.Equal("Open agent durable memory", AutomationProperties.GetName(memory));
-        Assert.Equal("Open agent usage and cost evidence", AutomationProperties.GetName(usage));
+        Assert.Equal("Open or close agent trace evidence", AutomationProperties.GetName(trace));
+        Assert.Equal("Open or close agent durable memory", AutomationProperties.GetName(memory));
+        Assert.Equal("Open or close agent usage and cost evidence", AutomationProperties.GetName(usage));
         Assert.True(trace.Focusable && trace.IsTabStop);
         Assert.True(memory.Focusable && memory.IsTabStop);
         Assert.True(usage.Focusable && usage.IsTabStop);
@@ -117,9 +117,9 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
                 "Townhall",
                 "Presentation",
                 "TownhallView.cs"));
-        Assert.Contains("Open agent trace evidence", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Open agent durable memory", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Open agent usage and cost evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent trace evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent durable memory", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent usage and cost evidence", townhallSource, StringComparison.Ordinal);
         Assert.Contains("IsTabStop = true", townhallSource, StringComparison.Ordinal);
     }
 

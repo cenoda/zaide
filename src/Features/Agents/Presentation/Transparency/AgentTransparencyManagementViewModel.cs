@@ -85,6 +85,10 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         RefreshUsageCommand = ReactiveCommand.CreateFromTask(RefreshUsageSurfaceAsync);
         RetryUsageCommand = ReactiveCommand.CreateFromTask(RetryUsageSurfaceAsync);
         ToggleUsageCaptureCommand = ReactiveCommand.Create(ToggleUsageCapture);
+
+        ToggleTraceCommand = ReactiveCommand.Create(ToggleTraceSurface);
+        ToggleMemoryCommand = ReactiveCommand.CreateFromTask(ToggleMemorySurfaceAsync);
+        ToggleUsageCommand = ReactiveCommand.CreateFromTask(ToggleUsageSurfaceAsync);
     }
 
     public string AccessibilityName => AutomationName;
@@ -114,6 +118,12 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> RetryUsageCommand { get; }
 
     public ReactiveCommand<Unit, Unit> ToggleUsageCaptureCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ToggleTraceCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ToggleMemoryCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ToggleUsageCommand { get; }
 
     public bool IsTracePanelOpen
     {
@@ -312,6 +322,17 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         MemoryStatusCaption = "Durable memory closed.";
     }
 
+    private Task ToggleMemorySurfaceAsync()
+    {
+        if (IsMemoryPanelOpen)
+        {
+            CloseMemorySurface();
+            return Task.CompletedTask;
+        }
+
+        return OpenMemorySurfaceAsync();
+    }
+
     private async Task ReloadMemoryAndPublishAsync(Func<Task> reload)
     {
         await reload().ConfigureAwait(false);
@@ -332,6 +353,18 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     }
 
     private void CloseTraceSurface() => IsTracePanelOpen = false;
+
+    private void ToggleTraceSurface()
+    {
+        if (IsTracePanelOpen)
+        {
+            CloseTraceSurface();
+        }
+        else
+        {
+            OpenTraceSurface();
+        }
+    }
 
     private void ToggleTraceCapture()
     {
@@ -357,6 +390,17 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     {
         IsUsagePanelOpen = false;
         UsageStatusCaption = "Usage evidence closed.";
+    }
+
+    private Task ToggleUsageSurfaceAsync()
+    {
+        if (IsUsagePanelOpen)
+        {
+            CloseUsageSurface();
+            return Task.CompletedTask;
+        }
+
+        return OpenUsageSurfaceAsync();
     }
 
     private async Task ReloadUsageAndPublishAsync(Func<Task> reload)

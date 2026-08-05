@@ -55,21 +55,21 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
                 "Townhall",
                 "Presentation",
                 "TownhallView.cs"));
-        Assert.Contains("Open agent trace evidence", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Open agent durable memory", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Open agent usage and cost evidence", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Opens the agent trace evidence panel", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Opens the durable memory lifecycle panel", townhallSource, StringComparison.Ordinal);
-        Assert.Contains("Opens the usage and cost evidence panel", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent trace evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent durable memory", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Open or close agent usage and cost evidence", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Opens or closes the agent trace evidence panel", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Opens or closes the durable memory lifecycle panel", townhallSource, StringComparison.Ordinal);
+        Assert.Contains("Opens or closes the usage and cost evidence panel", townhallSource, StringComparison.Ordinal);
         Assert.Contains("IsTabStop = true", townhallSource, StringComparison.Ordinal);
         Assert.Contains("Focusable = true", townhallSource, StringComparison.Ordinal);
 
-        var trace = CreateNamedTabStopButton("Open agent trace evidence");
-        var memory = CreateNamedTabStopButton("Open agent durable memory");
-        var usage = CreateNamedTabStopButton("Open agent usage and cost evidence");
-        AssertNamedFocusableTabStop(trace, "Open agent trace evidence");
-        AssertNamedFocusableTabStop(memory, "Open agent durable memory");
-        AssertNamedFocusableTabStop(usage, "Open agent usage and cost evidence");
+        var trace = CreateNamedTabStopButton("Open or close agent trace evidence");
+        var memory = CreateNamedTabStopButton("Open or close agent durable memory");
+        var usage = CreateNamedTabStopButton("Open or close agent usage and cost evidence");
+        AssertNamedFocusableTabStop(trace, "Open or close agent trace evidence");
+        AssertNamedFocusableTabStop(memory, "Open or close agent durable memory");
+        AssertNamedFocusableTabStop(usage, "Open or close agent usage and cost evidence");
     }
 
     [Fact]
