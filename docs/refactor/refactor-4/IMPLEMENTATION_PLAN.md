@@ -105,6 +105,10 @@ This refactor closes those gaps without expanding scope.
 - Do not introduce a new icon library. Use the existing `IconFactory`
   + `FileIconKeyResolver` + `Icons.axaml` assets.
 
+  > **Superseded (2026-08-06):** Phase 23 F10 accepts migration to a
+  > catalogued Avalonia icon pack (`docs/LIBRARIES.md`). Constraint above
+  > applied only to Refactor 4 scope; do not treat it as current product policy.
+
 ---
 
 ## Entry Conditions

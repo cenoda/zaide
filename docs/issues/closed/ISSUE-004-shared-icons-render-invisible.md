@@ -123,5 +123,8 @@ is used.
 - **Fix:** Resolve shared icon geometries with
   `Application.Current.TryFindResource(resourceKey, app.ActualThemeVariant, out var value)`
   and keep rendering them as stroked paths.
+- **Long-term (2026-08-06):** Phase 23 F10 reopened — embedded Phosphor +
+  `IconFactory` path rendering does not meet small-size legibility. Accepted
+  fix direction: catalogued icon pack + `IconFactory` adapter (`docs/LIBRARIES.md`).
 - **Commit:** Pending.
 - **Closed date:** 2026-07-06

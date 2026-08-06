@@ -595,11 +595,18 @@ when a screenshot under the workspace is selected
 
 ### F10 — Icon symbols are unrecognizable (Source Control header captured)
 
-- [x] Fixed (2026-08-06) — `IconFactory` paints Phosphor Regular paths with
-  `Fill` (not stroke-only mush); `Icon.GitBranch` and `Icon.Search` path data
-  corrected; decorative Source Control header glyph removed; icon-only controls
-  get tooltip + `AutomationProperties.Name`. Covered by
-  `Phase23IconFactoryTests`.
+- [ ] Not fixed (reopened 2026-08-06) — embedded Phosphor `StreamGeometry` +
+  `IconFactory` paint tweaks (Fill, path data, scaling) **did not** produce
+  readable glyphs at header/toolbar sizes (~14–20px); post-fix user
+  verification was **worse** than baseline (`temp-screenshots` 2026-08-06).
+  **Accepted direction:** migrate to a catalogued Avalonia icon pack (see
+  `docs/LIBRARIES.md`); keep `Icon.*` keys via an `IconFactory` adapter. Do
+  not add new hand-maintained Phosphor paths to `Icons.axaml`.
+
+- [x] Partial (2026-08-06) — icon-only controls got tooltip +
+  `AutomationProperties.Name`; decorative Source Control header glyph removed.
+  Covered by `Phase23IconFactoryTests` (paint/a11y contracts only — **not**
+  visual legibility).
 
 **Severity:** Medium (legibility / icon system quality)
 **Difficulty:** M
@@ -649,7 +656,9 @@ when a screenshot under the workspace is selected
   from `IconFactory` — check it in the same pass if users still cannot read
   explorer vs source-control rail icons (tooltips exist there: “Explorer” /
   “Source Control”).
-- Do not expand the icon library before the paint contract is fixed.
+- **Do not expand** hand-embedded Phosphor paths in `Icons.axaml`. Prefer a
+  catalogued icon pack (`docs/LIBRARIES.md`) and an `IconFactory` adapter.
+- **Implementation plan:** `F10_ICON_PACK_IMPLEMENTATION_PLAN.md`
 
 ---
 
@@ -660,7 +669,7 @@ when a screenshot under the workspace is selected
   intelligence) are plain layout segments (no `Button`, no Hand cursor, no
   hover/press chrome). Settings remains the only interactive control
   (`OpenSettingsCommand`, tooltip + automation name “Settings”). Covered by
-  `StatusBarTests`. Icon legibility (F10) unchanged.
+  `StatusBarTests`. Icon legibility tracked under F10 (icon pack migration).
 
 **Severity:** High (false affordance / dead controls)
 **Difficulty:** S

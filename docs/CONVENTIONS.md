@@ -203,6 +203,18 @@ Project workflow stays under Project System even when it consumes other
 features' projections. LSP is not root infrastructure; DAP is not root
 infrastructure.
 
+#### Icons
+
+- Prefer a **catalogued NuGet icon pack** (`docs/LIBRARIES.md`) over new
+  hand-maintained `StreamGeometry` in `Icons.axaml` (Phase 23 F10).
+- `App/Shell/IconFactory` stays the shell-owned facade: views call
+  `IconFactory.Create("Icon.*", brush, size)` and keep existing `Icon.*` keys;
+  they do not reference pack control types directly.
+- Embedded Phosphor paths in `UI/DesignSystem/Icons.axaml` are **legacy
+  interim** — do not extend; remove when pack migration lands.
+- `NavBar.CreateNavIcon` uses separate inline stroke geometry (readable at
+  16px); may unify after pack adoption.
+
 ### Optional layers (per feature)
 
 A feature may use a flat root or any subset of these layers. Do not create

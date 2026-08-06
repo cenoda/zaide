@@ -59,9 +59,30 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ## ICONS & ASSETS
 
-| Library | What It Does | Why You Want It |
-|---------|-------------|-----------------|
-| **Phosphor Icons (embedded Path)** | Vector icons from the MIT-licensed Phosphor set. Embedded as `StreamGeometry` in `src/UI/DesignSystem/Icons.axaml` and rendered through non-hit-test `Viewbox` + `Path` controls. | No NuGet required. Vector crisp. Monochrome. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
+Zaide targets **Avalonia 12.0.5** on **.NET 10**. Prefer a catalogued NuGet icon
+pack over hand-maintained `StreamGeometry` in `Icons.axaml` (see `docs-rules.md`
+§8: use a library when it covers 80%+ of the need).
+
+### Recommended — adopt on F10 follow-up (not yet in `Zaide.csproj`)
+
+| Library | What It Does | Why You Want It | Stack notes (2026-08) |
+|---------|-------------|-----------------|------------------------|
+| **Lucide.Avalonia** | Lucide stroke icons as `LucideIcon` controls and `{LucideIconContent …}` markup for Avalonia. MIT. | Stroke-oriented glyphs designed for ~16px UI; weekly icon updates; C# `Content = …` without AXAML xmlns. | NuGet **0.2.16** targets **net10.0**. **POC required** on Zaide’s Avalonia **12.0.5** before merge. Repo: [dme-compunet/Lucide.Avalonia](https://github.com/dme-compunet/Lucide.Avalonia). |
+| **IconPacks.Avalonia** (MahApps) | Aggregates many sets (Material, FontAwesome, Lucide, Phosphor, …) as `PackIcon` controls. MIT. | One package, huge catalog, XAML resource dictionaries. | **Avalonia 12:** stable **1.3.x** reports runtime failures ([issue #41](https://github.com/MahApps/IconPacks.Avalonia/issues/41)); Avalonia 12 support tracked in open [PR #42](https://github.com/MahApps/IconPacks.Avalonia/pull/42). Treat as **fallback** until a released build is verified on 12.0.5. Heavier than a single-set pack. |
+
+**Planned integration shape (when implemented):**
+- Add chosen package to `Directory.Packages.props` + `src/Zaide.csproj`.
+- Keep `IconFactory.Create("Icon.*", brush, size)` and `FileIconKeyResolver` keys;
+  map keys inside `IconFactory` to pack icons (facade — features do not reference
+  pack types directly).
+- `NavBar.CreateNavIcon` inline stroke paths unify in F10 — see
+  `docs/phases/v3/phase-23/F10_ICON_PACK_IMPLEMENTATION_PLAN.md`.
+
+### Interim — legacy embedded Phosphor (replace, do not extend)
+
+| Asset | What It Does | Status |
+|-------|-------------|--------|
+| **Phosphor Icons (embedded `StreamGeometry`)** | MIT Phosphor Regular paths in `src/UI/DesignSystem/Icons.axaml`, rendered via `App/Shell/IconFactory` (`Viewbox` + `Path`). | **Insufficient at 14–20px** (Phase 23 F10 reopened). Fill vs stroke and path edits did not restore recognition. **Do not add new manual paths** here; remove when pack migration lands. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
 
 ## LANGUAGE INTELLIGENCE (Phase 10)
 
@@ -92,4 +113,4 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ---
 
-*Last updated: 2026-07-17 (Refactor 6.2 M1–M12 mechanical migration complete — no NuGet / package surface change. Prior: Phase 11 complete — no new NuGet; workflow uses `System.Diagnostics.Process` / existing DI stack. Phase 10 stack unchanged: csharp-ls 0.25.0 + StreamJsonRpc 2.22.23)*
+*Last updated: 2026-08-06 (Phase 23 F10 — icon pack direction accepted; Lucide.Avalonia primary candidate; embedded Phosphor interim deprecated. Prior: 2026-07-17 Refactor 6.2 M1–M12 — no NuGet change. Phase 10 stack: csharp-ls 0.25.0 + StreamJsonRpc 2.22.23)*
