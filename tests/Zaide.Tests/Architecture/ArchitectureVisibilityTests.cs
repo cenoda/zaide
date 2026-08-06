@@ -193,8 +193,9 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
         // Phase 23 F10: +1 IconLucideMap (43).
         // Refactor 10 M1: +1 ThemeBinding (5).
+        // Refactor 10 M2: +1 Elevation.cs (6).
         Assert.Equal(43, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
-        Assert.Equal(5, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
+        Assert.Equal(6, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.

@@ -320,7 +320,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 23 F1: +1 AgentInspectHost (884).
         // Phase 23 F10: +1 IconLucideMap (885).
         // Refactor 10 M1: +4 ThemeBinding, Light.axaml, Shared.axaml, ThemeTokenParityTests (889).
-        Assert.Equal(889, inventory.SourceFiles.Count);
+        // Refactor 10 M2: +1 Elevation.cs (890).
+        Assert.Equal(890, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -330,7 +331,9 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
         // Phase 23 F10: +1 IconLucideMap (43).
         Assert.Equal(43, byFolder["App"]);
-        Assert.Equal(5, byFolder["UI"]);
+        // Refactor 10 M1: +1 ThemeBinding (5).
+        // Refactor 10 M2: +1 Elevation.cs (6).
+        Assert.Equal(6, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.

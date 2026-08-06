@@ -286,7 +286,8 @@ public sealed class Phase17AdversarialCloseoutTests : IDisposable
         // Phase 22.4 M1–M3: +7 authorized transparency surface production source files.
         // Phase 23 F10: +1 IconLucideMap (885).
         // Refactor 10 M1: +4 ThemeBinding, Light.axaml, Shared.axaml, ThemeTokenParityTests (889).
-        Assert.Equal(889, inventory.SourceFiles.Count);
+        // Refactor 10 M2: +1 Elevation.cs (890).
+        Assert.Equal(890, inventory.SourceFiles.Count);
         Assert.Equal(841, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
