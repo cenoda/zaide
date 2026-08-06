@@ -13,6 +13,7 @@ using Zaide.Features.Editor.Presentation;
 using Zaide.Features.Language.Contracts;
 using Zaide.Features.Debugging.Presentation;
 using Zaide.Features.Agents.Application.Continuity;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Presentation.Transparency;
@@ -101,6 +102,7 @@ public partial class App : Application
                 .GetRequiredService<AgentSessionContinuityStartupReconciler>()
                 .ReconcileOnStartupIfNeeded();
             _ = CompositionRoot.Services.GetRequiredService<AgentSessionContinuityEventSubscriber>();
+            _ = CompositionRoot.Services.GetRequiredService<AgentTransparencySettingsSync>();
             CompositionRoot.Services
                 .GetRequiredService<AgentSessionContinuityWorkspaceOpenReconciler>()
                 .ReconcileOnWorkspaceOpenIfNeeded();

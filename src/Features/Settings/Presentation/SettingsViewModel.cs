@@ -95,6 +95,33 @@ public sealed class SettingsViewModel : ReactiveObject, IDisposable
     public void SetShowSpaces(bool show) => SetCandidate(Candidate with { Editor = Candidate.Editor with { ShowSpaces = show } });
     public void SetFormatOnSave(bool formatOnSave) => SetCandidate(Candidate with { Editor = Candidate.Editor with { FormatOnSave = formatOnSave } });
 
+    public void SetTraceCaptureEnabled(bool enabled) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { TraceCaptureEnabled = enabled } });
+
+    public void SetUsageCaptureEnabled(bool enabled) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { UsageCaptureEnabled = enabled } });
+
+    public void SetTracePageSize(int size) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { TracePageSize = size } });
+
+    public void SetTraceMaxPageSize(int size) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { TraceMaxPageSize = size } });
+
+    public void SetAcpExecutablePath(string path) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { AcpExecutablePath = path ?? string.Empty } });
+
+    public void SetAcpArguments(string args) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { AcpArguments = args ?? string.Empty } });
+
+    public void SetAcpExpectedAgentName(string name) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { AcpExpectedAgentName = name ?? string.Empty } });
+
+    public void SetAcpExpectedAgentVersion(string version) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { AcpExpectedAgentVersion = version ?? string.Empty } });
+
+    public void SetDefaultContextPolicyLevel(string level) =>
+        SetCandidate(Candidate with { Agents = Candidate.Agents with { DefaultContextPolicyLevel = level ?? "Standard" } });
+
     public void RefreshFromCurrent(bool preserveCandidate = true)
     {
         var current = _settings.Current;
@@ -175,7 +202,26 @@ public sealed class SettingsViewModel : ReactiveObject, IDisposable
         if (candidate.Llm.BaseUrl != oldBase.Llm.BaseUrl) llm = llm with { BaseUrl = candidate.Llm.BaseUrl };
         if (candidate.Llm.Model != oldBase.Llm.Model) llm = llm with { Model = candidate.Llm.Model };
         if (candidate.Llm.ApiKeySource != oldBase.Llm.ApiKeySource) llm = llm with { ApiKeySource = candidate.Llm.ApiKeySource };
-        return current with { Editor = editor, Llm = llm };
+        var agents = current.Agents;
+        if (candidate.Agents.TraceCaptureEnabled != oldBase.Agents.TraceCaptureEnabled)
+            agents = agents with { TraceCaptureEnabled = candidate.Agents.TraceCaptureEnabled };
+        if (candidate.Agents.UsageCaptureEnabled != oldBase.Agents.UsageCaptureEnabled)
+            agents = agents with { UsageCaptureEnabled = candidate.Agents.UsageCaptureEnabled };
+        if (candidate.Agents.TracePageSize != oldBase.Agents.TracePageSize)
+            agents = agents with { TracePageSize = candidate.Agents.TracePageSize };
+        if (candidate.Agents.TraceMaxPageSize != oldBase.Agents.TraceMaxPageSize)
+            agents = agents with { TraceMaxPageSize = candidate.Agents.TraceMaxPageSize };
+        if (candidate.Agents.AcpExecutablePath != oldBase.Agents.AcpExecutablePath)
+            agents = agents with { AcpExecutablePath = candidate.Agents.AcpExecutablePath };
+        if (candidate.Agents.AcpArguments != oldBase.Agents.AcpArguments)
+            agents = agents with { AcpArguments = candidate.Agents.AcpArguments };
+        if (candidate.Agents.AcpExpectedAgentName != oldBase.Agents.AcpExpectedAgentName)
+            agents = agents with { AcpExpectedAgentName = candidate.Agents.AcpExpectedAgentName };
+        if (candidate.Agents.AcpExpectedAgentVersion != oldBase.Agents.AcpExpectedAgentVersion)
+            agents = agents with { AcpExpectedAgentVersion = candidate.Agents.AcpExpectedAgentVersion };
+        if (candidate.Agents.DefaultContextPolicyLevel != oldBase.Agents.DefaultContextPolicyLevel)
+            agents = agents with { DefaultContextPolicyLevel = candidate.Agents.DefaultContextPolicyLevel };
+        return current with { Editor = editor, Llm = llm, Agents = agents };
     }
 
     public void Dispose()

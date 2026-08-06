@@ -14,6 +14,7 @@ using Zaide.Features.Agents.Domain.Continuity;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.Features.Agents.Application;
@@ -38,6 +39,7 @@ internal sealed class AgentSessionService
     private readonly AgentDurableWorkspaceStorageKeyResolver? _workspaceKeyResolver;
     private readonly IAgentMemoryRetrievalService? _memoryRetrievalService;
     private readonly IAgentMemoryInfluenceRecorder? _memoryInfluenceRecorder;
+    private readonly ISettingsService? _settings;
     private readonly Func<string?> _workspaceRootProvider;
     private readonly Dictionary<ConversationId, LiveSession> _sessions = new();
     private readonly Dictionary<ConversationId, AgentContextPolicyLevel> _sessionPolicyOverrides = new();
@@ -56,7 +58,8 @@ internal sealed class AgentSessionService
         AgentDurableWorkspaceStorageKeyResolver? workspaceKeyResolver = null,
         IAgentMemoryRetrievalService? memoryRetrievalService = null,
         IAgentMemoryInfluenceRecorder? memoryInfluenceRecorder = null,
-        Func<string?>? workspaceRootProvider = null)
+        Func<string?>? workspaceRootProvider = null,
+        ISettingsService? settings = null)
     {
         ArgumentNullException.ThrowIfNull(backends);
         ArgumentNullException.ThrowIfNull(eventStream);
@@ -73,6 +76,7 @@ internal sealed class AgentSessionService
         _memoryRetrievalService = memoryRetrievalService;
         _memoryInfluenceRecorder = memoryInfluenceRecorder;
         _workspaceRootProvider = workspaceRootProvider ?? (() => Environment.CurrentDirectory);
+        _settings = settings;
 
         if (_workspaceAuthority is not null)
         {
@@ -1836,14 +1840,40 @@ internal sealed class AgentSessionService
         }
 
         return new AgentContextPolicy(
-            AgentContextApplicationDefault.Level,
+            ResolveApplicationDefaultLevel(),
             sessionOverride);
+    }
+
+    private AgentContextPolicyLevel ResolveApplicationDefaultLevel()
+    {
+        if (_settings is null)
+        {
+            return AgentContextApplicationDefault.Level;
+        }
+
+        var raw = _settings.Current.Agents.DefaultContextPolicyLevel;
+        if (raw.Equals("Off", StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentContextPolicyLevel.Off;
+        }
+
+        if (raw.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentContextPolicyLevel.Minimal;
+        }
+
+        if (raw.Equals("Detailed", StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentContextPolicyLevel.Detailed;
+        }
+
+        return AgentContextPolicyLevel.Standard;
     }
 
     private AgentContextSessionPolicyState CreatePolicyStateLocked(ConversationId conversationId)
     {
         var applicationDefault = AgentContextPolicyLevelMapper.ToContract(
-            AgentContextApplicationDefault.Level);
+            ResolveApplicationDefaultLevel());
         var policy = ResolveContextPolicyLocked(conversationId);
         var effective = AgentContextPolicyLevelMapper.ToContract(policy.EffectiveLevel);
         var isOverrideActive = policy.SessionOverride?.IsActive == true;

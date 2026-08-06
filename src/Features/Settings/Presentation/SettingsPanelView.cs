@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
@@ -14,7 +15,7 @@ namespace Zaide.Features.Settings.Presentation;
 
 /// <summary>
 /// Full-content slide-over surface for transient settings editing.
-/// Sections labelled Editor, Terminal, and LLM.
+/// Sections labelled Editor, Terminal, LLM, and Agents.
 /// </summary>
 public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, IDisposable
 {
@@ -41,6 +42,17 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     private readonly TextBox _model;
     private readonly TextBox _baseUrl;
     private readonly TextBox _apiKey;
+
+    // Agents controls
+    private readonly CheckBox _traceCaptureEnabled;
+    private readonly CheckBox _usageCaptureEnabled;
+    private readonly TextBox _tracePageSize;
+    private readonly TextBox _traceMaxPageSize;
+    private readonly TextBox _acpExecutablePath;
+    private readonly TextBox _acpArguments;
+    private readonly TextBox _acpExpectedAgentName;
+    private readonly TextBox _acpExpectedAgentVersion;
+    private readonly ComboBox _defaultContextPolicy;
 
     private bool _syncing;
     private bool _disposed;
@@ -108,6 +120,74 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         _baseUrl = new TextBox { Text = viewModel.Candidate.Llm.BaseUrl, PlaceholderText = "Base URL" };
         _apiKey = new TextBox { Text = viewModel.ApiKey ?? "", PasswordChar = '•', PlaceholderText = "API key" };
 
+        // ── Agents controls ────────────────────────────────────────────
+        _traceCaptureEnabled = new CheckBox
+        {
+            IsChecked = viewModel.Candidate.Agents.TraceCaptureEnabled,
+            Content = "Enable trace capture by default"
+        };
+        AutomationProperties.SetName(_traceCaptureEnabled, "Enable trace capture by default");
+
+        _usageCaptureEnabled = new CheckBox
+        {
+            IsChecked = viewModel.Candidate.Agents.UsageCaptureEnabled,
+            Content = "Enable usage capture by default"
+        };
+        AutomationProperties.SetName(_usageCaptureEnabled, "Enable usage capture by default");
+
+        _tracePageSize = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.TracePageSize.ToString(),
+            PlaceholderText = "64"
+        };
+        AutomationProperties.SetName(_tracePageSize, "Trace page size");
+
+        _traceMaxPageSize = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.TraceMaxPageSize.ToString(),
+            PlaceholderText = "256"
+        };
+        AutomationProperties.SetName(_traceMaxPageSize, "Trace max page size");
+
+        _acpExecutablePath = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.AcpExecutablePath,
+            PlaceholderText = "ACP executable path"
+        };
+        AutomationProperties.SetName(_acpExecutablePath, "ACP executable path");
+
+        _acpArguments = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.AcpArguments,
+            PlaceholderText = "ACP non-secret arguments"
+        };
+        AutomationProperties.SetName(_acpArguments, "ACP non-secret arguments");
+
+        _acpExpectedAgentName = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.AcpExpectedAgentName,
+            PlaceholderText = "ACP expected agent name"
+        };
+        AutomationProperties.SetName(_acpExpectedAgentName, "ACP expected agent name");
+
+        _acpExpectedAgentVersion = new TextBox
+        {
+            Text = viewModel.Candidate.Agents.AcpExpectedAgentVersion,
+            PlaceholderText = "ACP expected agent version"
+        };
+        AutomationProperties.SetName(_acpExpectedAgentVersion, "ACP expected agent version");
+
+        _defaultContextPolicy = new ComboBox
+        {
+            MinWidth = 200,
+            ItemsSource = new[] { "Off", "Minimal", "Standard", "Detailed" },
+            SelectedItem = viewModel.Candidate.Agents.DefaultContextPolicyLevel,
+        };
+        AutomationProperties.SetName(_defaultContextPolicy, "Default context policy level");
+        AutomationProperties.SetHelpText(
+            _defaultContextPolicy,
+            "Application-wide default IDE context disclosure policy for agent sessions.");
+
         // ── Status displays ────────────────────────────────────────────
         _errors = TextStyles.Caption("");
         _errors.Foreground = Brushes.OrangeRed;
@@ -156,6 +236,47 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         _model.TextChanged += (_, _) => { if (!_syncing) viewModel.SetModel(_model.Text ?? ""); };
         _baseUrl.TextChanged += (_, _) => { if (!_syncing) viewModel.SetBaseUrl(_baseUrl.Text ?? ""); };
         _apiKey.TextChanged += (_, _) => { if (!_syncing) viewModel.ApiKey = _apiKey.Text; };
+        _traceCaptureEnabled.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == CheckBox.IsCheckedProperty && !_syncing)
+                viewModel.SetTraceCaptureEnabled(_traceCaptureEnabled.IsChecked ?? false);
+        };
+        _usageCaptureEnabled.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == CheckBox.IsCheckedProperty && !_syncing)
+                viewModel.SetUsageCaptureEnabled(_usageCaptureEnabled.IsChecked ?? false);
+        };
+        _tracePageSize.TextChanged += (_, _) =>
+        {
+            if (!_syncing && int.TryParse(_tracePageSize.Text, out var size))
+                viewModel.SetTracePageSize(size);
+        };
+        _traceMaxPageSize.TextChanged += (_, _) =>
+        {
+            if (!_syncing && int.TryParse(_traceMaxPageSize.Text, out var size))
+                viewModel.SetTraceMaxPageSize(size);
+        };
+        _acpExecutablePath.TextChanged += (_, _) =>
+        {
+            if (!_syncing) viewModel.SetAcpExecutablePath(_acpExecutablePath.Text ?? string.Empty);
+        };
+        _acpArguments.TextChanged += (_, _) =>
+        {
+            if (!_syncing) viewModel.SetAcpArguments(_acpArguments.Text ?? string.Empty);
+        };
+        _acpExpectedAgentName.TextChanged += (_, _) =>
+        {
+            if (!_syncing) viewModel.SetAcpExpectedAgentName(_acpExpectedAgentName.Text ?? string.Empty);
+        };
+        _acpExpectedAgentVersion.TextChanged += (_, _) =>
+        {
+            if (!_syncing) viewModel.SetAcpExpectedAgentVersion(_acpExpectedAgentVersion.Text ?? string.Empty);
+        };
+        _defaultContextPolicy.SelectionChanged += (_, _) =>
+        {
+            if (!_syncing && _defaultContextPolicy.SelectedItem is string level)
+                viewModel.SetDefaultContextPolicyLevel(level);
+        };
 
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
@@ -175,6 +296,17 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             LabelledField("Model", _model),
             LabelledField("Base URL", _baseUrl),
             LabelledField("API Key", _apiKey));
+
+        var agentsSection = BuildSection("Agents",
+            _traceCaptureEnabled,
+            _usageCaptureEnabled,
+            LabelledField("Trace page size", _tracePageSize),
+            LabelledField("Trace max page size", _traceMaxPageSize),
+            LabelledField("ACP executable path", _acpExecutablePath),
+            LabelledField("ACP arguments (non-secret)", _acpArguments),
+            LabelledField("ACP expected agent name", _acpExpectedAgentName),
+            LabelledField("ACP expected agent version", _acpExpectedAgentVersion),
+            LabelledField("Default context policy", _defaultContextPolicy));
 
         // ScrollViewer so every setting stays reachable when content exceeds
         // the available height (mouse wheel / trackpad / scrollbar).
@@ -197,6 +329,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
                         editorSection,
                         terminalSection,
                         llmSection,
+                        agentsSection,
                         _conflict, _errors,
                         new StackPanel
                         {
@@ -251,6 +384,15 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
         _terminalFontSize.Text = ViewModel.Candidate.Editor.TerminalFontSize.ToString();
         _model.Text = ViewModel.Candidate.Llm.Model;
         _baseUrl.Text = ViewModel.Candidate.Llm.BaseUrl;
+        _traceCaptureEnabled.IsChecked = ViewModel.Candidate.Agents.TraceCaptureEnabled;
+        _usageCaptureEnabled.IsChecked = ViewModel.Candidate.Agents.UsageCaptureEnabled;
+        _tracePageSize.Text = ViewModel.Candidate.Agents.TracePageSize.ToString();
+        _traceMaxPageSize.Text = ViewModel.Candidate.Agents.TraceMaxPageSize.ToString();
+        _acpExecutablePath.Text = ViewModel.Candidate.Agents.AcpExecutablePath;
+        _acpArguments.Text = ViewModel.Candidate.Agents.AcpArguments;
+        _acpExpectedAgentName.Text = ViewModel.Candidate.Agents.AcpExpectedAgentName;
+        _acpExpectedAgentVersion.Text = ViewModel.Candidate.Agents.AcpExpectedAgentVersion;
+        _defaultContextPolicy.SelectedItem = ViewModel.Candidate.Agents.DefaultContextPolicyLevel;
         _syncing = false;
     }
 

@@ -11,6 +11,7 @@ using Zaide.Features.Agents.Domain.Transparency.Trace;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
+using Zaide.Features.Settings.Contracts;
 
 namespace Zaide.Features.Agents.Presentation.Transparency;
 
@@ -27,6 +28,7 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     public const int DefaultPageSize = 64;
     public const int MaxPageSize = 256;
 
+    private readonly ISettingsService _settings;
     private readonly AgentTraceInspectionViewModel _traceInspection;
     private readonly AgentUsageInspectionViewModel _usageInspection;
     private readonly AgentSessionContinuityInspectionViewModel _continuityInspection;
@@ -54,8 +56,10 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         AgentTraceAvailabilityProjection traceAvailabilityProjection,
         AgentUsageAvailabilityProjection usageAvailabilityProjection,
         AgentSessionContinuityAvailabilityProjection continuityAvailabilityProjection,
-        AgentMemoryAvailabilityProjection memoryAvailabilityProjection)
+        AgentMemoryAvailabilityProjection memoryAvailabilityProjection,
+        ISettingsService settings)
     {
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _traceInspection = traceInspection ?? throw new ArgumentNullException(nameof(traceInspection));
         _usageInspection = usageInspection ?? throw new ArgumentNullException(nameof(usageInspection));
         _continuityInspection = continuityInspection
@@ -186,10 +190,14 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         return Task.FromResult(_lifecycleCoordinator.Backup(workspaceKey));
     }
 
+    public int EffectiveDefaultPageSize => _settings.Current.Agents.TracePageSize;
+
+    public int EffectiveMaxPageSize => _settings.Current.Agents.TraceMaxPageSize;
+
     public int ClampPageSize(int requestedPageSize) =>
         requestedPageSize <= 0
-            ? DefaultPageSize
-            : Math.Min(requestedPageSize, MaxPageSize);
+            ? EffectiveDefaultPageSize
+            : Math.Min(requestedPageSize, EffectiveMaxPageSize);
 
     public Task<AgentTraceInspectionSummary> LoadTraceSummaryAsync() =>
         _traceInspection.LoadSummaryAsync();
@@ -203,7 +211,7 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
     public void RefreshTracePresentation()
     {
-        _traceInspection.ReloadPresentation(DefaultPageSize);
+        _traceInspection.ReloadPresentation(EffectiveDefaultPageSize);
         TraceStatusCaption = _traceInspection.AvailabilityCaption;
         this.RaisePropertyChanged(nameof(TraceInspection));
     }

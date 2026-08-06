@@ -27,6 +27,7 @@ using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 
 namespace Zaide.App.Composition.Registration;
@@ -217,6 +218,7 @@ internal static class AgentsServiceCollectionExtensions
         services.AddSingleton<IAgentUsageBackendEvidenceSource, AcpAgentUsageSource>();
         services.AddSingleton<AgentUsageAvailabilityProjection>();
         services.AddSingleton<AgentUsageInspectionViewModel>();
+        services.AddSingleton<AgentTransparencySettingsSync>();
 
         // Phase 21 M4: session continuity, explicit recovery, and termination.
         services.AddSingleton<AgentSessionContinuityCheckpointWriter>();
@@ -249,7 +251,8 @@ internal static class AgentsServiceCollectionExtensions
                 (AgentDurableWorkspaceStorageKeyResolver?)get(typeof(AgentDurableWorkspaceStorageKeyResolver)),
                 (IAgentMemoryRetrievalService?)get(typeof(IAgentMemoryRetrievalService)),
                 (IAgentMemoryInfluenceRecorder?)get(typeof(IAgentMemoryInfluenceRecorder)),
-                AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority));
+                AgentContinuityWorkspaceRootProvider.CreateOpenedWorkspaceProvider(workspaceAuthority),
+                (ISettingsService?)get(typeof(ISettingsService)));
         });
 
         // Phase 21 M5: durable scoped memory records (store only; no retrieval/injection).

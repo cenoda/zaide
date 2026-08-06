@@ -63,6 +63,12 @@ internal sealed class AgentTraceCaptureSink : IAgentTraceCaptureSink
 
     public void DisableCapture() => Interlocked.Exchange(ref _captureEnabledCounter, 0);
 
+    /// <summary>
+    /// Sets capture on or off from durable settings (idempotent).
+    /// </summary>
+    public void ApplyCaptureEnabled(bool enabled) =>
+        Interlocked.Exchange(ref _captureEnabledCounter, enabled ? 1 : 0);
+
     public AgentTraceCaptureResult TrySubmit(AgentTraceCaptureRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
