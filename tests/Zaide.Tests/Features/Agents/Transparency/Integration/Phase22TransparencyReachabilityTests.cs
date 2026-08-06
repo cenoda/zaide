@@ -35,6 +35,7 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot)));
@@ -70,7 +71,7 @@ public sealed class Phase22TransparencyReachabilityTests : IDisposable
         Assert.True(management.IsTracePanelOpen);
         management.RefreshTracePresentation();
         Assert.False(management.TraceAvailability.CurrentState.CaptureEnabled);
-        Assert.Contains("disabled", management.TraceStatusCaption, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("change in Settings", management.TraceStatusCaption, StringComparison.OrdinalIgnoreCase);
 
         Assert.True(registry.Execute("agent.memory.open"));
         Assert.True(management.IsMemoryPanelOpen);

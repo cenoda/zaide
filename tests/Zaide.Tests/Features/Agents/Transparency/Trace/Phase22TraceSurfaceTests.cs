@@ -5,10 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 using Zaide.App.Composition;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Trace;
 
@@ -24,16 +27,21 @@ public sealed class Phase22TraceSurfaceTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot)));
         services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
         _provider = services.BuildServiceProvider();
+        _ = _provider.GetRequiredService<AgentTransparencySettingsSync>();
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task TraceSurface_UsesOpenedWorkspaceAndExplicitCaptureToggle()
+    public async System.Threading.Tasks.Task TraceSurface_UsesOpenedWorkspaceAndSettingsCaptureDefault()
     {
+        var settings = _provider.GetRequiredService<ISettingsService>();
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(settings);
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
 
         Assert.False(management.IsTracePanelOpen);
@@ -42,13 +50,15 @@ public sealed class Phase22TraceSurfaceTests : IDisposable
         management.OpenTraceCommand.Execute().Subscribe();
         Assert.True(management.IsTracePanelOpen);
 
-        management.ToggleTraceCaptureCommand.Execute().Subscribe();
+        await Phase23SettingsTestSupport.EnableTraceCaptureAsync(settings);
+        management.RefreshTracePresentation();
         Assert.True(management.TraceAvailability.CurrentState.CaptureEnabled);
 
         var summary = await management.LoadTraceSummaryAsync();
         Assert.NotEqual("ws:unbound", summary.WorkspaceKey.Value);
 
-        management.ToggleTraceCaptureCommand.Execute().Subscribe();
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(settings);
+        management.RefreshTracePresentation();
         Assert.False(management.TraceAvailability.CurrentState.CaptureEnabled);
     }
 

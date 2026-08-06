@@ -1,17 +1,21 @@
 using System;
 using System.IO;
 using System.Reactive.Concurrency;
+using System.Threading.Tasks;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 using Zaide.App.Composition;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Integration;
 
@@ -34,11 +38,13 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot)));
         services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
         _provider = services.BuildServiceProvider();
+        _ = _provider.GetRequiredService<AgentTransparencySettingsSync>();
     }
 
     [Fact]
@@ -75,6 +81,9 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
     [Fact]
     public void LivePanels_ExposeNamedControlsFocusAndScreenReaderValueText()
     {
+        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
+            .GetAwaiter().GetResult();
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();
         management.OpenMemoryCommand.Execute().Subscribe();
@@ -99,7 +108,6 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
             AssertNamedFocusableTabStop(trace.OpenSettingsButton, "Open application settings");
             Assert.False(trace.RecordSelector.IsVisible);
             Assert.False(trace.PagingCaptionControl.IsVisible);
-            Assert.False(trace.CaptureButton.IsVisible);
 
             AssertNamedFocusableTabStop(memory.CreateButtonControl, "Create durable memory record");
             AssertNamedFocusableTabStop(memory.RefreshButton, "Refresh durable memory");
@@ -108,7 +116,6 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
 
             AssertNamedFocusableTabStop(usage.RefreshButton, "Refresh usage evidence");
             AssertNamedFocusableTabStop(usage.CloseButton, "Close usage panel");
-            Assert.False(usage.CaptureButton.IsVisible);
             Assert.False(usage.RecordSelector.IsVisible);
             Assert.False(usage.RetryButton.IsVisible);
         }
@@ -123,23 +130,25 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
     [Fact]
     public void Management_BoundedPaging_IsClampedAgainstLiveDefaults()
     {
+        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
+            .GetAwaiter().GetResult();
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         var townhall = _provider.GetRequiredService<TownhallViewModel>();
         Assert.Same(management, townhall.TransparencyManagement);
 
-        Assert.Equal(64, AgentTransparencyManagementViewModel.DefaultPageSize);
-        Assert.Equal(256, AgentTransparencyManagementViewModel.MaxPageSize);
+        Assert.Equal(64, management.EffectiveDefaultPageSize);
+        Assert.Equal(256, management.EffectiveMaxPageSize);
         Assert.Equal(64, management.ClampPageSize(0));
         Assert.Equal(64, management.ClampPageSize(-1));
         Assert.Equal(128, management.ClampPageSize(128));
         Assert.Equal(256, management.ClampPageSize(10_000));
 
-        // Live panels publish the clamped paging contract when full chrome is active.
+        // Live panels hide paging chrome until records exist (empty + capture on stays minimal).
         var trace = new AgentTracePanel();
         try
         {
             management.OpenTraceCommand.Execute().Subscribe();
-            management.ToggleTraceCaptureCommand.Execute().Subscribe();
             management.RefreshTracePresentation();
             trace.SetViewModel(management);
             Assert.False(trace.PagingCaptionControl.IsVisible);

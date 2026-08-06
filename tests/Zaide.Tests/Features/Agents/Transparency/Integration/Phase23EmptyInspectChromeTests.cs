@@ -12,11 +12,13 @@ using Zaide.App.Composition;
 using Zaide.Features.Agents.Contracts.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Memory;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
-using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Integration;
 
@@ -27,6 +29,7 @@ namespace Zaide.Tests.Features.Agents.Transparency.Integration;
 public sealed class Phase23EmptyInspectChromeTests : IDisposable
 {
     private readonly string _workspaceRoot;
+    private readonly string _settingsDir;
     private readonly ServiceProvider _provider;
 
     public Phase23EmptyInspectChromeTests()
@@ -38,11 +41,13 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        _settingsDir = Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot)));
         services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
         _provider = services.BuildServiceProvider();
+        _ = _provider.GetRequiredService<AgentTransparencySettingsSync>();
     }
 
     [Fact]
@@ -96,7 +101,6 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
             usage.SetViewModel(management);
 
             Assert.False(usage.RecordSelector.IsVisible);
-            Assert.False(usage.CaptureButton.IsVisible);
             Assert.True(usage.RefreshButton.IsVisible);
             Assert.True(usage.CloseButton.IsVisible);
             Assert.Contains("not zero", usage.SummaryCaptionControl.Text ?? string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -110,6 +114,9 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
     [Fact]
     public void TracePanel_CaptureDisabled_ShowsStatusCloseAndOpenSettingsOnly()
     {
+        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
+            .GetAwaiter().GetResult();
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();
         management.RefreshTracePresentation();
@@ -120,11 +127,10 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
         {
             trace.SetViewModel(management);
 
-            Assert.Contains("disabled", trace.StatusCaptionControl.Text ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("change in Settings", trace.StatusCaptionControl.Text ?? string.Empty, StringComparison.OrdinalIgnoreCase);
             Assert.False(trace.SummaryCaptionControl.IsVisible);
             Assert.False(trace.RecordSelector.IsVisible);
             Assert.False(trace.PagingCaptionControl.IsVisible);
-            Assert.False(trace.CaptureButton.IsVisible);
             Assert.False(trace.RefreshButton.IsVisible);
             Assert.True(trace.CloseButton.IsVisible);
             Assert.True(trace.OpenSettingsButton.IsVisible);
@@ -182,7 +188,7 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
             usage.SetViewModel(management);
 
             Assert.True(usage.RecordSelector.IsVisible);
-            Assert.True(usage.CaptureButton.IsVisible);
+            Assert.True(usage.RefreshButton.IsVisible);
         }
         finally
         {
@@ -242,6 +248,8 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
     [Fact]
     public async Task EmptyInspectSurfaces_KeepOperationalActionsReachable()
     {
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>());
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();
         management.OpenMemoryCommand.Execute().Subscribe();
@@ -289,6 +297,7 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
     public void Dispose()
     {
         _provider.Dispose();
+        Phase23IsolatedSettingsTestSupport.TryDeleteDirectory(_settingsDir);
         if (Directory.Exists(_workspaceRoot))
         {
             Directory.Delete(_workspaceRoot, recursive: true);

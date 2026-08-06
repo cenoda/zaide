@@ -22,7 +22,7 @@ intentional.
 
 **New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave complete (F1, F12, F9, F10, F3 fixed). Remaining: L/XL wave (F7 → F8 optional → F5).**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave complete (F1, F12, F9, F10, F3 fixed). L/XL wave: F5 fixed; remaining: F7 → F8 (optional).**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -35,7 +35,7 @@ inspection panels.**
 | **Townhall Trace / Memory / Usage** | Inspect evidence, refresh/retry, lifecycle actions that act on records (memory CRUD), close the surface — **not** a second settings form |
 | **Townhall DM chrome** | Conversation-scoped **session** actions (bind/unbind for this actor, end session, temporary context override) may stay near the chat if they are not durable profile config; durable defaults still go to Settings |
 
-Related open deferred note (underspecified until this inventory): `docs/deferred/open/DF-006-more-settings-options.md`.
+Related deferred note closed by F5: `docs/deferred/closed/DF-006-more-settings-options.md`.
 
 Current Settings UI only exposes **Editor / Terminal / LLM**
 (`SettingsPanelView` + `SettingsModel` schema v3). Agent/transparency config
@@ -98,7 +98,7 @@ Scale (effort for a careful implementer who already knows the repo):
 1. **Data-safety first:** **F14 / ISSUE-009** (user store contamination)
 2. **XS/S wave:** F13 → F11 → F2 → F4 → F6 → F15
 3. **M wave:** F1 → F12 → F9 → F10 → F3 (with F2 if not done)
-4. **L/XL wave:** F7 → F8 (if authorized) → **F5** (own plan; schema)
+4. **L/XL wave:** F7 → F8 (optional); **F5 complete**
 
 Do **not** start F5 in the same commit as XS/S polish. Do **not** claim product
 readiness from this board alone.
@@ -230,7 +230,7 @@ or reselect the conversation after scrub if the app was already running.
       selectors, paging, lifecycle toolbars, and standing create-denial copy;
       operational actions (Create, Refresh, Close, Open Settings when capture
       off) remain. Plan: [F3_EMPTY_CHROME_PLAN.md](./F3_EMPTY_CHROME_PLAN.md).
-      Commit `19fed133`. Covered by `Phase23EmptyInspectChromeTests` (+ caption/a11y
+      Commit `1a2c78a6`. Covered by `Phase23EmptyInspectChromeTests` (+ caption/a11y
       test updates).
 
 **Severity:** Medium
@@ -309,7 +309,14 @@ capture off” surface.
 
 ### F5 — Most agent / transparency config should live in Settings, not Townhall panels
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — **Agents** section in Settings (schema v4); capture defaults,
+      ACP identity, context policy, and trace paging persisted via `ISettingsService`;
+      Townhall trace/usage capture toggles removed; backend binding shows read-only ACP
+      defaults with Open Settings deep-link (same `ShowSettings` path as status bar).
+      Plan: [F5_SETTINGS_HOME_PLAN.md](./F5_SETTINGS_HOME_PLAN.md). Commits
+      `84dd8666` (schema), `2a9ce53f` (Settings UI + sync), `f2ab335b` (Townhall chrome),
+      `7c2e491c` (tests + docs). Covered by `Phase23SettingsAgentsTests`,
+      `Phase23F5TownhallConfigTests`, updated Phase 22/23 transparency tests.
 
 **Severity:** High (product direction; unblocks F3 chrome reduction)
 **Difficulty:** XL
@@ -382,8 +389,7 @@ capture off” surface.
 - Phase 22.4 reachability/a11y tests that assert capture buttons on panels
   must be updated deliberately when toggles move — do not silently break
   proofs.
-- Cross-link: partial answer to DF-006 (“more settings options”) once the
-  inventory above is implemented or explicitly deferred item-by-item.
+- Cross-link: DF-006 closed by F5 Agents section (see `docs/deferred/closed/DF-006-more-settings-options.md`).
 
 ---
 
@@ -943,9 +949,9 @@ chat Star band preserved; open-flag exclusivity unchanged. F3 not bundled.
 
 Remaining difficulty-first waves:
 
-1. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
+1. **L/XL:** F7 → F8 (optional)
 
-One reviewable commit per coherent outcome. Do not batch F5 with polish.
+F5 complete (2026-08-06). One reviewable commit per coherent outcome.
 
 
 
@@ -959,8 +965,7 @@ One reviewable commit per coherent outcome. Do not batch F5 with polish.
   package-9 / deferred backlog polish.
 - Do not treat this board as automatic authorization for V4 or Phase 22.5.
 - Open trackers that may still matter, but are **not** pre-loaded as Phase 23
-  scope: `docs/issues/open/`, `docs/deferred/open/` (DF-006 is now partly
-  specified by F5).
+  scope: `docs/issues/open/`, `docs/deferred/open/` (DF-006 closed by F5).
 - Empty evidence copy that states “missing is not fabrication / not zero” is
   product policy, not a bug. Only the **duplication and density** of that copy
   are in scope for F2/F3.

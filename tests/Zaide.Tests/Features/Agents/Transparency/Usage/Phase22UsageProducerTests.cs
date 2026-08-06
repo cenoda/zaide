@@ -14,13 +14,16 @@ using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Transparency;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Infrastructure.Acp;
 using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Usage;
@@ -64,6 +67,7 @@ public sealed class Phase22UsageProducerTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(workspace)));
@@ -73,9 +77,9 @@ public sealed class Phase22UsageProducerTests : IDisposable
         services.AddSingleton<INativeHarnessProviderOptionsSource>(new FixedNativeHarnessProviderOptionsSource());
 
         using var provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<AgentTransparencySettingsSync>();
         var management = provider.GetRequiredService<AgentTransparencyManagementViewModel>();
-        management.ToggleUsageCaptureCommand.Execute().Subscribe(
-            System.Reactive.Observer.Create<System.Reactive.Unit>(_ => { }));
+        await Phase23SettingsTestSupport.EnableUsageCaptureAsync(provider.GetRequiredService<ISettingsService>());
 
         var session = provider.GetRequiredService<IAgentSessionService>();
         var store = provider.GetRequiredService<IConversationStore>();

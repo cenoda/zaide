@@ -10,11 +10,14 @@ using Zaide.Features.Agents.Application;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Domain;
 using Zaide.Features.Agents.Domain.Transparency.Trace;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Infrastructure.Transparency.Storage;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Workspace.Contracts;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 using Zaide.Tests.Features.Conversations;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Trace;
@@ -61,6 +64,7 @@ public sealed class Phase22TraceProducerTests : System.IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(workspace)));
@@ -70,9 +74,10 @@ public sealed class Phase22TraceProducerTests : System.IDisposable
         services.AddSingleton<INativeHarnessProviderOptionsSource>(new FixedNativeHarnessProviderOptionsSource());
 
         using var provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<AgentTransparencySettingsSync>();
         var management = provider.GetRequiredService<AgentTransparencyManagementViewModel>();
-        management.ToggleTraceCaptureCommand.Execute().Subscribe(
-            System.Reactive.Observer.Create<System.Reactive.Unit>(_ => { }));
+        await Phase23SettingsTestSupport.EnableTraceCaptureAsync(provider.GetRequiredService<ISettingsService>());
+        management.RefreshTracePresentation();
         var session = provider.GetRequiredService<IAgentSessionService>();
         var store = provider.GetRequiredService<IConversationStore>();
         var catalog = ConversationsTestSupport.CreateCatalog();

@@ -6,13 +6,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 using Zaide.App.Composition;
+using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Application.Transparency.Trace;
 using Zaide.Features.Agents.Application.Transparency.Usage;
 using Zaide.Features.Agents.Domain.Transparency.Usage;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Townhall.Presentation;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Workspace.Contracts;
 using Zaide.Tests.Features.Agents;
+using Zaide.Tests.Features.Agents.Transparency.Integration;
 
 namespace Zaide.Tests.Features.Agents.Transparency.Usage;
 
@@ -28,11 +31,13 @@ public sealed class Phase22UsageSurfaceTests : IDisposable
 
         var services = new ServiceCollection();
         Program.ConfigureServices(services);
+        Phase23IsolatedSettingsTestSupport.ConfigureIsolatedSettings(services);
         services.RemoveAll<IWorkspaceActionAuthority>();
         services.AddSingleton<IWorkspaceActionAuthority>(new FakeWorkspaceActionAuthority(
             FakeWorkspaceActionAuthority.CreateScopeFromDirectory(_workspaceRoot)));
         services.AddSingleton<IScheduler>(_ => CurrentThreadScheduler.Instance);
         _provider = services.BuildServiceProvider();
+        _ = _provider.GetRequiredService<AgentTransparencySettingsSync>();
     }
 
     [Fact]
@@ -81,6 +86,9 @@ public sealed class Phase22UsageSurfaceTests : IDisposable
     [Fact]
     public async Task UsageSurface_ExplicitCaptureToggleAndRecordProjection()
     {
+        var settings = _provider.GetRequiredService<ISettingsService>();
+        await Phase23SettingsTestSupport.DisableUsageCaptureAsync(settings);
+
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         var coordinator = _provider.GetRequiredService<AgentUsageCoordinator>();
         var inspection = management.UsageInspection;
@@ -91,7 +99,8 @@ public sealed class Phase22UsageSurfaceTests : IDisposable
         await management.RefreshUsageSurfaceAsync();
         Assert.Equal(AgentUsageSurfaceState.Empty, inspection.SurfaceState);
 
-        management.ToggleUsageCaptureCommand.Execute().Subscribe();
+        await Phase23SettingsTestSupport.EnableUsageCaptureAsync(settings);
+        await management.RefreshUsageSurfaceAsync();
         Assert.True(management.UsageAvailability.CurrentState.CaptureEnabled);
 
         var workspaceKey = coordinator.ResolveWorkspaceKey(_workspaceRoot);
@@ -117,7 +126,8 @@ public sealed class Phase22UsageSurfaceTests : IDisposable
         Assert.NotNull(inspection.SelectedRecord);
         Assert.Equal("requests", inspection.SelectedRecord!.MetricName);
 
-        management.ToggleUsageCaptureCommand.Execute().Subscribe();
+        await Phase23SettingsTestSupport.DisableUsageCaptureAsync(settings);
+        await management.RefreshUsageSurfaceAsync();
         Assert.False(management.UsageAvailability.CurrentState.CaptureEnabled);
     }
 
@@ -195,7 +205,7 @@ public sealed class Phase22UsageSurfaceTests : IDisposable
         var inspection = management.UsageInspection;
 
         management.OpenUsageCommand.Execute().Subscribe();
-        management.ToggleUsageCaptureCommand.Execute().Subscribe();
+        await Phase23SettingsTestSupport.EnableUsageCaptureAsync(_provider.GetRequiredService<ISettingsService>());
 
         var workspaceKey = coordinator.ResolveWorkspaceKey(_workspaceRoot);
         Assert.Equal(
