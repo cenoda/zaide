@@ -53,7 +53,7 @@ public sealed class UnsavedDialogTests
     public void SpacingXl_Resource_IsDouble_NotThickness()
     {
         var app = ReactiveUiTestBootstrap.EnsureApplication();
-        Assert.True(app.Resources.TryGetValue("SpacingXl", out var value));
+        Assert.True(app.TryGetResource("SpacingXl", theme: null, out var value));
         Assert.IsType<double>(value);
         Assert.Equal(20d, (double)value!);
     }

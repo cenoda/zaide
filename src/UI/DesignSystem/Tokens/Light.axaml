@@ -1,0 +1,43 @@
+<!--
+  Light ramp. Low-saturation neutrals with a restrained blue accent.
+  XAML tier 1 (DESIGN.md §1): a resource dictionary is a framework requirement.
+  The key set here must stay identical to Dark.axaml; ThemeTokenParityTests
+  enforces this.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Palette colors -->
+    <Color x:Key="PrimaryAccentBrushColor">#1B6FD4</Color>
+    <Color x:Key="SecondaryAccentBrushColor">#1E9CB0</Color>
+    <Color x:Key="WarningBrushColor">#B87503</Color>
+    <Color x:Key="SuccessBrushColor">#1D8348</Color>
+    <Color x:Key="SurfaceBaseBrushColor">#F5F6F8</Color>
+    <Color x:Key="SurfacePanelBrushColor">#EBEDF2</Color>
+    <Color x:Key="PanelDeepBrushColor">#E2E5EA</Color>
+    <Color x:Key="SurfaceRaisedBrushColor">#D5DAE3</Color>
+    <Color x:Key="TextPrimaryBrushColor">#15171E</Color>
+    <Color x:Key="TextSecondaryBrushColor">#525A68</Color>
+    <Color x:Key="SeparatorBrushColor">#6B7382</Color>
+    <Color x:Key="IdleBrushColor">#737B8A</Color>
+
+    <!-- Palette brushes (derived from the colors above) -->
+    <SolidColorBrush x:Key="PrimaryAccentBrush" Color="{StaticResource PrimaryAccentBrushColor}" />
+    <SolidColorBrush x:Key="SecondaryAccentBrush" Color="{StaticResource SecondaryAccentBrushColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningBrushColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessBrushColor}" />
+    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="{StaticResource SurfaceBaseBrushColor}" />
+    <SolidColorBrush x:Key="SurfacePanelBrush" Color="{StaticResource SurfacePanelBrushColor}" />
+    <SolidColorBrush x:Key="PanelDeepBrush" Color="{StaticResource PanelDeepBrushColor}" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{StaticResource SurfaceRaisedBrushColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryBrushColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryBrushColor}" />
+    <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource SeparatorBrushColor}" />
+    <SolidColorBrush x:Key="IdleBrush" Color="{StaticResource IdleBrushColor}" />
+    <!-- BusyBrush reuses WarningBrushColor (amber) for visual consistency -->
+    <SolidColorBrush x:Key="BusyBrush" Color="{StaticResource WarningBrushColor}" />
+
+    <!-- AvaloniaEdit SearchPanel override -->
+    <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelBrushColor}" />
+    <SolidColorBrush x:Key="SearchPanelBorderBrush" Color="{StaticResource SeparatorBrushColor}" />
+</ResourceDictionary>

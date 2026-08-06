@@ -183,16 +183,19 @@ public class TerminalRenderControl : Control
         return Color.FromRgb(r, g, b);
     }
 
-    private static readonly IBrush CursorBrush = new SolidColorBrush(Colors.White);
-    private static readonly IBrush DimmedCursorBrush = new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
-    private static readonly TimeSpan CursorBlinkInterval = TimeSpan.FromMilliseconds(530);
+    private IBrush? _cursorBrush;
+    private IBrush? _dimmedCursorBrush;
+    private IBrush? _matchHighlightBrush;
+    private IBrush? _activeMatchHighlightBrush;
 
-    // Search highlight fills. The active match is drawn distinctly (stronger
-    // opacity) so the user can tell which occurrence navigation will land on.
-    private static readonly IBrush MatchHighlightBrush =
-        new SolidColorBrush(Color.FromArgb(70, 255, 214, 102));
-    private static readonly IBrush ActiveMatchHighlightBrush =
-        new SolidColorBrush(Color.FromArgb(170, 255, 196, 0));
+    private IBrush CursorBrush => _cursorBrush ??= new SolidColorBrush(Colors.White);
+    private IBrush DimmedCursorBrush => _dimmedCursorBrush ??= new SolidColorBrush(Color.FromArgb(64, 255, 255, 255));
+    private IBrush MatchHighlightBrush =>
+        _matchHighlightBrush ??= new SolidColorBrush(Color.FromArgb(70, 255, 214, 102));
+    private IBrush ActiveMatchHighlightBrush =>
+        _activeMatchHighlightBrush ??= new SolidColorBrush(Color.FromArgb(170, 255, 196, 0));
+
+    private static readonly TimeSpan CursorBlinkInterval = TimeSpan.FromMilliseconds(530);
 
     private bool _isFocused;
     private bool _isCursorBlinkOn = true;
@@ -261,6 +264,8 @@ public class TerminalRenderControl : Control
         this.GetObservable(CursorVisibleProperty).Subscribe(_ => ResetCursorBlink());
         this.GetObservable(CursorRowProperty).Subscribe(_ => ResetCursorBlink());
         this.GetObservable(CursorColProperty).Subscribe(_ => ResetCursorBlink());
+
+        ActualThemeVariantChanged += OnThemeVariantChanged;
 
         // Drop any active selection when a full-screen TUI takes over so the
         // main buffer cannot be copied mid-session.
@@ -1193,6 +1198,15 @@ public class TerminalRenderControl : Control
         {
             _cursorBlinkTimer.Stop();
         }
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        _cursorBrush = null;
+        _dimmedCursorBrush = null;
+        _matchHighlightBrush = null;
+        _activeMatchHighlightBrush = null;
+        InvalidateVisual();
     }
 
 }

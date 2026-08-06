@@ -19,15 +19,13 @@ public static class TownhallAvatarFactory
 
         var baseColor = PaletteTokens.SurfaceRaisedColor;
         var accentColor = PaletteTokens.PrimaryAccentColor;
-        var statusBrush = PaletteTokens.GetBrush(
-            statusBrushKey,
-            PaletteTokens.CreateSuccessStatusFallbackBrush());
+        var statusBrush = PaletteTokens.GetBrush(statusBrushKey);
         var surfaceBrush = PaletteTokens.SurfacePanelBrush;
 
         var initialsText = TextStyles.Body(initials);
         initialsText.HorizontalAlignment = HorizontalAlignment.Center;
         initialsText.VerticalAlignment = VerticalAlignment.Center;
-        initialsText.Foreground = PaletteTokens.TextPrimaryBrushOrFallback;
+        initialsText.Foreground = PaletteTokens.TextPrimaryBrush;
 
         var avatarBackground = new Border
         {

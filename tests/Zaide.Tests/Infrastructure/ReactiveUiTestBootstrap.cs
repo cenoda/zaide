@@ -2,10 +2,12 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Avalonia;
+using Avalonia.Styling;
 using ReactiveUI;
 using ReactiveUI.Avalonia;
 using ReactiveUI.Builder;
 using Splat;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Tests.Infrastructure;
 
@@ -20,6 +22,7 @@ public static class ReactiveUiTestBootstrap
     private static readonly object Sync = new();
 
     private static int _applicationInitialized;
+    private static Zaide.App.Composition.App? _application;
 
     [ModuleInitializer]
     internal static void InitializeModule()
@@ -59,15 +62,26 @@ public static class ReactiveUiTestBootstrap
         {
             if (Application.Current is Zaide.App.Composition.App current)
             {
+                ThemeBinding.TestApplication = current;
                 EnsureApplicationResources(current);
                 EnsureDefaultServicesRegistered();
                 return current;
             }
 
-            var app = new Zaide.App.Composition.App();
-            app.Initialize();
+            if (_application is not null)
+            {
+                ThemeBinding.TestApplication = _application;
+                EnsureApplicationResources(_application);
+                EnsureDefaultServicesRegistered();
+                return _application;
+            }
+
+            _application = new Zaide.App.Composition.App();
+            _application.Initialize();
+            ThemeBinding.TestApplication = _application;
+            EnsureApplicationResources(_application);
             EnsureDefaultServicesRegistered();
-            return app;
+            return _application;
         }
     }
 
@@ -99,7 +113,7 @@ public static class ReactiveUiTestBootstrap
 
     private static void EnsureApplicationResources(Zaide.App.Composition.App app)
     {
-        if (!app.Resources.ContainsKey("PrimaryAccentBrush"))
+        if (!app.TryGetResource("PrimaryAccentBrush", ThemeVariant.Light, out _))
             app.Initialize();
     }
 }

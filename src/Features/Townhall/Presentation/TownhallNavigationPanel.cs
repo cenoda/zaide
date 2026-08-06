@@ -6,6 +6,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -22,8 +23,37 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 internal sealed class TownhallNavigationPanel : Panel
 {
-    private static readonly Color ActiveRowOverlay = Color.FromArgb(0x15, 0x06, 0x6A, 0xDB);
-    private static readonly Color HoverOverlay = Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF);
+    private Color? _activeRowOverlay;
+    private Color? _hoverOverlay;
+
+    private Color ActiveRowOverlay
+    {
+        get
+        {
+            if (_activeRowOverlay is null)
+            {
+                var accent = PaletteTokens.PrimaryAccentColor;
+                _activeRowOverlay = Color.FromArgb(0x15, accent.R, accent.G, accent.B);
+            }
+
+            return _activeRowOverlay.Value;
+        }
+    }
+
+    private Color HoverOverlay
+    {
+        get
+        {
+            if (_hoverOverlay is null)
+            {
+                _hoverOverlay = ActualThemeVariant == ThemeVariant.Dark
+                    ? Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF)
+                    : Color.FromArgb(0x0A, 0x00, 0x00, 0x00);
+            }
+
+            return _hoverOverlay.Value;
+        }
+    }
 
     private readonly ListBox _channelList;
     private readonly ListBox _directList;
@@ -67,6 +97,7 @@ internal sealed class TownhallNavigationPanel : Panel
         };
 
         Children.Add(scrollViewer);
+        ActualThemeVariantChanged += OnThemeVariantChanged;
     }
 
     public void SetOnChannelSelected(Action<string> onSelected)
@@ -267,7 +298,7 @@ internal sealed class TownhallNavigationPanel : Panel
         }
     }
 
-    private static void ApplyRowActiveBackground(Border row, bool isActive)
+    private void ApplyRowActiveBackground(Border row, bool isActive)
     {
         if (isActive)
         {
@@ -281,7 +312,7 @@ internal sealed class TownhallNavigationPanel : Panel
         }
     }
 
-    private static Border CreateSelectableRow(Control content, bool isActive)
+    private Border CreateSelectableRow(Control content, bool isActive)
     {
         var row = new Border
         {
@@ -314,6 +345,19 @@ internal sealed class TownhallNavigationPanel : Panel
         };
 
         return row;
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        _activeRowOverlay = null;
+        _hoverOverlay = null;
+
+        var channelTemplate = _channelList.ItemTemplate;
+        var directTemplate = _directList.ItemTemplate;
+        _channelList.ItemTemplate = null;
+        _directList.ItemTemplate = null;
+        _channelList.ItemTemplate = channelTemplate;
+        _directList.ItemTemplate = directTemplate;
     }
 
     private void OnChannelSelectionChanged(object? sender, SelectionChangedEventArgs e)

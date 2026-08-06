@@ -1,8 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Media;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Features.Debugging.Presentation;
 
@@ -11,13 +13,15 @@ namespace Zaide.Features.Debugging.Presentation;
 /// </summary>
 internal sealed class InstructionPointerMargin : AbstractMargin
 {
-    private static readonly IBrush MarkerFill = new SolidColorBrush(Color.FromRgb(252, 187, 71));
+    private IBrush? _markerFill;
+    private IBrush MarkerFill => _markerFill ??= ThemeBinding.GetBrush("WarningBrush");
 
     private EditorInstructionPointerMarker? _marker;
 
     public InstructionPointerMargin()
     {
         Width = 10;
+        ActualThemeVariantChanged += OnThemeVariantChanged;
     }
 
     public void SetMarker(EditorInstructionPointerMarker? marker)
@@ -54,5 +58,11 @@ internal sealed class InstructionPointerMargin : AbstractMargin
         figure.Segments.Add(new LineSegment { Point = new Point(left, top + size) });
         geometry.Figures!.Add(figure);
         drawingContext.DrawGeometry(MarkerFill, null, geometry);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        _markerFill = null;
+        InvalidateVisual();
     }
 }

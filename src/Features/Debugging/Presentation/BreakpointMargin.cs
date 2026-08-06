@@ -8,6 +8,7 @@ using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Utils;
 using Zaide.App.Composition;
 using Zaide.Features.Debugging.Application;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Features.Debugging.Presentation;
 
@@ -18,13 +19,21 @@ namespace Zaide.Features.Debugging.Presentation;
 /// </summary>
 internal sealed class BreakpointMargin : AbstractMargin
 {
-    private static readonly IBrush EnabledFill = new SolidColorBrush(Color.FromRgb(229, 20, 75));
-    private static readonly IBrush VerifiedFill = new SolidColorBrush(Color.FromRgb(229, 20, 75));
-    private static readonly IBrush PendingFill = new SolidColorBrush(Color.FromRgb(230, 170, 40));
-    private static readonly IBrush RejectedFill = new SolidColorBrush(Color.FromRgb(120, 120, 140));
-    private static readonly IBrush RejectedStroke = new SolidColorBrush(Color.FromRgb(220, 80, 80));
-    private static readonly IBrush DisabledFill = new SolidColorBrush(Color.FromArgb(120, 180, 180, 200));
-    private static readonly IBrush DisabledStroke = new SolidColorBrush(Color.FromRgb(180, 180, 200));
+    private IBrush? _enabledFill;
+    private IBrush? _verifiedFill;
+    private IBrush? _pendingFill;
+    private IBrush? _rejectedFill;
+    private IBrush? _rejectedStroke;
+    private IBrush? _disabledFill;
+    private IBrush? _disabledStroke;
+
+    private IBrush EnabledFill => _enabledFill ??= CreateFill(229, 20, 75);
+    private IBrush VerifiedFill => _verifiedFill ??= CreateFill(229, 20, 75);
+    private IBrush PendingFill => _pendingFill ??= CreateFill(230, 170, 40);
+    private IBrush RejectedFill => _rejectedFill ??= CreateFill(120, 120, 140);
+    private IBrush RejectedStroke => _rejectedStroke ??= CreateFill(220, 80, 80);
+    private IBrush DisabledFill => _disabledFill ??= new SolidColorBrush(Color.FromArgb(120, 180, 180, 200));
+    private IBrush DisabledStroke => _disabledStroke ??= CreateFill(180, 180, 200);
 
     private readonly Action<int>? _toggleLine;
     private IReadOnlyList<EditorBreakpointMarker> _markers = Array.Empty<EditorBreakpointMarker>();
@@ -34,6 +43,7 @@ internal sealed class BreakpointMargin : AbstractMargin
         _toggleLine = toggleLine;
         Width = 16;
         Cursor = new Cursor(StandardCursorType.Hand);
+        ActualThemeVariantChanged += OnThemeVariantChanged;
     }
 
     public void SetMarkers(IReadOnlyList<EditorBreakpointMarker> markers)
@@ -100,6 +110,26 @@ internal sealed class BreakpointMargin : AbstractMargin
             }
         }
     }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        InvalidateBrushCaches();
+        InvalidateVisual();
+    }
+
+    private void InvalidateBrushCaches()
+    {
+        _enabledFill = null;
+        _verifiedFill = null;
+        _pendingFill = null;
+        _rejectedFill = null;
+        _rejectedStroke = null;
+        _disabledFill = null;
+        _disabledStroke = null;
+    }
+
+    private static IBrush CreateFill(byte r, byte g, byte b) =>
+        new SolidColorBrush(Color.FromRgb(r, g, b));
 
     private bool TryGetLineFromPoint(Point point, out int line)
     {

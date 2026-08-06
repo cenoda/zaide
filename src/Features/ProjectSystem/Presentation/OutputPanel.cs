@@ -61,7 +61,7 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
         {
             Text = "No output yet.\n\nBuild or run the project to see results here.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Foreground = PaletteTokens.TextSecondaryBrush,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
