@@ -22,7 +22,7 @@ intentional.
 
 **New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave: F1 + F12 + F9 + F10 fixed; F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -595,18 +595,24 @@ when a screenshot under the workspace is selected
 
 ### F10 — Icon symbols are unrecognizable (Source Control header captured)
 
-- [ ] Not fixed (reopened 2026-08-06) — embedded Phosphor `StreamGeometry` +
-  `IconFactory` paint tweaks (Fill, path data, scaling) **did not** produce
-  readable glyphs at header/toolbar sizes (~14–20px); post-fix user
-  verification was **worse** than baseline (`temp-screenshots` 2026-08-06).
-  **Accepted direction:** migrate to a catalogued Avalonia icon pack (see
-  `docs/LIBRARIES.md`); keep `Icon.*` keys via an `IconFactory` adapter. Do
-  not add new hand-maintained Phosphor paths to `Icons.axaml`.
+- [x] Fixed (2026-08-06) — migrated to **Lucide.Avalonia 0.2.16** behind
+      `IconFactory` + `IconLucideMap`; deleted `Icons.axaml` and unified NavBar
+      (`Icon.Explorer`, `Icon.SourceControl`). Stroke width scales with size
+      (~1.25–2.0).       Covered by `Phase23IconFactoryTests`
+      (`IconFactory_Create_UsesLucideIconContract`,
+      `IconFactory_SetForeground_UpdatesLucideForeground`,
+      `IconLucideMap_AllKnownKeys_Resolve`,
+      `IconLucideMap_IncludesLegacyAndNavKeys`,
+      `NavBar_UsesIconFactory_NotInlinePaths`,
+      `IconsAxaml_RemovedFromAppResources`,
+      `SourceControlPanel_RefreshButton_HasTooltipAndAutomationName`,
+      `IconOnlyControls_SourceHaveTooltipAndAutomationName`). Manual
+      before/after screenshots at 14–16px belong in the PR description only.
 
 - [x] Partial (2026-08-06) — icon-only controls got tooltip +
-  `AutomationProperties.Name`; decorative Source Control header glyph removed.
-  Covered by `Phase23IconFactoryTests` (paint/a11y contracts only — **not**
-  visual legibility).
+      `AutomationProperties.Name`; decorative Source Control header glyph removed.
+      Covered by `Phase23IconFactoryTests` (a11y contracts; superseded by full
+      Lucide migration above).
 
 **Severity:** Medium (legibility / icon system quality)
 **Difficulty:** M

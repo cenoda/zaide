@@ -59,30 +59,32 @@ Every library explained in plain English — what it does, why you'd want it, an
 
 ## ICONS & ASSETS
 
-Zaide targets **Avalonia 12.0.5** on **.NET 10**. Prefer a catalogued NuGet icon
-pack over hand-maintained `StreamGeometry` in `Icons.axaml` (see `docs-rules.md`
+Zaide targets **Avalonia 12.0.5** on **.NET 10**. Icons are served through a
+catalogued NuGet icon pack behind the `IconFactory` facade (see `docs-rules.md`
 §8: use a library when it covers 80%+ of the need).
 
-### Recommended — adopt on F10 follow-up (not yet in `Zaide.csproj`)
+### In use
 
 | Library | What It Does | Why You Want It | Stack notes (2026-08) |
 |---------|-------------|-----------------|------------------------|
-| **Lucide.Avalonia** | Lucide stroke icons as `LucideIcon` controls and `{LucideIconContent …}` markup for Avalonia. MIT. | Stroke-oriented glyphs designed for ~16px UI; weekly icon updates; C# `Content = …` without AXAML xmlns. | NuGet **0.2.16** targets **net10.0**. **POC required** on Zaide’s Avalonia **12.0.5** before merge. Repo: [dme-compunet/Lucide.Avalonia](https://github.com/dme-compunet/Lucide.Avalonia). |
-| **IconPacks.Avalonia** (MahApps) | Aggregates many sets (Material, FontAwesome, Lucide, Phosphor, …) as `PackIcon` controls. MIT. | One package, huge catalog, XAML resource dictionaries. | **Avalonia 12:** stable **1.3.x** reports runtime failures ([issue #41](https://github.com/MahApps/IconPacks.Avalonia/issues/41)); Avalonia 12 support tracked in open [PR #42](https://github.com/MahApps/IconPacks.Avalonia/pull/42). Treat as **fallback** until a released build is verified on 12.0.5. Heavier than a single-set pack. |
+| **Lucide.Avalonia** | Lucide stroke icons as `LucideIcon` controls and `{LucideIconContent …}` markup for Avalonia. MIT. | Stroke-oriented glyphs designed for ~16px UI; weekly icon updates; C# `Content = …` without AXAML xmlns. | NuGet **0.2.16** (pinned in `Directory.Packages.props`). Used via `App/Shell/IconFactory` + `IconLucideMap` — features do not reference Lucide types directly. Repo: [dme-compunet/Lucide.Avalonia](https://github.com/dme-compunet/Lucide.Avalonia). |
 
-**Planned integration shape (when implemented):**
-- Add chosen package to `Directory.Packages.props` + `src/Zaide.csproj`.
-- Keep `IconFactory.Create("Icon.*", brush, size)` and `FileIconKeyResolver` keys;
-  map keys inside `IconFactory` to pack icons (facade — features do not reference
-  pack types directly).
-- `NavBar.CreateNavIcon` inline stroke paths unify in F10 — see
-  `docs/phases/v3/phase-23/F10_ICON_PACK_IMPLEMENTATION_PLAN.md`.
+**Integration shape:**
+- `IconFactory.Create("Icon.*", brush, size)` and `FileIconKeyResolver` keys stay stable.
+- `IconLucideMap` maps `Icon.*` → `LucideIconKind` inside `App/Shell`.
+- NavBar uses the same `IconFactory` pipeline (`Icon.Explorer`, `Icon.SourceControl`).
 
-### Interim — legacy embedded Phosphor (replace, do not extend)
+### Fallback (not in use)
 
-| Asset | What It Does | Status |
-|-------|-------------|--------|
-| **Phosphor Icons (embedded `StreamGeometry`)** | MIT Phosphor Regular paths in `src/UI/DesignSystem/Icons.axaml`, rendered via `App/Shell/IconFactory` (`Viewbox` + `Path`). | **Insufficient at 14–20px** (Phase 23 F10 reopened). Fill vs stroke and path edits did not restore recognition. **Do not add new manual paths** here; remove when pack migration lands. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
+| Library | What It Does | Status |
+|---------|-------------|--------|
+| **IconPacks.Avalonia** (MahApps) | Aggregates many sets (Material, FontAwesome, Lucide, Phosphor, …) as `PackIcon` controls. MIT. | **Fallback only** — Avalonia 12 stable **1.3.x** reported runtime failures ([issue #41](https://github.com/MahApps/IconPacks.Avalonia/issues/41)); verify a released Avalonia 12 build before adopting. Heavier than a single-set pack. |
+
+### Removed — embedded Phosphor (Phase 23 F10)
+
+| Asset | Status |
+|-------|--------|
+| **Phosphor Icons (`StreamGeometry` in `Icons.axaml`)** | **Removed** (2026-08-06, F10). Insufficient at 14–20px. Attribution: MIT — Copyright (c) 2023 Phosphor Icons. |
 
 ## LANGUAGE INTELLIGENCE (Phase 10)
 

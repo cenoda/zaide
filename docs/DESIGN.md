@@ -115,9 +115,8 @@ var animation = new Animation
 - **Sidebar width:** Default 260px. Resizable via GridSplitter.
 - **Line height:** 1.5× font size for all text content.
 - **Icon size:** 16px inline, 20px standalone.
-- **Icon source:** Catalogued Avalonia icon pack via `IconFactory` (see
-  `docs/LIBRARIES.md`). Do not add new embedded Phosphor paths to
-  `Icons.axaml` (Phase 23 F10).
+- **Icon source:** Lucide.Avalonia via `IconFactory` (see `docs/LIBRARIES.md`).
+  Do not add hand-maintained icon path resources.
 - **Separation:** Panels are separated by 1px gap or subtle opacity difference — not thick borders.
 - No element should touch a panel edge without padding.
 

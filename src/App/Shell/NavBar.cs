@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -26,8 +25,8 @@ public class NavBar : Panel, IDisposable
     private readonly Panel _sourceControlVisual;
     private readonly Border _explorerActiveIndicator;
     private readonly Border _sourceControlActiveIndicator;
-    private readonly Path _explorerIcon;
-    private readonly Path _sourceControlIcon;
+    private readonly Control _explorerIcon;
+    private readonly Control _sourceControlIcon;
     private readonly Border _explorerHoverOverlay;
     private readonly Border _sourceControlHoverOverlay;
     private CompositeDisposable? _disposables;
@@ -76,14 +75,15 @@ public class NavBar : Panel, IDisposable
             IsVisible = false
         };
 
-        // Nav icons use small local geometry so the 32x32 hit target remains the only clickable layer.
-        _explorerIcon = CreateNavIcon(
-            "M2,5 L6,5 L7.5,6.5 L14,6.5 L14,13 L2,13 Z",
-            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"]);
+        _explorerIcon = IconFactory.Create(
+            "Icon.Explorer",
+            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
+            16);
 
-        _sourceControlIcon = CreateNavIcon(
-            "M5,3 A2,2 0 1 1 5,7 A2,2 0 1 1 5,3 M5,7 L5,10 A3,3 0 0 0 8,13 L11,13 M11,10 A2,2 0 1 1 11,14 A2,2 0 1 1 11,10",
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"]);
+        _sourceControlIcon = IconFactory.Create(
+            "Icon.SourceControl",
+            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            16);
 
         // Hover overlay: 7% white, fills the icon button area
         _explorerHoverOverlay = new Border
@@ -200,10 +200,14 @@ public class NavBar : Panel, IDisposable
                     _sourceControlActiveIndicator.IsVisible = !isExplorer;
 
                     // Icon color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
-                    _explorerIcon.Stroke = (IBrush?)Application.Current!.Resources[
-                        isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
-                    _sourceControlIcon.Stroke = (IBrush?)Application.Current!.Resources[
-                        !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"];
+                    IconFactory.SetForeground(
+                        _explorerIcon,
+                        (IBrush?)Application.Current!.Resources[
+                            isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
+                    IconFactory.SetForeground(
+                        _sourceControlIcon,
+                        (IBrush?)Application.Current!.Resources[
+                            !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
 
                     _ = AnimateModeSwitchAsync(isExplorer);
                 }));
@@ -233,24 +237,6 @@ public class NavBar : Panel, IDisposable
                 Animations.RunAsync(_explorerVisual, Animations.NavExit(HorizontalDirection.Left)),
                 Animations.RunAsync(_sourceControlVisual, Animations.NavEnter(HorizontalDirection.Right)));
         }
-    }
-
-    private static Path CreateNavIcon(string data, IBrush? stroke)
-    {
-        return new Path
-        {
-            Data = StreamGeometry.Parse(data),
-            Width = 16,
-            Height = 16,
-            Stroke = stroke,
-            StrokeThickness = 1.8,
-            StrokeLineCap = PenLineCap.Round,
-            StrokeJoin = PenLineJoin.Round,
-            Stretch = Stretch.Uniform,
-            IsHitTestVisible = false,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
     }
 
     private static Border CreateIconButton(string tooltip)

@@ -49,7 +49,7 @@ public sealed class ArchitectureInventoryTests
         // Refactor 8 M4: +1 internal MainLayoutBuilder (was 21 total / 14 public / 7 internal).
         // Refactor 8 M5: +2 internal SettingsPanelAttachHost, ShellOverlayFocusWiring.
         // Phase 14 M8: −1 internal AgentTownhallMirrorCoordinator.
-        Assert.Equal((23, 14, 9), byNamespace["Zaide.App.Shell"]);
+        Assert.Equal((24, 14, 10), byNamespace["Zaide.App.Shell"]);
         Assert.Equal((4, 2, 2), byNamespace["Zaide.UI.DesignSystem"]);
         Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);

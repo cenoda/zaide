@@ -1,74 +1,42 @@
 using System;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Styling;
+using Lucide.Avalonia;
 
 namespace Zaide.App.Shell;
+
 public static class IconFactory
 {
-    public static Viewbox Create(string resourceKey, IBrush? foreground, double size = 16)
+    public static Control Create(string resourceKey, IBrush? foreground, double size = 16)
     {
-        var geometry = ResolveIconGeometry(resourceKey);
-        // Phosphor Regular geometries in Icons.axaml are closed fill-oriented paths.
-        // Paint with Fill at header/toolbar sizes (~14–20px); stroke rendering turns
-        // these glyphs into mushy, unreadable outlines.
-        var path = new Path
-        {
-            Data = geometry,
-            Width = 256,
-            Height = 256,
-            Fill = foreground,
-            Stretch = Stretch.Uniform,
-            IsHitTestVisible = false
-        };
+        var kind = IconLucideMap.Resolve(resourceKey);
+        var strokeWidth = Math.Clamp(size / 8.0, 1.25, 2.0);
 
-        return new Viewbox
+        var icon = new LucideIcon
         {
-            Width = size,
-            Height = size,
-            Child = path,
-            Stretch = Stretch.Uniform,
+            Size = size,
+            StrokeWidth = strokeWidth,
+            Foreground = foreground,
             IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
         };
-    }
 
-    private static Geometry ResolveIconGeometry(string resourceKey)
-    {
-        var app = Application.Current;
-        if (app is null)
+        // Lucide resolves path geometry when Kind is set; defer until attach so
+        // headless/unit tests can construct views without a render platform.
+        icon.AttachedToVisualTree += (_, _) =>
         {
-            // Fallback for test environments where Application.Current is not
-            // initialized with theme resources. A simple empty geometry avoids
-            // crashing the test.
-            return new StreamGeometry();
-        }
+            if (icon.Kind is null)
+                icon.Kind = kind;
+        };
 
-        try
-        {
-            if (app.TryFindResource(resourceKey, ThemeVariant.Default, out var value) &&
-                value is Geometry geometry)
-            {
-                return geometry;
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            return new StreamGeometry();
-        }
-
-        throw new InvalidOperationException($"Icon resource '{resourceKey}' was not found.");
+        return icon;
     }
 
     public static void SetForeground(Control icon, IBrush? foreground)
     {
-        if (icon is Viewbox { Child: Path path })
-        {
-            path.Fill = foreground;
-        }
+        if (icon is LucideIcon lucideIcon)
+            lucideIcon.Foreground = foreground;
     }
 }

@@ -205,15 +205,13 @@ infrastructure.
 
 #### Icons
 
-- Prefer a **catalogued NuGet icon pack** (`docs/LIBRARIES.md`) over new
-  hand-maintained `StreamGeometry` in `Icons.axaml` (Phase 23 F10).
+- **Catalogued icon pack:** Lucide.Avalonia via `docs/LIBRARIES.md` (Phase 23 F10).
 - `App/Shell/IconFactory` stays the shell-owned facade: views call
   `IconFactory.Create("Icon.*", brush, size)` and keep existing `Icon.*` keys;
   they do not reference pack control types directly.
-- Embedded Phosphor paths in `UI/DesignSystem/Icons.axaml` are **legacy
-  interim** — do not extend; remove when pack migration lands.
-- `NavBar.CreateNavIcon` uses separate inline stroke geometry (readable at
-  16px); may unify after pack adoption.
+- `IconLucideMap` maps stable `Icon.*` keys to Lucide kinds inside `App/Shell`.
+- Do not add hand-maintained `StreamGeometry` icon resources; extend `IconLucideMap`
+  when a new `Icon.*` key is required.
 
 ### Optional layers (per feature)
 

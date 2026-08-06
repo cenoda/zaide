@@ -60,7 +60,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Content = IconFactory.Create(
                 "Icon.ArrowClockwise",
                 (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-                14),
+                16),
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
             Padding = LayoutTokens.NoneThickness,

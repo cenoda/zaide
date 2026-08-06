@@ -31,7 +31,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly TextBlock _statusMessageText = TextStyles.Caption("");
     private readonly TextBlock _modelText;
     private readonly Button _settingsButton;
-    private readonly Viewbox _settingsIcon;
+    private readonly Control _settingsIcon;
     private readonly TextBlock _settingsAppNameText;
     private readonly SolidColorBrush _settingsActiveBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
     private readonly SolidColorBrush _settingsHoverBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));

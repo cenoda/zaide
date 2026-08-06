@@ -6,9 +6,6 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://Zaide/UI/DesignSystem/Icons.axaml" />
-            </ResourceDictionary.MergedDictionaries>
 
         <!-- Navy IDE Palette per DESIGN.md §7 -->
         <Color x:Key="PrimaryAccentBrushColor">#066ADB</Color>

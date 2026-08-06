@@ -1,52 +1,86 @@
 using System;
 using System.IO;
-using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Media;
 using Xunit;
 using Zaide.App.Shell;
-using Zaide.Tests.Infrastructure;
 
 namespace Zaide.Tests.App.Shell;
 
 /// <summary>
-/// Phase 23 F10: Phosphor icons paint as fill-oriented glyphs and icon-only
-/// controls expose tooltip + automation names.
+/// Phase 23 F10: Lucide-backed icons via IconFactory and icon-only a11y contracts.
+/// Paint tests use source/map contracts — LucideIcon instantiation needs a render
+/// platform and is verified manually (see F10 plan checklist).
 /// </summary>
 public sealed class Phase23IconFactoryTests
 {
     [Fact]
-    public void IconFactory_Create_UsesFillBrush()
+    public void IconFactory_Create_UsesLucideIconContract()
     {
-        var brush = Brushes.Red;
-        var icon = IconFactory.Create("Icon.ArrowClockwise", brush, 14);
-        var path = AssertPath(icon);
+        var source = ReadRepoFile("src/App/Shell/IconFactory.cs");
 
-        Assert.Same(brush, path.Fill);
-        Assert.Null(path.Stroke);
+        Assert.Contains("new LucideIcon", source, StringComparison.Ordinal);
+        Assert.Contains("Foreground = foreground", source, StringComparison.Ordinal);
+        Assert.Contains("IsHitTestVisible = false", source, StringComparison.Ordinal);
+        Assert.Contains("Math.Clamp(size / 8.0, 1.25, 2.0)", source, StringComparison.Ordinal);
+        Assert.Contains("AttachedToVisualTree", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Viewbox", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("StreamGeometry", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void IconFactory_SetForeground_UpdatesFill()
+    public void IconFactory_SetForeground_UpdatesLucideForeground()
     {
-        var icon = IconFactory.Create("Icon.ArrowClockwise", Brushes.Red, 14);
-        IconFactory.SetForeground(icon, Brushes.Blue);
+        var source = ReadRepoFile("src/App/Shell/IconFactory.cs");
 
-        var path = AssertPath(icon);
-        Assert.Same(Brushes.Blue, path.Fill);
+        Assert.Contains("if (icon is LucideIcon lucideIcon)", source, StringComparison.Ordinal);
+        Assert.Contains("lucideIcon.Foreground = foreground", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void IconFactory_ResolveIconGeometry_KnownKey_ReturnsGeometry()
+    public void IconLucideMap_AllKnownKeys_Resolve()
     {
-        ReactiveUiTestBootstrap.EnsureApplication();
-
-        foreach (var key in new[] { "Icon.ArrowClockwise", "Icon.GitBranch" })
+        foreach (var key in IconLucideMap.AllKeys)
         {
-            var icon = IconFactory.Create(key, Brushes.Black, 14);
-            var path = AssertPath(icon);
-            Assert.NotNull(path.Data);
+            var kind = IconLucideMap.Resolve(key);
+            Assert.True(Enum.IsDefined(kind));
         }
+    }
+
+    [Fact]
+    public void IconLucideMap_IncludesLegacyAndNavKeys()
+    {
+        string[] required =
+        [
+            "Icon.ArrowClockwise",
+            "Icon.GitBranch",
+            "Icon.Folder",
+            "Icon.Code",
+            "Icon.Text",
+            "Icon.Image",
+            "Icon.Config",
+            "Icon.Markup",
+            "Icon.Project",
+            "Icon.Unknown",
+            "Icon.X",
+            "Icon.Plus",
+            "Icon.Search",
+            "Icon.Terminal",
+            "Icon.Broom",
+            "Icon.ChevronDown",
+            "Icon.ChevronLeft",
+            "Icon.ArrowUp",
+            "Icon.Selection",
+            "Icon.Bell",
+            "Icon.Info",
+            "Icon.Pin",
+            "Icon.Warning",
+            "Icon.CheckCircle",
+            "Icon.Explorer",
+            "Icon.SourceControl",
+            "Icon.Avatar",
+        ];
+
+        foreach (var key in required)
+            Assert.Contains(key, IconLucideMap.AllKeys);
     }
 
     [Fact]
@@ -57,6 +91,28 @@ public sealed class Phase23IconFactoryTests
         Assert.Contains("ToolTip.SetTip(refreshButton, \"Refresh source control\")", source, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.SetName(refreshButton, \"Refresh source control\")", source, StringComparison.Ordinal);
         Assert.DoesNotContain("\"Icon.GitBranch\"", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NavBar_UsesIconFactory_NotInlinePaths()
+    {
+        var source = ReadRepoFile("src/App/Shell/NavBar.cs");
+
+        Assert.Contains("IconFactory.Create(", source, StringComparison.Ordinal);
+        Assert.Contains("\"Icon.Explorer\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"Icon.SourceControl\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("CreateNavIcon", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("StreamGeometry.Parse", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IconsAxaml_RemovedFromAppResources()
+    {
+        var appAxaml = ReadRepoFile("src/App/Composition/App.axaml");
+        Assert.DoesNotContain("Icons.axaml", appAxaml, StringComparison.Ordinal);
+
+        var iconsPath = Path.Combine(ResolveRepoRoot(), "src/UI/DesignSystem/Icons.axaml");
+        Assert.False(File.Exists(iconsPath));
     }
 
     [Fact]
@@ -87,20 +143,31 @@ public sealed class Phase23IconFactoryTests
         Assert.Contains($"AutomationProperties.SetName({controlName}, \"{label}\")", source, StringComparison.Ordinal);
     }
 
-    private static Avalonia.Controls.Shapes.Path AssertPath(Control icon)
-    {
-        var viewbox = Assert.IsType<Viewbox>(icon);
-        return Assert.IsType<Avalonia.Controls.Shapes.Path>(viewbox.Child);
-    }
+    private static string ReadRepoFile(string relativePath) =>
+        File.ReadAllText(ResolveRepoPath(relativePath));
 
-    private static string ReadRepoFile(string relativePath)
+    private static string ResolveRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = System.IO.Path.Combine(dir.FullName, relativePath);
+            if (File.Exists(Path.Combine(dir.FullName, "Zaide.slnx")))
+                return dir.FullName;
+
+            dir = dir.Parent;
+        }
+
+        throw new FileNotFoundException("Could not locate repository root.");
+    }
+
+    private static string ResolveRepoPath(string relativePath)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, relativePath);
             if (File.Exists(candidate))
-                return File.ReadAllText(candidate);
+                return candidate;
 
             dir = dir.Parent;
         }

@@ -9,6 +9,8 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.5" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.0.5" />
     <PackageVersion Include="Avalonia.Diagnostics" Version="12.0.5" />
+    <!-- Icons -->
+    <PackageVersion Include="Lucide.Avalonia" Version="0.2.16" />
     <!-- Semi Design -->
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Semi.Avalonia" Version="12.0.3" />

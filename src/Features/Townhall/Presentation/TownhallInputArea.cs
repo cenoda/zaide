@@ -90,9 +90,8 @@ public class TownhallInputArea : Panel
             "Type a message. Press Enter to send. Press Shift+Enter for a new line.");
 
         // Send button (arrow icon)
-        var sendIcon = CreateIconOrFallback(
+        var sendIcon = IconFactory.Create(
             "Icon.ArrowUp",
-            "↑",
             PaletteTokens.TextPrimaryBrush,
             14);
 
@@ -120,9 +119,8 @@ public class TownhallInputArea : Panel
             Width = 28,
             Height = 28,
             CornerRadius = LayoutTokens.RadiusFull,
-            Child = CreateIconOrFallback(
+            Child = IconFactory.Create(
                 "Icon.Plus",
-                "+",
                 PaletteTokens.TextSecondaryBrush,
                 14),
             Cursor = CreateHandCursorOrNull(),
@@ -247,22 +245,6 @@ public class TownhallInputArea : Panel
         transform.ScaleY = 0.95;
 
         await Animations.RunAsync(transform, Animations.CreateScaleBounce(0.95d, 1d));
-    }
-
-    private static Control CreateIconOrFallback(string resourceKey, string fallbackText, IBrush foreground, double size)
-    {
-        if (Application.Current is { } app &&
-            app.TryFindResource(resourceKey, ThemeVariant.Default, out _))
-        {
-            return IconFactory.Create(resourceKey, foreground, size);
-        }
-
-        var fallback = TextStyles.Caption(fallbackText);
-        fallback.FontSize = size;
-        fallback.Foreground = foreground;
-        fallback.HorizontalAlignment = HorizontalAlignment.Center;
-        fallback.VerticalAlignment = VerticalAlignment.Center;
-        return fallback;
     }
 
     private static Cursor? CreateHandCursorOrNull()
