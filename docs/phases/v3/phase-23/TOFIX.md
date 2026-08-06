@@ -230,7 +230,7 @@ or reselect the conversation after scrub if the app was already running.
       selectors, paging, lifecycle toolbars, and standing create-denial copy;
       operational actions (Create, Refresh, Close, Open Settings when capture
       off) remain. Plan: [F3_EMPTY_CHROME_PLAN.md](./F3_EMPTY_CHROME_PLAN.md).
-      Commit `4feaf431`. Covered by `Phase23EmptyInspectChromeTests` (+ caption/a11y
+      Commit `19fed133`. Covered by `Phase23EmptyInspectChromeTests` (+ caption/a11y
       test updates).
 
 **Severity:** Medium
