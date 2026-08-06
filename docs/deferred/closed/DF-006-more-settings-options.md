@@ -13,7 +13,7 @@ Agent and transparency durable configuration lived in Townhall inspection chrome
 
 ## Resolution
 
-**Resolved by Phase 23 F5** (commit `7c2e491c`; schema `84dd8666`).
+**Resolved by Phase 23 F5** (commit `2a254786`; schema `84dd8666`).
 
 Settings now includes an **Agents** section (schema v4): trace/usage capture
 defaults, trace page size limits, ACP executable/arguments/expected identity
@@ -23,4 +23,4 @@ defaults, trace page size limits, ACP executable/arguments/expected identity
 
 - **Outcome:** closed
 - **Fix/issue/phase:** Phase 23 F5
-- **Commit or date:** `7c2e491c`
+- **Commit or date:** `2a254786`
