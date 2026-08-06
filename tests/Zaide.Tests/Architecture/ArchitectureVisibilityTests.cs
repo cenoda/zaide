@@ -192,8 +192,9 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 8 M5: +2 SettingsPanelAttachHost, ShellOverlayFocusWiring production files.
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
         // Phase 23 F10: +1 IconLucideMap (43).
+        // Refactor 10 M1: +1 ThemeBinding (5).
         Assert.Equal(43, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
-        Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
+        Assert.Equal(5, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.
@@ -224,7 +225,8 @@ public sealed class ArchitectureVisibilityTests
         // Phase 22.4 M2: +2 memory surface source files (834).
         // Phase 22.4 M3: +3 usage surface source files (837).
         // Phase 23 F1: +1 AgentInspectHost (838).
-        Assert.Equal(838, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Refactor 10 M1 + Phase 22/23: +3 (841).
+        Assert.Equal(841, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
     }
 
     [Fact]

@@ -50,11 +50,13 @@ public sealed class ArchitectureInventoryTests
         // Refactor 8 M5: +2 internal SettingsPanelAttachHost, ShellOverlayFocusWiring.
         // Phase 14 M8: −1 internal AgentTownhallMirrorCoordinator.
         Assert.Equal((24, 14, 10), byNamespace["Zaide.App.Shell"]);
-        Assert.Equal((4, 2, 2), byNamespace["Zaide.UI.DesignSystem"]);
-        Assert.Equal((11, 11, 0), byNamespace["Zaide.Features.Settings.Domain"]);
+        Assert.Equal((5, 2, 3), byNamespace["Zaide.UI.DesignSystem"]);
+        // Phase 22/23 settings v4: +1 public AgentsSettings, +1 internal type (12p/1i → 13 total).
+        Assert.Equal((13, 12, 1), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
         // M11d: SettingsService + FileSecretStore public→internal (5p/2i → 3p/4i).
-        Assert.Equal((7, 3, 4), byNamespace["Zaide.Features.Settings.Infrastructure"]);
+        // Phase 22/23 settings v4 migration: +1 public SettingsMigrationV3ToV4 (4p/4i → 8 total).
+        Assert.Equal((8, 4, 4), byNamespace["Zaide.Features.Settings.Infrastructure"]);
         // M10: +ISettingsPanelFactory (public) + SettingsPanelFactory (internal).
         Assert.Equal((9, 6, 3), byNamespace["Zaide.Features.Settings.Presentation"]);
         // Phase 17 M2: +1 internal WorkspaceActionScope.
@@ -193,7 +195,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal((56, 7, 49), byNamespace["Zaide.Features.Agents.Application"]);
         // Phase 21 M1: +1 internal AgentDurableRecordCoordinator.
         // Phase 21 M6: +1 internal AgentTransparencyLifecycleCoordinator.
-        Assert.Equal((2, 0, 2), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
+        // Phase 22/23 transparency: +1 internal AgentTransparencySettingsSync.
+        Assert.Equal((3, 0, 3), byNamespace["Zaide.Features.Agents.Application.Transparency"]);
         // Phase 21 M2: +17 internal trace evidence capture/redaction/queue/inspector/source types.
         // Phase 22.4 M1: +1 internal trace-source initialization contract.
         Assert.Equal((18, 0, 18), byNamespace["Zaide.Features.Agents.Application.Transparency.Trace"]);
@@ -315,7 +318,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.4 M3: +3 AgentUsagePanel, AgentUsageSurfaceState, AgentUsageAggregationSemantics (883).
         // Phase 23 F1: +1 AgentInspectHost (884).
         // Phase 23 F10: +1 IconLucideMap (885).
-        Assert.Equal(885, inventory.SourceFiles.Count);
+        // Refactor 10 M1: +4 ThemeBinding, Light.axaml, Shared.axaml, ThemeTokenParityTests (889).
+        Assert.Equal(889, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -325,7 +329,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
         // Phase 23 F10: +1 IconLucideMap (43).
         Assert.Equal(43, byFolder["App"]);
-        Assert.Equal(4, byFolder["UI"]);
+        Assert.Equal(5, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.
@@ -364,7 +368,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.4 M2: +2 memory surface source files (834).
         // Phase 22.4 M3: +3 usage surface source files (837).
         // Phase 23 F1: +1 AgentInspectHost (838).
-        Assert.Equal(838, byFolder["Features"]);
+        // Refactor 10 M1 + Phase 22/23: +3 (841).
+        Assert.Equal(841, byFolder["Features"]);
 
         // Namespace declarations match the completed feature-first tree
         // (Refactor 6.2 M1–M12: App Composition/Shell, UI DesignSystem, Features;

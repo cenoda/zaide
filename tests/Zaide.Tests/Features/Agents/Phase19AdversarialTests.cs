@@ -527,8 +527,9 @@ public sealed class Phase19AdversarialTests : IDisposable
         Assert.Equal(ArchitectureInventoryReader.M0TotalTopLevelTypes, inventory.TotalTopLevelTypeCount);
         // Phase 22.4 M1–M3: +7 authorized transparency surface production source files.
         // Phase 23 F10: +1 IconLucideMap (885).
-        Assert.Equal(885, inventory.SourceFiles.Count);
-        Assert.Equal(838, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
+        // Refactor 10 M1: +4 ThemeBinding, Light.axaml, Shared.axaml, ThemeTokenParityTests (889).
+        Assert.Equal(889, inventory.SourceFiles.Count);
+        Assert.Equal(841, inventory.SourceFiles.Count(f => f.TechnicalFolder == "Features"));
         Assert.Empty(ArchitectureRatchet.DetectRootFolderAdmissionViolations(inventory));
         Assert.Empty(ArchitectureVisibilityRatchet.DetectExpandedRootFolderAdmissionViolations(inventory));
     }

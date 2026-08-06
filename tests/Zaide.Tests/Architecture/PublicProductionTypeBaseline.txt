@@ -257,6 +257,7 @@ Zaide.Features.ProjectSystem.Presentation.TestResultsViewModel
 Zaide.Features.Settings.Contracts.ISecretStore
 Zaide.Features.Settings.Contracts.ISettingsMigration
 Zaide.Features.Settings.Contracts.ISettingsService
+Zaide.Features.Settings.Domain.AgentsSettings
 Zaide.Features.Settings.Domain.DebugSettings
 Zaide.Features.Settings.Domain.EditorSettings
 Zaide.Features.Settings.Domain.LlmSettings
@@ -270,6 +271,7 @@ Zaide.Features.Settings.Domain.SettingsValidationError
 Zaide.Features.Settings.Domain.SettingsValidator
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV1ToV2
 Zaide.Features.Settings.Infrastructure.SettingsMigrationV2ToV3
+Zaide.Features.Settings.Infrastructure.SettingsMigrationV3ToV4
 Zaide.Features.Settings.Infrastructure.SettingsPathResolver
 Zaide.Features.Settings.Presentation.FontPickerEntry
 Zaide.Features.Settings.Presentation.ISettingsPanelFactory

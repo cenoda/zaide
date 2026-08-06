@@ -138,6 +138,8 @@ public sealed class AgentsRegistrationModuleTests
         typeof(AgentTransparencyLifecycleCoordinator).FullName!,
         typeof(IAgentTransparencyLifecycleCoordinator).FullName!,
         typeof(AgentTransparencyManagementViewModel).FullName!,
+        // Phase 22/23: settings sync for transparency capture.
+        typeof(AgentTransparencySettingsSync).FullName!,
     };
 
 
@@ -185,7 +187,7 @@ public sealed class AgentsRegistrationModuleTests
         // memory records, retrieval/influence, and the integrated lifecycle
         // coordinator. The total reflects every AddSingleton admitted by
         // M1–M6 in registration order.
-        Assert.Equal(87, services.Count);
+        Assert.Equal(88, services.Count);
         Assert.All(services, d => Assert.Equal(ServiceLifetime.Singleton, d.Lifetime));
 
         var serviceTypes = services
@@ -535,7 +537,7 @@ public sealed class AgentsRegistrationModuleTests
         // Phase 21 M1–M6 expanded the Agents DI membership; the count now
         // reflects the durable record, trace/usage, continuity, memory, and
         // integrated-lifecycle registrations admitted through M6.
-        Assert.Equal(87, Regex.Matches(moduleSource, @"AddSingleton").Count);
+        Assert.Equal(88, Regex.Matches(moduleSource, @"AddSingleton").Count);
     }
 
     [Fact]
