@@ -36,10 +36,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     private readonly Control _headerIcon;
     private readonly Button _closeFolderButton;
 
-    // F9: track the single hovered row so fast pointer motion cannot leave a
-    // multi-row highlight tail; selection repaint is scoped to affected rows.
+    // F9: track hovered row so fast pointer motion clears the previous row.
     private Border? _hoveredRow;
-    private FileTreeNode? _lastSelectedFile;
 
     public FileTreeView()
     {
@@ -103,8 +101,43 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             };
         }
 
-        // M3.2 / M3.3: row builder paints selection chrome and instant hover.
+        // M3.2 / M3.3: capture the active brushes used by row paint.
+        var activeBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
+        var activeBgBrush = new Avalonia.Media.SolidColorBrush(
+            Avalonia.Media.Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
+        var parentFolderBgBrush = new Avalonia.Media.SolidColorBrush(
+            Avalonia.Media.Color.FromArgb(0x08, 0x06, 0x6A, 0xDB));
+        var defaultRowBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
         var hoverBrush = (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"];
+
+        void PaintRowForSelection(Border row, Border activeStrip, FileTreeNode thisNode)
+        {
+            var selected = ViewModel?.SelectedFile;
+            if (selected is null)
+            {
+                activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+                row.Background = defaultRowBrush;
+                return;
+            }
+
+            if (ReferenceEquals(selected, thisNode))
+            {
+                activeStrip.Background = activeBrush;
+                row.Background = activeBgBrush;
+                return;
+            }
+
+            if (thisNode.IsDirectory && !string.IsNullOrEmpty(selected.FullPath)
+                && selected.FullPath.StartsWith(thisNode.FullPath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+                row.Background = parentFolderBgBrush;
+                return;
+            }
+
+            activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+            row.Background = defaultRowBrush;
+        }
 
         // M3.2 / M3.3 / M3.4: Build the row visual: indent guides (M3.4),
         // 2px accent left border on the active row (M3.3), and hover
@@ -203,13 +236,30 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     // walking the visual tree. The Tag holds the FileTreeNode.
                     rowBorder.Tag = node;
 
-                    // M3.2: PointerEntered / Exited handlers swap the row's
-                    // Background brush instantly (no hover animation) so fast
-                    // pointer motion cannot leave a multi-row highlight tail.
+                    // M3.2: instant hover (no animation); clear the previous row
+                    // before painting the new one so highlights never stick.
                     rowBorder.PointerEntered += (_, _) =>
-                        OnRowPointerEntered(rowBorder, activeStrip, node, hoverBrush);
+                    {
+                        var previous = _hoveredRow;
+                        _hoveredRow = rowBorder;
+                        if (previous is not null && !ReferenceEquals(previous, rowBorder)
+                            && previous.Tag is FileTreeNode prevNode
+                            && previous.Child is Grid prevGrid
+                            && prevGrid.Children[0] is Border prevStrip)
+                        {
+                            PaintRowForSelection(previous, prevStrip, prevNode);
+                        }
+
+                        rowBorder.Background = hoverBrush ?? defaultRowBrush;
+                    };
                     rowBorder.PointerExited += (_, _) =>
-                        OnRowPointerExited(rowBorder, activeStrip, node);
+                    {
+                        if (!ReferenceEquals(_hoveredRow, rowBorder))
+                            return;
+
+                        _hoveredRow = null;
+                        PaintRowForSelection(rowBorder, activeStrip, node);
+                    };
 
                     // M3.3 / M3.4: After the row is added to the visual tree,
                     // wire up the IsExpanded binding and the active-row paint.
@@ -419,18 +469,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 interaction.SetOutput(confirmed);
             }));
 
-            // M3.3: When the view-model selection changes, repaint only rows
-            // whose selection decoration can change (not the full tree).
+            // M3.3: When the view-model selection changes, repaint every
+            // visible row so selection and any stale hover chrome stay in sync.
             d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedFile)
-                .Subscribe(selected =>
-                {
-                    var previous = _lastSelectedFile;
-                    if (ReferenceEquals(previous, selected))
-                        return;
-
-                    _lastSelectedFile = selected;
-                    RepaintRowsForSelectionChange(previous, selected);
-                }));
+                .Subscribe(_ => RepaintAllFileTreeRows()));
         });
 
         _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>
@@ -462,156 +504,61 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         };
     }
 
-    private void OnRowPointerEntered(Border row, Border activeStrip, FileTreeNode node, IBrush? hoverBrush)
+    /// <summary>
+    /// M3.3: Walks the visible tree, finds each row Border (tagged with
+    /// its <see cref="FileTreeNode"/>), and re-applies the selection-aware
+    /// paint.
+    /// </summary>
+    private void RepaintAllFileTreeRows()
     {
-        if (_hoveredRow is not null && !ReferenceEquals(_hoveredRow, row)
-            && _hoveredRow.Tag is FileTreeNode previousNode
-            && TryGetActiveStrip(_hoveredRow, out var previousStrip))
-        {
-            PaintRowForSelection(_hoveredRow, previousStrip, previousNode);
-        }
+        if (_treeView is null) return;
+        var resources = Application.Current?.Resources;
+        if (resources is null) return;
 
-        row.Background = hoverBrush ?? GetDefaultRowBrush();
-        _hoveredRow = row;
-    }
+        var activeBrush = (IBrush?)resources["PrimaryAccentBrush"];
+        var activeBg = new Avalonia.Media.SolidColorBrush(
+            Avalonia.Media.Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
+        var parentBg = new Avalonia.Media.SolidColorBrush(
+            Avalonia.Media.Color.FromArgb(0x08, 0x06, 0x6A, 0xDB));
+        var defaultBg = (IBrush?)resources["SurfaceBaseBrush"];
 
-    private void OnRowPointerExited(Border row, Border activeStrip, FileTreeNode node)
-    {
-        if (!ReferenceEquals(_hoveredRow, row))
-            return;
-
-        PaintRowForSelection(row, activeStrip, node);
-        _hoveredRow = null;
-    }
-
-    private void PaintRowForSelection(Border row, Border activeStrip, FileTreeNode thisNode)
-    {
         var selected = ViewModel?.SelectedFile;
-        var activeBrush = GetActiveAccentBrush();
-        var activeBgBrush = GetActiveFileBackgroundBrush();
-        var parentFolderBgBrush = GetParentFolderBackgroundBrush();
-        var defaultRowBrush = GetDefaultRowBrush();
 
-        if (selected is null)
-        {
-            activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-            if (!ReferenceEquals(_hoveredRow, row))
-                row.Background = defaultRowBrush;
-            return;
-        }
-
-        if (ReferenceEquals(selected, thisNode))
-        {
-            activeStrip.Background = activeBrush;
-            if (!ReferenceEquals(_hoveredRow, row))
-                row.Background = activeBgBrush;
-            return;
-        }
-
-        if (IsAncestorFolderOf(selected, thisNode))
-        {
-            activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-            if (!ReferenceEquals(_hoveredRow, row))
-                row.Background = parentFolderBgBrush;
-            return;
-        }
-
-        activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-        if (!ReferenceEquals(_hoveredRow, row))
-            row.Background = defaultRowBrush;
-    }
-
-    private void RepaintRowsForSelectionChange(FileTreeNode? previous, FileTreeNode? current)
-    {
-        foreach (var row in GetRowsNeedingSelectionRepaint(previous, current))
-        {
-            if (row.Tag is not FileTreeNode node)
-                continue;
-
-            if (!TryGetActiveStrip(row, out var activeStrip))
-                continue;
-
-            PaintRowForSelection(row, activeStrip, node);
-        }
-    }
-
-    private IEnumerable<Border> GetRowsNeedingSelectionRepaint(FileTreeNode? previous, FileTreeNode? current)
-    {
-        foreach (var row in GetTaggedFileTreeRows())
-        {
-            if (row.Tag is not FileTreeNode node)
-                continue;
-
-            if (ShouldRepaintSelectionRow(node, previous, current))
-                yield return row;
-        }
-    }
-
-    internal static bool ShouldRepaintSelectionRow(
-        FileTreeNode node,
-        FileTreeNode? previous,
-        FileTreeNode? current)
-    {
-        if (ReferenceEquals(node, previous) || ReferenceEquals(node, current))
-            return true;
-
-        if (!node.IsDirectory)
-            return false;
-
-        var wasParent = IsAncestorFolderOf(previous, node);
-        var isParent = IsAncestorFolderOf(current, node);
-        return wasParent != isParent;
-    }
-
-    private IEnumerable<Border> GetTaggedFileTreeRows()
-    {
         foreach (var row in _treeView.GetVisualDescendants().OfType<Border>())
         {
-            if (row.Tag is FileTreeNode)
-                yield return row;
+            if (row.Tag is not FileTreeNode node) continue;
+            if (row.Child is not Grid grid || grid.Children.Count < 3) continue;
+            if (grid.Children[0] is not Border activeStrip) continue;
+
+            if (ReferenceEquals(_hoveredRow, row))
+                continue;
+
+            if (selected is null)
+            {
+                activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+                row.Background = defaultBg;
+                continue;
+            }
+
+            if (ReferenceEquals(selected, node))
+            {
+                activeStrip.Background = activeBrush;
+                row.Background = activeBg;
+                continue;
+            }
+
+            if (node.IsDirectory && !string.IsNullOrEmpty(selected.FullPath)
+                && selected.FullPath.StartsWith(node.FullPath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+                row.Background = parentBg;
+                continue;
+            }
+
+            activeStrip.Background = Avalonia.Media.Brushes.Transparent;
+            row.Background = defaultBg;
         }
     }
-
-    private static bool TryGetActiveStrip(Border row, out Border activeStrip)
-    {
-        activeStrip = null!;
-        if (row.Child is not Grid grid || grid.Children.Count < 3)
-            return false;
-
-        if (grid.Children[0] is not Border strip)
-            return false;
-
-        activeStrip = strip;
-        return true;
-    }
-
-    private static bool IsAncestorFolderOf(FileTreeNode? selectedFile, FileTreeNode folderNode)
-    {
-        if (selectedFile is null || !folderNode.IsDirectory)
-            return false;
-
-        if (string.IsNullOrEmpty(selectedFile.FullPath))
-            return false;
-
-        return selectedFile.FullPath.StartsWith(
-            folderNode.FullPath + Path.DirectorySeparatorChar,
-            StringComparison.Ordinal);
-    }
-
-    private static IBrush? GetDefaultRowBrush()
-        => (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
-
-    private static IBrush? GetHoverBrush()
-        => (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"];
-
-    private static IBrush? GetActiveAccentBrush()
-        => (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
-
-    private static IBrush GetActiveFileBackgroundBrush()
-        => new SolidColorBrush(Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
-
-    private static IBrush GetParentFolderBackgroundBrush()
-        => new SolidColorBrush(Color.FromArgb(0x08, 0x06, 0x6A, 0xDB));
 
     /// <summary>
     /// Determines the parent directory for new file/folder creation.
